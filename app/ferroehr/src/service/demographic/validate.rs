@@ -16,6 +16,12 @@
 //!   and Relationships — relationship refs denote the party's version
 //!   container).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the commit interior carries the canonical \
+              fragment the seam produced once; stored-content serving"
+)]
+
 use openehr_base::base_types::identification::lexical::composite_ids_equal;
 use openehr_base::base_types::identification::object_version_id::ObjectVersionId;
 use openehr_base::prelude::PartyRef;

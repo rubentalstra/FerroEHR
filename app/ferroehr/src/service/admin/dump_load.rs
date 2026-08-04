@@ -92,6 +92,12 @@
 //! copies is the promoted `ehr` column projection (the subject + status-flag
 //! cache of the loaded `EHR_STATUS`), which is not content.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 3): EHR-Extract/TDD/dump-load compose over \
+              verbatim stored content (RM common master06 §Copying)"
+)]
+
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 

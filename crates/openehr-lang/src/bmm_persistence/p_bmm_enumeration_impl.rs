@@ -11,6 +11,12 @@
 //! (`_items_names_` meta-property) or both names and values (`_item_values_`
 //! meta-property) can be specified").
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "ODIN-to-JSON conversion targets the JSON data model by specification (LANG odin \
+              spec) (#1694)"
+)]
+
 use crate::bmm_persistence::p_bmm_enumeration::PBmmEnumeration;
 
 /// The underlying type name `BMM_ENUMERATION_INTEGER` redefines

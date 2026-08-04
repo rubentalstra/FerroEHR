@@ -3,6 +3,12 @@
 //! Spec: `docs/specs/openehr/ITS-REST/specifications/docs/ehr/` (CONTRIBUTION) +
 //! `specifications/operations/{contribution_create,contribution_get}.yaml`.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the handler carries the canonical fragment the \
+              negotiate seam produced once (stored-content serving / commit interior)"
+)]
+
 use axum::response::Response;
 use http::StatusCode;
 

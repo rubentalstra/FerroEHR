@@ -37,11 +37,17 @@
 //! - `publisher` — the drainer task + retention pruner + [`publisher::EventsHandle`].
 //! - `subscription` — the `event_subscription` CRUD on `FerroEhrService`.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): external FHIR resources, tenancy/event CRUD rows, \
+              multimedia offload over stored fragments (families 3/6/8)"
+)]
+
 pub mod config;
 
 pub mod amqp;
 pub mod publisher;
-mod subscription;
+pub mod subscription;
 
 use async_trait::async_trait;
 

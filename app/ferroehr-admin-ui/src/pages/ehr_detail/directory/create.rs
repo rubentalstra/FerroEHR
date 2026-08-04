@@ -1,6 +1,7 @@
-//! The empty-directory create flow: for an EHR the CDR has no directory for
-//! (a `404`), commit an empty root `FOLDER` with
-//! `POST /ehr/{ehr_id}/directory` (ITS-REST
+//! The empty-directory create flow.
+//!
+//! For an EHR the CDR has no directory for (a `404`), commit an empty root
+//! `FOLDER` with `POST /ehr/{ehr_id}/directory` (ITS-REST
 //! `specifications/operations/directory_create.yaml`), then build the tree in
 //! the structured editor.
 //!

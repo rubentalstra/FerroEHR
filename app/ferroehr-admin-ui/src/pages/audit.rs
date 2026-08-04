@@ -18,6 +18,13 @@
 //! (the local audit store disabled) is a first-class rendered state, not an
 //! error.
 
+#![allow(
+    clippy::disallowed_types,
+    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+              (#1694); the carriers here are ssr-only, so #[expect] would be unfulfilled on the \
+              hydrate target"
+)]
+
 use leptos::prelude::*;
 use leptos::{component, server};
 use leptos_meta::Title;

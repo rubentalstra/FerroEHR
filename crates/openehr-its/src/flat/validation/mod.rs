@@ -42,6 +42,13 @@
 //! refs, deep required nodes behind an absent optional wrapper) we skip rather
 //! than over-reject — biasing toward reporting only confident violations.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
+              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
+              (#1694)"
+)]
+
 mod leaf;
 mod subtype;
 

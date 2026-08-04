@@ -1,6 +1,13 @@
 //! The EHR-detail Contributions tab: the per-EHR activity timeline, the paged
 //! contribution list, and the by-uid CONTRIBUTION lookup box.
 
+#![allow(
+    clippy::disallowed_types,
+    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+              (#1694); the carriers here are ssr-only, so #[expect] would be unfulfilled on the \
+              hydrate target"
+)]
+
 use leptos::prelude::*;
 use leptos::server;
 use serde::{Deserialize, Serialize};

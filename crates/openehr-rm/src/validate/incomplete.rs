@@ -33,6 +33,12 @@
 //! Neither predicate is used by the strict (`532|complete|`) path, which is
 //! byte-for-byte unchanged.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "the wire-boundary validation reads the canonical JSON node before the typed decode \
+              (#1694 boundary class)"
+)]
+
 use serde_json::Value;
 
 use crate::model::{Container, class};

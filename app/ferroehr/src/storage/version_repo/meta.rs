@@ -10,6 +10,12 @@
 //! §Storage). The version identity these reads serve is RM common master06
 //! §Version Identification; the commit instant is §Committal.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 1): stored canonical fragments — a typed \
+              round-trip drops forward-compatible keys (docs/VERSIONS.md §Spec version policy)"
+)]
+
 use serde_json::Value;
 use sqlx::postgres::PgRow;
 use sqlx::{PgPool, Row};

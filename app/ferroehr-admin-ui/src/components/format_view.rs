@@ -1,7 +1,8 @@
-//! The shared read-only document viewer: a format selector row plus the
-//! document pane every screen shows a wire document in (the composition
-//! viewer, the EHR status tab, a contribution, the template detail's OPT and
-//! example tabs, a stored query's AQL).
+//! The shared read-only document viewer.
+//!
+//! A format selector row plus the document pane every screen shows a wire
+//! document in (the composition viewer, the EHR status tab, a contribution,
+//! the template detail's OPT and example tabs, a stored query's AQL).
 //!
 //! The pane is three views of one body — **Highlighted** (the default: the
 //! byte-exact document with pure-Rust syntax tokens from [`crate::highlight`]),
@@ -12,6 +13,12 @@
 //! wraps the Clipboard API), and both the tokenizer and the renderer are pure
 //! functions of the body string, so the server pass and client hydration emit
 //! identical markup (`.claude/rules/leptos-ui.md` §8).
+
+#![expect(
+    clippy::disallowed_types,
+    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+              (#1694)"
+)]
 
 use leptos::prelude::*;
 use leptos_use::{UseClipboardReturn, use_clipboard};
@@ -375,11 +382,11 @@ fn row_view(row: RenderedRow) -> AnyView {
     .into_any()
 }
 
-/// One domain error rendered as the standard inline error bar — used by
-/// data sections that resolve their `Result` inside `<Suspense>` (SSR'd
-/// `ErrorBoundary` fallbacks mismatch at hydration in leptos 0.8, so
-/// sections render content-or-this directly; errors never render as
-/// nothing).
+/// One domain error rendered as the standard inline error bar.
+///
+/// Used by data sections that resolve their `Result` inside `<Suspense>`
+/// (SSR'd `ErrorBoundary` fallbacks mismatch at hydration in leptos 0.8, so
+/// sections render content-or-this directly; errors never render as nothing).
 #[must_use]
 pub fn inline_error(error: &crate::error::AdminUiError) -> AnyView {
     let message = error.to_string();

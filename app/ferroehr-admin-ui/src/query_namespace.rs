@@ -1,7 +1,8 @@
 //! Namespace-derived stored-query grouping: the pure rules the `/queries`
-//! screen, the dashboard tiles, and both save flows share. Component-free
-//! plain Rust with ordinary unit tests (crate discipline), compiled for both
-//! the `ssr` and `hydrate` targets.
+//! screen, the dashboard tiles, and both save flows share.
+//!
+//! Component-free plain Rust with ordinary unit tests (crate discipline),
+//! compiled for both the `ssr` and `hydrate` targets.
 //!
 //! A stored query's group **is** the namespace of its qualified name. ITS-REST
 //! defines the stored-query identifier as `[{namespace}::]{query-name}`, with
@@ -20,11 +21,12 @@
 
 use crate::queries_api::StoredQueryRow;
 
-/// The heading for stored queries whose name carries no namespace. The
-/// namespace is optional per the spec, so this labels an absence rather than
-/// naming a namespace — which is why [`QueryNamespaceGroup::namespace`] stays
-/// `None` for that bucket and cannot collide with a real namespace of the same
-/// text.
+/// The heading for stored queries whose name carries no namespace.
+///
+/// The namespace is optional per the spec, so this labels an absence rather
+/// than naming a namespace — which is why [`QueryNamespaceGroup::namespace`]
+/// stays `None` for that bucket and cannot collide with a real namespace of
+/// the same text.
 pub const UNQUALIFIED_LABEL: &str = "unqualified";
 
 /// One derived group: the namespace (`None` for the unqualified bucket) and
@@ -64,8 +66,9 @@ pub fn bare_name_of(qualified_name: &str) -> &str {
     }
 }
 
-/// Split a qualified name into the console's two save fields:
-/// `(namespace, bare name)`, with an empty namespace for an unqualified name.
+/// Split a qualified name into the console's two save fields: `(namespace,
+/// bare name)`, with an empty namespace for an unqualified name.
+///
 /// This is what pre-fills the save form when a stored query is opened in the
 /// editor.
 #[must_use]
@@ -77,8 +80,10 @@ pub fn split_qualified(qualified_name: &str) -> (String, String) {
 }
 
 /// Compose the qualified name a save writes, from the namespace field and the
-/// name field. Both parts are trimmed; the namespace is optional (per the spec
-/// cited in the module docs), so an empty one yields the bare name.
+/// name field.
+///
+/// Both parts are trimmed; the namespace is optional (per the spec cited in
+/// the module docs), so an empty one yields the bare name.
 ///
 /// A `name` that ALREADY carries a `::` prefix is taken as fully qualified and
 /// wins: typing `org.example::vitals` into the name field saves exactly that,
@@ -98,8 +103,10 @@ pub fn qualify(namespace: &str, name: &str) -> String {
 }
 
 /// Split a `name@version` stored-query reference into its qualified name and
-/// version, or `None` when it lacks the `@version` suffix. Splits on the LAST
-/// `@` so a qualified name is never mistaken for the version.
+/// version, or `None` when it lacks the `@version` suffix.
+///
+/// Splits on the LAST `@` so a qualified name is never mistaken for the
+/// version.
 ///
 /// `name@version` is the console's own reference form for one stored-query
 /// VERSION (the raw editor's `?load=` hand-off carries it) — the openEHR REST

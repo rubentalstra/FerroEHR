@@ -10,6 +10,13 @@
 //! `audit_change_type` group and stored **verbatim** (never narrowed), while
 //! the storage branch collapses to create / modify / delete / attest.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 2): the serialized version envelope is the \
+              signed artifact (RM common master06 §Digital Signature) — re-encoding breaks \
+              verification"
+)]
+
 use openehr_base::prelude::{HierObjectId, ObjectId, ObjectRef, ObjectRefData};
 use serde_json::{Value, json};
 use uuid::Uuid;

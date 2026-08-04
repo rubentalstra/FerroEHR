@@ -5,6 +5,12 @@
 //! `stored_query_execute_spec.adoc`) plus the execute-call parameters
 //! (`i_query_service.adoc`).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 5): AQL result rows are arbitrary \
+              projections by specification (QUERY 1.1)"
+)]
+
 use std::collections::BTreeMap;
 
 use serde_json::Value;

@@ -31,6 +31,12 @@
 //! as the released ad-hoc AQL `POST` read is. The import routes are the
 //! mutating half of the same interface and stay writes.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the handler carries the canonical fragment the \
+              negotiate seam produced once (stored-content serving / commit interior)"
+)]
+
 use axum::extract::State;
 use axum::response::{IntoResponse, Response};
 use http::StatusCode;

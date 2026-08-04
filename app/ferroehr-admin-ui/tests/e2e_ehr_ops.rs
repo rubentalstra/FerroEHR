@@ -12,6 +12,11 @@
     dead_code,
     reason = "the shared `common` harness is compiled into every journey binary; each one drives a different subset of it"
 )]
+#![expect(
+    clippy::disallowed_types,
+    reason = "test fixtures and wire assertions are raw JSON by the testing rule \
+              (.claude/rules/testing.md §Test-fixture construction)"
+)]
 // e2e journeys are assertive by design; skip-with-reason prints; the shared
 // harness module is per-test-binary (the corpus.rs test-file precedent)
 //! End-to-end journeys over the console's **openEHR EHR/COMPOSITION write

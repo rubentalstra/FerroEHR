@@ -15,6 +15,12 @@
 //! Resource-Owner-Password grants that a CDR must never advertise are rejected
 //! by `ferroehr::config::smart::SmartConfig::validate`).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 7): RFC 7519 leaves the claim set open; \
+              decided-on claims lift into typed fields"
+)]
+
 use std::sync::Arc;
 use std::time::Duration;
 

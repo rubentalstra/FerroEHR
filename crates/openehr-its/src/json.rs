@@ -12,6 +12,13 @@
 //! raw `serde_json`, and so every read is wrapped once in
 //! `serde_path_to_error`.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
+              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
+              (#1694)"
+)]
+
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 

@@ -3,6 +3,10 @@
 //! The openEHR `EXPR_FUNCTION_CALL` spec class, generated from the vendored BMM
 //! meta-model.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "adjudicated free-form JSON slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only where the spec leaves the slot open, and each adjudicated field's NOTE names its citation"
+)]
 use crate::am24::beom::core::expression::Expression;
 
 /// Node representing a function call with 0 or more arguments.

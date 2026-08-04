@@ -1,12 +1,19 @@
 //! `RESULT_SET` export: a plain BFF axum route (NOT a `#[server]` fn) so a
-//! plain HTML `<form method="post">` downloads the file — the export
-//! works before WASM loads and without JavaScript entirely. The route
-//! enforces the console session exactly like every server fn (the
+//! plain HTML `<form method="post">` downloads the file — the export works
+//! before WASM loads and without JavaScript entirely.
+//!
+//! The route enforces the console session exactly like every server fn (the
 //! public-endpoint rule) and runs the AQL through the same CDR client.
 //!
 //! The query is sent to the CDR as-is (no `fetch`/`offset` paging): a
 //! query carrying its own `LIMIT` exports that window, and an unbounded
 //! query is capped by the CDR's server-side default fetch limit.
+
+#![expect(
+    clippy::disallowed_types,
+    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+              (#1694)"
+)]
 
 use axum::http::{HeaderValue, StatusCode, header};
 use axum::response::{IntoResponse, Response};

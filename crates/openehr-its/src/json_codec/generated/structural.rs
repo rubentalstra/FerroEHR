@@ -410,6 +410,10 @@
 //   VisibilityType: BMM enumeration: a literal token/integer on the wire, never `_type`-tagged
 //   TerminologyStatus: BMM enumeration: a literal token/integer on the wire, never `_type`-tagged
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "adjudicated free-form JSON slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only where the spec leaves the slot open, and each adjudicated field's NOTE names its citation"
+)]
 /// Deserialize `node` as the emitted spec class named by `ty` and discard the
 /// value: `Some(Ok(()))` when the node conforms structurally,
 /// `Some(Err(_))` when it does not, `None` when `ty` names no emitted
@@ -426,1507 +430,364 @@ pub fn structural_check(
     node: &::serde_json::Value,
 ) -> ::core::option::Option<::core::result::Result<(), crate::json::JsonParseError>> {
     match ty {
-        "ACCESS_CONTROL_SETTINGS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::AccessControlSettings>(node)
-                .map(|_| ()),
-        ),
-        "ACCESS_GROUP_REF" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_base::prelude::AccessGroupRef>(node)
-                .map(|_| ()),
-        ),
-        "ACTION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Action>(node).map(|_| ()),
-        ),
-        "ACTIVITY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Activity>(node).map(|_| ()),
-        ),
-        "ADDRESS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Address>(node).map(|_| ()),
-        ),
-        "ADDRESSED_MESSAGE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::AddressedMessage>(node)
-                .map(|_| ()),
-        ),
-        "ADL_CODE_DEFINITIONS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::AdlCodeDefinitionsData>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "ADMIN_ENTRY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::AdminEntry>(node).map(|_| ()),
-        ),
-        "AGENT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Agent>(node).map(|_| ()),
-        ),
-        "AOM_PROFILE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::AomProfile>(node)
-                .map(|_| ()),
-        ),
-        "AOM_PROPERTY_MAPPING" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::AomPropertyMapping>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "AOM_TYPE_MAPPING" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::AomTypeMapping>(node)
-                .map(|_| ()),
-        ),
-        "ARCHETYPE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::Archetype>(node)
-                .map(|_| ()),
-        ),
-        "ARCHETYPED" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Archetyped>(node).map(|_| ()),
-        ),
-        "ARCHETYPE_HRID" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::ArchetypeHrid>(node)
-                .map(|_| ()),
-        ),
-        "ARCHETYPE_ID" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_base::prelude::ArchetypeId>(node)
-                .map(|_| ()),
-        ),
-        "ARCHETYPE_ID_CONSTRAINT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::ArchetypeIdConstraint>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "ARCHETYPE_INTERNAL_REF" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::ArchetypeInternalRef>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "ARCHETYPE_ONTOLOGY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::ArchetypeOntology>(node)
-                .map(|_| ()),
-        ),
-        "ARCHETYPE_SLOT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::ArchetypeSlot>(node)
-                .map(|_| ()),
-        ),
-        "ARCHETYPE_TERM" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::ArchetypeTerm>(node)
-                .map(|_| ()),
-        ),
-        "ARCHETYPE_TERMINOLOGY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::ArchetypeTerminology>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "ASSERTION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::Assertion>(node).map(|_| ()),
-        ),
-        "ASSERTION_VARIABLE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::AssertionVariable>(node)
-                .map(|_| ()),
-        ),
-        "ASSIGNMENT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::Assignment>(node)
-                .map(|_| ()),
-        ),
-        "ATTESTATION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Attestation>(node).map(|_| ()),
-        ),
-        "AUDIT_DETAILS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::AuditDetailsData>(node)
-                .map(|_| ()),
-        ),
-        "AUTHORED_ARCHETYPE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::AuthoredArchetypeData>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "AUTHORED_RESOURCE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::AuthoredResource>(node)
-                .map(|_| ()),
-        ),
-        "BMM_ACTION_DECISION_TABLE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmActionDecisionTable>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "BMM_ACTION_TABLE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmActionTable>(node)
-                .map(|_| ()),
-        ),
-        "BMM_ASSERTION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmAssertion>(node)
-                .map(|_| ()),
-        ),
-        "BMM_ASSIGNMENT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmAssignment>(node)
-                .map(|_| ()),
-        ),
-        "BMM_BOOLEAN_VALUE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmBooleanValue>(node)
-                .map(|_| ()),
-        ),
-        "BMM_CLASS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::bmm::core::bmm_class::BmmClassData>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "BMM_CONSTANT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmConstant>(node)
-                .map(|_| ()),
-        ),
-        "BMM_CONTAINER_PROPERTY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<
-                openehr_lang::bmm::core::bmm_container_property::BmmContainerProperty,
-            >(node)
-            .map(|_| ()),
-        ),
-        "BMM_CONTAINER_TYPE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<
-                openehr_lang::bmm::core::bmm_container_type::BmmContainerTypeData,
-            >(node)
-            .map(|_| ()),
-        ),
-        "BMM_CONTAINER_VALUE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmContainerValue>(node)
-                .map(|_| ()),
-        ),
-        "BMM_DECLARATION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmDeclaration>(node)
-                .map(|_| ()),
-        ),
-        "BMM_DEFINITIONS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<
-                openehr_lang::bmm::core::bmm_definitions::BmmDefinitionsData,
-            >(node)
-            .map(|_| ()),
-        ),
-        "BMM_ENUMERATION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<
-                openehr_lang::bmm::core::bmm_enumeration::BmmEnumerationData,
-            >(node)
-            .map(|_| ()),
-        ),
-        "BMM_ENUMERATION_INTEGER" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<
-                openehr_lang::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger,
-            >(node)
-            .map(|_| ()),
-        ),
-        "BMM_ENUMERATION_STRING" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<
-                openehr_lang::bmm::core::bmm_enumeration_string::BmmEnumerationString,
-            >(node)
-            .map(|_| ()),
-        ),
-        "BMM_EXTERNAL_ROUTINE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmExternalRoutine>(node)
-                .map(|_| ()),
-        ),
-        "BMM_FEATURE_EXTENSION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmFeatureExtension>(node)
-                .map(|_| ()),
-        ),
-        "BMM_FEATURE_GROUP" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmFeatureGroup>(node)
-                .map(|_| ()),
-        ),
-        "BMM_FUNCTION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmFunction>(node)
-                .map(|_| ()),
-        ),
-        "BMM_FUNCTION_TYPE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmFunctionType>(node)
-                .map(|_| ()),
-        ),
-        "BMM_GENERIC_CLASS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<
-                openehr_lang::bmm::core::bmm_generic_class::BmmGenericClass,
-            >(node)
-            .map(|_| ()),
-        ),
-        "BMM_GENERIC_PARAMETER" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmGenericParameter>(node)
-                .map(|_| ()),
-        ),
-        "BMM_GENERIC_TYPE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<
-                openehr_lang::bmm::core::bmm_generic_type::BmmGenericType,
-            >(node)
-            .map(|_| ()),
-        ),
-        "BMM_INCLUDE_SPEC" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<
-                openehr_lang::bmm::core::bmm_include_spec::BmmIncludeSpec,
-            >(node)
-            .map(|_| ()),
-        ),
-        "BMM_INDEXED_CONTAINER_PROPERTY" => {
-            ::core::option::Option::Some(
-                crate::json::from_canonical_value::<
-                    openehr_lang::prelude::BmmIndexedContainerProperty,
-                >(node)
-                .map(|_| ()),
-            )
-        }
-        "BMM_INDEXED_CONTAINER_TYPE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<
-                openehr_lang::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType,
-            >(node)
-            .map(|_| ()),
-        ),
-        "BMM_INDEXED_CONTAINER_VALUE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmIndexedContainerValue>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "BMM_INTEGER_VALUE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmIntegerValue>(node)
-                .map(|_| ()),
-        ),
-        "BMM_INTERVAL_VALUE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmIntervalValue>(node)
-                .map(|_| ()),
-        ),
-        "BMM_LOCAL" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmLocal>(node).map(|_| ()),
-        ),
-        "BMM_LOCAL_ROUTINE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmLocalRoutine>(node)
-                .map(|_| ()),
-        ),
-        "BMM_MODEL" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::bmm::core::bmm_model::BmmModel>(node)
-                .map(|_| ()),
-        ),
-        "BMM_MODEL_ACCESS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmModelAccess>(node)
-                .map(|_| ()),
-        ),
-        "BMM_MODEL_METADATA" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmModelMetadataData>(node)
-                .map(|_| ()),
-        ),
-        "BMM_OPEN_TYPE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmOpenType>(node)
-                .map(|_| ()),
-        ),
-        "BMM_OPERATOR" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmOperator>(node)
-                .map(|_| ()),
-        ),
-        "BMM_PACKAGE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::bmm::core::bmm_package::BmmPackage>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "BMM_PACKAGE_CONTAINER" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<
-                openehr_lang::bmm::core::bmm_package_container::BmmPackageContainerData,
-            >(node)
-            .map(|_| ()),
-        ),
-        "BMM_PARAMETER" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmParameter>(node)
-                .map(|_| ()),
-        ),
-        "BMM_PARAMETER_TYPE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmParameterType>(node)
-                .map(|_| ()),
-        ),
-        "BMM_PRIMITIVE_VALUE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmPrimitiveValueData>(node)
-                .map(|_| ()),
-        ),
-        "BMM_PROCEDURE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmProcedure>(node)
-                .map(|_| ()),
-        ),
-        "BMM_PROCEDURE_CALL" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmProcedureCall>(node)
-                .map(|_| ()),
-        ),
-        "BMM_PROCEDURE_TYPE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmProcedureType>(node)
-                .map(|_| ()),
-        ),
-        "BMM_PROPERTY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<
-                openehr_lang::bmm::core::bmm_property::BmmPropertyData<::serde_json::Value>,
-            >(node)
-            .map(|_| ()),
-        ),
-        "BMM_PROPERTY_TYPE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmPropertyType>(node)
-                .map(|_| ()),
-        ),
-        "BMM_RESULT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmResult>(node).map(|_| ()),
-        ),
-        "BMM_ROUTINE_TYPE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmRoutineTypeData>(node)
-                .map(|_| ()),
-        ),
-        "BMM_SCHEMA" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmSchema>(node).map(|_| ()),
-        ),
-        "BMM_SCHEMA_CORE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmSchemaCoreData>(node)
-                .map(|_| ()),
-        ),
-        "BMM_SCHEMA_DESCRIPTOR" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmSchemaDescriptor>(node)
-                .map(|_| ()),
-        ),
-        "BMM_SELF" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmSelf>(node).map(|_| ()),
-        ),
-        "BMM_SIGNATURE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmSignatureData>(node)
-                .map(|_| ()),
-        ),
-        "BMM_SIMPLE_CLASS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmSimpleClassData>(node)
-                .map(|_| ()),
-        ),
-        "BMM_SIMPLE_TYPE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<
-                openehr_lang::bmm::core::bmm_simple_type::BmmSimpleType,
-            >(node)
-            .map(|_| ()),
-        ),
-        "BMM_SINGLETON" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmSingleton>(node)
-                .map(|_| ()),
-        ),
-        "BMM_STATEMENT_BLOCK" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmStatementBlock>(node)
-                .map(|_| ()),
-        ),
-        "BMM_STATUS_TYPE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmStatusType>(node)
-                .map(|_| ()),
-        ),
-        "BMM_STRING_VALUE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmStringValue>(node)
-                .map(|_| ()),
-        ),
-        "BMM_TUPLE_TYPE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmTupleType>(node)
-                .map(|_| ()),
-        ),
-        "BMM_UNITARY_PROPERTY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmUnitaryProperty>(node)
-                .map(|_| ()),
-        ),
-        "BMM_VALUE_SET_SPEC" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmValueSetSpec>(node)
-                .map(|_| ()),
-        ),
-        "BMM_VISIBILITY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::BmmVisibility>(node)
-                .map(|_| ()),
-        ),
-        "CAPABILITY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Capability>(node).map(|_| ()),
-        ),
-        "CARDINALITY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::Cardinality>(node)
-                .map(|_| ()),
-        ),
-        "CLUSTER" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Cluster>(node).map(|_| ()),
-        ),
-        "CODE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_term::prelude::Code>(node).map(|_| ()),
-        ),
-        "CODE_PHRASE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::CodePhrase>(node).map(|_| ()),
-        ),
-        "CODE_SET" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_term::prelude::CodeSet>(node).map(|_| ()),
-        ),
-        "CODE_SET_ACCESS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::CodeSetAccess>(node)
-                .map(|_| ()),
-        ),
-        "COMPOSITION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Composition>(node).map(|_| ()),
-        ),
-        "CONSTRAINT_REF" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::ConstraintRef>(node)
-                .map(|_| ()),
-        ),
-        "CONTACT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Contact>(node).map(|_| ()),
-        ),
-        "CONTRIBUTION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Contribution>(node)
-                .map(|_| ()),
-        ),
-        "C_ARCHETYPE_ROOT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::CArchetypeRoot>(node)
-                .map(|_| ()),
-        ),
-        "C_ATTRIBUTE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::CAttribute>(node)
-                .map(|_| ()),
-        ),
-        "C_ATTRIBUTE_TUPLE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::CAttributeTuple>(node)
-                .map(|_| ()),
-        ),
-        "C_BOOLEAN" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::CBoolean>(node)
-                .map(|_| ()),
-        ),
-        "C_CODED_TEXT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::CCodedText>(node)
-                .map(|_| ()),
-        ),
-        "C_COMPLEX_OBJECT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::CComplexObject>(node)
-                .map(|_| ()),
-        ),
-        "C_COMPLEX_OBJECT_PROXY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::CComplexObjectProxy>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "C_DATE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::CDate>(node).map(|_| ()),
-        ),
-        "C_DATE_TIME" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::CDateTime>(node)
-                .map(|_| ()),
-        ),
-        "C_DURATION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::CDuration>(node)
-                .map(|_| ()),
-        ),
-        "C_INTEGER" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::CInteger>(node)
-                .map(|_| ()),
-        ),
-        "C_MULTIPLE_ATTRIBUTE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::CMultipleAttribute>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "C_ORDINAL" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::COrdinal>(node)
-                .map(|_| ()),
-        ),
-        "C_PRIMITIVE_OBJECT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::CPrimitiveObject>(node)
-                .map(|_| ()),
-        ),
-        "C_PRIMITIVE_TUPLE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::CPrimitiveTuple>(node)
-                .map(|_| ()),
-        ),
-        "C_QUANTITY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::CQuantity>(node)
-                .map(|_| ()),
-        ),
-        "C_QUANTITY_ITEM" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::CQuantityItem>(node)
-                .map(|_| ()),
-        ),
-        "C_REAL" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::CReal>(node).map(|_| ()),
-        ),
-        "C_SINGLE_ATTRIBUTE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::CSingleAttribute>(node)
-                .map(|_| ()),
-        ),
-        "C_STRING" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::CString>(node)
-                .map(|_| ()),
-        ),
-        "C_TEMPORAL_DEFINITIONS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::CTemporalDefinitions>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "C_TERMINOLOGY_CODE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::CTerminologyCode>(node)
-                .map(|_| ()),
-        ),
-        "C_TIME" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::CTime>(node).map(|_| ()),
-        ),
-        "Cardinality" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_base::prelude::Cardinality>(node)
-                .map(|_| ()),
-        ),
-        "DV_BOOLEAN" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::DvBoolean>(node).map(|_| ()),
-        ),
-        "DV_CODED_TEXT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::DvCodedText>(node).map(|_| ()),
-        ),
-        "DV_COUNT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::DvCount>(node).map(|_| ()),
-        ),
-        "DV_DATE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::DvDate>(node).map(|_| ()),
-        ),
-        "DV_DATE_TIME" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::DvDateTime>(node).map(|_| ()),
-        ),
-        "DV_DURATION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::DvDuration>(node).map(|_| ()),
-        ),
-        "DV_EHR_URI" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::DvEhrUri>(node).map(|_| ()),
-        ),
-        "DV_GENERAL_TIME_SPECIFICATION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::DvGeneralTimeSpecification>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "DV_IDENTIFIER" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::DvIdentifier>(node)
-                .map(|_| ()),
-        ),
-        "DV_INTERVAL" => {
-            ::core::option::Option::Some(
-                crate::json::from_canonical_value::<
-                    openehr_rm::prelude::DvInterval<::serde_json::Value>,
-                >(node)
-                .map(|_| ()),
-            )
-        }
-        "DV_MULTIMEDIA" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::DvMultimedia>(node)
-                .map(|_| ()),
-        ),
-        "DV_ORDINAL" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::DvOrdinal>(node).map(|_| ()),
-        ),
-        "DV_PARAGRAPH" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::DvParagraph>(node).map(|_| ()),
-        ),
-        "DV_PARSABLE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::DvParsable>(node).map(|_| ()),
-        ),
-        "DV_PERIODIC_TIME_SPECIFICATION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::DvPeriodicTimeSpecification>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "DV_PROPORTION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::DvProportion>(node)
-                .map(|_| ()),
-        ),
-        "DV_QUANTITY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::DvQuantity>(node).map(|_| ()),
-        ),
-        "DV_SCALE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::DvScale>(node).map(|_| ()),
-        ),
-        "DV_STATE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::DvState>(node).map(|_| ()),
-        ),
-        "DV_TEXT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::DvTextData>(node).map(|_| ()),
-        ),
-        "DV_TIME" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::DvTime>(node).map(|_| ()),
-        ),
-        "DV_URI" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::DvUriData>(node).map(|_| ()),
-        ),
-        "EHR" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Ehr>(node).map(|_| ()),
-        ),
-        "EHR_ACCESS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::EhrAccess>(node).map(|_| ()),
-        ),
-        "EHR_STATUS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::EhrStatus>(node).map(|_| ()),
-        ),
-        "ELEMENT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Element>(node).map(|_| ()),
-        ),
-        "EL_ATTACHED" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::ElAttached>(node)
-                .map(|_| ()),
-        ),
-        "EL_BINARY_OPERATOR" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::ElBinaryOperator>(node)
-                .map(|_| ()),
-        ),
-        "EL_BOOLEAN_EXPRESSION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::ElBooleanExpression>(node)
-                .map(|_| ()),
-        ),
-        "EL_CASE" => {
-            ::core::option::Option::Some(
-                crate::json::from_canonical_value::<
-                    openehr_lang::prelude::ElCase<::serde_json::Value>,
-                >(node)
-                .map(|_| ()),
-            )
-        }
-        "EL_CASE_TABLE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<
-                openehr_lang::prelude::ElCaseTable<::serde_json::Value>,
-            >(node)
-            .map(|_| ()),
-        ),
-        "EL_CONDITIONAL_EXPRESSION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<
-                openehr_lang::prelude::ElConditionalExpression<::serde_json::Value>,
-            >(node)
-            .map(|_| ()),
-        ),
-        "EL_CONDITION_CHAIN" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<
-                openehr_lang::prelude::ElConditionChain<::serde_json::Value>,
-            >(node)
-            .map(|_| ()),
-        ),
-        "EL_DEFINED" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::ElDefined>(node).map(|_| ()),
-        ),
-        "EL_FUNCTION_AGENT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::ElFunctionAgent>(node)
-                .map(|_| ()),
-        ),
-        "EL_FUNCTION_CALL" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::ElFunctionCall>(node)
-                .map(|_| ()),
-        ),
-        "EL_LITERAL" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::ElLiteral>(node).map(|_| ()),
-        ),
-        "EL_PROCEDURE_AGENT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::ElProcedureAgent>(node)
-                .map(|_| ()),
-        ),
-        "EL_PROPERTY_REF" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::ElPropertyRef>(node)
-                .map(|_| ()),
-        ),
-        "EL_READONLY_VARIABLE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::ElReadonlyVariable>(node)
-                .map(|_| ()),
-        ),
-        "EL_STATIC_REF" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::ElStaticRef>(node)
-                .map(|_| ()),
-        ),
-        "EL_TUPLE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::ElTuple>(node).map(|_| ()),
-        ),
-        "EL_TUPLE_ITEM" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::ElTupleItem>(node)
-                .map(|_| ()),
-        ),
-        "EL_TYPE_REF" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::ElTypeRef>(node).map(|_| ()),
-        ),
-        "EL_UNARY_OPERATOR" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::ElUnaryOperator>(node)
-                .map(|_| ()),
-        ),
-        "EL_WRITABLE_VARIABLE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::ElWritableVariable>(node)
-                .map(|_| ()),
-        ),
-        "EVALUATION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Evaluation>(node).map(|_| ()),
-        ),
-        "EVENT_CONTEXT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::EventContext>(node)
-                .map(|_| ()),
-        ),
-        "EXPR_ARCHETYPE_ID_CONSTRAINT" => {
-            ::core::option::Option::Some(
-                crate::json::from_canonical_value::<
-                    openehr_am::am24::prelude::ExprArchetypeIdConstraint,
-                >(node)
-                .map(|_| ()),
-            )
-        }
-        "EXPR_ARCHETYPE_REF" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::ExprArchetypeRef>(node)
-                .map(|_| ()),
-        ),
-        "EXPR_BINARY_OPERATOR" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::ExprBinaryOperator>(node)
-                .map(|_| ()),
-        ),
-        "EXPR_CONSTRAINT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::ExprConstraintData>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "EXPR_FOR_ALL" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::ExprForAll>(node)
-                .map(|_| ()),
-        ),
-        "EXPR_FUNCTION_CALL" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::ExprFunctionCall>(node)
-                .map(|_| ()),
-        ),
-        "EXPR_LEAF" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::ExprLeaf>(node)
-                .map(|_| ()),
-        ),
-        "EXPR_LITERAL" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::ExprLiteral>(node)
-                .map(|_| ()),
-        ),
-        "EXPR_UNARY_OPERATOR" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::ExprUnaryOperator>(node)
-                .map(|_| ()),
-        ),
-        "EXPR_VALUE_REF" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::ExprValueRef>(node)
-                .map(|_| ()),
-        ),
-        "EXPR_VARIABLE_REF" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::ExprVariableRef>(node)
-                .map(|_| ()),
-        ),
-        "EXTERNAL_QUERY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::ExternalQuery>(node)
-                .map(|_| ()),
-        ),
-        "EXTRACT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Extract>(node).map(|_| ()),
-        ),
-        "EXTRACT_ACTION_REQUEST" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::ExtractActionRequest>(node)
-                .map(|_| ()),
-        ),
-        "EXTRACT_CHAPTER" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::ExtractChapterData>(node)
-                .map(|_| ()),
-        ),
-        "EXTRACT_ENTITY_CHAPTER" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::ExtractEntityChapter>(node)
-                .map(|_| ()),
-        ),
-        "EXTRACT_ENTITY_MANIFEST" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::ExtractEntityManifest>(node)
-                .map(|_| ()),
-        ),
-        "EXTRACT_ERROR" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::ExtractError>(node)
-                .map(|_| ()),
-        ),
-        "EXTRACT_FOLDER" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::ExtractFolder>(node)
-                .map(|_| ()),
-        ),
-        "EXTRACT_MANIFEST" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::ExtractManifest>(node)
-                .map(|_| ()),
-        ),
-        "EXTRACT_PARTICIPATION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::ExtractParticipation>(node)
-                .map(|_| ()),
-        ),
-        "EXTRACT_REQUEST" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::ExtractRequest>(node)
-                .map(|_| ()),
-        ),
-        "EXTRACT_SPEC" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::ExtractSpec>(node).map(|_| ()),
-        ),
-        "EXTRACT_UPDATE_SPEC" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::ExtractUpdateSpec>(node)
-                .map(|_| ()),
-        ),
-        "EXTRACT_VERSION_SPEC" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::ExtractVersionSpec>(node)
-                .map(|_| ()),
-        ),
-        "FEEDER_AUDIT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::FeederAudit>(node).map(|_| ()),
-        ),
-        "FEEDER_AUDIT_DETAILS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::FeederAuditDetails>(node)
-                .map(|_| ()),
-        ),
-        "FOLDER" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Folder>(node).map(|_| ()),
-        ),
-        "GENERIC_CONTENT_ITEM" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::GenericContentItem>(node)
-                .map(|_| ()),
-        ),
-        "GENERIC_ENTRY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::GenericEntry>(node)
-                .map(|_| ()),
-        ),
-        "GENERIC_ID" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_base::prelude::GenericId>(node).map(|_| ()),
-        ),
-        "GROUP" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Group>(node).map(|_| ()),
-        ),
-        "HIER_OBJECT_ID" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_base::prelude::HierObjectId>(node)
-                .map(|_| ()),
-        ),
-        "HISTORY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::History<::serde_json::Value>>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "IMPORTED_VERSION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<
-                openehr_rm::prelude::ImportedVersion<::serde_json::Value>,
-            >(node)
-            .map(|_| ()),
-        ),
-        "INSTRUCTION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Instruction>(node).map(|_| ()),
-        ),
-        "INSTRUCTION_DETAILS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::InstructionDetails>(node)
-                .map(|_| ()),
-        ),
-        "INTERNET_ID" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_base::prelude::InternetId>(node)
-                .map(|_| ()),
-        ),
-        "INTERVAL_EVENT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<
-                openehr_rm::prelude::IntervalEvent<::serde_json::Value>,
-            >(node)
-            .map(|_| ()),
-        ),
-        "ISM_TRANSITION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::IsmTransition>(node)
-                .map(|_| ()),
-        ),
-        "ISO_OID" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_base::prelude::IsoOid>(node).map(|_| ()),
-        ),
-        "ITEM_LIST" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::ItemList>(node).map(|_| ()),
-        ),
-        "ITEM_SINGLE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::ItemSingle>(node).map(|_| ()),
-        ),
-        "ITEM_TABLE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::ItemTable>(node).map(|_| ()),
-        ),
-        "ITEM_TAG" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::ItemTag>(node).map(|_| ()),
-        ),
-        "ITEM_TREE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::ItemTree>(node).map(|_| ()),
-        ),
-        "Iso8601_date" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Iso8601DateData>(node)
-                .map(|_| ()),
-        ),
-        "Iso8601_date_time" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Iso8601DateTimeData>(node)
-                .map(|_| ()),
-        ),
-        "Iso8601_duration" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Iso8601DurationData>(node)
-                .map(|_| ()),
-        ),
-        "Iso8601_time" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Iso8601TimeData>(node)
-                .map(|_| ()),
-        ),
-        "Iso8601_timezone" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_base::prelude::Iso8601Timezone>(node)
-                .map(|_| ()),
-        ),
-        "LINK" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Link>(node).map(|_| ()),
-        ),
-        "LOCATABLE_REF" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_base::prelude::LocatableRef>(node)
-                .map(|_| ()),
-        ),
-        "MEASUREMENT_SERVICE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::MeasurementService>(node)
-                .map(|_| ()),
-        ),
-        "MESSAGE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Message>(node).map(|_| ()),
-        ),
-        "Multiplicity_interval" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_base::prelude::MultiplicityInterval>(node)
-                .map(|_| ()),
-        ),
-        "OBJECT_REF" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_base::prelude::ObjectRefData>(node)
-                .map(|_| ()),
-        ),
-        "OBJECT_VERSION_ID" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_base::prelude::ObjectVersionId>(node)
-                .map(|_| ()),
-        ),
-        "OBSERVATION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Observation>(node).map(|_| ()),
-        ),
-        "OPENEHR_CODE_SET_IDENTIFIERS" => {
-            ::core::option::Option::Some(
-                crate::json::from_canonical_value::<
-                    openehr_rm::prelude::OpenehrCodeSetIdentifiersData,
-                >(node)
-                .map(|_| ()),
-            )
-        }
-        "OPENEHR_CONTENT_ITEM" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::OpenehrContentItem>(node)
-                .map(|_| ()),
-        ),
-        "OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<
-                openehr_rm::prelude::OpenehrTerminologyGroupIdentifiersData,
-            >(node)
-            .map(|_| ()),
-        ),
-        "OPERATIONAL_TEMPLATE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::OperationalTemplate>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "ORDINAL" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am14::prelude::Ordinal>(node)
-                .map(|_| ()),
-        ),
-        "ORGANISATION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Organisation>(node)
-                .map(|_| ()),
-        ),
-        "ORIGINAL_VERSION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<
-                openehr_rm::prelude::OriginalVersion<::serde_json::Value>,
-            >(node)
-            .map(|_| ()),
-        ),
-        "PARTICIPATION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Participation>(node)
-                .map(|_| ()),
-        ),
-        "PARTY_IDENTIFIED" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::PartyIdentifiedData>(node)
-                .map(|_| ()),
-        ),
-        "PARTY_IDENTITY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::PartyIdentity>(node)
-                .map(|_| ()),
-        ),
-        "PARTY_REF" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_base::prelude::PartyRef>(node).map(|_| ()),
-        ),
-        "PARTY_RELATED" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::PartyRelated>(node)
-                .map(|_| ()),
-        ),
-        "PARTY_RELATIONSHIP" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::PartyRelationship>(node)
-                .map(|_| ()),
-        ),
-        "PARTY_SELF" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::PartySelf>(node).map(|_| ()),
-        ),
-        "PERSON" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Person>(node).map(|_| ()),
-        ),
-        "POINT_EVENT" => {
-            ::core::option::Option::Some(
-                crate::json::from_canonical_value::<
-                    openehr_rm::prelude::PointEvent<::serde_json::Value>,
-                >(node)
-                .map(|_| ()),
-            )
-        }
-        "P_ARCHETYPE_HRID" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::PArchetypeHrid>(node)
-                .map(|_| ()),
-        ),
-        "P_ARCHETYPE_SLOT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::PArchetypeSlot>(node)
-                .map(|_| ()),
-        ),
-        "P_ARCHETYPE_TERMINOLOGY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::PArchetypeTerminology>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "P_AUTHORED_ARCHETYPE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::PAuthoredArchetypeData>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "P_BMM_CLASS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::PBmmClassData>(node)
-                .map(|_| ()),
-        ),
-        "P_BMM_CONSTANT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::PBmmConstant>(node)
-                .map(|_| ()),
-        ),
-        "P_BMM_CONTAINER_FUNCTION_PARAMETER" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<
-                openehr_lang::prelude::PBmmContainerFunctionParameter,
-            >(node)
-            .map(|_| ()),
-        ),
-        "P_BMM_CONTAINER_PROPERTY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::PBmmContainerPropertyData>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "P_BMM_CONTAINER_TYPE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::PBmmContainerTypeData>(node)
-                .map(|_| ()),
-        ),
-        "P_BMM_ENUMERATION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::PBmmEnumerationData>(node)
-                .map(|_| ()),
-        ),
-        "P_BMM_ENUMERATION_INTEGER" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::PBmmEnumerationInteger>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "P_BMM_ENUMERATION_STRING" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::PBmmEnumerationString>(node)
-                .map(|_| ()),
-        ),
-        "P_BMM_FUNCTION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::PBmmFunction>(node)
-                .map(|_| ()),
-        ),
-        "P_BMM_GENERIC_FUNCTION_PARAMETER" => {
-            ::core::option::Option::Some(
-                crate::json::from_canonical_value::<
-                    openehr_lang::prelude::PBmmGenericFunctionParameter,
-                >(node)
-                .map(|_| ()),
-            )
-        }
-        "P_BMM_GENERIC_PARAMETER" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::PBmmGenericParameter>(node)
-                .map(|_| ()),
-        ),
-        "P_BMM_GENERIC_PROPERTY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::PBmmGenericProperty>(node)
-                .map(|_| ()),
-        ),
-        "P_BMM_GENERIC_TYPE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::PBmmGenericType>(node)
-                .map(|_| ()),
-        ),
-        "P_BMM_INDEXED_CONTAINER_PROPERTY" => {
-            ::core::option::Option::Some(
-                crate::json::from_canonical_value::<
-                    openehr_lang::prelude::PBmmIndexedContainerProperty,
-                >(node)
-                .map(|_| ()),
-            )
-        }
-        "P_BMM_INDEXED_CONTAINER_TYPE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::PBmmIndexedContainerType>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "P_BMM_INTERFACE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::PBmmInterface>(node)
-                .map(|_| ()),
-        ),
-        "P_BMM_OPEN_TYPE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::PBmmOpenType>(node)
-                .map(|_| ()),
-        ),
-        "P_BMM_PACKAGE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::PBmmPackage>(node)
-                .map(|_| ()),
-        ),
-        "P_BMM_PACKAGE_CONTAINER" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::PBmmPackageContainerData>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "P_BMM_SCHEMA" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::PBmmSchema>(node)
-                .map(|_| ()),
-        ),
-        "P_BMM_SCHEMA_DESCRIPTOR" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::PBmmSchemaDescriptor>(node)
-                .map(|_| ()),
-        ),
-        "P_BMM_SIMPLE_TYPE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::PBmmSimpleType>(node)
-                .map(|_| ()),
-        ),
-        "P_BMM_SINGLE_FUNCTION_PARAMETER" => {
-            ::core::option::Option::Some(
-                crate::json::from_canonical_value::<
-                    openehr_lang::prelude::PBmmSingleFunctionParameter,
-                >(node)
-                .map(|_| ()),
-            )
-        }
-        "P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<
-                openehr_lang::prelude::PBmmSingleFunctionParameterOpen,
-            >(node)
-            .map(|_| ()),
-        ),
-        "P_BMM_SINGLE_PROPERTY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::PBmmSingleProperty>(node)
-                .map(|_| ()),
-        ),
-        "P_BMM_SINGLE_PROPERTY_OPEN" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::PBmmSinglePropertyOpen>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "P_C_ARCHETYPE_ROOT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::PCArchetypeRoot>(node)
-                .map(|_| ()),
-        ),
-        "P_C_ATTRIBUTE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::PCAttribute>(node)
-                .map(|_| ()),
-        ),
-        "P_C_ATTRIBUTE_TUPLE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::PCAttributeTuple>(node)
-                .map(|_| ()),
-        ),
-        "P_C_BOOLEAN" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::PCBoolean>(node)
-                .map(|_| ()),
-        ),
-        "P_C_COMPLEX_OBJECT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::PCComplexObjectData>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "P_C_COMPLEX_OBJECT_PROXY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::PCComplexObjectProxy>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "P_C_DATE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::PCDate>(node)
-                .map(|_| ()),
-        ),
-        "P_C_DATE_TIME" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::PCDateTime>(node)
-                .map(|_| ()),
-        ),
-        "P_C_DURATION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::PCDuration>(node)
-                .map(|_| ()),
-        ),
-        "P_C_INTEGER" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::PCInteger>(node)
-                .map(|_| ()),
-        ),
-        "P_C_REAL" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::PCReal>(node)
-                .map(|_| ()),
-        ),
-        "P_C_STRING" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::PCString>(node)
-                .map(|_| ()),
-        ),
-        "P_C_TERMINOLOGY_CODE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::PCTerminologyCode>(node)
-                .map(|_| ()),
-        ),
-        "P_C_TIME" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::PCTime>(node)
-                .map(|_| ()),
-        ),
-        "P_OPERATIONAL_TEMPLATE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::POperationalTemplate>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "P_TEMPLATE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::PTemplate>(node)
-                .map(|_| ()),
-        ),
-        "Point_interval" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<
-                openehr_base::prelude::PointInterval<::serde_json::Value>,
-            >(node)
-            .map(|_| ()),
-        ),
-        "Proper_interval" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<
-                openehr_base::prelude::ProperIntervalData<::serde_json::Value>,
-            >(node)
-            .map(|_| ()),
-        ),
-        "REFERENCE_MODEL_ACCESS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::ReferenceModelAccess>(node)
-                .map(|_| ()),
-        ),
-        "REFERENCE_RANGE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::ReferenceRange>(node)
-                .map(|_| ()),
-        ),
-        "RESOURCE_ANNOTATIONS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_base::prelude::ResourceAnnotations>(node)
-                .map(|_| ()),
-        ),
-        "RESOURCE_DESCRIPTION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::ResourceDescription>(node)
-                .map(|_| ()),
-        ),
-        "RESOURCE_DESCRIPTION_ITEM" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::ResourceDescriptionItem>(node)
-                .map(|_| ()),
-        ),
-        "REVISION_HISTORY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::RevisionHistory>(node)
-                .map(|_| ()),
-        ),
-        "REVISION_HISTORY_ITEM" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::RevisionHistoryItem>(node)
-                .map(|_| ()),
-        ),
-        "RM_ATTRIBUTE_VISIBILITY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::RmAttributeVisibility>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "RM_OVERLAY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::RmOverlay>(node)
-                .map(|_| ()),
-        ),
-        "ROLE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Role>(node).map(|_| ()),
-        ),
-        "SCHEMA_DESCRIPTOR" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::SchemaDescriptorData>(node)
-                .map(|_| ()),
-        ),
-        "SECTION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::Section>(node).map(|_| ()),
-        ),
-        "SIBLING_ORDER" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::SiblingOrder>(node)
-                .map(|_| ()),
-        ),
-        "STATEMENT_SET" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::StatementSet>(node)
-                .map(|_| ()),
-        ),
-        "SYNC_EXTRACT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::SyncExtract>(node).map(|_| ()),
-        ),
-        "SYNC_EXTRACT_REQUEST" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::SyncExtractRequest>(node)
-                .map(|_| ()),
-        ),
-        "SYNC_EXTRACT_SPEC" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::SyncExtractSpec>(node)
-                .map(|_| ()),
-        ),
-        "TEMPLATE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::Template>(node)
-                .map(|_| ()),
-        ),
-        "TEMPLATE_ID" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_base::prelude::TemplateId>(node)
-                .map(|_| ()),
-        ),
-        "TEMPLATE_OVERLAY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::TemplateOverlay>(node)
-                .map(|_| ()),
-        ),
-        "TERMINOLOGY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_term::prelude::Terminology>(node)
-                .map(|_| ()),
-        ),
-        "TERMINOLOGY_ACCESS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::TerminologyAccess>(node)
-                .map(|_| ()),
-        ),
-        "TERMINOLOGY_CONCEPT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_term::prelude::TerminologyConcept>(node)
-                .map(|_| ()),
-        ),
-        "TERMINOLOGY_GROUP" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_term::prelude::TerminologyGroup>(node)
-                .map(|_| ()),
-        ),
-        "TERMINOLOGY_ID" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_base::prelude::TerminologyId>(node)
-                .map(|_| ()),
-        ),
-        "TERMINOLOGY_SERVICE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::TerminologyService>(node)
-                .map(|_| ()),
-        ),
-        "TERM_MAPPING" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::TermMapping>(node).map(|_| ()),
-        ),
-        "TRANSLATION_DETAILS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::TranslationDetails>(node)
-                .map(|_| ()),
-        ),
-        "TYPE_DEF_BOOLEAN" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::TypeDefBoolean>(node)
-                .map(|_| ()),
-        ),
-        "TYPE_DEF_DATE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::TypeDefDate>(node)
-                .map(|_| ()),
-        ),
-        "TYPE_DEF_DATE_TIME" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::TypeDefDateTime>(node)
-                .map(|_| ()),
-        ),
-        "TYPE_DEF_DURATION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::TypeDefDuration>(node)
-                .map(|_| ()),
-        ),
-        "TYPE_DEF_INTEGER" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::TypeDefInteger>(node)
-                .map(|_| ()),
-        ),
-        "TYPE_DEF_OBJECT_REF" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::TypeDefObjectRef>(node)
-                .map(|_| ()),
-        ),
-        "TYPE_DEF_REAL" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::TypeDefReal>(node)
-                .map(|_| ()),
-        ),
-        "TYPE_DEF_STRING" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::TypeDefString>(node)
-                .map(|_| ()),
-        ),
-        "TYPE_DEF_TERMINOLOGY_CODE" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::TypeDefTerminologyCode>(
-                node,
-            )
-            .map(|_| ()),
-        ),
-        "TYPE_DEF_TIME" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::TypeDefTime>(node)
-                .map(|_| ()),
-        ),
-        "TYPE_DEF_URI" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::TypeDefUri>(node)
-                .map(|_| ()),
-        ),
-        "Terminology_code" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_base::prelude::TerminologyCode>(node)
-                .map(|_| ()),
-        ),
-        "Terminology_term" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_base::prelude::TerminologyTerm>(node)
-                .map(|_| ()),
-        ),
-        "UUID" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_base::prelude::Uuid>(node).map(|_| ()),
-        ),
-        "VALUE_SET" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_am::am24::prelude::ValueSet>(node)
-                .map(|_| ()),
-        ),
-        "VARIABLE_DECLARATION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_lang::prelude::VariableDeclaration>(node)
-                .map(|_| ()),
-        ),
-        "VERSIONED_COMPOSITION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::VersionedComposition>(node)
-                .map(|_| ()),
-        ),
-        "VERSIONED_EHR_ACCESS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::VersionedEhrAccess>(node)
-                .map(|_| ()),
-        ),
-        "VERSIONED_EHR_STATUS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::VersionedEhrStatus>(node)
-                .map(|_| ()),
-        ),
-        "VERSIONED_FOLDER" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::VersionedFolder>(node)
-                .map(|_| ()),
-        ),
-        "VERSIONED_OBJECT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::VersionedObjectData>(node)
-                .map(|_| ()),
-        ),
-        "VERSIONED_PARTY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::VersionedParty>(node)
-                .map(|_| ()),
-        ),
-        "VERSION_TREE_ID" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_base::prelude::VersionTreeId>(node)
-                .map(|_| ()),
-        ),
-        "X_CONTRIBUTION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::XContribution>(node)
-                .map(|_| ()),
-        ),
-        "X_VERSIONED_COMPOSITION" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::XVersionedComposition>(node)
-                .map(|_| ()),
-        ),
-        "X_VERSIONED_EHR_ACCESS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::XVersionedEhrAccess>(node)
-                .map(|_| ()),
-        ),
-        "X_VERSIONED_EHR_STATUS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::XVersionedEhrStatus>(node)
-                .map(|_| ()),
-        ),
-        "X_VERSIONED_FOLDER" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::XVersionedFolder>(node)
-                .map(|_| ()),
-        ),
-        "X_VERSIONED_OBJECT" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<
-                openehr_rm::prelude::XVersionedObjectData<::serde_json::Value>,
-            >(node)
-            .map(|_| ()),
-        ),
-        "X_VERSIONED_PARTY" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::XVersionedParty>(node)
-                .map(|_| ()),
-        ),
-        _ => ::core::option::Option::None,
-    }
+"ACCESS_CONTROL_SETTINGS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::AccessControlSettings>(node).map(|_| ())),
+"ACCESS_GROUP_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::prelude::AccessGroupRef>(node).map(|_| ())),
+"ACTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Action>(node).map(|_| ())),
+"ACTIVITY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Activity>(node).map(|_| ())),
+"ADDRESS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Address>(node).map(|_| ())),
+"ADDRESSED_MESSAGE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::AddressedMessage>(node).map(|_| ())),
+"ADL_CODE_DEFINITIONS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::AdlCodeDefinitionsData>(node).map(|_| ())),
+"ADMIN_ENTRY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::AdminEntry>(node).map(|_| ())),
+"AGENT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Agent>(node).map(|_| ())),
+"AOM_PROFILE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::AomProfile>(node).map(|_| ())),
+"AOM_PROPERTY_MAPPING" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::AomPropertyMapping>(node).map(|_| ())),
+"AOM_TYPE_MAPPING" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::AomTypeMapping>(node).map(|_| ())),
+"ARCHETYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::Archetype>(node).map(|_| ())),
+"ARCHETYPED" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Archetyped>(node).map(|_| ())),
+"ARCHETYPE_HRID" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::ArchetypeHrid>(node).map(|_| ())),
+"ARCHETYPE_ID" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::prelude::ArchetypeId>(node).map(|_| ())),
+"ARCHETYPE_ID_CONSTRAINT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::ArchetypeIdConstraint>(node).map(|_| ())),
+"ARCHETYPE_INTERNAL_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::ArchetypeInternalRef>(node).map(|_| ())),
+"ARCHETYPE_ONTOLOGY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::ArchetypeOntology>(node).map(|_| ())),
+"ARCHETYPE_SLOT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::ArchetypeSlot>(node).map(|_| ())),
+"ARCHETYPE_TERM" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::ArchetypeTerm>(node).map(|_| ())),
+"ARCHETYPE_TERMINOLOGY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::ArchetypeTerminology>(node).map(|_| ())),
+"ASSERTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::Assertion>(node).map(|_| ())),
+"ASSERTION_VARIABLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::AssertionVariable>(node).map(|_| ())),
+"ASSIGNMENT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::Assignment>(node).map(|_| ())),
+"ATTESTATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Attestation>(node).map(|_| ())),
+"AUDIT_DETAILS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::AuditDetailsData>(node).map(|_| ())),
+"AUTHORED_ARCHETYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::AuthoredArchetypeData>(node).map(|_| ())),
+"AUTHORED_RESOURCE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::AuthoredResource>(node).map(|_| ())),
+"BMM_ACTION_DECISION_TABLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmActionDecisionTable>(node).map(|_| ())),
+"BMM_ACTION_TABLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmActionTable>(node).map(|_| ())),
+"BMM_ASSERTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmAssertion>(node).map(|_| ())),
+"BMM_ASSIGNMENT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmAssignment>(node).map(|_| ())),
+"BMM_BOOLEAN_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmBooleanValue>(node).map(|_| ())),
+"BMM_CLASS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::bmm::core::bmm_class::BmmClassData>(node).map(|_| ())),
+"BMM_CONSTANT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmConstant>(node).map(|_| ())),
+"BMM_CONTAINER_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::bmm::core::bmm_container_property::BmmContainerProperty>(node).map(|_| ())),
+"BMM_CONTAINER_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::bmm::core::bmm_container_type::BmmContainerTypeData>(node).map(|_| ())),
+"BMM_CONTAINER_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmContainerValue>(node).map(|_| ())),
+"BMM_DECLARATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmDeclaration>(node).map(|_| ())),
+"BMM_DEFINITIONS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::bmm::core::bmm_definitions::BmmDefinitionsData>(node).map(|_| ())),
+"BMM_ENUMERATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::bmm::core::bmm_enumeration::BmmEnumerationData>(node).map(|_| ())),
+"BMM_ENUMERATION_INTEGER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger>(node).map(|_| ())),
+"BMM_ENUMERATION_STRING" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::bmm::core::bmm_enumeration_string::BmmEnumerationString>(node).map(|_| ())),
+"BMM_EXTERNAL_ROUTINE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmExternalRoutine>(node).map(|_| ())),
+"BMM_FEATURE_EXTENSION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmFeatureExtension>(node).map(|_| ())),
+"BMM_FEATURE_GROUP" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmFeatureGroup>(node).map(|_| ())),
+"BMM_FUNCTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmFunction>(node).map(|_| ())),
+"BMM_FUNCTION_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmFunctionType>(node).map(|_| ())),
+"BMM_GENERIC_CLASS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::bmm::core::bmm_generic_class::BmmGenericClass>(node).map(|_| ())),
+"BMM_GENERIC_PARAMETER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmGenericParameter>(node).map(|_| ())),
+"BMM_GENERIC_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::bmm::core::bmm_generic_type::BmmGenericType>(node).map(|_| ())),
+"BMM_INCLUDE_SPEC" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::bmm::core::bmm_include_spec::BmmIncludeSpec>(node).map(|_| ())),
+"BMM_INDEXED_CONTAINER_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmIndexedContainerProperty>(node).map(|_| ())),
+"BMM_INDEXED_CONTAINER_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType>(node).map(|_| ())),
+"BMM_INDEXED_CONTAINER_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmIndexedContainerValue>(node).map(|_| ())),
+"BMM_INTEGER_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmIntegerValue>(node).map(|_| ())),
+"BMM_INTERVAL_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmIntervalValue>(node).map(|_| ())),
+"BMM_LOCAL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmLocal>(node).map(|_| ())),
+"BMM_LOCAL_ROUTINE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmLocalRoutine>(node).map(|_| ())),
+"BMM_MODEL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::bmm::core::bmm_model::BmmModel>(node).map(|_| ())),
+"BMM_MODEL_ACCESS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmModelAccess>(node).map(|_| ())),
+"BMM_MODEL_METADATA" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmModelMetadataData>(node).map(|_| ())),
+"BMM_OPEN_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmOpenType>(node).map(|_| ())),
+"BMM_OPERATOR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmOperator>(node).map(|_| ())),
+"BMM_PACKAGE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::bmm::core::bmm_package::BmmPackage>(node).map(|_| ())),
+"BMM_PACKAGE_CONTAINER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::bmm::core::bmm_package_container::BmmPackageContainerData>(node).map(|_| ())),
+"BMM_PARAMETER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmParameter>(node).map(|_| ())),
+"BMM_PARAMETER_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmParameterType>(node).map(|_| ())),
+"BMM_PRIMITIVE_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmPrimitiveValueData>(node).map(|_| ())),
+"BMM_PROCEDURE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmProcedure>(node).map(|_| ())),
+"BMM_PROCEDURE_CALL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmProcedureCall>(node).map(|_| ())),
+"BMM_PROCEDURE_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmProcedureType>(node).map(|_| ())),
+"BMM_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::bmm::core::bmm_property::BmmPropertyData<::serde_json::Value>>(node).map(|_| ())),
+"BMM_PROPERTY_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmPropertyType>(node).map(|_| ())),
+"BMM_RESULT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmResult>(node).map(|_| ())),
+"BMM_ROUTINE_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmRoutineTypeData>(node).map(|_| ())),
+"BMM_SCHEMA" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmSchema>(node).map(|_| ())),
+"BMM_SCHEMA_CORE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmSchemaCoreData>(node).map(|_| ())),
+"BMM_SCHEMA_DESCRIPTOR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmSchemaDescriptor>(node).map(|_| ())),
+"BMM_SELF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmSelf>(node).map(|_| ())),
+"BMM_SIGNATURE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmSignatureData>(node).map(|_| ())),
+"BMM_SIMPLE_CLASS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmSimpleClassData>(node).map(|_| ())),
+"BMM_SIMPLE_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::bmm::core::bmm_simple_type::BmmSimpleType>(node).map(|_| ())),
+"BMM_SINGLETON" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmSingleton>(node).map(|_| ())),
+"BMM_STATEMENT_BLOCK" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmStatementBlock>(node).map(|_| ())),
+"BMM_STATUS_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmStatusType>(node).map(|_| ())),
+"BMM_STRING_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmStringValue>(node).map(|_| ())),
+"BMM_TUPLE_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmTupleType>(node).map(|_| ())),
+"BMM_UNITARY_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmUnitaryProperty>(node).map(|_| ())),
+"BMM_VALUE_SET_SPEC" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmValueSetSpec>(node).map(|_| ())),
+"BMM_VISIBILITY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::BmmVisibility>(node).map(|_| ())),
+"CAPABILITY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Capability>(node).map(|_| ())),
+"CARDINALITY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::Cardinality>(node).map(|_| ())),
+"CLUSTER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Cluster>(node).map(|_| ())),
+"CODE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_term::prelude::Code>(node).map(|_| ())),
+"CODE_PHRASE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::CodePhrase>(node).map(|_| ())),
+"CODE_SET" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_term::prelude::CodeSet>(node).map(|_| ())),
+"CODE_SET_ACCESS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::CodeSetAccess>(node).map(|_| ())),
+"COMPOSITION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Composition>(node).map(|_| ())),
+"CONSTRAINT_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::ConstraintRef>(node).map(|_| ())),
+"CONTACT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Contact>(node).map(|_| ())),
+"CONTRIBUTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Contribution>(node).map(|_| ())),
+"C_ARCHETYPE_ROOT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::CArchetypeRoot>(node).map(|_| ())),
+"C_ATTRIBUTE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::CAttribute>(node).map(|_| ())),
+"C_ATTRIBUTE_TUPLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::CAttributeTuple>(node).map(|_| ())),
+"C_BOOLEAN" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::CBoolean>(node).map(|_| ())),
+"C_CODED_TEXT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::CCodedText>(node).map(|_| ())),
+"C_COMPLEX_OBJECT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::CComplexObject>(node).map(|_| ())),
+"C_COMPLEX_OBJECT_PROXY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::CComplexObjectProxy>(node).map(|_| ())),
+"C_DATE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::CDate>(node).map(|_| ())),
+"C_DATE_TIME" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::CDateTime>(node).map(|_| ())),
+"C_DURATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::CDuration>(node).map(|_| ())),
+"C_INTEGER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::CInteger>(node).map(|_| ())),
+"C_MULTIPLE_ATTRIBUTE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::CMultipleAttribute>(node).map(|_| ())),
+"C_ORDINAL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::COrdinal>(node).map(|_| ())),
+"C_PRIMITIVE_OBJECT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::CPrimitiveObject>(node).map(|_| ())),
+"C_PRIMITIVE_TUPLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::CPrimitiveTuple>(node).map(|_| ())),
+"C_QUANTITY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::CQuantity>(node).map(|_| ())),
+"C_QUANTITY_ITEM" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::CQuantityItem>(node).map(|_| ())),
+"C_REAL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::CReal>(node).map(|_| ())),
+"C_SINGLE_ATTRIBUTE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::CSingleAttribute>(node).map(|_| ())),
+"C_STRING" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::CString>(node).map(|_| ())),
+"C_TEMPORAL_DEFINITIONS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::CTemporalDefinitions>(node).map(|_| ())),
+"C_TERMINOLOGY_CODE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::CTerminologyCode>(node).map(|_| ())),
+"C_TIME" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::CTime>(node).map(|_| ())),
+"Cardinality" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::prelude::Cardinality>(node).map(|_| ())),
+"DV_BOOLEAN" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::DvBoolean>(node).map(|_| ())),
+"DV_CODED_TEXT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::DvCodedText>(node).map(|_| ())),
+"DV_COUNT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::DvCount>(node).map(|_| ())),
+"DV_DATE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::DvDate>(node).map(|_| ())),
+"DV_DATE_TIME" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::DvDateTime>(node).map(|_| ())),
+"DV_DURATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::DvDuration>(node).map(|_| ())),
+"DV_EHR_URI" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::DvEhrUri>(node).map(|_| ())),
+"DV_GENERAL_TIME_SPECIFICATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::DvGeneralTimeSpecification>(node).map(|_| ())),
+"DV_IDENTIFIER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::DvIdentifier>(node).map(|_| ())),
+"DV_INTERVAL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::DvInterval<::serde_json::Value>>(node).map(|_| ())),
+"DV_MULTIMEDIA" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::DvMultimedia>(node).map(|_| ())),
+"DV_ORDINAL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::DvOrdinal>(node).map(|_| ())),
+"DV_PARAGRAPH" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::DvParagraph>(node).map(|_| ())),
+"DV_PARSABLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::DvParsable>(node).map(|_| ())),
+"DV_PERIODIC_TIME_SPECIFICATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::DvPeriodicTimeSpecification>(node).map(|_| ())),
+"DV_PROPORTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::DvProportion>(node).map(|_| ())),
+"DV_QUANTITY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::DvQuantity>(node).map(|_| ())),
+"DV_SCALE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::DvScale>(node).map(|_| ())),
+"DV_STATE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::DvState>(node).map(|_| ())),
+"DV_TEXT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::DvTextData>(node).map(|_| ())),
+"DV_TIME" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::DvTime>(node).map(|_| ())),
+"DV_URI" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::DvUriData>(node).map(|_| ())),
+"EHR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Ehr>(node).map(|_| ())),
+"EHR_ACCESS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::EhrAccess>(node).map(|_| ())),
+"EHR_STATUS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::EhrStatus>(node).map(|_| ())),
+"ELEMENT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Element>(node).map(|_| ())),
+"EL_ATTACHED" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ElAttached>(node).map(|_| ())),
+"EL_BINARY_OPERATOR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ElBinaryOperator>(node).map(|_| ())),
+"EL_BOOLEAN_EXPRESSION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ElBooleanExpression>(node).map(|_| ())),
+"EL_CASE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ElCase<::serde_json::Value>>(node).map(|_| ())),
+"EL_CASE_TABLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ElCaseTable<::serde_json::Value>>(node).map(|_| ())),
+"EL_CONDITIONAL_EXPRESSION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ElConditionalExpression<::serde_json::Value>>(node).map(|_| ())),
+"EL_CONDITION_CHAIN" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ElConditionChain<::serde_json::Value>>(node).map(|_| ())),
+"EL_DEFINED" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ElDefined>(node).map(|_| ())),
+"EL_FUNCTION_AGENT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ElFunctionAgent>(node).map(|_| ())),
+"EL_FUNCTION_CALL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ElFunctionCall>(node).map(|_| ())),
+"EL_LITERAL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ElLiteral>(node).map(|_| ())),
+"EL_PROCEDURE_AGENT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ElProcedureAgent>(node).map(|_| ())),
+"EL_PROPERTY_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ElPropertyRef>(node).map(|_| ())),
+"EL_READONLY_VARIABLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ElReadonlyVariable>(node).map(|_| ())),
+"EL_STATIC_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ElStaticRef>(node).map(|_| ())),
+"EL_TUPLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ElTuple>(node).map(|_| ())),
+"EL_TUPLE_ITEM" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ElTupleItem>(node).map(|_| ())),
+"EL_TYPE_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ElTypeRef>(node).map(|_| ())),
+"EL_UNARY_OPERATOR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ElUnaryOperator>(node).map(|_| ())),
+"EL_WRITABLE_VARIABLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ElWritableVariable>(node).map(|_| ())),
+"EVALUATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Evaluation>(node).map(|_| ())),
+"EVENT_CONTEXT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::EventContext>(node).map(|_| ())),
+"EXPR_ARCHETYPE_ID_CONSTRAINT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::ExprArchetypeIdConstraint>(node).map(|_| ())),
+"EXPR_ARCHETYPE_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::ExprArchetypeRef>(node).map(|_| ())),
+"EXPR_BINARY_OPERATOR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ExprBinaryOperator>(node).map(|_| ())),
+"EXPR_CONSTRAINT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::ExprConstraintData>(node).map(|_| ())),
+"EXPR_FOR_ALL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ExprForAll>(node).map(|_| ())),
+"EXPR_FUNCTION_CALL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ExprFunctionCall>(node).map(|_| ())),
+"EXPR_LEAF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::ExprLeaf>(node).map(|_| ())),
+"EXPR_LITERAL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ExprLiteral>(node).map(|_| ())),
+"EXPR_UNARY_OPERATOR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ExprUnaryOperator>(node).map(|_| ())),
+"EXPR_VALUE_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ExprValueRef>(node).map(|_| ())),
+"EXPR_VARIABLE_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ExprVariableRef>(node).map(|_| ())),
+"EXTERNAL_QUERY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ExternalQuery>(node).map(|_| ())),
+"EXTRACT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Extract>(node).map(|_| ())),
+"EXTRACT_ACTION_REQUEST" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::ExtractActionRequest>(node).map(|_| ())),
+"EXTRACT_CHAPTER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::ExtractChapterData>(node).map(|_| ())),
+"EXTRACT_ENTITY_CHAPTER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::ExtractEntityChapter>(node).map(|_| ())),
+"EXTRACT_ENTITY_MANIFEST" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::ExtractEntityManifest>(node).map(|_| ())),
+"EXTRACT_ERROR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::ExtractError>(node).map(|_| ())),
+"EXTRACT_FOLDER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::ExtractFolder>(node).map(|_| ())),
+"EXTRACT_MANIFEST" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::ExtractManifest>(node).map(|_| ())),
+"EXTRACT_PARTICIPATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::ExtractParticipation>(node).map(|_| ())),
+"EXTRACT_REQUEST" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::ExtractRequest>(node).map(|_| ())),
+"EXTRACT_SPEC" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::ExtractSpec>(node).map(|_| ())),
+"EXTRACT_UPDATE_SPEC" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::ExtractUpdateSpec>(node).map(|_| ())),
+"EXTRACT_VERSION_SPEC" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::ExtractVersionSpec>(node).map(|_| ())),
+"FEEDER_AUDIT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::FeederAudit>(node).map(|_| ())),
+"FEEDER_AUDIT_DETAILS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::FeederAuditDetails>(node).map(|_| ())),
+"FOLDER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Folder>(node).map(|_| ())),
+"GENERIC_CONTENT_ITEM" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::GenericContentItem>(node).map(|_| ())),
+"GENERIC_ENTRY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::GenericEntry>(node).map(|_| ())),
+"GENERIC_ID" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::prelude::GenericId>(node).map(|_| ())),
+"GROUP" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Group>(node).map(|_| ())),
+"HIER_OBJECT_ID" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::prelude::HierObjectId>(node).map(|_| ())),
+"HISTORY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::History<::serde_json::Value>>(node).map(|_| ())),
+"IMPORTED_VERSION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::ImportedVersion<::serde_json::Value>>(node).map(|_| ())),
+"INSTRUCTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Instruction>(node).map(|_| ())),
+"INSTRUCTION_DETAILS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::InstructionDetails>(node).map(|_| ())),
+"INTERNET_ID" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::prelude::InternetId>(node).map(|_| ())),
+"INTERVAL_EVENT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::IntervalEvent<::serde_json::Value>>(node).map(|_| ())),
+"ISM_TRANSITION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::IsmTransition>(node).map(|_| ())),
+"ISO_OID" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::prelude::IsoOid>(node).map(|_| ())),
+"ITEM_LIST" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::ItemList>(node).map(|_| ())),
+"ITEM_SINGLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::ItemSingle>(node).map(|_| ())),
+"ITEM_TABLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::ItemTable>(node).map(|_| ())),
+"ITEM_TAG" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::ItemTag>(node).map(|_| ())),
+"ITEM_TREE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::ItemTree>(node).map(|_| ())),
+"Iso8601_date" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Iso8601DateData>(node).map(|_| ())),
+"Iso8601_date_time" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Iso8601DateTimeData>(node).map(|_| ())),
+"Iso8601_duration" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Iso8601DurationData>(node).map(|_| ())),
+"Iso8601_time" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Iso8601TimeData>(node).map(|_| ())),
+"Iso8601_timezone" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::prelude::Iso8601Timezone>(node).map(|_| ())),
+"LINK" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Link>(node).map(|_| ())),
+"LOCATABLE_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::prelude::LocatableRef>(node).map(|_| ())),
+"MEASUREMENT_SERVICE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::MeasurementService>(node).map(|_| ())),
+"MESSAGE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Message>(node).map(|_| ())),
+"Multiplicity_interval" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::prelude::MultiplicityInterval>(node).map(|_| ())),
+"OBJECT_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::prelude::ObjectRefData>(node).map(|_| ())),
+"OBJECT_VERSION_ID" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::prelude::ObjectVersionId>(node).map(|_| ())),
+"OBSERVATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Observation>(node).map(|_| ())),
+"OPENEHR_CODE_SET_IDENTIFIERS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::OpenehrCodeSetIdentifiersData>(node).map(|_| ())),
+"OPENEHR_CONTENT_ITEM" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::OpenehrContentItem>(node).map(|_| ())),
+"OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::OpenehrTerminologyGroupIdentifiersData>(node).map(|_| ())),
+"OPERATIONAL_TEMPLATE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::OperationalTemplate>(node).map(|_| ())),
+"ORDINAL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am14::prelude::Ordinal>(node).map(|_| ())),
+"ORGANISATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Organisation>(node).map(|_| ())),
+"ORIGINAL_VERSION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::OriginalVersion<::serde_json::Value>>(node).map(|_| ())),
+"PARTICIPATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Participation>(node).map(|_| ())),
+"PARTY_IDENTIFIED" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::PartyIdentifiedData>(node).map(|_| ())),
+"PARTY_IDENTITY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::PartyIdentity>(node).map(|_| ())),
+"PARTY_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::prelude::PartyRef>(node).map(|_| ())),
+"PARTY_RELATED" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::PartyRelated>(node).map(|_| ())),
+"PARTY_RELATIONSHIP" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::PartyRelationship>(node).map(|_| ())),
+"PARTY_SELF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::PartySelf>(node).map(|_| ())),
+"PERSON" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Person>(node).map(|_| ())),
+"POINT_EVENT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::PointEvent<::serde_json::Value>>(node).map(|_| ())),
+"P_ARCHETYPE_HRID" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::PArchetypeHrid>(node).map(|_| ())),
+"P_ARCHETYPE_SLOT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::PArchetypeSlot>(node).map(|_| ())),
+"P_ARCHETYPE_TERMINOLOGY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::PArchetypeTerminology>(node).map(|_| ())),
+"P_AUTHORED_ARCHETYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::PAuthoredArchetypeData>(node).map(|_| ())),
+"P_BMM_CLASS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmClassData>(node).map(|_| ())),
+"P_BMM_CONSTANT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmConstant>(node).map(|_| ())),
+"P_BMM_CONTAINER_FUNCTION_PARAMETER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmContainerFunctionParameter>(node).map(|_| ())),
+"P_BMM_CONTAINER_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmContainerPropertyData>(node).map(|_| ())),
+"P_BMM_CONTAINER_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmContainerTypeData>(node).map(|_| ())),
+"P_BMM_ENUMERATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmEnumerationData>(node).map(|_| ())),
+"P_BMM_ENUMERATION_INTEGER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmEnumerationInteger>(node).map(|_| ())),
+"P_BMM_ENUMERATION_STRING" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmEnumerationString>(node).map(|_| ())),
+"P_BMM_FUNCTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmFunction>(node).map(|_| ())),
+"P_BMM_GENERIC_FUNCTION_PARAMETER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmGenericFunctionParameter>(node).map(|_| ())),
+"P_BMM_GENERIC_PARAMETER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmGenericParameter>(node).map(|_| ())),
+"P_BMM_GENERIC_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmGenericProperty>(node).map(|_| ())),
+"P_BMM_GENERIC_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmGenericType>(node).map(|_| ())),
+"P_BMM_INDEXED_CONTAINER_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmIndexedContainerProperty>(node).map(|_| ())),
+"P_BMM_INDEXED_CONTAINER_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmIndexedContainerType>(node).map(|_| ())),
+"P_BMM_INTERFACE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmInterface>(node).map(|_| ())),
+"P_BMM_OPEN_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmOpenType>(node).map(|_| ())),
+"P_BMM_PACKAGE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmPackage>(node).map(|_| ())),
+"P_BMM_PACKAGE_CONTAINER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmPackageContainerData>(node).map(|_| ())),
+"P_BMM_SCHEMA" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmSchema>(node).map(|_| ())),
+"P_BMM_SCHEMA_DESCRIPTOR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmSchemaDescriptor>(node).map(|_| ())),
+"P_BMM_SIMPLE_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmSimpleType>(node).map(|_| ())),
+"P_BMM_SINGLE_FUNCTION_PARAMETER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmSingleFunctionParameter>(node).map(|_| ())),
+"P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmSingleFunctionParameterOpen>(node).map(|_| ())),
+"P_BMM_SINGLE_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmSingleProperty>(node).map(|_| ())),
+"P_BMM_SINGLE_PROPERTY_OPEN" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::PBmmSinglePropertyOpen>(node).map(|_| ())),
+"P_C_ARCHETYPE_ROOT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::PCArchetypeRoot>(node).map(|_| ())),
+"P_C_ATTRIBUTE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::PCAttribute>(node).map(|_| ())),
+"P_C_ATTRIBUTE_TUPLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::PCAttributeTuple>(node).map(|_| ())),
+"P_C_BOOLEAN" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::PCBoolean>(node).map(|_| ())),
+"P_C_COMPLEX_OBJECT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::PCComplexObjectData>(node).map(|_| ())),
+"P_C_COMPLEX_OBJECT_PROXY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::PCComplexObjectProxy>(node).map(|_| ())),
+"P_C_DATE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::PCDate>(node).map(|_| ())),
+"P_C_DATE_TIME" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::PCDateTime>(node).map(|_| ())),
+"P_C_DURATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::PCDuration>(node).map(|_| ())),
+"P_C_INTEGER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::PCInteger>(node).map(|_| ())),
+"P_C_REAL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::PCReal>(node).map(|_| ())),
+"P_C_STRING" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::PCString>(node).map(|_| ())),
+"P_C_TERMINOLOGY_CODE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::PCTerminologyCode>(node).map(|_| ())),
+"P_C_TIME" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::PCTime>(node).map(|_| ())),
+"P_OPERATIONAL_TEMPLATE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::POperationalTemplate>(node).map(|_| ())),
+"P_TEMPLATE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::PTemplate>(node).map(|_| ())),
+"Point_interval" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::prelude::PointInterval<::serde_json::Value>>(node).map(|_| ())),
+"Proper_interval" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::prelude::ProperIntervalData<::serde_json::Value>>(node).map(|_| ())),
+"REFERENCE_MODEL_ACCESS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::ReferenceModelAccess>(node).map(|_| ())),
+"REFERENCE_RANGE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::ReferenceRange>(node).map(|_| ())),
+"RESOURCE_ANNOTATIONS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::prelude::ResourceAnnotations>(node).map(|_| ())),
+"RESOURCE_DESCRIPTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::ResourceDescription>(node).map(|_| ())),
+"RESOURCE_DESCRIPTION_ITEM" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::ResourceDescriptionItem>(node).map(|_| ())),
+"REVISION_HISTORY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::RevisionHistory>(node).map(|_| ())),
+"REVISION_HISTORY_ITEM" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::RevisionHistoryItem>(node).map(|_| ())),
+"RM_ATTRIBUTE_VISIBILITY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::RmAttributeVisibility>(node).map(|_| ())),
+"RM_OVERLAY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::RmOverlay>(node).map(|_| ())),
+"ROLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Role>(node).map(|_| ())),
+"SCHEMA_DESCRIPTOR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::SchemaDescriptorData>(node).map(|_| ())),
+"SECTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::Section>(node).map(|_| ())),
+"SIBLING_ORDER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::SiblingOrder>(node).map(|_| ())),
+"STATEMENT_SET" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::StatementSet>(node).map(|_| ())),
+"SYNC_EXTRACT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::SyncExtract>(node).map(|_| ())),
+"SYNC_EXTRACT_REQUEST" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::SyncExtractRequest>(node).map(|_| ())),
+"SYNC_EXTRACT_SPEC" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::SyncExtractSpec>(node).map(|_| ())),
+"TEMPLATE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::Template>(node).map(|_| ())),
+"TEMPLATE_ID" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::prelude::TemplateId>(node).map(|_| ())),
+"TEMPLATE_OVERLAY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::TemplateOverlay>(node).map(|_| ())),
+"TERMINOLOGY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_term::prelude::Terminology>(node).map(|_| ())),
+"TERMINOLOGY_ACCESS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::TerminologyAccess>(node).map(|_| ())),
+"TERMINOLOGY_CONCEPT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_term::prelude::TerminologyConcept>(node).map(|_| ())),
+"TERMINOLOGY_GROUP" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_term::prelude::TerminologyGroup>(node).map(|_| ())),
+"TERMINOLOGY_ID" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::prelude::TerminologyId>(node).map(|_| ())),
+"TERMINOLOGY_SERVICE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::TerminologyService>(node).map(|_| ())),
+"TERM_MAPPING" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::TermMapping>(node).map(|_| ())),
+"TRANSLATION_DETAILS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::TranslationDetails>(node).map(|_| ())),
+"TYPE_DEF_BOOLEAN" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::TypeDefBoolean>(node).map(|_| ())),
+"TYPE_DEF_DATE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::TypeDefDate>(node).map(|_| ())),
+"TYPE_DEF_DATE_TIME" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::TypeDefDateTime>(node).map(|_| ())),
+"TYPE_DEF_DURATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::TypeDefDuration>(node).map(|_| ())),
+"TYPE_DEF_INTEGER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::TypeDefInteger>(node).map(|_| ())),
+"TYPE_DEF_OBJECT_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::TypeDefObjectRef>(node).map(|_| ())),
+"TYPE_DEF_REAL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::TypeDefReal>(node).map(|_| ())),
+"TYPE_DEF_STRING" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::TypeDefString>(node).map(|_| ())),
+"TYPE_DEF_TERMINOLOGY_CODE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::TypeDefTerminologyCode>(node).map(|_| ())),
+"TYPE_DEF_TIME" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::TypeDefTime>(node).map(|_| ())),
+"TYPE_DEF_URI" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::TypeDefUri>(node).map(|_| ())),
+"Terminology_code" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::prelude::TerminologyCode>(node).map(|_| ())),
+"Terminology_term" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::prelude::TerminologyTerm>(node).map(|_| ())),
+"UUID" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::prelude::Uuid>(node).map(|_| ())),
+"VALUE_SET" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::am24::prelude::ValueSet>(node).map(|_| ())),
+"VARIABLE_DECLARATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::prelude::VariableDeclaration>(node).map(|_| ())),
+"VERSIONED_COMPOSITION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::VersionedComposition>(node).map(|_| ())),
+"VERSIONED_EHR_ACCESS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::VersionedEhrAccess>(node).map(|_| ())),
+"VERSIONED_EHR_STATUS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::VersionedEhrStatus>(node).map(|_| ())),
+"VERSIONED_FOLDER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::VersionedFolder>(node).map(|_| ())),
+"VERSIONED_OBJECT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::VersionedObjectData>(node).map(|_| ())),
+"VERSIONED_PARTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::VersionedParty>(node).map(|_| ())),
+"VERSION_TREE_ID" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::prelude::VersionTreeId>(node).map(|_| ())),
+"X_CONTRIBUTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::XContribution>(node).map(|_| ())),
+"X_VERSIONED_COMPOSITION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::XVersionedComposition>(node).map(|_| ())),
+"X_VERSIONED_EHR_ACCESS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::XVersionedEhrAccess>(node).map(|_| ())),
+"X_VERSIONED_EHR_STATUS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::XVersionedEhrStatus>(node).map(|_| ())),
+"X_VERSIONED_FOLDER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::XVersionedFolder>(node).map(|_| ())),
+"X_VERSIONED_OBJECT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::XVersionedObjectData<::serde_json::Value>>(node).map(|_| ())),
+"X_VERSIONED_PARTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::prelude::XVersionedParty>(node).map(|_| ())),
+_ => ::core::option::Option::None,
+}
 }
 
 /// The wire keys the spec class `ty` declares, sorted, or `None` when
@@ -1940,2092 +801,362 @@ pub fn structural_check(
 #[must_use]
 pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static str]> {
     match ty {
-        "ACCESS_CONTROL_SETTINGS" => ::core::option::Option::Some(&[]),
-        "ACCESS_GROUP_REF" => ::core::option::Option::Some(&["id", "namespace", "type"]),
-        "ACTION" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "description",
-            "encoding",
-            "feeder_audit",
-            "guideline_id",
-            "instruction_details",
-            "ism_transition",
-            "language",
-            "links",
-            "name",
-            "other_participations",
-            "protocol",
-            "provider",
-            "subject",
-            "time",
-            "uid",
-            "workflow_id",
-        ]),
-        "ACTIVITY" => ::core::option::Option::Some(&[
-            "action_archetype_id",
-            "archetype_details",
-            "archetype_node_id",
-            "description",
-            "feeder_audit",
-            "links",
-            "name",
-            "timing",
-            "uid",
-        ]),
-        "ADDRESS" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "details",
-            "feeder_audit",
-            "links",
-            "name",
-            "uid",
-        ]),
-        "ADDRESSED_MESSAGE" => ::core::option::Option::Some(&[
-            "addressees",
-            "message",
-            "sender",
-            "sender_reference",
-            "urgency",
-        ]),
-        "ADL_CODE_DEFINITIONS" => ::core::option::Option::Some(&[]),
-        "ADMIN_ENTRY" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "data",
-            "encoding",
-            "feeder_audit",
-            "language",
-            "links",
-            "name",
-            "other_participations",
-            "provider",
-            "subject",
-            "uid",
-            "workflow_id",
-        ]),
-        "AGENT" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "contacts",
-            "details",
-            "feeder_audit",
-            "identities",
-            "languages",
-            "links",
-            "name",
-            "relationships",
-            "roles",
-            "uid",
-        ]),
-        "AOM_PROFILE" => ::core::option::Option::Some(&[
-            "aom_lifecycle_mappings",
-            "aom_rm_type_mappings",
-            "aom_rm_type_substitutions",
-            "archetype_data_value_parent_class",
-            "archetype_parent_class",
-            "archetype_visualise_descendants_of",
-            "profile_name",
-            "rm_primitive_type_equivalences",
-        ]),
-        "AOM_PROPERTY_MAPPING" => {
-            ::core::option::Option::Some(&["source_property_name", "target_property_name"])
-        }
-        "AOM_TYPE_MAPPING" => ::core::option::Option::Some(&[
-            "property_mappings",
-            "source_class_name",
-            "target_class_name",
-        ]),
-        "ARCHETYPE" => ::core::option::Option::Some(&[
-            "adl_version",
-            "annotations",
-            "archetype_id",
-            "concept",
-            "definition",
-            "description",
-            "invariants",
-            "is_controlled",
-            "ontology",
-            "original_language",
-            "parent_archetype_id",
-            "translations",
-            "uid",
-        ]),
-        "ARCHETYPED" => {
-            ::core::option::Option::Some(&["archetype_id", "rm_version", "template_id"])
-        }
-        "ARCHETYPE_HRID" => ::core::option::Option::Some(&[
-            "build_count",
-            "concept_id",
-            "namespace",
-            "release_version",
-            "rm_class",
-            "rm_package",
-            "rm_publisher",
-            "version_status",
-        ]),
-        "ARCHETYPE_ID" => ::core::option::Option::Some(&["value"]),
-        "ARCHETYPE_ID_CONSTRAINT" => ::core::option::Option::Some(&["constraint"]),
-        "ARCHETYPE_INTERNAL_REF" => {
-            ::core::option::Option::Some(&["node_id", "occurrences", "rm_type_name", "target_path"])
-        }
-        "ARCHETYPE_ONTOLOGY" => ::core::option::Option::Some(&[
-            "constraint_codes",
-            "specialisation_depth",
-            "term_attribute_names",
-            "term_codes",
-            "terminologies_available",
-        ]),
-        "ARCHETYPE_SLOT" => ::core::option::Option::Some(&[
-            "excludes",
-            "includes",
-            "node_id",
-            "occurrences",
-            "rm_type_name",
-        ]),
-        "ARCHETYPE_TERM" => ::core::option::Option::Some(&["code", "items"]),
-        "ARCHETYPE_TERMINOLOGY" => ::core::option::Option::Some(&[
-            "concept_code",
-            "is_differential",
-            "original_language",
-            "term_bindings",
-            "term_definitions",
-            "terminology_extracts",
-            "value_sets",
-        ]),
-        "ASSERTION" => ::core::option::Option::Some(&["expression", "string_expression", "tag"]),
-        "ASSERTION_VARIABLE" => ::core::option::Option::Some(&["definition", "name"]),
-        "ASSIGNMENT" => ::core::option::Option::Some(&["source", "target"]),
-        "ATTESTATION" => ::core::option::Option::Some(&[
-            "attested_view",
-            "change_type",
-            "committer",
-            "description",
-            "is_pending",
-            "items",
-            "proof",
-            "reason",
-            "system_id",
-            "time_committed",
-        ]),
-        "AUDIT_DETAILS" => ::core::option::Option::Some(&[
-            "change_type",
-            "committer",
-            "description",
-            "system_id",
-            "time_committed",
-        ]),
-        "AUTHORED_ARCHETYPE" => ::core::option::Option::Some(&[
-            "adl_version",
-            "annotations",
-            "archetype_id",
-            "build_uid",
-            "definition",
-            "description",
-            "is_controlled",
-            "is_differential",
-            "is_generated",
-            "original_language",
-            "other_meta_data",
-            "parent_archetype_id",
-            "rm_overlay",
-            "rm_release",
-            "rules",
-            "terminology",
-            "translations",
-            "uid",
-        ]),
-        "AUTHORED_RESOURCE" => ::core::option::Option::Some(&[
-            "description",
-            "is_controlled",
-            "original_language",
-            "revision_history",
-            "translations",
-        ]),
-        "BMM_ACTION_DECISION_TABLE" => ::core::option::Option::Some(&[]),
-        "BMM_ACTION_TABLE" => ::core::option::Option::Some(&["decision_table"]),
-        "BMM_ASSERTION" => ::core::option::Option::Some(&["expression", "tag"]),
-        "BMM_ASSIGNMENT" => ::core::option::Option::Some(&["source", "target"]),
-        "BMM_BOOLEAN_VALUE" => {
-            ::core::option::Option::Some(&["syntax", "type", "value", "value_literal"])
-        }
-        "BMM_CLASS" => ::core::option::Option::Some(&[
-            "ancestors",
-            "documentation",
-            "immediate_descendants",
-            "is_abstract",
-            "is_override",
-            "is_primitive_type",
-            "name",
-            "package",
-            "properties",
-            "source_schema_id",
-        ]),
-        "BMM_CONSTANT" => ::core::option::Option::Some(&[
-            "documentation",
-            "extensions",
-            "feature_extensions",
-            "generator",
-            "group",
-            "is_nullable",
-            "is_synthesised_generic",
-            "name",
-            "type",
-        ]),
-        "BMM_CONTAINER_PROPERTY" => ::core::option::Option::Some(&[
-            "cardinality",
-            "documentation",
-            "is_computed",
-            "is_im_infrastructure",
-            "is_im_runtime",
-            "is_mandatory",
-            "name",
-            "type",
-        ]),
-        "BMM_CONTAINER_TYPE" => {
-            ::core::option::Option::Some(&["base_type", "container_type", "documentation"])
-        }
-        "BMM_CONTAINER_VALUE" => {
-            ::core::option::Option::Some(&["syntax", "type", "value", "value_literal"])
-        }
-        "BMM_DECLARATION" => ::core::option::Option::Some(&["name", "result", "type"]),
-        "BMM_DEFINITIONS" => ::core::option::Option::Some(&[]),
-        "BMM_ENUMERATION" => ::core::option::Option::Some(&[
-            "ancestors",
-            "documentation",
-            "immediate_descendants",
-            "is_abstract",
-            "is_override",
-            "is_primitive_type",
-            "item_names",
-            "item_values",
-            "name",
-            "package",
-            "properties",
-            "source_schema_id",
-            "underlying_type_name",
-        ]),
-        "BMM_ENUMERATION_INTEGER" => ::core::option::Option::Some(&[
-            "ancestors",
-            "documentation",
-            "immediate_descendants",
-            "is_abstract",
-            "is_override",
-            "is_primitive_type",
-            "item_names",
-            "item_values",
-            "name",
-            "package",
-            "properties",
-            "source_schema_id",
-            "underlying_type_name",
-        ]),
-        "BMM_ENUMERATION_STRING" => ::core::option::Option::Some(&[
-            "ancestors",
-            "documentation",
-            "immediate_descendants",
-            "is_abstract",
-            "is_override",
-            "is_primitive_type",
-            "item_names",
-            "item_values",
-            "name",
-            "package",
-            "properties",
-            "source_schema_id",
-            "underlying_type_name",
-        ]),
-        "BMM_EXTERNAL_ROUTINE" => ::core::option::Option::Some(&["argument_mapping", "meta_data"]),
-        "BMM_FEATURE_EXTENSION" => ::core::option::Option::Some(&[]),
-        "BMM_FEATURE_GROUP" => {
-            ::core::option::Option::Some(&["features", "name", "properties", "visibility"])
-        }
-        "BMM_FUNCTION" => ::core::option::Option::Some(&[
-            "definition",
-            "documentation",
-            "extensions",
-            "feature_extensions",
-            "group",
-            "is_nullable",
-            "is_synthesised_generic",
-            "name",
-            "operator_definition",
-            "parameters",
-            "post_conditions",
-            "pre_conditions",
-            "result",
-            "type",
-        ]),
-        "BMM_FUNCTION_TYPE" => ::core::option::Option::Some(&["argument_types", "result_type"]),
-        "BMM_GENERIC_CLASS" => ::core::option::Option::Some(&[
-            "ancestors",
-            "documentation",
-            "generic_parameters",
-            "immediate_descendants",
-            "is_abstract",
-            "is_override",
-            "is_primitive_type",
-            "name",
-            "package",
-            "properties",
-            "source_schema_id",
-        ]),
-        "BMM_GENERIC_PARAMETER" => ::core::option::Option::Some(&[
-            "conforms_to_type",
-            "documentation",
-            "inheritance_precursor",
-            "name",
-        ]),
-        "BMM_GENERIC_TYPE" => {
-            ::core::option::Option::Some(&["base_class", "documentation", "generic_parameters"])
-        }
-        "BMM_INCLUDE_SPEC" => ::core::option::Option::Some(&["id"]),
-        "BMM_INDEXED_CONTAINER_PROPERTY" => ::core::option::Option::Some(&[
-            "cardinality",
-            "documentation",
-            "extensions",
-            "feature_extensions",
-            "group",
-            "is_composition",
-            "is_im_infrastructure",
-            "is_im_runtime",
-            "is_nullable",
-            "is_synthesised_generic",
-            "name",
-            "type",
-        ]),
-        "BMM_INDEXED_CONTAINER_TYPE" => ::core::option::Option::Some(&[
-            "base_type",
-            "container_type",
-            "documentation",
-            "index_type",
-        ]),
-        "BMM_INDEXED_CONTAINER_VALUE" => {
-            ::core::option::Option::Some(&["syntax", "type", "value", "value_literal"])
-        }
-        "BMM_INTEGER_VALUE" => {
-            ::core::option::Option::Some(&["syntax", "type", "value", "value_literal"])
-        }
-        "BMM_INTERVAL_VALUE" => {
-            ::core::option::Option::Some(&["syntax", "type", "value", "value_literal"])
-        }
-        "BMM_LOCAL" => ::core::option::Option::Some(&[
-            "documentation",
-            "extensions",
-            "is_nullable",
-            "name",
-            "type",
-        ]),
-        "BMM_LOCAL_ROUTINE" => ::core::option::Option::Some(&["body", "locals"]),
-        "BMM_MODEL" => ::core::option::Option::Some(&[
-            "archetype_data_value_parent_class",
-            "archetype_parent_class",
-            "archetype_rm_closure_packages",
-            "archetype_visualise_descendants_of",
-            "class_definitions",
-            "documentation",
-            "packages",
-            "rm_publisher",
-            "rm_release",
-            "schema_author",
-            "schema_contributors",
-            "schema_description",
-            "schema_lifecycle_state",
-            "schema_name",
-            "schema_revision",
-        ]),
-        "BMM_MODEL_ACCESS" => ::core::option::Option::Some(&[
-            "all_schemas",
-            "bmm_models",
-            "matching_bmm_models",
-            "schema_directories",
-        ]),
-        "BMM_MODEL_METADATA" => ::core::option::Option::Some(&["rm_publisher", "rm_release"]),
-        "BMM_OPEN_TYPE" => ::core::option::Option::Some(&["documentation", "generic_constraint"]),
-        "BMM_OPERATOR" => ::core::option::Option::Some(&["name", "position", "symbols"]),
-        "BMM_PACKAGE" => {
-            ::core::option::Option::Some(&["classes", "documentation", "name", "packages"])
-        }
-        "BMM_PACKAGE_CONTAINER" => ::core::option::Option::Some(&["documentation", "packages"]),
-        "BMM_PARAMETER" => ::core::option::Option::Some(&[
-            "direction",
-            "documentation",
-            "extensions",
-            "is_nullable",
-            "name",
-            "type",
-        ]),
-        "BMM_PARAMETER_TYPE" => {
-            ::core::option::Option::Some(&["inheritance_precursor", "name", "type_constraint"])
-        }
-        "BMM_PRIMITIVE_VALUE" => {
-            ::core::option::Option::Some(&["syntax", "type", "value", "value_literal"])
-        }
-        "BMM_PROCEDURE" => ::core::option::Option::Some(&[
-            "definition",
-            "documentation",
-            "extensions",
-            "feature_extensions",
-            "group",
-            "is_nullable",
-            "is_synthesised_generic",
-            "name",
-            "parameters",
-            "post_conditions",
-            "pre_conditions",
-            "type",
-        ]),
-        "BMM_PROCEDURE_CALL" => ::core::option::Option::Some(&["agent"]),
-        "BMM_PROCEDURE_TYPE" => ::core::option::Option::Some(&["argument_types", "result_type"]),
-        "BMM_PROPERTY" => ::core::option::Option::Some(&[
-            "documentation",
-            "is_computed",
-            "is_im_infrastructure",
-            "is_im_runtime",
-            "is_mandatory",
-            "name",
-            "type",
-        ]),
-        "BMM_PROPERTY_TYPE" => ::core::option::Option::Some(&["result_type"]),
-        "BMM_RESULT" => ::core::option::Option::Some(&[
-            "documentation",
-            "extensions",
-            "is_nullable",
-            "name",
-            "type",
-        ]),
-        "BMM_ROUTINE_TYPE" => ::core::option::Option::Some(&["argument_types", "result_type"]),
-        "BMM_SCHEMA" => ::core::option::Option::Some(&[
-            "bmm_model",
-            "bmm_version",
-            "includes",
-            "model_name",
-            "rm_publisher",
-            "rm_release",
-            "schema_author",
-            "schema_contributors",
-            "schema_description",
-            "schema_lifecycle_state",
-            "schema_name",
-            "schema_revision",
-            "state",
-        ]),
-        "BMM_SCHEMA_CORE" => ::core::option::Option::Some(&[
-            "archetype_data_value_parent_class",
-            "archetype_parent_class",
-            "archetype_rm_closure_packages",
-            "archetype_visualise_descendants_of",
-            "rm_publisher",
-            "rm_release",
-            "schema_author",
-            "schema_contributors",
-            "schema_description",
-            "schema_lifecycle_state",
-            "schema_name",
-            "schema_revision",
-        ]),
-        "BMM_SCHEMA_DESCRIPTOR" => ::core::option::Option::Some(&[
-            "bmm_model",
-            "bmm_schema",
-            "includes",
-            "meta_data",
-            "schema_id",
-        ]),
-        "BMM_SELF" => ::core::option::Option::Some(&[
-            "documentation",
-            "extensions",
-            "is_nullable",
-            "name",
-            "type",
-        ]),
-        "BMM_SIGNATURE" => ::core::option::Option::Some(&["result_type"]),
-        "BMM_SIMPLE_CLASS" => ::core::option::Option::Some(&[
-            "ancestors",
-            "converters",
-            "creators",
-            "documentation",
-            "extensions",
-            "feature_groups",
-            "features",
-            "functions",
-            "immediate_descendants",
-            "invariants",
-            "is_abstract",
-            "is_override",
-            "is_primitive",
-            "name",
-            "package",
-            "procedures",
-            "properties",
-            "source_schema_id",
-            "static_properties",
-        ]),
-        "BMM_SIMPLE_TYPE" => ::core::option::Option::Some(&["base_class", "documentation"]),
-        "BMM_SINGLETON" => ::core::option::Option::Some(&[
-            "documentation",
-            "extensions",
-            "feature_extensions",
-            "generator",
-            "group",
-            "is_nullable",
-            "is_synthesised_generic",
-            "name",
-            "type",
-        ]),
-        "BMM_STATEMENT_BLOCK" => ::core::option::Option::Some(&["items"]),
-        "BMM_STATUS_TYPE" => ::core::option::Option::Some(&[]),
-        "BMM_STRING_VALUE" => {
-            ::core::option::Option::Some(&["syntax", "type", "value", "value_literal"])
-        }
-        "BMM_TUPLE_TYPE" => ::core::option::Option::Some(&["item_types"]),
-        "BMM_UNITARY_PROPERTY" => ::core::option::Option::Some(&[
-            "documentation",
-            "extensions",
-            "feature_extensions",
-            "group",
-            "is_composition",
-            "is_im_infrastructure",
-            "is_im_runtime",
-            "is_nullable",
-            "is_synthesised_generic",
-            "name",
-            "type",
-        ]),
-        "BMM_VALUE_SET_SPEC" => ::core::option::Option::Some(&["resource_id", "value_set_id"]),
-        "BMM_VISIBILITY" => ::core::option::Option::Some(&[]),
-        "CAPABILITY" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "credentials",
-            "feeder_audit",
-            "links",
-            "name",
-            "time_validity",
-            "uid",
-        ]),
-        "CARDINALITY" => ::core::option::Option::Some(&["interval", "is_ordered", "is_unique"]),
-        "CLUSTER" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "feeder_audit",
-            "items",
-            "links",
-            "name",
-            "uid",
-        ]),
-        "CODE" => ::core::option::Option::Some(&["description", "status", "value"]),
-        "CODE_PHRASE" => {
-            ::core::option::Option::Some(&["code_string", "preferred_term", "terminology_id"])
-        }
-        "CODE_SET" => ::core::option::Option::Some(&[
-            "codes",
-            "external_id",
-            "issuer",
-            "name",
-            "openehr_id",
-            "status",
-        ]),
-        "CODE_SET_ACCESS" => ::core::option::Option::Some(&[]),
-        "COMPOSITION" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "category",
-            "composer",
-            "content",
-            "context",
-            "feeder_audit",
-            "language",
-            "links",
-            "name",
-            "territory",
-            "uid",
-        ]),
-        "CONSTRAINT_REF" => {
-            ::core::option::Option::Some(&["node_id", "occurrences", "reference", "rm_type_name"])
-        }
-        "CONTACT" => ::core::option::Option::Some(&[
-            "addresses",
-            "archetype_details",
-            "archetype_node_id",
-            "feeder_audit",
-            "links",
-            "name",
-            "time_validity",
-            "uid",
-        ]),
-        "CONTRIBUTION" => ::core::option::Option::Some(&["audit", "uid", "versions"]),
-        "C_ARCHETYPE_ROOT" => ::core::option::Option::Some(&[
-            "alternative_ids",
-            "archetype_ref",
-            "attribute_tuples",
-            "attributes",
-            "default_value",
-            "is_deprecated",
-            "node_id",
-            "occurrences",
-            "parent",
-            "rm_type_name",
-            "sibling_order",
-            "soc_parent",
-        ]),
-        "C_ATTRIBUTE" => ::core::option::Option::Some(&[
-            "cardinality",
-            "children",
-            "differential_path",
-            "existence",
-            "is_multiple",
-            "parent",
-            "rm_attribute_name",
-            "soc_parent",
-        ]),
-        "C_ATTRIBUTE_TUPLE" => ::core::option::Option::Some(&["members", "tuples"]),
-        "C_BOOLEAN" => {
-            ::core::option::Option::Some(&["assumed_value", "false_valid", "true_valid"])
-        }
-        "C_CODED_TEXT" => ::core::option::Option::Some(&[
-            "assumed_value",
-            "code_list",
-            "node_id",
-            "occurrences",
-            "reference",
-            "rm_type_name",
-            "terminology",
-        ]),
-        "C_COMPLEX_OBJECT" => ::core::option::Option::Some(&[
-            "assumed_value",
-            "attributes",
-            "node_id",
-            "occurrences",
-            "rm_type_name",
-        ]),
-        "C_COMPLEX_OBJECT_PROXY" => ::core::option::Option::Some(&[
-            "alternative_ids",
-            "is_deprecated",
-            "node_id",
-            "occurrences",
-            "parent",
-            "rm_type_name",
-            "sibling_order",
-            "soc_parent",
-            "target_path",
-        ]),
-        "C_DATE" => ::core::option::Option::Some(&[
-            "assumed_value",
-            "day_validity",
-            "month_validity",
-            "range",
-        ]),
-        "C_DATE_TIME" => ::core::option::Option::Some(&[
-            "assumed_value",
-            "day_validity",
-            "hour_validity",
-            "millisecond_validity",
-            "minute_validity",
-            "month_validity",
-            "range",
-            "second_validity",
-            "timezone_validity",
-        ]),
-        "C_DURATION" => ::core::option::Option::Some(&[
-            "assumed_value",
-            "days_allowed",
-            "fractional_seconds_allowed",
-            "hours_allowed",
-            "minutes_allowed",
-            "months_allowed",
-            "range",
-            "seconds_allowed",
-            "weeks_allowed",
-            "years_allowed",
-        ]),
-        "C_INTEGER" => ::core::option::Option::Some(&["assumed_value", "list", "range"]),
-        "C_MULTIPLE_ATTRIBUTE" => ::core::option::Option::Some(&[
-            "cardinality",
-            "children",
-            "existence",
-            "rm_attribute_name",
-        ]),
-        "C_ORDINAL" => ::core::option::Option::Some(&[
-            "assumed_value",
-            "list",
-            "node_id",
-            "occurrences",
-            "rm_type_name",
-        ]),
-        "C_PRIMITIVE_OBJECT" => ::core::option::Option::Some(&[
-            "assumed_value",
-            "item",
-            "node_id",
-            "occurrences",
-            "rm_type_name",
-        ]),
-        "C_PRIMITIVE_TUPLE" => ::core::option::Option::Some(&["members"]),
-        "C_QUANTITY" => ::core::option::Option::Some(&[
-            "assumed_value",
-            "list",
-            "node_id",
-            "occurrences",
-            "property",
-            "rm_type_name",
-        ]),
-        "C_QUANTITY_ITEM" => ::core::option::Option::Some(&["magnitude", "units"]),
-        "C_REAL" => ::core::option::Option::Some(&["assumed_value", "list", "range"]),
-        "C_SINGLE_ATTRIBUTE" => {
-            ::core::option::Option::Some(&["children", "existence", "rm_attribute_name"])
-        }
-        "C_STRING" => {
-            ::core::option::Option::Some(&["assumed_value", "list", "list_open", "pattern"])
-        }
-        "C_TEMPORAL_DEFINITIONS" => ::core::option::Option::Some(&[
-            "valid_date_constraint_patterns",
-            "valid_date_constraint_replacements",
-            "valid_date_time_constraint_patterns",
-            "valid_date_time_constraint_replacements",
-            "valid_time_constraint_patterns",
-            "valid_time_constraint_replacements",
-        ]),
-        "C_TERMINOLOGY_CODE" => ::core::option::Option::Some(&[
-            "alternative_ids",
-            "assumed_value",
-            "constraint",
-            "constraint_status",
-            "default_value",
-            "is_deprecated",
-            "is_enumerated_type_constraint",
-            "node_id",
-            "occurrences",
-            "parent",
-            "rm_type_name",
-            "sibling_order",
-            "soc_parent",
-        ]),
-        "C_TIME" => ::core::option::Option::Some(&[
-            "assumed_value",
-            "millisecond_validity",
-            "minute_validity",
-            "range",
-            "second_validity",
-            "timezone_validity",
-        ]),
-        "Cardinality" => ::core::option::Option::Some(&["interval", "is_ordered", "is_unique"]),
-        "DV_BOOLEAN" => ::core::option::Option::Some(&["value"]),
-        "DV_CODED_TEXT" => ::core::option::Option::Some(&[
-            "defining_code",
-            "encoding",
-            "formatting",
-            "hyperlink",
-            "language",
-            "mappings",
-            "value",
-        ]),
-        "DV_COUNT" => ::core::option::Option::Some(&[
-            "accuracy",
-            "accuracy_is_percent",
-            "magnitude",
-            "magnitude_status",
-            "normal_range",
-            "normal_status",
-            "other_reference_ranges",
-        ]),
-        "DV_DATE" => ::core::option::Option::Some(&[
-            "accuracy",
-            "magnitude_status",
-            "normal_range",
-            "normal_status",
-            "other_reference_ranges",
-            "value",
-        ]),
-        "DV_DATE_TIME" => ::core::option::Option::Some(&[
-            "accuracy",
-            "magnitude_status",
-            "normal_range",
-            "normal_status",
-            "other_reference_ranges",
-            "value",
-        ]),
-        "DV_DURATION" => ::core::option::Option::Some(&[
-            "accuracy",
-            "accuracy_is_percent",
-            "magnitude_status",
-            "normal_range",
-            "normal_status",
-            "other_reference_ranges",
-            "value",
-        ]),
-        "DV_EHR_URI" => ::core::option::Option::Some(&["value"]),
-        "DV_GENERAL_TIME_SPECIFICATION" => ::core::option::Option::Some(&["value"]),
-        "DV_IDENTIFIER" => ::core::option::Option::Some(&["assigner", "id", "issuer", "type"]),
-        "DV_INTERVAL" => ::core::option::Option::Some(&[
-            "lower",
-            "lower_included",
-            "lower_unbounded",
-            "upper",
-            "upper_included",
-            "upper_unbounded",
-        ]),
-        "DV_MULTIMEDIA" => ::core::option::Option::Some(&[
-            "alternate_text",
-            "charset",
-            "compression_algorithm",
-            "data",
-            "integrity_check",
-            "integrity_check_algorithm",
-            "language",
-            "media_type",
-            "size",
-            "thumbnail",
-            "uri",
-        ]),
-        "DV_ORDINAL" => ::core::option::Option::Some(&[
-            "normal_range",
-            "normal_status",
-            "other_reference_ranges",
-            "symbol",
-            "value",
-        ]),
-        "DV_PARAGRAPH" => ::core::option::Option::Some(&["items"]),
-        "DV_PARSABLE" => {
-            ::core::option::Option::Some(&["charset", "formalism", "language", "value"])
-        }
-        "DV_PERIODIC_TIME_SPECIFICATION" => ::core::option::Option::Some(&["value"]),
-        "DV_PROPORTION" => ::core::option::Option::Some(&[
-            "accuracy",
-            "accuracy_is_percent",
-            "denominator",
-            "magnitude_status",
-            "normal_range",
-            "normal_status",
-            "numerator",
-            "other_reference_ranges",
-            "precision",
-            "type",
-        ]),
-        "DV_QUANTITY" => ::core::option::Option::Some(&[
-            "accuracy",
-            "accuracy_is_percent",
-            "magnitude",
-            "magnitude_status",
-            "normal_range",
-            "normal_status",
-            "other_reference_ranges",
-            "precision",
-            "units",
-            "units_display_name",
-            "units_system",
-        ]),
-        "DV_SCALE" => ::core::option::Option::Some(&[
-            "normal_range",
-            "normal_status",
-            "other_reference_ranges",
-            "symbol",
-            "value",
-        ]),
-        "DV_STATE" => ::core::option::Option::Some(&["is_terminal", "value"]),
-        "DV_TEXT" => ::core::option::Option::Some(&[
-            "encoding",
-            "formatting",
-            "hyperlink",
-            "language",
-            "mappings",
-            "value",
-        ]),
-        "DV_TIME" => ::core::option::Option::Some(&[
-            "accuracy",
-            "magnitude_status",
-            "normal_range",
-            "normal_status",
-            "other_reference_ranges",
-            "value",
-        ]),
-        "DV_URI" => ::core::option::Option::Some(&["value"]),
-        "EHR" => ::core::option::Option::Some(&[
-            "compositions",
-            "contributions",
-            "directory",
-            "ehr_access",
-            "ehr_id",
-            "ehr_status",
-            "folders",
-            "system_id",
-            "tags",
-            "time_created",
-        ]),
-        "EHR_ACCESS" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "feeder_audit",
-            "links",
-            "name",
-            "settings",
-            "uid",
-        ]),
-        "EHR_STATUS" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "feeder_audit",
-            "is_modifiable",
-            "is_queryable",
-            "links",
-            "name",
-            "other_details",
-            "subject",
-            "uid",
-        ]),
-        "ELEMENT" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "feeder_audit",
-            "links",
-            "name",
-            "null_flavour",
-            "null_reason",
-            "uid",
-            "value",
-        ]),
-        "EL_ATTACHED" => ::core::option::Option::Some(&["operand"]),
-        "EL_BINARY_OPERATOR" => ::core::option::Option::Some(&[
-            "call",
-            "left_operand",
-            "precedence_overridden",
-            "right_operand",
-            "symbol",
-        ]),
-        "EL_BOOLEAN_EXPRESSION" => ::core::option::Option::Some(&["base_expression"]),
-        "EL_CASE" => ::core::option::Option::Some(&["result", "value_constraint"]),
-        "EL_CASE_TABLE" => ::core::option::Option::Some(&["else", "items", "test_value"]),
-        "EL_CONDITIONAL_EXPRESSION" => ::core::option::Option::Some(&["condition", "result"]),
-        "EL_CONDITION_CHAIN" => ::core::option::Option::Some(&["else", "items"]),
-        "EL_DEFINED" => ::core::option::Option::Some(&["operand"]),
-        "EL_FUNCTION_AGENT" => ::core::option::Option::Some(&[
-            "closed_args",
-            "definition",
-            "is_writable",
-            "name",
-            "open_args",
-            "scoper",
-        ]),
-        "EL_FUNCTION_CALL" => {
-            ::core::option::Option::Some(&["agent", "is_writable", "name", "scoper"])
-        }
-        "EL_LITERAL" => ::core::option::Option::Some(&["value"]),
-        "EL_PROCEDURE_AGENT" => ::core::option::Option::Some(&[
-            "closed_args",
-            "definition",
-            "is_writable",
-            "name",
-            "open_args",
-            "scoper",
-        ]),
-        "EL_PROPERTY_REF" => {
-            ::core::option::Option::Some(&["definition", "is_writable", "name", "scoper"])
-        }
-        "EL_READONLY_VARIABLE" => {
-            ::core::option::Option::Some(&["definition", "is_writable", "name"])
-        }
-        "EL_STATIC_REF" => {
-            ::core::option::Option::Some(&["definition", "is_writable", "name", "scoper"])
-        }
-        "EL_TUPLE" => ::core::option::Option::Some(&["items", "type"]),
-        "EL_TUPLE_ITEM" => ::core::option::Option::Some(&["item", "name"]),
-        "EL_TYPE_REF" => {
-            ::core::option::Option::Some(&["is_mutable", "is_writable", "name", "type"])
-        }
-        "EL_UNARY_OPERATOR" => {
-            ::core::option::Option::Some(&["call", "operand", "precedence_overridden", "symbol"])
-        }
-        "EL_WRITABLE_VARIABLE" => {
-            ::core::option::Option::Some(&["definition", "is_writable", "name"])
-        }
-        "EVALUATION" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "data",
-            "encoding",
-            "feeder_audit",
-            "guideline_id",
-            "language",
-            "links",
-            "name",
-            "other_participations",
-            "protocol",
-            "provider",
-            "subject",
-            "uid",
-            "workflow_id",
-        ]),
-        "EVENT_CONTEXT" => ::core::option::Option::Some(&[
-            "end_time",
-            "health_care_facility",
-            "location",
-            "other_context",
-            "participations",
-            "setting",
-            "start_time",
-        ]),
-        "EXPR_ARCHETYPE_ID_CONSTRAINT" => ::core::option::Option::Some(&["item"]),
-        "EXPR_ARCHETYPE_REF" => ::core::option::Option::Some(&["item", "path"]),
-        "EXPR_BINARY_OPERATOR" => ::core::option::Option::Some(&[
-            "left_operand",
-            "operator",
-            "precedence_overridden",
-            "right_operand",
-            "symbol",
-        ]),
-        "EXPR_CONSTRAINT" => ::core::option::Option::Some(&["item"]),
-        "EXPR_FOR_ALL" => ::core::option::Option::Some(&[
-            "condition",
-            "operand",
-            "operator",
-            "precedence_overridden",
-            "symbol",
-        ]),
-        "EXPR_FUNCTION_CALL" => ::core::option::Option::Some(&["arguments", "item"]),
-        "EXPR_LEAF" => ::core::option::Option::Some(&["item", "reference_type", "type"]),
-        "EXPR_LITERAL" => ::core::option::Option::Some(&["item"]),
-        "EXPR_UNARY_OPERATOR" => ::core::option::Option::Some(&[
-            "operand",
-            "operator",
-            "precedence_overridden",
-            "symbol",
-        ]),
-        "EXPR_VALUE_REF" => ::core::option::Option::Some(&["item"]),
-        "EXPR_VARIABLE_REF" => ::core::option::Option::Some(&["item"]),
-        "EXTERNAL_QUERY" => ::core::option::Option::Some(&["context", "query_args", "query_id"]),
-        "EXTRACT" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "chapters",
-            "feeder_audit",
-            "links",
-            "name",
-            "participations",
-            "request_id",
-            "sequence_nr",
-            "specification",
-            "system_id",
-            "time_created",
-            "uid",
-        ]),
-        "EXTRACT_ACTION_REQUEST" => ::core::option::Option::Some(&[
-            "action",
-            "archetype_details",
-            "archetype_node_id",
-            "feeder_audit",
-            "links",
-            "name",
-            "request_id",
-            "uid",
-        ]),
-        "EXTRACT_CHAPTER" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "feeder_audit",
-            "items",
-            "links",
-            "name",
-            "uid",
-        ]),
-        "EXTRACT_ENTITY_CHAPTER" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "extract_id_key",
-            "feeder_audit",
-            "items",
-            "links",
-            "name",
-            "uid",
-        ]),
-        "EXTRACT_ENTITY_MANIFEST" => ::core::option::Option::Some(&[
-            "ehr_id",
-            "extract_id_key",
-            "item_list",
-            "other_ids",
-            "subject_id",
-        ]),
-        "EXTRACT_ERROR" => ::core::option::Option::Some(&["reason", "request_id"]),
-        "EXTRACT_FOLDER" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "feeder_audit",
-            "items",
-            "links",
-            "name",
-            "uid",
-        ]),
-        "EXTRACT_MANIFEST" => ::core::option::Option::Some(&["entities"]),
-        "EXTRACT_PARTICIPATION" => {
-            ::core::option::Option::Some(&["function", "mode", "performer", "time"])
-        }
-        "EXTRACT_REQUEST" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "extract_spec",
-            "feeder_audit",
-            "links",
-            "name",
-            "uid",
-            "update_spec",
-        ]),
-        "EXTRACT_SPEC" => ::core::option::Option::Some(&[
-            "criteria",
-            "extract_type",
-            "include_multimedia",
-            "link_depth",
-            "manifest",
-            "other_details",
-            "priority",
-            "version_spec",
-        ]),
-        "EXTRACT_UPDATE_SPEC" => ::core::option::Option::Some(&[
-            "persist_in_server",
-            "repeat_period",
-            "trigger_events",
-            "update_method",
-        ]),
-        "EXTRACT_VERSION_SPEC" => ::core::option::Option::Some(&[
-            "commit_time_interval",
-            "include_all_versions",
-            "include_data",
-            "include_revision_history",
-        ]),
-        "FEEDER_AUDIT" => ::core::option::Option::Some(&[
-            "feeder_system_audit",
-            "feeder_system_item_ids",
-            "original_content",
-            "originating_system_audit",
-            "originating_system_item_ids",
-        ]),
-        "FEEDER_AUDIT_DETAILS" => ::core::option::Option::Some(&[
-            "location",
-            "other_details",
-            "provider",
-            "subject",
-            "system_id",
-            "time",
-            "version_id",
-        ]),
-        "FOLDER" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "details",
-            "feeder_audit",
-            "folders",
-            "items",
-            "links",
-            "name",
-            "uid",
-        ]),
-        "GENERIC_CONTENT_ITEM" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "author",
-            "authorisation_time",
-            "authoriser",
-            "creation_time",
-            "feeder_audit",
-            "is_changed",
-            "is_masked",
-            "is_primary",
-            "item",
-            "item_status",
-            "item_type",
-            "item_type_version",
-            "links",
-            "name",
-            "other_details",
-            "system_id",
-            "uid",
-            "version_id",
-            "version_set_id",
-        ]),
-        "GENERIC_ENTRY" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "data",
-            "feeder_audit",
-            "links",
-            "name",
-            "uid",
-        ]),
-        "GENERIC_ID" => ::core::option::Option::Some(&["scheme", "value"]),
-        "GROUP" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "contacts",
-            "details",
-            "feeder_audit",
-            "identities",
-            "languages",
-            "links",
-            "name",
-            "relationships",
-            "roles",
-            "uid",
-        ]),
-        "HIER_OBJECT_ID" => ::core::option::Option::Some(&["value"]),
-        "HISTORY" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "duration",
-            "events",
-            "feeder_audit",
-            "links",
-            "name",
-            "origin",
-            "period",
-            "summary",
-            "uid",
-        ]),
-        "IMPORTED_VERSION" => {
-            ::core::option::Option::Some(&["commit_audit", "contribution", "item", "signature"])
-        }
-        "INSTRUCTION" => ::core::option::Option::Some(&[
-            "activities",
-            "archetype_details",
-            "archetype_node_id",
-            "encoding",
-            "expiry_time",
-            "feeder_audit",
-            "guideline_id",
-            "language",
-            "links",
-            "name",
-            "narrative",
-            "other_participations",
-            "protocol",
-            "provider",
-            "subject",
-            "uid",
-            "wf_definition",
-            "workflow_id",
-        ]),
-        "INSTRUCTION_DETAILS" => {
-            ::core::option::Option::Some(&["activity_id", "instruction_id", "wf_details"])
-        }
-        "INTERNET_ID" => ::core::option::Option::Some(&["value"]),
-        "INTERVAL_EVENT" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "data",
-            "feeder_audit",
-            "links",
-            "math_function",
-            "name",
-            "sample_count",
-            "state",
-            "time",
-            "uid",
-            "width",
-        ]),
-        "ISM_TRANSITION" => ::core::option::Option::Some(&[
-            "careflow_step",
-            "current_state",
-            "reason",
-            "transition",
-        ]),
-        "ISO_OID" => ::core::option::Option::Some(&["value"]),
-        "ITEM_LIST" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "feeder_audit",
-            "items",
-            "links",
-            "name",
-            "uid",
-        ]),
-        "ITEM_SINGLE" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "feeder_audit",
-            "item",
-            "links",
-            "name",
-            "uid",
-        ]),
-        "ITEM_TABLE" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "feeder_audit",
-            "links",
-            "name",
-            "rows",
-            "uid",
-        ]),
-        "ITEM_TAG" => {
-            ::core::option::Option::Some(&["key", "owner_id", "target", "target_path", "value"])
-        }
-        "ITEM_TREE" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "feeder_audit",
-            "items",
-            "links",
-            "name",
-            "uid",
-        ]),
-        "Iso8601_date" => ::core::option::Option::Some(&["value"]),
-        "Iso8601_date_time" => ::core::option::Option::Some(&["value"]),
-        "Iso8601_duration" => ::core::option::Option::Some(&["value"]),
-        "Iso8601_time" => ::core::option::Option::Some(&["value"]),
-        "Iso8601_timezone" => ::core::option::Option::Some(&["value"]),
-        "LINK" => ::core::option::Option::Some(&["meaning", "target", "type"]),
-        "LOCATABLE_REF" => ::core::option::Option::Some(&["id", "namespace", "path", "type"]),
-        "MEASUREMENT_SERVICE" => ::core::option::Option::Some(&[]),
-        "MESSAGE" => ::core::option::Option::Some(&["audit", "author", "content", "signature"]),
-        "Multiplicity_interval" => ::core::option::Option::Some(&[
-            "lower",
-            "lower_included",
-            "lower_unbounded",
-            "upper",
-            "upper_included",
-            "upper_unbounded",
-        ]),
-        "OBJECT_REF" => ::core::option::Option::Some(&["id", "namespace", "type"]),
-        "OBJECT_VERSION_ID" => ::core::option::Option::Some(&["value"]),
-        "OBSERVATION" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "data",
-            "encoding",
-            "feeder_audit",
-            "guideline_id",
-            "language",
-            "links",
-            "name",
-            "other_participations",
-            "protocol",
-            "provider",
-            "state",
-            "subject",
-            "uid",
-            "workflow_id",
-        ]),
-        "OPENEHR_CODE_SET_IDENTIFIERS" => ::core::option::Option::Some(&[]),
-        "OPENEHR_CONTENT_ITEM" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "feeder_audit",
-            "is_changed",
-            "is_masked",
-            "is_primary",
-            "item",
-            "links",
-            "name",
-            "uid",
-        ]),
-        "OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS" => ::core::option::Option::Some(&[]),
-        "OPERATIONAL_TEMPLATE" => ::core::option::Option::Some(&[
-            "adl_version",
-            "annotations",
-            "archetype_id",
-            "build_uid",
-            "component_terminologies",
-            "definition",
-            "description",
-            "is_controlled",
-            "is_differential",
-            "is_generated",
-            "original_language",
-            "other_meta_data",
-            "parent_archetype_id",
-            "rm_overlay",
-            "rm_release",
-            "rules",
-            "terminology",
-            "terminology_extracts",
-            "translations",
-            "uid",
-        ]),
-        "ORDINAL" => ::core::option::Option::Some(&["symbol", "value"]),
-        "ORGANISATION" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "contacts",
-            "details",
-            "feeder_audit",
-            "identities",
-            "languages",
-            "links",
-            "name",
-            "relationships",
-            "roles",
-            "uid",
-        ]),
-        "ORIGINAL_VERSION" => ::core::option::Option::Some(&[
-            "attestations",
-            "commit_audit",
-            "contribution",
-            "data",
-            "lifecycle_state",
-            "other_input_version_uids",
-            "preceding_version_uid",
-            "signature",
-            "uid",
-        ]),
-        "PARTICIPATION" => ::core::option::Option::Some(&["function", "mode", "performer", "time"]),
-        "PARTY_IDENTIFIED" => {
-            ::core::option::Option::Some(&["external_ref", "identifiers", "name"])
-        }
-        "PARTY_IDENTITY" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "details",
-            "feeder_audit",
-            "links",
-            "name",
-            "uid",
-        ]),
-        "PARTY_REF" => ::core::option::Option::Some(&["id", "namespace", "type"]),
-        "PARTY_RELATED" => {
-            ::core::option::Option::Some(&["external_ref", "identifiers", "name", "relationship"])
-        }
-        "PARTY_RELATIONSHIP" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "details",
-            "feeder_audit",
-            "links",
-            "name",
-            "source",
-            "target",
-            "time_validity",
-            "uid",
-        ]),
-        "PARTY_SELF" => ::core::option::Option::Some(&["external_ref"]),
-        "PERSON" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "contacts",
-            "details",
-            "feeder_audit",
-            "identities",
-            "languages",
-            "links",
-            "name",
-            "relationships",
-            "roles",
-            "uid",
-        ]),
-        "POINT_EVENT" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "data",
-            "feeder_audit",
-            "links",
-            "name",
-            "state",
-            "time",
-            "uid",
-        ]),
-        "P_ARCHETYPE_HRID" => ::core::option::Option::Some(&[
-            "build_count",
-            "concept_id",
-            "namespace",
-            "release_version",
-            "rm_class",
-            "rm_package",
-            "rm_publisher",
-            "version_status",
-        ]),
-        "P_ARCHETYPE_SLOT" => ::core::option::Option::Some(&[
-            "excludes",
-            "includes",
-            "is_closed",
-            "is_deprecated",
-            "node_id",
-            "occurrences",
-            "rm_type_name",
-        ]),
-        "P_ARCHETYPE_TERMINOLOGY" => ::core::option::Option::Some(&[
-            "is_differential",
-            "original_language",
-            "term_bindings",
-            "term_definitions",
-            "value_sets",
-        ]),
-        "P_AUTHORED_ARCHETYPE" => ::core::option::Option::Some(&[
-            "adl_version",
-            "annotations",
-            "archetype_id",
-            "build_uid",
-            "definition",
-            "description",
-            "is_controlled",
-            "is_differential",
-            "is_generated",
-            "original_language",
-            "other_meta_data",
-            "parent_archetype_id",
-            "rm_release",
-            "rules",
-            "terminology",
-            "translations",
-            "uid",
-        ]),
-        "P_BMM_CLASS" => ::core::option::Option::Some(&[
-            "ancestor_defs",
-            "ancestors",
-            "bmm_class",
-            "constants",
-            "documentation",
-            "functions",
-            "generic_parameter_defs",
-            "invariants",
-            "is_abstract",
-            "is_override",
-            "name",
-            "properties",
-            "source_schema_id",
-            "uid",
-        ]),
-        "P_BMM_CONSTANT" => {
-            ::core::option::Option::Some(&["documentation", "name", "type", "value"])
-        }
-        "P_BMM_CONTAINER_FUNCTION_PARAMETER" => ::core::option::Option::Some(&[
-            "cardinality",
-            "documentation",
-            "is_nullable",
-            "name",
-            "type_def",
-        ]),
-        "P_BMM_CONTAINER_PROPERTY" => ::core::option::Option::Some(&[
-            "bmm_property",
-            "cardinality",
-            "documentation",
-            "is_computed",
-            "is_im_infrastructure",
-            "is_im_runtime",
-            "is_mandatory",
-            "name",
-            "type_def",
-        ]),
-        "P_BMM_CONTAINER_TYPE" => {
-            ::core::option::Option::Some(&["bmm_type", "container_type", "type", "type_def"])
-        }
-        "P_BMM_ENUMERATION" => ::core::option::Option::Some(&[
-            "ancestor_defs",
-            "ancestors",
-            "bmm_class",
-            "constants",
-            "documentation",
-            "functions",
-            "generic_parameter_defs",
-            "invariants",
-            "is_abstract",
-            "is_override",
-            "item_documentations",
-            "item_names",
-            "item_values",
-            "name",
-            "properties",
-            "source_schema_id",
-            "uid",
-        ]),
-        "P_BMM_ENUMERATION_INTEGER" => ::core::option::Option::Some(&[
-            "ancestor_defs",
-            "ancestors",
-            "bmm_class",
-            "constants",
-            "documentation",
-            "functions",
-            "generic_parameter_defs",
-            "invariants",
-            "is_abstract",
-            "is_override",
-            "item_documentations",
-            "item_names",
-            "item_values",
-            "name",
-            "properties",
-            "source_schema_id",
-            "uid",
-        ]),
-        "P_BMM_ENUMERATION_STRING" => ::core::option::Option::Some(&[
-            "ancestor_defs",
-            "ancestors",
-            "bmm_class",
-            "constants",
-            "documentation",
-            "functions",
-            "generic_parameter_defs",
-            "invariants",
-            "is_abstract",
-            "is_override",
-            "item_documentations",
-            "item_names",
-            "item_values",
-            "name",
-            "properties",
-            "source_schema_id",
-            "uid",
-        ]),
-        "P_BMM_FUNCTION" => ::core::option::Option::Some(&[
-            "aliases",
-            "documentation",
-            "is_abstract",
-            "is_nullable",
-            "name",
-            "parameters",
-            "post_conditions",
-            "pre_conditions",
-            "result",
-        ]),
-        "P_BMM_GENERIC_FUNCTION_PARAMETER" => {
-            ::core::option::Option::Some(&["documentation", "is_nullable", "name", "type_def"])
-        }
-        "P_BMM_GENERIC_PARAMETER" => ::core::option::Option::Some(&[
-            "bmm_generic_parameter",
-            "conforms_to_type",
-            "documentation",
-            "name",
-        ]),
-        "P_BMM_GENERIC_PROPERTY" => ::core::option::Option::Some(&[
-            "bmm_property",
-            "documentation",
-            "is_computed",
-            "is_im_infrastructure",
-            "is_im_runtime",
-            "is_mandatory",
-            "name",
-            "type_def",
-        ]),
-        "P_BMM_GENERIC_TYPE" => ::core::option::Option::Some(&[
-            "bmm_type",
-            "generic_parameter_defs",
-            "generic_parameters",
-            "root_type",
-            "value_constraint",
-        ]),
-        "P_BMM_INDEXED_CONTAINER_PROPERTY" => ::core::option::Option::Some(&[
-            "bmm_property",
-            "cardinality",
-            "documentation",
-            "is_computed",
-            "is_im_infrastructure",
-            "is_im_runtime",
-            "is_mandatory",
-            "name",
-            "type_def",
-        ]),
-        "P_BMM_INDEXED_CONTAINER_TYPE" => ::core::option::Option::Some(&[
-            "bmm_type",
-            "container_type",
-            "index_type",
-            "type",
-            "type_def",
-        ]),
-        "P_BMM_INTERFACE" => ::core::option::Option::Some(&["documentation", "functions", "name"]),
-        "P_BMM_OPEN_TYPE" => {
-            ::core::option::Option::Some(&["bmm_type", "type", "value_constraint"])
-        }
-        "P_BMM_PACKAGE" => ::core::option::Option::Some(&[
-            "bmm_package_definition",
-            "classes",
-            "documentation",
-            "name",
-            "packages",
-        ]),
-        "P_BMM_PACKAGE_CONTAINER" => ::core::option::Option::Some(&["packages"]),
-        "P_BMM_SCHEMA" => ::core::option::Option::Some(&[
-            "archetype_data_value_parent_class",
-            "archetype_parent_class",
-            "archetype_rm_closure_packages",
-            "archetype_visualise_descendants_of",
-            "bmm_version",
-            "class_definitions",
-            "includes",
-            "packages",
-            "primitive_types",
-            "rm_publisher",
-            "rm_release",
-            "schema_author",
-            "schema_contributors",
-            "schema_description",
-            "schema_lifecycle_state",
-            "schema_name",
-            "schema_revision",
-        ]),
-        "P_BMM_SCHEMA_DESCRIPTOR" => ::core::option::Option::Some(&[
-            "bmm_schema",
-            "includes",
-            "meta_data",
-            "p_schema",
-            "schema",
-            "schema_id",
-        ]),
-        "P_BMM_SIMPLE_TYPE" => {
-            ::core::option::Option::Some(&["bmm_type", "type", "value_constraint"])
-        }
-        "P_BMM_SINGLE_FUNCTION_PARAMETER" => {
-            ::core::option::Option::Some(&["documentation", "is_nullable", "name", "type"])
-        }
-        "P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN" => {
-            ::core::option::Option::Some(&["documentation", "is_nullable", "name", "type"])
-        }
-        "P_BMM_SINGLE_PROPERTY" => ::core::option::Option::Some(&[
-            "bmm_property",
-            "documentation",
-            "is_computed",
-            "is_im_infrastructure",
-            "is_im_runtime",
-            "is_mandatory",
-            "name",
-            "type",
-            "type_def",
-            "type_ref",
-        ]),
-        "P_BMM_SINGLE_PROPERTY_OPEN" => ::core::option::Option::Some(&[
-            "bmm_property",
-            "documentation",
-            "is_computed",
-            "is_im_infrastructure",
-            "is_im_runtime",
-            "is_mandatory",
-            "name",
-            "type",
-            "type_def",
-            "type_ref",
-        ]),
-        "P_C_ARCHETYPE_ROOT" => ::core::option::Option::Some(&[
-            "archetype_ref",
-            "attribute_tuples",
-            "attributes",
-            "default_value",
-            "is_deprecated",
-            "is_frozen",
-            "node_id",
-            "occurrences",
-            "rm_type_name",
-        ]),
-        "P_C_ATTRIBUTE" => ::core::option::Option::Some(&[
-            "cardinality",
-            "children",
-            "differential_path",
-            "existence",
-            "is_multiple",
-            "rm_attribute_name",
-        ]),
-        "P_C_ATTRIBUTE_TUPLE" => ::core::option::Option::Some(&["members"]),
-        "P_C_BOOLEAN" => ::core::option::Option::Some(&[
-            "assumed_value",
-            "constraint",
-            "default_value",
-            "is_deprecated",
-            "is_enumerated_type_constraint",
-            "is_frozen",
-            "node_id",
-            "occurrences",
-            "rm_type_name",
-        ]),
-        "P_C_COMPLEX_OBJECT" => ::core::option::Option::Some(&[
-            "attribute_tuples",
-            "attributes",
-            "default_value",
-            "is_deprecated",
-            "is_frozen",
-            "node_id",
-            "occurrences",
-            "rm_type_name",
-        ]),
-        "P_C_COMPLEX_OBJECT_PROXY" => ::core::option::Option::Some(&[
-            "is_deprecated",
-            "node_id",
-            "occurrences",
-            "rm_type_name",
-            "target_path",
-        ]),
-        "P_C_DATE" => ::core::option::Option::Some(&[]),
-        "P_C_DATE_TIME" => ::core::option::Option::Some(&[]),
-        "P_C_DURATION" => ::core::option::Option::Some(&[]),
-        "P_C_INTEGER" => ::core::option::Option::Some(&[]),
-        "P_C_REAL" => ::core::option::Option::Some(&[]),
-        "P_C_STRING" => ::core::option::Option::Some(&[
-            "assumed_value",
-            "constraint",
-            "default_value",
-            "is_deprecated",
-            "is_enumerated_type_constraint",
-            "is_frozen",
-            "node_id",
-            "occurrences",
-            "rm_type_name",
-        ]),
-        "P_C_TERMINOLOGY_CODE" => ::core::option::Option::Some(&[
-            "assumed_value",
-            "constraint",
-            "default_value",
-            "is_deprecated",
-            "is_enumerated_type_constraint",
-            "is_frozen",
-            "node_id",
-            "occurrences",
-            "rm_type_name",
-        ]),
-        "P_C_TIME" => ::core::option::Option::Some(&[]),
-        "P_OPERATIONAL_TEMPLATE" => ::core::option::Option::Some(&[
-            "adl_version",
-            "annotations",
-            "archetype_id",
-            "build_uid",
-            "component_terminologies",
-            "definition",
-            "description",
-            "is_controlled",
-            "is_differential",
-            "is_generated",
-            "original_language",
-            "other_meta_data",
-            "parent_archetype_id",
-            "rm_release",
-            "rules",
-            "terminology",
-            "terminology_extracts",
-            "translations",
-            "uid",
-        ]),
-        "P_TEMPLATE" => ::core::option::Option::Some(&[
-            "adl_version",
-            "annotations",
-            "archetype_id",
-            "build_uid",
-            "definition",
-            "description",
-            "is_controlled",
-            "is_differential",
-            "is_generated",
-            "original_language",
-            "other_meta_data",
-            "parent_archetype_id",
-            "rm_release",
-            "rules",
-            "terminology",
-            "translations",
-            "uid",
-        ]),
-        "Point_interval" => ::core::option::Option::Some(&[
-            "lower",
-            "lower_included",
-            "lower_unbounded",
-            "upper",
-            "upper_included",
-            "upper_unbounded",
-        ]),
-        "Proper_interval" => ::core::option::Option::Some(&[
-            "lower",
-            "lower_included",
-            "lower_unbounded",
-            "upper",
-            "upper_included",
-            "upper_unbounded",
-        ]),
-        "REFERENCE_MODEL_ACCESS" => {
-            ::core::option::Option::Some(&["all_schemas", "schema_directories", "valid_models"])
-        }
-        "REFERENCE_RANGE" => ::core::option::Option::Some(&["meaning", "range"]),
-        "RESOURCE_ANNOTATIONS" => ::core::option::Option::Some(&["documentation"]),
-        "RESOURCE_DESCRIPTION" => ::core::option::Option::Some(&[
-            "details",
-            "lifecycle_state",
-            "original_author",
-            "other_contributors",
-            "other_details",
-            "resource_package_uri",
-        ]),
-        "RESOURCE_DESCRIPTION_ITEM" => ::core::option::Option::Some(&[
-            "copyright",
-            "keywords",
-            "language",
-            "misuse",
-            "original_resource_uri",
-            "other_details",
-            "purpose",
-            "use",
-        ]),
-        "REVISION_HISTORY" => ::core::option::Option::Some(&["items"]),
-        "REVISION_HISTORY_ITEM" => ::core::option::Option::Some(&["audits", "version_id"]),
-        "RM_ATTRIBUTE_VISIBILITY" => ::core::option::Option::Some(&["alias", "visibility"]),
-        "RM_OVERLAY" => ::core::option::Option::Some(&["rm_visibility"]),
-        "ROLE" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "capabilities",
-            "contacts",
-            "details",
-            "feeder_audit",
-            "identities",
-            "links",
-            "name",
-            "performer",
-            "relationships",
-            "time_validity",
-            "uid",
-        ]),
-        "SCHEMA_DESCRIPTOR" => ::core::option::Option::Some(&[
-            "includes",
-            "meta_data",
-            "p_schema",
-            "schema",
-            "schema_id",
-        ]),
-        "SECTION" => ::core::option::Option::Some(&[
-            "archetype_details",
-            "archetype_node_id",
-            "feeder_audit",
-            "items",
-            "links",
-            "name",
-            "uid",
-        ]),
-        "SIBLING_ORDER" => ::core::option::Option::Some(&["is_before", "sibling_node_id"]),
-        "STATEMENT_SET" => ::core::option::Option::Some(&["name", "statement"]),
-        "SYNC_EXTRACT" => ::core::option::Option::Some(&["items", "specification"]),
-        "SYNC_EXTRACT_REQUEST" => ::core::option::Option::Some(&["specification"]),
-        "SYNC_EXTRACT_SPEC" => ::core::option::Option::Some(&[
-            "all_contributions",
-            "contribution_list",
-            "contributions_since",
-            "includes_versions",
-        ]),
-        "TEMPLATE" => ::core::option::Option::Some(&[
-            "adl_version",
-            "annotations",
-            "archetype_id",
-            "build_uid",
-            "definition",
-            "description",
-            "is_controlled",
-            "is_differential",
-            "is_generated",
-            "original_language",
-            "other_meta_data",
-            "overlays",
-            "parent_archetype_id",
-            "rm_overlay",
-            "rm_release",
-            "rules",
-            "terminology",
-            "translations",
-            "uid",
-        ]),
-        "TEMPLATE_ID" => ::core::option::Option::Some(&["value"]),
-        "TEMPLATE_OVERLAY" => ::core::option::Option::Some(&[
-            "archetype_id",
-            "definition",
-            "is_differential",
-            "parent_archetype_id",
-            "rm_overlay",
-            "rules",
-            "terminology",
-        ]),
-        "TERMINOLOGY" => ::core::option::Option::Some(&[
-            "code_sets",
-            "date",
-            "language",
-            "name",
-            "version",
-            "vocabularies",
-        ]),
-        "TERMINOLOGY_ACCESS" => ::core::option::Option::Some(&[]),
-        "TERMINOLOGY_CONCEPT" => ::core::option::Option::Some(&["id", "rubric", "status"]),
-        "TERMINOLOGY_GROUP" => {
-            ::core::option::Option::Some(&["concepts", "name", "openehr_id", "status"])
-        }
-        "TERMINOLOGY_ID" => ::core::option::Option::Some(&["value"]),
-        "TERMINOLOGY_SERVICE" => ::core::option::Option::Some(&[]),
-        "TERM_MAPPING" => ::core::option::Option::Some(&["match", "purpose", "target"]),
-        "TRANSLATION_DETAILS" => {
-            ::core::option::Option::Some(&["accreditaton", "author", "language", "other_details"])
-        }
-        "TYPE_DEF_BOOLEAN" => ::core::option::Option::Some(&["type_anchor", "type_name"]),
-        "TYPE_DEF_DATE" => ::core::option::Option::Some(&["type_anchor", "type_name"]),
-        "TYPE_DEF_DATE_TIME" => ::core::option::Option::Some(&["type_anchor", "type_name"]),
-        "TYPE_DEF_DURATION" => ::core::option::Option::Some(&["type_anchor", "type_name"]),
-        "TYPE_DEF_INTEGER" => ::core::option::Option::Some(&["type_anchor", "type_name"]),
-        "TYPE_DEF_OBJECT_REF" => ::core::option::Option::Some(&["type_anchor", "type_name"]),
-        "TYPE_DEF_REAL" => ::core::option::Option::Some(&["type_anchor", "type_name"]),
-        "TYPE_DEF_STRING" => ::core::option::Option::Some(&["type_anchor", "type_name"]),
-        "TYPE_DEF_TERMINOLOGY_CODE" => ::core::option::Option::Some(&["type_anchor", "type_name"]),
-        "TYPE_DEF_TIME" => ::core::option::Option::Some(&["type_anchor", "type_name"]),
-        "TYPE_DEF_URI" => ::core::option::Option::Some(&["type_anchor", "type_name"]),
-        "Terminology_code" => ::core::option::Option::Some(&[
-            "code_string",
-            "terminology_id",
-            "terminology_version",
-            "uri",
-        ]),
-        "Terminology_term" => ::core::option::Option::Some(&["concept", "text"]),
-        "UUID" => ::core::option::Option::Some(&["value"]),
-        "VALUE_SET" => ::core::option::Option::Some(&["id", "members"]),
-        "VARIABLE_DECLARATION" => ::core::option::Option::Some(&["name", "type"]),
-        "VERSIONED_COMPOSITION" => {
-            ::core::option::Option::Some(&["owner_id", "time_created", "uid"])
-        }
-        "VERSIONED_EHR_ACCESS" => {
-            ::core::option::Option::Some(&["owner_id", "time_created", "uid"])
-        }
-        "VERSIONED_EHR_STATUS" => {
-            ::core::option::Option::Some(&["owner_id", "time_created", "uid"])
-        }
-        "VERSIONED_FOLDER" => ::core::option::Option::Some(&["owner_id", "time_created", "uid"]),
-        "VERSIONED_OBJECT" => ::core::option::Option::Some(&["owner_id", "time_created", "uid"]),
-        "VERSIONED_PARTY" => ::core::option::Option::Some(&["owner_id", "time_created", "uid"]),
-        "VERSION_TREE_ID" => ::core::option::Option::Some(&["value"]),
-        "X_CONTRIBUTION" => ::core::option::Option::Some(&["audit", "uid", "versions"]),
-        "X_VERSIONED_COMPOSITION" => ::core::option::Option::Some(&[
-            "extract_version_count",
-            "owner_id",
-            "revision_history",
-            "time_created",
-            "total_version_count",
-            "uid",
-            "versions",
-        ]),
-        "X_VERSIONED_EHR_ACCESS" => ::core::option::Option::Some(&[
-            "extract_version_count",
-            "owner_id",
-            "revision_history",
-            "time_created",
-            "total_version_count",
-            "uid",
-            "versions",
-        ]),
-        "X_VERSIONED_EHR_STATUS" => ::core::option::Option::Some(&[
-            "extract_version_count",
-            "owner_id",
-            "revision_history",
-            "time_created",
-            "total_version_count",
-            "uid",
-            "versions",
-        ]),
-        "X_VERSIONED_FOLDER" => ::core::option::Option::Some(&[
-            "extract_version_count",
-            "owner_id",
-            "revision_history",
-            "time_created",
-            "total_version_count",
-            "uid",
-            "versions",
-        ]),
-        "X_VERSIONED_OBJECT" => ::core::option::Option::Some(&[
-            "extract_version_count",
-            "owner_id",
-            "revision_history",
-            "time_created",
-            "total_version_count",
-            "uid",
-            "versions",
-        ]),
-        "X_VERSIONED_PARTY" => ::core::option::Option::Some(&[
-            "extract_version_count",
-            "owner_id",
-            "revision_history",
-            "time_created",
-            "total_version_count",
-            "uid",
-            "versions",
-        ]),
-        _ => ::core::option::Option::None,
-    }
+"ACCESS_CONTROL_SETTINGS" => ::core::option::Option::Some(&[]),
+"ACCESS_GROUP_REF" => ::core::option::Option::Some(&["id", "namespace", "type"]),
+"ACTION" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "description", "encoding", "feeder_audit", "guideline_id", "instruction_details", "ism_transition", "language", "links", "name", "other_participations", "protocol", "provider", "subject", "time", "uid", "workflow_id"]),
+"ACTIVITY" => ::core::option::Option::Some(&["action_archetype_id", "archetype_details", "archetype_node_id", "description", "feeder_audit", "links", "name", "timing", "uid"]),
+"ADDRESS" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "details", "feeder_audit", "links", "name", "uid"]),
+"ADDRESSED_MESSAGE" => ::core::option::Option::Some(&["addressees", "message", "sender", "sender_reference", "urgency"]),
+"ADL_CODE_DEFINITIONS" => ::core::option::Option::Some(&[]),
+"ADMIN_ENTRY" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "data", "encoding", "feeder_audit", "language", "links", "name", "other_participations", "provider", "subject", "uid", "workflow_id"]),
+"AGENT" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "contacts", "details", "feeder_audit", "identities", "languages", "links", "name", "relationships", "roles", "uid"]),
+"AOM_PROFILE" => ::core::option::Option::Some(&["aom_lifecycle_mappings", "aom_rm_type_mappings", "aom_rm_type_substitutions", "archetype_data_value_parent_class", "archetype_parent_class", "archetype_visualise_descendants_of", "profile_name", "rm_primitive_type_equivalences"]),
+"AOM_PROPERTY_MAPPING" => ::core::option::Option::Some(&["source_property_name", "target_property_name"]),
+"AOM_TYPE_MAPPING" => ::core::option::Option::Some(&["property_mappings", "source_class_name", "target_class_name"]),
+"ARCHETYPE" => ::core::option::Option::Some(&["adl_version", "annotations", "archetype_id", "concept", "definition", "description", "invariants", "is_controlled", "ontology", "original_language", "parent_archetype_id", "translations", "uid"]),
+"ARCHETYPED" => ::core::option::Option::Some(&["archetype_id", "rm_version", "template_id"]),
+"ARCHETYPE_HRID" => ::core::option::Option::Some(&["build_count", "concept_id", "namespace", "release_version", "rm_class", "rm_package", "rm_publisher", "version_status"]),
+"ARCHETYPE_ID" => ::core::option::Option::Some(&["value"]),
+"ARCHETYPE_ID_CONSTRAINT" => ::core::option::Option::Some(&["constraint"]),
+"ARCHETYPE_INTERNAL_REF" => ::core::option::Option::Some(&["node_id", "occurrences", "rm_type_name", "target_path"]),
+"ARCHETYPE_ONTOLOGY" => ::core::option::Option::Some(&["constraint_codes", "specialisation_depth", "term_attribute_names", "term_codes", "terminologies_available"]),
+"ARCHETYPE_SLOT" => ::core::option::Option::Some(&["excludes", "includes", "node_id", "occurrences", "rm_type_name"]),
+"ARCHETYPE_TERM" => ::core::option::Option::Some(&["code", "items"]),
+"ARCHETYPE_TERMINOLOGY" => ::core::option::Option::Some(&["concept_code", "is_differential", "original_language", "term_bindings", "term_definitions", "terminology_extracts", "value_sets"]),
+"ASSERTION" => ::core::option::Option::Some(&["expression", "string_expression", "tag"]),
+"ASSERTION_VARIABLE" => ::core::option::Option::Some(&["definition", "name"]),
+"ASSIGNMENT" => ::core::option::Option::Some(&["source", "target"]),
+"ATTESTATION" => ::core::option::Option::Some(&["attested_view", "change_type", "committer", "description", "is_pending", "items", "proof", "reason", "system_id", "time_committed"]),
+"AUDIT_DETAILS" => ::core::option::Option::Some(&["change_type", "committer", "description", "system_id", "time_committed"]),
+"AUTHORED_ARCHETYPE" => ::core::option::Option::Some(&["adl_version", "annotations", "archetype_id", "build_uid", "definition", "description", "is_controlled", "is_differential", "is_generated", "original_language", "other_meta_data", "parent_archetype_id", "rm_overlay", "rm_release", "rules", "terminology", "translations", "uid"]),
+"AUTHORED_RESOURCE" => ::core::option::Option::Some(&["description", "is_controlled", "original_language", "revision_history", "translations"]),
+"BMM_ACTION_DECISION_TABLE" => ::core::option::Option::Some(&[]),
+"BMM_ACTION_TABLE" => ::core::option::Option::Some(&["decision_table"]),
+"BMM_ASSERTION" => ::core::option::Option::Some(&["expression", "tag"]),
+"BMM_ASSIGNMENT" => ::core::option::Option::Some(&["source", "target"]),
+"BMM_BOOLEAN_VALUE" => ::core::option::Option::Some(&["syntax", "type", "value", "value_literal"]),
+"BMM_CLASS" => ::core::option::Option::Some(&["ancestors", "documentation", "immediate_descendants", "is_abstract", "is_override", "is_primitive_type", "name", "package", "properties", "source_schema_id"]),
+"BMM_CONSTANT" => ::core::option::Option::Some(&["documentation", "extensions", "feature_extensions", "generator", "group", "is_nullable", "is_synthesised_generic", "name", "type"]),
+"BMM_CONTAINER_PROPERTY" => ::core::option::Option::Some(&["cardinality", "documentation", "is_computed", "is_im_infrastructure", "is_im_runtime", "is_mandatory", "name", "type"]),
+"BMM_CONTAINER_TYPE" => ::core::option::Option::Some(&["base_type", "container_type", "documentation"]),
+"BMM_CONTAINER_VALUE" => ::core::option::Option::Some(&["syntax", "type", "value", "value_literal"]),
+"BMM_DECLARATION" => ::core::option::Option::Some(&["name", "result", "type"]),
+"BMM_DEFINITIONS" => ::core::option::Option::Some(&[]),
+"BMM_ENUMERATION" => ::core::option::Option::Some(&["ancestors", "documentation", "immediate_descendants", "is_abstract", "is_override", "is_primitive_type", "item_names", "item_values", "name", "package", "properties", "source_schema_id", "underlying_type_name"]),
+"BMM_ENUMERATION_INTEGER" => ::core::option::Option::Some(&["ancestors", "documentation", "immediate_descendants", "is_abstract", "is_override", "is_primitive_type", "item_names", "item_values", "name", "package", "properties", "source_schema_id", "underlying_type_name"]),
+"BMM_ENUMERATION_STRING" => ::core::option::Option::Some(&["ancestors", "documentation", "immediate_descendants", "is_abstract", "is_override", "is_primitive_type", "item_names", "item_values", "name", "package", "properties", "source_schema_id", "underlying_type_name"]),
+"BMM_EXTERNAL_ROUTINE" => ::core::option::Option::Some(&["argument_mapping", "meta_data"]),
+"BMM_FEATURE_EXTENSION" => ::core::option::Option::Some(&[]),
+"BMM_FEATURE_GROUP" => ::core::option::Option::Some(&["features", "name", "properties", "visibility"]),
+"BMM_FUNCTION" => ::core::option::Option::Some(&["definition", "documentation", "extensions", "feature_extensions", "group", "is_nullable", "is_synthesised_generic", "name", "operator_definition", "parameters", "post_conditions", "pre_conditions", "result", "type"]),
+"BMM_FUNCTION_TYPE" => ::core::option::Option::Some(&["argument_types", "result_type"]),
+"BMM_GENERIC_CLASS" => ::core::option::Option::Some(&["ancestors", "documentation", "generic_parameters", "immediate_descendants", "is_abstract", "is_override", "is_primitive_type", "name", "package", "properties", "source_schema_id"]),
+"BMM_GENERIC_PARAMETER" => ::core::option::Option::Some(&["conforms_to_type", "documentation", "inheritance_precursor", "name"]),
+"BMM_GENERIC_TYPE" => ::core::option::Option::Some(&["base_class", "documentation", "generic_parameters"]),
+"BMM_INCLUDE_SPEC" => ::core::option::Option::Some(&["id"]),
+"BMM_INDEXED_CONTAINER_PROPERTY" => ::core::option::Option::Some(&["cardinality", "documentation", "extensions", "feature_extensions", "group", "is_composition", "is_im_infrastructure", "is_im_runtime", "is_nullable", "is_synthesised_generic", "name", "type"]),
+"BMM_INDEXED_CONTAINER_TYPE" => ::core::option::Option::Some(&["base_type", "container_type", "documentation", "index_type"]),
+"BMM_INDEXED_CONTAINER_VALUE" => ::core::option::Option::Some(&["syntax", "type", "value", "value_literal"]),
+"BMM_INTEGER_VALUE" => ::core::option::Option::Some(&["syntax", "type", "value", "value_literal"]),
+"BMM_INTERVAL_VALUE" => ::core::option::Option::Some(&["syntax", "type", "value", "value_literal"]),
+"BMM_LOCAL" => ::core::option::Option::Some(&["documentation", "extensions", "is_nullable", "name", "type"]),
+"BMM_LOCAL_ROUTINE" => ::core::option::Option::Some(&["body", "locals"]),
+"BMM_MODEL" => ::core::option::Option::Some(&["archetype_data_value_parent_class", "archetype_parent_class", "archetype_rm_closure_packages", "archetype_visualise_descendants_of", "class_definitions", "documentation", "packages", "rm_publisher", "rm_release", "schema_author", "schema_contributors", "schema_description", "schema_lifecycle_state", "schema_name", "schema_revision"]),
+"BMM_MODEL_ACCESS" => ::core::option::Option::Some(&["all_schemas", "bmm_models", "matching_bmm_models", "schema_directories"]),
+"BMM_MODEL_METADATA" => ::core::option::Option::Some(&["rm_publisher", "rm_release"]),
+"BMM_OPEN_TYPE" => ::core::option::Option::Some(&["documentation", "generic_constraint"]),
+"BMM_OPERATOR" => ::core::option::Option::Some(&["name", "position", "symbols"]),
+"BMM_PACKAGE" => ::core::option::Option::Some(&["classes", "documentation", "name", "packages"]),
+"BMM_PACKAGE_CONTAINER" => ::core::option::Option::Some(&["documentation", "packages"]),
+"BMM_PARAMETER" => ::core::option::Option::Some(&["direction", "documentation", "extensions", "is_nullable", "name", "type"]),
+"BMM_PARAMETER_TYPE" => ::core::option::Option::Some(&["inheritance_precursor", "name", "type_constraint"]),
+"BMM_PRIMITIVE_VALUE" => ::core::option::Option::Some(&["syntax", "type", "value", "value_literal"]),
+"BMM_PROCEDURE" => ::core::option::Option::Some(&["definition", "documentation", "extensions", "feature_extensions", "group", "is_nullable", "is_synthesised_generic", "name", "parameters", "post_conditions", "pre_conditions", "type"]),
+"BMM_PROCEDURE_CALL" => ::core::option::Option::Some(&["agent"]),
+"BMM_PROCEDURE_TYPE" => ::core::option::Option::Some(&["argument_types", "result_type"]),
+"BMM_PROPERTY" => ::core::option::Option::Some(&["documentation", "is_computed", "is_im_infrastructure", "is_im_runtime", "is_mandatory", "name", "type"]),
+"BMM_PROPERTY_TYPE" => ::core::option::Option::Some(&["result_type"]),
+"BMM_RESULT" => ::core::option::Option::Some(&["documentation", "extensions", "is_nullable", "name", "type"]),
+"BMM_ROUTINE_TYPE" => ::core::option::Option::Some(&["argument_types", "result_type"]),
+"BMM_SCHEMA" => ::core::option::Option::Some(&["bmm_model", "bmm_version", "includes", "model_name", "rm_publisher", "rm_release", "schema_author", "schema_contributors", "schema_description", "schema_lifecycle_state", "schema_name", "schema_revision", "state"]),
+"BMM_SCHEMA_CORE" => ::core::option::Option::Some(&["archetype_data_value_parent_class", "archetype_parent_class", "archetype_rm_closure_packages", "archetype_visualise_descendants_of", "rm_publisher", "rm_release", "schema_author", "schema_contributors", "schema_description", "schema_lifecycle_state", "schema_name", "schema_revision"]),
+"BMM_SCHEMA_DESCRIPTOR" => ::core::option::Option::Some(&["bmm_model", "bmm_schema", "includes", "meta_data", "schema_id"]),
+"BMM_SELF" => ::core::option::Option::Some(&["documentation", "extensions", "is_nullable", "name", "type"]),
+"BMM_SIGNATURE" => ::core::option::Option::Some(&["result_type"]),
+"BMM_SIMPLE_CLASS" => ::core::option::Option::Some(&["ancestors", "converters", "creators", "documentation", "extensions", "feature_groups", "features", "functions", "immediate_descendants", "invariants", "is_abstract", "is_override", "is_primitive", "name", "package", "procedures", "properties", "source_schema_id", "static_properties"]),
+"BMM_SIMPLE_TYPE" => ::core::option::Option::Some(&["base_class", "documentation"]),
+"BMM_SINGLETON" => ::core::option::Option::Some(&["documentation", "extensions", "feature_extensions", "generator", "group", "is_nullable", "is_synthesised_generic", "name", "type"]),
+"BMM_STATEMENT_BLOCK" => ::core::option::Option::Some(&["items"]),
+"BMM_STATUS_TYPE" => ::core::option::Option::Some(&[]),
+"BMM_STRING_VALUE" => ::core::option::Option::Some(&["syntax", "type", "value", "value_literal"]),
+"BMM_TUPLE_TYPE" => ::core::option::Option::Some(&["item_types"]),
+"BMM_UNITARY_PROPERTY" => ::core::option::Option::Some(&["documentation", "extensions", "feature_extensions", "group", "is_composition", "is_im_infrastructure", "is_im_runtime", "is_nullable", "is_synthesised_generic", "name", "type"]),
+"BMM_VALUE_SET_SPEC" => ::core::option::Option::Some(&["resource_id", "value_set_id"]),
+"BMM_VISIBILITY" => ::core::option::Option::Some(&[]),
+"CAPABILITY" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "credentials", "feeder_audit", "links", "name", "time_validity", "uid"]),
+"CARDINALITY" => ::core::option::Option::Some(&["interval", "is_ordered", "is_unique"]),
+"CLUSTER" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "feeder_audit", "items", "links", "name", "uid"]),
+"CODE" => ::core::option::Option::Some(&["description", "status", "value"]),
+"CODE_PHRASE" => ::core::option::Option::Some(&["code_string", "preferred_term", "terminology_id"]),
+"CODE_SET" => ::core::option::Option::Some(&["codes", "external_id", "issuer", "name", "openehr_id", "status"]),
+"CODE_SET_ACCESS" => ::core::option::Option::Some(&[]),
+"COMPOSITION" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "category", "composer", "content", "context", "feeder_audit", "language", "links", "name", "territory", "uid"]),
+"CONSTRAINT_REF" => ::core::option::Option::Some(&["node_id", "occurrences", "reference", "rm_type_name"]),
+"CONTACT" => ::core::option::Option::Some(&["addresses", "archetype_details", "archetype_node_id", "feeder_audit", "links", "name", "time_validity", "uid"]),
+"CONTRIBUTION" => ::core::option::Option::Some(&["audit", "uid", "versions"]),
+"C_ARCHETYPE_ROOT" => ::core::option::Option::Some(&["alternative_ids", "archetype_ref", "attribute_tuples", "attributes", "default_value", "is_deprecated", "node_id", "occurrences", "parent", "rm_type_name", "sibling_order", "soc_parent"]),
+"C_ATTRIBUTE" => ::core::option::Option::Some(&["cardinality", "children", "differential_path", "existence", "is_multiple", "parent", "rm_attribute_name", "soc_parent"]),
+"C_ATTRIBUTE_TUPLE" => ::core::option::Option::Some(&["members", "tuples"]),
+"C_BOOLEAN" => ::core::option::Option::Some(&["assumed_value", "false_valid", "true_valid"]),
+"C_CODED_TEXT" => ::core::option::Option::Some(&["assumed_value", "code_list", "node_id", "occurrences", "reference", "rm_type_name", "terminology"]),
+"C_COMPLEX_OBJECT" => ::core::option::Option::Some(&["assumed_value", "attributes", "node_id", "occurrences", "rm_type_name"]),
+"C_COMPLEX_OBJECT_PROXY" => ::core::option::Option::Some(&["alternative_ids", "is_deprecated", "node_id", "occurrences", "parent", "rm_type_name", "sibling_order", "soc_parent", "target_path"]),
+"C_DATE" => ::core::option::Option::Some(&["assumed_value", "day_validity", "month_validity", "range"]),
+"C_DATE_TIME" => ::core::option::Option::Some(&["assumed_value", "day_validity", "hour_validity", "millisecond_validity", "minute_validity", "month_validity", "range", "second_validity", "timezone_validity"]),
+"C_DURATION" => ::core::option::Option::Some(&["assumed_value", "days_allowed", "fractional_seconds_allowed", "hours_allowed", "minutes_allowed", "months_allowed", "range", "seconds_allowed", "weeks_allowed", "years_allowed"]),
+"C_INTEGER" => ::core::option::Option::Some(&["assumed_value", "list", "range"]),
+"C_MULTIPLE_ATTRIBUTE" => ::core::option::Option::Some(&["cardinality", "children", "existence", "rm_attribute_name"]),
+"C_ORDINAL" => ::core::option::Option::Some(&["assumed_value", "list", "node_id", "occurrences", "rm_type_name"]),
+"C_PRIMITIVE_OBJECT" => ::core::option::Option::Some(&["assumed_value", "item", "node_id", "occurrences", "rm_type_name"]),
+"C_PRIMITIVE_TUPLE" => ::core::option::Option::Some(&["members"]),
+"C_QUANTITY" => ::core::option::Option::Some(&["assumed_value", "list", "node_id", "occurrences", "property", "rm_type_name"]),
+"C_QUANTITY_ITEM" => ::core::option::Option::Some(&["magnitude", "units"]),
+"C_REAL" => ::core::option::Option::Some(&["assumed_value", "list", "range"]),
+"C_SINGLE_ATTRIBUTE" => ::core::option::Option::Some(&["children", "existence", "rm_attribute_name"]),
+"C_STRING" => ::core::option::Option::Some(&["assumed_value", "list", "list_open", "pattern"]),
+"C_TEMPORAL_DEFINITIONS" => ::core::option::Option::Some(&["valid_date_constraint_patterns", "valid_date_constraint_replacements", "valid_date_time_constraint_patterns", "valid_date_time_constraint_replacements", "valid_time_constraint_patterns", "valid_time_constraint_replacements"]),
+"C_TERMINOLOGY_CODE" => ::core::option::Option::Some(&["alternative_ids", "assumed_value", "constraint", "constraint_status", "default_value", "is_deprecated", "is_enumerated_type_constraint", "node_id", "occurrences", "parent", "rm_type_name", "sibling_order", "soc_parent"]),
+"C_TIME" => ::core::option::Option::Some(&["assumed_value", "millisecond_validity", "minute_validity", "range", "second_validity", "timezone_validity"]),
+"Cardinality" => ::core::option::Option::Some(&["interval", "is_ordered", "is_unique"]),
+"DV_BOOLEAN" => ::core::option::Option::Some(&["value"]),
+"DV_CODED_TEXT" => ::core::option::Option::Some(&["defining_code", "encoding", "formatting", "hyperlink", "language", "mappings", "value"]),
+"DV_COUNT" => ::core::option::Option::Some(&["accuracy", "accuracy_is_percent", "magnitude", "magnitude_status", "normal_range", "normal_status", "other_reference_ranges"]),
+"DV_DATE" => ::core::option::Option::Some(&["accuracy", "magnitude_status", "normal_range", "normal_status", "other_reference_ranges", "value"]),
+"DV_DATE_TIME" => ::core::option::Option::Some(&["accuracy", "magnitude_status", "normal_range", "normal_status", "other_reference_ranges", "value"]),
+"DV_DURATION" => ::core::option::Option::Some(&["accuracy", "accuracy_is_percent", "magnitude_status", "normal_range", "normal_status", "other_reference_ranges", "value"]),
+"DV_EHR_URI" => ::core::option::Option::Some(&["value"]),
+"DV_GENERAL_TIME_SPECIFICATION" => ::core::option::Option::Some(&["value"]),
+"DV_IDENTIFIER" => ::core::option::Option::Some(&["assigner", "id", "issuer", "type"]),
+"DV_INTERVAL" => ::core::option::Option::Some(&["lower", "lower_included", "lower_unbounded", "upper", "upper_included", "upper_unbounded"]),
+"DV_MULTIMEDIA" => ::core::option::Option::Some(&["alternate_text", "charset", "compression_algorithm", "data", "integrity_check", "integrity_check_algorithm", "language", "media_type", "size", "thumbnail", "uri"]),
+"DV_ORDINAL" => ::core::option::Option::Some(&["normal_range", "normal_status", "other_reference_ranges", "symbol", "value"]),
+"DV_PARAGRAPH" => ::core::option::Option::Some(&["items"]),
+"DV_PARSABLE" => ::core::option::Option::Some(&["charset", "formalism", "language", "value"]),
+"DV_PERIODIC_TIME_SPECIFICATION" => ::core::option::Option::Some(&["value"]),
+"DV_PROPORTION" => ::core::option::Option::Some(&["accuracy", "accuracy_is_percent", "denominator", "magnitude_status", "normal_range", "normal_status", "numerator", "other_reference_ranges", "precision", "type"]),
+"DV_QUANTITY" => ::core::option::Option::Some(&["accuracy", "accuracy_is_percent", "magnitude", "magnitude_status", "normal_range", "normal_status", "other_reference_ranges", "precision", "units", "units_display_name", "units_system"]),
+"DV_SCALE" => ::core::option::Option::Some(&["normal_range", "normal_status", "other_reference_ranges", "symbol", "value"]),
+"DV_STATE" => ::core::option::Option::Some(&["is_terminal", "value"]),
+"DV_TEXT" => ::core::option::Option::Some(&["encoding", "formatting", "hyperlink", "language", "mappings", "value"]),
+"DV_TIME" => ::core::option::Option::Some(&["accuracy", "magnitude_status", "normal_range", "normal_status", "other_reference_ranges", "value"]),
+"DV_URI" => ::core::option::Option::Some(&["value"]),
+"EHR" => ::core::option::Option::Some(&["compositions", "contributions", "directory", "ehr_access", "ehr_id", "ehr_status", "folders", "system_id", "tags", "time_created"]),
+"EHR_ACCESS" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "feeder_audit", "links", "name", "settings", "uid"]),
+"EHR_STATUS" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "feeder_audit", "is_modifiable", "is_queryable", "links", "name", "other_details", "subject", "uid"]),
+"ELEMENT" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "feeder_audit", "links", "name", "null_flavour", "null_reason", "uid", "value"]),
+"EL_ATTACHED" => ::core::option::Option::Some(&["operand"]),
+"EL_BINARY_OPERATOR" => ::core::option::Option::Some(&["call", "left_operand", "precedence_overridden", "right_operand", "symbol"]),
+"EL_BOOLEAN_EXPRESSION" => ::core::option::Option::Some(&["base_expression"]),
+"EL_CASE" => ::core::option::Option::Some(&["result", "value_constraint"]),
+"EL_CASE_TABLE" => ::core::option::Option::Some(&["else", "items", "test_value"]),
+"EL_CONDITIONAL_EXPRESSION" => ::core::option::Option::Some(&["condition", "result"]),
+"EL_CONDITION_CHAIN" => ::core::option::Option::Some(&["else", "items"]),
+"EL_DEFINED" => ::core::option::Option::Some(&["operand"]),
+"EL_FUNCTION_AGENT" => ::core::option::Option::Some(&["closed_args", "definition", "is_writable", "name", "open_args", "scoper"]),
+"EL_FUNCTION_CALL" => ::core::option::Option::Some(&["agent", "is_writable", "name", "scoper"]),
+"EL_LITERAL" => ::core::option::Option::Some(&["value"]),
+"EL_PROCEDURE_AGENT" => ::core::option::Option::Some(&["closed_args", "definition", "is_writable", "name", "open_args", "scoper"]),
+"EL_PROPERTY_REF" => ::core::option::Option::Some(&["definition", "is_writable", "name", "scoper"]),
+"EL_READONLY_VARIABLE" => ::core::option::Option::Some(&["definition", "is_writable", "name"]),
+"EL_STATIC_REF" => ::core::option::Option::Some(&["definition", "is_writable", "name", "scoper"]),
+"EL_TUPLE" => ::core::option::Option::Some(&["items", "type"]),
+"EL_TUPLE_ITEM" => ::core::option::Option::Some(&["item", "name"]),
+"EL_TYPE_REF" => ::core::option::Option::Some(&["is_mutable", "is_writable", "name", "type"]),
+"EL_UNARY_OPERATOR" => ::core::option::Option::Some(&["call", "operand", "precedence_overridden", "symbol"]),
+"EL_WRITABLE_VARIABLE" => ::core::option::Option::Some(&["definition", "is_writable", "name"]),
+"EVALUATION" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "data", "encoding", "feeder_audit", "guideline_id", "language", "links", "name", "other_participations", "protocol", "provider", "subject", "uid", "workflow_id"]),
+"EVENT_CONTEXT" => ::core::option::Option::Some(&["end_time", "health_care_facility", "location", "other_context", "participations", "setting", "start_time"]),
+"EXPR_ARCHETYPE_ID_CONSTRAINT" => ::core::option::Option::Some(&["item"]),
+"EXPR_ARCHETYPE_REF" => ::core::option::Option::Some(&["item", "path"]),
+"EXPR_BINARY_OPERATOR" => ::core::option::Option::Some(&["left_operand", "operator", "precedence_overridden", "right_operand", "symbol"]),
+"EXPR_CONSTRAINT" => ::core::option::Option::Some(&["item"]),
+"EXPR_FOR_ALL" => ::core::option::Option::Some(&["condition", "operand", "operator", "precedence_overridden", "symbol"]),
+"EXPR_FUNCTION_CALL" => ::core::option::Option::Some(&["arguments", "item"]),
+"EXPR_LEAF" => ::core::option::Option::Some(&["item", "reference_type", "type"]),
+"EXPR_LITERAL" => ::core::option::Option::Some(&["item"]),
+"EXPR_UNARY_OPERATOR" => ::core::option::Option::Some(&["operand", "operator", "precedence_overridden", "symbol"]),
+"EXPR_VALUE_REF" => ::core::option::Option::Some(&["item"]),
+"EXPR_VARIABLE_REF" => ::core::option::Option::Some(&["item"]),
+"EXTERNAL_QUERY" => ::core::option::Option::Some(&["context", "query_args", "query_id"]),
+"EXTRACT" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "chapters", "feeder_audit", "links", "name", "participations", "request_id", "sequence_nr", "specification", "system_id", "time_created", "uid"]),
+"EXTRACT_ACTION_REQUEST" => ::core::option::Option::Some(&["action", "archetype_details", "archetype_node_id", "feeder_audit", "links", "name", "request_id", "uid"]),
+"EXTRACT_CHAPTER" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "feeder_audit", "items", "links", "name", "uid"]),
+"EXTRACT_ENTITY_CHAPTER" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "extract_id_key", "feeder_audit", "items", "links", "name", "uid"]),
+"EXTRACT_ENTITY_MANIFEST" => ::core::option::Option::Some(&["ehr_id", "extract_id_key", "item_list", "other_ids", "subject_id"]),
+"EXTRACT_ERROR" => ::core::option::Option::Some(&["reason", "request_id"]),
+"EXTRACT_FOLDER" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "feeder_audit", "items", "links", "name", "uid"]),
+"EXTRACT_MANIFEST" => ::core::option::Option::Some(&["entities"]),
+"EXTRACT_PARTICIPATION" => ::core::option::Option::Some(&["function", "mode", "performer", "time"]),
+"EXTRACT_REQUEST" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "extract_spec", "feeder_audit", "links", "name", "uid", "update_spec"]),
+"EXTRACT_SPEC" => ::core::option::Option::Some(&["criteria", "extract_type", "include_multimedia", "link_depth", "manifest", "other_details", "priority", "version_spec"]),
+"EXTRACT_UPDATE_SPEC" => ::core::option::Option::Some(&["persist_in_server", "repeat_period", "trigger_events", "update_method"]),
+"EXTRACT_VERSION_SPEC" => ::core::option::Option::Some(&["commit_time_interval", "include_all_versions", "include_data", "include_revision_history"]),
+"FEEDER_AUDIT" => ::core::option::Option::Some(&["feeder_system_audit", "feeder_system_item_ids", "original_content", "originating_system_audit", "originating_system_item_ids"]),
+"FEEDER_AUDIT_DETAILS" => ::core::option::Option::Some(&["location", "other_details", "provider", "subject", "system_id", "time", "version_id"]),
+"FOLDER" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "details", "feeder_audit", "folders", "items", "links", "name", "uid"]),
+"GENERIC_CONTENT_ITEM" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "author", "authorisation_time", "authoriser", "creation_time", "feeder_audit", "is_changed", "is_masked", "is_primary", "item", "item_status", "item_type", "item_type_version", "links", "name", "other_details", "system_id", "uid", "version_id", "version_set_id"]),
+"GENERIC_ENTRY" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "data", "feeder_audit", "links", "name", "uid"]),
+"GENERIC_ID" => ::core::option::Option::Some(&["scheme", "value"]),
+"GROUP" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "contacts", "details", "feeder_audit", "identities", "languages", "links", "name", "relationships", "roles", "uid"]),
+"HIER_OBJECT_ID" => ::core::option::Option::Some(&["value"]),
+"HISTORY" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "duration", "events", "feeder_audit", "links", "name", "origin", "period", "summary", "uid"]),
+"IMPORTED_VERSION" => ::core::option::Option::Some(&["commit_audit", "contribution", "item", "signature"]),
+"INSTRUCTION" => ::core::option::Option::Some(&["activities", "archetype_details", "archetype_node_id", "encoding", "expiry_time", "feeder_audit", "guideline_id", "language", "links", "name", "narrative", "other_participations", "protocol", "provider", "subject", "uid", "wf_definition", "workflow_id"]),
+"INSTRUCTION_DETAILS" => ::core::option::Option::Some(&["activity_id", "instruction_id", "wf_details"]),
+"INTERNET_ID" => ::core::option::Option::Some(&["value"]),
+"INTERVAL_EVENT" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "data", "feeder_audit", "links", "math_function", "name", "sample_count", "state", "time", "uid", "width"]),
+"ISM_TRANSITION" => ::core::option::Option::Some(&["careflow_step", "current_state", "reason", "transition"]),
+"ISO_OID" => ::core::option::Option::Some(&["value"]),
+"ITEM_LIST" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "feeder_audit", "items", "links", "name", "uid"]),
+"ITEM_SINGLE" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "feeder_audit", "item", "links", "name", "uid"]),
+"ITEM_TABLE" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "feeder_audit", "links", "name", "rows", "uid"]),
+"ITEM_TAG" => ::core::option::Option::Some(&["key", "owner_id", "target", "target_path", "value"]),
+"ITEM_TREE" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "feeder_audit", "items", "links", "name", "uid"]),
+"Iso8601_date" => ::core::option::Option::Some(&["value"]),
+"Iso8601_date_time" => ::core::option::Option::Some(&["value"]),
+"Iso8601_duration" => ::core::option::Option::Some(&["value"]),
+"Iso8601_time" => ::core::option::Option::Some(&["value"]),
+"Iso8601_timezone" => ::core::option::Option::Some(&["value"]),
+"LINK" => ::core::option::Option::Some(&["meaning", "target", "type"]),
+"LOCATABLE_REF" => ::core::option::Option::Some(&["id", "namespace", "path", "type"]),
+"MEASUREMENT_SERVICE" => ::core::option::Option::Some(&[]),
+"MESSAGE" => ::core::option::Option::Some(&["audit", "author", "content", "signature"]),
+"Multiplicity_interval" => ::core::option::Option::Some(&["lower", "lower_included", "lower_unbounded", "upper", "upper_included", "upper_unbounded"]),
+"OBJECT_REF" => ::core::option::Option::Some(&["id", "namespace", "type"]),
+"OBJECT_VERSION_ID" => ::core::option::Option::Some(&["value"]),
+"OBSERVATION" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "data", "encoding", "feeder_audit", "guideline_id", "language", "links", "name", "other_participations", "protocol", "provider", "state", "subject", "uid", "workflow_id"]),
+"OPENEHR_CODE_SET_IDENTIFIERS" => ::core::option::Option::Some(&[]),
+"OPENEHR_CONTENT_ITEM" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "feeder_audit", "is_changed", "is_masked", "is_primary", "item", "links", "name", "uid"]),
+"OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS" => ::core::option::Option::Some(&[]),
+"OPERATIONAL_TEMPLATE" => ::core::option::Option::Some(&["adl_version", "annotations", "archetype_id", "build_uid", "component_terminologies", "definition", "description", "is_controlled", "is_differential", "is_generated", "original_language", "other_meta_data", "parent_archetype_id", "rm_overlay", "rm_release", "rules", "terminology", "terminology_extracts", "translations", "uid"]),
+"ORDINAL" => ::core::option::Option::Some(&["symbol", "value"]),
+"ORGANISATION" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "contacts", "details", "feeder_audit", "identities", "languages", "links", "name", "relationships", "roles", "uid"]),
+"ORIGINAL_VERSION" => ::core::option::Option::Some(&["attestations", "commit_audit", "contribution", "data", "lifecycle_state", "other_input_version_uids", "preceding_version_uid", "signature", "uid"]),
+"PARTICIPATION" => ::core::option::Option::Some(&["function", "mode", "performer", "time"]),
+"PARTY_IDENTIFIED" => ::core::option::Option::Some(&["external_ref", "identifiers", "name"]),
+"PARTY_IDENTITY" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "details", "feeder_audit", "links", "name", "uid"]),
+"PARTY_REF" => ::core::option::Option::Some(&["id", "namespace", "type"]),
+"PARTY_RELATED" => ::core::option::Option::Some(&["external_ref", "identifiers", "name", "relationship"]),
+"PARTY_RELATIONSHIP" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "details", "feeder_audit", "links", "name", "source", "target", "time_validity", "uid"]),
+"PARTY_SELF" => ::core::option::Option::Some(&["external_ref"]),
+"PERSON" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "contacts", "details", "feeder_audit", "identities", "languages", "links", "name", "relationships", "roles", "uid"]),
+"POINT_EVENT" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "data", "feeder_audit", "links", "name", "state", "time", "uid"]),
+"P_ARCHETYPE_HRID" => ::core::option::Option::Some(&["build_count", "concept_id", "namespace", "release_version", "rm_class", "rm_package", "rm_publisher", "version_status"]),
+"P_ARCHETYPE_SLOT" => ::core::option::Option::Some(&["excludes", "includes", "is_closed", "is_deprecated", "node_id", "occurrences", "rm_type_name"]),
+"P_ARCHETYPE_TERMINOLOGY" => ::core::option::Option::Some(&["is_differential", "original_language", "term_bindings", "term_definitions", "value_sets"]),
+"P_AUTHORED_ARCHETYPE" => ::core::option::Option::Some(&["adl_version", "annotations", "archetype_id", "build_uid", "definition", "description", "is_controlled", "is_differential", "is_generated", "original_language", "other_meta_data", "parent_archetype_id", "rm_release", "rules", "terminology", "translations", "uid"]),
+"P_BMM_CLASS" => ::core::option::Option::Some(&["ancestor_defs", "ancestors", "bmm_class", "constants", "documentation", "functions", "generic_parameter_defs", "invariants", "is_abstract", "is_override", "name", "properties", "source_schema_id", "uid"]),
+"P_BMM_CONSTANT" => ::core::option::Option::Some(&["documentation", "name", "type", "value"]),
+"P_BMM_CONTAINER_FUNCTION_PARAMETER" => ::core::option::Option::Some(&["cardinality", "documentation", "is_nullable", "name", "type_def"]),
+"P_BMM_CONTAINER_PROPERTY" => ::core::option::Option::Some(&["bmm_property", "cardinality", "documentation", "is_computed", "is_im_infrastructure", "is_im_runtime", "is_mandatory", "name", "type_def"]),
+"P_BMM_CONTAINER_TYPE" => ::core::option::Option::Some(&["bmm_type", "container_type", "type", "type_def"]),
+"P_BMM_ENUMERATION" => ::core::option::Option::Some(&["ancestor_defs", "ancestors", "bmm_class", "constants", "documentation", "functions", "generic_parameter_defs", "invariants", "is_abstract", "is_override", "item_documentations", "item_names", "item_values", "name", "properties", "source_schema_id", "uid"]),
+"P_BMM_ENUMERATION_INTEGER" => ::core::option::Option::Some(&["ancestor_defs", "ancestors", "bmm_class", "constants", "documentation", "functions", "generic_parameter_defs", "invariants", "is_abstract", "is_override", "item_documentations", "item_names", "item_values", "name", "properties", "source_schema_id", "uid"]),
+"P_BMM_ENUMERATION_STRING" => ::core::option::Option::Some(&["ancestor_defs", "ancestors", "bmm_class", "constants", "documentation", "functions", "generic_parameter_defs", "invariants", "is_abstract", "is_override", "item_documentations", "item_names", "item_values", "name", "properties", "source_schema_id", "uid"]),
+"P_BMM_FUNCTION" => ::core::option::Option::Some(&["aliases", "documentation", "is_abstract", "is_nullable", "name", "parameters", "post_conditions", "pre_conditions", "result"]),
+"P_BMM_GENERIC_FUNCTION_PARAMETER" => ::core::option::Option::Some(&["documentation", "is_nullable", "name", "type_def"]),
+"P_BMM_GENERIC_PARAMETER" => ::core::option::Option::Some(&["bmm_generic_parameter", "conforms_to_type", "documentation", "name"]),
+"P_BMM_GENERIC_PROPERTY" => ::core::option::Option::Some(&["bmm_property", "documentation", "is_computed", "is_im_infrastructure", "is_im_runtime", "is_mandatory", "name", "type_def"]),
+"P_BMM_GENERIC_TYPE" => ::core::option::Option::Some(&["bmm_type", "generic_parameter_defs", "generic_parameters", "root_type", "value_constraint"]),
+"P_BMM_INDEXED_CONTAINER_PROPERTY" => ::core::option::Option::Some(&["bmm_property", "cardinality", "documentation", "is_computed", "is_im_infrastructure", "is_im_runtime", "is_mandatory", "name", "type_def"]),
+"P_BMM_INDEXED_CONTAINER_TYPE" => ::core::option::Option::Some(&["bmm_type", "container_type", "index_type", "type", "type_def"]),
+"P_BMM_INTERFACE" => ::core::option::Option::Some(&["documentation", "functions", "name"]),
+"P_BMM_OPEN_TYPE" => ::core::option::Option::Some(&["bmm_type", "type", "value_constraint"]),
+"P_BMM_PACKAGE" => ::core::option::Option::Some(&["bmm_package_definition", "classes", "documentation", "name", "packages"]),
+"P_BMM_PACKAGE_CONTAINER" => ::core::option::Option::Some(&["packages"]),
+"P_BMM_SCHEMA" => ::core::option::Option::Some(&["archetype_data_value_parent_class", "archetype_parent_class", "archetype_rm_closure_packages", "archetype_visualise_descendants_of", "bmm_version", "class_definitions", "includes", "packages", "primitive_types", "rm_publisher", "rm_release", "schema_author", "schema_contributors", "schema_description", "schema_lifecycle_state", "schema_name", "schema_revision"]),
+"P_BMM_SCHEMA_DESCRIPTOR" => ::core::option::Option::Some(&["bmm_schema", "includes", "meta_data", "p_schema", "schema", "schema_id"]),
+"P_BMM_SIMPLE_TYPE" => ::core::option::Option::Some(&["bmm_type", "type", "value_constraint"]),
+"P_BMM_SINGLE_FUNCTION_PARAMETER" => ::core::option::Option::Some(&["documentation", "is_nullable", "name", "type"]),
+"P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN" => ::core::option::Option::Some(&["documentation", "is_nullable", "name", "type"]),
+"P_BMM_SINGLE_PROPERTY" => ::core::option::Option::Some(&["bmm_property", "documentation", "is_computed", "is_im_infrastructure", "is_im_runtime", "is_mandatory", "name", "type", "type_def", "type_ref"]),
+"P_BMM_SINGLE_PROPERTY_OPEN" => ::core::option::Option::Some(&["bmm_property", "documentation", "is_computed", "is_im_infrastructure", "is_im_runtime", "is_mandatory", "name", "type", "type_def", "type_ref"]),
+"P_C_ARCHETYPE_ROOT" => ::core::option::Option::Some(&["archetype_ref", "attribute_tuples", "attributes", "default_value", "is_deprecated", "is_frozen", "node_id", "occurrences", "rm_type_name"]),
+"P_C_ATTRIBUTE" => ::core::option::Option::Some(&["cardinality", "children", "differential_path", "existence", "is_multiple", "rm_attribute_name"]),
+"P_C_ATTRIBUTE_TUPLE" => ::core::option::Option::Some(&["members"]),
+"P_C_BOOLEAN" => ::core::option::Option::Some(&["assumed_value", "constraint", "default_value", "is_deprecated", "is_enumerated_type_constraint", "is_frozen", "node_id", "occurrences", "rm_type_name"]),
+"P_C_COMPLEX_OBJECT" => ::core::option::Option::Some(&["attribute_tuples", "attributes", "default_value", "is_deprecated", "is_frozen", "node_id", "occurrences", "rm_type_name"]),
+"P_C_COMPLEX_OBJECT_PROXY" => ::core::option::Option::Some(&["is_deprecated", "node_id", "occurrences", "rm_type_name", "target_path"]),
+"P_C_DATE" => ::core::option::Option::Some(&[]),
+"P_C_DATE_TIME" => ::core::option::Option::Some(&[]),
+"P_C_DURATION" => ::core::option::Option::Some(&[]),
+"P_C_INTEGER" => ::core::option::Option::Some(&[]),
+"P_C_REAL" => ::core::option::Option::Some(&[]),
+"P_C_STRING" => ::core::option::Option::Some(&["assumed_value", "constraint", "default_value", "is_deprecated", "is_enumerated_type_constraint", "is_frozen", "node_id", "occurrences", "rm_type_name"]),
+"P_C_TERMINOLOGY_CODE" => ::core::option::Option::Some(&["assumed_value", "constraint", "default_value", "is_deprecated", "is_enumerated_type_constraint", "is_frozen", "node_id", "occurrences", "rm_type_name"]),
+"P_C_TIME" => ::core::option::Option::Some(&[]),
+"P_OPERATIONAL_TEMPLATE" => ::core::option::Option::Some(&["adl_version", "annotations", "archetype_id", "build_uid", "component_terminologies", "definition", "description", "is_controlled", "is_differential", "is_generated", "original_language", "other_meta_data", "parent_archetype_id", "rm_release", "rules", "terminology", "terminology_extracts", "translations", "uid"]),
+"P_TEMPLATE" => ::core::option::Option::Some(&["adl_version", "annotations", "archetype_id", "build_uid", "definition", "description", "is_controlled", "is_differential", "is_generated", "original_language", "other_meta_data", "parent_archetype_id", "rm_release", "rules", "terminology", "translations", "uid"]),
+"Point_interval" => ::core::option::Option::Some(&["lower", "lower_included", "lower_unbounded", "upper", "upper_included", "upper_unbounded"]),
+"Proper_interval" => ::core::option::Option::Some(&["lower", "lower_included", "lower_unbounded", "upper", "upper_included", "upper_unbounded"]),
+"REFERENCE_MODEL_ACCESS" => ::core::option::Option::Some(&["all_schemas", "schema_directories", "valid_models"]),
+"REFERENCE_RANGE" => ::core::option::Option::Some(&["meaning", "range"]),
+"RESOURCE_ANNOTATIONS" => ::core::option::Option::Some(&["documentation"]),
+"RESOURCE_DESCRIPTION" => ::core::option::Option::Some(&["details", "lifecycle_state", "original_author", "other_contributors", "other_details", "resource_package_uri"]),
+"RESOURCE_DESCRIPTION_ITEM" => ::core::option::Option::Some(&["copyright", "keywords", "language", "misuse", "original_resource_uri", "other_details", "purpose", "use"]),
+"REVISION_HISTORY" => ::core::option::Option::Some(&["items"]),
+"REVISION_HISTORY_ITEM" => ::core::option::Option::Some(&["audits", "version_id"]),
+"RM_ATTRIBUTE_VISIBILITY" => ::core::option::Option::Some(&["alias", "visibility"]),
+"RM_OVERLAY" => ::core::option::Option::Some(&["rm_visibility"]),
+"ROLE" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "capabilities", "contacts", "details", "feeder_audit", "identities", "links", "name", "performer", "relationships", "time_validity", "uid"]),
+"SCHEMA_DESCRIPTOR" => ::core::option::Option::Some(&["includes", "meta_data", "p_schema", "schema", "schema_id"]),
+"SECTION" => ::core::option::Option::Some(&["archetype_details", "archetype_node_id", "feeder_audit", "items", "links", "name", "uid"]),
+"SIBLING_ORDER" => ::core::option::Option::Some(&["is_before", "sibling_node_id"]),
+"STATEMENT_SET" => ::core::option::Option::Some(&["name", "statement"]),
+"SYNC_EXTRACT" => ::core::option::Option::Some(&["items", "specification"]),
+"SYNC_EXTRACT_REQUEST" => ::core::option::Option::Some(&["specification"]),
+"SYNC_EXTRACT_SPEC" => ::core::option::Option::Some(&["all_contributions", "contribution_list", "contributions_since", "includes_versions"]),
+"TEMPLATE" => ::core::option::Option::Some(&["adl_version", "annotations", "archetype_id", "build_uid", "definition", "description", "is_controlled", "is_differential", "is_generated", "original_language", "other_meta_data", "overlays", "parent_archetype_id", "rm_overlay", "rm_release", "rules", "terminology", "translations", "uid"]),
+"TEMPLATE_ID" => ::core::option::Option::Some(&["value"]),
+"TEMPLATE_OVERLAY" => ::core::option::Option::Some(&["archetype_id", "definition", "is_differential", "parent_archetype_id", "rm_overlay", "rules", "terminology"]),
+"TERMINOLOGY" => ::core::option::Option::Some(&["code_sets", "date", "language", "name", "version", "vocabularies"]),
+"TERMINOLOGY_ACCESS" => ::core::option::Option::Some(&[]),
+"TERMINOLOGY_CONCEPT" => ::core::option::Option::Some(&["id", "rubric", "status"]),
+"TERMINOLOGY_GROUP" => ::core::option::Option::Some(&["concepts", "name", "openehr_id", "status"]),
+"TERMINOLOGY_ID" => ::core::option::Option::Some(&["value"]),
+"TERMINOLOGY_SERVICE" => ::core::option::Option::Some(&[]),
+"TERM_MAPPING" => ::core::option::Option::Some(&["match", "purpose", "target"]),
+"TRANSLATION_DETAILS" => ::core::option::Option::Some(&["accreditaton", "author", "language", "other_details"]),
+"TYPE_DEF_BOOLEAN" => ::core::option::Option::Some(&["type_anchor", "type_name"]),
+"TYPE_DEF_DATE" => ::core::option::Option::Some(&["type_anchor", "type_name"]),
+"TYPE_DEF_DATE_TIME" => ::core::option::Option::Some(&["type_anchor", "type_name"]),
+"TYPE_DEF_DURATION" => ::core::option::Option::Some(&["type_anchor", "type_name"]),
+"TYPE_DEF_INTEGER" => ::core::option::Option::Some(&["type_anchor", "type_name"]),
+"TYPE_DEF_OBJECT_REF" => ::core::option::Option::Some(&["type_anchor", "type_name"]),
+"TYPE_DEF_REAL" => ::core::option::Option::Some(&["type_anchor", "type_name"]),
+"TYPE_DEF_STRING" => ::core::option::Option::Some(&["type_anchor", "type_name"]),
+"TYPE_DEF_TERMINOLOGY_CODE" => ::core::option::Option::Some(&["type_anchor", "type_name"]),
+"TYPE_DEF_TIME" => ::core::option::Option::Some(&["type_anchor", "type_name"]),
+"TYPE_DEF_URI" => ::core::option::Option::Some(&["type_anchor", "type_name"]),
+"Terminology_code" => ::core::option::Option::Some(&["code_string", "terminology_id", "terminology_version", "uri"]),
+"Terminology_term" => ::core::option::Option::Some(&["concept", "text"]),
+"UUID" => ::core::option::Option::Some(&["value"]),
+"VALUE_SET" => ::core::option::Option::Some(&["id", "members"]),
+"VARIABLE_DECLARATION" => ::core::option::Option::Some(&["name", "type"]),
+"VERSIONED_COMPOSITION" => ::core::option::Option::Some(&["owner_id", "time_created", "uid"]),
+"VERSIONED_EHR_ACCESS" => ::core::option::Option::Some(&["owner_id", "time_created", "uid"]),
+"VERSIONED_EHR_STATUS" => ::core::option::Option::Some(&["owner_id", "time_created", "uid"]),
+"VERSIONED_FOLDER" => ::core::option::Option::Some(&["owner_id", "time_created", "uid"]),
+"VERSIONED_OBJECT" => ::core::option::Option::Some(&["owner_id", "time_created", "uid"]),
+"VERSIONED_PARTY" => ::core::option::Option::Some(&["owner_id", "time_created", "uid"]),
+"VERSION_TREE_ID" => ::core::option::Option::Some(&["value"]),
+"X_CONTRIBUTION" => ::core::option::Option::Some(&["audit", "uid", "versions"]),
+"X_VERSIONED_COMPOSITION" => ::core::option::Option::Some(&["extract_version_count", "owner_id", "revision_history", "time_created", "total_version_count", "uid", "versions"]),
+"X_VERSIONED_EHR_ACCESS" => ::core::option::Option::Some(&["extract_version_count", "owner_id", "revision_history", "time_created", "total_version_count", "uid", "versions"]),
+"X_VERSIONED_EHR_STATUS" => ::core::option::Option::Some(&["extract_version_count", "owner_id", "revision_history", "time_created", "total_version_count", "uid", "versions"]),
+"X_VERSIONED_FOLDER" => ::core::option::Option::Some(&["extract_version_count", "owner_id", "revision_history", "time_created", "total_version_count", "uid", "versions"]),
+"X_VERSIONED_OBJECT" => ::core::option::Option::Some(&["extract_version_count", "owner_id", "revision_history", "time_created", "total_version_count", "uid", "versions"]),
+"X_VERSIONED_PARTY" => ::core::option::Option::Some(&["extract_version_count", "owner_id", "revision_history", "time_created", "total_version_count", "uid", "versions"]),
+_ => ::core::option::Option::None,
+}
 }

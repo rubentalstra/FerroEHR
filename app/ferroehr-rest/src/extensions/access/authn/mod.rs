@@ -29,6 +29,12 @@
 //! is a `403` with the `Principal` attached to the response so the ATNA audit
 //! layer records it.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 7): RFC 7519 leaves the claim set open; \
+              decided-on claims lift into typed fields"
+)]
+
 mod basic;
 mod jwt;
 

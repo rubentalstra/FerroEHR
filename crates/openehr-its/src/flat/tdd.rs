@@ -68,6 +68,13 @@
 //!   rejects an unconvertible TDD with a typed error rather than committing a
 //!   partial COMPOSITION.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
+              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
+              (#1694)"
+)]
+
 use std::collections::HashSet;
 use std::sync::LazyLock;
 

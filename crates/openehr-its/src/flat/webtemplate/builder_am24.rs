@@ -37,6 +37,13 @@
 //! own design/extension; the walk *semantics* the captured fields serve cite AOM2
 //! / RM common.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
+              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
+              (#1694)"
+)]
+
 use std::collections::BTreeMap;
 
 use indexmap::IndexMap;

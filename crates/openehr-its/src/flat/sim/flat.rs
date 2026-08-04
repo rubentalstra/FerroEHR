@@ -7,6 +7,13 @@
 //! `master04 §Conversion Between Formats`, expressed against the shared
 //! [`SimNode`] tree instead of a second ad-hoc structure.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
+              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
+              (#1694)"
+)]
+
 use std::fmt::Write;
 
 use serde_json::{Map, Value};

@@ -13,6 +13,13 @@
 //! (`master04 §Context`: "defaults to the current server time (now())") —
 //! injected by the caller so conversions stay deterministic under test.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
+              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
+              (#1694)"
+)]
+
 use serde_json::{Map, Value};
 
 use crate::flat::build;

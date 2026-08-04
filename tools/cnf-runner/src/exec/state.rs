@@ -5,6 +5,12 @@
 //! rules so two runners query identical instants (interpreter law d:
 //! before = t − 1 ms, after = t + 1 ms, between = the midpoint).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694)"
+)]
+
 use std::collections::BTreeMap;
 
 use crate::ids::CaptureName;

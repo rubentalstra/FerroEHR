@@ -53,6 +53,12 @@
 //! aligns them with the terminology-server configuration, not with a hidden
 //! alias table here.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 6): FHIR resources are an external standard \
+              with no RM type (typed-FHIR evaluation tracked separately)"
+)]
+
 use openehr_its::flat::validation::ConstraintBindingCheck;
 use openehr_its::flat::webtemplate::WebTemplate;
 use openehr_its::rm_instance::{ValidationKind, ValidationMessage};

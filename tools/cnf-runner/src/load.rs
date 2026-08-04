@@ -5,6 +5,12 @@
 //! typed [`LoadError`] naming the file, so validator reports are uniform
 //! across schema-level and model-level defects.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694)"
+)]
+
 use std::path::{Path, PathBuf};
 
 use thiserror::Error;

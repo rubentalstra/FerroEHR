@@ -21,6 +21,12 @@
 //! unavailable `VARIABLE_SAMPLE` with the reason), never a silently wrong
 //! type.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 6): FHIR resources are an external standard \
+              with no RM type (typed-FHIR evaluation tracked separately)"
+)]
+
 use std::collections::BTreeMap;
 
 use serde_json::Value;

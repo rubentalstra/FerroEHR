@@ -3,6 +3,10 @@
 //! The openEHR `BMM_PRIMITIVE_VALUE` spec class, generated from the vendored BMM
 //! meta-model.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "adjudicated free-form JSON slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only where the spec leaves the slot open, and each adjudicated field's NOTE names its citation"
+)]
 use crate::am24::bmm3::core::entity::bmm_simple_type::BmmSimpleType;
 use crate::am24::bmm3::core::literal_value::bmm_boolean_value::BmmBooleanValue;
 use crate::am24::bmm3::core::literal_value::bmm_integer_value::BmmIntegerValue;

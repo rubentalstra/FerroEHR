@@ -1,7 +1,15 @@
-//! The BFF's CDR client: one `reqwest` client, the ITS-REST base path,
-//! credential injection, strict `Accept`/`Content-Type` negotiation
-//! (`crate::format`), and error normalization into
-//! [`crate::error::AdminUiError`]. The console reaches the CDR ONLY here.
+//! The BFF's CDR client.
+//!
+//! One `reqwest` client, the ITS-REST base path, credential injection, strict
+//! `Accept`/`Content-Type` negotiation (`crate::format`), and error
+//! normalization into [`crate::error::AdminUiError`]. The console reaches the
+//! CDR ONLY here.
+
+#![expect(
+    clippy::disallowed_types,
+    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+              (#1694)"
+)]
 
 use crate::error::AdminUiError;
 use crate::session::Credential;

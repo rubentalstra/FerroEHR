@@ -76,6 +76,12 @@
 //!   invariants; the composition validator recurses into children (and prefixes
 //!   the absolute RM path onto each [`InvariantViolation`]).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "the wire-boundary validation reads the canonical JSON node before the typed decode \
+              (#1694 boundary class)"
+)]
+
 use openehr_base::validate::InvariantViolation;
 use serde_json::Value;
 

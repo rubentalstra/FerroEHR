@@ -41,6 +41,12 @@
 //! [`FerroEhrService::web_template_for`] / [`FerroEhrService::get_template_xml`]
 //! and the validated commit through [`FerroEhrService::create_composition`].
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 3): EHR-Extract/TDD/dump-load compose over \
+              verbatim stored content (RM common master06 §Copying)"
+)]
+
 use quick_xml::Reader;
 use quick_xml::events::Event;
 use serde_json::Value;

@@ -28,6 +28,12 @@
 //! behaviour. The shared write/read/committal/item-tag helpers below back all
 //! seven resource modules.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the handler carries the canonical fragment the \
+              negotiate seam produced once (stored-content serving / commit interior)"
+)]
+
 pub mod composition;
 pub mod contribution;
 pub mod directory;

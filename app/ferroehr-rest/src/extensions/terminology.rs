@@ -39,6 +39,12 @@
 //! `false`): when disabled every terminology route answers `404` without
 //! touching the backend.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 6): FHIR resources are an external standard \
+              with no RM type (typed-FHIR evaluation tracked separately)"
+)]
+
 use axum::extract::State;
 use axum::response::{IntoResponse, Response};
 use http::StatusCode;

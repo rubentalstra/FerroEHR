@@ -23,6 +23,12 @@
 //! NOTE: the `template_store` DDL is owned by the storage layer
 //! (`crate::storage`). This module only reads/writes rows.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): stored OPT/WebTemplate artefacts served verbatim \
+              (families 1/8)"
+)]
+
 use serde_json::{Value, json};
 use sqlx::Row;
 

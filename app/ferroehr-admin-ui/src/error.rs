@@ -1,6 +1,8 @@
-//! The console-wide error type, shared by both compilation targets so the
-//! UI can render domain errors (CDR status + diagnostic) instead of opaque
-//! strings. Implements `FromServerFnError` per the Leptos book (`server/25`).
+//! The console-wide error type, shared by both compilation targets so the UI
+//! can render domain errors (CDR status + diagnostic) instead of opaque
+//! strings.
+//!
+//! Implements `FromServerFnError` per the Leptos book (`server/25`).
 
 use serde::{Deserialize, Serialize};
 

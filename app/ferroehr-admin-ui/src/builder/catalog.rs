@@ -1,7 +1,9 @@
-//! The path catalog the Query Builder navigates: a slim, serializable tree
-//! distilled BFF-side from the Web Template (built from the CDR's OPT with
-//! `openehr_its::flat::webtemplate::build_web_template` — the same code the CDR
-//! serves `application/openehr.wt+json` with) and shipped to the browser.
+//! The path catalog the Query Builder navigates.
+//!
+//! A slim, serializable tree distilled BFF-side from the Web Template (built
+//! from the CDR's OPT with
+//! `openehr_its::flat::webtemplate::build_web_template` — the same code the
+//! CDR serves `application/openehr.wt+json` with) and shipped to the browser.
 //! Node shape per `docs/specs/openehr/ITS-REST/docs/simplified_formats/
 //! master04-basic_concepts.adoc` §"Web Template Metadata".
 

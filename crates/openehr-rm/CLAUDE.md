@@ -1,8 +1,9 @@
 # `openehr-rm` — RM 1.2.0 (GENERATED) — the domain model
 
 The Reference Model everything consumes, **generated from the vendored
-BMM** by `openehr-codegen -- emit`. Versioned by the spec
-(1.2.0).
+BMM** by `openehr-codegen -- emit`. Spec pin: RM 1.2.0 via `SPEC_VERSION`;
+the package version is the crate's own SemVer line
+(`.claude/rules/crates-publishing.md`).
 
 - **NEVER hand-edit a file with a `// @generated … DO NOT EDIT` header.**
   Change the emitter (`tools/openehr-codegen/src/render/emit.rs`) and regenerate

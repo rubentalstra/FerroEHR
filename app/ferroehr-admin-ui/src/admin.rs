@@ -1,6 +1,8 @@
-//! The CDR **Admin API** surface the console consumes: the availability probe
-//! every admin affordance is gated on, plus the three destructive operations
-//! (template delete, stored-query delete, physical EHR delete).
+//! The CDR **Admin API** surface the console consumes.
+//!
+//! The availability probe every admin affordance is gated on, plus the three
+//! destructive operations (template delete, stored-query delete, physical EHR
+//! delete).
 //!
 //! The CDR's admin group is **off by default**, and while it is disabled every
 //! admin route answers `405 Method Not Allowed` with an empty `Allow` (the
@@ -82,9 +84,10 @@ pub fn availability_of(manifest: &ConformanceManifest) -> AdminAvailability {
 }
 
 /// The single predicate every admin-gated view uses: destructive affordances
-/// render ONLY for a probe that succeeded and found the group mounted. A failed
-/// probe (CDR unreachable, unreadable manifest, expired session) hides them —
-/// never render a button that cannot work.
+/// render ONLY for a probe that succeeded and found the group mounted.
+///
+/// A failed probe (CDR unreachable, unreadable manifest, expired session)
+/// hides them — never render a button that cannot work.
 #[must_use]
 pub fn renders_admin_ops(probe: &Result<AdminAvailability, AdminUiError>) -> bool {
     probe.as_ref().copied().is_ok_and(AdminAvailability::usable)
@@ -142,9 +145,11 @@ pub fn when_admin_usable(
     .into_any()
 }
 
-/// Actionable copy for a refused admin delete: it names the exact object, the
-/// reason, and the next action, and carries the CDR's own diagnostic verbatim
-/// (the CDR's `409` names the referencing-version count).
+/// Actionable copy for a refused admin delete.
+///
+/// It names the exact object, the reason, and the next action, and carries the
+/// CDR's own diagnostic verbatim (the CDR's `409` names the
+/// referencing-version count).
 #[must_use]
 pub fn delete_failure_copy(object: &str, error: &AdminUiError) -> String {
     match error {

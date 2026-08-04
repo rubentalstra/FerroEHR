@@ -7,6 +7,12 @@
 //! store lives here, keyed by a qualified name (`reverse_domain_name ::
 //! semantic_id`) and a semantic version.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): stored template/query artefacts served verbatim + \
+              ADL/OPT wire envelopes"
+)]
+
 use serde_json::{Value, json};
 use sqlx::Row;
 use sqlx::postgres::PgRow;

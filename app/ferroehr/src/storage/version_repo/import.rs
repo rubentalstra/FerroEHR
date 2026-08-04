@@ -8,6 +8,12 @@
 //! §Storage). The import *policy* (period-chain synthesis, Case 2/3
 //! classification) lives in the versioning layer.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 1): stored canonical fragments — a typed \
+              round-trip drops forward-compatible keys (docs/VERSIONS.md §Spec version policy)"
+)]
+
 use serde_json::Value;
 use sqlx::{PgConnection, Row};
 use uuid::Uuid;

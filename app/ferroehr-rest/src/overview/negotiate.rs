@@ -60,6 +60,12 @@
 //! Selection applies to canonical RM documents only; the OPT 1.4 template
 //! representation is always v1 (`openehr_its::opt14`).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 9): the wire boundary — one byte-to-JSON \
+              step per route, consumed by the typed decode"
+)]
+
 use axum::response::{IntoResponse, Response};
 use bytes::Bytes;
 use http::{HeaderMap, HeaderValue, StatusCode, header};
@@ -526,6 +532,30 @@ pub(crate) fn typed_json_vec<T: DeserializeOwned>(
             ApiError::BadRequest(format!("invalid JSON array body: {inner}"))
         } else {
             ApiError::BadRequest(format!("invalid JSON array body at {path}: {inner}"))
+        }
+    })
+}
+
+/// Decode a required JSON **object** body into the typed DTO `T` — the scalar
+/// sibling of [`typed_json_vec`], with the same path-named refusal (`400`)
+/// so a client learns which member it must fix.
+///
+/// # Errors
+/// [`ApiError::UnsupportedMediaType`] if the `Content-Type` is not JSON;
+/// [`ApiError::BadRequest`] if the bytes do not decode as `T`.
+pub(crate) fn typed_json<T: DeserializeOwned>(
+    headers: &HeaderMap,
+    body: &Bytes,
+) -> Result<T, ApiError> {
+    require_json(headers)?;
+    let mut de = serde_json::Deserializer::from_slice(body);
+    serde_path_to_error::deserialize::<_, T>(&mut de).map_err(|e| {
+        let path = e.path().to_string();
+        let inner = e.into_inner();
+        if path == "." {
+            ApiError::BadRequest(format!("invalid JSON body: {inner}"))
+        } else {
+            ApiError::BadRequest(format!("invalid JSON body at {path}: {inner}"))
         }
     })
 }

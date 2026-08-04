@@ -17,6 +17,13 @@
 //! (`docs/specs/openehr/RM/docs/UML/classes/`) resolved against the terminology
 //! bundle in [`openehr_term::bundle`] (TERM 3.1.0).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
+              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
+              (#1694)"
+)]
+
 use openehr_rm::model::declared_concrete_type;
 use openehr_rm::validate::terminology::{Slot, slot_is_violated, slots_for};
 use serde_json::Value;

@@ -295,41 +295,64 @@ async fn post_flat_without_template_id_is_422() {
     assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
 }
 
-/// A COMPOSITION commit with an unrecognized `Content-Type` (here the deprecated
-/// `…wt.flat.schema+json`) is a `415` — the deprecated `.schema+json` names are
-/// not recognized (Resources.md §Simplified Formats NOTE).
+/// The deprecated and legacy simplified-format media types the release does
+/// not require a server to support: the `.schema+json` twins ("now deprecated
+/// and will be removed", Resources.md §Simplified Formats NOTE) and the
+/// legacy/experimental names (§Alternative data formats: "Some of these
+/// formats might not be supported").
+const BANNED_SIMPLIFIED_TYPES: &[&str] = &[
+    "application/openehr.wt.flat.schema+json",
+    "application/openehr.wt.structured.schema+json",
+    "application/openehr.nc.flat+json",
+    "application/openehr.tds2+xml",
+];
+
+/// A COMPOSITION commit under any deprecated/legacy simplified `Content-Type`
+/// is a `415` — "If the service cannot process the request payload as the
+/// simplified format is not supported, it MUST respond with HTTP status code
+/// 415 Unsupported Media Type" (Resources.md §Simplified Formats).
 #[tokio::test]
-async fn post_composition_deprecated_schema_content_type_is_415() {
+async fn post_composition_deprecated_or_legacy_content_type_is_415() {
     let (_pg, app, ehr) = app_with_ehr().await;
-    let req = Request::builder()
-        .method("POST")
-        .uri(format!("{BASE}/ehr/{ehr}/composition"))
-        .header(
-            header::CONTENT_TYPE,
-            "application/openehr.wt.flat.schema+json",
-        )
-        .header(TEMPLATE_ID_HEADER, TEMPLATE_ID)
-        .body(Body::from("{}"))
-        .unwrap();
-    let (status, _h, _b) = send(&app, req).await;
-    assert_eq!(status, StatusCode::UNSUPPORTED_MEDIA_TYPE);
+    for mime in BANNED_SIMPLIFIED_TYPES {
+        let req = Request::builder()
+            .method("POST")
+            .uri(format!("{BASE}/ehr/{ehr}/composition"))
+            .header(header::CONTENT_TYPE, *mime)
+            .header(TEMPLATE_ID_HEADER, TEMPLATE_ID)
+            .body(Body::from("{}"))
+            .unwrap();
+        let (status, _h, _b) = send(&app, req).await;
+        assert_eq!(
+            status,
+            StatusCode::UNSUPPORTED_MEDIA_TYPE,
+            "{mime} must refuse as 415"
+        );
+    }
 }
 
-/// A COMPOSITION GET whose `Accept` names only the deprecated
-/// `…wt.flat.schema+json` is a `406` — that media type is not recognized
-/// (Resources.md §Simplified Formats NOTE), so no representation is acceptable.
+/// A COMPOSITION GET whose `Accept` names only a deprecated/legacy simplified
+/// type is a `406` — "If the service cannot fulfill this aspect of the
+/// request, it MUST respond with HTTP status code 406 Not Acceptable"
+/// (Resources.md §Simplified Formats).
 #[tokio::test]
-async fn get_composition_deprecated_schema_accept_is_406() {
+async fn get_composition_deprecated_or_legacy_accept_is_406() {
     let (_pg, app, ehr) = app_with_ehr().await;
     let vo = commit_canonical(&app, &ehr, &canonical_composition()).await;
-    let req = Request::builder()
-        .method("GET")
-        .uri(format!("{BASE}/ehr/{ehr}/composition/{vo}"))
-        .header(header::ACCEPT, "application/openehr.wt.flat.schema+json")
-        .body(Body::empty())
-        .unwrap();
-    let (status, _h, _b) = send(&app, req).await;
-    assert_eq!(status, StatusCode::NOT_ACCEPTABLE);
+    for mime in BANNED_SIMPLIFIED_TYPES {
+        let req = Request::builder()
+            .method("GET")
+            .uri(format!("{BASE}/ehr/{ehr}/composition/{vo}"))
+            .header(header::ACCEPT, *mime)
+            .body(Body::empty())
+            .unwrap();
+        let (status, _h, _b) = send(&app, req).await;
+        assert_eq!(
+            status,
+            StatusCode::NOT_ACCEPTABLE,
+            "{mime} must refuse as 406"
+        );
+    }
 }
 
 /// `EHR_STATUS` is not templated → a simplified `Accept` on its retrieval is a

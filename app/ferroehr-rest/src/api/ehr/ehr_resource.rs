@@ -4,6 +4,12 @@
 //! `specifications/operations/{ehr_get_by_subject,ehr_create,
 //! ehr_create_with_id,ehr_get_by_id,ehr_tags_get}.yaml`.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the handler carries the canonical fragment the \
+              negotiate seam produced once (stored-content serving / commit interior)"
+)]
+
 use axum::response::Response;
 use http::StatusCode;
 use serde_json::Value;

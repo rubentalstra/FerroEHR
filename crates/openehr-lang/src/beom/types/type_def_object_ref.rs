@@ -3,6 +3,10 @@
 //! The openEHR `TYPE_DEF_OBJECT_REF` spec class, generated from the vendored BMM
 //! meta-model.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "adjudicated free-form JSON slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only where the spec leaves the slot open, and each adjudicated field's NOTE names its citation"
+)]
 /// Rules meta-type representing the type Object_ref, which is assumed to by the type of any non-primitive reference target within a rule.
 #[doc(alias = "TYPE_DEF_OBJECT_REF")]
 #[derive(Debug, Clone, PartialEq)]

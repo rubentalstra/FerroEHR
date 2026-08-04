@@ -32,6 +32,12 @@
 //! `tower-http` `RequestBodyLimitLayer` enforces as `413 Payload Too Large`
 //! before routing — so an absurd batch is refused by size, never by count.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the handler carries the canonical fragment the \
+              negotiate seam produced once (stored-content serving / commit interior)"
+)]
+
 use axum::extract::State;
 use axum::response::{IntoResponse, Response};
 use http::StatusCode;

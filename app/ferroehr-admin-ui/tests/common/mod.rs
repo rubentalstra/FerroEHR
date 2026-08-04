@@ -3,6 +3,12 @@
 //! standing browser-console gate — every journey fails on any console
 //! error (the cheapest hydration-bug detector).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "test fixtures and wire assertions are raw JSON by the testing rule \
+              (.claude/rules/testing.md §Test-fixture construction)"
+)]
+
 use std::time::Duration;
 
 use thirtyfour::prelude::*;

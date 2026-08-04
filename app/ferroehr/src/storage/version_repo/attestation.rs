@@ -6,6 +6,12 @@
 //! §Storage). The attestation semantics realized are RM common master06
 //! §Attestation; the completed canonical `ATTESTATION` is stored verbatim.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 1): stored canonical fragments — a typed \
+              round-trip drops forward-compatible keys (docs/VERSIONS.md §Spec version policy)"
+)]
+
 use serde_json::Value;
 use sqlx::{PgConnection, PgPool, Row};
 use uuid::Uuid;

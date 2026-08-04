@@ -13,6 +13,12 @@
 //! contract, so they use plain `serde` derives with authored-order
 //! preservation (`serde_json`'s `preserve_order`).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694)"
+)]
+
 use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};

@@ -29,6 +29,13 @@
 //! console session first (rules §0), and the CDR credential never reaches
 //! client-visible state.
 
+#![allow(
+    clippy::disallowed_types,
+    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+              (#1694); the carriers here are ssr-only, so #[expect] would be unfulfilled on the \
+              hydrate target"
+)]
+
 pub mod edit;
 pub mod history;
 
@@ -50,10 +57,11 @@ use crate::pages::ehr_detail::status::edit::{StatusEdit, StatusForm, edit_form, 
 /// ([`crate::feedback::write_failure_copy`]).
 const STATUS_OBJECT: &str = "the EHR's status";
 
-/// The console's view of an EHR's CURRENT `EHR_STATUS`: the canonical document
-/// verbatim, the version that document IS, and the facts the edit form works
-/// on — flattened BFF-side so the browser never re-models the RM (rules §10)
-/// and so the type carries no `usize` (rules §1).
+/// The console's view of an EHR's CURRENT `EHR_STATUS`.
+///
+/// The canonical document verbatim, the version that document IS, and the
+/// facts the edit form works on — flattened BFF-side so the browser never
+/// re-models the RM (rules §10) and so the type carries no `usize` (rules §1).
 ///
 /// The attributes are the RM `EHR_STATUS` class's own
 /// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.ehr_status.adoc`):

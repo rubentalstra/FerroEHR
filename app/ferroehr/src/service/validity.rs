@@ -23,6 +23,12 @@
 //! (`FerroEhrService::validate_for_commit`); an unrecognized root `_type` is
 //! `false`.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 8): genuinely open operational JSON (config \
+              dump, management env, validity-checker input, OpenAPI schema literals)"
+)]
+
 use serde_json::Value;
 
 use crate::service::FerroEhrService;

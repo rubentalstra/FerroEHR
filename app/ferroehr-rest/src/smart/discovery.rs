@@ -15,6 +15,12 @@
 //! (`crate::router::router` merges `overview::status::router` outside the auth layer;
 //! `crate::overview::status`).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 8): genuinely open operational JSON (config \
+              dump, management env, validity-checker input, OpenAPI schema literals)"
+)]
+
 use std::collections::BTreeMap;
 
 use axum::Router;

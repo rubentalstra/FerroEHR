@@ -6,6 +6,12 @@
 //! `responses/*.yaml`). The capture-source, header-matcher, and
 //! body-selector vocabularies are closed.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694)"
+)]
+
 use serde::de::Error as DeError;
 use serde::{Deserialize, Deserializer, Serialize};
 

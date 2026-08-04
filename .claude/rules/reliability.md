@@ -229,14 +229,16 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   clinical models carry per-file `licence` metadata). Every vendored tree's
   `PROVENANCE.md` names its license, with the upstream `LICENSE` vendored
   alongside. Dependencies stay license-gated by `deny.toml`.
-- **C-STABLE — re-adjudicated for publication (owner ruling 2026-08-04,
-  issue #1886)**: the `openehr-*` crates publish to crates.io on a
-  **pre-stabilisation `0.0.x` line** (`docs/VERSIONS.md` §Product and crate
-  versioning), so pre-1.0 crates exposing pre-1.0 public deps (`jiff 0.2`,
-  `chumsky 0.13`, …) is semver-honest and the original blocker does not
-  bite. It RE-ARMS at stabilisation: adopting the ≥1.0 spec versions as
-  package versions requires re-adjudicating every pre-1.0 public dependency
-  in the published API first.
+- **C-STABLE — re-adjudicated for publication (owner rulings 2026-08-04,
+  issue #1886 + same-day correction)**: the `openehr-*` crates publish to
+  crates.io on their **own independent SemVer line**, currently `0.x` and
+  permanently decoupled from the vendored spec versions
+  (`docs/VERSIONS.md` §Product and crate versioning), so pre-1.0 crates
+  exposing pre-1.0 public deps (`jiff 0.2`, `chumsky 0.13`, …) is
+  semver-honest and the original blocker does not bite. It RE-ARMS if the
+  line ever graduates past `0.x`: declaring stability requires
+  re-adjudicating every pre-1.0 public dependency in the published API
+  first (the version chosen then is still ours, never a spec number).
 
 ## When a lint fights a legitimate case
 

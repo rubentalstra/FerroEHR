@@ -7,6 +7,11 @@
 //! recognized by name and resolved to the generated RM/BASE crates rather than
 //! re-emitted.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev tooling over JSON artifacts (vendored BMM/OAS bundles, emitter reports) — not the \
+              application (#1694)"
+)]
 use serde_json::Value;
 
 /// A parsed `OpenAPI` document.

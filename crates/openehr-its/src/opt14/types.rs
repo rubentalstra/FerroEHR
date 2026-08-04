@@ -10,7 +10,10 @@
     clippy::nursery,
     reason = "mechanically generated model text: the XSD is emitted in full under its own spec-owned element/attribute spellings, so naming, style and dead-code lints do not apply — the hand-written runtime carries the lint bar"
 )]
-
+#![expect(
+    clippy::disallowed_types,
+    reason = "adjudicated free-form JSON slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only where the spec leaves the slot open, and each adjudicated field's NOTE names its citation"
+)]
 /// openEHR AOM/OPT `ANNOTATION`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Annotation {

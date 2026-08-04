@@ -47,6 +47,12 @@
 //! ```
 //!
 //! Exit codes: `0` clean · `1` findings · `2` runner error.
+
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694)"
+)]
 // Verification CLI: progress/diagnostics on the console ARE this tool's user
 // interface, so stdio is the right channel here; only library crates are
 // restricted to `tracing`.

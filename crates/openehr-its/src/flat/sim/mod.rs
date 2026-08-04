@@ -21,6 +21,13 @@
 //!   wire (`master04 §Instance Indexing`: indices appear when a node
 //!   repeats; single-valued nodes carry none).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
+              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
+              (#1694)"
+)]
+
 pub mod flat;
 pub mod structured;
 

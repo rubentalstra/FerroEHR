@@ -4,6 +4,12 @@
 //! `specifications/operations/{directory_get_at_time,directory_update,
 //! directory_create,directory_delete,directory_get_by_version_id}.yaml`.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the handler carries the canonical fragment the \
+              negotiate seam produced once (stored-content serving / commit interior)"
+)]
+
 use axum::response::Response;
 use http::StatusCode;
 use serde_json::Value;

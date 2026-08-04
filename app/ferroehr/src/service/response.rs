@@ -7,6 +7,12 @@
 //! `VERSION.commit_audit.time_committed.value`). This envelope is the seam
 //! that carries what the headers need.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): ServiceResponse::body — the hybrid \
+              RM/stored/dynamic carrier (commit-seam class)"
+)]
+
 use jiff::Timestamp;
 use openehr_rm::prelude::ItemTag;
 use serde_json::Value;

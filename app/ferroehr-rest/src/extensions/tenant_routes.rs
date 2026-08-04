@@ -192,7 +192,8 @@ async fn run(
             Ok(negotiate::respond(h, StatusCode::OK, &items))
         }
         "tenant_create" => {
-            let body = negotiate::json_value(h, &parts.body)?;
+            let body: ferroehr::extensions::tenancy::TenantDefinition =
+                negotiate::typed_json(h, &parts.body)?;
             let created = state.backend().tenant_create(body).await?;
             Ok(negotiate::respond(h, StatusCode::CREATED, &created))
         }
@@ -203,7 +204,8 @@ async fn run(
         }
         "tenant_update" => {
             let id = tenant_id(&parts)?;
-            let body = negotiate::json_value(h, &parts.body)?;
+            let body: ferroehr::extensions::tenancy::TenantDefinition =
+                negotiate::typed_json(h, &parts.body)?;
             let updated = state.backend().tenant_update(id, body).await?;
             Ok(negotiate::respond(h, StatusCode::OK, &updated))
         }

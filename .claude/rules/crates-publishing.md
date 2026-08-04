@@ -34,17 +34,21 @@ by the `crate-version-guard` CI job.
 
 ## Version identity
 
-- The package version is the **pre-stabilisation `0.0.x` line** — it says
-  nothing about the implemented spec. The spec pin is each crate's
-  `SPEC_VERSION` constant (emitted from the codegen composition table's
-  `spec_version` field for the generated crates; a literal in the
-  hand-written ones) and NEVER moves with the package version.
+- The package version is the crate's **own independent SemVer line** — it
+  says nothing about the implemented spec, and it NEVER adopts a spec
+  version (owner correction 2026-08-04: tying the package to the spec
+  version would freeze the crates' ability to keep improving while the
+  vendored spec stands still). The spec pin is each crate's `SPEC_VERSION`
+  constant (emitted from the codegen composition table's `spec_version`
+  field for the generated crates; a literal in the hand-written ones) and
+  never moves with the package version.
 - A spec-pin bump (new vendored generation) changes `SPEC_VERSION` via the
-  composition table + regeneration; the package still just takes the next
-  `0.0.x`.
-- At stabilisation each crate adopts its spec version as package
-  major.minor (patch digit ours) — that cutover re-opens the C-STABLE
-  adjudication (`.claude/rules/reliability.md`).
+  composition table + regeneration; the package still just takes its next
+  ordinary SemVer step.
+- Graduating the line past `0.x` (declaring API stability) is an owner
+  decision that re-opens the C-STABLE adjudication
+  (`.claude/rules/reliability.md`) — the version chosen then is still ours,
+  never a spec number.
 
 ## Packaging hygiene
 

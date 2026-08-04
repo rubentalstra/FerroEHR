@@ -1,7 +1,9 @@
-//! The console's thaw widget theme: the design system's teal accent as
-//! the Fluent brand ramp, so thaw widgets (buttons, radios, tabs, links)
-//! and the Tailwind token layer (`style/tailwind.css`) draw from the same
-//! palette instead of thaw's stock blue.
+//! The console's thaw widget theme.
+//!
+//! The design system's teal accent as the Fluent brand ramp, so thaw widgets
+//! (buttons, radios, tabs, links) and the Tailwind token layer
+//! (`style/tailwind.css`) draw from the same palette instead of thaw's stock
+//! blue.
 
 use std::collections::HashMap;
 

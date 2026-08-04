@@ -15,6 +15,12 @@
 //! existing version), so the list is the full change-set, not the narrower
 //! committed-only rows.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the commit interior carries the canonical \
+              fragment the seam produced once; stored-content serving"
+)]
+
 use openehr_base::prelude::{HierObjectId, ObjectId, ObjectRef, ObjectRefData};
 use serde_json::{Value, json};
 use uuid::Uuid;

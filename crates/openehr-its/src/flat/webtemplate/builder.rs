@@ -41,6 +41,13 @@
 //! Node- and coded-value-level external `termBindings` and the multiple-coded-text
 //! compaction are wired.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
+              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
+              (#1694)"
+)]
+
 use std::collections::HashMap;
 
 use crate::opt14::{

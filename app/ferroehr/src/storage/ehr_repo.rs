@@ -11,6 +11,12 @@
 //! policy, directory-slot resolution, the `is_modifiable` write guard) stay in
 //! the service layer, which calls these functions with plain inputs.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 1): stored canonical fragments — a typed \
+              round-trip drops forward-compatible keys (docs/VERSIONS.md §Spec version policy)"
+)]
+
 use serde_json::Value;
 use sqlx::{PgConnection, PgExecutor, PgPool, Row};
 use uuid::Uuid;

@@ -13,6 +13,12 @@
 //! the `200 OK` response carries an `ETag` identifying the `RESULT_SET`
 //! (`responses/200_Query.yaml` + `headers/ETag_RESULT_SET.yaml`).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the handler carries the canonical fragment the \
+              negotiate seam produced once (stored-content serving / commit interior)"
+)]
+
 use std::collections::hash_map::DefaultHasher;
 use std::hash::Hasher;
 

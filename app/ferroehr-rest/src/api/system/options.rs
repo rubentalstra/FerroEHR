@@ -26,6 +26,12 @@
 //! (`crate::router::router`) constructs the [`SystemManifest`] from config plus the
 //! live mounted-group set and mounts [`route`] at the API base-path root.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 8): genuinely open operational JSON (config \
+              dump, management env, validity-checker input, OpenAPI schema literals)"
+)]
+
 use std::sync::Arc;
 
 use axum::response::Response;

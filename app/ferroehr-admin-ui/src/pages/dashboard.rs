@@ -16,6 +16,13 @@
 //! `ErrorBoundary` fallback mismatches at hydration in leptos 0.8 — so one
 //! failing section never blanks the dashboard (rules §1/§6).
 
+#![allow(
+    clippy::disallowed_types,
+    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+              (#1694); the carriers here are ssr-only, so #[expect] would be unfulfilled on the \
+              hydrate target"
+)]
+
 use leptos::prelude::*;
 use leptos::{component, server};
 use leptos_meta::Title;
@@ -100,8 +107,9 @@ pub async fn dashboard_counts() -> Result<(i64, i64, u32), AdminUiError> {
 
 /// One dashboard namespace tile: the derived group's heading, the summed match
 /// count of its member stored queries, and how many members that sum covers.
-/// Fixed-size ints only, so it is WASM-safe over the server-fn boundary
-/// (rules §1).
+///
+/// Fixed-size ints only, so it is WASM-safe over the server-fn boundary (rules
+/// §1).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct NamespaceTile {
     /// The namespace, or the label for the bucket of names that carry none

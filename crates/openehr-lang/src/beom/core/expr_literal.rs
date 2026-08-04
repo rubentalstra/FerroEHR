@@ -3,6 +3,10 @@
 //! The openEHR `EXPR_LITERAL` spec class, generated from the vendored BMM
 //! meta-model.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "adjudicated free-form JSON slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only where the spec leaves the slot open, and each adjudicated field's NOTE names its citation"
+)]
 /// Literal value expression tree leaf item. This can represent a literal value of any primitive type included in the `PRIMITIVE_TYPE` enumeration.
 #[doc(alias = "EXPR_LITERAL")]
 #[derive(Debug, Clone, PartialEq)]

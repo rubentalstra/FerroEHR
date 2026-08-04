@@ -7,6 +7,12 @@
 //! capture-source grammar, and the assertion evaluators. Nothing here
 //! hard-codes an endpoint: a case executes because its bindings say how.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694)"
+)]
+
 use std::collections::BTreeMap;
 
 use base64::Engine as _;

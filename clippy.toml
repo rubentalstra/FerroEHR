@@ -28,6 +28,8 @@ doc-valid-idents = [
 # ── type-level enforcement of the jiff time pin (docs/VERSIONS.md; sqlx's
 #    chrono feature can leak chrono types into our signatures by accident) ────
 disallowed-types = [
+  { path = "serde_json::Value", reason = "typed carriers by default (#1694, owner 2026-08-03): an approved Value seam carries a scoped #[expect] naming its adjudicated family; everything else consumes the generated openehr-* types" },
+  { path = "serde_json::Map", reason = "typed carriers by default (#1694, owner 2026-08-03): an approved Value seam carries a scoped #[expect] naming its adjudicated family; everything else consumes the generated openehr-* types" },
   { path = "chrono::DateTime", reason = "use jiff — the pinned time library (docs/VERSIONS.md)" },
   { path = "chrono::NaiveDateTime", reason = "use jiff — the pinned time library (docs/VERSIONS.md)" },
   { path = "chrono::NaiveDate", reason = "use jiff — the pinned time library (docs/VERSIONS.md)" },

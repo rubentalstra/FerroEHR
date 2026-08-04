@@ -1,9 +1,11 @@
 //! Console configuration: one TOML file (`ferroehr-admin-ui.toml`) with
 //! `FERROEHR_ADMIN__…` environment overrides, mirroring the CDR's
-//! one-file/strict/env-grammar convention. No openEHR spec governs
-//! configuration — our own design. The console is stateless bar its
-//! in-process session store: no database, and no local store of domain state
-//! either — every fact it shows lives in the CDR and is read over ITS-REST.
+//! one-file/strict/env-grammar convention.
+//!
+//! No openEHR spec governs configuration — our own design. The console is
+//! stateless bar its in-process session store: no database, and no local store
+//! of domain state either — every fact it shows lives in the CDR and is read
+//! over ITS-REST.
 
 use serde::Deserialize;
 

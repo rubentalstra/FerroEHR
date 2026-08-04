@@ -29,7 +29,6 @@ pub(crate) mod conflicts;
 pub(crate) mod index;
 pub mod types;
 
-use serde_json::{Value, json};
 use sqlx::Row;
 
 use crate::ids::EhrId;
@@ -115,19 +114,13 @@ fn parse_valid_time(raw: Option<&str>) -> Result<Option<jiff_sqlx::Timestamp>, S
     }
 }
 
-/// Render a [`LocationDesc`] as the stored canonical JSON, or SQL NULL.
+/// Wrap a [`LocationDesc`] for its typed `jsonb` binding, or SQL NULL.
 ///
 /// NOTE: `LOCATION_DESC` is an attribute-less stub in the SM
 /// (`location_desc.adoc`) — a recorded spec defect; the designed contract
 /// `{system_id, uri?, description?}` is our own design.
-fn location_json(loc: Option<&LocationDesc>) -> Option<Value> {
-    loc.map(|l| {
-        json!({
-            "system_id": l.system_id,
-            "uri": l.uri,
-            "description": l.description,
-        })
-    })
+fn location_binding(loc: Option<&LocationDesc>) -> Option<sqlx::types::Json<&LocationDesc>> {
+    loc.map(sqlx::types::Json)
 }
 
 /// Map a zero-rows-affected write to [`IndexError::SubjectDoesNotExist`]
@@ -157,20 +150,11 @@ fn row_to_entry(row: &sqlx::postgres::PgRow) -> Result<EhrIndexEntry, sqlx::Erro
         end_valid_time: end.map(|t| t.to_jiff().to_string()),
         notes: row.try_get("notes")?,
     };
+    // A stored row that no longer decodes as the designed contract is a
+    // server fault: surface it (`?` → the DB error path), never blank fields.
     let location = row
-        .try_get::<Option<Value>, _>("location")?
-        .map(|v| LocationDesc {
-            system_id: v
-                .get("system_id")
-                .and_then(Value::as_str)
-                .unwrap_or_default()
-                .to_owned(),
-            uri: v.get("uri").and_then(Value::as_str).map(str::to_owned),
-            description: v
-                .get("description")
-                .and_then(Value::as_str)
-                .map(str::to_owned),
-        });
+        .try_get::<Option<sqlx::types::Json<LocationDesc>>, _>("location")?
+        .map(|j| j.0);
     Ok(EhrIndexEntry {
         ehr_id: ehr_id.to_string(),
         subject,

@@ -6,6 +6,12 @@
 //! `node` write and the `node`→canonical reload: the version read path, the
 //! dump/load export, and the AQL result assembly all funnel here.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 1): stored canonical fragments — a typed \
+              round-trip drops forward-compatible keys (docs/VERSIONS.md §Spec version policy)"
+)]
+
 use std::collections::{BTreeMap, HashMap};
 
 use serde_json::Value;

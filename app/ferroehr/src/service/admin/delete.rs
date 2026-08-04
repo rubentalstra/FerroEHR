@@ -10,6 +10,12 @@
 //! baseline count. No openEHR spec governs the cascade SQL / FK graph — our own
 //! design over the greenfield schema (`0001_baseline.sql`).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 3): EHR-Extract/TDD/dump-load compose over \
+              verbatim stored content (RM common master06 §Copying)"
+)]
+
 use uuid::Uuid;
 
 use crate::ids::{EhrId, VoId};

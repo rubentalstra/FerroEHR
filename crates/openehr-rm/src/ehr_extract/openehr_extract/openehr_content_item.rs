@@ -3,6 +3,10 @@
 //! The openEHR `OPENEHR_CONTENT_ITEM` spec class, generated from the vendored BMM
 //! meta-model.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "adjudicated free-form JSON slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only where the spec leaves the slot open, and each adjudicated field's NOTE names its citation"
+)]
 use crate::common::archetyped::archetyped::Archetyped;
 use crate::common::archetyped::feeder_audit::FeederAudit;
 use crate::common::archetyped::link::Link;

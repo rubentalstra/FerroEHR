@@ -6,6 +6,12 @@
 //! are read directly as canonical JSON (`jsonb`); whole-object cells reassemble
 //! their node subtree through the codec ([`crate::storage::codec::reassemble`]).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 5): AQL result rows are arbitrary \
+              projections by specification (QUERY 1.1)"
+)]
+
 use serde_json::Value;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;

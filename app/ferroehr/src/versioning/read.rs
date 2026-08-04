@@ -8,6 +8,13 @@
 //! from `crate::storage::node_repo` via the storage read shape. The served
 //! wire forms are built from these reads by [`super::wire`].
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 2): the serialized version envelope is the \
+              signed artifact (RM common master06 §Digital Signature) — re-encoding breaks \
+              verification"
+)]
+
 use serde_json::Value;
 use uuid::Uuid;
 

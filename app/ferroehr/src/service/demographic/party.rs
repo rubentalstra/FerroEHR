@@ -7,6 +7,12 @@
 //! status/`ETag`/`Location`/`If-Match`/deleted-read semantics mirror the EHR
 //! group by the spec's own design (module NOTE in [`super`]).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the commit interior carries the canonical \
+              fragment the seam produced once; stored-content serving"
+)]
+
 use serde_json::Value;
 
 use crate::ids::VoId;

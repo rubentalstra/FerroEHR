@@ -8,6 +8,13 @@
 //! shape follows the CNF certificate book
 //! (`CNF/docs/certificate/master03-certificate.adoc`).
 
+#![allow(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694); the carriers here are cfg(test)-only, so \
+              #[expect] would be unfulfilled in the non-test build"
+)]
+
 use std::collections::BTreeMap;
 use std::fmt::Write;
 

@@ -4,6 +4,12 @@
 //! `organisation_*`/`role_*`). Party bodies use the **LOCATABLE** content
 //! negotiation (`Accept_LOCATABLE`/`ContentType_LOCATABLE`): canonical JSON + XML.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the handler carries the canonical fragment the \
+              negotiate seam produced once (stored-content serving / commit interior)"
+)]
+
 use axum::response::Response;
 use http::{HeaderMap, StatusCode};
 

@@ -77,6 +77,12 @@
 //!     presence nor absence is assigned (the same silence the catalogue
 //!     carries as the `header-prefer-return-minimal` wire-surface element).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694)"
+)]
+
 use std::collections::BTreeMap;
 
 use serde_json::Value;

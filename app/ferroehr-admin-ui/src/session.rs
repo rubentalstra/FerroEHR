@@ -1,8 +1,9 @@
 //! Server-side session state and the auth guard every `#[server]` fn calls
-//! (the Leptos book's `server/25` security rule: server functions are a
-//! public HTTP API — "only my UI calls this" is never assumed). CDR
-//! credentials live ONLY here, server-side; they never reach a signal,
-//! prop, or serialized resource.
+//! (the Leptos book's `server/25` security rule.
+//!
+//! Server functions are a public HTTP API — "only my UI calls this" is never
+//! assumed). CDR credentials live ONLY here, server-side; they never reach a
+//! signal, prop, or serialized resource.
 
 use serde::{Deserialize, Serialize};
 
