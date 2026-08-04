@@ -96,7 +96,7 @@ async fn decode_composition_body(
 /// form a valid resource — the `422` row, never the `400` parse class.
 fn typed_composition(value: &Value) -> Result<Composition, RestError> {
     // NOTE: a post-conversion strict-reader refusal is the template-mediated
-    // 422 class (master04 §Validation; `responses/422.yaml`) — AMB-208.
+    // 422 class (master04 §Validation; `responses/422.yaml`).
     openehr_its::json::from_canonical_value(value).map_err(|e| {
         let detail = e.to_string();
         let hint = if detail.contains("invalid type") {

@@ -51,7 +51,7 @@ async fn insert_persists_promoted_columns_and_fhir_payload() {
     let store = AuditStore::new(pool.clone());
 
     let event = read_event("2026-07-10T08:30:00Z".parse().unwrap());
-    let rendered = fhir::to_fhir(&event, &ctx(), Some("patient-42"));
+    let rendered = fhir::to_fhir(&event, &ctx(), Some("patient-42")).expect("render");
     store
         .insert(&event, Some("patient-42"), &rendered)
         .await
@@ -128,9 +128,13 @@ async fn insert_batch_persists_every_record_with_identical_shape() {
         (
             first.clone(),
             Some("patient-42".to_owned()),
-            fhir::to_fhir(&first, &ctx(), Some("patient-42")),
+            Some(fhir::to_fhir(&first, &ctx(), Some("patient-42")).expect("render")),
         ),
-        (second.clone(), None, fhir::to_fhir(&second, &ctx(), None)),
+        (
+            second.clone(),
+            None,
+            Some(fhir::to_fhir(&second, &ctx(), None).expect("render")),
+        ),
     ];
     store.insert_batch(&records).await.expect("batch insert");
 
@@ -183,7 +187,7 @@ async fn reap_deletes_only_rows_past_the_horizon() {
     let old = now - jiff::SignedDuration::from_hours(40 * 24);
     for at in [now, old] {
         let event = read_event(at);
-        let rendered = fhir::to_fhir(&event, &ctx(), None);
+        let rendered = fhir::to_fhir(&event, &ctx(), None).expect("render");
         store.insert(&event, None, &rendered).await.expect("insert");
     }
 

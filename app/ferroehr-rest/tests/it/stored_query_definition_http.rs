@@ -162,10 +162,7 @@ async fn versioned_store_rejects_non_exact_versions() {
     // ("SEMVER style (i.e. `major.minor.patch`)",
     // docs/query/Qualified_query_name.md). Every other token is the 400 the
     // docs text assigns to a client error no other 4xx fits
-    // (docs/overview/Requests_and_responses.md §"HTTP status codes": "a
-    // generic client-side error, used when no other `4xx` error code is
-    // appropriate. The client SHOULD NOT repeat the request without
-    // modifications") — register-adjudicated.
+    // (docs/overview/Requests_and_responses.md §"HTTP status codes").
     for bad in ["1", "1.0", "1.0.0-rc.1", "latest", "1.0.x", "1..0"] {
         let (status, _h, body) = send(
             &app,

@@ -98,7 +98,7 @@ fn missing_template_id() -> RestError {
 fn flat_input_err(e: &openehr_its::flat::error::FlatError) -> RestError {
     // NOTE: TEMPLATE-INDEPENDENT FLAT violations are the 400 row, everything
     // template-/RM-mediated the 422 row ("could be converted to a resource",
-    // `responses/{400,422}.yaml`) — registered as AMB-207 + AMB-208.
+    // `responses/{400,422}.yaml`) — no released text splits the two.
     use openehr_its::flat::error::FlatError;
     let syntactic = matches!(
         e,

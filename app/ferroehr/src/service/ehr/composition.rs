@@ -864,17 +864,12 @@ impl FerroEhrService {
 
 // ── ITS-REST read-response adapter (adapter-support extension) ────────────────
 //
-// The SM `I_EHR_COMPOSITION` reads above return the bare COMPOSITION the
-// service model defines. A bare COMPOSITION carries no commit audit, so the
-// wire cannot derive `Last-Modified` from the served body — yet ITS-REST
-// requires it: `Requests_and_responses.md` §"`ETag` and Last-Modified" says
-// "this value should be derived from `VERSION.commit_audit.time_committed.value`"
-// and "Both `ETag` and `Last-Modified` SHOULD be included in responses for
-// VERSION, VERSIONED_OBJECT, or other resources that have versioning or unique
-// state identifiers". These siblings therefore hand the protocol adapter the
-// same read PLUS its [`ResourceMeta`] (version uid + commit instant), which the
-// version row already carries — no second read, and no re-derivation in the
-// adapter. No openEHR spec governs this envelope — our own design.
+// The SM `I_EHR_COMPOSITION` reads above return the bare COMPOSITION, which
+// carries no commit audit — yet ITS-REST requires `Last-Modified` "derived from
+// `VERSION.commit_audit.time_committed.value`" (`Requests_and_responses.md`
+// §"`ETag` and Last-Modified"). These siblings therefore hand the adapter the
+// same read PLUS its [`ResourceMeta`] (version uid + commit instant). No
+// openEHR spec governs this envelope — our own design.
 
 impl FerroEhrService {
     /// [`Self::get_composition_latest`] with the version metadata the wire's

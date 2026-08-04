@@ -27,8 +27,8 @@
 //! The [`ValidationCode`] variants `Vtpnc`/`Vtpin` (tuple conformance vs the
 //! parent node, `master08` §Phase 2 gloss) are present as the parent-conformance
 //! vocabulary but not yet raised here.
-//! TODO: implement `C_PRIMITIVE_TUPLE` / `C_ATTRIBUTE_TUPLE` conformance
-//! (`master04.5` §`C_SECOND_ORDER` L729-804) to raise VTPNC/VTPIN.
+//! TODO(#1921): implement `C_PRIMITIVE_TUPLE` / `C_ATTRIBUTE_TUPLE`
+//! conformance (`master04.5` §`C_SECOND_ORDER` L729-804) to raise VTPNC/VTPIN.
 //!
 //! `Vunt` (`use_node` RM type validity, `master04.5` §`C_COMPLEX_OBJECT_PROXY`
 //! VUNT L479-480) is NOT raised here: the rule is "according to the reference
@@ -258,11 +258,9 @@ impl<'a> ParentScan<'a> {
                 // identified, so it is distinguishable from those siblings
                 // (`master04.5` §`C_OBJECT`, VSONIF L356-357).
                 //
-                // NOTE: master04.5 defers VSONIF's detailed rule to VACMI, which
-                // is undefined in the vendored spec text; this implements the
-                // decidable identification requirement (an unidentified new node
-                // among identified flat siblings is invalid) — no openEHR spec
-                // text defines VACMI further.
+                // NOTE: master04.5 defers VSONIF's detailed rule to VACMI,
+                // which no vendored spec text defines; the decidable
+                // identification requirement is what this implements.
                 if object_node_id(child).is_empty()
                     && !aom_type(child).is_primitive()
                     && parent_attr

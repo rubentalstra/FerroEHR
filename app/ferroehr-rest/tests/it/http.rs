@@ -546,8 +546,8 @@ async fn recognized_but_unallowed_method_is_405_with_allow() {
 
 /// The same `405` + `Allow` discipline for a method the server does not
 /// recognize at all. ITS-REST §HTTP Methods SHOULDs `501` for an unrecognized
-/// method; we answer `405` instead — a registered deviation (ambiguity register
-/// `AMB-60`): the router matches on path + method and has no unrecognized-method
+/// method; we answer `405` instead — a settled deviation: the router matches
+/// on path + method and has no unrecognized-method
 /// seam, and `405` is a predefined, non-conflicting code in the spec's own
 /// status table (§HTTP status codes). What must never happen is a `405` without
 /// `Allow`.
@@ -780,8 +780,8 @@ async fn authenticated_write_attributes_the_default_committer() {
 /// (all three body members are OPTIONAL — the released OAS required-list loses
 /// to the docs text: offset defaults 0, fetch is implementation-default), the
 /// POSTs accept the URL parameter forms (the docs-text SHOULD-list draws no
-/// GET/POST distinction), and a body-vs-URL conflict is a 400 (the AMB-59
-/// pattern, register-documented).
+/// GET/POST distinction), and a body-vs-URL conflict is a 400 — the same rule
+/// the two `ehr_id` carriers follow.
 #[tokio::test]
 async fn query_post_body_optionality_and_url_forms() {
     let (_pg, app) = app(false).await;
@@ -825,7 +825,7 @@ async fn query_post_body_optionality_and_url_forms() {
     let (status, _h, _b) = send(app.clone(), exec_conflict).await;
     assert_eq!(status, StatusCode::BAD_REQUEST, "body-vs-URL conflict");
 
-    // Equal values in both places are accepted (the AMB-59 pattern).
+    // Equal values in both places are accepted.
     let exec_equal = Request::builder()
         .method("POST")
         .uri(format!("{BASE}/query/org.test::everything?fetch=2"))

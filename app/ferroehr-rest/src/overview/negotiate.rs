@@ -43,8 +43,8 @@
 //! `Content-Type: application/xml; version=1` to declare a request payload.
 //! Absent (or `version=2`) means the v2 default — the only published lineage
 //! whose schemas model the RM 1.2.0 this server serves (owner ruling
-//! 2026-08-03, #1666; the v1 bundle lacks 50 concrete RM classes, register
-//! AMB-185), so the default a schema-validating client receives actually
+//! 2026-08-03, #1666; the v1 bundle lacks 50 concrete RM classes), so the
+//! default a schema-validating client receives actually
 //! validates.
 //!
 //! NOTE: no openEHR spec governs this — our own design/extension. The

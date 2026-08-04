@@ -18,11 +18,8 @@ pub(super) fn transform_description(
     desc: &mut openehr_am::am24::resource::resource_description::ResourceDescription,
 ) {
     // NOTE: every 1.4 lifecycle state converts to `unmanaged`, matching the
-    // conversion oracle — the vendored `upgrade_from_14` expected `.adls` all
-    // carry `lifecycle_state = <"unmanaged">` regardless of the 1.4 source state
-    // (AuthorDraft / CommitteeDraft / published). A finer state map would diverge
-    // from that oracle. No openEHR spec governs 1.4→2 conversion — our own
-    // design/extension.
+    // vendored `upgrade_from_14` expected `.adls`; no openEHR spec governs
+    // 1.4→2 conversion — our own design/extension.
     "unmanaged".clone_into(&mut desc.lifecycle_state);
 
     // Hoist `details[lang].copyright` (if any) up to `description.copyright`.
@@ -129,14 +126,12 @@ fn take_keyed_lines(
     if lines.is_empty() {
         return;
     }
-    // NOTE: the appendix prescribes the LF-per-entry SOURCE syntax and the
-    // AOM2 target ("a keyed list of strings"), but no key scheme for the
-    // converted entries — no openEHR spec governs the key scheme, so this is
-    // our own design: stable 1-based ordinals in source line order, matching
-    // the `["1"]`/`["2"]` keys the vendored `upgrade_from_14` reference output
-    // carries. (Ordinals are unpadded, so a list of ten or more entries sorts
-    // lexicographically in the `BTreeMap` — a display order, not a semantic
-    // one; the ordinal itself still names the source line.)
+    // (Ordinals are unpadded, so ten or more entries sort lexicographically in
+    // the `BTreeMap` — a display order, not a semantic one; the ordinal itself
+    // still names the source line.)
+    // NOTE: the appendix prescribes the LF-per-entry source syntax and the AOM2
+    // target but no key scheme — no openEHR spec governs it, so this is our own
+    // design: stable 1-based ordinals in source line order.
     *target = Some(
         lines
             .into_iter()

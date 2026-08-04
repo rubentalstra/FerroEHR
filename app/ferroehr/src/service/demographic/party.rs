@@ -152,14 +152,12 @@ impl FerroEhrService {
         party_invariants(kind.rm_type(), &body, false)?;
 
         // The caller's UPDATE_VERSION attributes merge with the server rules —
-        // BOTH halves the committal headers carry: the `UPDATE_AUDIT`
-        // attributes and the VERSION `lifecycle_state` ("whatever is provided
-        // it MUST be merged with the default VERSION and
-        // `VERSION.audit_details` attributes on commit runtime", ITS-REST
-        // overview `Requests_and_responses.md` §"openehr-version and
-        // openehr-audit-details" — the sentence names the VERSION attributes
-        // first). The wire party seam passes them when the request carried
-        // committal headers.
+        // BOTH halves the committal headers carry: the `UPDATE_AUDIT` attributes
+        // and the VERSION `lifecycle_state` ("whatever is provided it MUST be
+        // merged with the default VERSION and `VERSION.audit_details` attributes
+        // on commit runtime", ITS-REST overview `Requests_and_responses.md`
+        // §"openehr-version and openehr-audit-details" — the sentence names the
+        // VERSION attributes first).
         let audit = self.demographic_audit(
             committal.map(|c| &c.audit),
             change_type::CREATION,

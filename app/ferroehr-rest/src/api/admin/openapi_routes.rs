@@ -507,8 +507,8 @@ pub(crate) async fn admin_ehr_delete(
 ///
 /// SM relation: it is the wire ANALOGUE of `I_DEFINITION_ADL14.delete_opt`
 /// (`docs/specs/openehr/SM/docs/UML/classes/i_definition_adl14.adoc`), not a
-/// realization of it — that SM operation has no released wire at all (register
-/// AMB-17), and it is keyed by the OPT's internal id whereas this route is
+/// realization of it — that SM operation has no released wire at all — and it
+/// is keyed by the OPT's internal id whereas this route is
 /// addressed by the wire `template_id` (matched case-insensitively, overview
 /// §"Composite Identifiers and Case").
 ///

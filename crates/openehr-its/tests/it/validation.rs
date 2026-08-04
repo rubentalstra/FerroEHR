@@ -418,14 +418,11 @@ fn inverted_dv_interval_surfaces_limits_consistent() {
 // ── name-differentiated same-archetype-id siblings (real OPT) ─────────────────
 //
 // The neurologist OPT fills `openEHR-EHR-OBSERVATION.sensorum_status.v2` twice
-// under one SECTION, differentiated by `name`: one unqualified sibling ('Общее
-// состояние', its inner `items` closed to `at0004`) and one name-qualified
-// ('Нервно-психический статус', inner `items` closed to at0013/at0086/at0041).
-// A composition carrying BOTH instances with the discriminating names is valid;
-// the fix routes each instance to its own overlay so neither is checked against
-// the other's closed-world set (RM common `master03-archetyped_package.adoc`
-// §"The `LOCATABLE` class"; AOM 1.4 `master04-constraint_model_package.adoc`
-// §`node_id`).
+// under one SECTION, differentiated by `name`: one unqualified sibling (inner
+// `items` closed to `at0004`) and one name-qualified (closed to
+// at0013/at0086/at0041). A composition carrying BOTH is valid; each instance
+// routes to its own overlay (RM common `master03-archetyped_package.adoc`
+// §"The `LOCATABLE` class"; AOM 1.4 `master04` §`node_id`).
 
 /// A `DV_CODED_TEXT` `ELEMENT` (a leaf under an `ITEM_TREE`).
 fn coded_element(node_id: &str, name: &str, code: &str) -> Value {

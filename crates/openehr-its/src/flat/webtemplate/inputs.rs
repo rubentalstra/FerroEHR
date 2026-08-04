@@ -254,17 +254,12 @@ fn coded_value(
 ) -> WebTemplateCodedValue {
     // Label resolution order: the artefact's own term definitions, then — for
     // `openehr`-terminology codes, which no archetype defines — the TERM 3.1.0
-    // rubric (`433` → `event`); the bare code is the last resort (no openEHR spec
-    // governs the label fallback). `DV_CODED_TEXT.value` is the displayable text of the defining
-    // code (RM data_types §DV_CODED_TEXT), so a code-as-label leaks wrong
-    // instance data out of every consumer that renders from the list.
-    //
-    // For an `openehr`-terminology code whose owning RM attribute fixes a
-    // terminology group (`group`), resolve the rubric from **that** group —
-    // openEHR concept codes are not globally unique (SPECPR-51: `532` is
-    // `complete` in `version_lifecycle_state` but `completed` in
-    // `instruction_states`), so the group-scoped lookup is the authoritative
-    // rubric where the group is known; the group-agnostic search is the fallback.
+    // rubric (`433` → `event`); the bare code is the last resort (no openEHR
+    // spec governs the label fallback). `DV_CODED_TEXT.value` is the displayable
+    // text of the defining code, so a code-as-label leaks wrong instance data.
+    // Where the owning RM attribute fixes a terminology group, the rubric
+    // resolves from THAT group — openEHR concept codes are not globally unique
+    // — with the group-agnostic search as the fallback.
     let label = labels
         .text(terminology, code)
         .or_else(|| {
@@ -353,14 +348,13 @@ fn ordinal_input(co: &CObject, labels: &dyn Labels, scale: bool) -> WebTemplateI
         }
         return input;
     }
-    // Generic C_COMPLEX_OBJECT form: AOM 1.4 has no `C_DV_SCALE` constrainer (AM
-    // `masterAppA-domain_extension.adoc` defines an integer-valued `C_ORDINAL`
-    // only), so a DV_SCALE (or a generically-constrained DV_ORDINAL) constrains
-    // its coded `symbol` through `symbol.defining_code` as a `C_CODE_PHRASE`
-    // `code_list` (RM `data_types` §`DV_SCALE`; AOM 1.4 §`C_CODE_PHRASE`). Surface
-    // that code set as the coded `list` so the walk enforces symbol membership;
-    // the numeric `value` set is captured separately as a `C_REAL`/`C_INTEGER`
-    // list. No paired `(symbol, value)` numeric is recorded here — the generic
+    // Generic C_COMPLEX_OBJECT form: AOM 1.4 has no `C_DV_SCALE` constrainer
+    // (AM `masterAppA-domain_extension.adoc` defines an integer-valued
+    // `C_ORDINAL` only), so a DV_SCALE constrains its coded `symbol` through
+    // `symbol.defining_code` as a `C_CODE_PHRASE` `code_list` (RM `data_types`
+    // §`DV_SCALE`). Surface that code set as the coded `list` so the walk
+    // enforces symbol membership; the numeric `value` set is captured
+    // separately. No paired `(symbol, value)` numeric is recorded — the generic
     // form loses the pairing — so the coded values carry no `ordinal`/`scale`.
     for symbol_child in attr_children(co, "symbol") {
         for dc_child in attr_children(symbol_child, "defining_code") {

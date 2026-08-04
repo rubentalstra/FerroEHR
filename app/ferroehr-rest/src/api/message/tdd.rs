@@ -1,6 +1,5 @@
 //! `I_TDD_SERVICE` over the MESSAGE extension wire — **our own extension**
-//! (see [`super`] for the whole group's spec-silence flag and register
-//! citation, AMB-34).
+//! (see [`super`] for the whole group's spec-silence flag).
 //!
 //! `i_tdd_service.adoc` declares `import_tdd(an_ehr_id, tdd: String)`; the
 //! batch form `import_tdds` carries no SM signature and is this product's
@@ -65,8 +64,8 @@ pub(crate) fn tdd_routes() -> OpenApiRouter<AppState> {
 
 /// Import one Template Data Document (`POST /message/tdd/{ehr_id}`).
 ///
-/// **Our own extension — no ITS-REST operation governs this** (module docs;
-/// register AMB-34). Realizes SM `I_TDD_SERVICE.import_tdd`.
+/// **Our own extension — no ITS-REST operation governs this** (module
+/// docs). Realizes SM `I_TDD_SERVICE.import_tdd`.
 #[utoipa::path(
     post, path = "/message/tdd/{ehr_id}", tag = "message",
     params(("ehr_id" = String, Path,
@@ -122,8 +121,8 @@ pub(crate) async fn message_import_tdd(
 /// Import a batch of Template Data Documents
 /// (`POST /message/tdd/{ehr_id}/batch`).
 ///
-/// **Our own extension — no ITS-REST operation governs this** (module docs;
-/// register AMB-34). Realizes `I_TDD_SERVICE.import_tdds`, itself an extension
+/// **Our own extension — no ITS-REST operation governs this** (module
+/// docs). Realizes `I_TDD_SERVICE.import_tdds`, itself an extension
 /// of the SM interface (which declares no signature for it): the batch is
 /// all-or-nothing — every TDD is converted before any is committed, so one
 /// unconvertible document rejects the whole batch with nothing committed.

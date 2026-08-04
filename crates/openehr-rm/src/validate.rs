@@ -345,8 +345,8 @@ pub fn check_slot_member_is_object(parent_type: &str, field: &str) -> Option<Inv
 /// under the node-id reading would it mandate `archetype_details` on every
 /// archetype-HRID node, and the released text does not choose between the
 /// two. An arm that is underivable from the released text is not
-/// enforceable, so it is registered rather than gated (ambiguity register
-/// AMB-177, `disposition: report_only`). Corroboration, not the ground:
+/// enforceable, so it is reported rather than gated. Corroboration, not the
+/// ground:
 /// the CNF valid data sets and the canonical-JSON corpus systematically
 /// omit `archetype_details` on nested archetype roots. The COMPOSITION
 /// root arm stays separately enforced (`composition_impl.rs`

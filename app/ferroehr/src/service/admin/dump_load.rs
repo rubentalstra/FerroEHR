@@ -1128,23 +1128,23 @@ impl FerroEhrService {
         }
         #[cfg(feature = "multimedia")]
         {
-        let Some(engine) = &self.multimedia else {
-            return Ok(Vec::new());
-        };
-        let mut keys: Vec<String> = records
-            .iter()
-            .flat_map(|r| r.versions.iter())
-            .flat_map(|v| engine.referenced_keys(&v.body))
-            .collect();
-        keys.sort_unstable();
-        keys.dedup();
-        for hex in &keys {
-            let bytes = engine.store().get(hex).await.map_err(|e| {
-                crate::service::error::internal_fault("export a multimedia blob", &e)
-            })?;
-            archive.write(&format!("{BLOB_PREFIX}{hex}"), &bytes)?;
-        }
-        Ok(keys)
+            let Some(engine) = &self.multimedia else {
+                return Ok(Vec::new());
+            };
+            let mut keys: Vec<String> = records
+                .iter()
+                .flat_map(|r| r.versions.iter())
+                .flat_map(|v| engine.referenced_keys(&v.body))
+                .collect();
+            keys.sort_unstable();
+            keys.dedup();
+            for hex in &keys {
+                let bytes = engine.store().get(hex).await.map_err(|e| {
+                    crate::service::error::internal_fault("export a multimedia blob", &e)
+                })?;
+                archive.write(&format!("{BLOB_PREFIX}{hex}"), &bytes)?;
+            }
+            Ok(keys)
         }
     }
 
@@ -1169,24 +1169,24 @@ impl FerroEhrService {
         }
         #[cfg(feature = "multimedia")]
         {
-        let Some(engine) = &self.multimedia else {
-            // The archive carries blobs but this target has no store configured.
-            return Err(SmError::precondition(
-                "archive carries externalized multimedia blobs but multimedia \
+            let Some(engine) = &self.multimedia else {
+                // The archive carries blobs but this target has no store configured.
+                return Err(SmError::precondition(
+                    "archive carries externalized multimedia blobs but multimedia \
                  externalization is not enabled on this server",
-            ));
-        };
-        for hex in blobs {
-            let bytes = archive.read(&format!("{BLOB_PREFIX}{hex}"))?;
-            engine
-                .store()
-                .put_if_absent(hex, bytes)
-                .await
-                .map_err(|e| {
-                    crate::service::error::internal_fault("import a multimedia blob", &e)
-                })?;
-        }
-        Ok(())
+                ));
+            };
+            for hex in blobs {
+                let bytes = archive.read(&format!("{BLOB_PREFIX}{hex}"))?;
+                engine
+                    .store()
+                    .put_if_absent(hex, bytes)
+                    .await
+                    .map_err(|e| {
+                        crate::service::error::internal_fault("import a multimedia blob", &e)
+                    })?;
+            }
+            Ok(())
         }
     }
 
@@ -1457,14 +1457,11 @@ impl FerroEhrService {
         // The load re-decomposed the EHR_STATUS versions directly, so the
         // promoted `ehr` columns are re-derived from the loaded current status
         // — the EHR_STATUS content is the truth, the exported columns only its
-        // cached projection (an archive written before a promotion fix, or by a
-        // path that never promoted, carries a stale/absent subject). This makes
-        // a loaded EHR visible to the subject lookup (SM
-        // `I_EHR_SERVICE.get_ehrs_for_subject`) and bound by the
+        // cached projection. This makes a loaded EHR visible to the subject
+        // lookup (SM `I_EHR_SERVICE.get_ehrs_for_subject`) and bound by the
         // one-EHR-per-subject rule (RM ehr master04 §EHR Status), and keeps
-        // `is_queryable` / `is_modifiable` matching the loaded state for the AQL
-        // full-population gate (SM I_QUERY_SERVICE — full population =
-        // queryable EHRs) and the content-write guard (§EHR Active Status).
+        // `is_queryable`/`is_modifiable` matching the loaded state for the AQL
+        // full-population gate and the content-write guard (§EHR Active Status).
         self.resync_promoted_columns(&mut tx, ehr_id).await?;
 
         // EHR.folders membership rows, verbatim (rank fidelity — RM ehr §EHR
@@ -1508,15 +1505,13 @@ impl FerroEhrService {
         }
 
         // Lineage keys mirror the removed EXCLUDE constraints exactly: trunk
-        // rows are one lineage per vo_id; branch rows are per
-        // {vo, creating system, fork point, branch number}.
-        // The archive is the ONLY path writing explicit historical
-        // `sys_period` bounds, so it carries the per-lineage temporal
-        // non-overlap invariant check the regular write path holds by
-        // construction (RM common master06: one valid version per lineage at
-        // any instant; the enforcement mechanism is our own design — the
-        // baseline schema NOTE). A corrupted or hand-crafted archive with
-        // overlapping validity fails the whole record before commit.
+        // rows are one lineage per vo_id; branch rows are per {vo, creating
+        // system, fork point, branch number}. The archive is the ONLY path
+        // writing explicit historical `sys_period` bounds, so it carries the
+        // per-lineage temporal non-overlap invariant check the regular write
+        // path holds by construction (RM common master06: one valid version per
+        // lineage at any instant). A corrupted archive with overlapping validity
+        // fails the whole record before commit.
         let overlap: bool = sqlx::query_scalar(
             "SELECT EXISTS ( \
                  SELECT 1 FROM vo_version a \

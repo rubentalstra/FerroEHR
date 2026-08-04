@@ -30,7 +30,7 @@
 //! the bundle itself lacks. The vendored schemas are never modified, and the
 //! driver adds no type, facet or content model — only a document root to hang
 //! validation on, which is exactly what ITS-XML withholds for most REST
-//! resources (`tools/cnf-runner/artifacts/registers/ambiguities.yaml` AMB-167).
+//! resources.
 //! The divergence sweeps below are computed from the generated RM model
 //! (`openehr_rm::model`) against the XSD text, so they re-derive themselves on
 //! every run instead of trusting a hand-maintained attribute list.
@@ -392,7 +392,7 @@ fn nsv2_lineage_is_uncompilable_by_a_conformant_xsd_processor() {
 /// package (`Demographic.xsd`) are simply absent, together with everything RM
 /// added afterwards (`DV_SCALE`, `ITEM_TAG`, the `VERSIONED_*` containers).
 /// A canonical-XML document of any of these has no v1 schema to conform to at
-/// all — the fact `AMB-167` classifies as "UNDEFINED, media type declared".
+/// all — the media type is declared, the schema binding is not.
 const V1_ABSENT_TYPES: &[&str] = &[
     "ADDRESS",
     "ADDRESSED_MESSAGE",

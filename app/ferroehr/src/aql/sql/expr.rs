@@ -218,18 +218,14 @@ pub(super) fn aql_like_to_sql(pattern: &str) -> String {
 /// predicate is the case-folded equality on `archetype`, served by the
 /// `idx_node_archetype_lower` functional index — unchanged.
 //
-// NOTE: QUERY master03 §Archetype predicate literally equates the predicate
-// to `archetype_node_id = '<literal>'` string equality; we implement the BASE/AM
-// subsumption + interface-reference semantics instead, because a query naming a
-// parent archetype MUST retrieve data created with its specialisation children
-// (master10 §Design-time Relationships) — plain string equality never would.
-// The `-`-prefix rule is exact for an ADL 1.4-form id (major-only `.vN`, lineage
-// encoded directly in the concept) and is applied ONLY to that form: AM
+// The `-`-prefix rule is exact for an ADL 1.4-form id (major-only `.vN`,
+// lineage encoded directly in the concept) and is applied ONLY to that form: AM
 // `Identification` master03 §Legacy ADL 1.4 Semantics strips the separator of
 // all meaning for AOM2-era identifiers ("the '-' character is still be allowed,
-// but no longer has any semantic significance"), so a `.vMAJOR.MINOR.PATCH`
-// identifier is never subsumed by a string heuristic — only by the stored
-// lineage above.
+// but no longer has any semantic significance").
+// NOTE: QUERY master03 §Archetype predicate equates the predicate to
+// `archetype_node_id` string equality; we implement BASE/AM subsumption instead,
+// since a parent archetype must retrieve its children (master10).
 pub(super) fn archetype_predicate(node: &str, value: &str, lineage: &ArchetypeLineage) -> Expr {
     let Ok(id) = value.parse::<ArchetypeId>() else {
         return archetype_equality(node, value);

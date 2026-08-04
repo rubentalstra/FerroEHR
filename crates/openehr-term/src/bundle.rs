@@ -553,10 +553,9 @@ impl OpenehrTerminology {
 
 /// The shared, cached openEHR terminology bundle (TERM 3.1.0), parsed on first use.
 static OPENEHR: LazyLock<OpenehrTerminology> = LazyLock::new(|| {
-    // NOTE: the terminology assets are vendored, spec-pinned (TERM 3.1.0),
-    // and embedded at compile time, so a parse failure is a corrupt build
-    // artifact — a build-time invariant, not a runtime condition. We therefore
-    // panic here (once) rather than thread a `Result` through every lookup.
+    // NOTE: the terminology assets are vendored, spec-pinned (TERM 3.1.0) and
+    // embedded at compile time, so a parse failure is a corrupt build artifact
+    // — a build-time invariant, which this panic (once) reports.
     #[expect(
         clippy::expect_used,
         reason = "the assets are `include_str!`-embedded at compile time and parsed by the crate's own tests, so an Err here is a corrupt build artifact, not a runtime condition; the message is should-phrased per the Book ch9 shape"

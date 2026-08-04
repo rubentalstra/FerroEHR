@@ -59,7 +59,7 @@ pub struct PublishedRoot {
 ///
 /// A root name the schemas publish no element for is deliberately absent —
 /// the ITS-REST §XML Format MUST ("responses MUST conform to the [published
-/// XSDs]") has nothing to bind to there (register AMB-167).
+/// XSDs]") has nothing to bind to there.
 pub const PUBLISHED_ROOTS: &[PublishedRoot] = &[
     PublishedRoot {
         element: "composition",
@@ -102,8 +102,8 @@ pub fn declared_abstract_root_type(element: &str) -> Option<&'static str> {
 /// `docs/specs/openehr/ITS-XML/README.adoc` §"Releases and IM Versions").
 /// The REST layer chooses its lineage explicitly per request via
 /// [`to_canonical_xml_ns`] and SERVES v2 by default (owner ruling 2026-08-03,
-/// #1666: the v1 bundle cannot describe the RM 1.2.0 the server emits —
-/// register AMB-185); this function is the fixed-lineage convenience for
+/// #1666: the v1 bundle cannot describe the RM 1.2.0 the server emits);
+/// this function is the fixed-lineage convenience for
 /// gates and tools, not the wire default.
 ///
 /// # Errors

@@ -3,6 +3,16 @@
 //! standing browser-console gate — every journey fails on any console
 //! error (the cheapest hydration-bug detector).
 
+#![allow(
+    clippy::panic,
+    clippy::expect_used,
+    clippy::print_stdout,
+    reason = "the shared e2e fixture panics when a configured stack cannot be \
+              driven, and the skip-with-reason lines ARE this suite's report \
+              (the clippy.toml test scoping reaches only #[test] fns, not \
+              integration-binary helper modules)"
+)]
+
 #![expect(
     clippy::disallowed_types,
     reason = "test fixtures and wire assertions are raw JSON by the testing rule \

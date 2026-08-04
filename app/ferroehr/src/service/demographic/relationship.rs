@@ -23,9 +23,8 @@
 //! addressed on the `versioned_party_relationship` read surface — while an
 //! inline `relationships` list in a committed PARTY body stays RM-valid data
 //! that is validated, stored and served verbatim. The two representations are
-//! DISJOINT: neither is auto-synchronized into the other. Register AMB-187
-//! carries the adjudication; AMB-32 carries the missing released wire for the
-//! container half.
+//! DISJOINT: neither is auto-synchronized into the other — no released text
+//! relates them, and the container half has no released wire at all.
 //!
 //! NOTEs on the SM spec asymmetries this module normalizes to the PARTY
 //! pattern:

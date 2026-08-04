@@ -31,22 +31,15 @@ fn has_scheme(value: &str) -> bool {
 pub(crate) fn push_dv_uri_invariants(value: &str, out: &mut Vec<InvariantViolation>) {
     // RM invariant `Value_valid: not value.is_empty` (the only DV_URI invariant).
     crate::validate::generated::dv_uri_core(value, out);
-    // NOTE: scheme presence is NOT an RM class invariant. The only DV_URI
-    // invariant is `Value_valid: not value.is_empty`
-    // (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_uri.adoc`
-    // §Invariants); the class Description asserts the value "structurally
-    // conforms to … RFC-3986" only in prose, and that same prose explicitly
-    // allows "plain-text URIs" containing RFC-3986-forbidden characters such as
-    // spaces. RFC 3986 itself permits relative references (so `xyz` is a valid
-    // relative-path reference), but the CNF content schedule is the conformance
-    // oracle here and is stricter than both the RM invariant set and RFC 3986:
-    // `master17.7-content_tc_data_types-uri.adoc` (Test Case
-    // CONT-DV_URI-validate_open) states "only invalid URIs should be rejected.
-    // Any RFC3986-compliant URI should be accepted" and tabulates
-    // `xyz | rejected | value doesn't comply with RFC3986` vs
-    // `ftp://ftp.is.co.za/rfc/rfc1808.txt | accepted`. We therefore require an
-    // absolute reference (a scheme followed by `:`); per the RM prose we do NOT
-    // enforce RFC-3986 encoding of the remainder (plain-text URIs stay valid).
+    // We therefore require an absolute reference (a scheme followed by `:`);
+    // per the RM prose we do NOT enforce RFC-3986 encoding of the remainder
+    // (plain-text URIs stay valid). The CNF content schedule is the conformance
+    // oracle and is stricter than both the RM invariant set and RFC 3986:
+    // `master17.7-content_tc_data_types-uri.adoc` (CONT-DV_URI-validate_open)
+    // tabulates `xyz | rejected` vs `ftp://ftp.is.co.za/… | accepted`.
+    // NOTE: scheme presence is NOT an RM class invariant — the only DV_URI
+    // invariant is `Value_valid: not value.is_empty` (`…dv_uri.adoc`
+    // §Invariants), and the class prose allows plain-text URIs.
     if !has_scheme(value) {
         out.push(InvariantViolation::here(
             "Invariant Scheme_valid failed on type DV_URI",

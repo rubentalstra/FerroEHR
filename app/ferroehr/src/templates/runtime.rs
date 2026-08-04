@@ -81,21 +81,13 @@ impl FerroEhrService {
         note_cache_event("miss");
 
         // Miss: load the stored OPT XML (the one store read, amortised across
-        // every future commit for this template). The XML load itself is not
-        // de-duplicated across a burst of concurrent *first* commits of a
-        // never-seen template — an accepted, bounded cost, since templates are
-        // provisioned before use and warm on the first hit.
-        //
-        // When the id is not an ADL 1.4 template, fall back to the ADL2/OPT2
-        // store (`web_template_adl2_cached`), so a FLAT/STRUCTURED commit keyed to
-        // an ADL2-registered template resolves and is archetype-constraint-checked
-        // (the am24 front end now carries the same conformance constraints — see
-        // `openehr_its::flat::webtemplate::build_web_template_am24`). Only after
-        // *both* stores miss is the id "operational template not known" (the
-        // commit-path 422). No openEHR spec governs the internal resolver wiring —
-        // our own design/extension (the FLAT-over-both-generations expectation is
-        // grounded in the AM side-by-side mandate,
-        // `docs/specs/openehr/BASE/docs/architecture_overview/master05-package_structure.adoc`).
+        // every future commit for this template). When the id is not an ADL 1.4
+        // template, fall back to the ADL2/OPT2 store
+        // (`web_template_adl2_cached`), so a FLAT/STRUCTURED commit keyed to an
+        // ADL2-registered template resolves and is archetype-constraint-checked.
+        // Only after *both* stores miss is the id "operational template not
+        // known" (the commit-path 422). No openEHR spec governs the internal
+        // resolver wiring — our own design/extension.
         let xml = match self.get_template_xml(template_id).await {
             Ok(xml) => xml,
             Err(ServiceError::NotFound(_)) => {

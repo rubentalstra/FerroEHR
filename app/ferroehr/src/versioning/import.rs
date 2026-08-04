@@ -324,18 +324,13 @@ async fn commit_import_scoped(
     skip_existing: bool,
 ) -> Result<Uuid, ServiceError> {
     // One instant anchors the whole import's temporal chain — the DATABASE
-    // transaction timestamp (returned by the audit insert), never the app
-    // clock: under app↔DB skew an app-clock base could close an existing open
-    // lineage at an instant before that row's lower bound (an invalid
-    // tstzrange) and diverge from the audit's `import_time`.
-    //
-    // This ONE audit row is the local act of committal for the CONTRIBUTION and
-    // for every IMPORTED_VERSION it carries: master06 §Committal and Audits
-    // requires the CONTRIBUTION audit's `system_id`, `committer` and
-    // `time_committed` to be "copied into the corresponding attributes of the
-    // `commit_audit` of each VERSION included in the CONTRIBUTION", and an
-    // import's per-version `change_type` is uniformly `249|creation|`
-    // (§Contributions, "import of item"), so the copy is the row itself.
+    // transaction timestamp (returned by the audit insert), never the app clock:
+    // under app↔DB skew an app-clock base could close an existing open lineage
+    // at an instant before that row's lower bound. This ONE audit row is the
+    // local act of committal for the CONTRIBUTION and every IMPORTED_VERSION it
+    // carries: master06 §Committal and Audits requires the CONTRIBUTION audit's
+    // `system_id`, `committer` and `time_committed` to be copied into each
+    // VERSION's `commit_audit`, and an import's `change_type` is `249|creation|`.
     let (contribution_audit_id, import_time) =
         crate::storage::version_repo::commit::insert_audit(tx, &import_audit.row()).await?;
     let base = import_time;
@@ -495,16 +490,14 @@ async fn commit_import_scoped(
                     commit_audit: &version.commit_audit,
                     lifecycle_state: &version.lifecycle_state,
                     data: &served,
-                    // The received original's own attestations are attributes
-                    // of `item`, so they ride inside the wrapper's signed form:
+                    // The received original's own attestations are attributes of
+                    // `item`, so they ride inside the wrapper's signed form:
                     // master06 §Digital Signature says of an IMPORTED_VERSION
                     // that "all attributes of the object are serialised and then
                     // used to generate a signature". They are the version's
-                    // at-committal attestations for this repository — nothing
-                    // else can be, since the local act of importing supplies no
-                    // attestations of its own (an import replays received
-                    // ORIGINAL_VERSIONs; §Copying: "the `ORIGINAL_VERSION`
-                    // instance is never modified").
+                    // at-committal attestations for this repository — the local
+                    // act of importing supplies none of its own (§Copying: "the
+                    // `ORIGINAL_VERSION` instance is never modified").
                     attestations: &version.attestations,
                     signature: version.signature.as_deref(),
                 },

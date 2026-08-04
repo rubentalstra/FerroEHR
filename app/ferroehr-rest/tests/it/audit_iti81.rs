@@ -110,7 +110,7 @@ async fn seed(
     e.object_id = Some("8fa1::ferroehr::1".to_owned());
     e.event_type = Some(EventType::RestOperation("composition_get"));
     e.timestamp = at.parse::<Timestamp>().expect("ts");
-    let rendered = fhir::to_fhir(&e, &ctx(), patient);
+    let rendered = fhir::to_fhir(&e, &ctx(), patient).expect("render");
     store.insert(&e, patient, &rendered).await.expect("seed");
 }
 

@@ -635,15 +635,9 @@ fn finder_section() -> AnyView {
     // A PLAIN <form>, not the router's <Form>: pre-WASM the browser submits it
     // natively (GET /ehrs?find=…, which the page turns into a server-side
     // redirect), and post-hydration our own `on:submit` listener prevents the
-    // default and navigates straight to the detail route — the uncontrolled
-    // NodeRef + `ev.prevent_default()` pattern (rules §5). The router only
-    // intercepts its own <Form>/<ActionForm> components and anchor clicks, so
-    // the native submission is untouched while WASM is absent.
-    //
-    // UNCONTROLLED input, read at submit (rules §5): a controlled
-    // (signal-driven) input resets to its empty signal at hydration, wiping
-    // anything typed before the WASM loaded — the login form's proven fix,
-    // applied here after the finder e2e journey caught the same wipe live.
+    // default and navigates to the detail route (rules §5). UNCONTROLLED
+    // input, read at submit (rules §5): a controlled input resets to its empty
+    // signal at hydration, wiping anything typed before the WASM loaded.
     let lookup_ref = NodeRef::<leptos::html::Input>::new();
     let by_id_navigate = leptos_router::hooks::use_navigate();
     let on_lookup = move |ev: leptos::ev::SubmitEvent| {

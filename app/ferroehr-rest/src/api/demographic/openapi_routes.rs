@@ -6249,36 +6249,16 @@ pub(crate) async fn contribution_get(
     guarded_dispatch(state, "contribution_get", parts, super::dispatch::dispatch).await
 }
 // ── ITEM_TAG sub-resources ───────────────────────────────────────────────────
-//
 // Sixteen released operations: five byte-identical typed quintets
-// (`{person,agent,group,organisation,role}_tags_{get,update,delete}.yaml`,
-// differing only in the RM type name and in their own
-// `responses/200_<RM>_ItemTagList_{retrieved,updated}.yaml` +
-// `schemas/demographic/ItemTagOf<Kind>.yaml`) plus the space-wide
-// `demographic_tags_get.yaml`. The fifteen typed ones mirror the EHR-side tag
-// family minus `ehr_id`; the space-wide one is a genuine delta (see it).
-//
-// Every tag route is canonical-JSON only. The canonical XML ITS defines no
-// ITEM_TAG type at all, so the released `Accept_canonical` enum's
-// `application/xml` member is stalled shape here: an XML `Accept` is `406`, and
-// an XML `Content-Type` on the five PUTs is `415` (`Resources.md` §"XML
-// Format"/§"JSON Format"). The five DELETEs declare no `Accept` and answer
-// `204` with no body, so they negotiate nothing and carry no `406`.
-//
-// Tags are not change-controlled: none of the sixteen commits a CONTRIBUTION,
-// mints a version, takes an `If-Match`, or serves an `ETag`, `Last-Modified` or
-// `Location`. The only response header on the whole family is
-// `Preference-Applied`, on the five PUTs.
-//
-// `target` is the bare RM `UID_BASED_ID` (`item_tag.adoc`: `target:
-// UID_BASED_ID`, "which may be a `VERSIONED_OBJECT<T>` or a `VERSION<T>`") — a
-// `HIER_OBJECT_ID` for a container target, an `OBJECT_VERSION_ID` for a
-// VERSION target; the RELEASED RM wins the real conflict with the released OAS
-// `ItemTag`/`UObjectRefOfUidBasedId` envelope. `owner_id` follows the five
-// released `ItemTagOf*` examples' unanimous `{namespace: local, type: SYSTEM}`
-// shape carrying the server's system identifier — no demographic RM class
-// declares a `tags` containment, so nothing released fixes the owner of an
-// EHR-less tag; the position is register-documented.
+// (`{person,agent,group,organisation,role}_tags_{get,update,delete}.yaml`) plus
+// the space-wide `demographic_tags_get.yaml`. Canonical-JSON only — the
+// canonical XML ITS defines no ITEM_TAG type (`Resources.md` §"XML Format"), so
+// an XML `Accept` is `406` and an XML `Content-Type` on the five PUTs `415`.
+// Tags are not change-controlled: no CONTRIBUTION, version, `If-Match`, `ETag`
+// or `Location`; the only response header is `Preference-Applied` on the PUTs.
+// NOTE: `target` is the bare RM `UID_BASED_ID` (`item_tag.adoc`), which wins
+// over the released OAS `UObjectRefOfUidBasedId` envelope; no released text
+// fixes an EHR-less tag's `owner_id`, so it follows the `ItemTagOf*` examples.
 
 /// List `ITEM_TAG`s across the whole Demographic space
 /// (`GET /demographic/tags`).

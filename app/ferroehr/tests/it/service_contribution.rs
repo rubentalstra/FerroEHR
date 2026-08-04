@@ -1552,8 +1552,8 @@ async fn contribution_member_without_lifecycle_state_is_refused() {
 /// `other_input_version_uids` is not a member of the released commit wire:
 /// ITS-REST `UpdateVersion.yaml` declares no such property and
 /// `NewContribution.versions` items are `UpdateVersion`, so the merge commit
-/// has no released shape (the same absence register entry AMB-89 records for
-/// the import commit). Merge provenance is produce-only — `OriginalVersion.yaml`
+/// has no released shape — the same absence the import commit has. Merge
+/// provenance is produce-only — `OriginalVersion.yaml`
 /// declares it on reads. A member carrying it is refused; the twin without it
 /// commits and serves no merge provenance.
 #[tokio::test]
@@ -1628,8 +1628,8 @@ async fn merge_provenance_is_refused_on_the_commit_wire() {
 /// exactly six properties (`preceding_version_uid`, `signature`,
 /// `lifecycle_state`, `attestations`, `data`, `commit_audit`) and
 /// `NewContribution.versions` items are `UpdateVersion` with no `oneOf` and no
-/// discriminator, so the import commit has no released shape at all (register
-/// AMB-89). RM common master06 §Copying puts it behind
+/// discriminator, so the import commit has no released shape at all. RM common
+/// master06 §Copying puts it behind
 /// `VERSIONED_OBJECT.commit_imported_version` ("Details of version id etc come
 /// from the `ORIGINAL_VERSION`"), realized here by the EHR-Extract import route.
 ///

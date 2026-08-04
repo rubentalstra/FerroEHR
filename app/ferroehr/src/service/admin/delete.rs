@@ -321,21 +321,21 @@ impl FerroEhrService {
         }
         #[cfg(feature = "multimedia")]
         {
-        let Some(engine) = &self.multimedia else {
-            return Ok(Vec::new());
-        };
-        let datas: Vec<serde_json::Value> =
-            sqlx::query_scalar("SELECT data FROM node WHERE ehr_id = ANY($1)")
-                .bind(ehr_ids)
-                .fetch_all(&self.pool)
-                .await?;
-        let mut keys: Vec<String> = datas
-            .iter()
-            .flat_map(|d| engine.referenced_keys(d))
-            .collect();
-        keys.sort_unstable();
-        keys.dedup();
-        Ok(keys)
+            let Some(engine) = &self.multimedia else {
+                return Ok(Vec::new());
+            };
+            let datas: Vec<serde_json::Value> =
+                sqlx::query_scalar("SELECT data FROM node WHERE ehr_id = ANY($1)")
+                    .bind(ehr_ids)
+                    .fetch_all(&self.pool)
+                    .await?;
+            let mut keys: Vec<String> = datas
+                .iter()
+                .flat_map(|d| engine.referenced_keys(d))
+                .collect();
+            keys.sort_unstable();
+            keys.dedup();
+            Ok(keys)
         }
     }
 
@@ -350,21 +350,21 @@ impl FerroEhrService {
         }
         #[cfg(feature = "multimedia")]
         {
-        let Some(engine) = &self.multimedia else {
-            return Ok(Vec::new());
-        };
-        let datas: Vec<serde_json::Value> =
-            sqlx::query_scalar("SELECT data FROM node WHERE ehr_id = $1")
-                .bind(ehr_id)
-                .fetch_all(&self.pool)
-                .await?;
-        let mut keys: Vec<String> = datas
-            .iter()
-            .flat_map(|d| engine.referenced_keys(d))
-            .collect();
-        keys.sort_unstable();
-        keys.dedup();
-        Ok(keys)
+            let Some(engine) = &self.multimedia else {
+                return Ok(Vec::new());
+            };
+            let datas: Vec<serde_json::Value> =
+                sqlx::query_scalar("SELECT data FROM node WHERE ehr_id = $1")
+                    .bind(ehr_id)
+                    .fetch_all(&self.pool)
+                    .await?;
+            let mut keys: Vec<String> = datas
+                .iter()
+                .flat_map(|d| engine.referenced_keys(d))
+                .collect();
+            keys.sort_unstable();
+            keys.dedup();
+            Ok(keys)
         }
     }
 
@@ -384,38 +384,38 @@ impl FerroEhrService {
         }
         #[cfg(feature = "multimedia")]
         {
-        let Some(engine) = &self.multimedia else {
-            return;
-        };
-        if candidates.is_empty() {
-            return;
-        }
-        let uris: Vec<String> = candidates
-            .iter()
-            .map(|hex| engine.store().uri_for(hex))
-            .collect();
-        let still_referenced: Vec<String> = match sqlx::query_scalar(
-            "SELECT DISTINCT k.uri FROM node n \
-             JOIN unnest($1::text[]) AS k(uri) ON position(k.uri in n.data::text) > 0",
-        )
-        .bind(&uris)
-        .fetch_all(&self.pool)
-        .await
-        {
-            Ok(rows) => rows,
-            Err(e) => {
-                tracing::warn!(error = %e, "multimedia blob GC reference scan failed; keeping all candidates");
+            let Some(engine) = &self.multimedia else {
+                return;
+            };
+            if candidates.is_empty() {
                 return;
             }
-        };
-        for (hex, uri) in candidates.iter().zip(&uris) {
-            if still_referenced.contains(uri) {
-                continue;
+            let uris: Vec<String> = candidates
+                .iter()
+                .map(|hex| engine.store().uri_for(hex))
+                .collect();
+            let still_referenced: Vec<String> = match sqlx::query_scalar(
+                "SELECT DISTINCT k.uri FROM node n \
+             JOIN unnest($1::text[]) AS k(uri) ON position(k.uri in n.data::text) > 0",
+            )
+            .bind(&uris)
+            .fetch_all(&self.pool)
+            .await
+            {
+                Ok(rows) => rows,
+                Err(e) => {
+                    tracing::warn!(error = %e, "multimedia blob GC reference scan failed; keeping all candidates");
+                    return;
+                }
+            };
+            for (hex, uri) in candidates.iter().zip(&uris) {
+                if still_referenced.contains(uri) {
+                    continue;
+                }
+                if let Err(e) = engine.store().delete(hex).await {
+                    tracing::warn!(blob = %hex, error = %e, "multimedia blob GC delete failed");
+                }
             }
-            if let Err(e) = engine.store().delete(hex).await {
-                tracing::warn!(blob = %hex, error = %e, "multimedia blob GC delete failed");
-            }
-        }
         }
     }
 

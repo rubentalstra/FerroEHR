@@ -156,13 +156,9 @@ fn classify(
             // VERSIONED_OBJECT.commit_attestation pre has_version_id). Absent →
             // the request cannot name its target: a 400, not a 422.
             //
-            // NOTE: the same §Contributions row spells the
-            // code's home `ATTESTATION._commit_audit_._change_type_`, a path
-            // ATTESTATION cannot have — it IS an AUDIT_DETAILS subtype
-            // (`…org.openehr.rm.common.attestation.adoc` §Inherit) and owns
-            // `change_type` directly, while `commit_audit` belongs to VERSION.
-            // The repaired reading — `ATTESTATION.change_type` — is what this
-            // route stamps.
+            // NOTE: the same §Contributions row spells the code's home
+            // `ATTESTATION._commit_audit_._change_type_`, a path ATTESTATION
+            // cannot have; the repaired reading `ATTESTATION.change_type` is used.
             if !has_preceding {
                 return Err(ServiceError::BadRequest(
                     "change_type 666|attestation| requires preceding_version_uid to \
@@ -262,8 +258,8 @@ const COMMITTABLE_MEMBER_TYPES: [&str; 2] = ["UPDATE_VERSION", "ORIGINAL_VERSION
 /// behind its own container operation — `VERSIONED_OBJECT.commit_imported_version`,
 /// whose description is "Details of version id etc come from the
 /// `ORIGINAL_VERSION`" (`UML/classes/org.openehr.rm.common.versioned_object.adoc`
-/// §Functions) — and the release defines no wire shape for it at all (register
-/// AMB-89). The distributed-import capability is realized by the EHR-Extract
+/// §Functions) — and the release defines no wire shape for it at all. The
+/// distributed-import capability is realized by the EHR-Extract
 /// import route instead, which carries a foreign `ORIGINAL_VERSION` verbatim.
 ///
 /// Accepting these keys silently is the failure this refusal exists to
@@ -428,20 +424,12 @@ pub(crate) async fn commit_version_set(
     };
 
     // The CONTRIBUTION audit's `committer` is REQUIRED, exactly like its
-    // `change_type` (#1688's sibling, #1817): RM common `audit_details.adoc`
-    // §Attributes types `committer` 1..1 on the mandatory `CONTRIBUTION.audit`,
-    // and the released commit schema requires it on the wire —
-    // `NewContribution.yaml` over `UpdateAudit.yaml` (`required: [change_type,
-    // committer]`). The ITS-REST docs text is silent on the contribution BODY
-    // (its optional-headers sentence governs the DIRECT routes' header merge,
-    // where the server default legitimately applies), so the released OAS
-    // grounds the requirement: a server-guessed committer in the audit trail
-    // would attribute the change set to an identity the client never named.
-    //
-    // master06 §Committal (m4) then copies system_id/committer/time_committed
-    // of the CONTRIBUTION audit "into the commit_audit of each VERSION
-    // included in the CONTRIBUTION"; time_committed is always the server
-    // commit-act time.
+    // `change_type`: RM common `audit_details.adoc` §Attributes types `committer`
+    // 1..1 on the mandatory `CONTRIBUTION.audit`, and the released commit schema
+    // requires it on the wire (`NewContribution.yaml` over `UpdateAudit.yaml`).
+    // master06 §Committal (m4) then copies system_id/committer/time_committed of
+    // the CONTRIBUTION audit "into the commit_audit of each VERSION included in
+    // the CONTRIBUTION"; time_committed is always the server commit-act time.
     let contrib_committer = match body.get("audit").and_then(|a| a.get("committer")) {
         Some(supplied) => party_proxy(supplied)?,
         None => {
@@ -475,12 +463,9 @@ pub(crate) async fn commit_version_set(
             .and_then(|a| a.get("change_type"))
             .and_then(coded_value);
         let data = version.get("data").cloned().filter(|d| !d.is_null());
-        // NOTE: a first version legitimately carries no
-        // `preceding_version_uid` (SM `update_version.adoc` types it `0..1`;
-        // master03 common_package: "must be specified, except … a first
-        // version"). The SM glue serializes a `None` preceding to JSON `null`,
-        // so treat a `null` as absent — a bare `.is_some()` would misclassify
-        // a spec-legal creation as a modify.
+        // NOTE: a first version legitimately carries no `preceding_version_uid`
+        // (SM `update_version.adoc` types it `0..1`), and the SM glue serializes
+        // a `None` preceding to JSON `null`, so a `null` counts as absent.
         let has_preceding = version
             .get("preceding_version_uid")
             .is_some_and(|v| !v.is_null());
@@ -505,38 +490,17 @@ pub(crate) async fn commit_version_set(
             action != Action::Attest,
         )?;
         let lifecycle_state = lifecycle_of(version);
-        // `UPDATE_VERSION.lifecycle_state` is REQUIRED on this wire: SM
-        // `master03-common_package.adoc` §Version Update Semantics — "The
-        // `lifecycle_state` must be supplied in all cases, which is a value
-        // such as `532|complete|`, `553|incomplete|`, `523|deleted|`, etc" —
-        // and the released `UpdateVersion` schema lists it under `required`
-        // (ITS-REST `schemas/ehr/UpdateVersion.yaml`; the docs text is silent,
-        // so the OAS grounds it). An omitted member is therefore a SHAPE
-        // failure, not a semantic one: `400_CONTRIBUTION` covers "syntactically
-        // invalid header, parameter or content".
-        //
-        // NOTE: the `666|attestation|` member is exempt, and only it. That
-        // member commits NO new version — master06 §Contributions: "all
-        // logical changes … are achieved by physically committing new
-        // Versions, or for attestations, new Attestation objects to existing
-        // Versions" — so it has no version lifecycle state to supply. The
-        // released wire has no separate attestation-member schema (its
-        // `versions` items are all `UpdateVersion`), which is the same
-        // schema-vs-RM gap register entry AMB-85 records for `data` on a
-        // deletion member; the RM governs, as it does there.
-        // `other_input_version_uids` is NOT a member of the commit wire. The
-        // released `UPDATE_VERSION` declares no such property (ITS-REST
-        // `schemas/ehr/UpdateVersion.yaml`), and `NewContribution.versions`
-        // items are `UpdateVersion` — the merge commit has no released shape at
-        // all, exactly as the import commit has none. Merge
-        // provenance is PRODUCE-only: `OriginalVersion.yaml` declares it on the
-        // read side, and it reaches storage only through the routes that carry
-        // a foreign `ORIGINAL_VERSION` verbatim (the EHR-Extract import, the
-        // archive load). Accepting it here would let a client stamp arbitrary
-        // provenance — feeding `ORIGINAL_VERSION.Is_merged_validity` (RM common
-        // master06 §Version Merging) and the version signature — onto a version
-        // this system never merged. Refused as the shape failure it is
+        // `UPDATE_VERSION.lifecycle_state` is REQUIRED on this wire (SM
+        // `master03-common_package.adoc` §Version Update Semantics: "must be
+        // supplied in all cases"; ITS-REST `schemas/ehr/UpdateVersion.yaml`
+        // lists it under `required`), and `other_input_version_uids` is NOT a
+        // member of it at all. Merge provenance is PRODUCE-only — accepting it
+        // here would let a client stamp arbitrary provenance onto a version this
+        // system never merged. Both are refused as the shape failures they are
         // (`400_CONTRIBUTION`: "syntactically invalid … content").
+        // NOTE: the `666|attestation|` member is exempt from the lifecycle rule,
+        // and only it — it commits no new version (master06 §Contributions), so
+        // it has no version lifecycle state to supply; the RM governs the gap.
         if version.get("other_input_version_uids").is_some() {
             return Err(ServiceError::BadRequest(
                 "other_input_version_uids is not a member of UPDATE_VERSION — the \
@@ -762,22 +726,13 @@ pub(crate) async fn commit_version_set(
     }
 
     // The CONTRIBUTION's own audit change type is the CLIENT's account of its
-    // change set, and it is REQUIRED: RM common
-    // `UML/classes/org.openehr.rm.common.audit_details.adoc` §Attributes types
-    // `change_type` 1..1 on the mandatory `CONTRIBUTION.audit`, and the released
-    // commit schema says the same on the wire —
-    // `specifications/schemas/ehr/NewContribution.yaml` (`required: [versions,
-    // audit]`) over `specifications/schemas/common/UpdateAudit.yaml`
-    // (`required: [change_type, committer]`), the demographic
-    // `NewContribution.yaml` identically. The ITS-REST docs text is silent on
-    // the contribution BODY (its `openehr-audit-details` §"None of these headers
-    // are mandatory" sentence governs the DIRECT resource routes' header merge,
-    // where the server does supply the default), so the released OAS grounds
-    // the requirement — and an omitted change type is refused rather than
-    // derived: master06 §Contributions itself says the aggregate "may sometimes
-    // be approximate, and is not expected to be used as a computable value", so
-    // a server-guessed aggregate would put an approximation into the audit trail
-    // under the client's name.
+    // change set, and it is REQUIRED: RM common `audit_details.adoc` §Attributes
+    // types `change_type` 1..1 on the mandatory `CONTRIBUTION.audit`, and the
+    // released commit schema says the same (`schemas/ehr/NewContribution.yaml`
+    // over `schemas/common/UpdateAudit.yaml`). It is refused rather than
+    // derived: master06 §Contributions calls the aggregate "approximate, and not
+    // expected to be used as a computable value", so a server guess would put an
+    // approximation into the audit trail under the client's name.
     let contribution_code = {
         let token = body
             .get("audit")
@@ -1015,15 +970,13 @@ fn parse_audit(
     attestable: bool,
 ) -> Result<AuditInput, ServiceError> {
     // AUDIT_DETAILS.description is a DV_TEXT (0..1). The two released sources
-    // spell the same attribute differently and BOTH spellings are accepted
-    // here: ITS-REST types it `UDvText`, which is `oneOf` [`DV_TEXT`,
-    // `DV_CODED_TEXT`] discriminated on `_type`
-    // (`specifications/schemas/data_types/UDvText.yaml` — an object, never a
-    // bare string), while SM `UPDATE_AUDIT.description` is `String [0..1]`
-    // (`SM/docs/UML/classes/update_audit.adoc` §Attributes), which is what
-    // grounds the plain-string branch. The whole fragment is kept for the
-    // object spelling: a DV_CODED_TEXT description's defining_code is part of
-    // the committed audit, not decoration.
+    // spell it differently and BOTH spellings are accepted: ITS-REST types it
+    // `UDvText`, `oneOf` [`DV_TEXT`, `DV_CODED_TEXT`] discriminated on `_type`
+    // (`schemas/data_types/UDvText.yaml` — an object, never a bare string),
+    // while SM `UPDATE_AUDIT.description` is `String [0..1]`
+    // (`update_audit.adoc` §Attributes), which grounds the plain-string branch.
+    // The whole fragment is kept for the object spelling: a DV_CODED_TEXT
+    // description's defining_code is part of the committed audit.
     let description = audit
         .and_then(|a| a.get("description"))
         .filter(|d| !d.is_null())
@@ -1057,16 +1010,9 @@ fn parse_audit(
     })
 }
 
-// NOTE (the aggregate derivation is deliberately absent): RM common
-// `master06-change_control_package.adoc` §Contributions describes what a
-// CONTRIBUTION-level change type typically holds for a mixed change set, and
-// says in the same breath that the value "may sometimes be approximate, and is
-// not expected to be used as a computable value". That makes it the client's
-// statement about its own change set, never a server derivation — so the commit
-// path above REFUSES an omitted `CONTRIBUTION.audit.change_type` (the released
-// commit schema requires it: `schemas/ehr/NewContribution.yaml` +
-// `schemas/common/UpdateAudit.yaml`) instead of guessing an aggregate into the
-// audit trail under the client's name.
+// NOTE: no aggregate is derived — master06 §Contributions calls a
+// CONTRIBUTION-level change type "approximate, and not expected to be used as a
+// computable value", so the commit path refuses an omitted one instead.
 
 /// Enforce that a version's object kind matches the contribution's scope: a
 /// demographic contribution (`party_only`) may carry only party roots +
@@ -1118,15 +1064,11 @@ fn coded_value(dv: &Value) -> Option<String> {
     dv.get("defining_code")
         .and_then(|c| c.get("code_string"))
         .and_then(Value::as_str)
+        // TODO(#1727): adjudicate whether the SM spelling stays accepted on the
+        // CONTRIBUTION wire now that the direct routes are typed.
         // NOTE: the two released sources spell this attribute differently —
-        // ITS-REST `schemas/common/UpdateAudit.yaml` `$ref`s `DvCodedText`
-        // (the wire form, which the typed commit seam now produces), while SM
-        // `UML/classes/update_audit.adoc` types it `Terminology_code`
-        // (`{terminology_id, code_string}`). This raw-body lane reads BOTH, so
-        // an SM-shaped client's change type is honoured rather than silently
-        // defaulting to creation/modification.
-        // TODO(#1727): adjudicate whether the SM spelling stays accepted on
-        // the CONTRIBUTION wire now that the direct routes are typed.
+        // ITS-REST `UpdateAudit.yaml` `$ref`s `DvCodedText`, SM
+        // `update_audit.adoc` types it `Terminology_code`; this lane reads both.
         .or_else(|| dv.get("code_string").and_then(Value::as_str))
         .or_else(|| dv.get("value").and_then(Value::as_str))
         .map(str::to_owned)
@@ -1300,12 +1242,9 @@ pub(crate) async fn get_contribution(
             .map(Box::new),
     }
     .canonical(&time_committed);
-    // NOTE: a JSON-literal envelope over already-canonical parts — `audit` is
-    // the canonical `AUDIT_DETAILS` fragment `AuditInput::canonical` produced,
-    // and `versions` holds EITHER `OBJECT_REF`s (built from their generated
-    // type above) OR whole resolved VERSION envelopes, which the generated
-    // `Contribution.versions: Vec<ObjectRef>` cannot express. Decoding those
-    // fragments only to re-encode them would gain nothing.
+    // NOTE: a JSON-literal envelope over already-canonical parts — `versions`
+    // holds EITHER `OBJECT_REF`s OR whole resolved VERSION envelopes, which the
+    // generated `Contribution.versions: Vec<ObjectRef>` cannot express.
     Ok(json!({
         "_type": "CONTRIBUTION",
         "uid": openehr_its::json::to_canonical_value(&HierObjectId::from(contribution_id)),

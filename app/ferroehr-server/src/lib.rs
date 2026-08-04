@@ -212,7 +212,11 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         .await
         .context("applying migrations")?;
 
-    // ATNA audit (fail-open at boot).
+    // ATNA audit (fail-open at boot). A slim build cannot render the FHIR
+    // `AuditEvent` the store and the ATX:FHIR Feed carry, so an enabled
+    // configuration is refused loudly instead.
+    #[cfg(not(feature = "fhir"))]
+    ferroehr::system_log::require_fhir_disabled(&config.audit).map_err(|e| anyhow::anyhow!(e))?;
     let audit_config: AuditConfig = config.audit.clone();
     let (audit_sender, audit_handle) = start_audit(&audit_config, &pool).await;
 
@@ -320,9 +324,8 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     // Opt-in DV_MULTIMEDIA externalization (the `multimedia` cargo feature; a
     // slim build refuses an enabled config loudly).
     #[cfg(feature = "multimedia")]
-    if let Some(engine) =
-        ferroehr::extensions::multimedia::engine_from_config(&config.multimedia)
-            .context("initialising the multimedia object store")?
+    if let Some(engine) = ferroehr::extensions::multimedia::engine_from_config(&config.multimedia)
+        .context("initialising the multimedia object store")?
     {
         tracing::info!(
             bucket = %config.multimedia.bucket,

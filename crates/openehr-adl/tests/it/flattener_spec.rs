@@ -150,13 +150,12 @@ fn occurrences_prohibited(obj: &CObject) -> bool {
 
 // ── siblingorder: exact order (master09.04 §Ordering of Sibling Nodes) ────────
 //
-// order-parent items = [id2, id3, id4, id5] (id2, id3 are occurrences {*} =
-// multiple; id4 {0..1}; id5 default). Each expected order below is the fixture's
-// own `--resulting order:` comment, reproduced and cross-checked against
-// master09.04: a marker anchors the run of nodes following it until the next
-// marker; `before [X]` inserts before the first node conforming to X, `after
-// [X]` after the last; a redefinition with no marker replaces its parent in
-// place; extensions with no marker go to the end.
+// order-parent items = [id2, id3, id4, id5] (id2, id3 occurrences {*}; id4
+// {0..1}; id5 default). Each expected order is the fixture's own `--resulting
+// order:` comment, cross-checked against master09.04: a marker anchors the run
+// of nodes following it until the next marker; `before [X]` inserts before the
+// first node conforming to X, `after [X]` after the last; a redefinition with
+// no marker replaces its parent in place; extensions with no marker go last.
 
 const SO: &str = "siblingorder";
 

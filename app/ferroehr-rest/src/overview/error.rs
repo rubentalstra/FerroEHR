@@ -174,29 +174,16 @@ pub(crate) fn status_error_response(status: StatusCode, message: &str) -> Respon
 }
 
 // ── HTTP-method status discipline (overview §HTTP Methods) ──────────────────
-//
 // "A server receiving an unrecognized or unimplemented method SHOULD respond
 // with the `501 Not Implemented` status code. If a method is recognized but not
 // allowed for the target resource, the response SHOULD be `405 Method Not
-// Allowed`."
-//
-// What this layer does:
-//
-// * **`405`** — [`method_not_allowed_handler`] is mounted as the API router's
-//   `method_not_allowed_fallback` (`crate::router::router`), so a request to a
-//   known path with a method that path does not serve renders the openEHR
-//   `{ error, message }` body instead of axum's default bare text `405`. Every
-//   `405` MUST also carry `Allow` (RFC 9110 §15.5.6 — "The origin server MUST
-//   generate an Allow header field in a 405 response containing a list of the
-//   target resource's currently supported methods"); see the handler doc for
-//   who supplies it on which path.
-// * **`501`** — there is no `501` handler: a recognised-but-unimplemented
-//   *operation* answers `501` through
-//   [`ApiError::NotImplemented`](openehr_its::rest::runtime::ApiError) at
-//   dispatch level. The overview's SHOULD-`501` for an *unrecognized method* is
-//   answered `405` instead — a deliberate, registered deviation
-//   (`tools/cnf-runner/artifacts/registers/ambiguities.yaml` `AMB-60`;
-//   rationale in `crate::router`).
+// Allowed`." [`method_not_allowed_handler`] is the API router's
+// `method_not_allowed_fallback`, rendering the openEHR `{ error, message }`
+// body with the `Allow` RFC 9110 §15.5.6 mandates; a recognised but
+// unimplemented *operation* answers `501` via `ApiError::NotImplemented`.
+// NOTE: no released text can be honoured for an *unrecognized method* here —
+// axum exposes no such seam — so it is answered `405`, itself a predefined code
+// in the spec's own status table; the rationale lives in `crate::router`.
 
 /// Axum fallback for a request whose method is not served by the matched
 /// resource → `405 Method Not Allowed` (overview §HTTP Methods) with the
