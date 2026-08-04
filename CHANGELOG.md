@@ -17,6 +17,7 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- EHR Extract import now enforces the copy closure (RM common master06 §Copying): a received branch version is refused with `400` unless its fork-point trunk version and same-branch predecessor travel in the same extract or are already stored (#1770).
 - **FOLDER (DIRECTORY) resources can now carry ITEM_TAGs.** ITS-REST overview
   `Requests_and_responses.md` §openehr-item-tag and openehr-version-item-tag
   names FOLDER among the change-controlled resources the wrapper headers

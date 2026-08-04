@@ -242,6 +242,38 @@ pub async fn insert_version_verbatim(
     Ok(())
 }
 
+/// Whether a specific version-tree position of one creating system is already
+/// stored for `vo_id` — the receiver-side copy-closure probe (RM common
+/// master06 §Copying: branch versions "cannot be copied without their
+/// corresponding preceding versions on the same branch (if any) and trunk
+/// versions also being copied"). Used by the import path to accept a Case-3
+/// append whose ancestry arrived in an EARLIER import.
+///
+/// # Errors
+/// The storage read error.
+pub async fn has_version_tree(
+    tx: &mut PgConnection,
+    vo_id: VoId,
+    creating_system_id: &str,
+    trunk_version: i32,
+    branch_number: i32,
+    branch_version: i32,
+) -> Result<bool, StorageError> {
+    let exists: bool = sqlx::query_scalar(
+        "SELECT EXISTS (SELECT 1 FROM vo_version WHERE vo_id = $1 \
+         AND creating_system_id = $2 AND trunk_version = $3 \
+         AND branch_number = $4 AND branch_version = $5)",
+    )
+    .bind(vo_id)
+    .bind(creating_system_id)
+    .bind(trunk_version)
+    .bind(branch_number)
+    .bind(branch_version)
+    .fetch_one(&mut *tx)
+    .await?;
+    Ok(exists)
+}
+
 /// Close the open (`upper_inf`) version of one LINEAGE of `vo_id` at an explicit
 /// instant (the import base time). The trunk lineage is `branch_number = 0`; a
 /// branch lineage is one `(creating_system_id, trunk_version, branch_number)`.

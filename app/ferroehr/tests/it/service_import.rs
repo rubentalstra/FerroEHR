@@ -1202,3 +1202,135 @@ async fn attesting_an_imported_version_is_refused() {
         err.message
     );
 }
+
+/// Rewrite the `version_tree_id` of the `X_VERSIONED_EHR_STATUS` version whose
+/// tree is `from` to `to`, returning the re-decoded extract. The uid keeps its
+/// `object_id`/`creating_system_id`; only the tree segment moves — the fixture
+/// tool for the copy-closure twins below.
+fn retree_status_version(extract: &Value, from: &str, to: &str) -> Extract {
+    let mut raw = extract.clone();
+    let items = raw["chapters"][0]["items"]
+        .as_array_mut()
+        .expect("chapter items");
+    items.retain(|it| it["item"]["_type"] == json!("X_VERSIONED_EHR_STATUS"));
+    let mut hit = false;
+    for it in items {
+        for v in it["item"]["versions"].as_array_mut().expect("versions") {
+            let uid = v["uid"]["value"].as_str().expect("uid").to_owned();
+            if let Some(prefix) = uid.strip_suffix(&format!("::{from}")) {
+                v["uid"]["value"] = json!(format!("{prefix}::{to}"));
+                hit = true;
+            }
+        }
+    }
+    assert!(hit, "fixture: no status version with tree '{from}' found");
+    openehr_its::json::from_canonical_value(&raw).expect("re-treed EXTRACT decodes")
+}
+
+/// The copy closure, refusal twin (a): RM common master06 §Copying — branch
+/// versions "cannot be copied without their corresponding preceding versions
+/// on the same branch (if any) and trunk versions also being copied". An
+/// extract carrying branch version `2.1.1` without trunk version `2` (neither
+/// in the extract nor stored) is refused as a precondition violation.
+#[tokio::test]
+async fn import_refuses_a_branch_version_without_its_fork_point_trunk() {
+    let source_db = testkit::db().await.expect("testkit database");
+    let source = FerroEhrService::new(source_db.pool());
+    let target_db = testkit::db().await.expect("testkit database");
+    let target = FerroEhrService::new(target_db.pool());
+
+    let ehr = seed_ehr(&source).await;
+    let exported = source.extract_ehrs(ehr).await.expect("export");
+    // Status versions 1 and 2 exist; re-tree 2 → 2.1.1: its fork-point trunk
+    // (version 2 itself) is now absent from the set and nothing is stored.
+    let mutated = retree_status_version(&exported[0], "2", "2.1.1");
+
+    let err = target
+        .import_ehr(None, mutated)
+        .await
+        .expect_err("a branch version without its fork-point trunk must be refused");
+    assert_eq!(err.status, CallStatusType::PreconditionViolation);
+    assert!(
+        err.message.contains("fork-point trunk"),
+        "the refusal names the missing trunk, got: {}",
+        err.message
+    );
+}
+
+/// The copy closure, refusal twin (b): branch version `2.1.2` without its
+/// same-branch predecessor `2.1.1` (master06 §Copying) is refused even though
+/// its fork-point trunk (version 2) is already stored from the first receipt
+/// (Case-3 append).
+#[tokio::test]
+async fn import_refuses_a_branch_version_without_its_branch_predecessor() {
+    let source_db = testkit::db().await.expect("testkit database");
+    let source = FerroEhrService::new(source_db.pool());
+    let target_db = testkit::db().await.expect("testkit database");
+    let target = FerroEhrService::new(target_db.pool());
+
+    let ehr = seed_ehr(&source).await;
+    let exported = source.extract_ehrs(ehr).await.expect("export");
+    let ehr_id = target
+        .import_ehr(
+            None,
+            openehr_its::json::from_canonical_value(&exported[0]).expect("EXTRACT decodes"),
+        )
+        .await
+        .expect("first receipt lands the trunk");
+
+    let err = target
+        .import_ehr_extract(ehr_id, retree_status_version(&exported[0], "2", "2.1.2"))
+        .await
+        .expect_err("a branch version without its same-branch predecessor must be refused");
+    assert_eq!(err.status, CallStatusType::PreconditionViolation);
+    assert!(
+        err.message.contains("same-branch"),
+        "the refusal names the missing predecessor, got: {}",
+        err.message
+    );
+}
+
+/// The copy closure, accepting twin: branch version `2.1.1` whose fork-point
+/// trunk (version 2) is already stored from the first receipt satisfies
+/// master06 §Copying — the Case-3 append lands and the branch version reads
+/// back as an IMPORTED_VERSION.
+#[tokio::test]
+async fn import_accepts_a_branch_version_whose_closure_is_already_stored() {
+    let source_db = testkit::db().await.expect("testkit database");
+    let source = FerroEhrService::new(source_db.pool());
+    let target_db = testkit::db().await.expect("testkit database");
+    let target = FerroEhrService::new(target_db.pool());
+
+    let ehr = seed_ehr(&source).await;
+    let exported = source.extract_ehrs(ehr).await.expect("export");
+    let status_uid = find_by_xtype(&exported[0], "X_VERSIONED_EHR_STATUS")
+        .expect("exported EHR_STATUS")["item"]["versions"][0]["uid"]["value"]
+        .as_str()
+        .expect("uid")
+        .to_owned();
+    let vo_id = ferroehr::ids::VoId(
+        status_uid
+            .split("::")
+            .next()
+            .expect("object_id")
+            .parse()
+            .expect("vo uuid"),
+    );
+    let ehr_id = target
+        .import_ehr(
+            None,
+            openehr_its::json::from_canonical_value(&exported[0]).expect("EXTRACT decodes"),
+        )
+        .await
+        .expect("first receipt lands the trunk");
+
+    target
+        .import_ehr_extract(ehr_id, retree_status_version(&exported[0], "2", "2.1.1"))
+        .await
+        .expect("a closure-satisfied branch append lands");
+    let served = target
+        .ehr_status_version_envelope(ehr_id, vo_id, "2.1.1")
+        .await
+        .expect("the imported branch version reads back");
+    assert_eq!(served["_type"], json!("IMPORTED_VERSION"));
+}
