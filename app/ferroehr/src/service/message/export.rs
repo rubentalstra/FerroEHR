@@ -173,53 +173,9 @@ impl FerroEhrService {
                 resolve_entity_ehr(self, entity.ehr_id.as_deref(), entity.subject_id.as_deref())
                     .await?;
 
-            // The primary set: an explicit item_list, else every VO of the EHR.
-            // TODO(#1736): `EXTRACT_SPEC.criteria` (`master04-common_package.adoc`,
-            // an AQL primary-set query) is a typed reject until the
-            // `$ehr`-bound AQL criteria selection lands — never a silent
-            // over-export.
-            let vo_kinds: Vec<(VoId, String)> =
-                if entity.item_list.as_ref().is_none_or(Vec::is_empty) {
-                    if criteria_present {
-                        return Err(SmError::precondition(
-                            "EXTRACT_SPEC.criteria (AQL selection) is not supported in this stage; \
-                         provide EXTRACT_ENTITY_MANIFEST.item_list instead",
-                        ));
-                    }
-                    self.ehr_versioned_objects(ehr_id).await?
-                } else {
-                    let mut resolved =
-                        Vec::with_capacity(entity.item_list.as_ref().map_or(0, Vec::len));
-                    for obj_ref in entity.item_list.iter().flatten() {
-                        let value = openehr_its::json::to_canonical_value(obj_ref);
-                        let raw = value
-                            .pointer("/id/value")
-                            .and_then(Value::as_str)
-                            .ok_or_else(|| {
-                                SmError::precondition("item_list OBJECT_REF has no id.value")
-                            })?;
-                        #[expect(
-                            clippy::map_err_ignore,
-                            reason = "the mapped error already echoes the rejected \
-                                  token; the discarded `uuid::Error` adds only \
-                                  its own wording, which is not part of the wire \
-                                  contract"
-                        )]
-                        let vo_id: VoId = raw.parse().map_err(|_| {
-                            SmError::precondition(format!(
-                                "item_list id {raw:?} is not a version-container UUID"
-                            ))
-                        })?;
-                        let kind = self.ehr_vo_kind(ehr_id, vo_id).await?.ok_or_else(|| {
-                            SmError::new(
-                                CallStatusType::VersionedObjectDoesNotExist,
-                                format!("version container {vo_id} not found in EHR {ehr_id}"),
-                            )
-                        })?;
-                        resolved.push((vo_id, kind));
-                    }
-                    resolved
-                };
+            let vo_kinds = self
+                .entity_primary_set(ehr_id, entity, criteria_present, &extract_spec)
+                .await?;
 
             let mut included: Vec<VoId> = vo_kinds.iter().map(|(vo, _)| *vo).collect();
             let mut items = Vec::with_capacity(vo_kinds.len());
@@ -286,6 +242,156 @@ impl FerroEhrService {
     /// The `(vo_id, kind)` of every versioned object currently in the EHR (one
     /// row per version container — its current, `upper_inf`, trunk version),
     /// ordered by id for a deterministic extract.
+    /// The primary set of one manifest entity: an explicit `item_list`; else
+    /// the criteria queries (`master04-common_package.adoc` §`EXTRACT_SPEC`:
+    /// criteria define "which items are to be retrieved from each entity's
+    /// record"); else every VO of the EHR. `item_list` wins when both are
+    /// given — master04 keeps the two mechanisms distinct ("only expected to
+    /// be used when a specific identifier is known, rather than when items
+    /// corresponding to filtering criteria are requested").
+    ///
+    /// # Errors
+    /// The [`Self::criteria_primary_set`] refusals; `precondition_violation`
+    /// for a malformed `item_list` entry; `versioned_object_does_not_exist`
+    /// for an `item_list` container outside the entity's EHR.
+    async fn entity_primary_set(
+        &self,
+        ehr_id: EhrId,
+        entity: &openehr_rm::ehr_extract::common::extract_entity_manifest::ExtractEntityManifest,
+        criteria_present: bool,
+        extract_spec: &ExtractSpec,
+    ) -> Result<Vec<(VoId, String)>, SmError> {
+        if entity.item_list.as_ref().is_none_or(Vec::is_empty) {
+            if criteria_present {
+                return self
+                    .criteria_primary_set(
+                        ehr_id,
+                        extract_spec.criteria.as_deref().unwrap_or_default(),
+                    )
+                    .await;
+            }
+            return Ok(self.ehr_versioned_objects(ehr_id).await?);
+        }
+        let mut resolved = Vec::with_capacity(entity.item_list.as_ref().map_or(0, Vec::len));
+        for obj_ref in entity.item_list.iter().flatten() {
+            let value = openehr_its::json::to_canonical_value(obj_ref);
+            let raw = value
+                .pointer("/id/value")
+                .and_then(Value::as_str)
+                .ok_or_else(|| SmError::precondition("item_list OBJECT_REF has no id.value"))?;
+            #[expect(
+                clippy::map_err_ignore,
+                reason = "the mapped error already echoes the rejected \
+                      token; the discarded `uuid::Error` adds only \
+                      its own wording, which is not part of the wire \
+                      contract"
+            )]
+            let vo_id: VoId = raw.parse().map_err(|_| {
+                SmError::precondition(format!(
+                    "item_list id {raw:?} is not a version-container UUID"
+                ))
+            })?;
+            let kind = self.ehr_vo_kind(ehr_id, vo_id).await?.ok_or_else(|| {
+                SmError::new(
+                    CallStatusType::VersionedObjectDoesNotExist,
+                    format!("version container {vo_id} not found in EHR {ehr_id}"),
+                )
+            })?;
+            resolved.push((vo_id, kind));
+        }
+        Ok(resolved)
+    }
+
+    /// The `$ehr`-bound criteria primary set (#1736): evaluate each
+    /// `EXTRACT_SPEC.criteria` query against the entity's EHR and collect the
+    /// version containers its result rows identify (RM `ehr_extract`
+    /// `master04-common_package.adoc` §`EXTRACT_SPEC`: criteria "defines in the
+    /// form of generic queries … which items are to be retrieved from each
+    /// entity's record"; "Query expressions use variables such as $ehr to
+    /// mean the current EHR from the `manifest` list").
+    ///
+    /// Realization decisions (the released text names AQL as an example
+    /// formalism and stops there — the mechanics below are our own design,
+    /// flagged per rule):
+    /// - The formalism must be AQL (`DV_PARSABLE.formalism`,
+    ///   case-insensitive `"aql"`) — any other formalism is a typed refusal,
+    ///   never a silent skip.
+    /// - The `$ehr` binding is realized twice over: the engine call is scoped
+    ///   to the entity's EHR (`ehr_ids = [entity]` — the SM
+    ///   `i_query_service.adoc` EHR scope), and a literal `$ehr` parameter in
+    ///   the query text binds to the EHR id, so both spellings work.
+    /// - A result row identifies a version container through any cell that is
+    ///   an `OBJECT_VERSION_ID`/UID string or an object carrying
+    ///   `uid.value`; cells that resolve to no container in this EHR are data
+    ///   values, not selections. The union across rows and criteria, in
+    ///   first-seen order, is the primary set — possibly empty (a criterion
+    ///   may legitimately match nothing).
+    /// - NOTE: the engine's SM population gate applies — a non-queryable EHR
+    ///   yields no rows (SM `i_query_service.adoc`: queries run over
+    ///   `is_queryable` EHRs). No openEHR spec relates EXTRACT criteria to
+    ///   that gate — our own design keeps criteria exactly as powerful as
+    ///   the query service they are defined in terms of.
+    ///
+    /// # Errors
+    /// `precondition_violation` — a non-AQL formalism, or a criterion that
+    /// does not parse/execute as AQL (the refusal names the criterion index).
+    async fn criteria_primary_set(
+        &self,
+        ehr_id: EhrId,
+        criteria: &[openehr_rm::data_types::encapsulated::dv_parsable::DvParsable],
+    ) -> Result<Vec<(VoId, String)>, SmError> {
+        let mut out: Vec<(VoId, String)> = Vec::new();
+        for (idx, criterion) in criteria.iter().enumerate() {
+            if !criterion.formalism.eq_ignore_ascii_case("aql") {
+                return Err(SmError::precondition(format!(
+                    "EXTRACT_SPEC.criteria[{idx}] formalism {:?} is not supported: this \
+                     service evaluates AQL criteria (master04-common_package.adoc \
+                     names AQL as the openEHR query formalism)",
+                    criterion.formalism
+                )));
+            }
+            let request = crate::service::query::request::AqlQueryRequest {
+                ehr_ids: vec![ehr_id.to_string()],
+                parameters: std::iter::once(("ehr".to_owned(), json!(ehr_id.to_string())))
+                    .collect(),
+                ..crate::service::query::request::AqlQueryRequest::default()
+            };
+            let outcome = self
+                .execute_ad_hoc_query(criterion.value.clone(), request)
+                .await
+                .map_err(|e| {
+                    SmError::precondition(format!(
+                        "EXTRACT_SPEC.criteria[{idx}] did not evaluate as AQL: {}",
+                        e.message
+                    ))
+                })?;
+            let empty = Vec::new();
+            let rows = outcome
+                .result_set
+                .get("rows")
+                .and_then(Value::as_array)
+                .unwrap_or(&empty);
+            for cell in rows.iter().filter_map(Value::as_array).flatten() {
+                let candidate = match cell {
+                    Value::String(s) => Some(s.as_str()),
+                    Value::Object(_) => cell.pointer("/uid/value").and_then(Value::as_str),
+                    _ => None,
+                };
+                let Some(raw) = candidate else { continue };
+                let Ok(vo_id) = raw.split("::").next().unwrap_or(raw).parse::<VoId>() else {
+                    continue;
+                };
+                if out.iter().any(|(v, _)| *v == vo_id) {
+                    continue;
+                }
+                if let Some(kind) = self.ehr_vo_kind(ehr_id, vo_id).await? {
+                    out.push((vo_id, kind));
+                }
+            }
+        }
+        Ok(out)
+    }
+
     async fn ehr_versioned_objects(
         &self,
         ehr_id: EhrId,

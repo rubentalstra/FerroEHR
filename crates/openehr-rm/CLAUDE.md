@@ -32,8 +32,17 @@ BMM** by `openehr-codegen -- emit`. Versioned by the spec
   `validate/terminology.rs` is the openEHR terminology-group / code-set binding
   table over the `openehr-term` bundle — **this crate DOES depend on
   `openehr-term`** (`openehr-term` reaches only `openehr-base`, so there is no
-  cycle). Every RM decision belongs here; `openehr-its` only dispatches, walks
-  instances, and prefixes paths.
+  cycle). Its sibling `validate/typed_dispatch.rs` is the AUTHORITATIVE typed
+  tier: the `_type` → concrete-RM-type table that decodes a node through the
+  emitted canonical-JSON `serde` impls and runs that class's `Validate` impl,
+  returning `false` for a class it does not name (the caller then runs the
+  GENERATED five-crate structural fallthrough, which can only be emitted
+  downstream in `openehr-its`). Its table must stay in LOCKSTEP with
+  `validate/fast.rs` — class membership and decode depth (`run` vs
+  `run_shallow`) — a relationship the `dispatch_lockstep` gate in
+  `openehr-its/tests/it/` derives from both sources. Every RM decision belongs
+  here; `openehr-its` only composes the tiers, walks instances, and prefixes
+  paths.
 - Emission conventions are settled — do not re-litigate per class: closed
   subtype sets → untagged enums; recursion → `Box`; `_type` via the EMITTED
   manual `serde::Serialize`/`Deserialize` impls in `src/json_serde.rs` (never a

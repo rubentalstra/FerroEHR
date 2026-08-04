@@ -9,15 +9,19 @@
 //! The **wire-boundary RM class-invariant dispatcher** gate
 //! (`openehr_its::wire_validate`).
 //!
-//! These tests moved here with the typed dispatcher (from `openehr-rm`'s
-//! `validate.rs`/`validate/fast.rs`): the fast path (`openehr_rm::validate::
-//! try_fast_validate`, untyped, in `openehr-rm`) and the typed path
-//! (`validate_rm_value_typed`, via the native codec, in this crate) are only both
-//! reachable here — `openehr-rm` is upstream of the codec. The assertions are
-//! unchanged: the two-tier entry point must produce byte-identical violations to
-//! the authoritative typed oracle over the whole corpus, and the fast path must
-//! vouch only when it is provably equivalent (declining to the typed path
-//! otherwise).
+//! Both validation tiers are RM model semantics and live in `openehr-rm`: the
+//! fast path (`openehr_rm::validate::try_fast_validate`, untyped) and the typed
+//! dispatch (`openehr_rm::validate::typed_dispatch::dispatch_typed`, which
+//! decodes through the emitted canonical-JSON `serde` impls). What this crate
+//! keeps — and why the gate runs HERE — is the composition: the GENERATED
+//! five-crate structural fallthrough
+//! (`openehr_its::json_codec::generated::structural`, which spans every spec
+//! crate at once and can only be emitted downstream of all of them) and the thin
+//! wire entry points that fix the order the tiers and the orthogonal layers run
+//! in. The assertions are unchanged: the two-tier entry point must produce
+//! byte-identical violations to the authoritative typed oracle over the whole
+//! corpus, and the fast path must vouch only when it is provably equivalent
+//! (declining to the typed path otherwise).
 
 use openehr_base::validate::InvariantViolation;
 use openehr_its::wire_validate::{

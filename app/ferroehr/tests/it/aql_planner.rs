@@ -1459,3 +1459,42 @@ fn version_coded_field_subpaths() {
         "bare coded object rejects: {e}"
     );
 }
+
+/// #1448 — LIKE and `matches` on an anchored data leaf lower through the
+/// EXISTENTIAL shape (`EXISTS(SELECT 1 …)`), the same lowering the comparison
+/// operators use, never the scalar LIMIT-1 extraction (order-undefined on a
+/// multi-valued path).
+#[test]
+fn like_and_matches_lower_existentially_on_anchored_leaves() {
+    let like_sql = build_sql(
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c \
+         WHERE c/context/other_context[at0001]/items[at0002]/value/value LIKE 'x*'",
+    );
+    assert!(
+        like_sql.contains("EXISTS(SELECT") && like_sql.contains("LIKE"),
+        "LIKE on an anchored leaf is existential: {like_sql}"
+    );
+    assert!(
+        !like_sql.contains("LIMIT 1"),
+        "no scalar LIMIT-1 extraction remains under the LIKE: {like_sql}"
+    );
+
+    let matches_sql = build_sql(
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c \
+         WHERE c/context/other_context[at0001]/items[at0002]/value/value MATCHES {'a', 'b'}",
+    );
+    assert!(
+        matches_sql.contains("EXISTS(SELECT") && matches_sql.contains("IN ("),
+        "matches on an anchored leaf is existential: {matches_sql}"
+    );
+    // NOT flips the polarity back to the scalar shape (three-valued SQL
+    // semantics preserved for absent leaves) — same rule as the comparisons.
+    let negated = build_sql(
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c \
+         WHERE NOT c/context/other_context[at0001]/items[at0002]/value/value LIKE 'x*'",
+    );
+    assert!(
+        !negated.contains("EXISTS(SELECT"),
+        "negative polarity keeps the scalar lowering: {negated}"
+    );
+}
