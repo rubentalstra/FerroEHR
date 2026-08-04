@@ -335,11 +335,9 @@ impl FerroEhrService {
                 }));
             }
         }
-        // NOTE: `total` is the number of entries in this Bundle, not a
-        // separate full-match count — the façade is a stateless connector, not
-        // a FHIR Search engine, so with `_count` it reports the returned page
-        // size. No `Bundle.link` paging is emitted (explicit params only, by
-        // design).
+        // NOTE: `total` = the entries in THIS Bundle (a stateless connector,
+        // not a FHIR Search engine: with `_count` it reports the page size);
+        // no `Bundle.link` paging is emitted — our own design/extension.
         Ok(json!({
             "resourceType": "Bundle",
             "type": "searchset",

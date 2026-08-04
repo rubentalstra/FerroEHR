@@ -211,10 +211,11 @@ pub fn resolve<'a>(root: &'a Value, path: &str) -> Option<&'a Value> {
     Some(cur)
 }
 
-/// Split one path segment into its `(name, index)` parts, e.g. `component[0]`
-/// → `("component", Some(0))`, `reference` → `("reference", None)`. Returns
-/// `None` for a malformed segment (unbalanced/broken index). Shared with the
-/// reverse transform's writer ([`super::reverse`]).
+/// Splits one path segment into its `(name, index)` parts.
+///
+/// `component[0]` → `("component", Some(0))`, `reference` → `("reference",
+/// None)`; `None` for a malformed segment (unbalanced/broken index). Shared
+/// with the reverse transform's writer ([`super::reverse`]).
 #[must_use]
 pub fn parse_segment(seg: &str) -> Option<(&str, Option<usize>)> {
     match seg.split_once('[') {

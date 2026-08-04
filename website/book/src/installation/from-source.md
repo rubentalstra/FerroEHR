@@ -64,3 +64,23 @@ hits the status endpoint and exits 0 or 1.
 > Building from source gives you the same binary the images use — the container
 > Dockerfile pins its Rust version from the same `rust-toolchain.toml`, and CI
 > cross-checks the two so they cannot drift.
+
+## Build features
+
+The server builds with three additive cargo features, all **on by default**:
+`fhir` (the FHIR connector, outbound emitter, FHIR terminology providers, and
+the FHIR `AuditEvent` audit sinks), `events` (contribution-outbox eventing
+and the AMQP transport), and `multimedia` (`DV_MULTIMEDIA` externalization
+to S3-compatible object storage).
+
+A slim build compiles them out entirely:
+
+```bash
+cargo build --release --no-default-features
+```
+
+A slim binary refuses loudly at boot if the configuration enables an
+integration it was built without — `multimedia.enabled`, `events.enabled`,
+`fhir.outbound.enabled`, `audit.store.enabled`, `audit.fhir_feed.enabled`,
+or a configured external FHIR terminology provider. The syslog ATNA feed and
+the in-process terminology bundle remain available in slim builds.

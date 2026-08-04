@@ -54,8 +54,9 @@ pub fn now_iso() -> String {
     jiff::Timestamp::now().to_string()
 }
 
-/// Build the `FEEDER_AUDIT` (canonical JSON) recording the FHIR import trail:
-/// originating system `fhir-connector`, the resource type/id as an
+/// Builds the `FEEDER_AUDIT` (canonical JSON) recording the FHIR import trail.
+///
+/// Originating system `fhir-connector`, the resource type/id as an
 /// originating-system item id, and the resource version + import time on the
 /// originating-system audit (RM common `FEEDER_AUDIT_DETAILS`).
 pub fn feeder_audit(

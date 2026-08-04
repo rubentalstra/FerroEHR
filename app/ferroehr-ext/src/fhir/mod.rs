@@ -1,6 +1,8 @@
-//! The FHIR R4B integration core: the mapping model + FLAT builder, the
-//! outbound reverse-map, the feeder-audit probe, the ATNA `AuditEvent`
-//! renderer, and the terminology-response decoder.
+//! The FHIR R4B integration core.
+//!
+//! The mapping model + FLAT builder, the outbound reverse-map, the
+//! feeder-audit probe, the ATNA `AuditEvent` renderer, and the
+//! terminology-response decoder.
 //!
 //! **No openEHR spec governs FHIR resource representation — our own
 //! design/extension.** The platform's service/REST glue (ingest, mapping
@@ -16,9 +18,10 @@ pub mod mapping;
 pub mod reverse;
 pub mod terminology;
 
-/// The EHR subject a mapped inbound resource addresses — the mapping's
-/// output identity (id + namespace, a person by definition of the inbound
-/// connector), which the platform resolves through its EHR index.
+/// The EHR subject a mapped inbound resource addresses.
+///
+/// The mapping's output identity (id + namespace, a person by definition of
+/// the inbound connector), which the platform resolves through its EHR index.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MappedSubject {
     /// The subject identifier value.
