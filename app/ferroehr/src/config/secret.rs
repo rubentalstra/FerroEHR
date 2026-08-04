@@ -99,9 +99,11 @@ impl Serialize for Secret {
     }
 }
 
-/// A connection URL that carries embedded credentials. Stored verbatim for
-/// connection use ([`SecretUrl::expose`]); every rendering
-/// (`Serialize`/`Display`/`Debug`) replaces the `userinfo` with [`REDACTED`].
+/// A connection URL that carries embedded credentials.
+///
+/// Stored verbatim for connection use ([`SecretUrl::expose`]); every
+/// rendering (`Serialize`/`Display`/`Debug`) replaces the `userinfo` with
+/// [`REDACTED`].
 #[derive(Clone, Default, PartialEq, Eq)]
 pub struct SecretUrl(String);
 

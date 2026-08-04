@@ -233,22 +233,26 @@ fn check_terminology_doc(label: &str, xml: &str, groups_allowed: bool, external_
 #[test]
 fn language_bundles_conform_to_openehr_terminology_xsd() {
     for (lang, xml) in LANGUAGE_ASSETS {
+        let groups_allowed = true;
+        let external_id_required = false;
         check_terminology_doc(
             &format!("{lang}/openehr_terminology.xml"),
             xml,
-            /* groups_allowed */ true,
-            /* external_id_required */ false,
+            groups_allowed,
+            external_id_required,
         );
     }
 }
 
 #[test]
 fn external_terminologies_conform_to_their_xsd() {
+    let groups_allowed = false;
+    let external_id_required = true;
     check_terminology_doc(
         "openehr_external_terminologies.xml",
         EXTERNAL_XML,
-        /* groups_allowed */ false,
-        /* external_id_required */ true,
+        groups_allowed,
+        external_id_required,
     );
 }
 

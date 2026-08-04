@@ -2,8 +2,10 @@
 //! `resource_instance_type.adoc`, `location_desc.adoc`).
 
 /// A subject identifier reference (`i_ehr_index.adoc` `a_subject_id:
-/// OBJECT_REF`). The realization of the `OBJECT_REF` the EHR Index keys its
-/// associations by: `id` = `OBJECT_ID.value`, `namespace`, `type`.
+/// OBJECT_REF`).
+///
+/// The realization of the `OBJECT_REF` the EHR Index keys its associations
+/// by: `id` = `OBJECT_ID.value`, `namespace`, `type`.
 ///
 /// NOTE: the SM types the subject as a full `OBJECT_REF`; we carry the
 /// three fields the index actually keys on (`(id, namespace)` is the
@@ -30,10 +32,10 @@ impl SubjectRef {
     }
 }
 
-/// `RESOURCE_INSTANCE_TYPE` — "Enumeration of resource instance types"
-/// (`resource_instance_type.adoc`): the kind of a subject↔EHR association,
-/// surfacing the N:M duplicate-management states master07 §Overview
-/// describes.
+/// `RESOURCE_INSTANCE_TYPE` — the kind of a subject↔EHR association.
+///
+/// "Enumeration of resource instance types" (`resource_instance_type.adoc`),
+/// surfacing the N:M duplicate-management states master07 §Overview describes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ResourceInstanceType {
     /// "Primary instance of the resource."
@@ -104,9 +106,10 @@ pub struct LocationDesc {
 }
 
 /// One EHR Index record: a subject↔EHR association with its status and
-/// optional location descriptor. Returned by the design-filled read calls
-/// (`ehr_subjects` / `subject_ehrs` — the SM defines no reads; NOTE on
-/// those methods).
+/// optional location descriptor.
+///
+/// Returned by the design-filled read calls (`ehr_subjects` / `subject_ehrs`
+/// — the SM defines no reads; NOTE on those methods).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EhrIndexEntry {
     /// The associated EHR id.

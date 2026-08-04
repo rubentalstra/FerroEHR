@@ -504,10 +504,11 @@ fn emit_lib(top: &BTreeSet<String>, include_prelude: bool, crate_doc: &str) -> G
         b.push_str("pub mod prelude;\n");
     }
     b.push_str(
-        "\n/// The openEHR specification version this crate implements — the crate\n\
-         /// version itself: the spec crates are versioned by the specification they\n\
-         /// implement (`docs/VERSIONS.md` §Product and crate versioning), so\n\
-         /// consumers read the pin from the package, never from a hand-typed literal.\n\
+        "\n/// The openEHR specification version this crate implements.\n\
+         ///\n\
+         /// It equals the crate version: the spec crates are versioned by the\n\
+         /// specification they implement, so consumers read the pin from the\n\
+         /// package, never from a hand-typed literal.\n\
          pub const SPEC_VERSION: &str = env!(\"CARGO_PKG_VERSION\");\n",
     );
     GenFile {
@@ -608,6 +609,7 @@ fn render_struct_def(
         class.documentation.as_deref(),
         "",
         &synth_class_doc(&class.name),
+        &synth_class_summary(&class.name),
     );
     push_spec_alias(&mut b, &class.name, struct_ty, "");
     // No serde/`_type` derive: canonical-JSON (de)serialization is provided by
@@ -675,6 +677,7 @@ fn render_struct_def(
             p.documentation.as_deref(),
             "    ",
             &synth_field_doc(&rp.owner, &p.name),
+            "",
         );
 
         // The wire name (rename) and literal default are consumed by the JSON
@@ -1249,6 +1252,7 @@ fn emit_newtype(class: &BmmClass, prim: &str, has_sibling: bool) -> String {
         class.documentation.as_deref(),
         "",
         &synth_class_doc(&class.name),
+        &synth_class_summary(&class.name),
     );
     push_spec_alias(&mut b, &class.name, &ty, "");
     // A transparent primitive newtype; canonical-JSON (de)serialization is the
@@ -1333,6 +1337,7 @@ fn emit_enum_literals(class: &BmmClass, enumeration: &BmmEnumeration, has_siblin
         class.documentation.as_deref(),
         "",
         &synth_class_doc(spec),
+        &synth_class_summary(spec),
     );
     push_spec_alias(&mut b, spec, &ty, "");
     let derive = if is_int {
@@ -1549,6 +1554,10 @@ fn push_spec_alias(b: &mut String, spec: &str, rust_ty: &str, indent: &str) {
 /// `documentation` for (10 such classes across the pinned schemas as of the
 /// current pins) — `missing_docs` admits no exceptions, and an honest
 /// synthesized line beats a silent gap.
+fn synth_class_summary(spec: &str) -> String {
+    format!("The openEHR `{spec}` class.")
+}
+
 fn synth_class_doc(spec: &str) -> String {
     format!("The openEHR `{spec}` class (the vendored BMM carries no documentation for it).")
 }
@@ -1581,10 +1590,18 @@ fn write_uses(b: &mut String, fixed: &[&str], imports: &BTreeSet<String>) {
 
 /// Emit `doc` as `///` lines, falling back to `fallback` when the vendored BMM
 /// carries no documentation for the item. Every public item needs docs
-/// (`missing_docs`), so there is no "no docs" branch.
-fn doc_block_or(b: &mut String, doc: Option<&str>, indent: &str, fallback: &str) {
+/// (`missing_docs`), so there is no "no docs" branch. `summary_hint` is the
+/// synthesized summary line prepended when the prose opens with a sentence
+/// too long to stand as the RFC 1574 summary (empty = leave verbatim).
+fn doc_block_or(
+    b: &mut String,
+    doc: Option<&str>,
+    indent: &str,
+    fallback: &str,
+    summary_hint: &str,
+) {
     if doc.is_some_and(|d| !d.trim().is_empty()) {
-        doc_block(b, doc, indent);
+        doc_block_summarized(b, doc, indent, summary_hint);
     } else {
         b.push_str(&format!("{indent}/// {fallback}\n"));
     }
@@ -1603,6 +1620,10 @@ fn doc_summary_then(b: &mut String, summary: &str, doc: Option<&str>, indent: &s
 }
 
 fn doc_block(b: &mut String, doc: Option<&str>, indent: &str) {
+    doc_block_summarized(b, doc, indent, "");
+}
+
+fn doc_block_summarized(b: &mut String, doc: Option<&str>, indent: &str, summary_hint: &str) {
     let Some(doc) = doc else { return };
     // Spec prose carries example blocks (ODIN snippets, `YYYY-MM-DDTHH:MM:SS`
     // date formats) that rustdoc would compile as Rust doctests and choke on.
@@ -1673,6 +1694,7 @@ fn doc_block(b: &mut String, doc: Option<&str>, indent: &str) {
     if in_fence {
         out.push("```".to_string());
     }
+    split_long_first_paragraph(&mut out, summary_hint);
 
     for line in &out {
         if line.is_empty() {
@@ -1681,6 +1703,93 @@ fn doc_block(b: &mut String, doc: Option<&str>, indent: &str) {
             b.push_str(&format!("{indent}/// {line}\n"));
         }
     }
+}
+
+/// Reshapes an over-long first doc paragraph into the RFC 1574 summary form.
+///
+/// When the first paragraph exceeds `clippy::too_long_first_doc_paragraph`'s
+/// 200-character threshold, the first sentence stays as the summary and the
+/// remainder moves below a blank line. BMM prose the split cannot apply to
+/// (no sentence boundary inside the budget) is left verbatim — the lint then
+/// cannot split within the budget gains the caller's synthesized
+/// `summary_hint` as its summary paragraph instead (empty hint = verbatim).
+fn split_long_first_paragraph(out: &mut Vec<String>, summary_hint: &str) {
+    let para_end = out.iter().position(String::is_empty).unwrap_or(out.len());
+    let text_len: usize = out
+        .iter()
+        .take(para_end)
+        .map(|l| l.chars().count() + 1)
+        .sum::<usize>()
+        .saturating_sub(1);
+    if text_len <= 200 {
+        return;
+    }
+    let mut budget: usize = 200;
+    for li in 0..para_end {
+        let Some(line) = out.get(li).cloned() else {
+            return;
+        };
+        if let Some(cut) = sentence_end_within(&line, budget) {
+            let (head, tail) = line.split_at_checked(cut).unwrap_or((line.as_str(), ""));
+            let head = head.trim_end().to_string();
+            let tail = tail.trim_start().to_string();
+            let replacement = if tail.is_empty() {
+                vec![head, String::new()]
+            } else {
+                vec![head, String::new(), tail]
+            };
+            out.splice(li..=li, replacement);
+            return;
+        }
+        // A line that ends the sentence at its very end splits between lines.
+        let trimmed = line.trim_end();
+        if trimmed.ends_with(['.', '!', '?']) && trimmed.chars().count() <= budget {
+            out.insert(li + 1, String::new());
+            return;
+        }
+        budget = budget.saturating_sub(line.chars().count() + 1);
+        if budget == 0 {
+            break;
+        }
+    }
+    // No sentence boundary inside the budget: prepend the synthesized summary
+    // when the caller supplied one; otherwise leave the prose verbatim.
+    if !summary_hint.is_empty() {
+        out.insert(0, String::new());
+        out.insert(0, summary_hint.to_string());
+    }
+}
+
+/// Returns the byte index just past the first sentence terminator that ends a
+/// sentence within the first `budget` characters of `line`, if any.
+///
+/// A terminator is `.`/`!`/`?` followed by a space, excluding the common
+/// abbreviations spec prose uses (`e.g.`, `i.e.`, `etc.`, `vs.`, `cf.`).
+fn sentence_end_within(line: &str, budget: usize) -> Option<usize> {
+    let mut chars_seen: usize = 0;
+    let mut prev_word_end: Option<usize> = None;
+    let mut iter = line.char_indices().peekable();
+    while let Some((i, c)) = iter.next() {
+        chars_seen += 1;
+        if chars_seen > budget {
+            return None;
+        }
+        if matches!(c, '.' | '!' | '?') && iter.peek().is_some_and(|&(_, n)| n == ' ') {
+            let word_start = prev_word_end.map_or(0, |w| w + 1);
+            let word = line.get(word_start..i).unwrap_or_default();
+            let abbrev = matches!(
+                word.trim_start_matches('(').to_ascii_lowercase().as_str(),
+                "e.g" | "i.e" | "etc" | "vs" | "cf" | "viz" | "resp" | "incl"
+            );
+            if !abbrev {
+                return Some(i + c.len_utf8());
+            }
+        }
+        if c == ' ' {
+            prev_word_end = Some(i);
+        }
+    }
+    None
 }
 
 /// Make verbatim openEHR spec prose safe for the workspace's deny-level rustdoc

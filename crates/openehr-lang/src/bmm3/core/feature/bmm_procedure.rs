@@ -10,7 +10,9 @@ use crate::bmm3::core::feature::bmm_parameter::BmmParameter;
 use crate::bmm3::core::feature::bmm_routine_definition::BmmRoutineDefinition;
 use crate::bmm3::statement::bmm_assertion::BmmAssertion;
 
-/// A formal element with signature of the form: `name ({arg:TArg}*):TStatus`, where `TStatus` is the built-in type `BMM_STATUS_TYPE`.. A procedure is a computed (rather than data) element, generally assumed to be state-changing, and is usually called in the form `name ({arg:TArg}*)`.
+/// A formal element with signature of the form: `name ({arg:TArg}*):TStatus`, where `TStatus` is the built-in type `BMM_STATUS_TYPE`..
+///
+/// A procedure is a computed (rather than data) element, generally assumed to be state-changing, and is usually called in the form `name ({arg:TArg}*)`.
 #[doc(alias = "BMM_PROCEDURE")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct BmmProcedure {

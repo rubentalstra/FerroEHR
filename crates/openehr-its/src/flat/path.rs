@@ -129,10 +129,11 @@ impl Display for FlatKey {
     }
 }
 
-/// The largest accepted `:i` instance index. The spec sets no bound; an
-/// unbounded index would let one tiny key allocate billions of placeholder
-/// occurrences, so the parser rejects anything above this (no openEHR spec
-/// governs this — our own resource-safety bound).
+/// The largest accepted `:i` instance index.
+///
+/// The spec sets no bound; an unbounded index would let one tiny key allocate
+/// billions of placeholder occurrences, so the parser rejects anything above
+/// this (no openEHR spec governs this — our own resource-safety bound).
 pub const MAX_INSTANCE_INDEX: u32 = 65_535;
 
 /// Split a trailing `:<digits>` index off a segment or suffix part. A colon

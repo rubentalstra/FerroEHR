@@ -152,8 +152,8 @@ Do not re-plan these — the audit confirmed each in code:
 ### T24 close-out
 
 - [ ] **T24** Spec-compliance audit of every console-touched surface
-  (openEHR ITS-REST/RM + IHE ITI-81 where relevant) — the former #145,
-  the final phase before close.
+  (openEHR ITS-REST/RM + IHE ITI-81 where relevant) — the final phase
+  before close.
 
 ## Exit criteria
 

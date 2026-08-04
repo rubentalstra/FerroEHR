@@ -1,6 +1,7 @@
-//! Row I/O for the `ehr` table and the `ehr_folder` membership index — the
-//! per-EHR reads/writes the EHR service chapter needs that are not part of the
-//! versioned-object spine ([`crate::storage::version_repo`]).
+//! Row I/O for the `ehr` table and the `ehr_folder` membership index.
+//!
+//! Covers the per-EHR reads/writes the EHR service chapter needs that are not
+//! part of the versioned-object spine ([`crate::storage::version_repo`]).
 //!
 //! No openEHR spec governs the `ehr` / `ehr_folder` schema — it is our own
 //! PG18-native design (`docs/architecture.md` §Storage). The EHR concepts these
@@ -18,10 +19,13 @@ use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
 use crate::storage::version_repo::meta::CurrentMeta;
 
-/// Insert the `ehr` root row (id + immutable `system_id`) with the promoted
+/// Inserts the `ehr` root row with its promoted `EHR_STATUS` columns.
+///
+/// The row carries the id + the immutable `system_id`, and the promoted
 /// `EHR_STATUS` columns (`subject_id` / `subject_namespace` / `is_queryable` /
-/// `is_modifiable`) set in the SAME statement — the create path knows these from the incoming
-/// `EHR_STATUS` before the row is written, so it never needs the follow-up
+/// `is_modifiable`) are set in the SAME statement — the create path knows these
+/// from the incoming `EHR_STATUS` before the row is written, so it never needs
+/// the follow-up
 /// `UPDATE ehr SET subject_id …` the [`crate::service`] sync hook runs on the
 /// update/contribution paths. Returns `Some(time_created)` — the server-assigned
 /// `EHR.time_created` (arch-overview master06 §The EHR), captured via `RETURNING`
@@ -88,8 +92,9 @@ pub async fn insert_ehr(
 
 /// The CURRENT `EHR_STATUS` root node fragment (`num = 0` of the latest trunk
 /// version) of an EHR, read on the CALLER'S connection so a transaction sees
-/// the `EHR_STATUS` it has just written. `None` when the EHR has no current
-/// `EHR_STATUS`.
+/// the `EHR_STATUS` it has just written.
+///
+/// `None` when the EHR has no current `EHR_STATUS`.
 ///
 /// This is the read half of the promoted-column refresh the paths that land
 /// `EHR_STATUS` versions WITHOUT the service write hook use — the EHR Extract
@@ -147,9 +152,11 @@ pub async fn ehr_id_by_subject<'e>(
     )
 }
 
-/// The `ehr` row header `(system_id, time_created)`, or `None` when the EHR does
-/// not exist. `system_id` is the stored per-EHR value (immutable, arch-overview
-/// master06 §System Identity), never the live config.
+/// The `ehr` row header `(system_id, time_created)`, or `None` when the EHR
+/// does not exist.
+///
+/// `system_id` is the stored per-EHR value (immutable, arch-overview master06
+/// §System Identity), never the live config.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
@@ -171,12 +178,12 @@ pub async fn ehr_header(
     Ok(Some((system_id, time_created)))
 }
 
-/// Everything the `GET /ehr/{ehr_id}` representation needs in ONE statement
-/// (the former four serial reads — header, current `EHR_STATUS` identity,
-/// `EHR_ACCESS` ref, live folder hierarchies — merged; no openEHR spec governs
-/// read batching, our own design): the EHR header, the current `EHR_STATUS`
-/// version identity, the `EHR_ACCESS` versioned-object id, and the LIVE
-/// folder-hierarchy ids in `rank` order.
+/// Reads the whole `GET /ehr/{ehr_id}` representation in ONE statement.
+///
+/// Returns the EHR header, the current `EHR_STATUS` version identity, the
+/// `EHR_ACCESS` versioned-object id, and the LIVE folder-hierarchy ids in
+/// `rank` order, in one round trip (no openEHR spec governs read batching —
+/// our own design).
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
@@ -272,10 +279,12 @@ pub struct EhrStatusIdentity {
 }
 
 /// The versioned-object id of the EHR's directory — `EHR.directory`
-/// (`folders.item(1)`, RM ehr, EHR class `Directory_in_folders`). Resolved as
-/// the lowest-`rank` LIVE hierarchy, falling back to the lowest-`rank`
-/// still-existing one so a read after a logical delete resolves to the deleted
-/// version (→ 204) rather than 404. `None` when the EHR indexes no hierarchy.
+/// (`folders.item(1)`, RM ehr, EHR class `Directory_in_folders`).
+///
+/// Resolved as the lowest-`rank` LIVE hierarchy, falling back to the
+/// lowest-`rank` still-existing one so a read after a logical delete resolves
+/// to the deleted version (→ 204) rather than 404. `None` when the EHR
+/// indexes no hierarchy.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
@@ -293,15 +302,17 @@ pub async fn directory_vo(pool: &PgPool, ehr_id: EhrId) -> Result<Option<VoId>, 
     .await?)
 }
 
-/// Resolve the EHR's directory slot **and** its current version metadata **and**
-/// the EHR's `is_modifiable` content-write flag in ONE statement: the
+/// Resolves the EHR's directory slot, current version metadata, and write flag.
+///
+/// One statement covers the directory slot **and** its current version metadata
+/// **and** the EHR's `is_modifiable` content-write flag: the
 /// `ehr_folder`⋈`vo_version`⋈`audit`⋈`ehr` join, ordered live-first by `rank`
 /// (the same slot resolution [`directory_vo`] applies), projecting the current
 /// trunk version's `VERSION_TREE_ID` column ints + stored `creating_system_id` +
 /// audit `time_committed`, plus the promoted `ehr.is_modifiable`. Folds the
-/// [`directory_vo`] slot lookup, the metadata-only current-version read, and the
-/// former standalone `is_modifiable` side-SELECT into one round trip for the
-/// directory `If-Match`/`412` write paths (`update`/`delete`). The
+/// [`directory_vo`] slot lookup, the metadata-only current-version read, and
+/// the `is_modifiable` read into one round trip for the directory
+/// `If-Match`/`412` write paths (`update`/`delete`). The
 /// full-`OBJECT_VERSION_ID` compare the caller builds from these columns is
 /// unchanged (ITS-REST overview §Concurrency control); the `is_modifiable` gate
 /// is RM ehr master04 §EHR Active Status. Returns `(meta, is_modifiable)`; `None`
@@ -345,13 +356,14 @@ pub async fn directory_current_meta(
     Ok(Some((meta, row.try_get("is_modifiable")?)))
 }
 
-/// Whether the EHR is modifiable, read from the promoted `ehr.is_modifiable`
-/// column (kept in lockstep with the current `EHR_STATUS.is_modifiable` by the
-/// service's `sync_ehr_subject` hook and its import/archive-load re-promotion
-/// over [`current_status_root`]; RM ehr master04 §EHR Active Status). `None`
-/// when the EHR does not exist (the caller treats that as modifiable so the
-/// guard never spuriously blocks). No openEHR spec governs the promoted column
-/// — our own storage design.
+/// Whether the EHR is modifiable.
+///
+/// Read from the promoted `ehr.is_modifiable` column (kept in lockstep with the
+/// current `EHR_STATUS.is_modifiable` by the service's `sync_ehr_subject` hook
+/// and its import/archive-load re-promotion over [`current_status_root`]; RM
+/// ehr master04 §EHR Active Status). `None` when the EHR does not exist (the
+/// caller treats that as modifiable so the guard never spuriously blocks). No
+/// openEHR spec governs the promoted column — our own storage design.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
@@ -364,14 +376,16 @@ pub async fn ehr_is_modifiable(pool: &PgPool, ehr_id: EhrId) -> Result<Option<bo
     )
 }
 
-/// The two content-write pre-checks in ONE round trip: whether the EHR exists,
-/// and whether it is modifiable. Reads the `ehr` row directly — a present row is
-/// the existence signal and carries the promoted `is_modifiable` column (synced
-/// with the current `EHR_STATUS` by `sync_ehr_subject` and its
-/// import/archive-load re-promotion over [`current_status_root`]).
-/// Returns `(exists, is_modifiable)` where `is_modifiable` is `None` exactly when
-/// the EHR does not exist. The concepts guarded are RM ehr master04 §EHR
-/// Creation (existence) and §EHR Active Status (`EHR_STATUS.is_modifiable`); no
+/// The two content-write pre-checks in ONE round trip: whether the EHR
+/// exists, and whether it is modifiable.
+///
+/// Reads the `ehr` row directly — a present row is the existence signal and
+/// carries the promoted `is_modifiable` column (synced with the current
+/// `EHR_STATUS` by `sync_ehr_subject` and its import/archive-load
+/// re-promotion over [`current_status_root`]). Returns `(exists,
+/// is_modifiable)` where `is_modifiable` is `None` exactly when the EHR does
+/// not exist. The concepts guarded are RM ehr master04 §EHR Creation
+/// (existence) and §EHR Active Status (`EHR_STATUS.is_modifiable`); no
 /// openEHR spec governs the promoted column — our own storage design.
 ///
 /// # Errors
@@ -389,13 +403,14 @@ pub async fn ehr_writability(
 }
 
 /// Whether ANY live (non-deleted) folder hierarchy is indexed for the EHR —
-/// the `POST /directory` conflict probe. Deliberately ignores logically
-/// deleted hierarchies: after a `523|deleted|` version the container remains
-/// (RM common master06 §Logical Deletion) but the directory slot is vacant,
-/// so a new hierarchy may be created (RM ehr master04 §Folders — "an
-/// entirely new Folder hierarchy may be added"); only a LIVE occupant
-/// conflicts (CNF master09 E.2 requires the error only for an EHR *with* a
-/// directory).
+/// the `POST /directory` conflict probe.
+///
+/// Deliberately ignores logically deleted hierarchies: after a `523|deleted|`
+/// version the container remains (RM common master06 §Logical Deletion) but
+/// the directory slot is vacant, so a new hierarchy may be created (RM ehr
+/// master04 §Folders — "an entirely new Folder hierarchy may be added"); only
+/// a LIVE occupant conflicts (CNF master09 E.2 requires the error only for an
+/// EHR *with* a directory).
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
@@ -412,11 +427,12 @@ pub async fn live_directory_exists(pool: &PgPool, ehr_id: EhrId) -> Result<bool,
     .await?)
 }
 
-/// Whether the EHR already has a LIVE folder hierarchy whose root carries the
-/// given `archetype_node_id` AND name — the LOCATABLE identity pair that
-/// distinguishes same-archetype siblings (RM common, paths: the name predicate
-/// disambiguates same-archetype nodes). Backs the CONTRIBUTION-route
-/// duplicate-directory rejection.
+/// Whether the EHR already has a LIVE folder hierarchy with that root identity.
+///
+/// The root must carry the given `archetype_node_id` AND name — the LOCATABLE
+/// identity pair that distinguishes same-archetype siblings (RM common, paths:
+/// the name predicate disambiguates same-archetype nodes). Backs the
+/// CONTRIBUTION-route duplicate-directory rejection.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.

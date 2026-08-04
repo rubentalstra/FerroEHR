@@ -12,7 +12,9 @@ use openehr_base::prelude::ObjectRef;
 #[derive(Debug, Clone, PartialEq)]
 pub struct VersionedEhrStatus {
     // inherited: VERSIONED_OBJECT
-    /// Unique identifier of this version container in the form of a UID with no extension. This id will be the same in all instances of the same container in a distributed environment, meaning that it can be understood as the uid of the  virtual version tree.
+    /// Unique identifier of this version container in the form of a UID with no extension.
+    ///
+    /// This id will be the same in all instances of the same container in a distributed environment, meaning that it can be understood as the uid of the  virtual version tree.
     pub uid: HierObjectId,
     /// Reference to object to which this version container belongs, e.g. the id of the containing EHR or other relevant owning entity.
     pub owner_id: ObjectRef,

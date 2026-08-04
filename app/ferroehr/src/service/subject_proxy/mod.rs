@@ -1,5 +1,6 @@
-//! The Subject Proxy service (`service/subject_proxy/`) — SM
-//! `I_SUBJECT_PROXY_SERVICE` / `I_DATA_BINDING`
+//! The Subject Proxy service (`service/subject_proxy/`).
+//!
+//! Realizes SM `I_SUBJECT_PROXY_SERVICE` / `I_DATA_BINDING`
 //! (`docs/specs/openehr/SM/docs/openehr_platform/master10-subject_proxy_service.adoc`
 //! and the UML classes `i_subject_proxy_service.adoc`, `i_data_binding.adoc`)
 //! over the `sp_*` configuration + sample stores.

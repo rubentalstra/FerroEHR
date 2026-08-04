@@ -1,7 +1,8 @@
-//! Wire-facing EHR-service types (SM `I_EHR_SERVICE` / `I_EHR_CONTRIBUTION`,
-//! `docs/specs/openehr/SM/docs/openehr_platform/master05-ehr_service.adoc`):
-//! the SM `EHR_SUMMARY` return shape and the contribution-list time-range
-//! argument.
+//! Wire-facing EHR-service types.
+//!
+//! The SM `EHR_SUMMARY` return shape and the contribution-list time-range
+//! argument (SM `I_EHR_SERVICE` / `I_EHR_CONTRIBUTION`,
+//! `docs/specs/openehr/SM/docs/openehr_platform/master05-ehr_service.adoc`).
 
 use serde_json::Value;
 
@@ -24,7 +25,9 @@ pub struct EhrSummary {
     pub composition_count: i64,
 }
 
-/// The optional inclusive `(lower, upper)` ISO-8601 bounds of an SM
-/// `Interval<Iso8601_date_time>` (`I_EHR_CONTRIBUTION.list_contributions` /
-/// `contribution_count`) — either side open (`None`) means unbounded.
+/// The optional inclusive `(lower, upper)` ISO-8601 bounds of a time interval.
+///
+/// Models an SM `Interval<Iso8601_date_time>`
+/// (`I_EHR_CONTRIBUTION.list_contributions` / `contribution_count`); either
+/// side open (`None`) means unbounded.
 pub type TimeRange = Option<(Option<String>, Option<String>)>;

@@ -16,6 +16,8 @@ pub struct BmmGenericType {
     pub value_constraint: Option<BmmValueSetSpec>,
     /// Defining generic class of this type.
     pub base_class: BmmGenericClass,
-    /// Generic parameters of the `_root_type_` in this type specifier. The order must match the order of the owning class's formal generic parameter declarations, and the types may be defined types or formal parameter types.
+    /// Generic parameters of the `_root_type_` in this type specifier.
+    ///
+    /// The order must match the order of the owning class's formal generic parameter declarations, and the types may be defined types or formal parameter types.
     pub generic_parameters: openehr_base::containers::NonEmptyVec<BmmUnitaryType>,
 }

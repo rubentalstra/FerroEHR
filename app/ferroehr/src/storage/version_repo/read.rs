@@ -1,6 +1,8 @@
-//! The full version reads: one `vo_version`⋈`audit` statement (attestations
-//! folded in as a LATERAL aggregate) plus the node→canonical reassembly,
-//! yielding the [`StoredVersion`] shape the versioning layer maps into a
+//! The full version reads.
+//!
+//! One `vo_version`⋈`audit` statement (attestations folded in as a LATERAL
+//! aggregate) plus the node→canonical reassembly, yielding the
+//! [`StoredVersion`] shape the versioning layer maps into a
 //! `VERSION`/`ORIGINAL_VERSION`.
 //!
 //! No openEHR spec governs the SQL — our own design (`docs/architecture.md`
@@ -19,8 +21,10 @@ use crate::storage::node_repo::read_version_canonical;
 
 /// A loaded `vo_version`⋈`audit` row plus its reassembled content and
 /// attestations — the storage read shape the versioning layer maps into a
-/// `VERSION`/`ORIGINAL_VERSION`. The tree is returned as its three column ints;
-/// the audit fields are flattened (versioning rebuilds the `AUDIT_DETAILS`).
+/// `VERSION`/`ORIGINAL_VERSION`.
+///
+/// The tree is returned as its three column ints; the audit fields are
+/// flattened (versioning rebuilds the `AUDIT_DETAILS`).
 #[derive(Debug, Clone)]
 pub struct StoredVersion {
     /// The versioned object's id.
@@ -203,10 +207,11 @@ async fn stored_version(
     })
 }
 
-/// Read the current TRUNK version of an object by id (any kind). `None` if it
-/// never existed (`latest_trunk_version`, master06 §Versioned Objects). A
-/// deleted current version returns with `canonical = Null` and its `523`
-/// lifecycle so the caller can distinguish 404 from a deleted read.
+/// Read the current TRUNK version of an object by id (any kind).
+///
+/// `None` if it never existed (`latest_trunk_version`, master06 §Versioned
+/// Objects). A deleted current version returns with `canonical = Null` and
+/// its `523` lifecycle so the caller can distinguish 404 from a deleted read.
 ///
 /// # Errors
 /// Returns [`StorageError`] on a driver/reassembly failure.
@@ -276,10 +281,11 @@ pub async fn read_version(
     Ok(Some(stored_version(pool, vo_id, &row).await?))
 }
 
-/// Read the version of an object current at a given instant (time-travel): the
-/// TRUNK row whose `sys_period` contains `at` (master08 §Change Management —
-/// any previous state reconstructable). `None` if the object had no trunk
-/// version then.
+/// Read the version of an object current at a given instant (time-travel):
+/// the TRUNK row whose `sys_period` contains `at` (master08 §Change
+/// Management — any previous state reconstructable).
+///
+/// `None` if the object had no trunk version then.
 ///
 /// NOTE: the trunk restriction is deliberate. `VERSIONED_OBJECT.version_at_time
 /// (a_time): VERSION[1]` returns exactly ONE version

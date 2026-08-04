@@ -1,6 +1,8 @@
 //! AQL abstract syntax tree, transcribed from `AqlParser.g4` (vendored at
-//! `vendor/grammar/`). Each grammar rule maps to a type here; the [`crate::parser`]
-//! builds these from the [`crate::lexer`] token stream.
+//! `vendor/grammar/`).
+//!
+//! Each grammar rule maps to a type here; the [`crate::parser`] builds these
+//! from the [`crate::lexer`] token stream.
 //!
 //! Scope note: this is the *syntactic* AST. Semantic concerns (resolving paths
 //! against Web Templates, typing quoted temporal literals) are later passes.

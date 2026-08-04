@@ -94,10 +94,11 @@ pub enum ClientAuth {
     Required,
 }
 
-/// `[server.tls]` — native TLS on the main listener. Off by default
-/// (deployments commonly terminate TLS at an ingress); with it on, the
-/// protocol floor is the rustls safe default (TLS 1.2+, strong suites —
-/// the IETF BCP 195 posture), and `client_auth` adds the IHE ATNA ITI-19
+/// `[server.tls]` — native TLS on the main listener.
+///
+/// Off by default (deployments commonly terminate TLS at an ingress); with it
+/// on, the protocol floor is the rustls safe default (TLS 1.2+, strong suites
+/// — the IETF BCP 195 posture), and `client_auth` adds the IHE ATNA ITI-19
 /// mutual-TLS node authentication against an explicit trust anchor. The
 /// separate-port management listener stays plain HTTP (an internal surface).
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]

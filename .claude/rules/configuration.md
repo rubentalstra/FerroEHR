@@ -71,5 +71,5 @@ everywhere else flag "no openEHR spec governs configuration — our own design".
 
 Config tests drive the pure `assemble(file, env_map, overrides)` seam with
 injected env maps + `assert_fs` temp files — **never** the process environment.
-Every section gets an env-mapping test (the missing test class is what let a
-documented-but-dead env form ship historically). Never weaken these to pass.
+Every section gets an env-mapping test — without one, a documented env form
+can ship dead. Never weaken these to pass.

@@ -12,7 +12,9 @@ use crate::data_structures::item_structure::item_tree::ItemTree;
 
 /// Closed subtype set of `DATA_STRUCTURE`, dispatched on each payload's `_type`.
 ///
-/// Abstract parent class of all data structure types. Includes the `_as_hierarchy_` function which can generate the equivalent CEN EN13606 single hierarchy for each subtype's physical representation. For example, the physical representation of an `ITEM_LIST` is `List<ELEMENT>`; its implementation of `_as_hierarchy_` will generate a `CLUSTER` containing the set of `ELEMENT` nodes from the list.
+/// Abstract parent class of all data structure types.
+///
+/// Includes the `_as_hierarchy_` function which can generate the equivalent CEN EN13606 single hierarchy for each subtype's physical representation. For example, the physical representation of an `ITEM_LIST` is `List<ELEMENT>`; its implementation of `_as_hierarchy_` will generate a `CLUSTER` containing the set of `ELEMENT` nodes from the list.
 #[doc(alias = "DATA_STRUCTURE")]
 #[derive(Debug, Clone, PartialEq)]
 pub enum DataStructure {

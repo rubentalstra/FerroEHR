@@ -1,9 +1,10 @@
-//! Concrete health indicators: the dependency-touching checks
-//! (DB pool, migrations, audit sender, event publisher) implementing the
-//! [`HealthIndicator`] trait from [`crate::telemetry::health`]. The binary
-//! constructs them over the live handles and registers them into the
-//! [`HealthRegistry`](crate::telemetry::health::HealthRegistry) at boot; the
-//! HTTP probes live in the protocol adapter (`ferroehr-rest`).
+//! Concrete health indicators: the dependency-touching checks (DB pool,
+//! migrations, audit sender, event publisher) implementing the
+//! [`HealthIndicator`] trait from [`crate::telemetry::health`].
+//!
+//! The binary constructs them over the live handles and registers them into
+//! the [`HealthRegistry`](crate::telemetry::health::HealthRegistry) at boot;
+//! the HTTP probes live in the protocol adapter (`ferroehr-rest`).
 //!
 //! No openEHR spec governs health probes — our own operational design.
 
@@ -114,10 +115,12 @@ impl HealthIndicator for AuditHealth {
 }
 
 /// `events` — reports the contribution-outbox publisher's broker-delivery
-/// health. Degraded-tolerable (the outbox buffers while the broker is
-/// down, so delivery lag must not block readiness): a broker outage flips only
-/// the aggregate to `DEGRADED`, never readiness. Registered only when eventing
-/// is enabled.
+/// health.
+///
+/// Degraded-tolerable (the outbox buffers while the broker is down, so
+/// delivery lag must not block readiness): a broker outage flips only the
+/// aggregate to `DEGRADED`, never readiness. Registered only when eventing is
+/// enabled.
 #[derive(Debug)]
 pub struct EventsHealth {
     healthy: Arc<AtomicBool>,

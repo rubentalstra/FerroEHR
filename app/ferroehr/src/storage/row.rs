@@ -59,10 +59,12 @@ pub struct NodeRow {
     pub promoted: Vec<Option<String>>,
 }
 
-/// The lean read row: only the columns [`crate::storage::codec::reassemble`] and the
-/// nested-set contract need. The read path fetches exactly these five columns
-/// — the promoted query columns (`rm_type`/`archetype`/`arch_*`/`name`)
-/// live inside `data` and are not needed to reconstruct the canonical tree.
+/// The lean read row: only the columns [`crate::storage::codec::reassemble`]
+/// and the nested-set contract need.
+///
+/// The read path fetches exactly these five columns — the promoted query
+/// columns (`rm_type`/`archetype`/`arch_*`/`name`) live inside `data` and are
+/// not needed to reconstruct the canonical tree.
 ///
 /// `num_cap`/`parent_num` are surfaced (unused by reassembly) because they are
 /// the nested-set interval contract the AQL engine consumes when it reads the
@@ -81,10 +83,12 @@ pub struct ReadRow {
     pub data: Value,
 }
 
-/// Read access to the three fields [`crate::storage::codec::reassemble`] needs from a
-/// node row — its pre-order number, its materialized path, and its JSON
-/// fragment. Implemented by both the write [`NodeRow`] and the lean [`ReadRow`],
-/// so reassembly works from either shape without forcing the read path to fetch
+/// Read access to the three fields [`crate::storage::codec::reassemble`]
+/// needs from a node row — its pre-order number, its materialized path, and
+/// its JSON fragment.
+///
+/// Implemented by both the write [`NodeRow`] and the lean [`ReadRow`], so
+/// reassembly works from either shape without forcing the read path to fetch
 /// the promoted query columns.
 pub trait NodeContent {
     /// Pre-order number within the versioned object (root = 0).

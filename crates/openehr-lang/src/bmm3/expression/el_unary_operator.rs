@@ -11,7 +11,9 @@ use crate::bmm3::expression::el_function_call::ElFunctionCall;
 #[derive(Debug, Clone, PartialEq)]
 pub struct ElUnaryOperator {
     // inherited: EL_OPERATOR
-    /// True if the natural precedence of operators is overridden in the expression represented by this node of the expression tree. If True, parentheses should be introduced around the totality of the syntax expression corresponding to this operator node and its operands.
+    /// True if the natural precedence of operators is overridden in the expression represented by this node of the expression tree.
+    ///
+    /// If True, parentheses should be introduced around the totality of the syntax expression corresponding to this operator node and its operands.
     pub precedence_overridden: Option<bool>,
     /// The symbol actually used in the expression, or intended to be used for serialisation. Must be a member of `OPERATOR_DEF._symbols_`.
     pub symbol: Option<String>,

@@ -13,9 +13,13 @@
 #[derive(Debug, Clone, PartialEq)]
 pub struct ExprLeaf {
     // inherited: EXPR_ITEM
-    /// Type name of this item in the mathematical sense. For leaf nodes, must be the name of a primitive type, or else a reference model type. The type for any relational or boolean operator will be “Boolean”, while the type for any arithmetic operator, will be “Real” or “Integer”.
+    /// Type name of this item in the mathematical sense.
+    ///
+    /// For leaf nodes, must be the name of a primitive type, or else a reference model type. The type for any relational or boolean operator will be “Boolean”, while the type for any arithmetic operator, will be “Real” or “Integer”.
     pub r#type: String,
-    /// Type of reference: “constant”, “attribute”, “function”, “constraint”. The first three are used to indicate the referencing mechanism for an operand. The last is used to indicate a constraint operand, as happens in the case of the right-hand operand of the ‘matches’ operator.
+    /// Type of reference: “constant”, “attribute”, “function”, “constraint”.
+    ///
+    /// The first three are used to indicate the referencing mechanism for an operand. The last is used to indicate a constraint operand, as happens in the case of the right-hand operand of the ‘matches’ operator.
     pub reference_type: String,
     /// The value referred to; a manifest constant, an attribute path (in the form of a String), or for the right-hand side of a ‘matches’ node, a constraint, often a C_PRIMITIVE_OBJECT.
     pub item: serde_json::Value,

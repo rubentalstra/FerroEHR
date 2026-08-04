@@ -34,9 +34,13 @@ pub struct PBmmSchema {
     pub schema_contributors: Option<Vec<String>>,
     /// Name of a parent class used within the schema to provide archetype capability, enabling filtering of classes in RM visualisation. If empty, 'Any' is assumed. Persisted attribute.
     pub archetype_parent_class: Option<String>,
-    /// Name of a parent class of logical 'data types' used within the schema to provide archetype capability, enabling filtering of classes in RM visualisation. If empty, 'Any' is assumed. Persisted attribute.
+    /// Name of a parent class of logical 'data types' used within the schema to provide archetype capability, enabling filtering of classes in RM visualisation.
+    ///
+    /// If empty, 'Any' is assumed. Persisted attribute.
     pub archetype_data_value_parent_class: Option<String>,
-    /// List of top-level package paths that provide the RM 'model' part in archetype identifiers, e.g. the path "org.openehr.ehr" gives "EHR" in "openEHR-EHR". Within this namespace, archetypes can be based on any class reachable from classes defined directly in these packages. Persisted attribute.
+    /// List of top-level package paths that provide the RM 'model' part in archetype identifiers, e.g. the path "org.openehr.ehr" gives "EHR" in "openEHR-EHR".
+    ///
+    /// Within this namespace, archetypes can be based on any class reachable from classes defined directly in these packages. Persisted attribute.
     pub archetype_rm_closure_packages: Option<Vec<String>>,
     /// If archetype_parent_class is not set, designate a class whose descendants should be made visible in tree and grid renderings of the archetype definition. Persisted attribute.
     pub archetype_visualise_descendants_of: Option<String>,

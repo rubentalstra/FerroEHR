@@ -40,11 +40,10 @@ pub struct AuthConfig {
     /// identically-named (upper-cased) role via scope→role extraction, so the
     /// RBAC `admin_role` gate subsumes it. Still consulted by the management
     /// surface's `AdminOnly` access level. Unset by default.
-    // NOTE: the configuration design retires `admin_scope`; it is
-    // kept for one transition while the management AdminOnly gate still reads it
-    // — retiring it fully is a follow-up that rewires that gate to the RBAC
-    // admin role. No openEHR spec governs authorization (SM places it out of
-    // band) — our own design.
+    // TODO(#1879): rewire the management AdminOnly gate to the RBAC admin
+    // role and delete this alias.
+    // NOTE: no openEHR spec governs authorization — the SM places it out of
+    // band — so this deprecated alias is our own design/extension.
     pub admin_scope: Option<String>,
 }
 
@@ -102,10 +101,12 @@ fn default_basic_roles() -> Vec<String> {
     vec!["USER".to_owned()]
 }
 
-/// OAuth2/OIDC bearer configuration. Validation happens as a resource server:
-/// the token's signature is checked against a key source and the `iss`/`aud`
-/// claims validated. The authorization-code client flow (the `oauth2` crate) is
-/// a client concern, not a CDR's, so it is out of scope here.
+/// OAuth2/OIDC bearer configuration.
+///
+/// Validation happens as a resource server: the token's signature is checked
+/// against a key source and the `iss`/`aud` claims validated. The
+/// authorization-code client flow (the `oauth2` crate) is a client concern,
+/// not a CDR's, so it is out of scope here.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct OidcConfig {

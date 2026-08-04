@@ -174,10 +174,11 @@ impl TerminologyRelation {
     }
 }
 
-/// `Terminology_extract` (`terminology_extract.adoc`): "Root object of a
-/// collection of items extracted from a single version or release of one
-/// terminology." May represent a flat value-set, a structured value-set, or
-/// a subsumption hierarchy.
+/// `Terminology_extract` (`terminology_extract.adoc`).
+///
+/// "Root object of a collection of items extracted from a single version or
+/// release of one terminology." May represent a flat value-set, a structured
+/// value-set, or a subsumption hierarchy.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct TerminologyExtract {
     /// `terminology_id` (1..1) — the namespace identifier of the terminology.

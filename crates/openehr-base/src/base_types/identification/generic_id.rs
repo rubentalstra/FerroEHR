@@ -11,6 +11,8 @@ pub struct GenericId {
     // inherited: OBJECT_ID
     /// The value of the id in the form defined below.
     pub value: String,
-    /// Name of the scheme to which this identifier conforms. Ideally this name will be recognisable globally but realistically it may be a local ad hoc scheme whose name is not controlled or standardised in any way.
+    /// Name of the scheme to which this identifier conforms.
+    ///
+    /// Ideally this name will be recognisable globally but realistically it may be a local ad hoc scheme whose name is not controlled or standardised in any way.
     pub scheme: String,
 }

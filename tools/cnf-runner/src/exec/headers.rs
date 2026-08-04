@@ -1,4 +1,6 @@
-//! Response-header assertion evaluation — the executed half of the
+//! Response-header assertion evaluation.
+//!
+//! This is the executed half of the
 //! catalogue's `outcomes.*.headers` declarations (issue #403: the matchers
 //! were parsed by the binding model but never evaluated, so every header
 //! declaration was documentation, not an assertion).

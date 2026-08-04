@@ -1,4 +1,6 @@
-//! Observed-outcome classification — interpreter law (c): transport and
+//! Observed-outcome classification.
+//!
+//! Interpreter law (c): transport and
 //! connection faults, timeouts, and responses no binding outcome maps →
 //! `errored` (ISO/IEC 9646 *inconclusive*, never a conformance finding); a
 //! *mapped but unexpected* outcome → `failed`.
@@ -77,8 +79,9 @@ fn expectation_matches(expectation: &WireExpectation, status: u16) -> bool {
         .is_some_and(|alts| alts.iter().any(|alt| alt.value() == status))
 }
 
-/// The row verdict a step observation produces against its expectation —
-/// laws (b) and (c) combined: a mismatch fails the row (and the caller
+/// The row verdict a step observation produces against its expectation.
+///
+/// Laws (b) and (c) combined: a mismatch fails the row (and the caller
 /// aborts its remaining steps); an unmapped/transport observation errors it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StepJudgement {

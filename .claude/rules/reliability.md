@@ -195,25 +195,25 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   carry a `compile_error!` guard (the Cargo book's prescription — the
   console's `hydrate`/`ssr` pair), and `--all-features` lanes exclude the
   guarded crate, testing it per-feature.
-- **Only the official comment-annotation forms** (owner ruling 2026-07-17):
-  unfinished work is `// TODO:` (or `// TODO(perf):` for a deferred
-  performance optimization); a deliberate spec-silent design decision is a
-  plain `// NOTE:` carrying the spec citation or the explicit "no openEHR
-  spec governs this — our own design/extension" flag; `unsafe` (none
-  expected) carries `// SAFETY:` — now also machine-guarded against misuse
-  (`unnecessary_safety_comment`). The bespoke `(port)` vocabulary
-  (`// PORT NOTE:`, `TODO(port)`, `PERF(port)`, the "PORT STATUS" trailer)
-  is deleted and must not reappear. **Explicit exception to this file's
-  rule-needs-a-check pattern:** there is NO CI grep gate for this (the owner
-  removed it) — the enforcement story is that the official `// TODO:` form is
-  the one the Rust toolchain and the IDE surface, so it is self-reinforcing;
-  the `(port)` forms simply have no tooling behind them and die of neglect.
-  (Review-enforced.)
+- **Comment style is machine-enforced** (owner rulings 2026-07-17,
+  2026-08-01, 2026-08-04; the full guide is `comments.md` — RFC 505 +
+  RFC 1574): line comments only, unfinished work is `// TODO(#NNNN):` (issue
+  reference mandatory), a settled spec-silent decision is `// NOTE:` as a
+  citation + one sentence (≤3 lines), plain `//` runs ≤8 lines (essays live
+  on the PR/issue), `// SAFETY:` reserved for `unsafe`
+  (`unnecessary_safety_comment` guards misuse), and no unsanctioned marker
+  vocabulary (the guard's list is the authority — only `TODO`, `NOTE`, and
+  `SAFETY` are sanctioned).
+  Enforcement (tier 4): `scripts/check-comment-style.sh` — per-edit
+  via the `rust_fmt_clippy.sh` hook, per-PR via the `comment-style` CI job
+  (diff-scoped until the legacy essay sweep #1870 closes) — plus
+  `clippy::too_long_first_doc_paragraph` (tier 3) for the RFC 1574 doc
+  summary line. Change-narration and prose deferrals stay review-enforced
+  (no tool can judge them).
 
 ## Recorded deviations from the API Guidelines (deliberate, owner-adjudicated)
 
-- **C-SERDE — satisfied via emitted MANUAL impls (waiver retired by the
-  foundation-phase rewrite, #1702)**: the spec types implement
+- **C-SERDE — satisfied via emitted MANUAL impls** (#1702): the spec types implement
   `serde::Serialize`/`Deserialize` through explicit generated code
   (per-crate `json_serde.rs` from `emit-json`), never derives and never
   serde attributes — the manual form is what lets the strict reader,
@@ -221,8 +221,8 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   code (root `CLAUDE.md` §Code generation). The wire contract stays pinned
   by the canonical-output gates.
 - **C-PERMISSIVE — MIT for the project's own code** (owner decision
-  2026-07-31, superseding the earlier Apache-2.0-only ruling): the project
-  relicensed to MIT with the rename; vendored openEHR machine-readable
+  2026-07-31): the project's own code is MIT-licensed; vendored openEHR
+  machine-readable
   artifacts and CKM-derived data keep their upstream Apache-2.0 terms
   (`LICENSE-APACHE-2.0`). Dependencies stay license-gated by `deny.toml`.
 - **C-STABLE — latent, neutralized by `publish = false`**: the `openehr-*`

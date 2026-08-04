@@ -1,4 +1,6 @@
-//! **ITS-XML** — canonical XML serialization (openEHR ITS-XML), in either of
+//! **ITS-XML** — canonical XML serialization (openEHR ITS-XML).
+//!
+//! A document is written in either of
 //! the two published wire lineages: `http://schemas.openehr.org/v1`
 //! (Release-1.0.2v2, the STABLE bundle) and `http://schemas.openehr.org/v2`
 //! (Release-2.0.0v2, TRIAL upstream). One generated impl set serves both: the
@@ -39,10 +41,11 @@ pub struct PublishedRoot {
     pub type_is_abstract: bool,
 }
 
-/// The published document elements served as canonical-XML roots — the ONE
-/// statement of the published-element fact both the REST layer and the admin
-/// archive consume (the schemas live in this crate: `schemas/xml/`). Both
-/// published lineages spell every entry identically:
+/// The published document elements served as canonical-XML roots.
+///
+/// This is the ONE statement of the published-element fact both the REST layer
+/// and the admin archive consume (the schemas live in this crate:
+/// `schemas/xml/`). Both published lineages spell every entry identically:
 ///
 /// - `<xs:element name="composition" type="COMPOSITION"/>` —
 ///   `its-xml-1.0.2-nsv1/ALL/Composition.xsd`;
@@ -77,8 +80,10 @@ pub const PUBLISHED_ROOTS: &[PublishedRoot] = &[
 
 /// The declared **abstract** XSD type of published root `element`, when its
 /// type is abstract (the instance must then carry `xsi:type` — see
-/// [`PublishedRoot::type_is_abstract`]). `None` for a concretely-typed root
-/// and for a name the schemas publish no element for.
+/// [`PublishedRoot::type_is_abstract`]).
+///
+/// `None` for a concretely-typed root and for a name the schemas publish no
+/// element for.
 #[must_use]
 pub fn declared_abstract_root_type(element: &str) -> Option<&'static str> {
     PUBLISHED_ROOTS

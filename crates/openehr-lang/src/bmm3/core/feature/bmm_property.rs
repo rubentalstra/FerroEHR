@@ -8,7 +8,9 @@ use crate::bmm3::core::feature::bmm_unitary_property::BmmUnitaryProperty;
 
 /// Closed subtype set of `BMM_PROPERTY`, dispatched on each payload's `_type`.
 ///
-/// Meta-type of a writable property definition within a class definition of an object model. The `_is_composition_` attribute indicates whether the property has sub-part or an association semantics with respect to the owning class.
+/// Meta-type of a writable property definition within a class definition of an object model.
+///
+/// The `_is_composition_` attribute indicates whether the property has sub-part or an association semantics with respect to the owning class.
 #[doc(alias = "BMM_PROPERTY")]
 #[derive(Debug, Clone, PartialEq)]
 pub enum BmmProperty {

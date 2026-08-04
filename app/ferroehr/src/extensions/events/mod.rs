@@ -118,11 +118,13 @@ pub fn routing_key(kind: &str, change_type: &str, template_id: Option<&str>) -> 
     format!("{kind}.{change_type}.{template}")
 }
 
-/// Build the topic **binding** key for a subscription's predicates, parallel to
-/// [`routing_key`] but substituting the `*` single-word wildcard for any NULL
-/// (absent) predicate. `archetype` is intentionally absent: the routing key has
-/// no archetype segment (see the `event_subscription.archetype` NOTE), so
-/// it cannot participate in topic binding.
+/// Build the topic **binding** key for a subscription's predicates, parallel
+/// to [`routing_key`] but substituting the `*` single-word wildcard for any
+/// NULL (absent) predicate.
+///
+/// `archetype` is intentionally absent: the routing key has no archetype
+/// segment (see the `event_subscription.archetype` NOTE), so it cannot
+/// participate in topic binding.
 #[must_use]
 pub fn subscription_binding_key(
     kind: Option<&str>,

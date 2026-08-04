@@ -1,8 +1,9 @@
-//! Hand-written `Iso8601_duration` spec behaviour: the accessor functions
-//! (component counts, `to_seconds`, `is_partial`, `is_extended`,
-//! `is_decimal_sign_comma`, `as_string`), the arithmetic functions
-//! (`add`/`subtract`/`multiply`/`divide`/`negative`) and a `PartialOrd` ordering
-//! durations by their total-seconds reduction.
+//! Hand-written `Iso8601_duration` spec behaviour.
+//!
+//! Covers the accessor functions (component counts, `to_seconds`, `is_partial`,
+//! `is_extended`, `is_decimal_sign_comma`, `as_string`), the arithmetic
+//! functions (`add`/`subtract`/`multiply`/`divide`/`negative`) and a
+//! `PartialOrd` ordering durations by their total-seconds reduction.
 //!
 //! Spec sources (vendored):
 //! - `BASE/docs/UML/classes/org.openehr.base.foundation_types.iso8601_duration.adoc`

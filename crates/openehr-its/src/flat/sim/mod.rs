@@ -131,10 +131,11 @@ impl SimNode {
 /// most one `ctx` child plus the data root(s).
 pub type SimDocument = SimNode;
 
-/// Whether a JSON value counts as absent on the simplified wire. Datum
-/// values that are `null` or empty are skipped on read and never emitted
-/// (`master04 §Structured format` rule 6: empty objects SHOULD be omitted;
-/// the same reading is applied to FLAT values).
+/// Whether a JSON value counts as absent on the simplified wire.
+///
+/// Datum values that are `null` or empty are skipped on read and never
+/// emitted (`master04 §Structured format` rule 6: empty objects SHOULD be
+/// omitted; the same reading is applied to FLAT values).
 #[must_use]
 pub fn is_present(v: &Value) -> bool {
     match v {

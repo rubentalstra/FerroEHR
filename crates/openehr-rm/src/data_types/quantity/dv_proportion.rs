@@ -8,7 +8,9 @@ use crate::data_types::quantity::dv_interval::DvInterval;
 use crate::data_types::quantity::reference_range::ReferenceRange;
 use crate::data_types::text::code_phrase::CodePhrase;
 
-/// Models a ratio of values, i.e. where the numerator and denominator are both pure numbers. The `_valid_proportion_kind_` property of the `PROPORTION_KIND` class is used to control the type attribute to be one of a defined set.
+/// Models a ratio of values, i.e. where the numerator and denominator are both pure numbers.
+///
+/// The `_valid_proportion_kind_` property of the `PROPORTION_KIND` class is used to control the type attribute to be one of a defined set.
 ///
 /// Used for recording titers (e.g. 1:128), concentration ratios, e.g. Na:K (unitary denominator), albumin:creatinine ratio, and percentages, e.g. red cell distirbution width (RDW).
 ///
@@ -17,7 +19,9 @@ use crate::data_types::text::code_phrase::CodePhrase;
 #[derive(Debug, Clone, PartialEq)]
 pub struct DvProportion {
     // inherited: DV_ORDERED
-    /// Optional normal status indicator of value with respect to normal range for this value. Often included by lab, even if the normal range itself is not included. Coded by ordinals in series HHH, HH, H, (nothing), L, LL, LLL; see openEHR terminology group  `normal_status`.
+    /// Optional normal status indicator of value with respect to normal range for this value.
+    ///
+    /// Often included by lab, even if the normal range itself is not included. Coded by ordinals in series HHH, HH, H, (nothing), L, LL, LLL; see openEHR terminology group  `normal_status`.
     pub normal_status: Option<CodePhrase>,
     /// Optional normal range.
     pub normal_range: Option<Box<DvInterval<DvProportion>>>,
@@ -50,6 +54,8 @@ pub struct DvProportion {
     pub denominator: f64,
     /// Indicates semantic type of proportion, including percent, unitary etc.
     pub r#type: i32,
-    /// Precision  to  which  the  `_numerator_` and `_denominator_` values of  the  proportion are expressed, in terms of number  of decimal places. The value 0 implies an integral quantity. The value -1 implies no limit, i.e. any number of decimal places.
+    /// Precision  to  which  the  `_numerator_` and `_denominator_` values of  the  proportion are expressed, in terms of number  of decimal places.
+    ///
+    /// The value 0 implies an integral quantity. The value -1 implies no limit, i.e. any number of decimal places.
     pub precision: Option<i32>,
 }

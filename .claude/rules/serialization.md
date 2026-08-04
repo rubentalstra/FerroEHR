@@ -19,7 +19,7 @@ per-type tables, `master06` ctx vocabulary)**, and the CNF content chapters
 with the canonical fixtures under `CNF/tests/platform/robot/_resources/` as
 reference material. The SM `serial_data_formats` + `simplified_im_b` docs are
 DEVELOPMENT-state model documents (their terse string encodings conflict with
-the STABLE suffix encoding — never implement them); the SDT spec is retired.
+the STABLE suffix encoding — never implement them).
 
 ## The `_type` mechanism (generated manual serde impls — do not improvise)
 
@@ -31,9 +31,10 @@ hand-written runtime `openehr_base::serde_support` (tag-anywhere enum
 buffering, the class-naming `unknown_field` helper, slot-tag verification).
 The spec types carry NO serde derives and NO serde attributes — per-class
 field-identifier enums + visitors, the serde.rs manual long form, so every
-wire decision is auditable generated code (the foundation-phase rewrite,
-#1702; the former `ToJson`/`FromJson` traits and `json_codec/runtime.rs` are
-deleted). Entry points are `openehr_its::json::{to_canonical_json,
+wire decision is auditable generated code (#1702). Serde is the ONE codec
+seam: never introduce a parallel `ToJson`/`FromJson` trait pair or a
+hand-written JSON codec runtime beside it.
+Entry points are `openehr_its::json::{to_canonical_json,
 from_canonical_json, from_canonical_value}`; refusal diagnostics carry the
 full JSON path via `serde_path_to_error` (error path only — the happy path
 reads untracked). The contract (know it; never hand-write it):
@@ -49,8 +50,8 @@ reads untracked). The contract (know it; never hand-write it):
   present-but-wrong `_type` is an error; an abstract polymorphic slot
   requires `_type` and dispatches on it (tag anywhere in the object — keys
   before the tag are buffered and replayed); **undeclared keys are REFUSED**
-  (named, with the class and the legal field set — the former ignore-unknown
-  tolerance is retired); **repeated members are REFUSED** (`duplicate_field`);
+  (named, with the class and the legal field set — never tolerate an unknown
+  key); **repeated members are REFUSED** (`duplicate_field`);
   absent mandatories are `missing_field`; identifier-typed fields construct
   through the validated master05-grammar doors, so a malformed uid refuses at
   parse, path-named. Semantic invariants + terminology stay AFTER parse in
@@ -128,6 +129,6 @@ entry points.
 - At the wire, the CNF pipeline (`tools/cnf-runner`) is the end-to-end
   acceptance instrument.
 
-Hand-written files here follow `rust-style.md` (the official
-comment-annotation forms; there is no PORT STATUS trailer). Generated files
+Hand-written files here follow `rust-style.md` and `comments.md` (the
+sanctioned comment-annotation forms only). Generated files
 carry `// @generated` and are never hand-edited.

@@ -104,12 +104,13 @@ impl ManagementState {
     }
 }
 
-/// The observability inputs the binary assembles and carries in
-/// [`AppState`](crate::state::AppState): the management configuration, the telemetry
-/// render/reload handles, the health registry, build provenance, and the
-/// redacted config snapshot. Everything defaults **off** (management disabled,
-/// no handles, empty registry) so a server without observability is the clean
-/// default, not a special case.
+/// The observability inputs the binary assembles for the application state.
+///
+/// Carried in [`AppState`](crate::state::AppState): the management
+/// configuration, the telemetry render/reload handles, the health registry,
+/// build provenance, and the redacted config snapshot. Everything defaults
+/// **off** (management disabled, no handles, empty registry) so a server
+/// without observability is the clean default, not a special case.
 #[derive(Clone)]
 pub struct Observability {
     /// The management surface configuration.
@@ -240,12 +241,14 @@ pub fn router(state: ManagementState) -> Router {
 
 // ── OpenAPI document (the full management surface, documented unconditionally) ─
 
-/// The management surface's `OpenAPI` document — every management operation,
-/// documented **unconditionally** (the document describes the product surface;
-/// the live [`router`] mounts only the opted-in endpoints). Built natively with
-/// `utoipa-axum` so each operation's route + `OpenAPI` path come from the one
-/// `#[utoipa::path]` handler; only the `OpenApi` half is kept here (the mounted,
-/// access-gated router is built by [`router`]).
+/// The management surface's `OpenAPI` document.
+///
+/// Every management operation is documented **unconditionally** (the document
+/// describes the product surface; the live [`router`] mounts only the opted-in
+/// endpoints). Built natively with `utoipa-axum` so each operation's route +
+/// `OpenAPI` path come from the one `#[utoipa::path]` handler; only the
+/// `OpenApi` half is kept here (the mounted, access-gated router is built by
+/// [`router`]).
 ///
 /// No openEHR spec governs the management surface — our own operational design.
 #[must_use]

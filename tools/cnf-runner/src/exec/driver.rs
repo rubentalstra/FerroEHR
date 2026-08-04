@@ -1,4 +1,6 @@
-//! The live HTTP driver — a [`crate::exec::StepDriver`] realized PURELY
+//! The live HTTP driver.
+//!
+//! A [`crate::exec::StepDriver`] realized PURELY
 //! from the operation bindings: request construction (method, path/query
 //! templates, format headers, `Prefer`/`If-Match` discipline), wire
 //! observation classification, capture extraction per the closed
@@ -324,10 +326,7 @@ impl<'a> HttpDriver<'a> {
                         // `with:` or as an earlier capture in the var store)
                         // and does not render as a scalar is a case-authoring
                         // or capture-shape defect and must be loud, never a
-                        // silent drop (the group-9 triage, re-found by #594: a
-                        // List/Body-bound capture on an optional slot rendered
-                        // Err and the parameter vanished — the dropped bound
-                        // parameter masquerading as a SUT failure).
+                        // silent drop that masquerades as a SUT failure.
                         Err(e) if template_is_optional(template) => {
                             if let Some(referenced) = template_ref_name(template)
                                 && (with.contains_key(referenced)
@@ -1746,21 +1745,14 @@ impl HttpDriver<'_> {
         set: &[(String, Value)],
         vars: &VarStore,
     ) -> Result<Value, String> {
-        // Negatives against a non-existent resource have no captured base
-        // body (nothing to GET) — the wire still needs a valid resource
-        // payload, so fall back to a minimal RM-VALID canonical EHR_STATUS
-        // (the SUT rejects on the unknown id, not the body). The fallback
-        // MUST be RM-valid: EHR_STATUS is an unconditional archetype root
-        // (RM ehr ehr_status.adoc `Is_archetype_root`) and a root without
-        // ARCHETYPED violates `Archetyped_valid` (RM common locatable.adoc,
-        // which also fixes archetype_node_id as "the stringified form of the
-        // archetype_id found in the archetype_details object") — the old
-        // details-less fallback masked a MISSING capture as a fake SUT 422
-        // (the 2026-07-28 posture-run triage, finding 7). The masking half
-        // of the fix: the fallback applies ONLY to a capture name the case
-        // never declared, i.e. the deliberate no-resource negatives; a case
-        // that DECLARED the capture and failed to bind it is a loud step
-        // error, never a substituted body.
+        // Negatives against a non-existent resource have no captured base body, so
+        // the wire gets a minimal RM-VALID canonical EHR_STATUS (the SUT must reject
+        // on the unknown id, not the body). RM-validity is load-bearing: EHR_STATUS
+        // is an unconditional archetype root (RM ehr `ehr_status.adoc`
+        // `Is_archetype_root`) and a root without ARCHETYPED violates
+        // `Archetyped_valid` (RM common `locatable.adoc`). The fallback applies ONLY
+        // to a capture name the case never declared; a DECLARED capture that failed
+        // to bind is a loud step error, never a substituted body.
         let mut patched = match vars.get(from_capture) {
             Some(Captured::Body(body)) => body.clone(),
             Some(other) => {
@@ -1937,14 +1929,12 @@ impl HttpDriver<'_> {
         if let Some(format) = format {
             let media = Self::media_type(format);
             // The step's format has two distinct roles by request shape: on a
-            // body-carrying request (POST/PUT commit) it names the REQUEST
-            // body representation (a simplified INPUT format), so it sets
-            // Content-Type only and the response is negotiated canonical —
-            // the version-id headers the commit capture reads (ETag,
-            // Location) are representation-independent and RFC 7231 §6.3.2
-            // requires Location on a 201 regardless of the request body
-            // format. On a bodyless request (GET read-back) it names the
-            // desired RESPONSE representation and sets Accept.
+            // body-carrying request (POST/PUT commit) it names the REQUEST body
+            // representation, so it sets Content-Type only and the response stays
+            // negotiated canonical — ETag/Location are representation-independent,
+            // and RFC 7231 §6.3.2 requires Location on a 201 regardless of the
+            // request body format. On a bodyless request (GET read-back) it names
+            // the desired RESPONSE representation and sets Accept.
             if request_spec.body.is_some() {
                 headers
                     .entry("Content-Type".to_owned())
@@ -1978,15 +1968,12 @@ impl HttpDriver<'_> {
                         }
                         crate::model::binding::FormatHeaderReq::Required => {
                             // openehr-template-id: the committed payload's own
-                            // manifest-declared template identity wins — the
-                            // step's `${ds:…}` body names the data set, and its
-                            // corpus entry carries the authoritative
-                            // `template_id` (this also serves cases that
-                            // provision their template IN-FLOW, e.g. via
-                            // I_DEFINITION_ADL2.upload_artefact, where
-                            // `requires.templates` is rightly empty). Fallback:
-                            // the case's provisioned template list (corpus key
-                            // itself for entries that predate the metadata).
+                            // manifest-declared template identity wins — the step's
+                            // `${ds:…}` body names the data set and its corpus entry
+                            // carries the authoritative `template_id` (which also
+                            // serves cases provisioning their template IN-FLOW, where
+                            // `requires.templates` is rightly empty). Fallback: the
+                            // case's provisioned template list.
                             let body_ds_template_id = step.and_then(|step| {
                                 step.with_entries().iter().find_map(|(_, v)| {
                                     v.refs().iter().find_map(|r| match r {
@@ -2615,16 +2602,13 @@ impl HttpDriver<'_> {
                     }
                 }
                 CaptureField::CommitTime => {
-                    // The live commit WINDOW: [request send, response
-                    // receipt] in runner-clock milliseconds, WIDENED by the
-                    // SUT's own second-resolution `Date` header — the SUT
-                    // stamped the version inside it even when its clock is
-                    // skewed from the runner's (containerized SUTs drift),
-                    // so `before` resolves from the lower bound and `after`
-                    // from the upper, both sound on the wire. Determinism
-                    // law (d) governs the ${time:*} ARITHMETIC over this
-                    // window, not the window itself; the transcript player
-                    // binds its own recorded point ordinals.
+                    // The live commit WINDOW: [request send, response receipt] in
+                    // runner-clock milliseconds, WIDENED by the SUT's own
+                    // second-resolution `Date` header — the SUT stamped the version
+                    // inside it even when its clock is skewed from the runner's, so
+                    // `before` resolves from the lower bound and `after` from the
+                    // upper. Determinism law (d) governs the `${time:*}` ARITHMETIC
+                    // over this window, not the window itself.
                     let mut lo = sent_ms;
                     let mut hi = now_ms();
                     if let Some(date_ms) = exchange

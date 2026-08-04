@@ -1,8 +1,10 @@
 //! The version-tree placement reads: the preceding lineage tip, the next
 //! storage commit ordinal, the transaction timestamp, and the next branch
-//! number at a fork point. The placement *decision* (classify, tree placement,
-//! lifecycle) stays in the versioning layer (`versioning::change`), which
-//! takes the per-vo advisory lock first and then calls these reads.
+//! number at a fork point.
+//!
+//! The placement *decision* (classify, tree placement, lifecycle) stays in
+//! the versioning layer (`versioning::change`), which takes the per-vo
+//! advisory lock first and then calls these reads.
 //!
 //! No openEHR spec governs the SQL — our own design (`docs/architecture.md`
 //! §Storage); the version tree realized is RM common master06 §The 'Virtual Version Tree'.
@@ -13,10 +15,12 @@ use sqlx::{PgConnection, Row};
 use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
 
-/// The preceding lineage-tip row read for the version-tree placement decision:
-/// the addressed version (`expected = Some((t, b, v))`) or the current open
-/// TRUNK tip (`expected = None`). Plain row values — the versioning layer maps
-/// them onto its `PrecedingTip` (tree id + kind + lifecycle).
+/// The preceding lineage-tip row read for the version-tree placement
+/// decision: the addressed version (`expected = Some((t, b, v))`) or the
+/// current open TRUNK tip (`expected = None`).
+///
+/// Plain row values — the versioning layer maps them onto its `PrecedingTip`
+/// (tree id + kind + lifecycle).
 #[derive(Debug, Clone)]
 pub struct TipRow {
     /// The owning EHR, or `None` for a demographic versioned object.
@@ -111,13 +115,15 @@ pub struct Placement {
     pub now: jiff::Timestamp,
 }
 
-/// The version-tree placement read, merged into ONE statement: the preceding
-/// lineage tip (the version `expected` names, or the open TRUNK tip), the next
-/// storage commit ordinal, and the transaction timestamp. The timestamp is the
-/// commit instant every row of this transaction stamps (`now()` is stable for
-/// the whole transaction), so the caller can compute the `VERSION.signature`
-/// over `time_committed` BEFORE any insert (RM common master06 §Digital
-/// Signature) and commit through the folded CTE unconditionally.
+/// The version-tree placement read, merged into ONE statement.
+///
+/// Returns the preceding lineage tip (the version `expected` names, or the open
+/// TRUNK tip), the next storage commit ordinal, and the transaction timestamp.
+/// The timestamp is the commit instant every row of this transaction stamps
+/// (`now()` is stable for the whole transaction), so the caller can compute the
+/// `VERSION.signature` over `time_committed` BEFORE any insert (RM common
+/// master06 §Digital Signature) and commit through the folded CTE
+/// unconditionally.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.

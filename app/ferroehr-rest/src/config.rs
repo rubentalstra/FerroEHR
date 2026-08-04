@@ -8,11 +8,12 @@ use ferroehr::config::auth::AuthConfig;
 use ferroehr::config::server::{AdminConfig, ServerConfig, TenancyConfig};
 use ferroehr::config::smart::SmartConfig;
 
-/// The REST adapter's runtime configuration view, assembled by the binary from
-/// the root [`ferroehr::config::FerroEhrConfig`]. Not a serde root — it is built
-/// in code, so extension-group toggles are plain `bool`s lifted from their
-/// owning sections (`[fhir].api_enabled`, `[terminology].api_enabled`,
-/// `[events].admin_api`).
+/// The REST adapter's runtime configuration view, assembled by the binary
+/// from the root [`ferroehr::config::FerroEhrConfig`].
+///
+/// Not a serde root — it is built in code, so extension-group toggles are
+/// plain `bool`s lifted from their owning sections (`[fhir].api_enabled`,
+/// `[terminology].api_enabled`, `[events].admin_api`).
 #[derive(Debug, Clone, Default)]
 pub struct AppConfig {
     /// `[server]` — listener + REST surface + System-Options identity.

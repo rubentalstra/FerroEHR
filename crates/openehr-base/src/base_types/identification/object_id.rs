@@ -12,7 +12,9 @@ use crate::base_types::identification::terminology_id::TerminologyId;
 
 /// Closed subtype set of `OBJECT_ID`, dispatched on each payload's `_type`.
 ///
-/// Ancestor class of identifiers of informational objects. Ids may be completely meaningless, in which case their only job is to refer to something, or may carry some information to do with the identified object.
+/// Ancestor class of identifiers of informational objects.
+///
+/// Ids may be completely meaningless, in which case their only job is to refer to something, or may carry some information to do with the identified object.
 ///
 /// Object ids are used inside an object to identify that object. To identify another object in another service, use an `OBJECT_REF`, or else use a UID for local objects identified by UID. If none of the subtypes is suitable, direct instances of this class may be used.
 #[doc(alias = "OBJECT_ID")]

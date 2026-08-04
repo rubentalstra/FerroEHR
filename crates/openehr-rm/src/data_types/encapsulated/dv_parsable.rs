@@ -6,12 +6,16 @@
 
 use crate::data_types::text::code_phrase::CodePhrase;
 
-/// Encapsulated data expressed as a parsable String. The internal model of the data item is not described in the openEHR model in common with other encapsulated types, but in this case, the form of the data is assumed to be plaintext, rather than compressed or other types of large binary data.
+/// Encapsulated data expressed as a parsable String.
+///
+/// The internal model of the data item is not described in the openEHR model in common with other encapsulated types, but in this case, the form of the data is assumed to be plaintext, rather than compressed or other types of large binary data.
 #[doc(alias = "DV_PARSABLE")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct DvParsable {
     // inherited: DV_ENCAPSULATED
-    /// Name of character encoding scheme in which this value is encoded. Coded from openEHR Code Set  character sets . Unicode is the default assumption in openEHR, with UTF-8 being the assumed encoding. This attribute allows for variations from these assumptions.
+    /// Name of character encoding scheme in which this value is encoded.
+    ///
+    /// Coded from openEHR Code Set  character sets . Unicode is the default assumption in openEHR, with UTF-8 being the assumed encoding. This attribute allows for variations from these assumptions.
     pub charset: Option<CodePhrase>,
     /// Optional indicator of the localised language in which the data is written, if relevant. Coded from openEHR Code Set `languages`.
     pub language: Option<CodePhrase>,

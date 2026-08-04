@@ -23,8 +23,10 @@ pub const INTEGER_UNDERLYING_TYPE_NAME: &str = "INTEGER";
 /// §Attributes: `{default = "STRING"}`).
 pub const STRING_UNDERLYING_TYPE_NAME: &str = "STRING";
 
-/// The type an un-subtyped `BMM_ENUMERATION` is based on when the schema states
-/// no ancestor: "It is designed so that the default type is Integer"
+/// The type an un-subtyped `BMM_ENUMERATION` is based on.
+///
+/// It applies when the schema states no ancestor: "It is designed so that the
+/// default type is Integer"
 /// (`org.openehr.lang.bmm.bmm_enumeration.adoc` §Description).
 pub const DEFAULT_UNDERLYING_TYPE_NAME: &str = "Integer";
 

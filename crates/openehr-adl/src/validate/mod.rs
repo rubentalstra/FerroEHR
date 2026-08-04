@@ -236,10 +236,11 @@ pub fn validate_integrity(
     issues
 }
 
-/// Parse `src` in `dialect` and validate it against that dialect's
-/// basic-integrity catalogue, including the source-level checks (VOKU keyed-list
-/// uniqueness, VRRLP rule paths) that need the raw ODIN text (master08 "phase 1
-/// — basic integrity" in the spec's guide vocabulary).
+/// Parses `src` in `dialect` and runs that dialect's basic-integrity catalogue.
+///
+/// The pass includes the source-level checks (VOKU keyed-list uniqueness,
+/// VRRLP rule paths) that need the raw ODIN text (master08 "phase 1 — basic
+/// integrity" in the spec's guide vocabulary).
 ///
 /// Under [`Dialect::Adl2`] this is the full AOM2 integrity catalogue.
 ///
@@ -310,8 +311,9 @@ pub fn validate_source_integrity(
     Ok(issues)
 }
 
-/// Parse an **ADL 1.4** source and validate it against the FULL ADL 1.4
-/// catalogue: the 1.4 basic-integrity pass
+/// Parses an **ADL 1.4** source and validates it against the full 1.4 catalogue.
+///
+/// The catalogue is the 1.4 basic-integrity pass
 /// ([`validate_source_integrity`] with [`Dialect::Adl14`]) plus the one 1.4
 /// validity rule that needs a reference model, VUNT
 /// ([`rm::validate_rm_conformance`] in the 1.4 dialect).
@@ -357,11 +359,12 @@ pub fn validate_adl14_source(
     Ok(issues)
 }
 
-/// Validate an assembled [`Archetype`] against the full schedule: basic
-/// integrity, then — only if that raised no [`Severity::Error`] — the
-/// reference-model checks against `rm`, the parent-conformance checks, and the
-/// flat-form checks (master08's "phase 1 / phase 2 / phase 3" in the spec's
-/// guide vocabulary).
+/// Validates an assembled [`Archetype`] against the full schedule.
+///
+/// The schedule is basic integrity, then — only if that raised no
+/// [`Severity::Error`] — the reference-model checks against `rm`, the
+/// parent-conformance checks, and the flat-form checks (master08's "phase 1 /
+/// phase 2 / phase 3" in the spec's guide vocabulary).
 ///
 /// The gating is the `master08` §Overview phase gate ("more basic kinds of
 /// errors being checked first"): each later pass runs on a structurally-sound
@@ -465,8 +468,9 @@ fn run_flat_form_checks(
     }
 }
 
-/// Parse and validate ADL2 `src` against the SAME schedule as [`validate`],
-/// with the source-level integrity checks added: basic integrity, then — only
+/// Parses and validates ADL2 `src` against the same schedule as [`validate`].
+///
+/// The source-level integrity checks are added: basic integrity, then — only
 /// if that is error-free — the reference-model checks against `rm` (`master08`
 /// §Overview phase gate), the parent-conformance checks, and the flat-form
 /// checks.

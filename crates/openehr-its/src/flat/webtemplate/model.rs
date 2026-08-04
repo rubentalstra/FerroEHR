@@ -95,8 +95,10 @@ fn serialize_root<S: Serializer>(node: &WebTemplateNode, s: S) -> Result<S::Ok, 
     value.serialize(s)
 }
 
-/// The `defining_code` a node whose runtime `name` is constrained as a
-/// `DV_CODED_TEXT` must carry — the constrained terminology + code the
+/// The `defining_code` a coded-name node must carry.
+///
+/// A node whose runtime `name` is constrained as a `DV_CODED_TEXT` carries the
+/// constrained terminology + code the
 /// composition builder stamps so the instance name is a coded name, not a
 /// plain `DV_TEXT` (RM common `master03-archetyped_package.adoc` §"The
 /// `LOCATABLE` class" — a `LOCATABLE.name` is `DV_TEXT` *or* `DV_CODED_TEXT`;
@@ -429,10 +431,12 @@ pub enum WebTemplateInputType {
 }
 
 /// A leaf input descriptor (master04 §"Web Template Metadata": `inputs[]`).
-/// Member order `suffix, type`; empty members omitted. `listOpen`, `terminology`,
-/// and `defaultValue` are additive fields the master04 example does not list —
-/// no openEHR spec governs them; our own design/extension (`listOpen` also drives
-/// the master04 §"Open Value-Sets and the `|other` Suffix" behaviour).
+///
+/// Member order `suffix, type`; empty members omitted. `listOpen`,
+/// `terminology`, and `defaultValue` are additive fields the master04 example
+/// does not list — no openEHR spec governs them; our own design/extension
+/// (`listOpen` also drives the master04 §"Open Value-Sets and the `|other`
+/// Suffix" behaviour).
 #[derive(Debug, Clone, Serialize)]
 pub struct WebTemplateInput {
     /// The FLAT key suffix this input fills (`magnitude`, `unit`, `code`, …), or `None` for the node's bare value.
@@ -475,10 +479,13 @@ impl WebTemplateInput {
 }
 
 /// A coded option (master04 §"Web Template Metadata": an `inputs[].list[]`
-/// entry). Null members omitted, member order `value, label, localizedLabels,
+/// entry).
+///
+/// Null members omitted, member order `value, label, localizedLabels,
 /// localizedDescriptions, termBindings, validation, ordinal|scale`. `ordinal`
-/// (for `DV_ORDINAL`) and `scale` (for `DV_SCALE`) are optional fields, omitted
-/// when absent — no openEHR spec governs them here; our own design/extension.
+/// (for `DV_ORDINAL`) and `scale` (for `DV_SCALE`) are optional fields,
+/// omitted when absent — no openEHR spec governs them here; our own
+/// design/extension.
 #[derive(Debug, Clone, Serialize)]
 pub struct WebTemplateCodedValue {
     /// The option's code string.
@@ -557,10 +564,11 @@ impl WebTemplateValidation {
     }
 }
 
-/// A validation range (master04 §"Web Template Metadata": the `range`/`precision`
-/// object): `minOp, min, maxOp, max`. Serves integer, decimal, and temporal
-/// ranges alike — `min`/`max` are numbers or ISO strings, so they are held as
-/// [`serde_json::Value`].
+/// A validation range (master04 §"Web Template Metadata": the
+/// `range`/`precision` object): `minOp, min, maxOp, max`.
+///
+/// Serves integer, decimal, and temporal ranges alike — `min`/`max` are
+/// numbers or ISO strings, so they are held as [`serde_json::Value`].
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct WebTemplateRange {
     /// The lower-bound comparison operator (wire member `minOp`).
@@ -577,11 +585,13 @@ pub struct WebTemplateRange {
     pub max: Option<serde_json::Value>,
 }
 
-/// An AOM 1.4 `C_ATTRIBUTE.existence` constraint on a single RM attribute
-/// (whether the attribute *field* is present at all — distinct from `cardinality`
-/// = container membership and `occurrences` = per-object-block count; AOM 1.4
-/// `master04-constraint_model_package.adoc` §existence). Captured for the
-/// validation walk only; not part of the Web Template metadata document.
+/// An AOM 1.4 `C_ATTRIBUTE.existence` constraint on a single RM attribute.
+///
+/// Existence is whether the attribute *field* is present at all — distinct from
+/// `cardinality` = container membership and `occurrences` = per-object-block
+/// count; AOM 1.4 `master04-constraint_model_package.adoc` §existence. Captured
+/// for the validation walk only; not part of the Web Template metadata
+/// document.
 ///
 /// `path` is the absolute archetype path of the constrained attribute
 /// (`{node aqlPath}/{rm_attribute_name}`); `min`/`max` are the existence bounds
@@ -596,8 +606,9 @@ pub struct WebTemplateExistence {
     pub path: String,
 }
 
-/// A hoisted-wrapper type narrowing (validation-only, never serialized): the
-/// instance node(s) matched at the absolute archetype `path` must conform to
+/// A hoisted-wrapper type narrowing (validation-only, never serialized).
+///
+/// The instance node(s) matched at the absolute archetype `path` must conform to
 /// `rm_type` (or to one of the types when several same-path alternatives were
 /// hoisted — the walk groups by path).
 #[derive(Debug, Clone)]
@@ -609,8 +620,9 @@ pub struct WebTemplateSlot {
     pub rm_type: String,
 }
 
-/// A `C_CODE_PHRASE` code-list constraint on a coded RM attribute of a leaf
-/// (validation-only, never serialized): `attr` is the RM attribute name (e.g.
+/// A `C_CODE_PHRASE` code-list constraint on a coded RM attribute of a leaf.
+///
+/// Validation-only, never serialized: `attr` is the RM attribute name (e.g.
 /// `media_type`), `terminology` the constrained terminology id (`None` =
 /// `local`), `codes` the allowed `code_string`s.
 #[derive(Debug, Clone)]
@@ -652,16 +664,18 @@ pub struct WebTemplateConstraintBinding {
     pub query_uri: String,
 }
 
-/// A structural stub for an RM-mandatory structural attribute of an ENTRY-family
-/// node (validation/synthesis-only, never serialized). The template constrains
-/// the attribute `attr` (e.g. `description`) with a node-identified structural
-/// child of RM type `rm_type` (`ITEM_TREE`, `HISTORY`, …) and archetype node id
-/// `node_id` (`at0017`), whose rubric `name` comes from the archetype
-/// `term_definitions`. When the attribute carries no leaf content, the compacted
-/// web-template drops the wrapper, so this record lets the composition builder
-/// synthesise the empty attribute with the *constrained* identity — a value the
-/// closed-archetype walk admits (AOM 1.4
-/// `AM/docs/AOM1.4/master04-constraint_model_package.adoc` §`Valid_value`).
+/// A structural stub for an RM-mandatory structural attribute of an
+/// ENTRY-family node (validation/synthesis-only, never serialized).
+///
+/// The template constrains the attribute `attr` (e.g. `description`) with a
+/// node-identified structural child of RM type `rm_type` (`ITEM_TREE`,
+/// `HISTORY`, …) and archetype node id `node_id` (`at0017`), whose rubric
+/// `name` comes from the archetype `term_definitions`. When the attribute
+/// carries no leaf content, the compacted web-template drops the wrapper, so
+/// this record lets the composition builder synthesise the empty attribute
+/// with the *constrained* identity — a value the closed-archetype walk admits
+/// (AOM 1.4 `AM/docs/AOM1.4/master04-constraint_model_package.adoc`
+/// §`Valid_value`).
 #[derive(Debug, Clone)]
 pub struct WebTemplateStructuralStub {
     /// The constrained RM attribute name (`data`, `description`, `protocol`,
@@ -677,11 +691,13 @@ pub struct WebTemplateStructuralStub {
 }
 
 /// A closed-archetype constraint on one attribute (validation-only, never
-/// serialized). Under the constrained attribute at
-/// absolute archetype `path`, an instance child bearing an `archetype_node_id`
-/// is admissible iff it matches one of `allowed_ids` (a fixed at-code /
-/// archetype-id sibling alternative) **or** an open `ARCHETYPE_SLOT` in `slots`.
-/// Any other archetyped child is an "unexpected node" (closed-world rejection).
+/// serialized).
+///
+/// Under the constrained attribute at absolute archetype `path`, an instance
+/// child bearing an `archetype_node_id` is admissible iff it matches one of
+/// `allowed_ids` (a fixed at-code / archetype-id sibling alternative) **or**
+/// an open `ARCHETYPE_SLOT` in `slots`. Any other archetyped child is an
+/// "unexpected node" (closed-world rejection).
 #[derive(Debug, Clone)]
 pub struct WebTemplateClosedAttribute {
     /// Absolute archetype path of the constrained attribute (`{node aqlPath}/{attr}`).
@@ -693,11 +709,13 @@ pub struct WebTemplateClosedAttribute {
     pub slots: Vec<WebTemplateArchetypeSlot>,
 }
 
-/// An open `ARCHETYPE_SLOT` constraint (AOM 1.4 `ARCHETYPE_SLOT`; validation-only,
-/// never serialized). A slot-filling instance object must conform to `rm_type`,
-/// match at least one `includes` archetype-id regex, and match no `excludes`
-/// regex (a blanket `.*` exclude is ignored when `includes` is non-empty — the
-/// ADL 1.4 closed-slot idiom; AOM 1.4 has no `is_closed`). `min`/`max` bound the
+/// An open `ARCHETYPE_SLOT` constraint (AOM 1.4 `ARCHETYPE_SLOT`;
+/// validation-only, never serialized).
+///
+/// A slot-filling instance object must conform to `rm_type`, match at least
+/// one `includes` archetype-id regex, and match no `excludes` regex (a
+/// blanket `.*` exclude is ignored when `includes` is non-empty — the ADL 1.4
+/// closed-slot idiom; AOM 1.4 has no `is_closed`). `min`/`max` bound the
 /// permitted number of fillers (`max == -1` unbounded).
 #[derive(Debug, Clone)]
 pub struct WebTemplateArchetypeSlot {

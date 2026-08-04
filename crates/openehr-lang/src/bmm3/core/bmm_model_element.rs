@@ -20,7 +20,9 @@ use crate::bmm3::core::model::bmm_package::BmmPackage;
 
 /// Closed subtype set of `BMM_MODEL_ELEMENT`, dispatched on each payload's `_type`.
 ///
-/// Abstract meta-type of BMM declared model elements. A _declaration_ is a an element of a model within a context, which defines the _scope_ of the element. Thus, a class definition and its property and routine definitions are model elements, but Types are not, since they are derived from model elements.
+/// Abstract meta-type of BMM declared model elements.
+///
+/// A _declaration_ is a an element of a model within a context, which defines the _scope_ of the element. Thus, a class definition and its property and routine definitions are model elements, but Types are not, since they are derived from model elements.
 #[doc(alias = "BMM_MODEL_ELEMENT")]
 #[derive(Debug, Clone, PartialEq)]
 pub enum BmmModelElement {

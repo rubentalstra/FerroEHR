@@ -5,10 +5,14 @@
 
 use crate::am24::aom2::rm_overlay::rm_attribute_visibility::RmAttributeVisibility;
 
+/// The openEHR `RM_OVERLAY` class.
+///
 /// Container object for archetype statements relating to RM attributes, which may be directly on objects constrained within the archetype, or at deeper non-constrained RM paths from an object or the root.
 #[doc(alias = "RM_OVERLAY")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct RmOverlay {
-    /// Optional structure in which visibility and aliasing of reference model elements can be specified. Key is path to an RM attribute, which is typically formed from a path to an archetyped node concatenated with a further pure RM attribute path; may also refer to a non-archetyped attribute.
+    /// Optional structure in which visibility and aliasing of reference model elements can be specified.
+    ///
+    /// Key is path to an RM attribute, which is typically formed from a path to an archetyped node concatenated with a further pure RM attribute path; may also refer to a non-archetyped attribute.
     pub rm_visibility: Option<std::collections::BTreeMap<String, RmAttributeVisibility>>,
 }

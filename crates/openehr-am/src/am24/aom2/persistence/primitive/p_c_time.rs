@@ -3,7 +3,9 @@
 //! The openEHR `P_C_TIME` spec class, generated from the vendored BMM
 //! meta-model.
 
-/// ISO 8601-compatible constraint on instances of Time in the form either of a set of validity values, or else date ranges based on the C_ORDERED list constraint. There is no validity flag for ‘hour’, since it must always be by definition mandatory in order to have a sensible time at all. Syntax expressions of instances of this class include “HH:??:xx” (time with optional minutes and seconds not allowed).
+/// ISO 8601-compatible constraint on instances of Time in the form either of a set of validity values, or else date ranges based on the C_ORDERED list constraint.
+///
+/// There is no validity flag for ‘hour’, since it must always be by definition mandatory in order to have a sensible time at all. Syntax expressions of instances of this class include “HH:??:xx” (time with optional minutes and seconds not allowed).
 #[doc(alias = "P_C_TIME")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct PCTime {}

@@ -53,6 +53,8 @@ pub(crate) fn cardinality_conforms_to(
     }
 }
 
+/// True if `child`'s occurrences conform to `other`'s.
+///
 /// `occurrences_conforms_to` (`master04.5` §Conformance Semantics: `C_OBJECT`,
 /// L287-299): "only redefinitions of single-occurrence nodes can be dealt with
 /// here" — if `child`'s occurrences is set and `other`'s upper is 1, require

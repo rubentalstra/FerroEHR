@@ -10,7 +10,9 @@ use crate::data_structures::item_structure::item_structure::ItemStructure;
 use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
 use crate::data_types::text::dv_coded_text::DvCodedText;
 
-/// Documents the context information of a healthcare event involving the subject of care and the health system. The context information recorded here are independent of the attributes recorded in the version audit, which document the  system interaction  context, i.e. the context of a user interacting with the health record system. Healthcare events include patient contacts, and any other business activity, such as pathology investigations which take place on behalf of the patient.
+/// Documents the context information of a healthcare event involving the subject of care and the health system.
+///
+/// The context information recorded here are independent of the attributes recorded in the version audit, which document the  system interaction  context, i.e. the context of a user interacting with the health record system. Healthcare events include patient contacts, and any other business activity, such as pathology investigations which take place on behalf of the patient.
 #[doc(alias = "EVENT_CONTEXT")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct EventContext {
@@ -24,7 +26,9 @@ pub struct EventContext {
     pub setting: DvCodedText,
     /// Other optional context which will be archetyped.
     pub other_context: Option<ItemStructure>,
-    /// The health care facility under whose care the event took place. This is the most specific workgroup or delivery unit within a care delivery enterprise that has an official identifier in the health system, and can be used to ensure medico-legal accountability.
+    /// The health care facility under whose care the event took place.
+    ///
+    /// This is the most specific workgroup or delivery unit within a care delivery enterprise that has an official identifier in the health system, and can be used to ensure medico-legal accountability.
     pub health_care_facility: Option<PartyIdentified>,
     /// Parties involved in the healthcare event. These would normally include the physician(s) and often the patient (but not the latter if the clinical session is a pathology test for example).
     pub participations: Option<openehr_base::containers::NonEmptyVec<Participation>>,

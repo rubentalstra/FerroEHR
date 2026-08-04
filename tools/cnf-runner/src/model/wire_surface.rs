@@ -1,7 +1,8 @@
 //! The wire-surface coverage register (`vocab/wire_surface.yaml`) — the
 //! authored, spec-cited record of the wire surface the CNF catalogue is
-//! measured against for TOTAL coverage. Three sections, one per axis the
-//! `surface-coverage` gate
+//! measured against for TOTAL coverage.
+//!
+//! Three sections, one per axis the `surface-coverage` gate
 //! (`crate::validate`) enforces:
 //!
 //! - `sm_operations` — Axis 1: SM operations of the platform interfaces that

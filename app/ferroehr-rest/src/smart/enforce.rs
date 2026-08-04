@@ -105,8 +105,10 @@ pub fn family_of_op(op: &str) -> Option<ResourceFamily> {
 }
 
 /// Map an operation id onto the CRUDS [`Permission`] it exercises (master08
-/// §Resource Scopes permission list). Total; mirrors
-/// `classify::access_of` but also covers the template ops (upload/store → create).
+/// §Resource Scopes permission list).
+///
+/// Total; mirrors `classify::access_of` but also covers the template ops
+/// (upload/store → create).
 #[must_use]
 pub fn permission_of_op(op: &str) -> Permission {
     if op.starts_with("query_execute_") {
@@ -122,10 +124,11 @@ pub fn permission_of_op(op: &str) -> Permission {
     }
 }
 
-/// The [`ResourceFamily`] for an ABAC [`ResourceKind`], where one exists — the
-/// alternative entry point when the PEP already has the resolved kind. Note that
-/// `Template` has no `ResourceKind` (template ops are RBAC-only), so prefer
-/// [`family_of_op`] to also catch templates.
+/// The [`ResourceFamily`] for an ABAC [`ResourceKind`], where one exists —
+/// the alternative entry point when the PEP already has the resolved kind.
+///
+/// Note that `Template` has no `ResourceKind` (template ops are RBAC-only),
+/// so prefer [`family_of_op`] to also catch templates.
 #[must_use]
 pub const fn family_of_kind(kind: ResourceKind) -> Option<ResourceFamily> {
     match kind {
@@ -230,9 +233,10 @@ pub fn evaluate(
 }
 
 /// The launch-context openEHR `EHR` id for the current request (master07
-/// §Context Selection token-response table): the `ehrId` claim, falling back to
-/// the standard SMART `patient` context claim. Returns `None` when neither is
-/// present.
+/// §Context Selection token-response table): the `ehrId` claim, falling back
+/// to the standard SMART `patient` context claim.
+///
+/// Returns `None` when neither is present.
 #[must_use]
 pub fn launch_context_ehr_id(
     claims: &serde_json::Map<String, serde_json::Value>,
@@ -242,9 +246,11 @@ pub fn launch_context_ehr_id(
     claim_str(claims, ehr_id_claim).or_else(|| claim_str(claims, patient_claim))
 }
 
-/// Whether the caller requested a `launch/patient` context (master07). Advisory:
-/// context *selection* is an Authorization-Server/Launcher duty (out of CDR
-/// scope — master07 §SMART Authorization Flow); the CDR only observes the marker.
+/// Whether the caller requested a `launch/patient` context (master07).
+///
+/// Advisory: context *selection* is an Authorization-Server/Launcher duty
+/// (out of CDR scope — master07 §SMART Authorization Flow); the CDR only
+/// observes the marker.
 #[must_use]
 pub fn requests_patient_context(scopes: &[SmartScope]) -> bool {
     use openehr_its::rest::smart_scopes::LaunchContext;

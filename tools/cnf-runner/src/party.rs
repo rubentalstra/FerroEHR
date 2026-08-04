@@ -228,10 +228,11 @@ pub struct Runner {
     pub verification_pack_status: VerificationPackStatus,
 }
 
-/// The outcome status of one case×format execution, as recorded in the
-/// results (ISO/IEC 9646 verdicts: passed→pass, failed→fail, errored→
+/// The outcome status of one case×format execution, as recorded in the results.
+///
+/// ISO/IEC 9646 verdicts: passed→pass, failed→fail, errored→
 /// inconclusive; `skipped`/`not_applicable` are selection records each carrying a
-/// mandatory citation).
+/// mandatory citation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum OutcomeStatus {

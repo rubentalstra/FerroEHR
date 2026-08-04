@@ -1,4 +1,6 @@
-//! The performance schedule machinery — conformance-by-MEASUREMENT: the
+//! The performance schedule machinery — conformance-by-MEASUREMENT.
+//!
+//! It carries the
 //! `kind: performance` case model (class, corpus, open-loop workload,
 //! thresholds), the journey catalogue (the hospital-simulation vocabulary a
 //! workload decomposes into), the measurement record (counts, errors,
@@ -203,10 +205,12 @@ impl Serialize for Percent {
     }
 }
 
-/// The closed operation vocabulary a journey stage may name — each variant
-/// is one concrete platform operation with a fixed ITS-REST wire
-/// realization in the driver (`perf_run`). Reads and writes are classified
-/// so the catalogue's expanded mix reconciles against the derivation band.
+/// The closed operation vocabulary a journey stage may name — each variant is
+/// one concrete platform operation with a fixed ITS-REST wire realization in
+/// the driver (`perf_run`).
+///
+/// Reads and writes are classified so the catalogue's expanded mix reconciles
+/// against the derivation band.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PerfOp {
     /// `POST /ehr` → 201 (`I_EHR_SERVICE.create_ehr`).
@@ -354,12 +358,12 @@ pub enum PerfOp {
     ReadonlyWriteDenied,
 }
 
-/// Which ixit-declared principal a measured arrival is driven by. The
-/// primary is the party's default `sut` instance; the others are named
-/// instances a party MAY declare — a party that declares none simply does
-/// not run the journeys that need them (an undeclared fact costs coverage,
-/// never correctness), so the ixit stays the single source of deployment
-/// facts.
+/// Which ixit-declared principal a measured arrival is driven by.
+///
+/// The primary is the party's default `sut` instance; the others are named
+/// instances a party MAY declare — a party that declares none simply does not
+/// run the journeys that need them (an undeclared fact costs coverage, never
+/// correctness), so the ixit stays the single source of deployment facts.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Principal {
     /// The party's default `sut` instance.
@@ -692,8 +696,9 @@ impl PerfOp {
     }
 }
 
-/// The auxiliary committed payloads the journey stages that do NOT commit a
-/// CKM COMPOSITION carry — each one a corpus fixture the functional
+/// The auxiliary committed payloads of the non-COMPOSITION journey stages.
+///
+/// Each one is a corpus fixture the functional
 /// catalogue already adjudicates, never a payload invented for the load
 /// instrument.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -710,8 +715,9 @@ pub enum AuxPayloadKind {
 }
 
 /// A journey stage's planned offset from the journey's arrival instant.
-/// Every form is deterministic under the seeded schedule (uniform draws
-/// hash the journey/stage indices — two runners produce the same instants).
+///
+/// Every form is deterministic under the seeded schedule (uniform draws hash
+/// the journey/stage indices — two runners produce the same instants).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StageOffset {
     /// Exactly `s` seconds after the journey arrival.
@@ -893,8 +899,9 @@ pub struct JourneyCatalogue(
     #[serde(deserialize_with = "crate::model::de::ordered_map")] pub Vec<(String, Journey)>,
 );
 
-/// The derivation band the expanded operation mix must reconcile with:
-/// write share within [100/(50+1), 100/(10+1)] percent — the 10:1
+/// The derivation band the expanded operation mix must reconcile with.
+///
+/// Write share within \[100/(50+1), 100/(10+1)\] percent — the 10:1
 /// read-heavy OLTP convention (YCSB/OLTP-Bench) as the floor's mix, ~50:1
 /// as the audit-log-evidenced read-heavy ceiling.
 pub const WRITE_SHARE_BAND: (f64, f64) = (100.0 / 51.0, 100.0 / 11.0);
@@ -1281,10 +1288,12 @@ impl ResourcePhase {
     ];
 }
 
-/// One resource observation of one container at a run-clock offset
-/// (offsets from the measured window's start — never wall-clock, the same
-/// determinism rule as every other record field). Peak and mean aggregates
-/// are DERIVED from the series at render time, never stored beside it.
+/// One resource observation of one container at a run-clock offset (offsets
+/// from the measured window's start — never wall-clock, the same determinism
+/// rule as every other record field).
+///
+/// Peak and mean aggregates are DERIVED from the series at render time, never
+/// stored beside it.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ResourceSample {
@@ -1354,10 +1363,11 @@ impl ContainerResourceSeries {
 }
 
 /// The database volume's on-disk size at the run's four anchors (bytes).
+///
 /// The first two yield bytes per committed composition (the
 /// storage-efficiency headline); the last two yield the sustained load's
-/// write amplification. Each anchor is honestly absent when it could not
-/// be probed (a failed probe degrades to absence, never a run failure).
+/// write amplification. Each anchor is honestly absent when it could not be
+/// probed (a failed probe degrades to absence, never a run failure).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct DiskAnchors {
@@ -1379,7 +1389,9 @@ pub struct DiskAnchors {
     pub seed_compositions: Option<u64>,
 }
 
-/// The resource telemetry of one measured run — measured CONTEXT, never
+/// The resource telemetry of one measured run.
+///
+/// Measured CONTEXT, never
 /// verdict-bearing: classes stay earned on latency/error/throughput only,
 /// and an absent record never fails a run (sampling is optional by
 /// capability — it requires the ixit `containers` block and a reachable
@@ -1432,10 +1444,11 @@ pub struct Measurement {
     pub resources: Option<ResourcesRecord>,
 }
 
-/// The one-line evidence behind a measured-run verdict, for progress
-/// streams and console summaries — the committed record (encoded
-/// histograms + environment) stays the re-checkable evidence; this is the
-/// operator-facing digest of it.
+/// The one-line evidence behind a measured-run verdict.
+///
+/// It serves progress streams and console summaries — the committed record
+/// (encoded histograms + environment) stays the re-checkable evidence; this is
+/// the operator-facing digest of it.
 #[must_use]
 pub fn verdict_evidence(measurement: &Measurement) -> String {
     let floor = measurement.class.arrival_floor_per_s();
@@ -1480,10 +1493,11 @@ pub enum ClassVerdict {
     NotEarned,
 }
 
-/// The pure class-verdict function: every threshold of the case holds in
-/// the single measured run ⇒ `earned`, else `not-earned`. Latency metrics
-/// are re-derived from the DECODED histograms (never trusted from the
-/// summary fields), which is what makes the record re-checkable.
+/// The pure class-verdict function: every threshold of the case holds in the
+/// single measured run ⇒ `earned`, else `not-earned`.
+///
+/// Latency metrics are re-derived from the DECODED histograms (never trusted
+/// from the summary fields), which is what makes the record re-checkable.
 ///
 /// # Errors
 /// Returns a message when a threshold references an operation the run did

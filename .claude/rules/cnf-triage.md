@@ -102,12 +102,11 @@ test suite that presumes our code and questions the tests.
 - Standing test discipline applies: never weaken a test or expectation to
   go green (`.claude/rules/testing.md`).
 
-## Upstream reports (owner ruling 2026-08-01 — the ledger file is deleted)
+## Upstream reports (owner ruling 2026-08-01)
 
 An outbound report of a released-spec defect/contradiction/silence is a
-**GitHub issue labeled `upstream-report`** (dark red) — the former
-`docs/conformance/upstream-reports.md` ledger is deleted and must not come
-back. One issue per defect; the register entry points at it via
+**GitHub issue labeled `upstream-report`** (dark red) — never a markdown
+ledger file. One issue per defect; the register entry points at it via
 `upstream_issue: <number>`; the narrative lives ONLY on the issue.
 
 - **Shape** (never ticket-draft framing — no Channel/Status/Ask fields): a

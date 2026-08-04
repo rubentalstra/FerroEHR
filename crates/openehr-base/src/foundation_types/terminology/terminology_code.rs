@@ -11,7 +11,9 @@ pub struct TerminologyCode {
     pub terminology_id: String,
     /// Optional string value representing terminology version, typically a date or dotted numeric.
     pub terminology_version: Option<String>,
-    /// A terminology code or post-coordinated code expression, if supported by the terminology. The code may refer to a single term, a value set consisting of multiple terms, or some other entity representable within the terminology.
+    /// A terminology code or post-coordinated code expression, if supported by the terminology.
+    ///
+    /// The code may refer to a single term, a value set consisting of multiple terms, or some other entity representable within the terminology.
     pub code_string: String,
     /// The URI reference that may be used as a concrete key into a notional terminology service for queries that can obtain the term text, definition, and other associated elements.
     pub uri: Option<String>,

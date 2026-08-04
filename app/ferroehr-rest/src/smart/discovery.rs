@@ -245,9 +245,11 @@ fn scopes_supported(cfg: &SmartConfig) -> Vec<String> {
 }
 
 /// The `.well-known/smart-configuration` path, relative to the SMART Platform
-/// base (master04 §Service Discovery ¶3-4). `platform_base_url` overrides the
-/// default (`rest_root`, e.g. `/ferroehr/rest`); a base with a path segment is
-/// honoured (`/gateway/v1` → `/gateway/v1/.well-known/smart-configuration`).
+/// base (master04 §Service Discovery ¶3-4).
+///
+/// `platform_base_url` overrides the default (`rest_root`, e.g.
+/// `/ferroehr/rest`); a base with a path segment is honoured (`/gateway/v1` →
+/// `/gateway/v1/.well-known/smart-configuration`).
 #[must_use]
 pub fn discovery_path(cfg: &SmartConfig, rest_root: &str) -> String {
     let base = cfg
@@ -258,10 +260,12 @@ pub fn discovery_path(cfg: &SmartConfig, rest_root: &str) -> String {
     format!("{base}/.well-known/smart-configuration")
 }
 
-/// Build the pre-auth discovery router. Returns an **empty** router when SMART is
-/// disabled, so a merge is a no-op and the path is absent (a `404`) — matching
-/// the extension-group `404`-when-off convention (`crate::config`). When enabled,
-/// serves the document (`application/json`, R-02) at [`discovery_path`].
+/// Build the pre-auth discovery router.
+///
+/// Returns an **empty** router when SMART is disabled, so a merge is a no-op
+/// and the path is absent (a `404`) — matching the extension-group
+/// `404`-when-off convention (`crate::config`). When enabled, serves the
+/// document (`application/json`, R-02) at [`discovery_path`].
 ///
 /// The document is a pure function of static configuration (the openEHR/FHIR base
 /// URLs + the OIDC issuer fallback), so it is **built once here** and served as

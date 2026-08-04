@@ -57,9 +57,11 @@ impl CodePrefix {
     }
 }
 
-/// A parsed ADL local code: its [`CodePrefix`] and the ordered `.`-separated
-/// numeric segments (verbatim strings, so zero-padding survives round-trips —
-/// `at0004.0.1` → prefix `At`, segments `["0004", "0", "1"]`).
+/// A parsed ADL local code.
+///
+/// Carries its [`CodePrefix`] and the ordered `.`-separated numeric segments
+/// (verbatim strings, so zero-padding survives round-trips — `at0004.0.1` →
+/// prefix `At`, segments `["0004", "0", "1"]`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ParsedCode {
     /// The alphabetic leader.
@@ -199,8 +201,9 @@ pub fn codes_conformant(child: &str, parent: &str) -> bool {
 
 /// The immediate specialisation parent of a code — the code with its trailing
 /// `.N` segment removed (master07 §Specialisation Depth: the parent of
-/// `at0025.1.1` is `at0025.1`). Returns `None` for a level-0 code (no
-/// separators) or a non-code string.
+/// `at0025.1.1` is `at0025.1`).
+///
+/// Returns `None` for a level-0 code (no separators) or a non-code string.
 ///
 /// NOTE: no formal `specialisation_parent_from_code` is vendored; this is
 /// derived from the master07 dot-structure prose. The intervening `.0` filler
@@ -225,8 +228,10 @@ pub fn is_root_code(code: &str) -> bool {
     ROOT_CODE_RE.is_match(code)
 }
 
-/// True if `code` is a valid archetype root code **at the given specialisation
-/// depth** — a root code whose number of `.1` segments equals `depth`
+/// True if `code` is a valid archetype root code at the given specialisation
+/// depth.
+///
+/// A root code qualifies when its number of `.1` segments equals `depth`
 /// (AOM2 master03 VARCN: root `node_id` of the form `at0000{.1}*` / `id1{.1}*`
 /// where the number of `.1` components equals the specialisation depth).
 #[must_use]
@@ -234,9 +239,10 @@ pub fn is_root_code_at_depth(code: &str, depth: usize) -> bool {
     is_root_code(code) && specialisation_depth(code) == Some(depth)
 }
 
-/// True if `code` has been redefined (specialised) from a parent code — there
-/// is a non-zero numeric segment anywhere *above* the last segment
-/// (`is_redefined_code`, `adl_code_definitions`: `at0.0.1` → False,
+/// True if `code` has been redefined (specialised) from a parent code.
+///
+/// Redefinition means a non-zero numeric segment anywhere *above* the last
+/// segment (`is_redefined_code`, `adl_code_definitions`: `at0.0.1` → False,
 /// `at1.0.1` → True).
 #[must_use]
 pub fn is_redefined_code(code: &str) -> bool {
@@ -253,7 +259,9 @@ pub fn is_redefined_code(code: &str) -> bool {
 }
 
 /// True if `code` is a *new* node code introduced at its own specialisation
-/// level rather than a redefinition of a parent code — i.e. every segment above
+/// level.
+///
+/// A new code is not a redefinition of a parent code — i.e. every segment above
 /// the last is a `0` filler (`at0.0.1`, `at0004.0.1`'s new-node cousin
 /// `at0.0.1`) (master07 §Specialisation Depth; master09.05 `at0.{0.}*N` new-node
 /// form). A level-0 code is never "new at level" in this sense.

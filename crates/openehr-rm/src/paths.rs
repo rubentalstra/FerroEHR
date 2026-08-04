@@ -189,9 +189,10 @@ pub enum CmpLiteral {
     Num(String),
 }
 
-/// One general comparison conjunct of a predicate (BASE `master11-paths`
-/// §"Other Predicates"): a relative attribute path, an operator, and a
-/// literal — e.g. `time >= '2005-06-24T09:30:00'` or
+/// One general comparison conjunct of a predicate.
+///
+/// BASE `master11-paths` §"Other Predicates": a relative attribute path, an
+/// operator, and a literal — e.g. `time >= '2005-06-24T09:30:00'` or
 /// `value/defining_code/code_string = 'A04'`.
 ///
 /// Evaluation follows XPath 1 existential node-set semantics: the conjunct
@@ -614,21 +615,9 @@ fn apply_conjunct(c: &str, predicate: &mut Predicate) -> Result<(), PathError> {
     if c.contains('\'') {
         return Err(PathError::UnsupportedPredicate(c.to_owned()));
     }
-    // NOTE (register AMB-183): RM common `master05-directory_package.adoc`
-    // §Paths states a SECOND, name-based bare-bracket form for directory paths
-    // ("Directory paths are built using the `_name_` attribute values inherited
-    // from `LOCATABLE`", `/folders[hospital episodes]`) with a parenthesised
-    // uniqueness modifier appended in the same brackets
-    // (`[hospital episodes(car accident Aug 1998)]`). This engine implements
-    // BASE `master11-paths`, the formal path-grammar chapter, whose bare
-    // bracket is the archetype_node_id shortcut ("the `[atNNNN]` predicates are
-    // a shortcut for `[@archetype_node_id = 'atNNNN']`", §Archetype path
-    // Predicate) and which defines no parenthesis production outside boolean
-    // grouping. A bare name token therefore binds as an archetype_node_id (the
-    // master11 answer, matching nothing in practice), but the parenthesised
-    // modifier is refused rather than bound whole — binding
-    // `hospital episodes(car accident Aug 1998)` as an archetype_node_id would
-    // silently conflate the two grammars into a predicate that can never match.
+    // NOTE (register AMB-183): the name-based bare-bracket form with a parenthesised
+    // uniqueness modifier that RM common `master05-directory_package.adoc` §Paths
+    // states has no production in BASE `master11-paths`, so it is refused, not bound.
     if c.contains('(') || c.contains(')') {
         return Err(PathError::UnsupportedPredicate(c.to_owned()));
     }
@@ -810,10 +799,11 @@ pub fn items_at_path<'a>(root: &'a Value, path: &RmPath) -> Vec<&'a Value> {
     current
 }
 
-/// RM `PATHABLE.item_at_path`: the item at a path. The spec precondition is
-/// `path_unique(a_path)`; for a non-unique path the *first* item in document
-/// order is returned (use [`items_at_path`] to see all), and `None` when the
-/// path does not exist.
+/// RM `PATHABLE.item_at_path`: the item at a path.
+///
+/// The spec precondition is `path_unique(a_path)`; for a non-unique path the
+/// *first* item in document order is returned (use [`items_at_path`] to see
+/// all), and `None` when the path does not exist.
 #[must_use]
 pub fn item_at_path<'a>(root: &'a Value, path: &RmPath) -> Option<&'a Value> {
     items_at_path(root, path).into_iter().next()
@@ -835,6 +825,7 @@ pub fn path_unique(root: &Value, path: &RmPath) -> bool {
 
 /// RM `PATHABLE.path_of_item`: the path of `item` relative to `root`, located
 /// by pointer identity (`item` must be a node *inside* `root`'s tree).
+///
 /// Container steps carry the `[archetype_node_id,'name']` predicates needed
 /// to make the returned path as selective as the data allows.
 #[must_use]
@@ -856,8 +847,10 @@ pub fn path_of_item(root: &Value, item: &Value) -> Option<String> {
 
 /// RM `PATHABLE.parent`: the parent RM node (nearest enclosing JSON object,
 /// skipping the container array) of `item` inside `root`'s tree, or `None`
-/// for the root itself / a node not in the tree. Realised as a root-anchored
-/// search — no owning back-references are stored (repo convention).
+/// for the root itself / a node not in the tree.
+///
+/// Realised as a root-anchored search — no owning back-references are stored
+/// (repo convention).
 #[must_use]
 pub fn parent_of<'a>(root: &'a Value, item: &Value) -> Option<&'a Value> {
     if std::ptr::eq(root, item) {
@@ -983,8 +976,9 @@ pub fn archetype_node_id_is_term_code(node_id: &str) -> bool {
             .all(|seg| !seg.is_empty() && seg.bytes().all(|b| b.is_ascii_digit()))
 }
 
-/// RM `LOCATABLE.is_archetype_root()` decided from the node's
-/// `archetype_node_id` alone — "True if this node is the root of an archetyped
+/// RM `LOCATABLE.is_archetype_root()` decided from `archetype_node_id` alone.
+///
+/// The function answers "True if this node is the root of an archetyped
 /// structure" (`UML/classes/org.openehr.rm.common.locatable.adoc` §Functions).
 ///
 /// The derivation is the one the RM itself states for the attribute: "At an
@@ -1094,8 +1088,10 @@ pub struct TopLevelLocator {
 }
 
 /// A structurally parsed `ehr:` URI (BASE `master11-paths` §"EHR URIs"; RM
-/// `data_types/master10-uri_package` §"DV_EHR_URI Syntax"). Covers the four
-/// absolute forms plus the relative forms (`ehr:compositions/…`, `ehr:directory`).
+/// `data_types/master10-uri_package` §"DV_EHR_URI Syntax").
+///
+/// Covers the four absolute forms plus the relative forms
+/// (`ehr:compositions/…`, `ehr:directory`).
 ///
 /// This is the *structural* grammar on top of the `DV_EHR_URI` scheme
 /// invariant (`Scheme_valid`, which lives in

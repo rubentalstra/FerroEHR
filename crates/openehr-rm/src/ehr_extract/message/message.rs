@@ -7,7 +7,9 @@ use crate::common::generic::audit_details::AuditDetails;
 use crate::common::generic::party_proxy::PartyProxy;
 use crate::ehr_extract::message::message_content::MessageContent;
 
-/// A “message” is an authored, possibly signed, piece of content intended for one or more recipients. Since the recipient may or may not be known directly, recipients are specified in the `ADDRESSED_MESSAGE` class.
+/// A “message” is an authored, possibly signed, piece of content intended for one or more recipients.
+///
+/// Since the recipient may or may not be known directly, recipients are specified in the `ADDRESSED_MESSAGE` class.
 #[doc(alias = "MESSAGE")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct Message {
@@ -17,6 +19,8 @@ pub struct Message {
     pub author: PartyProxy,
     /// Content of the message.
     pub content: MessageContent,
-    /// Optional signature by the author of message content in openPGP format. The signature is created as a Hash and optional signing of the serialisation of this message object with this signature field Void.
+    /// Optional signature by the author of message content in openPGP format.
+    ///
+    /// The signature is created as a Hash and optional signing of the serialisation of this message object with this signature field Void.
     pub signature: Option<String>,
 }

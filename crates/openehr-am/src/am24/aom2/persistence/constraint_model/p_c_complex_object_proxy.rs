@@ -3,7 +3,9 @@
 //! The openEHR `P_C_COMPLEX_OBJECT_PROXY` spec class, generated from the vendored BMM
 //! meta-model.
 
-/// A constraint defined by proxy, using a reference to an object constraint defined elsewhere in the same archetype. Note that since this object refers to another node, there are two objects with available occurrences values. The local occurrences value on a COJMPLEX_OBJECT_PROXY should always be used; when setting this from a seri- alised form, if no occurrences is mentioned, the target occurrences should be used (not the standard default of {1..1}); otherwise the locally specified occurrences should be used as normal. When serialising out, if the occurrences is the same as that of the target, it can be left out.
+/// A constraint defined by proxy, using a reference to an object constraint defined elsewhere in the same archetype.
+///
+/// Note that since this object refers to another node, there are two objects with available occurrences values. The local occurrences value on a COJMPLEX_OBJECT_PROXY should always be used; when setting this from a seri- alised form, if no occurrences is mentioned, the target occurrences should be used (not the standard default of {1..1}); otherwise the locally specified occurrences should be used as normal. When serialising out, if the occurrences is the same as that of the target, it can be left out.
 #[doc(alias = "P_C_COMPLEX_OBJECT_PROXY")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct PCComplexObjectProxy {

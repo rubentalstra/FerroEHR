@@ -1,7 +1,9 @@
 //! The ambiguity register (`registers/ambiguities.yaml`) — every entry a
 //! real, verified spec divergence or silence with the normative handling a
-//! runner must apply. The register is normative: a runner that "resolves"
-//! an ambiguity privately is non-conformant to the schedule.
+//! runner must apply.
+//!
+//! The register is normative: a runner that "resolves" an ambiguity privately
+//! is non-conformant to the schedule.
 
 use serde::Deserialize;
 

@@ -670,9 +670,11 @@ impl<'de> Deserialize<'de> for FormatHeaderReq {
     }
 }
 
-/// An explicit unrealized-operation declaration: the ITS surfaces no wire
-/// for this SM operation, so cases anchored to it are `not-applicable` with
-/// this citation on this ITS (machine-readable, never silent absence).
+/// An explicit unrealized-operation declaration.
+///
+/// The ITS surfaces no wire for this SM operation, so cases anchored to it are
+/// `not-applicable` with this citation on this ITS (machine-readable, never
+/// silent absence).
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct UnrealizedDecl {

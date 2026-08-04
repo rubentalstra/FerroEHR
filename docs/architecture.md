@@ -12,17 +12,16 @@ PostgreSQL-18-native internals. Two layers:
    on that foundation.** The server, storage, service layer, AQL
    execution engine, validation, and auth — proper crates, our own algorithms,
    the openEHR specifications as the authority. EHRbase and other CDRs are
-   prior art, not an oracle. Shipped as of v3.5.0.
+   prior art, not an oracle. Shipped.
 
 Authoritative roadmap: the public **FerroEHR Roadmap board** (a GitHub
 Project view over the tracker; its readme carries the direction themes —
-`.claude/rules/project-board.md`; the former root `ROADMAP.md` was retired
-2026-08-04); the open-items tracker is
+`.claude/rules/project-board.md`); the open-items tracker is
 GitHub Issues (root `CLAUDE.md` §Issue workflow), with `docs/plans/` (deep
 working plans) under it; the build record is the closed issues + PR
 descriptions + `CHANGELOG.md` + git history. Per-endpoint call chains are
 read from the code (router → handler → service → SQL) — there is no standing
-endpoint-map document (deleted 2026-07-26; a standing map goes stale).
+endpoint-map document (a standing map goes stale).
 
 Key architectural decisions (described in full in the sections below): the
 spec + ITS layer is generated from the vendored machine-readable specs
@@ -130,7 +129,7 @@ the same gate), the `/message` group realizing the SM Message component
 (EHR-Extract export/import + TDD import — the release publishes no such API),
 the always-on public health family (`/health`, `/health/liveness`,
 `/health/readiness`), `/rest/status`, the ops-introspection `/management/*`
-surface, item tags (the EhrScape surface was cut, not built). **Auth:** Basic +
+surface, item tags (there is no EhrScape surface). **Auth:** Basic +
 OAuth2/OIDC via `argon2`/`jsonwebtoken`/`oauth2`/`openidconnect`; authorization is the
 shipped RBAC/ABAC `access` module in `ferroehr-rest`.
 
@@ -194,11 +193,10 @@ stress/probe instruments; nothing consumes `cnf-runner` as a library),
 generated openEHR spec layer + its tooling (`openehr-*`). Root
 workspace `members = ["crates/*", "app/*", "tools/*"]`. Arrows:
 `ferroehr-server → {ferroehr-rest, ferroehr}`, `ferroehr-rest → ferroehr`,
-`app/* → crates/openehr-*`. The former `ferroehr-sm` trait catalog is deleted:
-the SM Platform Service Model survives as the *structure* of
-`ferroehr::service` — one module per SM chapter, concrete methods, SM call
-semantics as the design authority — with zero re-exports anywhere (every
-import names its defining module).
+`app/* → crates/openehr-*`. The SM Platform Service Model is realized as the
+*structure* of `ferroehr::service` — one module per SM chapter, concrete
+methods (no trait catalog), SM call semantics as the design authority — with
+zero re-exports anywhere (every import names its defining module).
 
 ### SM platform component map
 
@@ -238,19 +236,15 @@ The service layer realizes the openEHR **SM Platform Service Model**
 | `cnf-runner` | CNF 2.0 conformance runner + the measured-performance, step-load stress, and AQL-probe instruments (`tools/*`; consumed by nothing — terminal instrument) | tooling |
 | `testkit` | Shared test-database harness: one PG18 server + template-database cloning (`tools/*`) | tooling |
 
-## Build sequence & stages
+## Build state
 
-- **Stage 1**: the openEHR-conformant CDR — the generated spec/ITS
-  foundation plus the full application (persistence, greenfield storage,
-  REST + auth, the SM service layer, templates, WebTemplate/FLAT/STRUCTURED,
-  validation, the AQL engine, conformance, optimization, cutover). Built as
-  compiling, tested increments; the per-phase build record is the closed
-  issues + PR descriptions (+ the retired `docs/PROGRESS.md` in git
-  history).
-- **Stage 2**: remaining enterprise capabilities — the plugin system and any
-  other unrestored capability (`reference/v1` archaeology; RBAC/ABAC and
-  multi-tenancy already shipped greenfield in Stage 1).
-- **Stage 3**: refinement, performance, new capabilities.
+The openEHR-conformant CDR is shipped: the generated spec/ITS foundation plus
+the full application (persistence, greenfield storage, REST + auth, the SM
+service layer, templates, WebTemplate/FLAT/STRUCTURED, validation, the AQL
+engine, conformance). Everything not yet built — the plugin system, further
+enterprise capabilities, refinement, performance — is ordinary tracker work:
+an issue with a milestone, built as compiling, tested increments of our own
+design. The build record is the closed issues + PR descriptions.
 
 ## Verification
 
@@ -261,8 +255,7 @@ The service layer realizes the openEHR **SM Platform Service Model**
   (Docker-composed SUT on fresh volumes) — the acceptance instrument;
   results → pure-function verdicts → report/statement/certificate + badges,
   all under `docs/conformance/<sut>/` (the baseline lives ONLY in those
-  committed artifacts; the ECC harness retired 2026-07-22 — the reviewed
-  cutover comparison lives in git history).
+  committed artifacts).
 - **Measured performance** (the same runner): `cnf-runner perf` earns the
   volumetric deployment classes (POC/S/L/R) by open-loop,
   coordinated-omission-free sustained runs (normative hour, extendable

@@ -22,6 +22,7 @@ pub struct AssertionFailure(pub String);
 
 /// Resolve an RM path segment sequence (`context/setting`,
 /// `content[0]/data/events[0]/...`) over a canonical-JSON value.
+///
 /// Supported addressing: object attributes and `[<index>]` list positions —
 /// the subset the catalogue's field assertions use.
 #[must_use]
@@ -325,7 +326,9 @@ fn flat_equivalent(
         })
 }
 
-/// The `equivalent` comparison: structural equality after stripping the
+/// The `equivalent` comparison.
+///
+/// Structural equality after stripping the
 /// resolved ignore paths from BOTH sides (numeric leaves by value, via the
 /// result-set cell rule — canonical JSON carries RM numbers), with canonical
 /// `_type` self-tag PRESENCE normalized (see this module's `rm_cells_equal`). FLAT bodies

@@ -5,7 +5,9 @@
 
 use crate::bmm3::expression::el_expression::ElExpression;
 
-/// Conditional structure used in condition chain expressions. Evaluated by evaluating its `_condition_`, which is a Boolean-returning expression, and if this returns True, the result is the evaluation result of `_expression_`.
+/// Conditional structure used in condition chain expressions.
+///
+/// Evaluated by evaluating its `_condition_`, which is a Boolean-returning expression, and if this returns True, the result is the evaluation result of `_expression_`.
 #[doc(alias = "EL_CONDITIONAL_EXPRESSION")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct ElConditionalExpression<T> {

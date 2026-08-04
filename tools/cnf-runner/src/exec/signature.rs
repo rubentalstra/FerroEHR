@@ -20,11 +20,13 @@ use base64::Engine as _;
 use serde_json::Value;
 use sha2::{Digest as _, Sha256};
 
-/// The IXIT-declared signing posture of the SUT (the `signing` block, tagged by
-/// `mode`). `present`/`equals` are mode-agnostic; `verifiable` dispatches on
-/// this. Deserialized directly from the IXIT so the framework tests whatever
-/// mode a given deployment runs (RM common master06 §Digital Signature: a
-/// deployment runs digest OR openPGP, one at a time).
+/// The IXIT-declared signing posture of the SUT (the `signing` block, tagged
+/// by `mode`).
+///
+/// `present`/`equals` are mode-agnostic; `verifiable` dispatches on this.
+/// Deserialized directly from the IXIT so the framework tests whatever mode a
+/// given deployment runs (RM common master06 §Digital Signature: a deployment
+/// runs digest OR openPGP, one at a time).
 #[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
 #[serde(tag = "mode", rename_all = "snake_case", deny_unknown_fields)]
 pub enum SigningMode {
@@ -61,8 +63,10 @@ pub fn canonical_form(envelope: &Value) -> Result<String, String> {
 }
 
 /// Whether `signature` verifies over the reconstructed canonical form of
-/// `envelope` under `mode`. Digest mode recomputes and compares; pgp mode
-/// verifies the RFC 4880 detached signature against the declared key.
+/// `envelope` under `mode`.
+///
+/// Digest mode recomputes and compares; pgp mode verifies the RFC 4880
+/// detached signature against the declared key.
 ///
 /// # Errors
 /// [`String`] on a malformed signature/key or an unknown digest algorithm or

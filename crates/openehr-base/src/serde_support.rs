@@ -194,10 +194,11 @@ pub fn read_slot_tag<'de, A: MapAccess<'de>>(
     Ok((None, buffered))
 }
 
-/// The remainder of a polymorphic object after its `_type` has been read: the
-/// discriminator itself, the members buffered ahead of it, and the still-unread
-/// tail of the stream — presented as one [`Deserializer`] the chosen variant
-/// deserializes from.
+/// The remainder of a polymorphic object after its `_type` has been read.
+///
+/// The discriminator itself, the members buffered ahead of it, and the
+/// still-unread tail of the stream are presented as one [`Deserializer`] the
+/// chosen variant deserializes from.
 ///
 /// The discriminator is replayed rather than swallowed, because a tag may route
 /// to an INTERMEDIATE variant that is itself polymorphic and has to dispatch on

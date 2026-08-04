@@ -26,7 +26,7 @@
 //! ([`openehr_lang::lexer::lex_adl`]). The `rules`
 //! body and slot assertion expressions are captured as raw text alongside a
 //! structured placeholder.
-//! TODO: model rule/slot assertion expressions as full BEL/beom trees.
+//! TODO(#1874): model rule/slot assertion expressions as full BEL/beom trees.
 
 // Doctests are copy-paste templates: they must use `?`, never unwrap
 // (C-QUESTION-MARK, https://rust-lang.github.io/api-guidelines/documentation.html#c-question-mark).
@@ -49,8 +49,10 @@ pub mod rules;
 pub mod source;
 pub mod validate;
 
-/// The openEHR specification version this crate implements — the crate
-/// version itself: the spec crates are versioned by the specification they
-/// implement (`docs/VERSIONS.md` §Product and crate versioning), so
-/// consumers read the pin from the package, never from a hand-typed literal.
+/// The openEHR specification version this crate implements.
+///
+/// It is the crate version itself: the spec crates are versioned by the
+/// specification they implement (`docs/VERSIONS.md` §Product and crate
+/// versioning), so consumers read the pin from the package, never from a
+/// hand-typed literal.
 pub const SPEC_VERSION: &str = env!("CARGO_PKG_VERSION");

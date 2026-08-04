@@ -57,10 +57,11 @@ fn effective_type<'a>(node: &'a Value, declared: &'a str) -> Option<&'a str> {
         .or(None)
 }
 
-/// Whether every attribute the RM model declares MANDATORY is present in
-/// `value`, and no container with a cardinality lower bound of 1 is empty —
-/// recursing through the nested nodes a typed decode of `value` would itself
-/// decode.
+/// Whether `value` carries every attribute the RM model declares MANDATORY.
+///
+/// No container with a cardinality lower bound of 1 may be empty either, and
+/// the check recurses through the nested nodes a typed decode of `value` would
+/// itself decode.
 ///
 /// `true` means "nothing is missing", so the strict tiers apply to this node
 /// unchanged. `false` means the node is missing data the RM declares
@@ -134,10 +135,11 @@ pub fn mandatory_data_present(ty: &str, value: &Value) -> bool {
     true
 }
 
-/// Whether `value` positively CONTRADICTS its declared RM type `ty` — a member
-/// whose JSON kind the declared type cannot hold, a container member that is
-/// not an array, or a slot payload whose `_type` is not a concrete descendant
-/// of the declared class.
+/// Whether `value` positively CONTRADICTS its declared RM type `ty`.
+///
+/// A contradiction is a member whose JSON kind the declared type cannot hold, a
+/// container member that is not an array, or a slot payload whose `_type` is not
+/// a concrete descendant of the declared class.
 ///
 /// This is the "may not be wrong" half of RM common master06 §Incomplete
 /// Content, and it ignores presence entirely: an absent or `null` member is

@@ -3,38 +3,33 @@
 A pure-Rust, openEHR-spec-conformant CDR (ITS-REST 1.1.0 + AQL 1.1) with
 greenfield PG18-native internals. This file says what lives where and which
 document is authoritative for what. When two docs disagree, the **newer
-decision wins**. *(The former `ADRs/`, `blueprint/`, `enterprise/`, and
-`spec-audit/` layers were deleted 2026-07-16/17 — implemented or stale; the
-vendored specs are the only doc oracle, and live behaviour is documented in
-the code + the user website. The former `design/` folder is gone too —
-2026-07-20, with the admin-console scope consolidation onto tracker issue
-#152: unbuilt design content lives in the governing plan file or the issue,
-never in a parallel design layer.)*
+decision wins**. The vendored specs are the only doc oracle; live behaviour
+is documented in the code + the user website.
 
 ## Start here
 
 | Path | What it is | Authoritative for |
 |---|---|---|
-| The [FerroEHR Roadmap board](https://github.com/rubentalstra/FerroEHR/projects) | The public direction + live-status view over the tracker (`.claude/rules/project-board.md`; the former root `ROADMAP.md` was retired 2026-08-04) | where the product goes next |
+| The [FerroEHR Roadmap board](https://github.com/rubentalstra/FerroEHR/projects) | The public direction + live-status view over the tracker (`.claude/rules/project-board.md`) | where the product goes next |
 | GitHub Issues (`gh issue list --state open`) | The open-items tracker (root `CLAUDE.md` §Issue workflow) | what's open + what's active (pinned = current focus) |
-| Closed issues + PR descriptions + `CHANGELOG.md` | The build record (the former `PROGRESS.md` is retired — its content lives in git history) | the historical record of what shipped |
-| The code itself (router → handler → service → SQL) | Per-endpoint call chains — there is no standing endpoint map (the former `endpoint-map.md` was deleted 2026-07-26; a standing map goes stale) | navigation + optimization |
+| Closed issues + PR descriptions + `CHANGELOG.md` | The build record | the historical record of what shipped |
+| The code itself (router → handler → service → SQL) | Per-endpoint call chains — there is no standing endpoint map (a standing map goes stale) | navigation + optimization |
 
 ## Decisions
 
-The former `ADRs/` layer has been **deleted** (owner ruling 2026-07-17 — the
-ADRs caused more confusion than value: they were superseded piecemeal and left
-stale claims behind). Architectural decisions now live inline, in the durable
-record: the living reference docs (`architecture.md`, this tree, `VERSIONS.md`),
-the closed issues + PR descriptions, `CHANGELOG.md`, and git history. **No document reads, writes, or
-cites an ADR; the only citable references are the vendored specs and official
-external documentation.** (The current design in brief: the spec + ITS layer is
-generated from the vendored machine-readable specs by `openehr-codegen`; the
-application is idiomatic Rust of our own design on those crates, with its own
-PG18-native storage and typed AQL engine, four app crates with zero
-re-exports, an SM-aligned service layer, and enterprise capabilities —
-eventing, multi-tenancy, FHIR connectors, multimedia externalization;
-acceptance is the openEHR conformance suite. See `architecture.md`.)
+**There is no ADR layer** (owner ruling 2026-07-17). Architectural decisions
+live inline, in the durable record: the living reference docs
+(`architecture.md`, this tree, `VERSIONS.md`), the closed issues + PR
+descriptions, `CHANGELOG.md`, and git history. **No document reads, writes,
+or cites an ADR; the only citable references are the vendored specs and
+official external documentation.** (The current design in brief: the spec +
+ITS layer is generated from the vendored machine-readable specs by
+`openehr-codegen`; the application is idiomatic Rust of our own design on
+those crates, with its own PG18-native storage and typed AQL engine, four
+app crates with zero re-exports, an SM-aligned service layer, and enterprise
+capabilities — eventing, multi-tenancy, FHIR connectors, multimedia
+externalization; acceptance is the openEHR conformance suite. See
+`architecture.md`.)
 
 ## The specs (the oracle — do not edit)
 
@@ -46,10 +41,10 @@ acceptance is the openEHR conformance suite. See `architecture.md`.)
 ## Plans
 
 - `plans/` — one deep working plan per open tracker issue that needs one,
-  plus `WORKLIST.md` (the retired tracker's pointer stub). Completed plan
-  files are pruned in the PR that lands them, with the close recorded in
-  the PR description + issue handoff comment (all in git history). See
-  `plans/README.md`.
+  plus `WORKLIST.md` (a delete-protected pointer stub to the tracker).
+  Completed plan files are pruned in the PR that lands them, with the close
+  recorded in the PR description + issue handoff comment (all in git
+  history). See `plans/README.md`.
 
 ## Platform + verification
 
@@ -60,10 +55,8 @@ acceptance is the openEHR conformance suite. See `architecture.md`.)
   wins for those).
 - `postgres-features.md` — the PG 17/18 feature delta this CDR exploits.
 - `conformance/` — CNF 2.0 pipeline artifacts, one directory per SUT
-  (`ferroehr/`: `results.json`, `verdicts.json`, the rendered
-  reviewed ECC↔CNF cutover record). `ehrbase-java/` + `COMPARISON.md` are
-  the FROZEN final artifacts of the retired ECC harness (2026-07-22) —
-  historical comparison data until the CNF pipeline re-bases the public
-  comparison. Numbers live ONLY in these committed artifacts.
+  (`ferroehr/`: `results.json`, `verdicts.json`). `ehrbase-java/` +
+  `COMPARISON.md` are frozen comparison data until the CNF pipeline re-bases
+  the public comparison. Numbers live ONLY in these committed artifacts.
 - `profiles/` — per-statement profiling captures (`scripts/profile.sh`),
   operator evidence for optimization rungs.

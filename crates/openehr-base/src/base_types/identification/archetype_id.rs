@@ -4,7 +4,9 @@
 //! The openEHR `ARCHETYPE_ID` spec class, generated from the vendored BMM
 //! meta-model.
 
-/// Identifier or reference for archetypes. Ideally, these identify globally unique archetypes. When used as a reference, only partial version information is included (major version only), and the namespace is omitted.
+/// Identifier or reference for archetypes.
+///
+/// Ideally, these identify globally unique archetypes. When used as a reference, only partial version information is included (major version only), and the namespace is omitted.
 ///
 /// Lexical form: `rm_originator  '-' rm_name  '-' rm_entity  '.' concept_name {  '-' specialisation }*  '.v' version_id`.
 #[doc(alias = "ARCHETYPE_ID")]

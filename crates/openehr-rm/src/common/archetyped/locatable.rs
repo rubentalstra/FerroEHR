@@ -45,7 +45,9 @@ use crate::integration::generic_entry::GenericEntry;
 
 /// Closed subtype set of `LOCATABLE`, dispatched on each payload's `_type`.
 ///
-/// Root class of all information model classes that can be archetyped. Most classes in the openEHR reference model inherit from the `LOCATABLE` class, which defines the idea of  locatability in an archetyped structure. `LOCATABLE` defines a runtime name and an `_archetype_node_id_`.
+/// Root class of all information model classes that can be archetyped.
+///
+/// Most classes in the openEHR reference model inherit from the `LOCATABLE` class, which defines the idea of  locatability in an archetyped structure. `LOCATABLE` defines a runtime name and an `_archetype_node_id_`.
 #[doc(alias = "LOCATABLE")]
 #[derive(Debug, Clone, PartialEq)]
 pub enum Locatable {

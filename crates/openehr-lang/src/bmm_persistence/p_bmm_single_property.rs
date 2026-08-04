@@ -31,7 +31,9 @@ pub struct PBmmSingleProperty {
     pub type_def: Option<PBmmType>,
     /// `BMM_PROPERTY` created by `_create_bmm_property_definition_`.
     pub bmm_property: Option<BmmProperty<BmmType>>,
-    /// If the type is a simple type, then this attribute will hold the type name. If the type is a container or generic, then type_ref will hold the type definition. The resulting type is generated in type_def.
+    /// If the type is a simple type, then this attribute will hold the type name.
+    ///
+    /// If the type is a container or generic, then type_ref will hold the type definition. The resulting type is generated in type_def.
     pub r#type: Option<String>,
     /// Type definition of this property computed from `_type_` for later use in `_bmm_property_`.
     pub type_ref: Option<PBmmSimpleType>,

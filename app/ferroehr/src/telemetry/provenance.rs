@@ -1,12 +1,15 @@
-//! Build/spec provenance constants — the spec pins **derived from the
-//! `openehr-*` crate versions** (each spec crate is versioned by the openEHR
-//! specification it implements, so its `SPEC_VERSION` constant is the pin),
-//! never hand-typed literals: a pin bump in a crate manifest propagates here
-//! at compile time, so the identity surfaces cannot drift.
+//! Build/spec provenance constants.
+//!
+//! The spec pins are **derived from the `openehr-*` crate versions** (each spec
+//! crate is versioned by the openEHR specification it implements, so its
+//! `SPEC_VERSION` constant is the pin), never hand-typed literals: a pin bump
+//! in a crate manifest propagates here at compile time, so the identity
+//! surfaces cannot drift.
 
-/// The openEHR ITS-REST contract version this server implements (the released
-/// `Release-1.1.0`, 19-Jul-2026; the vendored `-codegen` OAS at
-/// `crates/openehr-its/vendor/rest-oas/PROVENANCE.md` pins that release).
+/// The openEHR ITS-REST contract version this server implements.
+///
+/// The released `Release-1.1.0`, 19-Jul-2026; the vendored `-codegen` OAS at
+/// `crates/openehr-its/vendor/rest-oas/PROVENANCE.md` pins that release.
 /// Reported by management `/info`, the System Options manifest
 /// (`restapi_specs_version` — a plain version string, per the System API OAS
 /// example `restapi_specs_version: 1.1.0`), and `/status`.
@@ -32,11 +35,13 @@ pub const TERM: &str = openehr_term::SPEC_VERSION;
 pub const PG_TARGET: &str = "18.4+";
 /// The last machine-computed ECC conformance verdict — the highest profile
 /// obtained — advertised by the System Options manifest (`OPTIONS /`
-/// `conformance_profile`). No openEHR spec governs the value; the
-/// conformance instrument computes it (CNF master03 profiles). Updated at
-/// each conformance re-baseline from the runner's machine verdict recorded
-/// in `docs/conformance/ferroehr/CONFORMANCE_REPORT.md` §"Profile verdict"
-/// (Core PASS · Standard PASS). The manifest MUST NOT out-claim it.
+/// `conformance_profile`).
+///
+/// No openEHR spec governs the value; the conformance instrument computes it
+/// (CNF master03 profiles). Updated at each conformance re-baseline from the
+/// runner's machine verdict recorded in
+/// `docs/conformance/ferroehr/CONFORMANCE_REPORT.md` §"Profile verdict" (Core
+/// PASS · Standard PASS). The manifest MUST NOT out-claim it.
 pub const CONFORMANCE_PROFILE: &str = "STANDARD";
 
 #[cfg(test)]

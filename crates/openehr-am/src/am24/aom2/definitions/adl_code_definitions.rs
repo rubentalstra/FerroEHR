@@ -51,7 +51,9 @@ impl AdlCodeDefinitionsData {
     /// BMM constant `Code_regex_pattern`.
     pub const CODE_REGEX_PATTERN: &'static str = "(0|[1-9][0-9]*)(\\.(0|[1-9][0-9]*))*";
 
-    /// Regex pattern of the root code of any archetype. Corresponds to at-codes of the form `at0000`, `at0000.1`, `at0000.1.1` etc, and id-codes of the form `id1`, `id1.1`, `id1.1.1` etc. For at-coded ADL2 numbering starts with zero (i.e. `at0000`) while the id-coded ADL2 numbering starts with one (i.e. `id1`).
+    /// Regex pattern of the root code of any archetype.
+    ///
+    /// Corresponds to at-codes of the form `at0000`, `at0000.1`, `at0000.1.1` etc, and id-codes of the form `id1`, `id1.1`, `id1.1.1` etc. For at-coded ADL2 numbering starts with zero (i.e. `at0000`) while the id-coded ADL2 numbering starts with one (i.e. `id1`).
     /// BMM constant `Root_code_regex_pattern`.
     pub const ROOT_CODE_REGEX_PATTERN: &'static str = "^(id1|at0000)(\\.1)*$";
 

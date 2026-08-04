@@ -48,7 +48,9 @@ use crate::integration::generic_entry::GenericEntry;
 
 /// Closed subtype set of `PATHABLE`, dispatched on each payload's `_type`.
 ///
-/// The `PATHABLE` class defines the pathing capabilities used by nearly all classes in the openEHR reference model, mostly via inheritance of `LOCATABLE`. The defining characteristics of `PATHABLE` objects are that they can locate child objects using paths, and they know their parent object in a compositional hierarchy. The parent feature is defined as abstract in the model, and may be implemented in any way convenient.
+/// The `PATHABLE` class defines the pathing capabilities used by nearly all classes in the openEHR reference model, mostly via inheritance of `LOCATABLE`.
+///
+/// The defining characteristics of `PATHABLE` objects are that they can locate child objects using paths, and they know their parent object in a compositional hierarchy. The parent feature is defined as abstract in the model, and may be implemented in any way convenient.
 #[doc(alias = "PATHABLE")]
 #[derive(Debug, Clone, PartialEq)]
 pub enum Pathable {

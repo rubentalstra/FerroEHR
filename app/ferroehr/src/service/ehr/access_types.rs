@@ -89,10 +89,11 @@ pub struct AccessEntry {
     pub max_level: Option<i64>,
 }
 
-/// Per-Composition privacy levels. The meaning of a level is deliberately
-/// deployment-defined ("the definition of the privacy levels is not hard-wired
-/// in the openEHR models but rather is defined by standards or agreements
-/// within jurisdictions of use" — BASE
+/// Per-Composition privacy levels.
+///
+/// The meaning of a level is deliberately deployment-defined ("the definition
+/// of the privacy levels is not hard-wired in the openEHR models but rather
+/// is defined by standards or agreements within jurisdictions of use" — BASE
 /// `architecture_overview/master07-security.adoc` §Access Control).
 ///
 /// No openEHR spec governs the concrete scheme — our own design.
@@ -188,10 +189,12 @@ impl EhrAccessSettings {
     }
 }
 
-/// Whether a scheme principal string (`user:<id>` / `role:<name>`) matches the
-/// authenticated caller identified by `subject` (Basic username / OIDC
-/// subject) and `roles`. Role comparison is case-insensitive (roles are
-/// normalised upper-case at authentication).
+/// Whether a scheme principal string (`user:<id>` / `role:<name>`) matches
+/// the authenticated caller identified by `subject` (Basic username / OIDC
+/// subject) and `roles`.
+///
+/// Role comparison is case-insensitive (roles are normalised upper-case at
+/// authentication).
 #[must_use]
 pub fn principal_matches(principal: &str, subject: Option<&str>, roles: &[String]) -> bool {
     if let Some(user) = principal.strip_prefix("user:") {

@@ -171,9 +171,10 @@ async fn stamp_tenant_guc(conn: &mut PgConnection) -> Result<(), sqlx::Error> {
     Ok(())
 }
 
-/// Create the **tenant-scoped** application pool: [`connect`] plus hooks that
-/// stamp the `ferroehr.tenant_id` session GUC on every checked-out connection
-/// from the current request's tenant context
+/// Creates the **tenant-scoped** application pool.
+///
+/// Wraps [`connect`] with hooks that stamp the `ferroehr.tenant_id` session GUC
+/// on every checked-out connection from the current request's tenant context
 /// ([`crate::extensions::tenant_context::current`]). Multi-tenancy is our own
 /// deployment extension — no openEHR spec governs it.
 ///
@@ -259,10 +260,12 @@ const BOOTSTRAP: &[&str] = &[
 
 /// A stable fingerprint of the complete embedded migration state: the
 /// bootstrap statements plus every migrator's (version, checksum) sequence,
-/// in application order. Two builds with identical migrations produce the
-/// same value; any migration change produces a new one. Test infrastructure
-/// keys its migrated template databases on this (no openEHR spec governs
-/// test infrastructure — our own design).
+/// in application order.
+///
+/// Two builds with identical migrations produce the same value; any migration
+/// change produces a new one. Test infrastructure keys its migrated template
+/// databases on this (no openEHR spec governs test infrastructure — our own
+/// design).
 #[must_use]
 pub fn migration_fingerprint() -> String {
     // FNV-1a over the bootstrap text + each migration's version/checksum —

@@ -21,7 +21,9 @@ pub struct Archetype {
     pub uid: Option<HierObjectId>,
 
     // inherited: AUTHORED_RESOURCE
-    /// Language in which this resource was initially authored. Although there is no language primacy of resources overall, the language of original authoring is required to ensure natural language translations can preserve quality. Language is relevant in both the description and ontology sections.
+    /// Language in which this resource was initially authored.
+    ///
+    /// Although there is no language primacy of resources overall, the language of original authoring is required to ensure natural language translations can preserve quality. Language is relevant in both the description and ontology sections.
     pub original_language: TerminologyCode,
     /// Description and lifecycle information of the resource.
     pub description: Option<Box<ResourceDescription>>,
@@ -29,7 +31,9 @@ pub struct Archetype {
     pub is_controlled: Option<bool>,
     /// Annotations on individual items within the resource, keyed by path. The inner table takes the form of a Hash table of String values keyed by String tags.
     pub annotations: Option<ResourceAnnotations>,
-    /// List of details for each natural translation made of this resource, keyed by language code. For each translation listed here, there must be corresponding sections in all language-dependent parts of the resource. The `_original_language_` does not appear in this list.
+    /// List of details for each natural translation made of this resource, keyed by language code.
+    ///
+    /// For each translation listed here, there must be corresponding sections in all language-dependent parts of the resource. The `_original_language_` does not appear in this list.
     pub translations: Option<std::collections::BTreeMap<String, TranslationDetails>>,
     /// Root node of the definition of this archetype.
     pub definition: CComplexObject,

@@ -37,22 +37,14 @@ change the emitter and regenerate (`cargo run -p openehr-codegen -- emit`/
   conformance suite + corpus tests. Consult prior art (upstream EHRbase, other
   CDRs) when useful; never port it blindly.
 
-## Annotation vocabulary (grep-able, where relevant)
+## Comments & documentation
 
-Use ONLY the official comment forms (owner ruling 2026-07-17 — the bespoke
-`(port)` vocabulary is deleted and banned): `// TODO:` for unfinished work ·
-`// TODO(perf):` for a performance optimization to do later · `// NOTE:` for a
-deliberate spec-silent design decision (carry the spec citation, or the
-explicit flag "no openEHR spec governs this — our own design/extension") ·
-`// SAFETY:` for any `unsafe` (expect almost none — this is a web service).
-**Deferred work is TODO, never prose (owner reinforcement 2026-07-19):**
-anything postponed to a later phase/session ("lands later", "deferred to
-the flattener", "resolved in A7") is pending work and must be
-`// TODO: <what is missing>` — no prose deferrals, and NO phase/plan/tracker
-markers in code (A5/P16/W-nn are the banned tracker-ID pattern). If a
-comment describes something not yet done, it is a TODO, not a NOTE.
-There is no PORT STATUS trailer and no `// PORT NOTE:` / `TODO(port)` /
-`PERF(port)` — those retired conventions must not reappear.
+The comment/doc-comment discipline lives in **`comments.md`** (RFC 505 +
+RFC 1574): line comments only, `// TODO(#NNNN):` / `// NOTE:` / `// SAFETY:`
+as the only markers, NOTE = citation + one sentence (≤3 lines), `//` runs
+≤8 lines, doc-comment summary-line + section conventions. Enforced by
+`scripts/check-comment-style.sh` (hook + CI) and
+`clippy::too_long_first_doc_paragraph`.
 
 ## Type and error conventions
 
@@ -85,15 +77,11 @@ There is no PORT STATUS trailer and no `// PORT NOTE:` / `TODO(port)` /
 
 - Every public item carries a doc comment (rustc `missing_docs`; generated
   crates get theirs from the emitter — never hand-edit `// @generated`).
-  Shape per the rustdoc book: first line = ONE plain-language summary
-  sentence (it is what search results and module indexes show); detail after
-  a blank line; `# Errors` on fallible fns and `# Panics` where a panic is
-  possible (pedantic-enforced).
+  Shape, sections, and summary-line rules: `comments.md` (RFC 1574).
 - Intra-doc links (`[`Type`]`) resolve in the scope of the module where the
   item is DEFINED — which under the zero-re-exports rule is also where
   readers import it from. `rustdoc::broken_intra_doc_links` is deny; the CI
-  doc job is the gate. Bare URLs go in `<…>` angle brackets; literal
-  square brackets in prose are escaped `\[…\]`.
+  doc job is the gate. Literal square brackets in prose are escaped `\[…\]`.
 - `#[doc(alias = "EHR_STATUS")]`-style aliases on spec-named types are
   encouraged — rustdoc search then finds the Rust type from the openEHR
   spelling.
@@ -122,5 +110,5 @@ There is no PORT STATUS trailer and no `// PORT NOTE:` / `TODO(port)` /
 
 - Do not port JVM plumbing (classloaders, Spring context internals, PF4J) —
   design the idiomatic Rust equivalent (tower middleware, axum state, a Rust
-  plugin model) or defer to Stage 2 with a `// NOTE:`.
+  plugin model) or register it as its own tracker issue with a `// TODO(#NNNN):`.
 - Do not hand-edit generated code; do not re-model what `openehr-*` provides.

@@ -9,7 +9,9 @@ use crate::data_types::text::dv_coded_text::DvCodedText;
 use crate::ehr_extract::common::extract_manifest::ExtractManifest;
 use crate::ehr_extract::common::extract_version_spec::ExtractVersionSpec;
 
-/// Specification of an Extract's contents. Subtypes can be used to add details specific to the type of Extract. The specification consists of attributes specifying the directory, and two further groups of attributes in their own classes, namely a version specfication (which versions of information items are to be included) and a manifest (which entities are to be included in the extract).
+/// Specification of an Extract's contents.
+///
+/// Subtypes can be used to add details specific to the type of Extract. The specification consists of attributes specifying the directory, and two further groups of attributes in their own classes, namely a version specfication (which versions of information items are to be included) and a manifest (which entities are to be included in the extract).
 ///
 /// Use: Used in a request to specify an Extract, as well as to describe what is contained in an Extract.
 #[doc(alias = "EXTRACT_SPEC")]

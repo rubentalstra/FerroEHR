@@ -91,7 +91,7 @@ server refuses to start on any error:
 
 - **Unknown keys are rejected** — in the file (with the offending `file:line`)
   and in the `FERROEHR_` environment namespace — with a did-you-mean suggestion.
-  A misspelled security key can no longer be silently ignored.
+  A misspelled security key is a boot error, never silently ignored.
 - **Type errors are boot errors**, naming the key, the expected type, and where
   the bad value came from.
 - **Semantic errors are aggregated** — one pass reports every problem at once,
@@ -666,8 +666,8 @@ DV_MULTIMEDIA externalization → S3-compatible object store. Off by default
 
 The IHE ATNA audit trail (see the [Audit trail chapter](../audit.md)). **On
 by default** with only the local store active; forwarding is opt-in per
-sink. (Replaces the former `[atna]` section — old keys fail at boot with
-did-you-mean guidance.)
+sink. (`[atna]` keys are rejected at boot with did-you-mean guidance
+pointing here.)
 
 | Key | Type | Default | Description |
 |---|---|---|---|
@@ -823,7 +823,6 @@ below maps every old spelling to its replacement.
 | `FERROEHR__QUERY__PLAN_CACHE_CAPACITY` / `_TIMEOUT_MS` | `query.*` — same spelling, now strict-parsed | behaviour change (bad values now error) |
 | the nine `FERROEHR_*_CONFIG` file pointers | — | **removed** — merge each file's contents into `ferroehr.toml` under its `[section]` |
 
-The `PostgreSQL init` container variables `FERROEHR_DB_USER` / `_PASSWORD` /
-`_NAME` were renamed to `PG_INIT_USER` / `_PASSWORD` / `_DB` — they configure
-the database container, not the server, and no longer collide with the
-server's reserved `FERROEHR_` namespace.
+The `PostgreSQL init` container variables are `PG_INIT_USER` / `_PASSWORD` /
+`_DB` — they configure the database container, not the server, and sit
+outside the server's reserved `FERROEHR_` namespace.

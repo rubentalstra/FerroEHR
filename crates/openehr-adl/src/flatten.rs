@@ -100,10 +100,12 @@ pub fn flatten(
 }
 
 /// The flat form of `archetype`, resolving and flattening its full
-/// specialisation lineage top-down (`master08` §Flattening: "process each parent
-/// in order from the top"). A non-specialised archetype is its own flat form
-/// (`master09.02` §Differential and Flat Forms). Results are memoised per repo
-/// lookup key for the duration of the call graph.
+/// specialisation lineage top-down (`master08` §Flattening: "process each
+/// parent in order from the top").
+///
+/// A non-specialised archetype is its own flat form (`master09.02`
+/// §Differential and Flat Forms). Results are memoised per repo lookup key
+/// for the duration of the call graph.
 ///
 /// # Errors
 /// [`FlattenError::ParentNotFound`] if a lineage parent is absent from `repo`,

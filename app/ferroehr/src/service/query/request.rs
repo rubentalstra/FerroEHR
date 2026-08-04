@@ -1,18 +1,21 @@
-//! Query execution requests/outcomes — the realization of
-//! `ADHOC_QUERY_EXECUTE_SPEC` / `STORED_QUERY_EXECUTE_SPEC`
-//! (`adhoc_query_execute_spec.adoc`, `stored_query_execute_spec.adoc`) plus
-//! the execute-call parameters (`i_query_service.adoc`).
+//! Query execution requests and outcomes.
+//!
+//! The realization of `ADHOC_QUERY_EXECUTE_SPEC` /
+//! `STORED_QUERY_EXECUTE_SPEC` (`adhoc_query_execute_spec.adoc`,
+//! `stored_query_execute_spec.adoc`) plus the execute-call parameters
+//! (`i_query_service.adoc`).
 
 use std::collections::BTreeMap;
 
 use serde_json::Value;
 
 /// A normalized AQL query request: the paging window, the EHR scope, and the
-/// `$parameter` bindings. Realizes the SM execute-spec classes plus the
-/// execute-call parameters: `query_parameters` (the spec types them
-/// `Hash<String, String>`; carried as JSON [`Value`]s — the ITS-REST wire
-/// binds typed parameters, a documented widening), `row_offset` /
-/// `rows_to_fetch`, and `ehr_ids`.
+/// `$parameter` bindings.
+///
+/// Realizes the SM execute-spec classes plus the execute-call parameters:
+/// `query_parameters` (the spec types them `Hash<String, String>`; carried as
+/// JSON [`Value`]s — the ITS-REST wire binds typed parameters, a documented
+/// widening), `row_offset` / `rows_to_fetch`, and `ehr_ids`.
 ///
 /// `formalism` (`ADHOC_QUERY_EXECUTE_SPEC.formalism`, default `"aql"`) is
 /// fixed to AQL — another formalism is rejected typed, which the SM sanctions
@@ -57,11 +60,12 @@ impl AqlQueryRequest {
     }
 }
 
-/// The outcome of an AQL execution: the assembled `RESULT_SET`
-/// (`result_set.adoc`; rendered as ITS-REST canonical JSON) plus — when the
-/// caller asked for them ([`AqlQueryRequest::collect_attributes`]) — the
-/// distinct EHR ids and template ids the query touched, for the ABAC
-/// post-check.
+/// The outcome of an AQL execution.
+///
+/// Carries the assembled `RESULT_SET` (`result_set.adoc`; rendered as ITS-REST
+/// canonical JSON) plus — when the caller asked for them
+/// ([`AqlQueryRequest::collect_attributes`]) — the distinct EHR ids and
+/// template ids the query touched, for the ABAC post-check.
 #[derive(Debug, Clone, Default)]
 pub struct QueryOutcome {
     /// The `RESULT_SET` (canonical JSON) the adapter renders.

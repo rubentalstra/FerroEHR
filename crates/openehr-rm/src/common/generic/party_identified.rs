@@ -8,6 +8,8 @@ use crate::common::generic::party_related::PartyRelated;
 use crate::data_types::basic::dv_identifier::DvIdentifier;
 use openehr_base::prelude::PartyRef;
 
+/// The openEHR `PARTY_IDENTIFIED` class.
+///
 /// Proxy data for an identified party other than the subject of the record, minimally consisting of human-readable identifier(s), such as name, formal (and possibly computable) identifiers such as NHS number, and an optional link to external data. There must be at least one of name, identifier or external_ref present.
 ///
 /// Used to describe parties where only identifiers may be known, and there is no entry at all in the demographic system (or even no demographic system). Typically for health care providers, e.g. name and provider number of an institution.

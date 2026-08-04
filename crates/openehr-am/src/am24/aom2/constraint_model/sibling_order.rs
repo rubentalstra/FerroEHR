@@ -3,6 +3,8 @@
 //! The openEHR `SIBLING_ORDER` spec class, generated from the vendored BMM
 //! meta-model.
 
+/// The openEHR `SIBLING_ORDER` class.
+///
 /// Defines the order indicator that can be used on a `C_OBJECT` within a container attribute in a specialised archetype to indicate its order with respect to a sibling defined in a higher specialisation level.
 ///
 /// Misuse: This type cannot be used on a `C_OBJECT` other than one within a container attribute in a specialised archetype.

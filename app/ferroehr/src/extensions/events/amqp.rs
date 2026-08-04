@@ -30,9 +30,11 @@ use super::{EventError, EventPublisher};
 /// Persistent AMQP delivery mode (survives a broker restart on a durable queue).
 const DELIVERY_MODE_PERSISTENT: u8 = 2;
 
-/// A lazily-connecting `RabbitMQ` publisher. Cheap to construct (no I/O); the
-/// first [`publish`](AmqpPublisher::publish) opens the connection + channel and
-/// declares the exchange, and any later loss triggers a transparent reconnect.
+/// A lazily-connecting `RabbitMQ` publisher.
+///
+/// Cheap to construct (no I/O); the first [`publish`](AmqpPublisher::publish)
+/// opens the connection + channel and declares the exchange, and any later
+/// loss triggers a transparent reconnect.
 #[derive(Debug)]
 pub struct AmqpPublisher {
     url: String,

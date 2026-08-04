@@ -191,9 +191,11 @@ fn is_structure(v: &Value) -> bool {
 }
 
 /// Reassembles the canonical JSON from node rows (sorted or not — rows are
-/// ordered by `num` internally). Lossless inverse of [`decompose`]. Generic over
-/// [`NodeContent`], so it accepts either the write [`NodeRow`] (from
-/// [`decompose`], e.g. to reassemble the served form for signing) or the lean
+/// ordered by `num` internally).
+///
+/// Lossless inverse of [`decompose`]. Generic over [`NodeContent`], so it
+/// accepts either the write [`NodeRow`] (from [`decompose`], e.g. to
+/// reassemble the served form for signing) or the lean
 /// [`crate::storage::row::ReadRow`] the repository fetches back.
 ///
 /// # Errors

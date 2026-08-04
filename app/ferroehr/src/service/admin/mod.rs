@@ -1,5 +1,6 @@
-//! The Admin service (`service/admin/`) — the openEHR **Admin component** of the
-//! platform crate: SM `I_ADMIN_SERVICE` / `I_ADMIN_ARCHIVE` / `I_ADMIN_DUMP_LOAD`
+//! The Admin service (`service/admin/`) — the openEHR **Admin component**.
+//!
+//! Realizes SM `I_ADMIN_SERVICE` / `I_ADMIN_ARCHIVE` / `I_ADMIN_DUMP_LOAD`
 //! (`docs/specs/openehr/SM/docs/openehr_platform/master15-admin_service.adoc`
 //! and the UML classes `i_admin_service.adoc`, `i_admin_archive.adoc`,
 //! `i_admin_dump_load.adoc`; `master02-overview.adoc` frames Admin as

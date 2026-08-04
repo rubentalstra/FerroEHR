@@ -7,7 +7,9 @@ use openehr_base::prelude::Interval;
 use openehr_base::prelude::Iso8601DateTime;
 use openehr_base::prelude::ValidityKind;
 
-/// ISO 8601-compatible constraint on instances of Date_Time. There is no validity flag for ‘year’, since it must always be by definition mandatory in order to have a sensible date/time at all. Syntax expressions of instances of this class include “YYYY-MM-DDT??:??:??” (date/time with optional time) and “YYYY-MMDDTHH:MM:xx” (date/time, seconds not allowed).
+/// ISO 8601-compatible constraint on instances of Date_Time.
+///
+/// There is no validity flag for ‘year’, since it must always be by definition mandatory in order to have a sensible date/time at all. Syntax expressions of instances of this class include “YYYY-MM-DDT??:??:??” (date/time with optional time) and “YYYY-MMDDTHH:MM:xx” (date/time, seconds not allowed).
 #[doc(alias = "C_DATE_TIME")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct CDateTime {

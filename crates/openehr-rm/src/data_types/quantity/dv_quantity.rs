@@ -8,14 +8,18 @@ use crate::data_types::quantity::dv_interval::DvInterval;
 use crate::data_types::quantity::reference_range::ReferenceRange;
 use crate::data_types::text::code_phrase::CodePhrase;
 
-/// Quantitified type representing  scientific  quantities, i.e. quantities expressed as a magnitude and units. Units are expressed in the UCUM syntax ([Unified Code for Units of Measure (UCUM)](http://unitsofmeasure.org/ucum.html), by Gunther Schadow and Clement J. McDonald of The Regenstrief Institute)  (case-sensitive form) by default, or another system if `_units_system_` is set.
+/// Quantitified type representing  scientific  quantities, i.e. quantities expressed as a magnitude and units.
+///
+/// Units are expressed in the UCUM syntax ([Unified Code for Units of Measure (UCUM)](http://unitsofmeasure.org/ucum.html), by Gunther Schadow and Clement J. McDonald of The Regenstrief Institute)  (case-sensitive form) by default, or another system if `_units_system_` is set.
 ///
 /// Can also be used for time durations, where it is more convenient to treat these as simply a number of seconds rather than days, months, years (in the latter case, `DV_DURATION` may be used).
 #[doc(alias = "DV_QUANTITY")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct DvQuantity {
     // inherited: DV_ORDERED
-    /// Optional normal status indicator of value with respect to normal range for this value. Often included by lab, even if the normal range itself is not included. Coded by ordinals in series HHH, HH, H, (nothing), L, LL, LLL; see openEHR terminology group  `normal_status`.
+    /// Optional normal status indicator of value with respect to normal range for this value.
+    ///
+    /// Often included by lab, even if the normal range itself is not included. Coded by ordinals in series HHH, HH, H, (nothing), L, LL, LLL; see openEHR terminology group  `normal_status`.
     pub normal_status: Option<CodePhrase>,
     /// Optional normal range.
     pub normal_range: Option<Box<DvInterval<DvQuantity>>>,
@@ -44,7 +48,9 @@ pub struct DvQuantity {
     pub accuracy_is_percent: Option<bool>,
     /// Numeric magnitude of the quantity.
     pub magnitude: f64,
-    /// Precision to which the value of the quantity is expressed, in terms of number of decimal places. The value 0 implies an integral quantity.
+    /// Precision to which the value of the quantity is expressed, in terms of number of decimal places.
+    ///
+    /// The value 0 implies an integral quantity.
     /// The value -1 implies no limit, i.e. any number of decimal places.
     pub precision: Option<i32>,
     /// Quantity units, expressed as a code or syntax string from either UCUM (the default) or the units system specified in `_units_system_`, when set.
@@ -55,7 +61,9 @@ pub struct DvQuantity {
     ///
     /// Example values from UCUM: "kg/m^2", “mm\[Hg\]", "ms-1", "km/h".
     pub units: String,
-    /// Optional field used to specify a units system from which codes in `_units_` are defined. Value is a URI identifying a terminology containing units concepts from the  ([HL7 FHIR terminologies list](https://www.hl7.org/fhir/terminologies-systems.html)).
+    /// Optional field used to specify a units system from which codes in `_units_` are defined.
+    ///
+    /// Value is a URI identifying a terminology containing units concepts from the  ([HL7 FHIR terminologies list](https://www.hl7.org/fhir/terminologies-systems.html)).
     ///
     /// If not set, the UCUM standard (case-sensitive codes) is assumed as the units system.
     pub units_system: Option<String>,

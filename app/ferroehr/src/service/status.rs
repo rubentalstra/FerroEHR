@@ -244,6 +244,7 @@ impl SmError {
 }
 
 /// `CALL_STATUS` — "Object representing a call status" (`call_status.adoc`).
+///
 /// All five attributes are mandatory in the SM. Built on demand from a failed
 /// call's [`SmError`] via [`SmError::into_call_status`] (the stateless
 /// realization of `I_STATUS.last_call_status()`).

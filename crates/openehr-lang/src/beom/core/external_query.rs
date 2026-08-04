@@ -3,11 +3,15 @@
 //! The openEHR `EXTERNAL_QUERY` spec class, generated from the vendored BMM
 //! meta-model.
 
-/// Definition of a variable whose value is derived from a query run on a data context in the operational environment. Typical uses of this kind of variable are to obtain values like the patient date of birth, sex, weight, and so on. It could also be used to obtain items from a knowledge context, such as a drug database.
+/// Definition of a variable whose value is derived from a query run on a data context in the operational environment.
+///
+/// Typical uses of this kind of variable are to obtain values like the patient date of birth, sex, weight, and so on. It could also be used to obtain items from a knowledge context, such as a drug database.
 #[doc(alias = "EXTERNAL_QUERY")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct ExternalQuery {
-    /// Optional name of context. This allows a basic separation of query types to be done in more sophisticated environments. Possible values might be “patient”, “medications” and so on.
+    /// Optional name of context.
+    ///
+    /// This allows a basic separation of query types to be done in more sophisticated environments. Possible values might be “patient”, “medications” and so on.
     /// Not yet standardised.
     pub context: String,
     /// Identifier of query in the external context, e.g. “date_of_birth”.

@@ -112,10 +112,11 @@ pub async fn serve_with(
 }
 
 /// Build the application router with a concrete backend and a full
-/// [`Observability`] bundle (management surface + telemetry handles). The
-/// management surface is merged into the returned router when it is enabled and
-/// not bound to a separate port. ATNA auditing lives in the backend's SM
-/// `SystemLog` component.
+/// [`Observability`] bundle (management surface + telemetry handles).
+///
+/// The management surface is merged into the returned router when it is
+/// enabled and not bound to a separate port. ATNA auditing lives in the
+/// backend's SM `SystemLog` component.
 ///
 /// # Errors
 /// [`ServeError::Auth`] if the OIDC key material/algorithms are invalid.
@@ -141,11 +142,12 @@ fn build_authenticator(
     Authenticator::with_role_claims(config.auth.clone(), role_claims).map_err(ServeError::Auth)
 }
 
-/// Build and serve the application with full observability: the API + audit +
-/// telemetry surface, and — when `management.port` is set — the management
-/// surface on its own internal listener (otherwise merged into the main app).
-/// Graceful shutdown on `SIGINT`/`SIGTERM` covers both listeners. ATNA auditing
-/// lives in the backend's SM `SystemLog` component.
+/// Builds and serves the application with full observability.
+///
+/// Mounts the API + audit + telemetry surface, and — when `management.port` is
+/// set — the management surface on its own internal listener (otherwise merged
+/// into the main app). Graceful shutdown on `SIGINT`/`SIGTERM` covers both
+/// listeners. ATNA auditing lives in the backend's SM `SystemLog` component.
 ///
 /// # Errors
 /// [`ServeError::Auth`] on bad auth config; [`ServeError::Io`] on bind/serve failure.
@@ -253,11 +255,12 @@ async fn run_server(
     Ok(())
 }
 
-/// Build the rustls server config for `[server.tls]`: the certificate chain +
-/// key, and — when `client_auth` is not `off` — a client-certificate verifier
-/// against the explicit `client_ca_file` trust anchor (never the web PKI).
-/// Public: the TLS tests (and any embedding binary) drive the same builder
-/// the server boots with.
+/// Builds the rustls server config for `[server.tls]`.
+///
+/// Assembles the certificate chain + key, and — when `client_auth` is not
+/// `off` — a client-certificate verifier against the explicit
+/// `client_ca_file` trust anchor (never the web PKI). Public: the TLS tests
+/// (and any embedding binary) drive the same builder the server boots with.
 ///
 /// # Errors
 /// [`std::io::Error`] when required key material is missing/unreadable or a

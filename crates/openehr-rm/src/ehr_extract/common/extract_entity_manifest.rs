@@ -5,7 +5,9 @@
 
 use openehr_base::prelude::ObjectRef;
 
-/// The manifest for one entity (e.g. EHR subject), identifying the entity and optionally specifying top-level items to be included in the Extract. The list actually included may be modified by the `_version_spec_` part of the specification, and also by the link_depth attribute. In repeat (standing order) requests, the final inclusion may be modified by the send_changes_only value for `EXTRACT_UPDATE_SPEC._update_method_`.
+/// The manifest for one entity (e.g. EHR subject), identifying the entity and optionally specifying top-level items to be included in the Extract.
+///
+/// The list actually included may be modified by the `_version_spec_` part of the specification, and also by the link_depth attribute. In repeat (standing order) requests, the final inclusion may be modified by the send_changes_only value for `EXTRACT_UPDATE_SPEC._update_method_`.
 ///
 /// Various identifiers may be provided for the entity; these are to be used by the receiver system to locate the entity. The `_extract_id_key_` attribute is used to record the identifier that will be used throughout the Extract for this entity, including in instances of `EXTRACT_ENTITY_IDENTIFIER`.
 #[doc(alias = "EXTRACT_ENTITY_MANIFEST")]
@@ -19,6 +21,8 @@ pub struct ExtractEntityManifest {
     pub subject_id: Option<String>,
     /// Other identifiers that may be used to find the entity at the target system, keyed by type. May include medicare numbers, drivers license number, tax number etc.
     pub other_ids: Option<Vec<String>>,
-    /// List of Uids of items to be included in the Extract, in cases where individual items are being requested by id. More typically, this attribute is not used, and the `EXTRACT_SPEC._criteria query_` defines the Extract contents. If set, for openEHR data, these are Uids identifying the version containers.
+    /// List of Uids of items to be included in the Extract, in cases where individual items are being requested by id.
+    ///
+    /// More typically, this attribute is not used, and the `EXTRACT_SPEC._criteria query_` defines the Extract contents. If set, for openEHR data, these are Uids identifying the version containers.
     pub item_list: Option<Vec<ObjectRef>>,
 }

@@ -7,7 +7,9 @@ use crate::am24::bmm3::core::entity::bmm_property_type::BmmPropertyType;
 use crate::am24::bmm3::core::entity::bmm_routine_type::BmmRoutineType;
 use crate::am24::bmm3::core::entity::bmm_type::BmmType;
 
-/// Built-in meta-type that expresses the type structure of any referenceable element of a model. Consists of potential `_arguments_` and `_result_`, with constraints in descendants determining the exact form.
+/// Built-in meta-type that expresses the type structure of any referenceable element of a model.
+///
+/// Consists of potential `_arguments_` and `_result_`, with constraints in descendants determining the exact form.
 #[doc(alias = "BMM_SIGNATURE")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct BmmSignatureData {
@@ -23,7 +25,9 @@ impl BmmSignatureData {
 
 /// Polymorphic slot of `BMM_SIGNATURE`, dispatched on each payload's `_type`.
 ///
-/// Built-in meta-type that expresses the type structure of any referenceable element of a model. Consists of potential `_arguments_` and `_result_`, with constraints in descendants determining the exact form.
+/// Built-in meta-type that expresses the type structure of any referenceable element of a model.
+///
+/// Consists of potential `_arguments_` and `_result_`, with constraints in descendants determining the exact form.
 #[doc(alias = "BMM_SIGNATURE")]
 #[derive(Debug, Clone, PartialEq)]
 pub enum BmmSignature {
