@@ -8939,3 +8939,85 @@ AMB-206:
     `I_EHR_EXTRACT_SERVICE.export_ehr_extracts-latest_across_lineages`, whose
     container holds trunk `::2` and branch `::1.1.1` at once.
   disposition: fixed_handling
+
+AMB-207:
+  ambiguity: >-
+    The REJECTION of a template-INDEPENDENT Simplified-Format violation is
+    mandated, but no released text assigns it a status. ITS-REST
+    docs/simplified_formats/master04-basic_concepts.adoc §"Open Value-Sets and
+    the `|other` Suffix" states the rule in the imperative — "`|other` is
+    mutually exclusive with `|code`, `|value` and `|terminology` on the same
+    leaf path; servers MUST reject combinations" — and the sibling bullet adds
+    "`|other` MUST be rejected when the constraint is closed". Neither bullet,
+    nor any other sentence of that chapter, names a status code. The overview
+    chapter that DOES assign codes to the simplified formats
+    (specifications/docs/overview/Resources.md §Simplified Formats) assigns
+    only 415 (payload format not supported) and 406 (response format not
+    acceptable) — nothing for a body that IS in the format and violates its
+    own suffix grammar. The released OAS does not narrow it either: the
+    composition write operations declare both 400 and 422, and neither
+    response file binds itself to this trigger. So the wire answer is
+    genuinely open between the two refusal rows.
+  source: >-
+    ITS-REST docs/simplified_formats/master04-basic_concepts.adoc §"Open
+    Value-Sets and the `|other` Suffix" (the two MUST-reject bullets, no
+    status); ITS-REST specifications/docs/overview/Resources.md §Simplified
+    Formats (415 and 406 only); ITS-REST specifications/responses/400.yaml
+    ("returned when the request could not be parsed or is invalid (e.g.
+    malformed request URL syntax, missing required header or parameter, or
+    syntactically invalid header, parameter or content)");
+    specifications/responses/422.yaml ("returned when the content type and
+    syntax is correct, could be converted to a resource, but there are
+    semantic validation errors, such as the underlying template is not known
+    or is not validating the supplied resource"). All read first-hand.
+  handling: >-
+    Fixed handling: a template-INDEPENDENT Simplified-Format violation is
+    refused 400. The discriminator is decidability: the `|other`/`|code`
+    conflict is a property of the submitted document's own suffix grammar and
+    is detected without consulting any Operational Template, so it never
+    reaches the stage `responses/422.yaml` describes — the body cannot be
+    "converted to a resource" in the first place, which is exactly the
+    unconvertible half `responses/400.yaml` owns as "syntactically invalid
+    ... content". The complementary template-MEDIATED half is AMB-208's 422.
+    Pinned by `SF-FLAT-reject_other_with_code`.
+  disposition: fixed_handling
+
+AMB-208:
+  ambiguity: >-
+    The status of a template-MEDIATED Simplified-Format validation failure is
+    likewise unassigned. ITS-REST
+    docs/simplified_formats/master04-basic_concepts.adoc §Validation
+    enumerates the checks — "Mandatory context fields (language, territory)
+    are present", "Data types match expected types from the Operational
+    Template", "Terminology bindings are valid" — without a status code, and
+    the overview's §Simplified Formats assigns only 415 and 406. The two
+    refusal rows the composition write operations declare therefore both
+    remain candidates for this class.
+  source: >-
+    ITS-REST docs/simplified_formats/master04-basic_concepts.adoc §Validation
+    (the enumerated checks, no status); ITS-REST
+    specifications/docs/overview/Resources.md §Simplified Formats (415 and 406
+    only); ITS-REST specifications/responses/422.yaml ("returned when the
+    content type and syntax is correct, could be converted to a resource, but
+    there are semantic validation errors, such as the underlying template is
+    not known or is not validating the supplied resource");
+    specifications/responses/400.yaml (the unconvertible half). All read
+    first-hand.
+  handling: >-
+    Fixed handling: a template-MEDIATED Simplified-Format validation failure
+    is refused 422. Every check master04 §Validation lists is stated as a
+    comparison against the Operational Template, so the failure IS the
+    released 422 trigger in its own words — the template "is not validating
+    the supplied resource". The NOTED ALTERNATIVE, recorded because it is a
+    defensible reading of the same file: `responses/422.yaml` opens with
+    "could be converted to a resource", and a Simplified-Format body that
+    fails one of these checks may never yield a COMPOSITION at all, which
+    would put every FLAT conversion failure on the 400 row and leave the 422
+    branch for simplified formats populated only by "the underlying template
+    is not known". That reading is not taken, because it makes the 422
+    clause's own second half ("or is not validating the supplied resource")
+    unreachable for the one format whose validation the release describes at
+    length. The complementary template-INDEPENDENT half is AMB-207's 400.
+    Pinned by `SF-FLAT-reject_datatype_mismatch`, `SF-CTX-missing_mandatory`
+    and `SF-FLAT-reject_terminology_binding`.
+  disposition: fixed_handling

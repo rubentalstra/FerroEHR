@@ -1982,10 +1982,10 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
     InvariantRealization {
         class: "PARTY",
         name: "Contacts_valid",
-        venue: InvariantVenue::App,
-        site: "app/ferroehr/src/service/demographic/validate.rs",
+        venue: InvariantVenue::Excluded,
+        site: "",
         spec_file: "org.openehr.rm.demographic.party.adoc",
-        reason: "`contacts /= Void implies not contacts.is_empty`: present-but-empty is unrepresentable in the `Vec`-emitted typed model, so the demographic write boundary enforces it on the raw body (422).",
+        reason: "the `x /= Void implies not x.is_empty` family: holds BY CONSTRUCTION since #1730 — an optional container carrying the invariant emits `Option<NonEmptyVec<T>>` (`analyze::nonempty_optional_lists`), so a present-but-empty value is unrepresentable and the strict readers refuse `[]` at parse.",
     },
     InvariantRealization {
         class: "PARTY",
@@ -2038,10 +2038,10 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
     InvariantRealization {
         class: "ROLE",
         name: "Capabilities_valid",
-        venue: InvariantVenue::App,
-        site: "app/ferroehr/src/service/demographic/validate.rs",
+        venue: InvariantVenue::Excluded,
+        site: "",
         spec_file: "org.openehr.rm.demographic.role.adoc",
-        reason: "`capabilities /= Void implies not capabilities.empty`: present-but-empty is unrepresentable in the `Vec`-emitted typed model, so the demographic write boundary enforces it on the raw body (422).",
+        reason: "the `x /= Void implies not x.empty` family (Eiffel spelling): holds BY CONSTRUCTION — an optional container carrying the invariant emits `Option<NonEmptyVec<T>>` (`analyze::nonempty_optional_lists`), so a present-but-empty value is unrepresentable and the strict readers refuse `[]` at parse.",
     },
     InvariantRealization {
         class: "EXTRACT",

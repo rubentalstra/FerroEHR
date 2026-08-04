@@ -1293,3 +1293,31 @@ async fn details_not_item_structure_refused() {
         "the 400 names the FOLDER.details slot and its declared type: {body}"
     );
 }
+
+/// A root FOLDER whose `archetype_node_id` does not equal the stringified
+/// `archetype_details.archetype_id` converts fine and fails the RM invariant
+/// pass → `422` (RM common `locatable.adoc` §`Archetyped_valid` family — the
+/// root-identity rule; overview `Requests_and_responses.md` §HTTP status
+/// codes, row 422).
+#[tokio::test]
+async fn create_rejects_root_archetype_id_mismatch_as_422() {
+    let (_pg, app) = common::test_router().await;
+    let ehr = create_ehr(&app).await;
+
+    let folder = json!({
+        "_type": "FOLDER",
+        "name": {"_type": "DV_TEXT", "value": "root"},
+        "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": {"_type": "ARCHETYPE_ID", "value": "openEHR-EHR-FOLDER.other.v1"},
+            "rm_version": "1.1.0"
+        }
+    });
+    let (status, _h, body) = create_directory(&app, &ehr, &folder, None).await;
+    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "got body: {body}");
+    assert!(
+        body.contains("archetype"),
+        "the 422 names the root archetype-identity rule: {body}"
+    );
+}

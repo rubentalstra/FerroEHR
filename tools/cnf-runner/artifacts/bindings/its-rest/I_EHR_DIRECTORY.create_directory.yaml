@@ -35,30 +35,15 @@ outcomes:
       Content-Type: negotiated
     body: prefer_conditional
   validation_failed:
-    # An RM-invalid FOLDER is well-formed JSON that breaks an RM rule, so the
-    # SEMANTIC row of the released status table describes it and the syntactic
-    # one does not — ITS-REST overview Requests_and_responses.md §HTTP status
-    # codes: "422 | Unprocessable Entity | The request was well-formed but was
-    # unable to be followed due to semantic errors" versus "400 | Bad Request |
-    # … (e.g., malformed request syntax, syntactically invalid content)".
-    # CORRECTED 2026-07-28: this branch read 400, sourced only from the OAS
-    # `400.yaml`. RE-GROUNDED the same day under the OAS-fallback oracle
-    # order; the correction stands, on the OAS's OWN wording rather than on
-    # its tier. `responses/400.yaml` scopes itself to input that does not
-    # parse ("the request could not be parsed or is invalid (e.g. malformed
-    # request URL syntax, missing required header or parameter, or
-    # syntactically invalid header, parameter or content)"), and an RM-invalid
-    # FOLDER parses fine — so the OAS never grounded this branch even as a
-    # tier-2 source, and `directory_create.yaml` declares no 422 to ground it
-    # either. The docs-text 422 row does describe it, and §HTTP status codes
-    # permits "Additional status codes … as long as they do not conflict with
-    # the predefined codes". The identical defect class already maps to 422 everywhere
-    # else in the catalogue on this same row (I_EHR_SERVICE.create_ehr,
-    # I_EHR_COMPOSITION.create_composition, I_EHR_STATUS.*-invalid_body); the
-    # directory was the lone OAS-grounded outlier. The 400 that REMAINS
-    # correct on this family is a different branch: a malformed identifier
-    # segment (I_EHR_DIRECTORY.get_directory_at_version, register AMB-76),
-    # which the 400 row's "syntactically invalid content" does describe.
+    # The SEMANTIC class: a FOLDER that DOES convert to the resource and then
+    # fails validation. `responses/422.yaml` scopes 422 to content that "could
+    # be converted to a resource, but there are semantic validation errors";
+    # `responses/400.yaml` owns the unconvertible half (`bad_request` above) —
+    # a body missing a member the release's own request-body schema declares
+    # `required` is "syntactically invalid ... content" and never converts.
+    # `directory_create.yaml` declares no 422; the docs-text 422 row grounds
+    # it, and §HTTP status codes permits "Additional status codes … as long as
+    # they do not conflict with the predefined codes".
     status: 422
     body: error_loose                     # ITS-REST overview §HTTP status codes — for 4xx/5xx, services MAY return additional error details if Prefer: return=representation
   not_found: { status: 404 }              # unknown ehr_id (404_unknown_ehr_id.yaml)

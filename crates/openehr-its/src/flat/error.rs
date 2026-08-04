@@ -63,8 +63,19 @@ pub enum FlatError {
 
     /// A mandatory context field is absent (master04 §Context: "Mandatory:
     /// language, territory").
-    #[error("missing mandatory context field ctx/{0}")]
+    #[error("mandatory ctx field {0} is required (master04 §Context: language and territory)")]
     MissingContext(&'static str),
+
+    /// A `|code` on a closed value-set leaf names a code outside the bound
+    /// list and carries no explicit `|value` to supply the text
+    /// (master04 §Validation: "Terminology bindings are valid").
+    #[error("coded value is not a member of the bound value set: '{code}' at {path}")]
+    CodeNotInValueSet {
+        /// The simplified path of the coded leaf.
+        path: String,
+        /// The code the document supplied.
+        code: String,
+    },
 
     /// A `ctx/` key outside the vocabulary of master06-context_information.
     #[error("unknown context key ctx/{0}")]

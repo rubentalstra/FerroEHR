@@ -1,5 +1,13 @@
 # Create an invalid persistent COMPOSITION: rejected with errors about the
-# content; nothing is committed.
+# content; nothing is committed. The fixture's EVALUATION carries no `data`, a
+# member the release's own request-body schema declares mandatory (ITS-REST
+# OAS `schemas/ehr/Evaluation.yaml` `required: [data]`).
+#
+# WHICH BRANCH THE REFUSAL TAKES: `responses/400.yaml` scopes 400 to
+# "syntactically invalid header, parameter or content"; `responses/422.yaml`
+# scopes 422 to content that "could be converted to a resource" and then fails
+# semantic validation. A body missing a `required` member never converts, so
+# it is the 400 row.
 id: I_EHR_COMPOSITION.create_composition-invalid_persistent
 kind: functional
 component: EHR_COMPOSITION
@@ -13,6 +21,10 @@ description: "Create new invalid persistent COMPOSITION"
 spec_refs:
   - "SM openehr_platform §I_EHR_COMPOSITION.create_composition"
   - "CNF platform_test_schedule master07 §create_composition-invalid_persistent"
+  - "ITS-REST OAS schemas/ehr/Evaluation.yaml §required (data)"
+  - "ITS-REST OAS responses/400.yaml"
+  - "ITS-REST OAS responses/422.yaml"
+  - "ITS-REST overview Requests_and_responses §HTTP status codes"
 applies: { rm: ">=1.0.2" }
 requires:
   server: any
@@ -23,7 +35,7 @@ flow:
   - step: 1
     call: create_composition
     with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.composition.minimal_persistent.invalid_structure}" }
-    expect: validation_failed             # "information about the errors in the provided COMPOSITION"
+    expect: bad_request                   # the `required: [data]` member is absent — the body never converts
     assert:
       - { assert: message_exemplar, text: "information about the errors in the provided COMPOSITION" }
 postconditions:

@@ -15,6 +15,30 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A ROLE carrying an empty `capabilities` list (and a party carrying an
+  empty `relationships` list) is now refused at parse (`400`)** — the RM
+  invariants `Capabilities_valid`/`Relationships_validity` forbid
+  present-but-empty; the generated model now emits these optional lists as
+  `Option<NonEmptyVec<…>>` (the emitter's invariant matcher learned the
+  BMM's `.empty` spelling and conjunction form), so a lenient acceptance is
+  unrepresentable.
+- **Template-mediated Simplified-Format commit failures now answer `422`
+  instead of `400`**: a missing mandatory ctx field (`language`/`territory`),
+  a `|code` outside a closed value set with no `|value`, a datatype mismatch,
+  or any other post-conversion validation failure of a body that was readable
+  as FLAT/STRUCTURED (register entries AMB-207/AMB-208). Refusal messages now
+  name the actual defect. Template-independent FLAT syntax violations
+  (`|other` conflicts, malformed keys) keep answering `400`.
+- The six missing-mandatory conformance expectations, the `create_ehr` and
+  `update_directory` binding outcomes, the `invalid-other-details` fixture,
+  and the shared EHR-Extract import identity were corrected on the catalogue
+  side after spec-adjudicated triage; the CNF runner's ETag matcher gained
+  released-grammar structural tokens for the object-id and template-id
+  segments plus a validate gate that refuses un-resolvable matcher
+  placeholders.
+
 ## [3.17.2] - 2026-08-04
 
 ### Added

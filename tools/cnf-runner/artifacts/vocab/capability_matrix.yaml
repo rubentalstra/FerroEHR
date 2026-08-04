@@ -56,7 +56,7 @@ QueryProvisioning: { family: Platform, tier: STANDARD, required: true, min_cases
 EhrOperations: { family: Platform, tier: CORE, required: true, min_cases: 24, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: EHR Operations)" }
 EhrStatus: { family: Platform, tier: CORE, required: true, min_cases: 47, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: EHR Status)" }
 CompositionOps: { family: Platform, tier: CORE, required: true, min_cases: 52, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Composition Operations)" }
-DirectoryOps: { family: Platform, tier: STANDARD, required: true, min_cases: 77, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Directory Operations)" }
+DirectoryOps: { family: Platform, tier: STANDARD, required: true, min_cases: 79, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Directory Operations)" }
 ChangeSets: { family: Platform, tier: CORE, required: true, min_cases: 87, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Change sets)" }
 Versioning: { family: Platform, tier: CORE, required: true, min_cases: 69, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Versioning)" }
 # Floor raised 121 -> 125 (2026-07-29): the four commit-time CONSTRAINT
@@ -94,7 +94,7 @@ PartyRelationshipOperations: { family: Platform, tier: OPTIONS, required: false,
 # recognize. Exercised by the measured workload through the demographic
 # admission journey's party commits — the validator runs on every commit, the
 # same reasoning that maps ArchetypeValidation onto CompositionCommit.
-DemographicArchetypeValidation: { family: Platform, tier: OPTIONS, required: false, min_cases: 10, source: "CNF profiles master03-profiles.adoc §Functional (Demographic Persistence: Archetype validation)" }
+DemographicArchetypeValidation: { family: Platform, tier: OPTIONS, required: false, min_cases: 11, source: "CNF profiles master03-profiles.adoc §Functional (Demographic Persistence: Archetype validation)" }
 # Floor raised 19 -> 30 (2026-07-30): the AQL master03 language battery — LIKE wildcards, EXISTS/NOT EXISTS, NOT CONTAINS, the AND/OR containment operat (register: AMB-174).
 AqlBasic: { family: Platform, tier: STANDARD, required: true, min_cases: 32, source: "CNF profiles master03-profiles.adoc §Functional (Querying: AQL basic)" }
 # Floor raised 2 -> 3 (2026-07-30): the DISTINCT x LIMIT ordering case

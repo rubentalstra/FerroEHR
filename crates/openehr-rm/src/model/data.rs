@@ -437,7 +437,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
-                nonempty: false,
+                nonempty: true,
             },
             RmAttribute {
                 name: "languages",
@@ -840,7 +840,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
-                nonempty: false,
+                nonempty: true,
             },
             RmAttribute {
                 name: "languages",
@@ -6233,7 +6233,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
-                nonempty: false,
+                nonempty: true,
             },
             RmAttribute {
                 name: "languages",
@@ -8375,7 +8375,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
-                nonempty: false,
+                nonempty: true,
             },
             RmAttribute {
                 name: "languages",
@@ -8660,7 +8660,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
-                nonempty: false,
+                nonempty: true,
             },
         ],
         is_structure_root: false,
@@ -9166,7 +9166,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
-                nonempty: false,
+                nonempty: true,
             },
             RmAttribute {
                 name: "languages",
@@ -9874,7 +9874,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
-                nonempty: false,
+                nonempty: true,
             },
             RmAttribute {
                 name: "time_validity",
@@ -9907,7 +9907,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
-                nonempty: false,
+                nonempty: true,
             },
         ],
         is_structure_root: false,

@@ -16,11 +16,13 @@
 # structure is a valid instance of the relevant RM classes" — a LINK missing a
 # 1..1 attribute is not one.
 #
-# WHICH BRANCH THE REFUSAL TAKES (ITS-REST overview Requests_and_responses.md
-# §HTTP status codes): "422 | Unprocessable Entity | The request was
-# well-formed but was unable to be followed due to semantic errors". The 400
-# row of the same table is scoped to "malformed request syntax, syntactically
-# invalid content", which this well-formed body is not.
+# WHICH BRANCH THE REFUSAL TAKES: the docs-text status table does not say
+# where "invalid content" ends and "semantic error" begins; the released OAS
+# does. `schemas/common/Link.yaml` declares `required: [meaning, type,
+# target]`, `responses/400.yaml` scopes 400 to "syntactically invalid header,
+# parameter or content", and `responses/422.yaml` scopes 422 to content that
+# "could be converted to a resource" and then fails semantic validation. A
+# body missing a `required` member never converts — the 400 row.
 #
 # The refusal is proved to have refused, not just answered: step 2 asks whether
 # the EHR has a directory at all.
@@ -32,12 +34,15 @@ capabilities: [DirectoryOps]
 profiles: [STANDARD]
 test_purpose: >-
   create_directory with a FOLDER whose LINK is missing the mandatory meaning is
-  rejected as a semantic error and creates no directory.
+  rejected as invalid content and creates no directory.
 description: "Create a directory from a FOLDER carrying an incomplete LINK"
 spec_refs:
   - "SM openehr_platform §I_EHR_DIRECTORY.create_directory"
   - "SM openehr_platform §I_VALIDITY_CHECKER.content_valid"
   - "RM common §link (meaning: DV_TEXT, 1..1)"
+  - "ITS-REST OAS schemas/common/Link.yaml §required (meaning, type, target)"
+  - "ITS-REST OAS responses/400.yaml"
+  - "ITS-REST OAS responses/422.yaml"
   - "ITS-REST overview Requests_and_responses §HTTP status codes"
 applies: { rm: ">=1.0.2" }
 requires:
@@ -48,7 +53,7 @@ flow:
   - step: 1
     call: create_directory
     with: { ehr_id: "${ehr_id}", directory: "${ds:cnf.directory.invalid.link_missing_meaning}" }
-    expect: validation_failed
+    expect: bad_request                    # the `required: [meaning]` member is absent — the body never converts
   - step: 2                              # nothing was created by the refused request
     call: has_directory
     with: { ehr_id: "${ehr_id}" }

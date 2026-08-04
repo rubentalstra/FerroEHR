@@ -51,11 +51,11 @@ pub struct Role {
     /// All other details for this Party.
     pub details: Option<ItemStructure>,
     /// Relationships in which this Party takes part as source.
-    pub relationships: Option<Vec<PartyRelationship>>,
+    pub relationships: Option<openehr_base::containers::NonEmptyVec<PartyRelationship>>,
     /// Valid time interval for this role.
     pub time_validity: Option<DvInterval<DvDate>>,
     /// Reference to Version container of Actor playing the role.
     pub performer: PartyRef,
     /// The capabilities of this role.
-    pub capabilities: Option<Vec<Capability>>,
+    pub capabilities: Option<openehr_base::containers::NonEmptyVec<Capability>>,
 }

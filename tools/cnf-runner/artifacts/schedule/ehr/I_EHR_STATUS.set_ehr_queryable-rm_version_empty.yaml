@@ -19,11 +19,13 @@
 # wherever the block occurs; the catalogue already gates the same invariant
 # inside a COMPOSITION.
 #
-# WHICH BRANCH THE REFUSAL TAKES (ITS-REST overview Requests_and_responses.md
-# §HTTP status codes): "422 | Unprocessable Entity | The request was
-# well-formed but was unable to be followed due to semantic errors". The 400
-# row of the same table is scoped to "malformed request syntax, syntactically
-# invalid content", which this well-formed body is not.
+# WHICH BRANCH THE REFUSAL TAKES: the docs-text status table does not say
+# where "invalid content" ends and "semantic error" begins; the released OAS
+# does. Every member the request-body schemas declare `required` is present
+# and well-typed here, so the body DOES convert — `responses/422.yaml`'s
+# "could be converted to a resource, but there are semantic validation
+# errors". `responses/400.yaml`'s "syntactically invalid ... content" owns the
+# unconvertible half, which this body is not.
 id: I_EHR_STATUS.set_ehr_queryable-rm_version_empty
 kind: functional
 component: EHR

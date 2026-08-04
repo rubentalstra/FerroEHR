@@ -351,6 +351,26 @@ impl<'de> Deserialize<'de> for HeaderExpectation {
     }
 }
 
+/// The `<name>` placeholders a matcher pattern declares, in order.
+///
+/// The compile probe below only proves the WILDCARDED form parses as a regex;
+/// naming the placeholders is what lets a gate check they can ever resolve
+/// (`crate::validate`).
+#[must_use]
+pub fn placeholder_names(pattern: &str) -> Vec<&str> {
+    let mut names = Vec::new();
+    let mut rest = pattern;
+    while let Some(start) = rest.find('<') {
+        let tail = rest.split_at(start).1;
+        let Some(end) = tail.find('>') else { break };
+        if let Some(name) = tail.get(1..end) {
+            names.push(name);
+        }
+        rest = tail.get(end + 1..).unwrap_or_default();
+    }
+    names
+}
+
 /// Replace `<name>` placeholders with `.*` for the compile probe — the
 /// pattern text is a regex (`pattern:<regex>`), so everything else is left
 /// verbatim and must compile.
