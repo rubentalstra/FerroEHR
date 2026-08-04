@@ -1293,7 +1293,7 @@ async fn import_refuses_a_branch_version_without_its_branch_predecessor() {
 /// The copy closure, accepting twin: branch version `2.1.1` whose fork-point
 /// trunk (version 2) is already stored from the first receipt satisfies
 /// master06 §Copying — the Case-3 append lands and the branch version reads
-/// back as an IMPORTED_VERSION.
+/// back as an `IMPORTED_VERSION`.
 #[tokio::test]
 async fn import_accepts_a_branch_version_whose_closure_is_already_stored() {
     let source_db = testkit::db().await.expect("testkit database");

@@ -1167,28 +1167,10 @@ async fn an_imported_version_round_trips_through_the_archive() {
 /// Signature) and one attached afterwards by a `666|attestation|`-only
 /// CONTRIBUTION — and a strict `verify_on_read` of the restored version
 /// passes, which it cannot if the at-committal attestation was dropped.
-#[tokio::test]
-async fn attestations_round_trip_and_the_restored_signature_verifies() {
-    use ferroehr::versioning::signature::config::{Mode, SigningConfig, VerifyOnRead};
-    use ferroehr::versioning::signature::signer::Signer;
-    use std::sync::Arc;
-
-    let config = SigningConfig {
-        enabled: true,
-        mode: Mode::Digest,
-        key_path: None,
-        key_passphrase: None,
-        key_passphrase_file: None,
-        verify_on_read: Some(VerifyOnRead::Strict),
-    };
-    let src_db = testkit::db().await.expect("testkit database");
-    let source = FerroEhrService::new(src_db.pool())
-        .with_signer(Arc::new(Signer::from_config(&config).expect("signer")));
-    let dst_db = testkit::db().await.expect("testkit database");
-    let target = FerroEhrService::new(dst_db.pool())
-        .with_signer(Arc::new(Signer::from_config(&config).expect("signer")));
-
-    let ehr_id = source.create_ehr(None).await.expect("ehr");
+/// The at-committal CONTRIBUTION fixture of
+/// [`attestations_round_trip_and_the_restored_signature_verifies`]: one
+/// COMPOSITION version carrying an `UPDATE_ATTESTATION`.
+fn attested_contribution() -> Value {
     let change_type = |code: &str, value: &str| {
         json!({
             "_type": "DV_CODED_TEXT", "value": value,
@@ -1200,9 +1182,7 @@ async fn attestations_round_trip_and_the_restored_signature_verifies() {
         })
     };
     let committer = |name: &str| json!({ "_type": "PARTY_IDENTIFIED", "name": name });
-
-    // (a) A version committed WITH an attestation.
-    let contribution = json!({
+    json!({
         "_type": "CONTRIBUTION",
         "versions": [{
             "_type": "ORIGINAL_VERSION",
@@ -1255,20 +1235,26 @@ async fn attestations_round_trip_and_the_restored_signature_verifies() {
             "change_type": change_type("251", "modification"),
             "committer": committer("author")
         }
-    });
-    let created = source
-        .create_ehr_contribution(ehr_id.into(), contribution)
-        .await
-        .expect("contribution with an at-committal attestation");
-    let ovid = created.body["versions"][0]["id"]["value"]
-        .as_str()
-        .expect("committed version uid")
-        .to_owned();
+    })
+}
 
-    // (b) The same version attested AFTERWARDS by a 666-only CONTRIBUTION.
-    let attest = json!({
+/// The 666-only after-committal CONTRIBUTION attesting `ovid` — fixture of the
+/// same test.
+fn later_attest_contribution(ovid: &str) -> Value {
+    let change_type = |code: &str, value: &str| {
+        json!({
+            "_type": "DV_CODED_TEXT", "value": value,
+            "defining_code": {
+                "_type": "CODE_PHRASE",
+                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                "code_string": code
+            }
+        })
+    };
+    let committer = |name: &str| json!({ "_type": "PARTY_IDENTIFIED", "name": name });
+    json!({
         "versions": [{
-            "preceding_version_uid": { "value": ovid.clone() },
+            "preceding_version_uid": { "value": ovid },
             "commit_audit": {
                 "change_type": change_type("666", "attestation"),
                 "committer": committer("senior reviewer"),
@@ -1280,9 +1266,46 @@ async fn attestations_round_trip_and_the_restored_signature_verifies() {
             "change_type": change_type("666", "attestation"),
             "committer": committer("senior reviewer")
         }
-    });
+    })
+}
+
+#[tokio::test]
+async fn attestations_round_trip_and_the_restored_signature_verifies() {
+    use ferroehr::versioning::signature::config::{Mode, SigningConfig, VerifyOnRead};
+    use ferroehr::versioning::signature::signer::Signer;
+    use std::sync::Arc;
+
+    let config = SigningConfig {
+        enabled: true,
+        mode: Mode::Digest,
+        key_path: None,
+        key_passphrase: None,
+        key_passphrase_file: None,
+        verify_on_read: Some(VerifyOnRead::Strict),
+    };
+    let src_db = testkit::db().await.expect("testkit database");
+    let source = FerroEhrService::new(src_db.pool())
+        .with_signer(Arc::new(Signer::from_config(&config).expect("signer")));
+    let dst_db = testkit::db().await.expect("testkit database");
+    let target = FerroEhrService::new(dst_db.pool())
+        .with_signer(Arc::new(Signer::from_config(&config).expect("signer")));
+
+    let ehr_id = source.create_ehr(None).await.expect("ehr");
+    let contribution = attested_contribution();
+
+    let created = source
+        .create_ehr_contribution(ehr_id, contribution)
+        .await
+        .expect("contribution with an at-committal attestation");
+    let ovid = created.body["versions"][0]["id"]["value"]
+        .as_str()
+        .expect("committed version uid")
+        .to_owned();
+
+    // (b) The same version attested AFTERWARDS by a 666-only CONTRIBUTION.
+    let attest = later_attest_contribution(&ovid);
     source
-        .create_ehr_contribution(ehr_id.into(), attest)
+        .create_ehr_contribution(ehr_id, attest)
         .await
         .expect("after-committal 666 attestation");
 
@@ -1297,7 +1320,10 @@ async fn attestations_round_trip_and_the_restored_signature_verifies() {
         .export_ehrs(dir.clone(), ExportSpec::canonical_json(1))
         .await
         .expect("export");
-    assert!(export_reports.is_empty(), "clean export: {export_reports:?}");
+    assert!(
+        export_reports.is_empty(),
+        "clean export: {export_reports:?}"
+    );
     let load_reports = target.load_ehrs(dir.clone()).await.expect("load");
     assert!(load_reports.is_empty(), "clean load: {load_reports:?}");
 
