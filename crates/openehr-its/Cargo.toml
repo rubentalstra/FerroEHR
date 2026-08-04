@@ -1,17 +1,17 @@
 [package]
 name = "openehr-its"
-version = "1.1.0"                 # = the implemented openEHR spec version: ITS-REST Release-1.1.0 (ITS-XML 1.0.2 + ITS-JSON dev vendored alongside)
+version = "0.0.1"                 # crates.io pre-stabilisation line; adopts the openEHR spec version at stabilisation (docs/VERSIONS.md)
 description = "openEHR ITS (Implementation Technology Specifications): canonical JSON + XML serialization, ITS-REST OpenAPI contract, ITS-BMM. Mirrors the specifications-ITS-{JSON,XML,REST,BMM} repos."
 edition.workspace = true
 rust-version.workspace = true
-license.workspace = true
+license = "MIT AND Apache-2.0"
 repository.workspace = true
 authors.workspace = true
-documentation.workspace = true
-readme.workspace = true
-keywords.workspace = true
-categories.workspace = true
-publish = false
+documentation = "https://docs.rs/openehr-its"
+readme = "README.md"
+keywords = ["openehr", "serialization", "rest", "healthcare", "json"]
+categories = ["encoding", "web-programming"]
+include = ["src/**", "schemas/json/openehr_rm_1.1.0_all.json", "README.md", "LICENSE-MIT", "LICENSE-APACHE-2.0"]
 
 # EVERY dependency rides the default `full` feature (see [features] below), so
 # `default-features = false` yields the dependency-free `rest::smart_scopes`
@@ -42,14 +42,14 @@ regex = { workspace = true, optional = true }
 fancy-regex = { workspace = true, optional = true }
 # The generated XML (de)serializers impl the crate's ToXml/FromXml traits for the
 # RM/BASE spec types, so these are real (non-dev) deps.
-openehr-base = { path = "../openehr-base", optional = true }
-openehr-rm = { path = "../openehr-rm", optional = true }
+openehr-base = { path = "../openehr-base", version = "0.0.1", optional = true }
+openehr-rm = { path = "../openehr-rm", version = "0.0.1", optional = true }
 # The native canonical-JSON codec (`json_codec/generated`, emit-json) implements
 # `ToJson` for EVERY generated spec type the `OpenEhrType` derive covers, so it
 # spans all five spec crates (not just the RM/BASE the XML codec needs).
-openehr-lang = { path = "../openehr-lang", optional = true }
-openehr-am = { path = "../openehr-am", optional = true }
-openehr-term = { path = "../openehr-term", optional = true }
+openehr-lang = { path = "../openehr-lang", version = "0.0.1", optional = true }
+openehr-am = { path = "../openehr-am", version = "0.0.1", optional = true }
+openehr-term = { path = "../openehr-term", version = "0.0.1", optional = true }
 
 # `full` — every ITS surface (canonical JSON/XML, the generated ITS-REST
 # contract, `opt14`, Simplified Formats). ON BY DEFAULT, so every consumer sees
@@ -98,3 +98,6 @@ tokio = { workspace = true, features = ["macros", "rt"] }
 openehr-adl = { path = "../openehr-adl" }
 [lints]
 workspace = true
+
+[package.metadata.docs.rs]
+all-features = true

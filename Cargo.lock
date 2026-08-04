@@ -5471,7 +5471,7 @@ checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
 
 [[package]]
 name = "openehr-adl"
-version = "2.4.0"
+version = "0.0.1"
 dependencies = [
  "indexmap 2.14.0",
  "openehr-am",
@@ -5486,7 +5486,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-am"
-version = "2.4.0"
+version = "0.0.1"
 dependencies = [
  "openehr-base",
  "openehr-lang",
@@ -5496,7 +5496,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-base"
-version = "1.3.0"
+version = "0.0.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -5515,7 +5515,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-its"
-version = "1.1.0"
+version = "0.0.1"
 dependencies = [
  "async-trait",
  "axum",
@@ -5544,7 +5544,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-lang"
-version = "1.0.0"
+version = "0.0.1"
 dependencies = [
  "assert_fs",
  "chumsky",
@@ -5558,7 +5558,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-query"
-version = "1.1.0"
+version = "0.0.1"
 dependencies = [
  "chumsky",
  "logos",
@@ -5567,7 +5567,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-rm"
-version = "1.2.0"
+version = "0.0.1"
 dependencies = [
  "insta",
  "jsonschema",
@@ -5584,7 +5584,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-term"
-version = "3.1.0"
+version = "0.0.1"
 dependencies = [
  "openehr-base",
  "roxmltree",

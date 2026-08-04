@@ -41,8 +41,29 @@ optional:
   `scripts/gh-project.sh sync-dates` so the board's Roadmap timeline
   follows the re-milestoned issues.
 - **Versioning split:** the product (workspace, `ferroehr-*`, tools, codegen
-  tooling) follows the product SemVer (3.x line).
-  The `openehr-*` **spec crates** carry the version of the openEHR
-  specification they implement (BASE 1.3.0, RM 1.2.0, AM 2.4.0, ADL 2.4.0, TERM 3.1.0,
-  LANG 1.0.0, QUERY 1.1.0, ITS 1.1.0 — see `docs/VERSIONS.md`); bump them
-  only on a spec-pin bump, never with the product version.
+  tooling) follows the product SemVer (3.x line). The `openehr-*` **spec
+  crates** publish to crates.io on their own pre-stabilisation `0.0.x` line
+  (owner ruling 2026-08-04, issue #1886; each crate's `SPEC_VERSION`
+  constant carries the implemented spec pin — full policy + the
+  stabilisation plan in `docs/VERSIONS.md` §Product and crate versioning);
+  they release in lockstep and never with the product version.
+
+- **Publishing the `openehr-*` crates (crates.io):** releases go through
+  `.github/workflows/publish-crates.yml` — a manual `workflow_dispatch` lane
+  (dry-run by default; a real publish needs the `publish` input set to
+  `true`) that authenticates via **crates.io Trusted Publishing** (OIDC,
+  `rust-lang/crates-io-auth-action`, `id-token: write`, the `crates-io`
+  environment) and runs `cargo publish --workspace` over the eight
+  `crates/*` members in dependency order — no long-lived crates.io token
+  exists anywhere. Version bumps happen in the CONTENT PR, not at publish
+  time: any PR changing packaged crate content bumps every crate's `version`
+  and the internal `version =` requirements together (lockstep `0.0.x` —
+  the `crate-version-guard` CI job and the local push hook enforce it; full
+  rule in `.claude/rules/crates-publishing.md`), so a publish just ships the
+  version already in the tree — verify locally with
+  `cargo publish --workspace --dry-run`. The very first release
+  of a crate cannot use OIDC (crates.io requires an existing crate to
+  configure a Trusted Publisher) — it is pushed manually with a scoped API
+  token, after which each crate's Trusted Publisher is configured on
+  crates.io (repository `rubentalstra/FerroEHR`, workflow
+  `publish-crates.yml`, environment `crates-io`).

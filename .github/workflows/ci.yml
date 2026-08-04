@@ -869,6 +869,58 @@ jobs:
           echo "::error::This PR changes the admin-console UI but does not refresh website/book/src/admin-ui/img/ (run scripts/ui-e2e.sh with UI_E2E_DOCS_SHOTS=1 and commit the captures), and does not carry the 'no-ui-visual-change' label." >&2
           exit 1
 
+  # Crate-version guard (the changelog-guard pattern): a PR that changes
+  # PACKAGED content of the published crates/* members must bump the lockstep
+  # 0.0.x crate version in the same PR — published versions are immutable
+  # (.claude/rules/crates-publishing.md; local twin:
+  # .claude/hooks/crate_version_bump_guard.sh). Escape hatch: the
+  # `no-crate-bump` label for diffs that provably do not alter packaged bytes.
+  crate-version:
+    name: crate-version-guard
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Require a lockstep version bump for packaged-content changes
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'no-crate-bump') }}
+        run: |
+          set -euo pipefail
+          if [ "$HAS_LABEL" = "true" ]; then
+            echo "no-crate-bump label set — guard skipped."; exit 0
+          fi
+          changed=$(git diff --name-only "$BASE" "$HEAD")
+          if ! echo "$changed" | grep -qE '^crates/openehr-[a-z]+/(src/|assets/|schemas/json/|README\.md|LICENSE-|Cargo\.toml)'; then
+            echo "No packaged crate content touched — guard not required."; exit 0
+          fi
+          old=$(git show "$BASE:crates/openehr-base/Cargo.toml" | grep -m1 '^version = ')
+          new=$(git show "$HEAD:crates/openehr-base/Cargo.toml" | grep -m1 '^version = ')
+          if [ "$old" = "$new" ]; then
+            echo "::error::This PR changes packaged content of the published crates/* members but does not bump the lockstep 0.0.x crate version (bump all eight 'version' fields + the internal version requirements — .claude/rules/crates-publishing.md), and does not carry the 'no-crate-bump' label." >&2
+            exit 1
+          fi
+          # Lockstep: all eight crates carry ONE version, and every internal
+          # dependency requirement names exactly that version.
+          ver=$(echo "$new" | sed -E 's/version = "([^"]+)".*/\1/')
+          for c in base rm am adl term lang query its; do
+            v=$(git show "$HEAD:crates/openehr-$c/Cargo.toml" | grep -m1 '^version = ' | sed -E 's/version = "([^"]+)".*/\1/')
+            if [ "$v" != "$ver" ]; then
+              echo "::error::crates/openehr-$c is at $v but the lockstep version is $ver — bump all eight together." >&2
+              exit 1
+            fi
+          done
+          reqs=$(git grep -hoE 'path = "\.\./openehr-[a-z]+", version = "[0-9.]+"' "$HEAD" -- 'crates/*/Cargo.toml' | grep -oE '[0-9.]+' | sort -u)
+          if [ "$reqs" != "$ver" ]; then
+            echo "::error::internal openehr-* version requirements ($reqs) do not all match the lockstep version $ver — update every 'version =' on the path dependencies too." >&2
+            exit 1
+          fi
+          echo "Lockstep crate version bumped to $ver — OK."
+
   # Changelog guard (Keep a Changelog discipline): a PR that changes
   # user-visible surfaces must update CHANGELOG.md's [Unreleased] section in
   # the same PR. Escape hatch: the `no-changelog` label for genuinely

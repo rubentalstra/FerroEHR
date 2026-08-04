@@ -286,6 +286,7 @@ pub(crate) fn emit_crate(
     schema: &BmmSchema,
     external: &External,
     crate_doc: &str,
+    spec_version: &str,
     impls: &SiblingImpls,
 ) -> Vec<GenFile> {
     emit_generations(
@@ -296,6 +297,7 @@ pub(crate) fn emit_crate(
         }],
         external,
         crate_doc,
+        spec_version,
         impls,
     )
 }
@@ -347,6 +349,7 @@ pub(crate) fn emit_generations(
     generations: &[CrateGeneration<'_>],
     external: &External,
     crate_doc: &str,
+    spec_version: &str,
     impls: &SiblingImpls,
 ) -> Vec<GenFile> {
     let mut files: Vec<GenFile> = Vec::new();
@@ -384,7 +387,7 @@ pub(crate) fn emit_generations(
         }
     }
     files.push(emit_prelude(&emitted, "prelude.rs"));
-    files.push(emit_lib(&top, true, crate_doc));
+    files.push(emit_lib(&top, true, crate_doc, spec_version));
     files
 }
 
@@ -395,6 +398,7 @@ pub(crate) fn emit_multi_crate(
     versions: &[(&str, &Model, &BmmSchema)],
     external: &External,
     crate_doc: &str,
+    spec_version: &str,
     impls: &SiblingImpls,
 ) -> Vec<GenFile> {
     let mut files = Vec::new();
@@ -404,7 +408,7 @@ pub(crate) fn emit_multi_crate(
         files.extend(v.files);
         top.extend(v.top);
     }
-    files.push(emit_lib(&top, false, crate_doc));
+    files.push(emit_lib(&top, false, crate_doc, spec_version));
     files
 }
 
@@ -448,7 +452,12 @@ fn top_modules(chains: &[Vec<String>]) -> BTreeSet<String> {
     chains.iter().filter_map(|c| c.first().cloned()).collect()
 }
 
-fn emit_lib(top: &BTreeSet<String>, include_prelude: bool, crate_doc: &str) -> GenFile {
+fn emit_lib(
+    top: &BTreeSet<String>,
+    include_prelude: bool,
+    crate_doc: &str,
+    spec_version: &str,
+) -> GenFile {
     let mut b = String::new();
     for line in crate_doc.lines() {
         b.push_str(&format!("//! {line}\n"));
@@ -503,14 +512,14 @@ fn emit_lib(top: &BTreeSet<String>, include_prelude: bool, crate_doc: &str) -> G
     if include_prelude {
         b.push_str("pub mod prelude;\n");
     }
-    b.push_str(
+    b.push_str(&format!(
         "\n/// The openEHR specification version this crate implements.\n\
          ///\n\
-         /// It equals the crate version: the spec crates are versioned by the\n\
-         /// specification they implement, so consumers read the pin from the\n\
-         /// package, never from a hand-typed literal.\n\
-         pub const SPEC_VERSION: &str = env!(\"CARGO_PKG_VERSION\");\n",
-    );
+         /// The pin is emitted by `openehr-codegen` from the vendored inputs and is\n\
+         /// deliberately independent of the crates.io package version, which follows\n\
+         /// its own pre-stabilisation line.\n\
+         pub const SPEC_VERSION: &str = \"{spec_version}\";\n",
+    ));
     GenFile {
         path: "lib.rs".to_string(),
         body: b,

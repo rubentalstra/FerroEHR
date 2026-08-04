@@ -1,0 +1,68 @@
+# .github/workflows/publish-crates.yml
+#
+# Publishes the eight `crates/*` openEHR spec crates to crates.io
+# (issue #1886; procedure: .claude/rules/changelog.md §Publishing the
+# openehr-* crates).
+#
+#   - Manual `workflow_dispatch` only. The default run is a DRY RUN
+#     (`cargo publish --workspace --dry-run` — package + verify, no upload);
+#     a real publish requires the `publish` input set to `true`.
+#   - Authentication is crates.io Trusted Publishing (OIDC): the
+#     `rust-lang/crates-io-auth-action` step exchanges this workflow's OIDC
+#     identity for a 30-minute publish token. No long-lived crates.io token
+#     exists in the repository. Each crate's Trusted Publisher on crates.io
+#     names this repository + this workflow file + the `crates-io`
+#     environment; the crate's FIRST-ever release cannot use OIDC and is
+#     pushed manually with a scoped token.
+#   - `cargo publish --workspace` resolves the inter-crate dependency order
+#     itself (Cargo ≥1.90) and skips the `publish = false` members (the
+#     app/tools crates), so the eight spec crates are exactly what ships.
+#     Publishing is non-atomic upstream: if a late upload fails, re-running
+#     the workflow retries the missing crates (already-published versions
+#     fail individually without harming the rest).
+name: Publish crates
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Really publish to crates.io (false = dry run)"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  dry-run:
+    if: ${{ !inputs.publish }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Package + verify every publishable crate (no upload)
+        run: cargo publish --workspace --dry-run --locked
+
+  publish:
+    if: ${{ inputs.publish }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    # The protected environment is part of each crate's Trusted Publisher
+    # configuration on crates.io — a publish outside it is refused.
+    environment: crates-io
+    permissions:
+      contents: read
+      # OIDC token exchange (rust-lang/crates-io-auth-action).
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - id: auth
+        name: Exchange OIDC identity for a temporary crates.io token
+        uses: rust-lang/crates-io-auth-action@v1
+      - name: Publish the workspace's publishable crates in dependency order
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+        run: cargo publish --workspace --locked

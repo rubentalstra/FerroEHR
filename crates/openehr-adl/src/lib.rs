@@ -51,8 +51,6 @@ pub mod validate;
 
 /// The openEHR specification version this crate implements.
 ///
-/// It is the crate version itself: the spec crates are versioned by the
-/// specification they implement (`docs/VERSIONS.md` §Product and crate
-/// versioning), so consumers read the pin from the package, never from a
-/// hand-typed literal.
-pub const SPEC_VERSION: &str = env!("CARGO_PKG_VERSION");
+/// The pin is deliberately independent of the crates.io package version,
+/// which follows its own pre-stabilisation line.
+pub const SPEC_VERSION: &str = "2.4.0";
