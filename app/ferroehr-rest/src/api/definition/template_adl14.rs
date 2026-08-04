@@ -68,7 +68,7 @@ const TEMPLATE_DEF_FORMATS: &[WireFormat] = &[
 /// The wire decodes `template_id` (glob), `concept` (glob), `version`
 /// (version filter), `offset`, `fetch`
 /// (`operations/definition_template_adl1.4_list.yaml`); they are threaded to the
-/// adapter as a [`TemplateListFilter`](ferroehr::service::adapters::TemplateListFilter)
+/// adapter as a [`TemplateListFilter`](ferroehr::service::definition::types::TemplateListFilter)
 /// + [`Page`](ferroehr::service::list::Page).
 pub(super) async fn list(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
