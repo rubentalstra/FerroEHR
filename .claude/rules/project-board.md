@@ -118,16 +118,21 @@ Views — name/layout/filter ARE scriptable
 2026-08-04; the concept docs don't mention them. Fine view configuration —
 grouping, the roadmap's date source, visible fields — is still UI-only):
 
-1. **Board** — `BOARD_LAYOUT`, grouped by Status; the "what is going on
-   right now" surface.
+1. **Board** — `BOARD_LAYOUT`, grouped by Status, **slice by Milestone**
+   (one sidebar click = a single release's kanban, without hardcoding a
+   milestone into the filter where it would go stale at every cut); the
+   "what is going on right now" surface.
 2. **Roadmap** — `ROADMAP_LAYOUT`, filter `is:open`; items placed by the
-   derived **`Target date`** field (date source picked in the UI; kept true
-   by `sync-dates`; every open `vX.Y.Z` milestone carries a due date — set
-   one when creating a milestone, and the milestone markers come from it).
+   derived **`Target date`** field (Date fields → Target date in the UI;
+   kept true by `sync-dates`); **group by Milestone**, **slice by Labels**,
+   milestone markers ON, zoom Month, sort by Target date. Every open
+   `vX.Y.Z` milestone carries a due date — set one when creating a
+   milestone; the markers come from it.
 3. **Current focus** — `TABLE_LAYOUT`, filter `is:open label:P0,P1`;
-   columns Title/Status/Labels/Milestone/Sub-issues progress.
+   columns Title/Status/Labels/Milestone/Sub-issues progress; no slice.
 4. **Needs attention** — `TABLE_LAYOUT`, filter
-   `is:open label:P0,blocked-upstream,upstream-confirmed`; same columns.
+   `is:open label:P0,blocked-upstream,upstream-confirmed`; same columns;
+   no slice.
 
 Built-in workflows (verified 2026-08-04: only `deleteProjectV2Workflow`
 exists in the schema — **enabling/configuring them is UI-only**; visibility +
