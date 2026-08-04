@@ -183,7 +183,16 @@ fn judge(
                     "header {name}: expected a value matching {pattern:?}, got none"
                 ));
             };
-            let resolved = resolve_placeholders(pattern, vars);
+            let resolved = match resolve_placeholders(pattern, vars) {
+                Ok(resolved) => resolved,
+                Err(missing) => {
+                    return Some(format!(
+                        "header {name}: pattern {pattern:?} names <{missing}>, which is \
+                         neither a captured/with-supplied case variable nor a structural \
+                         token (<n>, <system_id>) — refusing the vacuous wildcard (#1852)"
+                    ));
+                }
+            };
             match regex::Regex::new(&format!("^(?:{resolved})$")) {
                 Ok(re) if re.is_match(v) => None,
                 Ok(_) => Some(format!(
@@ -231,10 +240,20 @@ fn strip_entity_tag(value: &str) -> &str {
     v.trim_matches('"')
 }
 
-/// Substitute `<name>` placeholders: a resolvable case variable inserts its
-/// regex-escaped scalar; an unresolvable one wildcards to `.*` (mirroring
-/// the parse-time compile probe).
-fn resolve_placeholders(pattern: &str, vars: &VarStore) -> String {
+/// Substitute `<name>` placeholders. A resolvable case variable inserts its
+/// regex-escaped scalar; the two STRUCTURAL tokens the catalogue vocabulary
+/// declares resolve to their grammars when no variable shadows them —
+/// `<n>` to the `VERSION_TREE_ID` shape (BASE `base_types` master05
+/// §`VERSION_TREE_ID`: a trunk ordinal or `trunk.branch.version`) and
+/// `<system_id>` to a non-empty `::`-free segment. Any OTHER unresolvable
+/// placeholder is a LOUD error, never a silent `.*` wildcard: a matcher like
+/// `W/"<versioned_object_uid>::…"` degrading to a near-tautology is the
+/// vacuous-assertion class of #1830, on the expectation side (#1852).
+///
+/// # Errors
+/// The name of the first placeholder that is neither a case variable nor a
+/// structural token.
+fn resolve_placeholders(pattern: &str, vars: &VarStore) -> Result<String, String> {
     let mut out = String::new();
     let mut rest = pattern;
     while let Some(start) = rest.find('<') {
@@ -242,12 +261,18 @@ fn resolve_placeholders(pattern: &str, vars: &VarStore) -> String {
         out.push_str(head);
         if let Some(end) = tail.find('>') {
             let name = tail.get(1..end).unwrap_or_default();
-            match crate::ids::CaptureName::parse(name)
+            let captured = crate::ids::CaptureName::parse(name)
                 .ok()
-                .and_then(|n| vars.scalar(&n).map(str::to_owned))
-            {
-                Some(value) => out.push_str(&regex::escape(&value)),
-                None => out.push_str(".*"),
+                .and_then(|n| vars.scalar(&n).map(str::to_owned));
+            match (captured, name) {
+                (Some(value), _) => out.push_str(&regex::escape(&value)),
+                // VERSION_TREE_ID: `[1-9][0-9]*` or dotted triple (BASE
+                // base_types master05 §VERSION_TREE_ID).
+                (None, "n") => out.push_str(r"[1-9][0-9]*(?:\.[0-9]+\.[0-9]+)?"),
+                // A creating-system-id segment: non-empty, free of the `::`
+                // separator and the quote that closes a weak ETag.
+                (None, "system_id") => out.push_str(r#"[^:"]+"#),
+                (None, missing) => return Err(missing.to_owned()),
             }
             rest = tail.get(end + 1..).unwrap_or_default();
         } else {
@@ -256,7 +281,7 @@ fn resolve_placeholders(pattern: &str, vars: &VarStore) -> String {
         }
     }
     out.push_str(rest);
-    out
+    Ok(out)
 }
 
 #[cfg(test)]
@@ -352,10 +377,35 @@ mod tests {
         );
         let ok = response(&[("etag", "W/\"abc-123::any.system::2\"")]);
         assert!(evaluate(&e, &ok, &ctx(), &vars).is_empty());
-        // A different resolved uid fails; the unresolved placeholders stay
-        // wildcards.
+        // A different resolved uid fails; the structural tokens (<system_id>,
+        // <n>) resolve to their grammars, not to a `.*` wildcard (#1852).
         let bad = response(&[("etag", "W/\"other-uid::any.system::2\"")]);
         assert_eq!(evaluate(&e, &bad, &ctx(), &vars).len(), 1);
+        // The structural grammars are real constraints: an empty system
+        // segment and a zero-led tree ordinal both fail.
+        let empty_system = response(&[("etag", "W/\"abc-123::::2\"")]);
+        assert_eq!(evaluate(&e, &empty_system, &ctx(), &vars).len(), 1);
+        let zero_led = response(&[("etag", "W/\"abc-123::any.system::02\"")]);
+        assert_eq!(evaluate(&e, &zero_led, &ctx(), &vars).len(), 1);
+    }
+
+    /// #1852 seeded defect: a placeholder naming neither a case variable nor
+    /// a structural token is a loud failure — never a silent `.*` that turns
+    /// the matcher into a tautology.
+    #[test]
+    fn unresolvable_placeholder_is_a_loud_failure_not_a_wildcard() {
+        let e = expectation(&serde_json::json!({
+            "ETag": "pattern:W/\"<no_such_capture>::x\""
+        }));
+        // The observed value would MATCH a `.*` degradation — the failure
+        // must come from the refusal, not from a mismatch.
+        let would_pass = response(&[("etag", "W/\"anything::x\"")]);
+        let failures = evaluate(&e, &would_pass, &ctx(), &VarStore::default());
+        assert_eq!(failures.len(), 1, "{failures:?}");
+        assert!(
+            failures[0].contains("no_such_capture") && failures[0].contains("#1852"),
+            "the failure names the unresolvable placeholder: {failures:?}"
+        );
     }
 
     #[test]
