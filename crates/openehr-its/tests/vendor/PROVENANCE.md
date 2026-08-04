@@ -71,6 +71,20 @@ invalid negatives, defective upstream fixtures (each with a repo-authored
 VALID TWIN under `tests/fixtures/twins/`), and RM-1.1-era documents that
 omit members RM 1.2 makes mandatory.
 
+## `ips_invalid.json` (adjudicated 2026-08-04, #1824)
+
+The `_invalid` in the name is TEMPLATE-relative, not RM-relative: the
+document is a perfectly legal canonical-JSON COMPOSITION (so the
+serialization gates here correctly exercise and PASS it — it needs no
+registry entry), whose defects are out-of-range magnitudes and coded values
+outside the IPS template's value sets. Its refusals are pinned where that
+judgement lives: the template-conformance suite
+(`app/ferroehr/tests/it/service_validation.rs`) commits it against the IPS
+OPT and asserts the 422 class. An earlier revision of this document called
+it "excluded"; that claim was stale — the single registry
+(`tests/it/common.rs`) is the only exclusion source, and this file names
+none.
+
 ## RM version note
 
 The SDK corpus is authored for RM 1.0.4 (its `archetype_details.rm_version`
