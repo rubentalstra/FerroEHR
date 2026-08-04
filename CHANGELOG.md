@@ -75,6 +75,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The `OPTIONS /` conformance manifest serves the generated contract DTO,
+  and the System API group joins the authorization and audit classifiers.**
+  The manifest body is now the emitted `Options` DTO (byte-identical wire; a
+  lockstep test pins the served OpenAPI's documentation shape to it), the
+  System route table joins the RBAC route map explicitly, and the operation
+  carries explicit authorization (any authenticated principal) and audit
+  (application-activity) classifications instead of the fail-closed defaults.
+
 - **A malformed ITEM_TAG refuses at construction, not after the fact.** The
   generated `ItemTag` type gains a validated constructor running its RM
   invariants (`Inv_key_valid`/`Inv_value_valid`), so a violating tag cannot
