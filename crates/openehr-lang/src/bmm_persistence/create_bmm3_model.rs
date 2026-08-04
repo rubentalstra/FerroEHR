@@ -26,21 +26,12 @@
 //!   `master04-syntax.adoc` §Value-set Constraints) belongs — the `::`-split of
 //!   `master07-core-classes.adoc` §Value-set Types.
 //!
-//! Three boundaries are load-bearing and stated here rather than left implicit:
+//! * **Generic-substituted properties.** Where a class binds an ancestor's
+//!   formal parameter, the ancestor's properties typed by that parameter
+//!   reappear in the descendant with the bound type and
+//!   `is_synthesised_generic` set — [`synthesise_generic_properties`].
 //!
-//! TODO(#1877): synthesise generic-substituted properties and stamp
-//! `is_synthesised_generic`. `master13-model_semantics.adoc` §Generic Inheritance
-//! requires that where an ancestor's formal parameter is substituted, the
-//! properties whose type was that parameter "are synthesised within
-//! `DV_INTERVAL<T>` with their new concrete types. Their BMM meta-type objects
-//! (type `BMM_UNITARY_PROPERTY`) will both have the meta-attribute
-//! `_is_synthesised_generic_` set to `True`". Every materialised property
-//! therefore leaves the flag unset today. The substitution machinery this needs is
-//! now all present — the ancestor type carries its bindings (above), and
-//! `BmmClass::flat_features` walks the lineage — but doing it correctly means
-//! deciding how a synthesised property interacts with a redefinition of the same
-//! name, and how far a partially-closed chain propagates, which is a design step
-//! rather than plumbing.
+//! Three boundaries are load-bearing and stated here rather than left implicit:
 //!
 //! TODO(#1878): land class INVARIANTS and routine pre-/post-conditions. v3 requires them
 //! as `BMM_ASSERTION` ("Expressions as used in BMM models to express class
@@ -98,6 +89,7 @@ use crate::bmm_persistence::p_bmm_type::PBmmType;
 use crate::bmm3::core::entity::bmm_class::BmmClass;
 use crate::bmm3::core::entity::bmm_container_type::BmmContainerType;
 use crate::bmm3::core::entity::bmm_container_type::BmmContainerTypeData;
+use crate::bmm3::core::entity::bmm_effective_type::BmmEffectiveType;
 use crate::bmm3::core::entity::bmm_generic_class::BmmGenericClass;
 use crate::bmm3::core::entity::bmm_generic_type::BmmGenericType;
 use crate::bmm3::core::entity::bmm_indexed_container_type::BmmIndexedContainerType;
@@ -330,7 +322,8 @@ fn build_class(
     visiting: &mut BTreeSet<String>,
 ) -> Result<BmmClass, PBmmReadError> {
     let persisted = entry.class;
-    let core = build_core(builder, entry, depth, visiting)?;
+    let mut core = build_core(builder, entry, depth, visiting)?;
+    synthesise_generic_properties(builder, depth, visiting, &mut core)?;
     if let PBmmClass::PBmmEnumeration(enumeration) = persisted {
         check_enumeration_validity(core.name.as_str(), enumeration)?;
         return Ok(BmmClass::BmmSimpleClass(BmmSimpleClass::BmmEnumeration(
@@ -560,6 +553,239 @@ fn build_ancestors(
     Ok((!out.is_empty()).then_some(out))
 }
 
+/// Adds the generic-substituted properties a class inherits from a generic
+/// ancestor whose formal parameters it binds.
+///
+/// `master13-model_semantics.adoc` §Generic Inheritance: where `DV_INTERVAL
+/// <T:DV_ORDERED>` inherits `Interval<T:Ordered>`, "the resulting types of
+/// `lower` and `upper` are now `T:DV_ORDERED` rather than `T:Ordered` from the
+/// parent … these two properties are synthesised within `DV_INTERVAL<T>` with
+/// their new concrete types. Their BMM meta-type objects (type
+/// `BMM_UNITARY_PROPERTY`) will both have the meta-attribute
+/// `_is_synthesised_generic_` set to `True`". The closed case is the same
+/// operation with a concrete binding: `TIMER_WAIT` inheriting `WAIT<TIMER_
+/// EVENT>` gets `event: TIMER_EVENT` "synthesised new … with the meta-attribute
+/// `_is_synthesised_generic_` set `True`".
+///
+/// Both examples are ONE rule — replace the ancestor's formal parameter with
+/// whatever the descendant bound it to — because a binding to another formal
+/// parameter carries that parameter's own (narrowed) constraint in its type
+/// object. Three decisions the section leaves to the implementation:
+///
+/// * A property the descendant DECLARES wins: the section synthesises the
+///   ancestor's properties "within" the descendant, which cannot mean
+///   overwriting one the descendant defines for itself.
+/// * Propagation down a partially-closed chain is automatic rather than
+///   special-cased: an embedded ancestor has already had its own synthesis
+///   applied (this runs per class, before the class is embedded), so a
+///   re-substituted property is just the next step of the same rule.
+/// * Only a property whose type IS the parameter is synthesised. A parameter
+///   nested inside a generic argument (`List<T>` where the container type is
+///   the property's type) is substituted in place by the same walk.
+fn synthesise_generic_properties(
+    builder: &Builder<'_>,
+    depth: Depth,
+    visiting: &mut BTreeSet<String>,
+    core: &mut ClassCore,
+) -> Result<(), PBmmReadError> {
+    let generic_ancestors: Vec<BmmGenericType> = core
+        .ancestors
+        .iter()
+        .flat_map(|map| map.values())
+        .filter_map(|ancestor| match ancestor {
+            BmmModelType::BmmGenericType(generic) => Some(generic.clone()),
+            BmmModelType::BmmSimpleType(_) => None,
+        })
+        .collect();
+    let mut synthesised: BTreeMap<String, BmmProperty> = BTreeMap::new();
+    for generic in generic_ancestors {
+        let bindings = parameter_bindings(&generic);
+        if bindings.is_empty() {
+            continue;
+        }
+        // The embedded `base_class` is a STUB (no features — the
+        // embedding-depth adjudication in the module docs), so the ancestor's
+        // properties come from its own definition, rebuilt here. That build
+        // applies this same synthesis to the ancestor, which is what carries a
+        // substitution down a partially-closed chain.
+        let name = generic.base_class.name.clone();
+        let key = name.to_uppercase();
+        if visiting.contains(&key) {
+            continue;
+        }
+        let context = format!("generic ancestor `{name}`");
+        let entry = builder.entry(&context, &name)?;
+        visiting.insert(key.clone());
+        let ancestor = build_class(builder, entry, depth, visiting);
+        visiting.remove(&key);
+        for (property_name, property) in ancestor?.properties().iter().copied().flatten() {
+            if core
+                .properties
+                .as_ref()
+                .is_some_and(|own| own.contains_key(property_name))
+            {
+                continue;
+            }
+            if let Some(substituted) = substitute_property(property, &bindings) {
+                synthesised.insert(property_name.clone(), substituted);
+            }
+        }
+    }
+    if !synthesised.is_empty() {
+        core.properties
+            .get_or_insert_with(BTreeMap::new)
+            .extend(synthesised);
+    }
+    Ok(())
+}
+
+/// Pairs a generic ancestor's FORMAL parameter names with the types the
+/// descendant bound them to.
+///
+/// `BMM_GENERIC_TYPE.generic_parameters` is "the actual generic parameter
+/// types" as an ordered list while `BMM_GENERIC_CLASS.generic_parameters` is
+/// the formal declarations keyed by name
+/// (`org.openehr.lang.bmm3.bmm_generic_type.adoc` +
+/// `…bmm3.bmm_generic_class.adoc` §Attributes), so the two zip positionally.
+/// A binding that merely restates the formal parameter unchanged is dropped:
+/// substituting a parameter for itself synthesises nothing.
+fn parameter_bindings(generic: &BmmGenericType) -> BTreeMap<String, BmmUnitaryType> {
+    generic
+        .base_class
+        .generic_parameters
+        .iter()
+        .zip(generic.generic_parameters.iter())
+        .filter(|((name, formal), actual)| !is_unsubstituted(name, formal, actual))
+        .map(|((name, _), actual)| (name.clone(), actual.clone()))
+        .collect()
+}
+
+/// Whether `actual` restates the formal parameter unchanged — the same
+/// parameter name under the same conformance constraint.
+///
+/// A same-named parameter under a NARROWER constraint is a substitution, which
+/// is what makes `DV_INTERVAL<T:DV_ORDERED>` inheriting `Interval<T:Ordered>`
+/// synthesise (`master13-model_semantics.adoc` §Generic Inheritance: "the
+/// formal parameters of the inheriting class may further constrain any of the
+/// ancestor type's formal parameters"). The constraint is read through
+/// `BMM_PARAMETER_TYPE.flattened_conforms_to_type`
+/// (`org.openehr.lang.bmm3.bmm_parameter_type.adoc` §Functions), so an
+/// inherited precursor counts.
+fn is_unsubstituted(name: &str, formal: &BmmParameterType, actual: &BmmUnitaryType) -> bool {
+    let BmmUnitaryType::BmmParameterType(actual) = actual else {
+        return false;
+    };
+    actual.name.eq_ignore_ascii_case(name) && conformance_name(actual) == conformance_name(formal)
+}
+
+/// A formal parameter's flattened conformance-type name, if it declares one.
+fn conformance_name(parameter: &BmmParameterType) -> Option<String> {
+    parameter
+        .flattened_conforms_to_type()
+        .map(BmmEffectiveType::type_name)
+}
+
+/// One ancestor property re-typed under `bindings`, or `None` when its type
+/// mentions no bound parameter (nothing to synthesise).
+fn substitute_property(
+    property: &BmmProperty,
+    bindings: &BTreeMap<String, BmmUnitaryType>,
+) -> Option<BmmProperty> {
+    match property {
+        BmmProperty::BmmUnitaryProperty(unitary) => {
+            let substituted = substitute_unitary(&unitary.r#type, bindings)?;
+            let mut out = unitary.clone();
+            out.r#type = substituted;
+            out.is_synthesised_generic = Some(true);
+            Some(BmmProperty::BmmUnitaryProperty(out))
+        }
+        BmmProperty::BmmContainerProperty(BmmContainerProperty::BmmContainerProperty(data)) => {
+            let substituted = substitute_container(&data.r#type, bindings)?;
+            let mut out = data.clone();
+            out.r#type = substituted;
+            out.is_synthesised_generic = Some(true);
+            Some(BmmProperty::BmmContainerProperty(
+                BmmContainerProperty::BmmContainerProperty(out),
+            ))
+        }
+        BmmProperty::BmmContainerProperty(BmmContainerProperty::BmmIndexedContainerProperty(
+            indexed,
+        )) => {
+            let substituted = substitute_indexed_container(&indexed.r#type, bindings)?;
+            let mut out = indexed.clone();
+            out.r#type = substituted;
+            out.is_synthesised_generic = Some(true);
+            Some(BmmProperty::BmmContainerProperty(
+                BmmContainerProperty::BmmIndexedContainerProperty(out),
+            ))
+        }
+    }
+}
+
+/// A unitary type with every bound formal parameter replaced, or `None` when it
+/// mentions none. Recurses through a generic type's own arguments, so
+/// `List<T>`-shaped property types substitute in place.
+fn substitute_unitary(
+    r#type: &BmmUnitaryType,
+    bindings: &BTreeMap<String, BmmUnitaryType>,
+) -> Option<BmmUnitaryType> {
+    match r#type {
+        BmmUnitaryType::BmmParameterType(parameter) => bindings
+            .iter()
+            .find(|(formal, _)| formal.eq_ignore_ascii_case(&parameter.name))
+            .map(|(_, bound)| bound.clone()),
+        BmmUnitaryType::BmmGenericType(generic) => {
+            let mut arguments = generic.generic_parameters.clone();
+            let mut touched = false;
+            for argument in &mut arguments {
+                if let Some(substituted) = substitute_unitary(argument, bindings) {
+                    *argument = substituted;
+                    touched = true;
+                }
+            }
+            touched.then(|| {
+                let mut out = generic.clone();
+                out.generic_parameters = arguments;
+                BmmUnitaryType::BmmGenericType(out)
+            })
+        }
+        _ => None,
+    }
+}
+
+/// A container type whose ITEM type mentions a bound parameter, re-typed
+/// (`BMM_CONTAINER_TYPE.item_type`, `…bmm3.bmm_container_type.adoc`
+/// §Attributes).
+fn substitute_container(
+    r#type: &BmmContainerType,
+    bindings: &BTreeMap<String, BmmUnitaryType>,
+) -> Option<BmmContainerType> {
+    match r#type {
+        BmmContainerType::BmmContainerType(data) => {
+            let item = substitute_unitary(&data.item_type, bindings)?;
+            let mut out = data.clone();
+            out.item_type = Box::new(item);
+            Some(BmmContainerType::BmmContainerType(out))
+        }
+        BmmContainerType::BmmIndexedContainerType(indexed) => {
+            substitute_indexed_container(indexed, bindings)
+                .map(|out| BmmContainerType::BmmIndexedContainerType(Box::new(out)))
+        }
+    }
+}
+
+/// The indexed-container arm of [`substitute_container`], reached directly by
+/// a `BMM_INDEXED_CONTAINER_PROPERTY`, whose `type` is the indexed type itself.
+fn substitute_indexed_container(
+    r#type: &BmmIndexedContainerType,
+    bindings: &BTreeMap<String, BmmUnitaryType>,
+) -> Option<BmmIndexedContainerType> {
+    let item = substitute_unitary(&r#type.item_type, bindings)?;
+    let mut out = r#type.clone();
+    out.item_type = item;
+    Some(out)
+}
+
 /// The type a class generates — `BMM_CLASS.type` ("Generate a type object that
 /// represents the type for which this class is the definer",
 /// `org.openehr.lang.bmm3.bmm_class.adoc` §Functions), applied to a stub class.
@@ -632,11 +858,7 @@ fn build_parameter_type(
                     visiting,
                 )?;
                 visiting.remove(&edge);
-                Some(Box::new(
-                    crate::bmm3::core::entity::bmm_effective_type::BmmEffectiveType::from(
-                        class_as_type(stub),
-                    ),
-                ))
+                Some(Box::new(BmmEffectiveType::from(class_as_type(stub))))
             } else {
                 None
             }

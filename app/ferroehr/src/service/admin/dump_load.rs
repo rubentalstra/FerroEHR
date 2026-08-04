@@ -384,6 +384,7 @@ const ZIP_ENTRY_FILE: &str = "archive.zip";
 /// The packed 7z container entry (SM `COMPRESSION_FORMAT.7z`).
 const SEVENZ_ENTRY_FILE: &str = "archive.7z";
 /// The entry-name prefix of an externalized `DV_MULTIMEDIA` blob.
+#[cfg(feature = "multimedia")]
 const BLOB_PREFIX: &str = "blobs/";
 /// The entry-name prefix of an externalized version payload document
 /// (`EXPORT_FORMAT.openehr_canonical_xml`).

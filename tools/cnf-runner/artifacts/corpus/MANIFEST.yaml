@@ -3217,3 +3217,54 @@ cnf.composition.minimal_event.item_tree_empty:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "authored 2026-08-04 for the #1858 matrix as the ACCEPTED side of the empty-list split: cnf.composition.minimal_event.v1 with its ITEM_TREE items emptied. VALID by the RM text — data_structures item_tree.adoc §Attributes types items at 0..1 and its Meaning says 'Can include 0 or more CLUSTERs and/or 0 or more individual ELEMENTs', and the class declares no invariants — so it is the contrast against the 1..1 CLUSTER refusal, not a defect"
+cnf.composition.minimal_event.duplicate_member:
+  source: fixtures/composition/minimal_event.duplicate_member.json
+  format: raw-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the DV_QUANTITY object writes its magnitude member TWICE"
+    spec_ref: "RFC 8259 §4 (<https://www.rfc-editor.org/rfc/rfc8259#section-4>): the names within an object SHOULD be unique, and 'when the names within an object are not unique, the behavior of software that receives such an object is unpredictable' + ITS-REST specifications/docs/overview/Resources.md §JSON Format (every attribute is written once, in BMM declaration order, so no conformant producer can have meant a repeated member)"
+  provenance: "authored 2026-08-04 for #1725 — cnf.composition.minimal_event.v1 with its magnitude line repeated once and nothing else changed (the two files differ by exactly that one line). Carried as raw-json because the defect is BYTE-level: serde_json and every other Value parser silently resolve a repeated member last-wins, so a canonical-json data set would normalise the defect away before it reached the SUT. The in-process twin of this refusal is crates/openehr-its/tests/it/fixture_twins.rs a_repeated_member_is_refused"
+cnf.composition.minimal_event.single_member:
+  source: fixtures/composition/minimal_event.single_member.json
+  format: raw-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-08-04 for #1725 as the ACCEPTING twin of cnf.composition.minimal_event.duplicate_member: byte-identical to it except that the repeated magnitude member is written once. Also raw-json, so both halves reach the SUT through the same verbatim-bytes path and the ONLY difference the pair tests is the repetition"
+cnf.demographic.agent.cluster_no_items:
+  source: fixtures/demographic/agent.cluster_no_items.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the CLUSTER's items list is present but empty"
+    spec_ref: "RM data_structures cluster.adoc §Attributes (items: List<ITEM>, 1..1 — a mandatory list) + ITS-REST OAS schemas/data_structures/Clstr.yaml §required (items)"
+  provenance: "authored 2026-08-04 for the #1858 matrix's UPDATE half — cnf.demographic.agent.v1 with one empty CLUSTER added in PARTY_IDENTITY.details; everything else valid. One defect per fixture"
+cnf.demographic.group.cluster_no_items:
+  source: fixtures/demographic/group.cluster_no_items.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the CLUSTER's items list is present but empty"
+    spec_ref: "RM data_structures cluster.adoc §Attributes (items: List<ITEM>, 1..1 — a mandatory list) + ITS-REST OAS schemas/data_structures/Clstr.yaml §required (items)"
+  provenance: "authored 2026-08-04 for the #1858 matrix's UPDATE half — cnf.demographic.group.v1 with one empty CLUSTER added in PARTY_IDENTITY.details; everything else valid. One defect per fixture"
+cnf.demographic.organisation.cluster_no_items:
+  source: fixtures/demographic/organisation.cluster_no_items.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the CLUSTER's items list is present but empty"
+    spec_ref: "RM data_structures cluster.adoc §Attributes (items: List<ITEM>, 1..1 — a mandatory list) + ITS-REST OAS schemas/data_structures/Clstr.yaml §required (items)"
+  provenance: "authored 2026-08-04 for the #1858 matrix's UPDATE half — cnf.demographic.organisation.v1 with one empty CLUSTER added in PARTY_IDENTITY.details; everything else valid. One defect per fixture"
+cnf.demographic.role.cluster_no_items:
+  source: fixtures/demographic/role.cluster_no_items.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the CLUSTER's items list is present but empty"
+    spec_ref: "RM data_structures cluster.adoc §Attributes (items: List<ITEM>, 1..1 — a mandatory list) + ITS-REST OAS schemas/data_structures/Clstr.yaml §required (items)"
+  provenance: "authored 2026-08-04 for the #1858 matrix's UPDATE half — cnf.demographic.role.v1 with one empty CLUSTER added in PARTY_IDENTITY.details; everything else valid. One defect per fixture"

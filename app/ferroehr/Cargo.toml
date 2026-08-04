@@ -18,7 +18,7 @@ publish = false
 # binary and every existing consumer keep today's surface; a
 # --no-default-features build is the slim CDR. Additive only.
 default = ["fhir", "events", "multimedia"]
-fhir = ["dep:ferroehr-ext", "ferroehr-ext/fhir"]
+fhir = ["dep:ferroehr-ext", "ferroehr-ext/fhir", "events"]
 events = ["dep:ferroehr-ext", "ferroehr-ext/events"]
 multimedia = ["dep:ferroehr-ext", "ferroehr-ext/multimedia"]
 
@@ -115,7 +115,7 @@ openehr-adl = { path = "../../crates/openehr-adl" }
 openehr-query = { path = "../../crates/openehr-query" }
 
 [dev-dependencies]
-ferroehr-ext = { path = "../ferroehr-ext", features = ["multimedia"] }
+ferroehr-ext = { path = "../ferroehr-ext", features = ["multimedia", "events"] }
 testkit = { path = "../../tools/testkit" }
 serde_norway.workspace = true
 # Temp config files for the pure-loader (`config` module) tests.

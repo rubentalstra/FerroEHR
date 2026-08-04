@@ -314,6 +314,13 @@ impl FerroEhrService {
     /// (empty when externalization is disabled) — one read for the whole
     /// chunk. Our own extension — no openEHR spec governs multimedia offload.
     async fn collect_blob_keys_for(&self, ehr_ids: &[EhrId]) -> Result<Vec<String>, ServiceError> {
+        #[cfg(not(feature = "multimedia"))]
+        {
+            let _ = ehr_ids;
+            return Ok(Vec::new());
+        }
+        #[cfg(feature = "multimedia")]
+        {
         let Some(engine) = &self.multimedia else {
             return Ok(Vec::new());
         };
@@ -329,12 +336,20 @@ impl FerroEhrService {
         keys.sort_unstable();
         keys.dedup();
         Ok(keys)
+        }
     }
 
     /// Collect the distinct externalized-blob keys referenced by an EHR's stored
     /// nodes (empty when externalization is disabled). Read-only, on the pool.
     /// Our own extension — no openEHR spec governs multimedia offload.
     async fn collect_ehr_blob_keys(&self, ehr_id: EhrId) -> Result<Vec<String>, ServiceError> {
+        #[cfg(not(feature = "multimedia"))]
+        {
+            let _ = ehr_id;
+            return Ok(Vec::new());
+        }
+        #[cfg(feature = "multimedia")]
+        {
         let Some(engine) = &self.multimedia else {
             return Ok(Vec::new());
         };
@@ -350,6 +365,7 @@ impl FerroEhrService {
         keys.sort_unstable();
         keys.dedup();
         Ok(keys)
+        }
     }
 
     /// Delete each candidate blob no longer referenced by any surviving `node`.
@@ -362,6 +378,12 @@ impl FerroEhrService {
     /// set (the still-referenced keys fall out of a single scan joined
     /// against the candidate array), never a scan per blob.
     async fn gc_unreferenced_blobs(&self, candidates: Vec<String>) {
+        #[cfg(not(feature = "multimedia"))]
+        {
+            let _candidates = candidates;
+        }
+        #[cfg(feature = "multimedia")]
+        {
         let Some(engine) = &self.multimedia else {
             return;
         };
@@ -393,6 +415,7 @@ impl FerroEhrService {
             if let Err(e) = engine.store().delete(hex).await {
                 tracing::warn!(blob = %hex, error = %e, "multimedia blob GC delete failed");
             }
+        }
         }
     }
 

@@ -30,7 +30,7 @@ use sqlx::{PgPool, Row};
 use crate::typed_body::typed;
 use ferroehr::extensions::events::config::EventsConfig;
 use ferroehr::extensions::events::publisher::start_with_publisher;
-use ferroehr::extensions::events::{EventError, EventPublisher};
+use ferroehr_ext::events::{EventError, EventPublisher};
 use ferroehr::service::FerroEhrService;
 use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
 use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};

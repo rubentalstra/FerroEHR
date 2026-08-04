@@ -69,7 +69,9 @@ use indexmap::IndexMap;
 use utoipa_axum::router::OpenApiRouter;
 
 use crate::extensions::access::{ehr_access, pep};
-use crate::extensions::{event_subscription, fhir, tenant_routes, terminology};
+#[cfg(feature = "events")]
+use crate::extensions::event_subscription;
+use crate::extensions::{fhir, tenant_routes, terminology};
 use crate::state::AppState;
 
 /// A boxed response future — the uniform return type of a group dispatcher.
@@ -158,7 +160,16 @@ pub(crate) fn api_openapi_router() -> OpenApiRouter<AppState> {
         .merge(message::extract::extract_routes())
         .merge(message::tdd::tdd_routes())
         .merge(terminology::routes())
-        .merge(event_subscription::routes())
+        .merge({
+            #[cfg(feature = "events")]
+            {
+                event_subscription::routes()
+            }
+            #[cfg(not(feature = "events"))]
+            {
+                OpenApiRouter::new()
+            }
+        })
         .merge(tenant_routes::routes())
         .merge(fhir::routes())
 }

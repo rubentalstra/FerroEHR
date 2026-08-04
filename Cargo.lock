@@ -2782,8 +2782,10 @@ dependencies = [
 name = "ferroehr-ext"
 version = "3.17.2"
 dependencies = [
+ "async-trait",
  "base64 0.22.1",
  "bytes",
+ "lapin",
  "object_store",
  "openehr-base",
  "openehr-its",
