@@ -132,13 +132,24 @@ grouping, the roadmap's date source, visible fields — is still UI-only):
 Built-in workflows (verified 2026-08-04: only `deleteProjectV2Workflow`
 exists in the schema — **enabling/configuring them is UI-only**; visibility +
 repo-link ARE scriptable via `gh project edit --visibility` /
-`gh project link`): a new project ships **Item closed → `Done`** and **Pull
-request merged → `Done` enabled by default**; enable by hand **Auto-add to
-project** (filter `is:issue is:open`), **Item added to project → `Todo`**,
-and **Item reopened → `Todo`**; leave auto-archive OFF. (An Actions-based
-alternative — `actions/add-to-project` — exists but needs a PAT secret for a
-user-owned project; three one-time UI toggles beat a standing secret.)
-Visibility: public.
+`gh project link`). The full adjudicated switchboard:
+
+| Workflow | State | Why |
+|---|---|---|
+| Auto-add to project | ON, filter `is:issue is:open` | issues only — every PR declares `Closes #N`, so a PR card would show the same work twice |
+| Auto-add sub-issues to project | ON | sub-issues are real issues |
+| Item added to project | ON → `Todo` (issues only) | every new open issue starts in Todo |
+| Item reopened | ON → `Todo` | a reopened issue re-enters the working columns |
+| Item closed | ON → `Done` | the tracker drives the board |
+| Pull request merged | ON → `Done` | harmless (PRs never land on the board) |
+| Pull request linked to issue | ON → `In Progress` (when offered) | auto-pickup safety net: a PR referencing the issue proves work started |
+| **Auto-close issue** | **OFF** | it closes the REAL issue when a card is dragged to Done — the board is a view and must never mutate the tracker; closing happens only via the PR's `Closes #N` |
+| Auto-archive items | OFF | closed items stay visible as the shipped record |
+| Code changes requested / Code review approved | OFF | PR-status workflows; PRs aren't on the board |
+
+(An Actions-based alternative — `actions/add-to-project` — exists but needs a
+PAT secret for a user-owned project; one-time UI toggles beat a standing
+secret.) Visibility: public.
 
 ## Interaction with the rest of the workflow
 
