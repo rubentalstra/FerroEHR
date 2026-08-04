@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [3.17.2] - 2026-08-04
+
 ### Changed
 
 - **The declared FHIR integration surface is now stated as R4B (4.3.0)
@@ -5203,7 +5205,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.1...HEAD
+[unreleased]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.2...HEAD
+[3.17.2]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.1...v3.17.2
 [3.17.1]: https://github.com/rubentalstra/FerroEHR/compare/v3.17.0...v3.17.1
 [3.17.0]: https://github.com/rubentalstra/FerroEHR/compare/v3.16.0...v3.17.0
 [3.16.0]: https://github.com/rubentalstra/FerroEHR/compare/v3.15.3...v3.16.0

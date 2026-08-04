@@ -12,7 +12,7 @@ metadata:
     helm.sh/chart: ferroehr-3.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "3.17.1"
+    app.kubernetes.io/version: "3.17.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
@@ -36,7 +36,7 @@ metadata:
     helm.sh/chart: ferroehr-3.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "3.17.1"
+    app.kubernetes.io/version: "3.17.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
@@ -55,7 +55,7 @@ metadata:
     helm.sh/chart: ferroehr-3.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "3.17.1"
+    app.kubernetes.io/version: "3.17.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 automountServiceAccountToken: false
@@ -69,7 +69,7 @@ metadata:
     helm.sh/chart: ferroehr-3.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "3.17.1"
+    app.kubernetes.io/version: "3.17.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 data:
@@ -167,7 +167,7 @@ metadata:
     helm.sh/chart: ferroehr-3.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "3.17.1"
+    app.kubernetes.io/version: "3.17.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
@@ -190,7 +190,7 @@ metadata:
     helm.sh/chart: ferroehr-3.2.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
-    app.kubernetes.io/version: "3.17.1"
+    app.kubernetes.io/version: "3.17.2"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
@@ -203,7 +203,7 @@ spec:
     metadata:
       annotations:
         # Roll pods when the rendered ferroehr.toml changes.
-        checksum/config: 243e73a5210c0e28d175690cfe628dbb52e9964da8f75cb4f2f19abbbab3f8d3
+        checksum/config: f9a00cfa399b6e9804ac994e60d7dd2e02b1a0d6c1e9997e9ba684cf326e58df
       labels:
         app.kubernetes.io/name: ferroehr
         app.kubernetes.io/instance: ferroehr
@@ -221,7 +221,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: ferroehr
-          image: "ghcr.io/rubentalstra/ferroehr:3.17.1"
+          image: "ghcr.io/rubentalstra/ferroehr:3.17.2"
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
