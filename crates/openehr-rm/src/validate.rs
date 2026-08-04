@@ -47,7 +47,8 @@
 //!
 //! The RM class invariants realized here are the released class tables' own
 //! invariant expressions, machine-classified from the vendored BMM — the
-//! generated register at the head of [`generated`] is the per-invariant
+//! generated register at the head of the crate-private `generated` module
+//! (`validate/generated.rs`) is the per-invariant
 //! authority (venue + citation + adjudication). A failure renders the uniform
 //! message `Invariant <Name> failed on type <RM_TYPE>` (see
 //! `invariant_failed`): `<Name>` is the invariant's released class-table name
