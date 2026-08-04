@@ -26,14 +26,6 @@
 //!   produced COMPOSITION is RM-valid without the builder duplicating that
 //!   structure. Governing cardinalities: openEHR RM `common`/`composition`/
 //!   `data_structures`.
-//! * **`ISM_TRANSITION`/careflow-step synthesis**: an ADL 1.4 ACTION constrains
-//!   `ism_transition` once per careflow step, and the tree currently carries one
-//!   node per such constraint (`planned`, `completed`, …). An ACTION INSTANCE
-//!   carries exactly one `ISM_TRANSITION`, and Simplified Formats master05
-//!   §ISM_TRANSITION maps it to a single `…/ism_transition/current_state` path,
-//!   so the per-state nodes are not the served shape.
-//!   TODO(#1880): synthesise one `ism_transition` node whose coded children take
-//!   the union of the per-state constraints.
 //! * **The "any" (unconstrained) `ELEMENT` value**: an ELEMENT with no value
 //!   constraint is emitted without an enumerated per-`DATA_VALUE` `inputs`
 //!   expansion. No openEHR spec governs the shape of an unconstrained value node —
@@ -291,7 +283,15 @@ pub fn build_web_template(
 
     let root_arch_id = opt.definition.archetype_id.value.clone();
     let root_co = CObject::CArchetypeRoot(opt.definition.clone());
-    let mut tree = build_node(&ctx, None, &root_co, "", &root_arch_id, None);
+    let mut tree = build_node(
+        &ctx,
+        None,
+        &root_co,
+        "",
+        &root_arch_id,
+        None,
+        shape::Identity::Archetyped,
+    );
     tree = shape::compact(tree, 1).unwrap_or_else(shape::tree_placeholder);
     // Synthesize the in-context RM children the master04 example carries for the
     // structural attributes an OPT commonly leaves unconstrained (COMPOSITION
@@ -328,13 +328,14 @@ fn build_node(
     parent_path: &str,
     parent_arch_id: &str,
     group: Option<&str>,
+    identity: shape::Identity,
 ) -> WebTemplateNode {
     // A C_ARCHETYPE_ROOT switches the ontology scope to its own archetype.
     let node_arch_id = match co {
         CObject::CArchetypeRoot(r) => r.archetype_id.value.as_str(),
         _ => parent_arch_id,
     };
-    let mut node = create_node(ctx, attr_name, co, parent_path, node_arch_id);
+    let mut node = create_node(ctx, attr_name, co, parent_path, node_arch_id, identity);
     build_children(ctx, co, &mut node, node_arch_id, group);
     node
 }
@@ -345,11 +346,21 @@ fn create_node(
     co: &CObject,
     parent_path: &str,
     arch_id: &str,
+    identity: shape::Identity,
 ) -> WebTemplateNode {
+    let archetyped = identity == shape::Identity::Archetyped;
     let rm_type = object_rm_type(co).to_owned();
-    let arch_node_id = object_archetype_node_id(co);
+    let arch_node_id = if archetyped {
+        object_archetype_node_id(co)
+    } else {
+        String::new()
+    };
     let (min, max) = occurrences(object_occurrences(co));
-    let name_constraint = name_constraint(co);
+    let name_constraint = if archetyped {
+        name_constraint(co)
+    } else {
+        None
+    };
 
     let path = build_path(
         parent_path,
@@ -366,12 +377,14 @@ fn create_node(
     node.min = min;
     node.max = max;
 
-    let name_code = object_node_id(co);
+    let name_code = if archetyped { object_node_id(co) } else { "" };
     // A `DV_CODED_TEXT` name constraint (RM common master03 §LOCATABLE — the
     // name is `DV_TEXT` *or* `DV_CODED_TEXT`) fixes both the display value and
     // the `defining_code` the composition builder must stamp; it takes
     // precedence over the plain `name/value` and node-rubric name.
-    let coded_name = coded_name_constraint(co, ctx, arch_id, name_constraint.as_deref());
+    let coded_name = archetyped
+        .then(|| coded_name_constraint(co, ctx, arch_id, name_constraint.as_deref()))
+        .flatten();
     if let Some((value, coded)) = coded_name {
         node.name = Some(value.clone());
         node.localized_name = Some(value);
@@ -435,6 +448,17 @@ fn build_children(
             // from the correct group (SPECPR-51 code collisions; see
             // `inputs::openehr_group`).
             let child_group = inputs::openehr_group(&node.rm_type, attr_name);
+            // The careflow-state alternatives of `ism_transition` collapse into
+            // the one transition node master05 §ISM_TRANSITION maps, so they are
+            // built without their at-code identity (see
+            // [`shape::MERGED_ATTRIBUTE`]).
+            let merged = attr_name == shape::MERGED_ATTRIBUTE;
+            let identity = if merged {
+                shape::Identity::AttributeOnly
+            } else {
+                shape::Identity::Archetyped
+            };
+            let mut built = Vec::new();
             for child_co in inputs::attribute_children(attr) {
                 if matches!(
                     child_co,
@@ -442,14 +466,28 @@ fn build_children(
                 ) {
                     continue; // Unfilled slot / constraint ref: no node.
                 }
-                children.push(build_node(
+                built.push(build_node(
                     ctx,
                     Some(attr_name),
                     child_co,
                     &node.aql_path,
                     arch_id,
                     child_group,
+                    identity,
                 ));
+            }
+            if merged {
+                if let Some(mut transition) = shape::merge_alternatives(built) {
+                    // The merged node's occurrences are the ATTRIBUTE's — one
+                    // required transition per ACTION instance, not one per
+                    // careflow state.
+                    let (min, max) = occurrences(attribute_existence(attr));
+                    transition.min = min;
+                    transition.max = max;
+                    children.push(transition);
+                }
+            } else {
+                children.extend(built);
             }
         }
     }
@@ -1203,6 +1241,15 @@ fn object_occurrences(co: &CObject) -> &Intervalofinteger {
         CObject::ArchetypeSlot(c) => &c.occurrences,
         CObject::ConstraintRef(c) => &c.occurrences,
         CObject::TComplexObject(c) => &c.occurrences,
+    }
+}
+
+/// The `C_ATTRIBUTE.existence` interval of `attr` (AOM 1.4
+/// `master04-constraint_model_package.adoc` §existence).
+fn attribute_existence(attr: &crate::opt14::CAttribute) -> &Intervalofinteger {
+    match attr {
+        crate::opt14::CAttribute::CSingleAttribute(s) => &s.existence,
+        crate::opt14::CAttribute::CMultipleAttribute(m) => &m.existence,
     }
 }
 

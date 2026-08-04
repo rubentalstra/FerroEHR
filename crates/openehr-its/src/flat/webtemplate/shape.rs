@@ -22,6 +22,9 @@
 //!    per node, before compaction: the ELEMENT coded/`other` merge, the
 //!    COMPOSITION `category` reorder, the OBSERVATION `depends_on`).
 //!
+//! [`merge_alternatives`] is the fourth shared pass, applied by each front end
+//! while it builds an attribute's children.
+//!
 //! `ITS-REST simplified_formats master04-basic_concepts.adoc` is the wire oracle
 //! (§"Web Template Metadata", §"Level Removal").
 
@@ -158,6 +161,160 @@ fn post_process_observation(node: &mut WebTemplateNode) {
         if child.aql_path.starts_with(&state_prefix) || child.aql_path.starts_with(&protocol_prefix)
         {
             child.depends_on = Some(vec![data_path.clone()]);
+        }
+    }
+}
+
+// ── careflow-state merging (master05 §ISM_TRANSITION) ────────────────────────
+
+/// How a front end gives a built node its archetype identity.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(super) enum Identity {
+    /// From the constraint object: its archetype-node-id path predicate, `nodeId`,
+    /// and rubric / `name` constraint.
+    Archetyped,
+    /// From the RM attribute alone — no path predicate, no `nodeId`, no rubric
+    /// name — so several constraint objects can collapse into one node
+    /// ([`merge_alternatives`]).
+    AttributeOnly,
+}
+
+/// The RM attribute whose sibling constraint objects merge into one node.
+///
+/// `ACTION.ism_transition` is `1..1` (RM
+/// `UML/classes/org.openehr.rm.composition.action.adoc`), so an ACTION instance
+/// carries exactly one `ISM_TRANSITION`, while an archetype constrains the
+/// attribute once per careflow step. `ITS-REST simplified_formats
+/// master05-rm_mapping.adoc` §ACTION maps the whole transition to one
+/// `/ism_transition` row, and §ISM_TRANSITION gives that node its
+/// `/current_state`, `/transition`, `/careflow_step` children — one node, three
+/// coded children, never one node per state.
+pub(super) const MERGED_ATTRIBUTE: &str = "ism_transition";
+
+/// Fold the constraint alternatives of [`MERGED_ATTRIBUTE`] into the single
+/// node master05 §ISM_TRANSITION maps.
+///
+/// Each front end builds the alternatives **without** their careflow at-code
+/// identity, so all of them already share one `aqlPath` and no path is
+/// rewritten here. The fold is pairwise: children match by `(aqlPath, rmType)`,
+/// a coded leaf takes the union of the alternatives' options in first-seen
+/// order, and a child that only some alternatives carry becomes optional — so
+/// an instance conforming to any one alternative conforms to the merged node.
+pub(super) fn merge_alternatives(nodes: Vec<WebTemplateNode>) -> Option<WebTemplateNode> {
+    nodes.into_iter().reduce(|mut acc, other| {
+        merge_into(&mut acc, other);
+        acc
+    })
+}
+
+fn merge_into(acc: &mut WebTemplateNode, other: WebTemplateNode) {
+    acc.min = match (acc.min, other.min) {
+        (Some(a), Some(b)) => Some(a.min(b)),
+        // An unstated lower bound constrains nothing, so it wins the relaxation.
+        _ => None,
+    };
+    acc.max = if acc.max == -1 || other.max == -1 {
+        -1
+    } else {
+        acc.max.max(other.max)
+    };
+    // The closed-local reading survives only if EVERY alternative scopes its
+    // code list to `local` (AOM 1.4 `c_coded_text` §C_CODED_TEXT: a code list is
+    // scoped to the terminology it names).
+    acc.coded_terminology_local &= other.coded_terminology_local;
+    merge_inputs(&mut acc.inputs, other.inputs);
+    merge_children(acc, other.children);
+    merge_existence(&mut acc.existence, other.existence);
+    extend_by_key(&mut acc.cardinalities, other.cardinalities, |c| {
+        c.path.clone()
+    });
+    extend_by_key(&mut acc.card_all, other.card_all, |c| c.path.clone());
+    extend_by_key(&mut acc.slots, other.slots, |s| {
+        (s.path.clone(), s.rm_type.clone())
+    });
+    extend_by_key(&mut acc.closed_attributes, other.closed_attributes, |c| {
+        c.path.clone()
+    });
+    extend_by_key(&mut acc.code_lists, other.code_lists, |c| {
+        (c.attr.clone(), c.terminology.clone())
+    });
+    extend_by_key(
+        &mut acc.constraint_bindings,
+        other.constraint_bindings,
+        |b| (b.attr.clone(), b.ac_code.clone(), b.terminology.clone()),
+    );
+    for (terminology, binding) in other.term_bindings {
+        acc.term_bindings.entry(terminology).or_insert(binding);
+    }
+}
+
+/// Merge one alternative's children into `acc`, matching by `(aqlPath, rmType)`
+/// and relaxing every child either side does not carry to optional.
+fn merge_children(acc: &mut WebTemplateNode, children: Vec<WebTemplateNode>) {
+    let mut matched = vec![false; acc.children.len()];
+    for child in children {
+        let hit = acc
+            .children
+            .iter()
+            .position(|c| c.aql_path == child.aql_path && c.rm_type == child.rm_type);
+        if let Some(index) = hit {
+            if let Some(seen) = matched.get_mut(index) {
+                *seen = true;
+            }
+            if let Some(existing) = acc.children.get_mut(index) {
+                merge_into(existing, child);
+            }
+        } else {
+            let mut child = child;
+            child.min = Some(0);
+            acc.children.push(child);
+        }
+    }
+    for (existing, seen) in acc.children.iter_mut().zip(&matched) {
+        if !*seen {
+            existing.min = Some(0);
+        }
+    }
+}
+
+/// Union the alternatives' coded options per input (matched by suffix + type),
+/// preserving first-seen order and deduplicating by code.
+fn merge_inputs(acc: &mut Vec<WebTemplateInput>, inputs: Vec<WebTemplateInput>) {
+    for input in inputs {
+        let hit = acc
+            .iter()
+            .position(|i| i.suffix == input.suffix && i.input_type == input.input_type);
+        if let Some(existing) = hit.and_then(|index| acc.get_mut(index)) {
+            for option in input.list {
+                if !existing.list.iter().any(|held| held.value == option.value) {
+                    existing.list.push(option);
+                }
+            }
+        } else {
+            acc.push(input);
+        }
+    }
+}
+
+/// Merge the alternatives' existence constraints, keeping one entry per path at
+/// the loosest lower bound (an instance conforming to any one alternative must
+/// not be rejected).
+fn merge_existence(acc: &mut Vec<WebTemplateExistence>, existence: Vec<WebTemplateExistence>) {
+    for entry in existence {
+        let hit = acc.iter().position(|e| e.path == entry.path);
+        if let Some(held) = hit.and_then(|index| acc.get_mut(index)) {
+            held.min = held.min.min(entry.min);
+        } else {
+            acc.push(entry);
+        }
+    }
+}
+
+/// Append the entries of `extra` whose key is not already held by `acc`.
+fn extend_by_key<T, K: PartialEq>(acc: &mut Vec<T>, extra: Vec<T>, key: impl Fn(&T) -> K) {
+    for item in extra {
+        if !acc.iter().any(|held| key(held) == key(&item)) {
+            acc.push(item);
         }
     }
 }
@@ -310,19 +467,9 @@ fn synth_entry(node: &mut WebTemplateNode) {
 
 /// The EVENT-level in-context child (master04 §"Web Template Metadata": every
 /// retained EVENT-family node carries a `time`).
-// NOTE: the EVENT family synthesizes ONLY `time`, deliberately (#606,
-// adjudicated 2026-07-28). The shape oracle is master04's own worked
-// example (`docs/specs/openehr/ITS-REST/docs/simplified_formats/
-// master04-basic_concepts.adoc` §Web Template Metadata: the blood_pressure
-// EVENT carries exactly one inContext child, `time`), and no released
-// example renders an INTERVAL_EVENT's `width`/`math_function` as
-// in-context children — fabricating them would invent a web-template
-// shape the release never shows. Both stay fully ADDRESSABLE on the wire
-// regardless: master05's §INTERVAL_EVENT rows map `/width`,
-// `/math_function` and `|sample_count` as datum paths, realized by the
-// builder's direct-RM-path route (`build.rs`) and exercised by
-// SF-MAP-interval_event. Revisit only if a release publishes an
-// INTERVAL_EVENT web-template rendering with those children.
+// NOTE: master04 §"Web Template Metadata" renders an EVENT with exactly one
+// inContext child, so only `time` is synthesized; an INTERVAL_EVENT's `width`,
+// `math_function` and `|sample_count` stay addressable as master05 datum paths.
 fn synth_event(node: &mut WebTemplateNode) {
     let base = node.aql_path.clone();
     ensure_child(

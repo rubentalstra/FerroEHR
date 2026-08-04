@@ -238,28 +238,11 @@ fn occurrences_of<'a>(
                     })
                 }
                 Some(_) => None,
-                // NOTE: the `false` arm below — a value-less ELEMENT with no
-                // null flavour either — emits nothing. That input is
-                // RM-INVALID and unreachable for data this platform accepted:
-                // RM data_structures §ELEMENT `Inv_null_flavour_indicated`
-                // (`is_null() xor null_flavour = Void`,
-                // `RM/docs/UML/classes/org.openehr.rm.data_structures.element.adoc`)
-                // makes exactly one of `value` / `null_flavour` present, and
-                // the commit choke point runs that invariant unconditionally
-                // (`crate::rm_instance::validate_rm_and_terminology`), so
-                // such a COMPOSITION is rejected 422 before it can be stored
-                // and re-flattened. The flattener therefore does not
-                // second-guess it: there is no datum and no null flavour to
-                // put on the wire, and inventing either would fabricate
-                // clinical meaning.
+                // NOTE: RM data_structures §ELEMENT `Inv_null_flavour_indicated`
+                // makes a value-less ELEMENT with no null flavour RM-invalid.
                 //
-                // A value-less null-flavoured ELEMENT belongs to no particular
-                // alternative of a choice group: the alternatives share one
-                // aqlPath and the datum that would select one is exactly what
-                // is absent. It is emitted once, under the group's first
-                // alternative. NOTE: no openEHR spec governs a null-flavoured
-                // choice — our own design/extension, chosen so the null flavour
-                // is neither duplicated across alternatives nor dropped.
+                // NOTE: no openEHR spec governs a null-flavoured CHOICE — our
+                // own design/extension: emitted once, under the first alternative.
                 None => (element
                     .is_some_and(|e| e.get("null_flavour").is_some_and(|v| !v.is_null()))
                     && (!in_choice || child.alt_json_id.is_none()))
@@ -294,15 +277,13 @@ fn value_step_owners<'a>(
 ///
 /// This is the correct suppression signal for the direct-RM-path fallback: the
 /// web template may constrain an attribute under a node-id-specialized child
-/// whose id is NOT the attribute name (e.g. the CKM ACTION templates model
-/// `ism_transition` as the careflow-state children `ism_transition[at0109,…]`,
-/// id `intended`/`completed`/…), so an id-string check on the attribute name
-/// misses it. Conversely, when the template models the attribute but no such
-/// child matched this instance (e.g. the RM value carries no careflow node id),
-/// the walk emits nothing — and the direct path MUST still emit the generic
-/// spelling so the datum is not lost. Hence: suppress iff a realizing child was
-/// actually emitted; the WT-child realization then wins entirely (it carries
-/// the constrained node identity/name the direct path cannot reconstruct).
+/// whose id is NOT the attribute name, so an id-string check on the attribute
+/// name misses it. Conversely, when the template models the attribute but no
+/// such child matched this instance, the walk emits nothing — and the direct
+/// path MUST still emit the datum so it is not lost. Hence: suppress iff a
+/// realizing child was actually emitted; the WT-child realization then wins
+/// entirely (it carries the constrained node identity/name the direct path
+/// cannot reconstruct).
 fn attr_emitted(node: &WebTemplateNode, out: &SimNode, attr: &str) -> bool {
     node.children.iter().any(|c| {
         out.children.contains_key(&c.id)
@@ -343,6 +324,15 @@ fn emit_direct_rm_paths(node: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
             {
                 emit_ism_transition(ism, out.occurrence_mut("ism_transition", None));
             }
+        }
+        // master05 §ISM_TRANSITION: the three coded rows are addressable on the
+        // transition node itself, so one the template leaves unconstrained is
+        // emitted here rather than lost (the `leaf` closure skips whatever the
+        // template-child walk already realized).
+        "ISM_TRANSITION" => {
+            leaf("current_state", "DV_CODED_TEXT", rm.get("current_state"));
+            leaf("transition", "DV_CODED_TEXT", rm.get("transition"));
+            leaf("careflow_step", "DV_CODED_TEXT", rm.get("careflow_step"));
         }
         "INSTRUCTION" => leaf("narrative", "DV_TEXT", rm.get("narrative")),
         "OBSERVATION" => {
@@ -393,25 +383,17 @@ fn emit_direct_rm_paths(node: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
 /// DV_TEXT list (master05 §ISM_TRANSITION). The mirror of
 /// [`crate::flat::build`]'s `build_ism_transition`.
 ///
-/// NOTE (the #1719 adjudication — WT careflow children never resolve from the
-/// RM side, and the GENERIC spelling is the spec wire form): `ISM_TRANSITION`
-/// inherits `PATHABLE`, not `LOCATABLE`
-/// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.ism_transition.adoc`
-/// §Inherit), so an RM instance carries no `name`/`archetype_node_id` for a
-/// node-id-specialized web-template careflow child (`ism_transition[at0109,…]`,
-/// ids `intended`/`completed`/…) to match on — template-path predicate
-/// matching is `LOCATABLE`-attribute matching by definition (BASE
-/// `master11-paths` §Name-based Predicate). That is not a resolution gap to
-/// engineer around: the Simplified Formats spec's OWN worked example
-/// (`docs/specs/openehr/ITS-REST/docs/simplified_formats/master05-rm_mapping.adoc`
-/// §ISM_TRANSITION) flattens a careflow-stepped transition
-/// (`careflow_step|code: at0006`, terminology `local`) under the GENERIC
-/// `…/ism_transition/…` path, never under a careflow-state child id. So the
-/// RM→FLAT direction always emits this generic spelling — the careflow step
-/// itself travels as the `/careflow_step` datum — and the FLAT→RM direction
-/// accepts it back ([`crate::flat::build`]'s `DirectPath::Ism`). The
-/// careflow-child spelling remains ACCEPTED on input (vendor Web Templates
-/// emit it — prior art, tolerated, never produced).
+/// Reached only for an ACTION whose template constrains no `ism_transition` at
+/// all; a template that constrains one carries the merged transition node
+/// ([`crate::flat::webtemplate`]) and the walk emits the same paths through it.
+///
+/// The spelling is GENERIC in both routes: `ISM_TRANSITION` inherits `PATHABLE`,
+/// not `LOCATABLE` (RM
+/// `UML/classes/org.openehr.rm.composition.ism_transition.adoc` §Inherit), so an
+/// instance carries no `archetype_node_id` a careflow-state path predicate could
+/// match, and master05 §ISM_TRANSITION's own worked example puts a
+/// careflow-stepped transition (`careflow_step|code: at0006`) under
+/// `…/ism_transition/…`, never under a careflow-state child id.
 fn emit_ism_transition(ism: &Value, out: &mut SimNode) {
     for attr in ["current_state", "transition", "careflow_step"] {
         if let Some(cs) = ism.get(attr).filter(|v| !v.is_null()) {

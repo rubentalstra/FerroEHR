@@ -1002,15 +1002,7 @@ impl Validator {
         let raw_id_seg = &segments[identity_idx];
         let trailing = &segments[identity_idx + 1..];
         let identity_is_locatable = !trailing.is_empty() || is_locatable(&first.rm_type);
-        // `ism_transition` is also non-`LOCATABLE` (PATHABLE), but it is left
-        // UNMATCHED deliberately — the WebTemplate builder models its careflow
-        // steps as separate per-state nodes (a documented builder scope gap, see
-        // the occurrences NOTE below), and structurally matching them would check
-        // the instance's single ISM_TRANSITION against every per-state constraint.
-        // Its presence is an RM invariant, so keeping it unmatched here is sound.
-        let structural_match = !identity_is_locatable
-            && !raw_id_seg.predicate.is_empty()
-            && raw_id_seg.attribute != "ism_transition";
+        let structural_match = !identity_is_locatable && !raw_id_seg.predicate.is_empty();
         let structural_id_seg;
         let id_seg: &PathSegment = if structural_match {
             let mut stripped = raw_id_seg.clone();
@@ -1027,17 +1019,12 @@ impl Validator {
         // Occurrences are an *archetype-node* constraint: only checked when the
         // matched node is identified by an archetype-node predicate (at-code /
         // archetype id) on a `LOCATABLE` node that can bear one. Plain RM
-        // structural attributes (`context`, `value`, `action_archetype_id`, …) and
-        // non-`LOCATABLE` nodes (e.g. `EVENT_CONTEXT`, matched structurally above)
-        // are governed by RM cardinality/invariants, not archetype occurrences, so
-        // they are not occurrence-checked here.
-        //
-        // NOTE: `ism_transition` is skipped (the builder models careflow steps as
-        // per-state nodes while an ACTION instance carries one ISM_TRANSITION,
-        // whose presence is an RM invariant); `in_context` nodes are structural.
+        // structural attributes (`context`, `value`, `ism_transition`, …),
+        // non-`LOCATABLE` nodes (`EVENT_CONTEXT`, matched structurally above) and
+        // `in_context` nodes are governed by RM cardinality/invariants, not
+        // archetype occurrences, so they are not occurrence-checked here.
         let occ_applies = identity_is_locatable
             && id_seg.predicate.archetype_node_id.is_some()
-            && id_seg.attribute != "ism_transition"
             && !members.iter().any(|c| c.in_context == Some(true));
         let group_min = members
             .iter()

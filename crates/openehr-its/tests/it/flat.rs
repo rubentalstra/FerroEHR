@@ -536,14 +536,11 @@ fn terse_coded_text_string_is_rejected() {
 
 // ── persistent-Composition context (finding 3) ──────────────────────────────────
 //
-// `COMPOSITION.context` is optional (0..1). A `431|persistent|` Composition
-// idiomatically carries NO Event context (RM ehr
-// `master05-composition_package.adoc` §"Persistent Compositions may optionally
-// have an Event context" — the pre-1.0.4 invariant forbidding it was removed by
-// SPECRM-52). `from_flat` must therefore NOT fabricate a default Event context
-// for a persistent Composition that carried none, while still preserving one the
-// caller explicitly supplied (participations / location / facility / end_time),
-// and while still building the mandatory context for an event Composition.
+// `COMPOSITION.context` is optional (0..1) and a `431|persistent|` Composition
+// idiomatically carries none (RM ehr `master05-composition_package.adoc`
+// §"Persistent Compositions may optionally have an Event context"), so
+// `from_flat` must not fabricate one — while still preserving a context the
+// caller supplied and still building the mandatory one for an event Composition.
 
 const CNF_CORPUS: &str =
     "../../docs/specs/openehr/CNF/tests/platform/robot/_resources/test_data_sets";
@@ -679,12 +676,10 @@ fn event_composition_context_follows_explicit_ctx_input() {
 // ── direct RM-attribute paths the OPT leaves unconstrained ───────────────────
 //
 // master05-rm_mapping.adoc lists RM-level attributes addressable directly on a
-// node regardless of whether the OPT constrains them. The compacted
-// web-template carries no child for the ones the OPT leaves unconstrained (e.g.
-// `ACTION/ism_transition`, `ACTION/time`), so the FLAT builder must build them
-// from their datum sub-tree — not reject them as unknown paths. Oracle: the CNF
-// Robot `minimal_action.en.v1` template + its FLAT instance shape (master05
-// §§ACTION, ISM_TRANSITION and the worked JSON examples).
+// node whether or not the OPT constrains them. The compacted web-template
+// carries no child for an unconstrained one (e.g. `ACTION/time`), so the FLAT
+// builder must build it from its datum sub-tree rather than reject it as an
+// unknown path. Carrier: the CNF Robot `minimal_action.en.v1` template.
 
 fn minimal_action_wt() -> WebTemplate {
     let opt_xml = std::fs::read_to_string(format!(
@@ -772,27 +767,60 @@ fn action_ism_transition_from_flat_builds_supplied_state() {
     );
 }
 
-/// Every ACTION node's first careflow-state ISM_TRANSITION child's
-/// `(node_id, name)`, in web-template pre-order — the node-id-specialized
-/// `ism_transition[at…,…]` constraints the CKM ACTION archetypes carry (ids
-/// `intended`/`completed`/…, NOT a child literally named `ism_transition`).
-/// `None` for an ACTION whose careflow children carry no node id. Positional
-/// (not archetype-keyed) because a template may reuse one ACTION archetype in
-/// several slots (ips.v0 uses `medication.v1` for both medication and
-/// immunization) with per-slot careflow specialization.
+/// Collect every node of `rm_type` at or below `n`, in web-template pre-order.
+fn collect_by_rm_type<'a>(
+    n: &'a openehr_its::flat::webtemplate::WebTemplateNode,
+    rm_type: &str,
+    out: &mut Vec<&'a openehr_its::flat::webtemplate::WebTemplateNode>,
+) {
+    if n.rm_type == rm_type {
+        out.push(n);
+    }
+    for c in &n.children {
+        collect_by_rm_type(c, rm_type, out);
+    }
+}
+
+/// The merged `ism_transition` child of an ACTION node, if the template models
+/// one (master05 §ISM_TRANSITION: one `/ism_transition` node per ACTION, not one
+/// per careflow state).
+fn wt_transition(
+    action: &openehr_its::flat::webtemplate::WebTemplateNode,
+) -> Option<&openehr_its::flat::webtemplate::WebTemplateNode> {
+    action
+        .children
+        .iter()
+        .find(|c| c.rm_type == "ISM_TRANSITION")
+}
+
+/// Every ACTION node's first `careflow_step` option `(code, label)`, in
+/// web-template pre-order — the union the careflow-state alternatives
+/// contribute to the merged transition node's master05 §ISM_TRANSITION
+/// `/careflow_step` row. `None` for an ACTION whose template models no careflow
+/// step. Positional (not archetype-keyed) because a template may reuse one
+/// ACTION archetype in several slots (ips.v0 uses `medication.v1` for both
+/// medication and immunization) with per-slot careflow specialization.
 fn wt_action_careflows(
     n: &openehr_its::flat::webtemplate::WebTemplateNode,
     out: &mut Vec<Option<(String, String)>>,
 ) {
     if n.rm_type == "ACTION" {
         out.push(
-            n.children
-                .iter()
-                .find(|c| c.rm_type == "ISM_TRANSITION" && c.node_id.is_some())
-                .and_then(|c| {
-                    c.node_id
-                        .clone()
-                        .map(|nid| (nid, c.name.clone().unwrap_or_else(|| "Careflow".to_owned())))
+            wt_transition(n)
+                .and_then(|t| {
+                    t.children
+                        .iter()
+                        .find(|c| c.aql_path.ends_with("/careflow_step"))
+                })
+                .and_then(|step| step.inputs.iter().find_map(|i| i.list.first()))
+                .map(|option| {
+                    (
+                        option.value.clone(),
+                        option
+                            .label
+                            .clone()
+                            .unwrap_or_else(|| "Careflow".to_owned()),
+                    )
                 }),
         );
     }
@@ -802,18 +830,16 @@ fn wt_action_careflows(
 }
 
 /// Stamp the i-th composition ACTION's `ism_transition.careflow_step` (document
-/// pre-order, the same order as [`wt_action_careflows`]) with the WT careflow
-/// child's name as a `DV_CODED_TEXT` — the leaf that must survive the round
-/// trip.
+/// pre-order, the same order as [`wt_action_careflows`]) with that ACTION's
+/// modelled careflow option as a `DV_CODED_TEXT` — the leaf that must survive
+/// the round trip.
 ///
 /// It is `careflow_step` and NOT `name`/`archetype_node_id`: `ISM_TRANSITION`
-/// inherits `PATHABLE`, not `LOCATABLE`
-/// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.ism_transition.adoc`
-/// §Inherit), so it declares neither of those attributes and a document
-/// carrying them is not a conformant instance — the strict canonical reader
-/// refuses it. `careflow_step` is the class's own `0..1 DV_CODED_TEXT`
-/// (same file §Attributes), which is exactly the datum the careflow
-/// specialization identifies.
+/// inherits `PATHABLE`, not `LOCATABLE` (RM
+/// `UML/classes/org.openehr.rm.composition.ism_transition.adoc` §Inherit), so it
+/// declares neither attribute and the strict canonical reader refuses a document
+/// carrying them. `careflow_step` is the class's own `0..1 DV_CODED_TEXT` (same
+/// file §Attributes) — exactly the datum a careflow specialization identifies.
 fn stamp_careflow(v: &mut Value, careflows: &[Option<(String, String)>], idx: &mut usize) {
     match v {
         Value::Object(m) => {
@@ -864,17 +890,13 @@ fn dv_leaf_count(v: &Value) -> usize {
     }
 }
 
-/// Regression (benchmark IPS faithfulness): when the web template models
-/// `ACTION.ism_transition` as node-id-specialized careflow-state children
-/// (the CKM ACTION archetypes constrain `ism_transition[at0109,'Intended']` &c.
-/// — ids `intended`/`completed`/… , NOT a child literally named
-/// `ism_transition`) AND the RM value carries the matching careflow node id,
-/// the WT-child realization wins entirely: it is the sole spelling on the wire
-/// and its careflow `name` DV_TEXT survives the round-trip. The master05
-/// direct-RM-path fallback must NOT emit a duplicate generic `.../ism_transition/*`
-/// spelling that then overwrites the WT-child value on rebuild and drops the
-/// name (4 leaves were lost on the CKM IPS). (master05 §§ACTION
-/// `/ism_transition`, ISM_TRANSITION; master04 §Level Removal.)
+/// Regression (benchmark IPS faithfulness): a careflow-stepped
+/// `ACTION.ism_transition` loses no DV leaf across canonical → FLAT → canonical
+/// on the CKM IPS template, whose ACTION archetypes constrain `ism_transition`
+/// once per careflow state. The merged transition node realizes the datum, and
+/// the master05 direct-RM-path fallback must NOT emit a second generic
+/// `.../ism_transition/*` spelling that then overwrites it on rebuild (4 leaves
+/// were lost that way). master05 §§ACTION `/ism_transition`, ISM_TRANSITION.
 #[test]
 fn action_careflow_ism_transition_wins_over_direct_path() {
     let wts = web_templates();
@@ -885,7 +907,7 @@ fn action_careflow_ism_transition_wins_over_direct_path() {
     wt_action_careflows(&wt.tree, &mut careflows);
     assert!(
         careflows.iter().filter(|c| c.is_some()).count() >= 3,
-        "ips.v0 models ism_transition via node-id-specialized careflow children on its ACTIONs"
+        "ips.v0's ACTIONs model a careflow_step option set on their merged ism_transition"
     );
 
     let mut comp = load("ips_canonical.json");
@@ -893,18 +915,78 @@ fn action_careflow_ism_transition_wins_over_direct_path() {
     let before = dv_leaf_count(&comp);
 
     let flat = composition_to_flat(&comp, wt).unwrap();
-    // No DV leaf is lost: for every ACTION whose careflow child resolved the
-    // ism_transition, its `careflow_step` DV_CODED_TEXT survives because the
-    // WT-child build wins (the direct path no longer over-emits nor overwrites
-    // it). At least three of the four IPS ACTIONs resolve, so a shadowing
-    // regression drops >= 3 leaves and trips this equality.
+    // No DV leaf is lost: every stamped `careflow_step` DV_CODED_TEXT survives,
+    // so a shadowing regression on the >= 3 modelled IPS ACTIONs trips this.
     let rebuilt = composition_from_flat(&flat, wt, NOW).unwrap();
     assert_eq!(
         before,
         dv_leaf_count(&rebuilt),
-        "ism_transition careflow names are preserved (WT-child realization wins, not shadowed)"
+        "ism_transition careflow steps are preserved (the merged node realizes them, unshadowed)"
     );
     assert!(is_valid_rm(&rebuilt), "ips_canonical from_flat valid RM");
+}
+
+/// master05 §ISM_TRANSITION maps an ACTION's transition to ONE path family —
+/// `…/ism_transition/current_state|code`, `…/transition|code`,
+/// `…/careflow_step|code` — and its table types `/ism_transition` as a single
+/// `ISM_TRANSITION` (Required). So an ACTION whose archetype constrains
+/// `ism_transition` once per careflow state (`minimal_action.en.v1`: `at0003`
+/// planned, `at0004` completed) serves ONE node, id `ism_transition`, with no
+/// careflow at-code in its `aqlPath` or `nodeId`, whose coded children carry the
+/// union of the states' options.
+#[test]
+fn ism_transition_is_one_merged_node_per_action() {
+    let wt = minimal_action_wt();
+    let mut actions = Vec::new();
+    collect_by_rm_type(&wt.tree, "ACTION", &mut actions);
+    let action = actions.first().expect("the fixture carries an ACTION");
+
+    let transitions: Vec<_> = action
+        .children
+        .iter()
+        .filter(|c| c.rm_type == "ISM_TRANSITION")
+        .collect();
+    assert_eq!(
+        transitions.len(),
+        1,
+        "one transition node per ACTION, not one per careflow state: {:?}",
+        transitions.iter().map(|t| &t.id).collect::<Vec<_>>()
+    );
+    let transition = transitions.first().expect("the single transition node");
+    assert_eq!(transition.id, "ism_transition");
+    assert_eq!(
+        transition.aql_path,
+        format!("{}/ism_transition", action.aql_path)
+    );
+    assert_eq!(
+        transition.node_id, None,
+        "the merged node stands for no single careflow at-code"
+    );
+    // RM `action.adoc`: `ism_transition` is 1..1 — the attribute's occurrences,
+    // not a per-state 1..1.
+    assert_eq!((transition.min, transition.max), (Some(1), 1));
+
+    let options = |suffix: &str| -> Vec<String> {
+        transition
+            .children
+            .iter()
+            .find(|c| c.aql_path.ends_with(suffix))
+            .into_iter()
+            .flat_map(|c| c.inputs.iter())
+            .flat_map(|i| i.list.iter())
+            .map(|option| option.value.clone())
+            .collect()
+    };
+    assert_eq!(
+        options("/current_state"),
+        vec!["526".to_owned(), "532".to_owned()],
+        "the openEHR instruction-state codes of both careflow states, unioned"
+    );
+    assert_eq!(
+        options("/careflow_step"),
+        vec!["at0003".to_owned(), "at0004".to_owned()],
+        "the local careflow-step codes of both states, unioned"
+    );
 }
 
 /// canonical → FLAT → canonical stability for an ACTION `ism_transition`: the
