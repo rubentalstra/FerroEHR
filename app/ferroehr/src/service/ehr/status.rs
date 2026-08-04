@@ -170,7 +170,7 @@ impl FerroEhrService {
     pub(in crate::service) async fn status_mutate(
         &self,
         ehr_id: EhrId,
-        mutate: impl FnOnce(&mut serde_json::Map<String, Value>),
+        mutate: impl FnOnce(&mut EhrStatus) -> Result<(), ServiceError>,
     ) -> Result<crate::versioning::change::Committed, ServiceError> {
         // Resolve the current EHR_STATUS versioned object once and read its
         // body; the resolved `vo_id` threads into `commit_status` so its commit
@@ -196,30 +196,29 @@ impl FerroEhrService {
             .as_ref()
             .map(|m| m.uid.clone())
             .unwrap_or_default();
-        let mut body = current.body;
-        if let Value::Object(map) = &mut body {
-            // The read injects `uid`; drop it so the re-commit carries only the
-            // mutated EHR_STATUS content (the server assigns the new version
-            // id).
-            map.remove("uid");
-            mutate(map);
-        }
+        // The stored fragment decodes ONCE into the typed EHR_STATUS and the
+        // mutation operates on the typed value (#1846 — no Map round trip):
+        // a mutation that cannot produce a legal EHR_STATUS is unrepresentable
+        // (the typed fields) or refused by the closure itself (the
+        // client-supplied `other_details` decode, SM `i_ehr_status.adoc`
+        // §update_other_details).
+        let mut status: EhrStatus = openehr_its::json::from_canonical_value(&current.body)
+            .map_err(|e| {
+                ServiceError::Unprocessable(
+                    crate::service::error::Violation::new("is not a canonical EHR_STATUS")
+                        .with_path("EHR_STATUS")
+                        .with_decode_failure(&e),
+                )
+            })?;
+        // The read injects `uid`; drop it so the re-commit carries only the
+        // mutated EHR_STATUS content (the server assigns the new version id).
+        status.uid = None;
+        mutate(&mut status)?;
         // The SM flag mutators commit a modification of the existing
         // EHR_STATUS: carry the operation's own change type so the commit
         // audit resolves without a client envelope (the `direct()` placeholder
         // is `249|creation|`, which would contradict this update —
         // `versioning::audit::merged_change_type`).
-        // The mutated root is re-typed through the strict canonical reader:
-        // a mutation that broke the EHR_STATUS shape (an `other_details` that
-        // is not an ITEM_STRUCTURE — SM `i_ehr_status.adoc`
-        // §update_other_details) is refused here rather than committed.
-        let status: EhrStatus = openehr_its::json::from_canonical_value(&body).map_err(|e| {
-            ServiceError::Unprocessable(
-                crate::service::error::Violation::new("is not a canonical EHR_STATUS")
-                    .with_path("EHR_STATUS")
-                    .with_decode_failure(&e),
-            )
-        })?;
         let mut version = crate::service::version_update::direct_envelope(status);
         *crate::service::version_update::audit_base_mut(&mut version.commit_audit).change_type =
             crate::service::version_update::change_type_coded(change_type::MODIFICATION);
@@ -672,8 +671,9 @@ impl FerroEhrService {
     /// fails.
     pub async fn set_ehr_queryable(&self, an_ehr_id: EhrId) -> Result<String, SmError> {
         Ok(self
-            .status_mutate(an_ehr_id, |m| {
-                m.insert("is_queryable".to_owned(), Value::Bool(true));
+            .status_mutate(an_ehr_id, |s| {
+                s.is_queryable = true;
+                Ok(())
             })
             .await?
             .version_uid())
@@ -687,8 +687,9 @@ impl FerroEhrService {
     /// fails.
     pub async fn clear_ehr_queryable(&self, an_ehr_id: EhrId) -> Result<String, SmError> {
         Ok(self
-            .status_mutate(an_ehr_id, |m| {
-                m.insert("is_queryable".to_owned(), Value::Bool(false));
+            .status_mutate(an_ehr_id, |s| {
+                s.is_queryable = false;
+                Ok(())
             })
             .await?
             .version_uid())
@@ -703,8 +704,9 @@ impl FerroEhrService {
     /// fails.
     pub async fn set_ehr_modifiable(&self, an_ehr_id: EhrId) -> Result<String, SmError> {
         Ok(self
-            .status_mutate(an_ehr_id, |m| {
-                m.insert("is_modifiable".to_owned(), Value::Bool(true));
+            .status_mutate(an_ehr_id, |s| {
+                s.is_modifiable = true;
+                Ok(())
             })
             .await?
             .version_uid())
@@ -721,8 +723,9 @@ impl FerroEhrService {
         // Committable on the EHR it disables: the write guard scopes to EHR
         // *contents*, never to EHR_STATUS (RM ehr master04 §EHR Active Status).
         Ok(self
-            .status_mutate(an_ehr_id, |m| {
-                m.insert("is_modifiable".to_owned(), Value::Bool(false));
+            .status_mutate(an_ehr_id, |s| {
+                s.is_modifiable = false;
+                Ok(())
             })
             .await?
             .version_uid())
@@ -742,8 +745,20 @@ impl FerroEhrService {
     ) -> Result<String, SmError> {
         // Boxed: the typed EHR_STATUS envelope makes the mutate future large
         // enough to matter on the stack (clippy `large_futures`).
-        Ok(Box::pin(self.status_mutate(an_ehr_id, move |m| {
-            m.insert("other_details".to_owned(), a_details);
+        Ok(Box::pin(self.status_mutate(an_ehr_id, move |s| {
+            // The client-supplied details decode through the strict reader —
+            // a non-ITEM_STRUCTURE refuses here, path-named (the same
+            // judgement the retired post-mutation re-decode made).
+            s.other_details = Some(openehr_its::json::from_canonical_value(&a_details).map_err(
+                |e| {
+                    ServiceError::Unprocessable(
+                        crate::service::error::Violation::new("is not a canonical ITEM_STRUCTURE")
+                            .with_path("EHR_STATUS/other_details")
+                            .with_decode_failure(&e),
+                    )
+                },
+            )?);
+            Ok(())
         }))
         .await?
         .version_uid())
