@@ -75,6 +75,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **A node id carrying the at/id code leader but failing the code grammar is
+  refused (`at0abc`).** AOM2's own code predicate is leader-based, so such a
+  string claims code-hood and must satisfy the code syntax — previously it
+  fell between the code family (whose grammar it fails) and the free-text
+  family (whose leader-freedom it lacks) and no rule caught it.
+
 - **The `OPTIONS /` conformance manifest serves the generated contract DTO,
   and the System API group joins the authorization and audit classifiers.**
   The manifest body is now the emitted `Options` DTO (byte-identical wire; a

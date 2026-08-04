@@ -318,6 +318,18 @@ fn vacmco_children_exceed_cardinality_upper() {
 
 // ── VATID (node-id codes defined in terminology) ────────────────────────────
 
+/// THE MALFORMED MIDDLE CLASS (#1691): a node id carrying the at/id leader
+/// but failing the code-body grammar is a malformed CLAIMED code — AOM2's
+/// own predicate is leader-based (`adl_code_definitions.adoc` §is_at_code),
+/// so `at0abc` is neither a valid code (grammar) nor free text (leader) and
+/// must be refused, never fall between the two families. The valid twin is
+/// every `at0001`-formed id the corpus accepts.
+#[test]
+fn vatid_leader_carrying_malformed_node_id() {
+    let xml = minimal_xml().replace("<node_id>at0001</node_id>", "<node_id>at0abc</node_id>");
+    expect_code(&parse(&xml), "VATID");
+}
+
 #[test]
 fn vatid_undefined_node_id() {
     // Point a node at an at-code that no term definition defines.
