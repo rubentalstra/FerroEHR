@@ -624,14 +624,11 @@ impl FerroEhrService {
         .await?;
         tx.commit().await?;
         // Delete is the only mutation that ends a stored template's lifetime
-        // (uploads are create-only — `store_template`'s `ON CONFLICT DO NOTHING`
-        // never overwrites, and `web_template_for` never caches a negative
-        // result), so this is the single cache-invalidation point. Key on the
-        // identity-canonical form so a case variant of the id is evicted too
-        // (BASE master05 §Composite Identifiers and Case). No openEHR spec
-        // governs the cache; cross-instance eviction (a delete on node A does
-        // not evict node B's in-memory cache) is out of scope for this
-        // single-node optimisation — our own design.
+        // (uploads are create-only), so this is the single cache-invalidation
+        // point. Key on the identity-canonical form so a case variant of the id
+        // is evicted too (BASE master05 §Composite Identifiers and Case). No
+        // openEHR spec governs the cache; cross-instance eviction is out of
+        // scope for this single-node optimisation — our own design.
         self.web_templates
             .invalidate(&crate::templates::identity::canonical_key(&template_id))
             .await;

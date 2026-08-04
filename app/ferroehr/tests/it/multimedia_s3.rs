@@ -33,11 +33,11 @@ use testcontainers::runners::AsyncRunner;
 use testcontainers::{ContainerAsync, GenericImage, ImageExt};
 use uuid::Uuid;
 
-use ferroehr_ext::multimedia::MultimediaEngine;
 use ferroehr::extensions::multimedia::config::MultimediaConfig;
-use ferroehr_ext::multimedia::store::BlobStore;
 use ferroehr::service::FerroEhrService;
 use ferroehr::service::admin::types::ExportSpec;
+use ferroehr_ext::multimedia::MultimediaEngine;
+use ferroehr_ext::multimedia::store::BlobStore;
 
 const BUCKET: &str = "openehr-multimedia";
 /// S3-gateway port `SeaweedFS` listens on.

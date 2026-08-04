@@ -132,12 +132,9 @@ pub(super) fn result_set_json(
         .columns
         .iter()
         .map(|c| {
-            // NOTE (SM `result_set_column.adoc`):
-            // `RESULT_SET_COLUMN.archetype_id [0..1]` is optional and omitted —
-            // the engine's `ColumnMeta` carries name + path only, the generated
-            // `ResultSetColumn` has no slot for it (the OAS declares only
-            // `name` + `path`), and the SM itself flags it "check on whether
-            // needed". The optional cardinality means omitting it is conformant.
+            // NOTE: `RESULT_SET_COLUMN.archetype_id [0..1]` is optional and
+            // omitted — the SM flags it "check on whether needed"
+            // (`result_set_column.adoc`) and the OAS declares only name + path.
             ResultSetColumn {
                 name: c.name.clone(),
                 path: c.path.clone(),

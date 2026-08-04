@@ -406,13 +406,11 @@ async fn composition_delete_emits_delete_record() {
 async fn composition_tags_update_emits_update_record() {
     // A tag mutation IS an audited state change. The openEHR specs are silent
     // on any audit obligation for tags — RM ehr `master04-ehr_package.adoc`
-    // §Tags puts them outside change control outright ("they do not cause
-    // re-versioning of the content"), so no CONTRIBUTION and no AUDIT_DETAILS
-    // is the spec-correct behaviour, and no released text substitutes anything
-    // in their place. Emitting an IHE ATNA record instead is OUR OWN DESIGN
-    // (no openEHR spec governs this): a tag carries clinical meaning and a
-    // mutation with no trail at all would be a medico-legal blind spot. This
-    // pins that the trail exists.
+    // §Tags puts them outside change control ("they do not cause re-versioning
+    // of the content"), so no CONTRIBUTION and no AUDIT_DETAILS is
+    // spec-correct. Emitting an IHE ATNA record instead is OUR OWN DESIGN (no
+    // openEHR spec governs this): a tag carries clinical meaning and a mutation
+    // with no trail would be a medico-legal blind spot.
     let (socket, sender) = audit_capture(true).await;
     let (_pg, app, uid) = audit_app_with_composition(sender).await;
     let vo = uid.split("::").next().unwrap().to_owned();

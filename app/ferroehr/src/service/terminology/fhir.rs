@@ -11,6 +11,11 @@
 //! Design: our own — the client + the HAPI-FHIR/Snowstorm
 //! server it points at. SM contract:
 //! `docs/specs/openehr/SM/docs/UML/classes/i_terminology_service.adoc`.
+//! This module owns the HTTP client, the cache, and the SM error mapping;
+//! the FHIR resources themselves are decoded by
+//! [`ferroehr_ext::fhir::terminology`] over the typed `fhir-model` R4B model
+//! (the `fhir` cargo feature — a slim build refuses a configured provider at
+//! boot).
 //!
 //! # SM call → FHIR operation mapping
 //!
@@ -54,21 +59,13 @@
 //! [`config::ExternalTerminologyConfig::fail_on_error`](super::config::ExternalTerminologyConfig::fail_on_error)), never to the raw
 //! provider.
 
-#![expect(
-    clippy::disallowed_types,
-    reason = "owner-approved 2026-08-03 (#1694 family 6): FHIR resources are an external standard \
-              with no RM type (typed-FHIR evaluation tracked separately)"
-)]
-
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::time::Duration;
 
-use serde::Deserialize;
-
 use crate::service::status::{CallStatusType, SmError};
 use crate::service::terminology::types::{
-    DefinedTerm, TermCode, TermEntry, TermRelationship, TerminologyDescription, TerminologyExtract,
+    DefinedTerm, TermEntry, TermRelationship, TerminologyDescription, TerminologyExtract,
     TerminologyRelation,
 };
 
@@ -95,10 +92,10 @@ pub struct FhirTerminologyProvider {
     /// The configured provider name (for error/log context).
     name: String,
     /// TTL-bounded response cache keyed by the full operation URL (`None`
-    /// when disabled). Caches the decoded JSON of successful responses —
-    /// including the 404 "unknown resource" outcome — so a validation burst
-    /// over the same codes costs one remote round trip per TTL window.
-    cache: Option<moka::future::Cache<String, Option<serde_json::Value>>>,
+    /// when disabled). Caches the DECODED response — including the 404
+    /// "unknown resource" outcome — so a validation burst over the same codes
+    /// costs one remote round trip per TTL window.
+    cache: Option<moka::future::Cache<String, Option<DecodedResponse>>>,
     /// The `OAuth2` client-credentials token source whose bearer credential
     /// authenticates every request, when the provider configures one. `None` =
     /// unauthenticated requests.
@@ -165,21 +162,16 @@ impl FhirTerminologyProvider {
         &self.name
     }
 
-    /// GET a FHIR operation with query params, returning the parsed body.
+    /// GET a FHIR operation with query params, returning the decoded response.
     ///
     /// `404`/`410` → `Ok(None)` (the resource is unknown → a precondition the
     /// caller maps to `VersionedObjectDoesNotExist`).
-    ///
-    /// # Errors
-    ///
-    /// [`SmError::exception`] on an invalid operation URL, a transport fault
-    /// (connect/read timeout), any other non-2xx status, or a body that does
-    /// not parse as `T`.
-    pub async fn get<T: for<'de> Deserialize<'de>>(
+    async fn fetch(
         &self,
         op_path: &str,
         query: &[(&str, &str)],
-    ) -> Result<Option<T>, SmError> {
+        kind: ResponseKind,
+    ) -> Result<Option<DecodedResponse>, SmError> {
         let mut url = reqwest::Url::parse(&format!("{}{op_path}", self.base))
             .map_err(|e| self.provider_fault(op_path, &format_args!("invalid url: {e}")))?;
         {
@@ -191,12 +183,7 @@ impl FhirTerminologyProvider {
         if let Some(cache) = &self.cache
             && let Some(hit) = cache.get(url.as_str()).await
         {
-            return match hit {
-                Some(body) => serde_json::from_value(body).map(Some).map_err(|e| {
-                    self.provider_fault(op_path, &format_args!("cached response decode: {e}"))
-                }),
-                None => Ok(None),
-            };
+            return Ok(hit);
         }
         let cache_key = url.as_str().to_owned();
         let mut request = self
@@ -226,15 +213,32 @@ impl FhirTerminologyProvider {
                 &format_args!("upstream returned HTTP {}", status.as_u16()),
             ));
         }
-        let body = response.json::<serde_json::Value>().await.map_err(|e| {
+        let body = response
+            .bytes()
+            .await
+            .map_err(|e| self.transport_error(op_path, &e))?;
+        let decoded = decode(kind, &body).map_err(|e| {
             self.provider_fault(op_path, &format_args!("malformed FHIR response: {e}"))
         })?;
         if let Some(cache) = &self.cache {
-            cache.insert(cache_key, Some(body.clone())).await;
+            cache.insert(cache_key, Some(decoded.clone())).await;
         }
-        serde_json::from_value(body).map(Some).map_err(|e| {
-            self.provider_fault(op_path, &format_args!("malformed FHIR response: {e}"))
-        })
+        Ok(Some(decoded))
+    }
+
+    /// The named scalar values of a `Parameters` response.
+    async fn parameters(
+        &self,
+        op_path: &str,
+        query: &[(&str, &str)],
+    ) -> Result<Option<ParameterValues>, SmError> {
+        match self.fetch(op_path, query, ResponseKind::Parameters).await? {
+            None => Ok(None),
+            Some(DecodedResponse::Parameters(values)) => Ok(Some(values)),
+            Some(DecodedResponse::Expansion(_)) => {
+                Err(self.provider_fault(op_path, &format_args!("expected a Parameters response")))
+            }
+        }
     }
 
     /// A classified transport-fault exception (timeout / connect / other).
@@ -286,23 +290,29 @@ impl FhirTerminologyProvider {
         )
     }
 
-    /// `ValueSet/$expand` → an [`FhirValueSet`], or `None` when the value set
-    /// is unknown (`404`). Forwards `at_date` as the FHIR `date` parameter
-    ///.
-    ///
-    /// # Errors
-    ///
-    /// As [`FhirTerminologyProvider::get`].
+    /// `ValueSet/$expand` → the decoded [`Expansion`], or `None` when the
+    /// value set is unknown (`404`). Forwards `at_date` as the FHIR `date`
+    /// parameter.
     async fn expand(
         &self,
         value_set_url: &str,
         at_date: Option<&str>,
-    ) -> Result<Option<FhirValueSet>, SmError> {
+    ) -> Result<Option<Expansion>, SmError> {
         let mut query = vec![("url", value_set_url)];
         if let Some(date) = at_date {
             query.push(("date", date));
         }
-        self.get("/ValueSet/$expand", &query).await
+        match self
+            .fetch("/ValueSet/$expand", &query, ResponseKind::ValueSet)
+            .await?
+        {
+            None => Ok(None),
+            Some(DecodedResponse::Expansion(expansion)) => Ok(Some(expansion)),
+            Some(DecodedResponse::Parameters(_)) => Err(self.provider_fault(
+                "/ValueSet/$expand",
+                &format_args!("expected a ValueSet response"),
+            )),
+        }
     }
 
     /// `value_set_validate` → FHIR `ValueSet/$validate-code` (or `$expand` +
@@ -330,11 +340,11 @@ impl FhirTerminologyProvider {
         }
         match self.operation {
             FhirOperation::Expand => {
-                let vs = self
+                let expansion = self
                     .expand(value_set_id, at_date.as_deref())
                     .await?
                     .ok_or_else(|| self.not_found("value set", value_set_id))?;
-                Ok(vs.contains_code(candidate_code))
+                Ok(expansion.contains_code(candidate_code))
             }
             FhirOperation::ValidateCode => {
                 let mut query = vec![
@@ -345,11 +355,11 @@ impl FhirTerminologyProvider {
                 if let Some(date) = at_date.as_deref() {
                     query.push(("date", date));
                 }
-                let params: FhirParameters = self
-                    .get("/ValueSet/$validate-code", &query)
+                let values = self
+                    .parameters("/ValueSet/$validate-code", &query)
                     .await?
                     .ok_or_else(|| self.not_found("value set", value_set_id))?;
-                params.result().ok_or_else(|| {
+                values.booleans.get("result").copied().ok_or_else(|| {
                     SmError::exception(format!(
                         "terminology provider '{}': $validate-code response had no 'result'",
                         self.name
@@ -373,11 +383,11 @@ impl FhirTerminologyProvider {
         _terminology_id: &str,
         value_set_code: &str,
     ) -> Result<TerminologyExtract, SmError> {
-        let vs = self
+        let expansion = self
             .expand(value_set_code, None)
             .await?
             .ok_or_else(|| self.not_found("value set", value_set_code))?;
-        Ok(vs.into_extract(value_set_code))
+        Ok(expansion.into_extract(value_set_code))
     }
 
     /// `subsumes` → FHIR `CodeSystem/$subsumes` (`codeA` = `ref_code`,
@@ -395,8 +405,8 @@ impl FhirTerminologyProvider {
         ref_code: &str,
         candidate_child_code: &str,
     ) -> Result<bool, SmError> {
-        let params: FhirParameters = self
-            .get(
+        let values = self
+            .parameters(
                 "/CodeSystem/$subsumes",
                 &[
                     ("system", terminology_id),
@@ -406,7 +416,7 @@ impl FhirTerminologyProvider {
             )
             .await?
             .ok_or_else(|| self.not_found("terminology", terminology_id))?;
-        let outcome = params.code("outcome").ok_or_else(|| {
+        let outcome = values.codes.get("outcome").ok_or_else(|| {
             SmError::exception(format!(
                 "terminology provider '{}': $subsumes response had no 'outcome'",
                 self.name
@@ -433,8 +443,10 @@ impl FhirTerminologyProvider {
         if let Some(date) = at_date.as_deref() {
             query.push(("date", date));
         }
-        let found: Option<FhirParameters> = self.get("/CodeSystem/$lookup", &query).await?;
-        Ok(found.is_some())
+        Ok(self
+            .parameters("/CodeSystem/$lookup", &query)
+            .await?
+            .is_some())
     }
 
     /// `get_term` → FHIR `CodeSystem/$lookup`, mapped to a single-term
@@ -463,11 +475,15 @@ impl FhirTerminologyProvider {
         if let Some(date) = at_date.as_deref() {
             query.push(("date", date));
         }
-        let params: FhirParameters = self
-            .get("/CodeSystem/$lookup", &query)
+        let values = self
+            .parameters("/CodeSystem/$lookup", &query)
             .await?
             .ok_or_else(|| self.not_found("term", code))?;
-        let text = params.string("display").unwrap_or_else(|| code.to_owned());
+        let text = values
+            .strings
+            .get("display")
+            .cloned()
+            .unwrap_or_else(|| code.to_owned());
         let mut terms = BTreeMap::new();
         terms.insert(
             code.to_owned(),
@@ -526,100 +542,70 @@ impl FhirTerminologyProvider {
     }
 }
 
-// ─── the FHIR R4B wire subset (only what these operations read) ───────────────
+// ─── the decoded response the cache holds ─────────────────────────────────────
 
-/// A FHIR `Parameters` resource (the `$validate-code`/`$subsumes`/`$lookup`
-/// response envelope) — only the fields these operations read.
-#[derive(Debug, Clone, Deserialize)]
-struct FhirParameters {
-    #[serde(default)]
-    parameter: Vec<FhirParameter>,
+/// Which FHIR resource an operation answers with.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ResponseKind {
+    /// `$validate-code` / `$subsumes` / `$lookup`.
+    Parameters,
+    /// `$expand`.
+    ValueSet,
 }
 
-/// One `Parameters.parameter` entry (only the value kinds we consume).
-#[derive(Debug, Clone, Deserialize)]
-struct FhirParameter {
-    name: String,
-    #[serde(rename = "valueBoolean")]
-    value_boolean: Option<bool>,
-    #[serde(rename = "valueString")]
-    value_string: Option<String>,
-    #[serde(rename = "valueCode")]
-    value_code: Option<String>,
+/// A decoded FHIR terminology response, reduced to what the SM calls read.
+/// The cache is typed on this, never on raw JSON.
+#[derive(Debug, Clone)]
+#[cfg_attr(
+    not(feature = "fhir"),
+    allow(
+        dead_code,
+        reason = "a slim build decodes no FHIR response: the router refuses a configured \
+                  provider at boot"
+    )
+)]
+enum DecodedResponse {
+    /// The named scalar values of a `Parameters` response.
+    Parameters(ParameterValues),
+    /// The membership + hierarchy of a `ValueSet` expansion.
+    Expansion(Expansion),
 }
 
-impl FhirParameters {
-    /// The `result` boolean of a `$validate-code` response.
-    fn result(&self) -> Option<bool> {
-        self.parameter
-            .iter()
-            .find(|p| p.name == "result")
-            .and_then(|p| p.value_boolean)
-    }
-
-    /// A named `valueCode` parameter (e.g. `$subsumes` `outcome`).
-    fn code(&self, name: &str) -> Option<&str> {
-        self.parameter
-            .iter()
-            .find(|p| p.name == name)
-            .and_then(|p| p.value_code.as_deref())
-    }
-
-    /// A named `valueString` parameter (e.g. `$lookup` `display`).
-    fn string(&self, name: &str) -> Option<String> {
-        self.parameter
-            .iter()
-            .find(|p| p.name == name)
-            .and_then(|p| p.value_string.clone())
-    }
+/// The named scalar values a `Parameters` response carries.
+#[derive(Debug, Clone, Default)]
+struct ParameterValues {
+    /// `valueBoolean` parameters (`$validate-code` `result`).
+    booleans: BTreeMap<String, bool>,
+    /// `valueCode` parameters (`$subsumes` `outcome`).
+    codes: BTreeMap<String, String>,
+    /// `valueString` parameters (`$lookup` `display`).
+    strings: BTreeMap<String, String>,
 }
 
-/// A FHIR `ValueSet` resource with an expansion — only the expansion members.
-#[derive(Debug, Clone, Deserialize)]
-struct FhirValueSet {
-    expansion: Option<FhirExpansion>,
+/// A `$expand` expansion reduced to the extract's membership + hierarchy.
+#[derive(Debug, Clone, Default)]
+struct Expansion {
+    /// Every member with a code, flattened (the membership view).
+    terms: BTreeMap<String, TermEntry>,
+    /// One `Term_relationship` per member that nests children.
+    relationships: Vec<TermRelationship>,
 }
 
-/// `ValueSet.expansion`.
-#[derive(Debug, Clone, Deserialize)]
-struct FhirExpansion {
-    #[serde(default)]
-    contains: Vec<FhirContains>,
-}
-
-/// `ValueSet.expansion.contains` (hierarchical: may nest further members).
-#[derive(Debug, Clone, Deserialize)]
-struct FhirContains {
-    code: Option<String>,
-    display: Option<String>,
-    #[serde(default)]
-    contains: Vec<FhirContains>,
-}
-
-impl FhirValueSet {
+impl Expansion {
     /// Whether `code` appears anywhere in the (possibly hierarchical)
     /// expansion.
     fn contains_code(&self, code: &str) -> bool {
-        self.expansion
-            .as_ref()
-            .is_some_and(|e| e.contains.iter().any(|c| c.contains_code(code)))
+        self.terms.contains_key(code)
     }
 
-    /// Map the expansion into a [`TerminologyExtract`]: a flat `terms` map
+    /// Map the expansion into a [`TerminologyExtract`]: the flat `terms` map
     /// keyed by code (the membership view) plus, when the expansion nests
     /// members, the parent→child tree preserved as `relationships`.
     fn into_extract(self, terminology_id: &str) -> TerminologyExtract {
-        let mut terms = BTreeMap::new();
-        let mut relationships = Vec::new();
-        if let Some(expansion) = self.expansion {
-            for c in &expansion.contains {
-                c.collect(&mut terms, &mut relationships);
-            }
-        }
         // The `child` relation is defined by the FHIR concept-property URI
         // (an `external_code` relation; `terminology_relation.adoc`
         // `Inv_valid_definition`), present only when a hierarchy was emitted.
-        let relations = (!relationships.is_empty()).then(|| {
+        let relations = (!self.relationships.is_empty()).then(|| {
             let mut m = BTreeMap::new();
             m.insert(
                 CHILD_RELATION.to_owned(),
@@ -630,95 +616,144 @@ impl FhirValueSet {
         TerminologyExtract {
             terminology_id: terminology_id.to_owned(),
             terminology_version: None,
-            terms: if terms.is_empty() { None } else { Some(terms) },
-            relationships: if relationships.is_empty() {
+            terms: if self.terms.is_empty() {
                 None
             } else {
-                Some(relationships)
+                Some(self.terms)
+            },
+            relationships: if self.relationships.is_empty() {
+                None
+            } else {
+                Some(self.relationships)
             },
             relations,
         }
     }
 }
 
-impl FhirContains {
-    /// Whether `code` is this member or any descendant.
-    fn contains_code(&self, code: &str) -> bool {
-        self.code.as_deref() == Some(code) || self.contains.iter().any(|c| c.contains_code(code))
-    }
-
-    /// Collect this member (and its descendants) into the flat `terms` map,
-    /// and record a `Term_relationship` from this member to each direct child
-    /// so the `$expand` hierarchy is not lost.
-    fn collect(&self, out: &mut BTreeMap<String, TermEntry>, rels: &mut Vec<TermRelationship>) {
-        if let Some(code) = &self.code {
-            let entry = match &self.display {
-                Some(text) => TermEntry::Defined(DefinedTerm {
-                    code: code.clone(),
-                    text: text.clone(),
-                    language: None,
-                    is_preferred_term: None,
-                }),
-                None => TermEntry::Bare(TermCode { code: code.clone() }),
-            };
-            out.insert(code.clone(), entry);
-
-            let child_codes: Vec<String> = self
-                .contains
-                .iter()
-                .filter_map(|c| c.code.clone())
-                .collect();
-            if !child_codes.is_empty() {
-                rels.push(TermRelationship {
-                    origin_code: code.clone(),
-                    relation_name: CHILD_RELATION.to_owned(),
-                    target_codes: Some(child_codes),
-                });
-            }
+/// Decode a FHIR terminology response body into the reduced form the service
+/// consumes, via the typed R4B model in the extension crate.
+#[cfg(feature = "fhir")]
+fn decode(kind: ResponseKind, body: &[u8]) -> Result<DecodedResponse, String> {
+    match kind {
+        ResponseKind::Parameters => {
+            let view = ferroehr_ext::fhir::terminology::decode_parameters(body)
+                .map_err(|e| e.to_string())?;
+            Ok(DecodedResponse::Parameters(ParameterValues {
+                booleans: view.booleans,
+                codes: view.codes,
+                strings: view.strings,
+            }))
         }
-        for child in &self.contains {
-            child.collect(out, rels);
+        ResponseKind::ValueSet => {
+            let members = ferroehr_ext::fhir::terminology::decode_expansion(body)
+                .map_err(|e| e.to_string())?;
+            let mut expansion = Expansion::default();
+            for member in &members {
+                collect(member, &mut expansion);
+            }
+            Ok(DecodedResponse::Expansion(expansion))
         }
     }
 }
 
+/// Collect one expansion member (and its descendants) into the flat `terms`
+/// map, recording a `Term_relationship` from the member to each direct child
+/// so the `$expand` hierarchy is not lost.
+#[cfg(feature = "fhir")]
+fn collect(member: &ferroehr_ext::fhir::terminology::ExpansionMember, out: &mut Expansion) {
+    use crate::service::terminology::types::TermCode;
+
+    if let Some(code) = &member.code {
+        let entry = match &member.display {
+            Some(text) => TermEntry::Defined(DefinedTerm {
+                code: code.clone(),
+                text: text.clone(),
+                language: None,
+                is_preferred_term: None,
+            }),
+            None => TermEntry::Bare(TermCode { code: code.clone() }),
+        };
+        out.terms.insert(code.clone(), entry);
+
+        let child_codes: Vec<String> = member
+            .children
+            .iter()
+            .filter_map(|c| c.code.clone())
+            .collect();
+        if !child_codes.is_empty() {
+            out.relationships.push(TermRelationship {
+                origin_code: code.clone(),
+                relation_name: CHILD_RELATION.to_owned(),
+                target_codes: Some(child_codes),
+            });
+        }
+    }
+    for child in &member.children {
+        collect(child, out);
+    }
+}
+
+/// A slim build decodes no FHIR responses. Unreachable:
+/// [`FhirTerminologyProvider::new`] refuses a configured provider at boot.
+#[cfg(not(feature = "fhir"))]
+fn decode(_kind: ResponseKind, _body: &[u8]) -> Result<DecodedResponse, String> {
+    Err("this binary was built without the `fhir` cargo feature".to_owned())
+}
+
 #[cfg(test)]
+#[cfg(feature = "fhir")]
 mod tests {
     use super::*;
 
-    fn parse_params(json: &str) -> FhirParameters {
-        serde_json::from_str(json).expect("parse Parameters")
+    fn parameters(json: &str) -> ParameterValues {
+        match decode(ResponseKind::Parameters, json.as_bytes()).expect("decode Parameters") {
+            DecodedResponse::Parameters(values) => values,
+            DecodedResponse::Expansion(_) => panic!("expected Parameters"),
+        }
     }
+
+    fn expansion(json: &str) -> Expansion {
+        match decode(ResponseKind::ValueSet, json.as_bytes()).expect("decode ValueSet") {
+            DecodedResponse::Expansion(expansion) => expansion,
+            DecodedResponse::Parameters(_) => panic!("expected ValueSet"),
+        }
+    }
+
+    /// The FHIR-required `ValueSet` members every `$expand` response carries
+    /// (`ValueSet.status` and `ValueSet.expansion.timestamp` are both 1..1).
+    const VS_HEAD: &str = r#""resourceType":"ValueSet","status":"active""#;
+    /// The FHIR-required `ValueSet.expansion.timestamp` (1..1).
+    const EXPANSION_HEAD: &str = r#""timestamp":"2026-08-04T00:00:00Z""#;
 
     #[test]
     fn validate_code_result_extracted() {
-        let p = parse_params(
+        let p = parameters(
             r#"{"resourceType":"Parameters","parameter":[
                 {"name":"result","valueBoolean":true},
                 {"name":"display","valueString":"Buccal"}]}"#,
         );
-        assert_eq!(p.result(), Some(true));
-        assert_eq!(p.string("display").as_deref(), Some("Buccal"));
+        assert_eq!(p.booleans.get("result").copied(), Some(true));
+        assert_eq!(p.strings.get("display").map(String::as_str), Some("Buccal"));
     }
 
     #[test]
     fn subsumes_outcome_extracted() {
-        let p = parse_params(
+        let p = parameters(
             r#"{"resourceType":"Parameters","parameter":[
                 {"name":"outcome","valueCode":"subsumes"}]}"#,
         );
-        assert_eq!(p.code("outcome"), Some("subsumes"));
+        assert_eq!(p.codes.get("outcome").map(String::as_str), Some("subsumes"));
     }
 
     #[test]
     fn expansion_membership_and_flattening() {
-        let vs: FhirValueSet = serde_json::from_str(
-            r#"{"resourceType":"ValueSet","expansion":{"contains":[
-                {"system":"s","code":"B","display":"Buccal"},
-                {"system":"s","code":"L","contains":[
-                    {"system":"s","code":"O","display":"Occlusal"}]}]}}"#,
-        )
-        .expect("parse ValueSet");
+        let vs = expansion(&format!(
+            r#"{{{VS_HEAD},"expansion":{{{EXPANSION_HEAD},"contains":[
+                {{"system":"s","code":"B","display":"Buccal"}},
+                {{"system":"s","code":"L","contains":[
+                    {{"system":"s","code":"O","display":"Occlusal"}}]}}]}}}}"#
+        ));
         assert!(vs.contains_code("B"));
         assert!(vs.contains_code("O")); // nested
         assert!(!vs.contains_code("Z"));
@@ -734,12 +769,11 @@ mod tests {
         // The parent→child `contains` tree survives as
         // relationships, with the `child` relation defined by its FHIR
         // property URI.
-        let vs: FhirValueSet = serde_json::from_str(
-            r#"{"resourceType":"ValueSet","expansion":{"contains":[
-                {"system":"s","code":"L","display":"Lower","contains":[
-                    {"system":"s","code":"O","display":"Occlusal"}]}]}}"#,
-        )
-        .expect("parse ValueSet");
+        let vs = expansion(&format!(
+            r#"{{{VS_HEAD},"expansion":{{{EXPANSION_HEAD},"contains":[
+                {{"system":"s","code":"L","display":"Lower","contains":[
+                    {{"system":"s","code":"O","display":"Occlusal"}}]}}]}}}}"#
+        ));
         let ext = vs.into_extract("http://example/vs/surface");
         let rels = ext.relationships.expect("relationships");
         assert_eq!(rels.len(), 1);
@@ -754,16 +788,28 @@ mod tests {
 
     #[test]
     fn flat_expansion_has_no_relationships() {
-        let vs: FhirValueSet = serde_json::from_str(
-            r#"{"resourceType":"ValueSet","expansion":{"contains":[
-                {"system":"s","code":"A","display":"Alpha"},
-                {"system":"s","code":"B","display":"Beta"}]}}"#,
-        )
-        .expect("parse ValueSet");
+        let vs = expansion(&format!(
+            r#"{{{VS_HEAD},"expansion":{{{EXPANSION_HEAD},"contains":[
+                {{"system":"s","code":"A","display":"Alpha"}},
+                {{"system":"s","code":"B","display":"Beta"}}]}}}}"#
+        ));
         let ext = vs.into_extract("http://example/vs/flat");
         assert_eq!(ext.terms.expect("terms").len(), 2);
         assert!(ext.relationships.is_none());
         assert!(ext.relations.is_none());
+    }
+
+    #[test]
+    fn a_response_that_is_not_a_valid_r4b_resource_is_refused() {
+        // `ValueSet.status` is 1..1 in R4B; the typed reader refuses the
+        // response rather than reading it partially.
+        assert!(
+            decode(
+                ResponseKind::ValueSet,
+                br#"{"resourceType":"ValueSet","expansion":{"contains":[]}}"#
+            )
+            .is_err()
+        );
     }
 
     #[test]

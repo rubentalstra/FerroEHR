@@ -255,13 +255,11 @@ impl AuditInput {
                     .unwrap_or_else(|| dv_text(default_description)),
             ),
             committer: base.committer.clone(),
-            // `UPDATE_VERSION.commit_audit` is polymorphic on the released
-            // wire (`UpdateAudit.yaml` carries a `discriminator.mapping` to
-            // `UPDATE_ATTESTATION`), which is the RM's own pair: "the
-            // committing party … `AUDIT_DETAILS` … or its subtype
-            // `ATTESTATION`" (RM common master06 §Committal and Audits). The
-            // `ATTESTATION`-declared attributes are carried through when the
-            // caller committed that form; the shared
+            // `UPDATE_VERSION.commit_audit` is polymorphic on the released wire
+            // (`UpdateAudit.yaml` carries a `discriminator.mapping` to
+            // `UPDATE_ATTESTATION`), which is the RM's own pair: "the committing
+            // party … `AUDIT_DETAILS` … or its subtype `ATTESTATION`" (RM common
+            // master06 §Committal and Audits). The shared
             // [`crate::versioning::attestation::AttestationInput`] decoder is
             // the one place the subtype's invariants are evaluated.
             attestation: match update {

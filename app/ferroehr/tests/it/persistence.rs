@@ -42,14 +42,10 @@ async fn migrations_apply_cleanly_and_idempotently() {
         .expect("ehr bookkeeping");
     // Single squashed baseline per schema, plus one file per own-extension
     // table set (pre-production rule: schema changes edit the baseline
-    // directly — ALTER-style additions fold in; the optimization folds brought
-    // context_start, the case-insensitive TEMPLATE_ID unique, and
-    // ext.openehr_timestamp into the baselines and removed the speculative
-    // GIN + magnitude indexes). ext: 0001_openehr_functions (functions incl.
-    // openehr_timestamp + roles + grants) + 0002_tenant_context. ehr:
-    // 0001_baseline (all core tables) + 0002_event_outbox +
-    // 0003_event_subscription + 0004_multitenancy + 0005_fhir_mapping +
-    // 0006_fhir_outbound_cursor.
+    // directly). ext: 0001_openehr_functions (functions incl. openehr_timestamp
+    // + roles + grants) + 0002_tenant_context. ehr: 0001_baseline (all core
+    // tables) + 0002_event_outbox + 0003_event_subscription +
+    // 0004_multitenancy + 0005_fhir_mapping + 0006_fhir_outbound_cursor.
     assert_eq!((applied_ext, applied_ehr), (2, 6));
 
     let tables: Vec<String> = sqlx::query_scalar(

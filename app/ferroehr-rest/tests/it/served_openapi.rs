@@ -671,7 +671,7 @@ async fn demographic_operations_are_fully_documented() {
     // `ObjectRefOfHierObjectId` schema titles, `namespace: local`,
     // `type: SYSTEM` (vendored ITS-REST OAS
     // `crates/openehr-its/vendor/rest-oas/demographic-codegen.openapi.yaml`,
-    // `components.schemas.VersionedParty.example`; register AMB-69), not a
+    // `components.schemas.VersionedParty.example`), not a
     // PARTY_REF and not a demographic-namespaced self-reference.
     let container_200 = &doc["paths"][&versioned[0]]["get"]["responses"]["200"];
     // The example sits in the media-typed `content` block, or bare on the

@@ -139,19 +139,13 @@ pub fn AppShell() -> impl IntoView {
     );
 
     // The chrome (and the routed <Outlet/>) is created exactly ONCE, outside
-    // any Suspend closure. The session gate below renders ONLY the redirect
-    // decision. Rationale (found live 2026-07-18, the E2E console gate): a
-    // Suspend closure re-runs on every notification of the resources it
-    // awaits, and re-creating the Outlet re-creates every resource the
-    // routed page owns — the server and client can re-run a DIFFERENT number
-    // of times, so their resource ids diverge and hydration reads the wrong
-    // serialized slots ("expected a text node" crashes). Identity-dependent
-    // fragments resolve the session in their own small, resource-free
-    // sections instead. The chrome is a COMPONENT (not a pre-built view
-    // value): component bodies run lazily at render, inside the
-    // ToasterProvider's context scope — an eagerly-built view would be
-    // created before the provider exists and pages would panic on
-    // `ToasterInjection::expect_context` (also found live 2026-07-18).
+    // any Suspend closure; the session gate below renders ONLY the redirect
+    // decision. A Suspend closure re-runs on every notification of the
+    // resources it awaits, and re-creating the Outlet re-creates every resource
+    // the routed page owns, so server and client resource ids diverge and
+    // hydration reads the wrong serialized slots. The chrome is a COMPONENT,
+    // not a pre-built view value: component bodies run lazily at render, inside
+    // the ToasterProvider's context scope.
     view! {
         <thaw::ToasterProvider>
             <Suspense fallback=|| ()>
@@ -397,15 +391,12 @@ fn authed_shell(
             </Suspense>
         }
     };
-    // Popover adjudication: the user menu STAYS a thaw widget — it needs
-    // click-outside dismissal and anchored positioning, and it only ever opens
-    // after a click, i.e. after hydration, so thaw's runtime-injected CSS is
-    // off the pre-hydration paint path this module's doc warns about. What was
-    // wrong was only its chrome: the surface drew from thaw's stock Fluent
-    // neutrals, matching no other panel. `style/tailwind.css` now restates
+    // The user menu stays a thaw widget: it needs click-outside dismissal and
+    // anchored positioning, and it only opens after a click — i.e. after
+    // hydration — so thaw's runtime-injected CSS is off the pre-hydration paint
+    // path this module's doc warns about. `style/tailwind.css` restates
     // `.thaw-popover-surface` in the design tokens (raised background, edge
-    // hairline, card radius + shadow) for every popover at once, and the
-    // content below uses the same ink tokens as the rest of the kit.
+    // hairline, card radius + shadow) so every popover matches the kit.
     let user_menu = view! {
         <thaw::Popover trigger_type=thaw::PopoverTriggerType::Click>
             <PopoverTrigger slot>

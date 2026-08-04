@@ -1420,10 +1420,10 @@ async fn ehr_wide_tag_listing_guards_the_ehr() {
 
 /// The remaining group-8 tag disciplines in one battery: `[]` clear-all (the
 /// released sentence), `Prefer: return=identifier` resolving to the applied
-/// minimal default (an `ITEM_TAG` has no uid — AMB-92), delete-by-key as a
+/// minimal default (an `ITEM_TAG` has no uid), delete-by-key as a
 /// SET delete (the released "resource(s)" plural — every `target_path` under
 /// the key goes, and the second delete is the released non-idempotent 404),
-/// and the `ehr_tags_get` filters (AND-combined, exact — AMB-94).
+/// and the `ehr_tags_get` filters (AND-combined, exact — our own handling).
 #[tokio::test]
 async fn tag_collection_disciplines() {
     let (_pg, app) = app().await;

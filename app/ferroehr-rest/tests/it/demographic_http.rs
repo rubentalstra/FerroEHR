@@ -835,13 +835,10 @@ async fn versioned_party_relationship_is_mounted() {
     // The ehr-less relationship version spine serves the base RM
     // `VERSIONED_OBJECT` — no `VERSIONED_PARTY_RELATIONSHIP` class exists in
     // the RM demographic package — and its mandatory `owner_id` names the
-    // SERVING SYSTEM, the same shape every ehr-less demographic container
-    // carries: an `OBJECT_REF` `{namespace: local, type: SYSTEM}` over a
+    // SERVING SYSTEM: an `OBJECT_REF` `{namespace: local, type: SYSTEM}` over a
     // `HIER_OBJECT_ID`, per the released `VersionedParty` example (vendored
-    // ITS-REST OAS
-    // `crates/openehr-its/vendor/rest-oas/demographic-codegen.openapi.yaml`,
-    // `components.schemas.VersionedParty.example`; register AMB-69). It is NOT
-    // a self-reference to the relationship's own container, which would merely
+    // ITS-REST OAS `demographic-codegen.openapi.yaml`). It is NOT a
+    // self-reference to the relationship's own container, which would merely
     // duplicate the sibling `uid`.
     assert_eq!(v["_type"], "VERSIONED_OBJECT");
     assert_eq!(v["owner_id"]["_type"], "OBJECT_REF");

@@ -647,17 +647,13 @@ mod tests {
         );
     }
     // …and exactly ONE CONSUMPTION site on the way back: `build_party`. The
-    // generic `_`-family router (`structures::build_rm_attr`) still owns an
-    // `identifier` arm for hosts that are not parties, so the split is enforced
-    // by `crate::flat::build::leaf_consumes_segment`, which withholds the
-    // segment from the router on every PARTY base. This pins the edge the two
+    // generic `_`-family router still owns an `identifier` arm for hosts that
+    // are not parties, so the split is enforced by
+    // `crate::flat::build::leaf_consumes_segment`. This pins the edge the two
     // sites do NOT agree on: an `_identifier` family whose occurrences are all
     // empty. `build_party` omits the key; the router's arm would insert
-    // `identifiers: []`, which RM `PARTY_IDENTIFIED` invariant
-    // `Identifiers_valid` forbids ("identifiers /= Void implies not
-    // identifiers.is_empty") and ITS-REST Resources.md §JSON Format keeps off
-    // the wire ("The RM attributes … that are `Null` or an empty list (array)
-    // SHOULD be absent when serialized as JSON").
+    // `identifiers: []`, which RM `PARTY_IDENTIFIED`'s `Identifiers_valid`
+    // forbids and ITS-REST Resources.md §JSON Format keeps off the wire.
     #[test]
     fn an_all_empty_party_identifier_family_yields_no_identifiers_key() {
         let mut party = SimNode::default();

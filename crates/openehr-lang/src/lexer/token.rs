@@ -241,11 +241,10 @@ pub enum Token {
     //
     // The three date/time VALUE tokens carry an explicit high priority so they
     // win every tie against the constraint-PATTERN tokens below, whose fields
-    // admit literal date/time numbers (`ADL1.4/master05-cadl.adoc` §Patterns
-    // L894). Where a text is BOTH a legal value and a legal all-literal
-    // pattern (`1995-??-??`), the value reading is the established one and the
-    // pattern adds nothing — the pattern tokens keep the shapes only they
-    // match (`1995-??-XX`, `1995-mm-dd`).
+    // admit literal date/time numbers (`ADL1.4/master05-cadl.adoc` §Patterns).
+    // Where a text is BOTH a legal value and a legal all-literal pattern
+    // (`1995-??-??`), the value reading wins; the pattern tokens keep the shapes
+    // only they match (`1995-??-XX`, `1995-mm-dd`).
     /// `ISO8601_DATE_TIME` (with optional partial `??` fields / timezone).
     ///
     /// The `??`-partial family covers the whole set of
@@ -264,13 +263,12 @@ pub enum Token {
     )]
     // The space-separated date/time form of the `AM/docs/ADL1.4/master08-adl`
     // §Revision History Section example (`time_committed = <2004-11-02
-    // 09:31:04+1000>`). NOTE: that example contradicts its own chapter set —
+    // 09:31:04+1000>`). That example contradicts its own chapter set —
     // `master04-dadl` §Complete Date/Times mandates the ISO 8601 extended form
-    // with the `T` designator, and neither the dADL lex rules nor the vendored
-    // `base_lexer.g4` `ISO8601_DATE_TIME` admit a space. The form is a
-    // deliberate ODIN-only widening (an upstream spec-example defect, not an
-    // authoring error to punish); the ODIN pass normalises it to the `T` form
-    // on read, and the ADL/BEL passes re-tag or split it back.
+    // with the `T` designator, and neither the dADL lex rules nor
+    // `base_lexer.g4` `ISO8601_DATE_TIME` admit a space — so the form is a
+    // deliberate ODIN-only widening: the ODIN pass normalises it to the `T`
+    // form on read, and the ADL/BEL passes re-tag or split it back.
     #[regex(
         r"[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}(:[0-9]{2}([.,][0-9]+)?)?(Z|[+\-][0-9]{4})?",
         |lex| lex.slice().to_owned(),
@@ -298,27 +296,16 @@ pub enum Token {
     )]
     Iso8601Duration(String),
 
-    // ── constraint PATTERNS (base_lexer.g4 + the ADL 1.4 chapter's own
-    //    lexical spec, `ADL1.4/master05-cadl.adoc` §Symbols L1415-1426) ──
+    // ── constraint PATTERNS (base_lexer.g4 + `ADL1.4/master05-cadl.adoc`
+    //    §Symbols L1415-1426) ──
     //
     // Three spec-grounded widenings over `base_lexer.g4`'s transcription, all
-    // supersets that reject nothing the narrower form accepted:
-    // 1. Every field also admits a LITERAL date/time number — master05 L894:
-    //    "the 'yyyy' etc match strings can be replaced by literal date/time
-    //    numbers. For example, `yyyy-??-XX` could be transformed into
-    //    `1995-??-XX`".
-    // 2. The timezone modifier admits the ASCII `+`/`-` forms, not only the
-    //    literal `±` character — master05 §Patterns L852 ("the addition of a
-    //    patterns such as `+hh:mm`, `+hhmm`, and `-hh`") and the
-    //    <<timezone_constraints>> table L900-906, whose `±` column head is
-    //    glossed "commencing with '+' or '-'".
-    // 3. The date/time separator is `[T ]`, per the chapter's own
-    //    `V_ISO8601_DATE_TIME_CONSTRAINT_PATTERN` (master05 L1422:
-    //    `…[dD?X][dD?X][ T][hH?X][hH?X]:…`); `base_lexer.g4` L37 spells only
-    //    `'T'`, so the space form is the 1.4 chapter's superset.
-    //
-    // The explicit low priority keeps the date/time VALUE tokens above winning
-    // every equal-length tie (see the note on those tokens).
+    // supersets: every field also admits a LITERAL date/time number (master05
+    // L894); the timezone modifier admits the ASCII `+`/`-` forms, not only `±`
+    // (§Patterns L852 + the timezone table L900-906); and the date/time
+    // separator is `[T ]` per `V_ISO8601_DATE_TIME_CONSTRAINT_PATTERN` (L1422).
+    // NOTE: the explicit low priority keeps the date/time VALUE tokens above
+    // winning every equal-length tie.
     /// `DATE_TIME_CONSTRAINT_PATTERN` — e.g. `yyyy-mm-ddThh:mm:ss`.
     #[regex(
         r"(yyyy|YYYY|yyy|YYY|[0-9]{4})-(mm|MM|\?\?|XX|xx|[0-9]{2})-(dd|DD|\?\?|XX|xx|[0-9]{2})[T ](hh|HH|\?\?|XX|xx|[0-9]{2}):(mm|MM|\?\?|XX|xx|[0-9]{2}):(ss|SS|\?\?|XX|xx|[0-9]{2})([+\-\u{00B1}](hh|HH)(:?(mm|MM))?|Z)?",

@@ -18,14 +18,14 @@
 //!   parameter): every operation — `GET` and `POST` alike — accepts the EHR
 //!   scope as the `ehr_id` query parameter OR the `openehr-ehr-id` request
 //!   header. Supplying both is only accepted when they name the same EHR; a
-//!   conflict is a `400` (the released text is silent on precedence — register
-//!   `AMB-59`). A well-formed-but-absent `ehr_id` is a `404`, a malformed UUID
+//!   conflict is a `400` (the released text is silent on precedence, so that
+//!   is our own handling). A well-formed-but-absent `ehr_id` is a `404`, a malformed UUID
 //!   a `400`.
 //! - **URL parameters on the `POST`s**: `Request.md`'s SHOULD-list is headed
 //!   "All query execution requests" and draws no `GET`/`POST` distinction, so
 //!   the three `POST`s accept `offset`/`fetch`/named `$parameter` binds from the
 //!   query string as well as from the body. Precedence between the two carriers
-//!   is unassigned, so the `AMB-59` pattern applies: equal values are accepted,
+//!   is unassigned, so the same rule applies: equal values are accepted,
 //!   conflicting values are a `400`.
 //! - **JSON-only response** (`200_Query.yaml` declares `application/json`; the
 //!   `RESULT_SET` has no canonical-XML shape): an exclusively-XML `Accept`
@@ -119,8 +119,7 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
                         when both name the same EHR; a conflict is a `400` — \
                         the released text says \"or alternatively\" and never \
                         assigns a precedence, so that handling is OURS \
-                        (register-documented in the conformance catalogue, \
-                        `AMB-59`).",
+                        (no released text assigns a precedence).",
          example = "7d44b88c-4199-4bad-97dc-d78268e01398"),
         ("ehr_id" = Option<String>, Query,
          description = "\"An optional parameter to execute the query within an \
@@ -322,7 +321,7 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
                                       (the one released prohibition); or the \
                                       `ehr_id` query parameter and the \
                                       `openehr-ehr-id` header name different \
-                                      EHRs (`AMB-59`).",
+                                      EHRs.",
          body = serde_json::Value),
         (status = 404, description = "A well-formed `ehr_id` scope names no \
                                       existing EHR. This branch is OUR OWN \
@@ -398,7 +397,7 @@ pub(crate) async fn query_execute_adhoc_query(
 /// `$parameter` binds from the query string. When a value arrives both in the
 /// URL and in the body, equal values are accepted and conflicting ones are a
 /// `400` — the released text assigns no precedence, so that is OUR OWN handling,
-/// the same rule `AMB-59` fixes for the two `ehr_id` carriers.
+/// the same rule the two `ehr_id` carriers follow.
 #[utoipa::path(
     post, path = "/query/aql", tag = "Query",
     params(
@@ -414,7 +413,7 @@ pub(crate) async fn query_execute_adhoc_query(
                         (`Requests_and_responses.md` §\"Deprecated headers\"; \
                         RFC 9110 §5.1). Accepted alongside the `ehr_id` query \
                         parameter only when both name the same EHR; a conflict \
-                        is a `400` (register-documented, `AMB-59`).",
+                        is a `400` (no released text assigns a precedence).",
          example = "7d44b88c-4199-4bad-97dc-d78268e01398"),
         ("ehr_id" = Option<String>, Query,
          description = "\"An optional parameter to execute the query within an \
@@ -596,7 +595,7 @@ pub(crate) async fn query_execute_adhoc_query(
                                       combined with the deprecated AQL `TOP`; \
                                       the `ehr_id` query parameter and the \
                                       `openehr-ehr-id` header name different \
-                                      EHRs (`AMB-59`); or the URL and the body \
+                                      EHRs; or the URL and the body \
                                       carry CONFLICTING values for the same \
                                       `offset`/`fetch`/named parameter (OUR OWN \
                                       handling of the unassigned precedence — \
@@ -705,7 +704,7 @@ pub(crate) async fn query_execute_adhoc_query_body(
                         (`Requests_and_responses.md` §\"Deprecated headers\"; \
                         RFC 9110 §5.1). Accepted alongside the `ehr_id` query \
                         parameter only when both name the same EHR; a conflict \
-                        is a `400` (register-documented, `AMB-59`).",
+                        is a `400` (no released text assigns a precedence).",
          example = "7d44b88c-4199-4bad-97dc-d78268e01398"),
         ("ehr_id" = Option<String>, Query,
          description = "\"An optional parameter to execute the query within an \
@@ -871,7 +870,7 @@ pub(crate) async fn query_execute_adhoc_query_body(
                                       combined with the deprecated AQL `TOP`; \
                                       or the `ehr_id` query parameter and the \
                                       `openehr-ehr-id` header name different \
-                                      EHRs (`AMB-59`).",
+                                      EHRs.",
          body = serde_json::Value),
         (status = 404, description = "The released trigger, verbatim: `404 Not \
                                       Found` \"is returned when a stored query \
@@ -944,7 +943,7 @@ pub(crate) async fn query_execute_stored_query(
 /// "All query execution requests" with no `GET`/`POST` distinction, so this
 /// operation also accepts `offset`/`fetch`/named binds from the query string;
 /// a value supplied in both carriers must agree, else `400` (OUR OWN handling of
-/// the unassigned precedence, the same rule `AMB-59` fixes for `ehr_id`).
+/// the unassigned precedence, the same rule `ehr_id` follows).
 #[utoipa::path(
     post, path = "/query/{qualified_query_name}", tag = "Query",
     params(
@@ -973,7 +972,7 @@ pub(crate) async fn query_execute_stored_query(
                         §\"Deprecated headers\"; RFC 9110 §5.1). Accepted \
                         alongside the `ehr_id` query parameter only when both \
                         name the same EHR; a conflict is a `400` \
-                        (register-documented, `AMB-59`).",
+                        (no released text assigns a precedence).",
          example = "7d44b88c-4199-4bad-97dc-d78268e01398"),
         ("ehr_id" = Option<String>, Query,
          description = "\"An optional parameter to execute the query within an \
@@ -1154,7 +1153,7 @@ pub(crate) async fn query_execute_stored_query(
                                       combined with the deprecated AQL `TOP`; \
                                       the `ehr_id` query parameter and the \
                                       `openehr-ehr-id` header name different \
-                                      EHRs (`AMB-59`); or the URL and the body \
+                                      EHRs; or the URL and the body \
                                       carry CONFLICTING values for the same \
                                       `offset`/`fetch`/named parameter (OUR OWN \
                                       handling of the unassigned precedence — \
@@ -1283,7 +1282,7 @@ pub(crate) async fn query_execute_stored_query_body(
                         (`Requests_and_responses.md` §\"Deprecated headers\"; \
                         RFC 9110 §5.1). Accepted alongside the `ehr_id` query \
                         parameter only when both name the same EHR; a conflict \
-                        is a `400` (register-documented, `AMB-59`).",
+                        is a `400` (no released text assigns a precedence).",
          example = "7d44b88c-4199-4bad-97dc-d78268e01398"),
         ("ehr_id" = Option<String>, Query,
          description = "\"An optional parameter to execute the query within an \
@@ -1444,7 +1443,7 @@ pub(crate) async fn query_execute_stored_query_body(
                                       combined with the deprecated AQL `TOP`; \
                                       or the `ehr_id` query parameter and the \
                                       `openehr-ehr-id` header name different \
-                                      EHRs (`AMB-59`).",
+                                      EHRs.",
          body = serde_json::Value),
         (status = 404, description = "The released trigger, verbatim: `404 Not \
                                       Found` \"is returned when a stored query \
@@ -1563,7 +1562,7 @@ pub(crate) async fn query_execute_stored_query_version(
                         §\"Deprecated headers\"; RFC 9110 §5.1). Accepted \
                         alongside the `ehr_id` query parameter only when both \
                         name the same EHR; a conflict is a `400` \
-                        (register-documented, `AMB-59`).",
+                        (no released text assigns a precedence).",
          example = "7d44b88c-4199-4bad-97dc-d78268e01398"),
         ("ehr_id" = Option<String>, Query,
          description = "\"An optional parameter to execute the query within an \
@@ -1744,7 +1743,7 @@ pub(crate) async fn query_execute_stored_query_version(
                                       combined with the deprecated AQL `TOP`; \
                                       the `ehr_id` query parameter and the \
                                       `openehr-ehr-id` header name different \
-                                      EHRs (`AMB-59`); or the URL and the body \
+                                      EHRs; or the URL and the body \
                                       carry CONFLICTING values for the same \
                                       `offset`/`fetch`/named parameter (OUR OWN \
                                       handling of the unassigned precedence — \

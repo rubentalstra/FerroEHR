@@ -27,8 +27,8 @@
 
 #![expect(
     clippy::disallowed_types,
-    reason = "owner-approved 2026-08-03 (#1694 family 6): FHIR resources are an external standard \
-              with no RM type (typed-FHIR evaluation tracked separately)"
+    reason = "owner-approved 2026-08-03 (#1694 family 6, settled by #1885): the drain carries an \
+              already-rendered FHIR document, never a typed resource"
 )]
 
 use std::future::Future;
@@ -46,7 +46,6 @@ use super::event::{AuditEvent, EmitOutcome};
 
 use crate::system_log::AuditError;
 use crate::system_log::config::{AuditConfig, FailMode, FhirFeedConfig};
-use crate::system_log::fhir;
 use crate::system_log::message::{AuditContext, AuditMessage};
 use crate::system_log::store::AuditStore;
 use crate::system_log::syslog::{Transport, assemble_syslog};
@@ -444,15 +443,18 @@ async fn drain(
         }
 
         // Render once per event; both the store and the FHIR feed consume
-        // the rendered document.
-        let mut records: Vec<(AuditEvent, Option<String>, fhir::FhirAuditEvent)> =
+        // the rendered document. No FHIR consumer means no rendering.
+        let render_fhir = sinks.store.is_some() || sinks.direct_feed.is_some();
+        let mut records: Vec<(AuditEvent, Option<String>, Option<serde_json::Value>)> =
             Vec::with_capacity(batch.len());
         for event in batch.drain(..) {
             let subject = match (resolve_subject, &event.ehr_id) {
                 (true, Some(ehr_id)) => subject_cache.get(ehr_id).await.flatten(),
                 _ => None,
             };
-            let rendered = fhir::to_fhir(&event, &ctx, subject.as_deref());
+            let rendered = render_fhir
+                .then(|| render_audit_event(&event, &ctx, subject.as_deref()))
+                .flatten();
             records.push((event, subject, rendered));
         }
 
@@ -499,6 +501,9 @@ async fn drain(
                 }
             } else {
                 for (index, (event, subject, rendered)) in records.iter().enumerate() {
+                    let Some(rendered) = rendered else {
+                        continue;
+                    };
                     let insert =
                         || async { store.insert(event, subject.as_deref(), rendered).await };
                     match insert
@@ -566,26 +571,52 @@ async fn drain(
         //    outbox worker owns delivery).
         if let Some(feed) = &sinks.direct_feed {
             for (_, _, rendered) in &records {
-                match serde_json::to_value(rendered) {
-                    Ok(body) => match feed.post(&body).await {
-                        Ok(()) => {
-                            metrics::counter!(METRIC_SENT, "sink" => "fhir_feed").increment(1);
-                        }
-                        Err(e) => {
-                            metrics::counter!(METRIC_SEND_FAILED, "sink" => "fhir_feed")
-                                .increment(1);
-                            tracing::warn!("ATNA audit FHIR feed send failed: {e}");
-                        }
-                    },
+                let Some(body) = rendered else {
+                    continue;
+                };
+                match feed.post(body).await {
+                    Ok(()) => {
+                        metrics::counter!(METRIC_SENT, "sink" => "fhir_feed").increment(1);
+                    }
                     Err(e) => {
-                        metrics::counter!(METRIC_SERIALIZE_FAILED).increment(1);
-                        tracing::warn!("ATNA audit FHIR serialization failed: {e}");
+                        metrics::counter!(METRIC_SEND_FAILED, "sink" => "fhir_feed").increment(1);
+                        tracing::warn!("ATNA audit FHIR feed send failed: {e}");
                     }
                 }
             }
         }
     }
     tracing::debug!("ATNA audit drain: channel closed, task exiting");
+}
+
+/// The FHIR R4B `AuditEvent` document for one resolved record, or `None` when
+/// the rendering failed (metered + logged, never silent).
+#[cfg(feature = "fhir")]
+fn render_audit_event(
+    event: &AuditEvent,
+    ctx: &AuditContext,
+    subject: Option<&str>,
+) -> Option<serde_json::Value> {
+    match crate::system_log::fhir::to_fhir(event, ctx, subject) {
+        Ok(document) => Some(document),
+        Err(e) => {
+            metrics::counter!(METRIC_SERIALIZE_FAILED).increment(1);
+            tracing::warn!("ATNA audit FHIR rendering failed: {e}");
+            None
+        }
+    }
+}
+
+/// A slim build renders no FHIR document. Unreachable: [`start`] refuses a
+/// configuration that enables the store or the FHIR feed, and nothing else
+/// consumes the document.
+#[cfg(not(feature = "fhir"))]
+fn render_audit_event(
+    _event: &AuditEvent,
+    _ctx: &AuditContext,
+    _subject: Option<&str>,
+) -> Option<serde_json::Value> {
+    None
 }
 
 /// The ITI-20 ATX:FHIR Feed outbox worker: ship undelivered rows oldest-first,

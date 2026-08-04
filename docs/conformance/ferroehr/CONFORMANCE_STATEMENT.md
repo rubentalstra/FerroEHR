@@ -94,10 +94,10 @@ Beside the openEHR resources of ITS-REST 1.1.0, this product serves the route fa
 
 | Profile | Verdict |
 | --- | --- |
-| CORE | PASS |
-| STANDARD | PASS |
+| CORE | FAIL |
+| STANDARD | FAIL |
 | OPTIONS | PASS |
-| SEC-BASIC | PASS |
+| SEC-BASIC | FAIL |
 | Performance class POC (claimed) | EARNED |
 
 ## Attestation

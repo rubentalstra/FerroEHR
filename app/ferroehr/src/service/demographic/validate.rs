@@ -103,13 +103,12 @@ pub(crate) fn party_check(
             ));
         }
     };
-    // NOTE: on a `553|incomplete|` commit the TYPED construction is not the
-    // gate — the generated party types make `PARTY.identities [1..*]` and every
-    // mandatory attribute structural, and those are precisely the bounds RM
-    // common master06 §Incomplete Content lifts ("mandatory attributes may be
-    // absent … container attributes may be empty"). A body that DOES construct
-    // is still fully judged; one that does not is handed to the relaxed
-    // whole-instance pass below, which enforces everything except presence.
+    // A body that DOES construct is still fully judged; one that does not is
+    // handed to the relaxed whole-instance pass below, which enforces
+    // everything except presence.
+    // NOTE: on a `553|incomplete|` commit the TYPED construction is not the gate
+    // — the generated party types make mandatory attributes structural, and RM
+    // common master06 §Incomplete Content lifts precisely those bounds.
     if !incomplete {
         typed.map_err(|e| {
             ServiceError::Unprocessable(
@@ -148,28 +147,18 @@ pub(super) fn party_invariants(
         crate::service::ehr::validation::validate_root_locatable(obj, rm_type)?;
     }
 
-    // NOTE: Identities_valid (1..* -> NonEmptyVec) and the present-implies-
-    // non-empty family (Contacts/Relationships/Roles/Capabilities -> #1730
-    // Option<NonEmptyVec>) hold by construction at the strict typed door; the
-    // 553|incomplete| lane skips typed construction (master06 §Incomplete
-    // Content relaxes empty containers).
+    // NOTE: Identities_valid (1..* → NonEmptyVec) and the present-implies-
+    // non-empty family hold by construction at the strict typed door; the
+    // `553|incomplete|` lane skips typed construction (master06 §Incomplete).
 
     // Relationships_validity, second arm (party.adoc): every inline
-    // relationship's `source` must reference THIS party. The party's identity
-    // is its `uid` (copied from the version container); when the body carries
-    // one, an inline relationship pointing at another source is invalid.
-    //
-    // The comparison is against the party's CONTAINER id, not the version id:
-    // RM demographic `docs/demographic/master02-demographic_package.adoc`
-    // §Party Relationships (L44) requires the refs to be "`OBJECT_REFs`
-    // containing `HIER_OBJECT_IDs` to denote the Version container of a Party,
-    // rather than `OBJECT_VERSION_IDs`, which would denote particular
-    // versions" — while a served party's `uid` is the three-part
-    // `OBJECT_VERSION_ID` of the version it was read from. So the body's uid is
-    // reduced to its `object_id` (BASE `master05-identification_package.adoc`
-    // §Syntaxes: `object_version_id = object_id, '::', creating_system_id,
-    // '::', version_tree_id`, the object_id being the version container's id),
-    // which leaves a body carrying a bare container id compared verbatim.
+    // relationship's `source` must reference THIS party. The comparison is
+    // against the party's CONTAINER id, not the version id: RM demographic
+    // `master02-demographic_package.adoc` §Party Relationships requires
+    // "`OBJECT_REFs` containing `HIER_OBJECT_IDs` to denote the Version
+    // container of a Party", while a served party's `uid` is the three-part
+    // `OBJECT_VERSION_ID`, so the body's uid is reduced to its `object_id`
+    // (BASE `master05-identification_package.adoc` §Syntaxes).
     if let (Some(uid), Some(relationships)) = (
         data.pointer("/uid/value").and_then(Value::as_str),
         data.get("relationships").and_then(Value::as_array),
@@ -229,16 +218,13 @@ pub(crate) fn relationship_check(data: &Value, incomplete: bool) -> Result<(), S
     // The decode is the validating ACT, and its result is the carrier the two
     // ref rules below are judged on — `source`/`target` are mandatory
     // `PARTY_REF`s on the RM type, so once this succeeds their PRESENCE and
-    // their `PARTY_REF` SHAPE are facts of the type, not things to re-check
-    // (the Rust Book ch9.3 custom-validation-type pattern: a downstream
-    // function "wouldn't need to do any additional checks in its body").
-    //
-    // NOTE: on a `553|incomplete|` commit the decode is not the gate — mandatory
-    // `source`/`target` may be absent (RM common master06 §Incomplete Content:
-    // "single-valued attributes may have null values"), which is exactly what
-    // the decode refuses. A body that DOES construct is still fully judged by
-    // the two ref rules below; one that does not is handed to the relaxed
-    // whole-instance pass, which enforces everything except presence.
+    // SHAPE are facts of the type, not things to re-check (the Rust Book ch9.3
+    // custom-validation-type pattern). A body that does NOT construct is handed
+    // to the relaxed whole-instance pass, which enforces everything except
+    // presence.
+    // NOTE: on a `553|incomplete|` commit the decode is not the gate —
+    // mandatory `source`/`target` may be absent (RM common master06 §Incomplete
+    // Content), which is exactly what the decode refuses.
     let decoded = openehr_its::json::from_canonical_value::<PartyRelationship>(data);
     let typed = match decoded {
         Ok(typed) => Some(typed),

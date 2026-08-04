@@ -413,10 +413,8 @@ fn bullet7_terminology_bindings_valid() {
 // master04 §"RM Attributes prefix": optional RM attributes are addressed with a
 // leading underscore (`_attributeName`); the valid families are the `_`-rows of
 // the master05 per-type tables. The FLAT conversion seam
-// (`convert::composition_from_flat`) validates this: an underscore-prefixed
-// segment naming no RM-attribute family is rejected as `FlatError::UnknownSuffix`
-// (the "converters reject" half of the validation surface — no dedicated
-// validator was needed; the check already lives on this public seam).
+// (`convert::composition_from_flat`) rejects an underscore-prefixed segment
+// naming no RM-attribute family as `FlatError::UnknownSuffix`.
 #[test]
 fn bullet8_underscore_rm_attribute_paths_valid() {
     let wts = web_templates();

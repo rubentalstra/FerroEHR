@@ -7,9 +7,8 @@
 //! * **Write-schema strictness** — `schemas/common/UpdateItemTag.yaml` is
 //!   `additionalProperties: false` over exactly `key`/`value`/`target_path`
 //!   with `key` required. An undeclared member, a non-string `value` and a
-//!   non-string `target_path` are each refused `400`; the status is register
-//!   AMB-205 (the release declares the constraint and assigns no status to
-//!   violating it).
+//!   non-string `target_path` are each refused `400`; the release declares the
+//!   constraint and assigns no status to violating it, so the `400` is ours.
 //! * **FOLDER wrapper tags** — ITS-REST overview `Requests_and_responses.md`
 //!   §openehr-item-tag and openehr-version-item-tag names FOLDER among the
 //!   change-controlled resources the headers associate tags with, and the
@@ -161,7 +160,7 @@ async fn status_vo(app: &Router, ehr: &str) -> String {
 
 /// The released write schema declares exactly three members and
 /// `additionalProperties: false`, so an undeclared member is REFUSED — never
-/// silently dropped. Register AMB-205 assigns the `400`.
+/// silently dropped; no released text assigns a status, so the `400` is ours.
 #[tokio::test]
 async fn a_tag_put_with_an_undeclared_member_is_refused() {
     let (_pg, app) = common::test_router().await;
@@ -461,8 +460,8 @@ async fn no_dedicated_directory_tag_routes_exist() {
 // ── validate-first: a refused tag list commits no content ────────────────────
 
 /// A wrapper-header tag that breaks `ITEM_TAG.Inv_key_valid` refuses the write
-/// BEFORE the content commits, so no version exists afterwards (register
-/// AMB-204). The alternative — refusing after the commit — answers `4xx` for a
+/// BEFORE the content commits, so no version exists afterwards (no released
+/// text fixes the order). The alternative — refusing after the commit — answers `4xx` for a
 /// request whose VERSION is durable and whose response carries no `ETag` and no
 /// `Location`, so the client's only recovery is to re-POST and duplicate
 /// clinical content.
@@ -590,7 +589,7 @@ async fn a_tag_put_with_an_unprocessable_content_type_is_refused() {
 /// SEMANTIC failure of well-formed content, not a syntactic one: ITS-REST
 /// overview `Requests_and_responses.md` §"HTTP status codes", the `422` row
 /// ("The request was well-formed but was unable to be followed due to semantic
-/// errors"). Register AMB-93 fixes that split for all seven tag PUTs.
+/// errors"); no released text splits the two, so this handling is ours.
 #[tokio::test]
 async fn a_tag_put_with_an_empty_value_is_unprocessable() {
     let (_pg, app) = common::test_router().await;
@@ -623,7 +622,7 @@ async fn a_tag_put_with_an_empty_value_is_unprocessable() {
 /// `204 No Content`)" carrying "a single JSON object with a single `uid`
 /// attribute" (ITS-REST overview `Requests_and_responses.md` §"Prefer only
 /// identifier"), while an `ITEM_TAG` has no uid at all and the affected
-/// resource is a collection. Register AMB-92 fixes the fallback; the `204` is
+/// resource is a collection, so the fallback is our own; the `204` is
 /// itself the proof, since the identifier branch forbids that status.
 #[tokio::test]
 async fn a_tag_put_preferring_an_identifier_applies_the_minimal_default() {
@@ -692,8 +691,8 @@ async fn a_duplicate_identity_pair_in_one_tag_put_keeps_the_last() {
 ///
 /// `target_path` is `String[0..1]` in the RM with no non-empty invariant
 /// (`UML/classes/org.openehr.rm.common.item_tag.adoc`), while six of the seven
-/// released `ItemTagOf<T>` examples spell it `""`; register AMB-96 fixes the
-/// normalization identically on the EHR and demographic families.
+/// released `ItemTagOf<T>` examples spell it `""`, so the normalization is our
+/// own — applied identically on the EHR and demographic families.
 #[tokio::test]
 async fn an_empty_target_path_is_stored_as_absent_and_stays_deletable() {
     let (_pg, app) = common::test_router().await;

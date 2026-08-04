@@ -172,27 +172,12 @@ pub(crate) fn query_param(query: Option<&str>, key: &str) -> Option<String> {
 //
 // Lightweight wrappers over the dedicated ITEM_TAG operations:
 // `openehr-item-tag` targets a VERSIONED_OBJECT, `openehr-version-item-tag` a
-// specific VERSION. The value is a `;`-separated list of ITEM_TAG entries, each
-// a comma-separated `key`/`value`/`target_path` pair set. On `PUT`/`POST` the
-// header sets the tag list for the target (an empty value removes all tags); on
-// `GET`/write responses the server MAY echo the stored tags.
-//
-// This module owns only the header parse/validate/emit; the dispatch call
-// sites live outside `overview/`. The EHR group consumes them in two steps, and
-// the split is load-bearing: on a change-controlled `PUT`/`POST`,
-// `crate::api::ehr::pending_item_tags` calls `parse_item_tag_header` +
-// `validate_item_tag_entries` for both header names BEFORE the content commit
-// (so a defective tag refuses the request with nothing durable), then
-// `crate::api::ehr::apply_item_tag_headers` writes each header's entries to the
-// ITEM_TAG service AFTER it — `openehr-item-tag` → the VERSIONED_OBJECT,
-// `openehr-version-item-tag` → the committed VERSION (empty value ⇒ delete
-// all), the write staying post-commit because a tag must not re-version the
-// content it annotates. `crate::api::ehr::echo_item_tags` then optionally
-// echoes each target's stored list under its own header name with
-// `emit_item_tag_header`. The demographic group mirrors the same two steps
-// (`crate::api::demographic::party`) and emits both headers from one set on
-// reads/creates, because demographic tags are stored against the
-// VERSIONED_OBJECT only, so the two targets' lists coincide there.
+// specific VERSION. The value is a `;`-separated list of entries, each a
+// comma-separated `key`/`value`/`target_path` set. On `PUT`/`POST` the header
+// sets the target's tag list (empty removes all); responses MAY echo it.
+// NOTE: this module owns only header parse/validate/emit; the EHR group
+// validates both headers BEFORE the content commit and writes them AFTER, so a
+// defective tag refuses the request and a tag never re-versions its content.
 
 /// The canonical HTTP header names for the two `ITEM_TAG` wrapper headers.
 pub(crate) const H_ITEM_TAG: &str = "openehr-item-tag";
@@ -923,12 +908,10 @@ mod tests {
         // An EMPTY `openehr-item-tag` is the release's "remove all ITEM_TAGs"
         // instruction (overview §Usage in Requests), so it must never be the
         // fallback for a list that cannot be rendered: the caller omits the
-        // header entirely.
-        //
-        // A control character in the key is the reachable case: nothing in the
-        // RM forbids one (`Inv_key_valid` bars only an empty or
-        // whitespace-padded key, and "a\nb" is neither), while RFC 9110
-        // §5.5 bars it from a field value.
+        // header entirely. A control character in the key is the reachable
+        // case: nothing in the RM forbids one (`Inv_key_valid` bars only an
+        // empty or whitespace-padded key), while RFC 9110 §5.5 bars it from a
+        // field value.
         assert_eq!(emit_item_tag_header(&[entry("a\nb", None, None)]), None);
         // Non-ASCII text is NOT the unencodable case — obs-text is legal in a
         // field value — so such a list still echoes.

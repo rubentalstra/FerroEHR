@@ -126,13 +126,11 @@ impl FerroEhrService {
         // Validate every tag before writing; the storage replace dedupes the
         // posted set on the ITEM_TAG identity — the (key, target_path) PAIR
         // (ITS-REST Requests_and_responses.md §item-tag headers), last-wins.
-        //
         // The judgement is the RM's own: each posted UPDATE_ITEM_TAG is turned
         // into the ITEM_TAG the write would store — with the `target` and
-        // `owner_id` the server assigns, which is exactly why the write schema
-        // omits them — and run through `ItemTag`'s single `Validate` impl. The
-        // demographic seam does the same with its own owner, so there is ONE
-        // invariant implementation behind both families.
+        // `owner_id` the server assigns, which is why the write schema omits
+        // them — and run through `ItemTag`'s single `Validate` impl, the same
+        // one the demographic seam uses.
         let target = match target_version {
             Some(version) => UidBasedId::ObjectVersionId(version.clone()),
             None => UidBasedId::HierObjectId(HierObjectId::from(target_vo_id.0)),
@@ -356,10 +354,10 @@ fn ehr_owner_ref(ehr_id: EhrId) -> ObjectRef {
 /// RM models `target_path` 0..1 (absent = no path) with no non-empty
 /// invariant, while six of the seven released `ItemTagOf<T>` examples write
 /// `target_path: ""`; under the (`key`, `target_path`) identity those would be
-/// two distinct tags. Register AMB-96 fixes the handling, and this is the ONE
-/// function that applies it — the EHR and demographic families both call it, so
-/// the register's "applied identically on the EHR and demographic families"
-/// is a structural fact rather than a claim.
+/// two distinct tags, so the normalization is our own — and this is the ONE
+/// function that applies it: the EHR and demographic families both call it, so
+/// applying it identically across the two families is a structural fact rather
+/// than a claim.
 pub(in crate::service) fn normalized_target_path(raw: Option<&str>) -> Option<&str> {
     raw.filter(|p| !p.is_empty())
 }

@@ -25,7 +25,7 @@
 //! this codec writes — 50 concrete RM classes have no complexType there at all
 //! and 23 attributes over 17 more are undeclared, `FOLDER.details` among them.
 //! The sweep, its per-attribute adjudications and the wire proof live in
-//! `xml_xsd_validity` (register `AMB-185`); the assertions below deliberately
+//! `xml_xsd_validity`; the assertions below deliberately
 //! stay scoped to the serializer, which is all they ever proved.
 
 use openehr_its::xml::{Namespace, from_canonical_xml, to_canonical_xml, to_canonical_xml_ns};

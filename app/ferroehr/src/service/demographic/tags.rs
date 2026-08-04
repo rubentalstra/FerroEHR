@@ -129,14 +129,11 @@ impl FerroEhrService {
             .await?;
         // Validate + dedup (last wins) before touching the DB, keyed on the
         // ITEM_TAG identity — the (key, target_path) PAIR, never the key alone
-        // (two same-key tags on different target_paths coexist; keying by tag
-        // key collapsed them — the run-2 triage defect, 2026-07-28, mirroring
-        // the EHR-side #369 identity fix). BTreeMap ordering matches the
-        // `ORDER BY key` read-back order on the leading component.
-        //
-        // The invariants and the `target_path: ""` normalization are the EHR
-        // family's, called rather than restated: one implementation of each,
-        // so the two families cannot diverge.
+        // (two same-key tags on different target_paths coexist). BTreeMap
+        // ordering matches the `ORDER BY key` read-back order on the leading
+        // component. The invariants and the `target_path: ""` normalization are
+        // the EHR family's, called rather than restated: one implementation of
+        // each, so the two families cannot diverge.
         let target = match target_version {
             Some(version) => UidBasedId::ObjectVersionId(version.clone()),
             // A bare container key is a UUID by type, so the conversion is

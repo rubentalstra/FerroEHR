@@ -293,25 +293,16 @@ pub(super) async fn apply_item_tag_headers(
         object: object_tags,
         version: version_tags,
     } = pending;
-    // The two wrappers address DISTINCT collections (Requests_and_responses.md
-    // §"openehr-item-tag and openehr-version-item-tag": "`openehr-item-tag`
-    // applies to *VERSIONED_OBJECT* targets" while "`openehr-version-item-tag`
-    // applies to a specific target *VERSION* within a VERSIONED_OBJECT"):
-    // `openehr-item-tag` replaces the VERSIONED_OBJECT container's tags
-    // (addressed by the bare object id), and `openehr-version-item-tag`
-    // replaces the just-committed VERSION's own tags (addressed by the full
-    // version_uid). An absent header leaves its collection untouched, and each
-    // stored collection stays separate all the way to its own response header
-    // — the echo confirms "the actual list of ITEM_TAGs stored" for the target
-    // the header names, so the two lists are never merged.
-    // The VERSIONED_OBJECT the `openehr-item-tag` header addresses is the
-    // `object_id` of the just-committed version's OBJECT_VERSION_ID, read
-    // through the BASE accessor (`base_types` §Functions `object_id`;
-    // `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.object_version_id.adoc`)
-    // rather than a local `::` split.
-    // The just-committed version uid is server-minted through the BASE
-    // construction door, so it parses; a value that does not is a server fault,
-    // never a client one.
+    // The two wrappers address DISTINCT collections
+    // (Requests_and_responses.md §"openehr-item-tag and
+    // openehr-version-item-tag"): `openehr-item-tag` replaces the
+    // VERSIONED_OBJECT container's tags, `openehr-version-item-tag` the
+    // just-committed VERSION's own. An absent header leaves its collection
+    // untouched and the two lists are never merged. The container id is the
+    // `object_id` of the committed OBJECT_VERSION_ID, read through the BASE
+    // accessor (`base_types` §Functions `object_id`), never a local `::` split.
+    // NOTE: the just-committed version uid is server-minted, so a parse failure
+    // here is a server fault, never a client one.
     let container_uid = ObjectVersionId::new(version_uid)
         .map_err(|e| {
             crate::overview::error::internal_fault(

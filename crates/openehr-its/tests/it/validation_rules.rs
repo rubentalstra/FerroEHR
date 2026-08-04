@@ -1479,16 +1479,10 @@ fn data_structure_shapes_are_enforced() {
 //
 // A template may fill the same archetype twice under one container, the two
 // fills differentiated by their runtime `name` (RM common
-// `master03-archetyped_package.adoc` §"The `LOCATABLE` class" L33-35: a `name`
-// distinguishes sibling nodes that share an `archetype_node_id`; AOM 1.4
-// `master04-constraint_model_package.adoc` §`node_id` L41: node ids "guarantee
-// sibling node unique identification"). Templates realise this by putting a
-// fixed `name/value` `C_STRING` on all-but-one sibling, so one sibling stays
-// *unqualified* (its `name` unconstrained). Each instance must be routed to
-// exactly the sibling whose name it matches, and the unqualified sibling must
-// admit only the instances no name-qualified sibling claims — otherwise the
-// unqualified sibling (matched by `archetype_node_id` alone) captures a
-// name-qualified sibling's instance and rejects it against the wrong overlay.
+// `master03-archetyped_package.adoc` §"The `LOCATABLE` class"; AOM 1.4
+// `master04-constraint_model_package.adoc` §`node_id`). Templates put a fixed
+// `name/value` `C_STRING` on all-but-one sibling, so each instance must route to
+// the sibling whose name it matches, the unqualified one taking the rest.
 
 /// Two same-archetype siblings under `items`, one unqualified (name "A", inner
 /// `items` closed to `at0004`) and one name-qualified ('B', inner `items` closed

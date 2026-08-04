@@ -77,9 +77,8 @@ fn composition_xml_round_trips() {
 /// §Attributes types it `0..1 ITEM_STRUCTURE` ("Optional attribute to carry any
 /// custom meta-data. May be archetyped."). The v1 XSD's `FEEDER_AUDIT_DETAILS`
 /// sequence ends at `version_id`, so the generated codec emits the element from
-/// the RM model under the completeness rule; the ambiguity register records the
-/// lineage split and why the emission is not suppressed (AMB-177's sibling
-/// AMB-178, `disposition: report_only`). This gate pins BOTH halves of that
+/// the RM model under the completeness rule, and the lineage split is reported
+/// rather than suppressed. This gate pins BOTH halves of that
 /// handling: the element is on the wire, and it survives a parse back unchanged.
 #[test]
 fn feeder_audit_details_other_details_round_trips() {

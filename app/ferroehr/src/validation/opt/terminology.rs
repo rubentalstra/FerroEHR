@@ -45,15 +45,13 @@ pub(super) fn check_node_id(
     defined_at: &HashSet<String>,
 ) -> Result<(), RuleViolation> {
     if !archetype_node_id_is_term_code(node_id) {
-        // THE MALFORMED MIDDLE CLASS (#1691): a node id CARRYING the at/id
-        // leader but failing the code-body grammar (`at0abc`) is a malformed
-        // CLAIMED code, not free text — AOM2's own predicate is leader-based
+        // THE MALFORMED MIDDLE CLASS: a node id CARRYING the at/id leader but
+        // failing the code-body grammar (`at0abc`) is a malformed CLAIMED code,
+        // not free text — AOM2's own predicate is leader-based
         // (`adl_code_definitions.adoc` §is_at_code: "Result =
-        // a_code.starts_with (At_code_leader)"), so the string claims
-        // code-hood and the body must then satisfy the code syntax
-        // (leader + `.`-separated numeric segments). Refused here rather
-        // than falling between the code family (whose grammar it fails) and
-        // the free-text family (whose leader-freedom it lacks).
+        // a_code.starts_with (At_code_leader)"), so the string claims code-hood
+        // and the body must then satisfy the code syntax. Refused here rather
+        // than falling between the code family and the free-text family.
         let claims_code_leader = (node_id.starts_with("at") || node_id.starts_with("id"))
             && node_id.len() > 2
             && !openehr_rm::paths::is_archetype_root_node_id(node_id);
@@ -90,14 +88,11 @@ pub(super) fn check_term_bindings(
     defined_at: &HashSet<String>,
 ) -> Result<(), RuleViolation> {
     let check = |code: &str| -> Result<(), RuleViolation> {
-        // NOTE (flattened-OPT tolerance): a *specialised* code (`at0.23`,
-        // dot-notation — AOM2 §specialisation depth) names a code DEFINED IN
-        // THE PARENT archetype, so a flattened template legitimately binds it
-        // without re-emitting the definition locally; the released AM text
-        // never requires the definition to be repeated at the specialisation
-        // level. A dotted code is therefore accepted as a valid binding key.
         // (Observed in the vendored blood-pressure corpus OPTs — evidence that
         // the shape occurs, never the authority for accepting it.)
+        // NOTE (flattened-OPT tolerance): a *specialised* code (`at0.23`, AOM2
+        // §specialisation depth) names a code DEFINED IN THE PARENT archetype,
+        // which the released AM text never requires to be repeated locally.
         let specialised = code.contains('.');
         if code.starts_with('/')
             || !archetype_node_id_is_term_code(code)

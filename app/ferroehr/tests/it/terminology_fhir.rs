@@ -60,6 +60,9 @@ fn cached_provider(base: &str, operation: FhirOperation) -> FhirTerminologyProvi
 /// The reference golden case: `ValueSet/surface`, code `B` = "Buccal".
 const SURFACE_VS: &str = "http://hl7.org/fhir/ValueSet/surface";
 const SURFACE_SYS: &str = "http://hl7.org/fhir/surface";
+/// `ValueSet.expansion.timestamp` is 1..1 in FHIR R4B; every mock
+/// `$expand` response carries it.
+const EXPANSION_TIMESTAMP: &str = "2026-08-04T00:00:00Z";
 
 #[tokio::test]
 async fn validate_code_member_is_accepted() {
@@ -138,7 +141,8 @@ async fn validate_via_expand_membership() {
         .and(query_param("url", SURFACE_VS))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({
             "resourceType": "ValueSet",
-            "expansion": {"contains": [
+            "status": "active",
+            "expansion": {"timestamp": EXPANSION_TIMESTAMP, "contains": [
                 {"system": SURFACE_SYS, "code": "B", "display": "Buccal"},
                 {"system": SURFACE_SYS, "code": "L", "display": "Lingual"}
             ]}
@@ -166,7 +170,8 @@ async fn get_value_set_maps_expansion_to_extract() {
         .and(path("/ValueSet/$expand"))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({
             "resourceType": "ValueSet",
-            "expansion": {"contains": [
+            "status": "active",
+            "expansion": {"timestamp": EXPANSION_TIMESTAMP, "contains": [
                 {"system": SURFACE_SYS, "code": "B", "display": "Buccal"},
                 {"system": SURFACE_SYS, "code": "O", "display": "Occlusal"}
             ]}

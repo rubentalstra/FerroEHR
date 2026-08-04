@@ -20,8 +20,10 @@ use crate::extensions::multimedia::config::MultimediaConfig;
 #[cfg(feature = "multimedia")]
 pub fn engine_from_config(
     cfg: &MultimediaConfig,
-) -> Result<Option<ferroehr_ext::multimedia::MultimediaEngine>, ferroehr_ext::multimedia::MultimediaError>
-{
+) -> Result<
+    Option<ferroehr_ext::multimedia::MultimediaEngine>,
+    ferroehr_ext::multimedia::MultimediaError,
+> {
     if !cfg.enabled {
         return Ok(None);
     }

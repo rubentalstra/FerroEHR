@@ -65,30 +65,14 @@ async fn run(
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {
-    // Config gate: the ADMIN API is opt-in. When disabled every admin route
-    // answers `405 Method Not Allowed`, rendered with the openEHR error body.
-    // Two grounds, one wire:
-    // - `admin_ehr_delete_all` has its OWN released provenance — its NOTE ("may
-    //   be disabled in production environments, in which case server may
-    //   respond with 405", `operations/admin_ehr_delete_all.yaml`) with
-    //   `responses/405.yaml` enumerated.
-    // - Every OTHER route here (the single-EHR delete, and the three
-    //   extensions, which have no released file at all) rests on the
-    //   cross-cutting rule instead: "If a method is recognized but not allowed
-    //   for the target resource, the response SHOULD be `405 Method Not
-    //   Allowed` status code" (`docs/overview/Requests_and_responses.md`
-    //   §"HTTP Methods"). The bulk route's NOTE governs only that operation and
-    //   is not their ground.
-    //
-    // This `405` comes from a MATCHED handler, so axum's allow-header machinery
-    // (which only decorates a *method fallback*) never runs and the `Allow`
-    // RFC 9110 §15.5.6 makes mandatory must be stated here. The value is the
-    // EMPTY field value, which is exactly what RFC 9110 §10.2.1 defines for
-    // this situation: "An empty Allow field value indicates that the resource
-    // allows no methods, which might occur in a 405 response if the resource
-    // has been temporarily disabled by configuration." While `admin.enabled` is
-    // off the resource serves no method at all, so no non-empty list would be
-    // truthful.
+    // Config gate: the ADMIN API is opt-in, and every admin route answers
+    // `405 Method Not Allowed` with the openEHR error body while it is off —
+    // `operations/admin_ehr_delete_all.yaml` states it for the bulk delete, and
+    // `docs/overview/Requests_and_responses.md` §"HTTP Methods" covers the
+    // rest. This `405` comes from a MATCHED handler, so axum's allow-header
+    // machinery never runs and the `Allow` RFC 9110 §15.5.6 mandates is stated
+    // here as the EMPTY field value — RFC 9110 §10.2.1's exact case for a
+    // resource "temporarily disabled by configuration".
     if let Some(refusal) = admin_group_gate(&state) {
         return Ok(refusal);
     }
@@ -138,19 +122,13 @@ async fn run(
         }
         "admin_ehr_delete_all" => {
             // The generated `AdminEhrDeleteAllParams.ehr_id: Option<String>`
-            // under-models the RFC 6570 `{?ehr_id*}` list: the type-directed
-            // params deserializer (`crate::params`) collapses a repeated
-            // `?ehr_id=a&ehr_id=b` to `Some("a")` for an `Option<String>` field.
-            // So the full list is read straight from the raw query here, which
-            // accepts BOTH the repeated form and a comma-separated single value
-            // (`?ehr_id=a,b`).
-            //
-            // `ehr_id` is OPTIONAL (`parameters/query/ehr_id_Admin.yaml`: "An
-            // optional parameter to perform the operation on a subset of EHRs").
-            // An absent/empty list therefore means "delete ALL EHRs", per
-            // `operations/admin_ehr_delete_all.yaml:5` ("Deletes all or multiple
-            // EHRs, or a specified subset"). The list is passed through verbatim;
-            // an empty vec is the "all EHRs" request.
+            // under-models the RFC 6570 `{?ehr_id*}` list — the params
+            // deserializer collapses a repeated `?ehr_id=a&ehr_id=b` to
+            // `Some("a")` — so the full list is read from the raw query, which
+            // accepts both the repeated and comma-separated forms. `ehr_id` is
+            // OPTIONAL (`parameters/query/ehr_id_Admin.yaml`), so an
+            // absent/empty list means "delete ALL EHRs"
+            // (`operations/admin_ehr_delete_all.yaml`).
             let ids = ehr_id_list(q);
             // The `AdminService::admin_ehr_delete_all` seam honours the
             // empty-list = all-EHRs semantics: per

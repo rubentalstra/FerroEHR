@@ -518,7 +518,8 @@ async fn expand_server(value_set_url: &str, codes: &[&str]) -> MockServer {
         .and(query_param("url", value_set_url))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({
             "resourceType": "ValueSet",
-            "expansion": { "contains": contains }
+            "status": "active",
+            "expansion": { "timestamp": "2026-08-04T00:00:00Z", "contains": contains }
         })))
         .mount(&server)
         .await;

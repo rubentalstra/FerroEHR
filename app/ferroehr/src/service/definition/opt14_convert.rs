@@ -239,8 +239,7 @@ pub(crate) fn convert_opt_to_archetypes(
         };
         // NOTE: `is_differential`, `adl_version`, `rm_release`, `is_generated`
         // above are the converter's starting point only — `convert` overrides
-        // them (`is_differential` from the absent parent; the ADL/RM stamps from
-        // `ConvertConfig`).
+        // them from the absent parent and from `ConvertConfig`.
         let art =
             Archetype::AuthoredArchetype(Box::new(AuthoredArchetype::AuthoredArchetype(data)));
         let converted = convert(&art, &cfg, &mut log)
@@ -544,16 +543,13 @@ impl Decomposer<'_> {
                 ),
             ),
             // A `C_CODE_REFERENCE` names an external reference set by URI. With
-            // no inline code list, that is exactly the AOM2 ac-code
-            // term-binding pattern: an ac-code constraint whose binding URI
-            // "will designate a ref-set or value set"
-            // (`AOM2/master07-terminology_package.adoc` §Overview; keys per
-            // VTCBK). A minted ac-code + definition + binding is emitted; the
-            // converter core shifts all three consistently. When an inline
-            // code list is ALSO present the (more concrete) list constraint
-            // wins and the URI is carried in `conversion_details` — a
-            // dual-constrained node has no single ADL2 form (no openEHR spec
-            // governs 1.4→2 conversion — our own design).
+            // no inline code list that is exactly the AOM2 ac-code term-binding
+            // pattern, whose binding URI "will designate a ref-set or value set"
+            // (`AOM2/master07-terminology_package.adoc` §Overview), so a minted
+            // ac-code + definition + binding is emitted. When an inline code
+            // list is ALSO present the list constraint wins and the URI is
+            // carried in `conversion_details` (no openEHR spec governs 1.4→2
+            // conversion — our own design).
             opt14::CObject::CCodeReference(c) => map_code_reference(c, cx),
             // A `CONSTRAINT_REF` names an ac-code whose definition lives in the
             // flattened ontology's `constraint_definitions` (AOM 1.4
@@ -1571,15 +1567,13 @@ fn quantity_tuple(c: &opt14::CDvQuantity, cx: &mut RootCx) -> CObject {
             is_multiple: false,
         });
     }
-    // Tuple members co-vary: a tuple is emitted only when EVERY item
-    // constrains the magnitude (the reference corpus renders a units-only
-    // constraint as a plain `units` attribute, never a tuple with empty
-    // members — `dv_quantity_variations_1` fixture). A mixed set (some items
-    // with a magnitude, some without) widens to the plain units list — the
-    // safe direction (a widened constraint never rejects valid data) — with
-    // the dropped per-unit ranges reported. Precision joins the tuple only
-    // when every item carries one, on the same rule. No openEHR spec governs
-    // 1.4→2 conversion — our own design.
+    // Tuple members co-vary: a tuple is emitted only when EVERY item constrains
+    // the magnitude (the reference corpus renders a units-only constraint as a
+    // plain `units` attribute). A mixed set widens to the plain units list — the
+    // safe direction, since a widened constraint never rejects valid data — with
+    // the dropped per-unit ranges reported. Precision joins the tuple only when
+    // every item carries one. No openEHR spec governs 1.4→2 conversion — our own
+    // design.
     let all_magnitude = !c.list.is_empty() && c.list.iter().all(|i| i.magnitude.is_some());
     let all_precision = !c.list.is_empty() && c.list.iter().all(|i| i.precision.is_some());
     let some_dropped = c

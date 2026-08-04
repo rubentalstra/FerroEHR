@@ -161,18 +161,9 @@ impl FerroEhrService {
         // lifecycle_state, attestations, signature } … ], audit }`. The typed
         // shapes serialize to exactly those field names.
         //
-        // NOTE (adjudicated 2026-08-04, #1820 — no openEHR spec governs the
-        // internal seam; our own design): this typed → wire-JSON bridge is
-        // DELIBERATE, not residue. `commit_version_set` is the ONE
-        // change-set engine (classification, m4 copy-down, attestation-only
-        // and delete members) and deliberately operates on the heterogeneous
-        // wire shape (the owner-approved Value lane — #1694 family 4, ruled
-        // 2026-08-03); a parallel typed entry would fork those semantics for
-        // this SM-only caller. The bridge is shape-faithful in both
-        // directions — the generated DTOs ARE the released wire shape
-        // (absent optionals omitted, `change_type` the `DV_CODED_TEXT` of
-        // the released `UpdateAudit.yaml`) — so what is re-parsed is exactly
-        // what a client would have sent.
+        // NOTE: no openEHR spec governs this internal seam — our own design:
+        // the typed → wire-JSON bridge routes this SM-only caller through the
+        // one change-set engine (`commit_version_set`) rather than forking it.
         let versions_json = openehr_its::json::to_canonical_value(&versions);
         let audit_json = openehr_its::json::to_canonical_value(&an_audit);
         let body = json!({ "versions": versions_json, "audit": audit_json });
