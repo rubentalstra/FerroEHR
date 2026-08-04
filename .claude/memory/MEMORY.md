@@ -42,3 +42,4 @@
 - [Foundation-first sequencing](foundation-first-sequencing.md) — owner 2026-08-02: systemic defect classes get a full-repo sweep phase before the next audit unit (blocked-by edge + P1); typed-codec sweep #1686 is the live case
 - [En-route findings always filed](en-route-findings-always-filed.md) — owner 2026-08-02: out-of-scope discoveries become tracker issues, never ignored; all agent defs carry the reporting section
 - [One worker per phase, hard fences](one-worker-per-phase-hard-fences.md) — 2026-08-02 collision incident: same-phase refactors run ONE worker with file fences; reverts orchestrator-only; backup before any reset
+- [Comments: less is more](comments-less-is-more.md) — owner 2026-08-04: NOTE = citation + one sentence max; adjudication essays live on the issue/PR, never in code

@@ -397,7 +397,7 @@ fn build_committer(pairs: &[(String, String)]) -> Result<Option<PartyProxy>, Api
         PartyIdentified::PartyIdentified(PartyIdentifiedData {
             external_ref,
             name,
-            identifiers: openehr_base::containers::present(Vec::new()),
+            identifiers: None,
         }),
     )))
 }

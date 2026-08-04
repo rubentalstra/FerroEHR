@@ -927,7 +927,11 @@ mod tests {
             .unwrap()
             .insert("links".into(), json!([]));
         let err = validate_folder(&bad, false).expect_err("an empty links list must be rejected");
-        assert!(format!("{err:?}").contains("Links_valid"), "got {err:?}");
+        assert!(
+            format!("{err:?}").contains("links")
+                && format!("{err:?}").contains("at least one member"),
+            "got {err:?}"
+        );
 
         let mut good = folder_fixture();
         good["folders"][0].as_object_mut().unwrap().insert(
@@ -1112,8 +1116,9 @@ mod tests {
         let err = validate_ehr_status(&with_other(other_details(json!([]))))
             .expect_err("a nested present-but-empty links list must be refused");
         assert!(
-            format!("{err:?}").contains("Links_valid"),
-            "the refusal should name the invariant, got {err:?}"
+            format!("{err:?}").contains("links")
+                && format!("{err:?}").contains("at least one member"),
+            "the refusal names the empty container (#1730 parse class), got {err:?}"
         );
 
         validate_ehr_status(&with_other(other_details(json!([{

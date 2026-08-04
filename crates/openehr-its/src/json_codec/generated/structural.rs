@@ -38,9 +38,13 @@
     reason = "mechanically generated dispatch text: one uniform arm per emitted class, every item named by its full path — length and style lints do not apply, the hand-written runtime carries the lint bar"
 )]
 
-// Shadowed twins (134):
+// Shadowed twins (139):
 //   AUTHORED_RESOURCE: openehr_rm::prelude::AuthoredResource wins over openehr_base::prelude::AuthoredResource
 //   CODE_PHRASE: openehr_rm::prelude::CodePhrase wins over openehr_base::prelude::CodePhrase
+//   Iso8601_date: openehr_rm::prelude::Iso8601DateData wins over openehr_base::prelude::Iso8601Date
+//   Iso8601_date_time: openehr_rm::prelude::Iso8601DateTimeData wins over openehr_base::prelude::Iso8601DateTime
+//   Iso8601_duration: openehr_rm::prelude::Iso8601DurationData wins over openehr_base::prelude::Iso8601Duration
+//   Iso8601_time: openehr_rm::prelude::Iso8601TimeData wins over openehr_base::prelude::Iso8601Time
 //   RESOURCE_DESCRIPTION: openehr_rm::prelude::ResourceDescription wins over openehr_base::prelude::ResourceDescription
 //   RESOURCE_DESCRIPTION_ITEM: openehr_rm::prelude::ResourceDescriptionItem wins over openehr_base::prelude::ResourceDescriptionItem
 //   TRANSLATION_DETAILS: openehr_rm::prelude::TranslationDetails wins over openehr_base::prelude::TranslationDetails
@@ -60,6 +64,7 @@
 //   ASSERTION: openehr_lang::prelude::Assertion wins over openehr_am::am14::prelude::Assertion
 //   EXPR_BINARY_OPERATOR: openehr_lang::prelude::ExprBinaryOperator wins over openehr_am::am14::prelude::ExprBinaryOperator
 //   EXPR_UNARY_OPERATOR: openehr_lang::prelude::ExprUnaryOperator wins over openehr_am::am14::prelude::ExprUnaryOperator
+//   RESOURCE_DESCRIPTION: openehr_rm::prelude::ResourceDescription wins over openehr_am::am14::prelude::ResourceDescription
 //   ARCHETYPE_SLOT: openehr_am::am14::prelude::ArchetypeSlot wins over openehr_am::am24::prelude::ArchetypeSlot
 //   ARCHETYPE_TERM: openehr_am::am14::prelude::ArchetypeTerm wins over openehr_am::am24::prelude::ArchetypeTerm
 //   ASSERTION: openehr_lang::prelude::Assertion wins over openehr_am::am24::prelude::Assertion
@@ -173,7 +178,7 @@
 //   RESOURCE_DESCRIPTION: openehr_rm::prelude::ResourceDescription wins over openehr_am::am24::prelude::ResourceDescription
 //   SCHEMA_DESCRIPTOR: openehr_lang::prelude::SchemaDescriptorData wins over openehr_am::am24::prelude::SchemaDescriptorData
 //   STATEMENT_SET: openehr_lang::prelude::StatementSet wins over openehr_am::am24::prelude::StatementSet
-// Shapes with no `_type` key (223):
+// Shapes with no `_type` key (230):
 //   Actor: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   AuditDetails: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   CareEntry: untagged enum: the wire `_type` is the active variant's, which has its own arm
@@ -196,6 +201,12 @@
 //   ExtractItem: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   Item: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   ItemStructure: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   Interval: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   Iso8601Date: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   Iso8601DateTime: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   Iso8601Duration: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   Iso8601Time: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   Iso8601Type: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   Locatable: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   MessageContent: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   OpenehrCodeSetIdentifiers: untagged enum: the wire `_type` is the active variant's, which has its own arm
@@ -297,6 +308,7 @@
 //   ElValueGenerator: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   ElVariable: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   ArchetypeConstraint: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   AuthoredResource: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   CAttribute: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   CDefinedObject: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   CDomainType: untagged enum: the wire `_type` is the active variant's, which has its own arm
@@ -1325,19 +1337,19 @@ pub fn structural_check(
             crate::json::from_canonical_value::<openehr_rm::prelude::ItemTree>(node).map(|_| ()),
         ),
         "Iso8601_date" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_base::prelude::Iso8601Date>(node)
+            crate::json::from_canonical_value::<openehr_rm::prelude::Iso8601DateData>(node)
                 .map(|_| ()),
         ),
         "Iso8601_date_time" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_base::prelude::Iso8601DateTime>(node)
+            crate::json::from_canonical_value::<openehr_rm::prelude::Iso8601DateTimeData>(node)
                 .map(|_| ()),
         ),
         "Iso8601_duration" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_base::prelude::Iso8601Duration>(node)
+            crate::json::from_canonical_value::<openehr_rm::prelude::Iso8601DurationData>(node)
                 .map(|_| ()),
         ),
         "Iso8601_time" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_base::prelude::Iso8601Time>(node)
+            crate::json::from_canonical_value::<openehr_rm::prelude::Iso8601TimeData>(node)
                 .map(|_| ()),
         ),
         "Iso8601_timezone" => ::core::option::Option::Some(

@@ -164,18 +164,18 @@ pub(crate) fn committer_proxy() -> PartyProxy {
             PartyIdentifiedData {
                 external_ref: None,
                 name: Some(principal.subject.clone()),
-                identifiers: Some(vec![DvIdentifier {
+                identifiers: Some(openehr_base::containers::NonEmptyVec::of(DvIdentifier {
                     issuer: Some("ferroehr".to_owned()),
                     assigner: None,
                     id: principal.subject,
                     r#type: Some(id_type.to_owned()),
-                }]),
+                })),
             }
         }
         None => PartyIdentifiedData {
             external_ref: None,
             name: Some(ferroehr::service::SYSTEM_COMMITTER_NAME.to_owned()),
-            identifiers: openehr_base::containers::present(Vec::new()),
+            identifiers: None,
         },
     };
     PartyProxy::PartyIdentified(PartyIdentified::PartyIdentified(party))

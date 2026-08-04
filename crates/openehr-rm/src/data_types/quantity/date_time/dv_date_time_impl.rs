@@ -41,7 +41,7 @@ mod tests {
         DvDateTime {
             normal_status: None,
             normal_range: None,
-            other_reference_ranges: openehr_base::containers::present(Vec::new()),
+            other_reference_ranges: openehr_base::containers::present_nonempty(Vec::new()),
             magnitude_status: None,
             accuracy: None,
             value: value.to_owned(),

@@ -515,7 +515,7 @@ pub(crate) fn complete_attestation(
             .unwrap_or_else(|| committer_fallback.clone()),
         attested_view: partial.parts.attested_view.clone(),
         proof: partial.parts.proof.clone(),
-        items: openehr_base::containers::present(partial.parts.items.clone()),
+        items: openehr_base::containers::present_nonempty(partial.parts.items.clone()),
         reason: partial.parts.reason.clone(),
         is_pending: partial.parts.is_pending,
     }

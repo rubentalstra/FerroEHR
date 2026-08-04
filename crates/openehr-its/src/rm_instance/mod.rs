@@ -572,24 +572,23 @@ mod tests {
         );
     }
 
-    /// `locatable.adoc` §Invariants `Links_valid`: `links /= Void implies not
-    /// links.is_empty` — a present-but-empty `links` list is refused on ANY
-    /// LOCATABLE node (the invariant is inherited, so the rule is
-    /// attribute-keyed).
+    /// `locatable.adoc` §Invariants `Links_valid` — since #1730 the shape is
+    /// `Option<NonEmptyVec<LINK>>`, so a present-but-empty `links` refuses at
+    /// the typed tier's decode (parse class), on ANY LOCATABLE node.
     #[test]
     fn links_present_but_empty_rejected() {
         let mut inst = root_node(
             "openEHR-EHR-SECTION.adhoc.v1",
             "openEHR-EHR-SECTION.adhoc.v1",
         );
-        inst.as_object_mut()
-            .expect("root object")
-            .insert("links".into(), json!([]));
+        let obj = inst.as_object_mut().expect("root object");
+        obj.remove("items"); // SECTION.items is 0..1; keep the fixture valid but for links
+        obj.insert("links".into(), json!([]));
         let msgs = rm_only(&inst);
         assert!(
             msgs.iter()
-                .any(|m| m.kind == ValidationKind::Invariant && m.message.contains("Links_valid")),
-            "expected a Links_valid violation, got {msgs:?}"
+                .any(|m| m.message.contains("links") && m.message.contains("at least one member")),
+            "expected the links parse refusal, got {msgs:?}"
         );
     }
 

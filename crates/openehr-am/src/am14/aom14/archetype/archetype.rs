@@ -6,10 +6,10 @@
 use crate::am14::aom14::archetype::assertion::assertion::Assertion;
 use crate::am14::aom14::archetype::constraint_model::c_complex_object::CComplexObject;
 use crate::am14::aom14::archetype::ontology::archetype_ontology::ArchetypeOntology;
+use crate::am14::resource::resource_description::ResourceDescription;
 use openehr_base::prelude::ArchetypeId;
 use openehr_base::prelude::HierObjectId;
 use openehr_base::prelude::ResourceAnnotations;
-use openehr_base::prelude::ResourceDescription;
 use openehr_base::prelude::TerminologyCode;
 use openehr_base::prelude::TranslationDetails;
 
@@ -44,5 +44,5 @@ pub struct Archetype {
     /// Identifier of the specialisation parent of this archetype.
     pub parent_archetype_id: Option<ArchetypeId>,
     /// Invariant statements about this object. Statements are expressed in first order predicate logic, and usually refer to at least two attributes.
-    pub invariants: Option<Vec<Assertion>>,
+    pub invariants: Option<openehr_base::containers::NonEmptyVec<Assertion>>,
 }

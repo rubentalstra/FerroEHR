@@ -48,7 +48,7 @@ flow:
       versioned_object_uid: "${versioned_object_uid}"
       party: "${ds:cnf.demographic.person.contacts_empty}"
       preceding_version_uid: "${preceding_version_uid}"
-    expect: validation_failed            # the 422 semantic class — converts, then fails PARTY.Contacts_valid
+    expect: bad_request                  # parse class since #1730 (Option<NonEmptyVec>; the #1727 ruling)            # the 422 semantic class — converts, then fails PARTY.Contacts_valid
   - step: 3                              # the stored party is untouched
     call: I_PARTY.get_party
     with: { versioned_object_uid: "${versioned_object_uid}" }

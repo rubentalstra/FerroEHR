@@ -49,6 +49,12 @@ pub fn present<T>(members: Vec<T>) -> Option<Vec<T>> {
     (!members.is_empty()).then_some(members)
 }
 
+/// [`present`] for an `Option<NonEmptyVec<T>>` field: empty input = absent.
+#[must_use]
+pub fn present_nonempty<T>(members: Vec<T>) -> Option<NonEmptyVec<T>> {
+    NonEmptyVec::new(members).ok()
+}
+
 #[cfg(test)]
 mod tests {
     use super::present;
