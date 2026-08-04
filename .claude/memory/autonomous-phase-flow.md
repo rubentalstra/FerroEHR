@@ -13,9 +13,10 @@ fresh branch from develop, and **start the next phase immediately** without
 waiting for a "yes continue".
 
 **Why:** the owner wants uninterrupted autonomous progression through the
-roadmap (now the root `ROADMAP.md` — the E1→E5 enterprise arc that
+roadmap (the open issues + milestones; the E1→E5 enterprise arc that
 originally motivated this has shipped; the enterprise doc tree was deleted
-2026-07-14).
+2026-07-14, and the root `ROADMAP.md` was retired 2026-08-04 into the
+public roadmap board — see [[tracker-is-github-issues]]).
 
 **Hard ordering rule (owner correction 2026-07-11, angry):** the sequence is
 strictly commit → push → **create PR → merge** → `git fetch` → checkout the

@@ -16,7 +16,7 @@ ITS-REST 1.1.0 &nbsp;·&nbsp; AQL 1.1 &nbsp;·&nbsp; RM 1.2.0 &nbsp;·&nbsp; ADL
 [![GHCR](https://img.shields.io/badge/ghcr.io-ferroehr-2496ED.svg?logo=docker&logoColor=white)](https://github.com/rubentalstra/FerroEHR/pkgs/container/ferroehr)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-[**Documentation**](https://ferroehr.eu/) · [Quick start](#quick-start) · [Features](#features) · [Architecture](#architecture) · [Conformance](#conformance-measured-not-asserted) · [Deployment](#deployment) · [Contributing](#contributing-and-security)
+[**Documentation**](https://ferroehr.eu/) · [Quick start](#quick-start) · [Features](#features) · [Architecture](#architecture) · [Conformance](#conformance-measured-not-asserted) · [Deployment](#deployment) · [Roadmap](https://github.com/rubentalstra/FerroEHR/projects) · [Contributing](#contributing-and-security)
 
 </div>
 
@@ -379,7 +379,7 @@ test. See [CONTRIBUTING.md](CONTRIBUTING.md) for the developer workflow.
 | [Architecture](docs/architecture.md) | How the system is built, and why |
 | [Conformance report](docs/conformance/ferroehr/CONFORMANCE_REPORT.md) | The latest measured results, per test case |
 | [Version matrix](docs/VERSIONS.md) | Every pin: openEHR spec versions, Rust toolchain, PostgreSQL |
-| [Product roadmap](ROADMAP.md) | Where the product goes next |
+| [Roadmap board](https://github.com/rubentalstra/FerroEHR/projects) | Where the product goes next — planned, in progress, and shipped, live |
 | [Developer documentation](docs/README.md) | Contributing, design decisions, specifications |
 | [Vendored openEHR specifications](docs/specs/openehr/) | The oracle every spec-facing decision cites |
 

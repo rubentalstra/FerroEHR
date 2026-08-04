@@ -14,7 +14,10 @@ PostgreSQL-18-native internals. Two layers:
    the openEHR specifications as the authority. EHRbase and other CDRs are
    prior art, not an oracle. Shipped as of v3.5.0.
 
-Authoritative roadmap: the root **`ROADMAP.md`**; the open-items tracker is
+Authoritative roadmap: the public **FerroEHR Roadmap board** (a GitHub
+Project view over the tracker; its readme carries the direction themes —
+`.claude/rules/project-board.md`; the former root `ROADMAP.md` was retired
+2026-08-04); the open-items tracker is
 GitHub Issues (root `CLAUDE.md` §Issue workflow), with `docs/plans/` (deep
 working plans) under it; the build record is the closed issues + PR
 descriptions + `CHANGELOG.md` + git history. Per-endpoint call chains are

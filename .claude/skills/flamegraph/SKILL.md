@@ -99,8 +99,8 @@ sudo cargo flamegraph --bin ferroehr     # macOS (dtrace needs elevation)
 ## Ground rules
 
 - **Profile first, then optimize** — a perf change without a profile naming
-  the hotspot is speculation (ROADMAP §Performance: profile-first, one
-  change per ladder).
+  the hotspot is speculation (the standing perf rule: profile-first, one
+  change per ladder, re-measured per release).
 - pprof is Linux + macOS only (signal-based sampling) — matches our targets.
 - A flamegraph is an exploration artifact, NEVER a conformance/perf record:
   committed performance claims come only from the CNF runner's measured
