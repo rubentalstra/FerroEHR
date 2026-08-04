@@ -182,7 +182,11 @@ Three physical directories (consolidated 2026-07-16):
 **`app/*`** holds the application — `ferroehr` (the platform **library**),
 `ferroehr-rest` (the ITS-REST protocol adapter, which calls the concrete
 `FerroEhrService` directly), `ferroehr-server` (the wiring-only binary; the
-bin is still named `ferroehr`), and `ferroehr-admin-ui` (the Leptos SSR admin
+bin is still named `ferroehr`), `ferroehr-ext` (the feature-gated
+optional-integration crate — FHIR conversion core, events transport,
+multimedia store — one additive cargo feature per integration, default all-on,
+slim builds compile them out with loud boot refusals for enabled-but-unbuilt
+integrations), and `ferroehr-admin-ui` (the Leptos SSR admin
 console — its own binary/OCI image, consuming the CDR strictly over
 ITS-REST); **`tools/*`** holds the dev/verification
 tooling that is *not* part of the shipped application (`cnf-runner` — the
@@ -193,6 +197,7 @@ stress/probe instruments; nothing consumes `cnf-runner` as a library),
 generated openEHR spec layer + its tooling (`openehr-*`). Root
 workspace `members = ["crates/*", "app/*", "tools/*"]`. Arrows:
 `ferroehr-server → {ferroehr-rest, ferroehr}`, `ferroehr-rest → ferroehr`,
+`ferroehr → ferroehr-ext` (optional, feature-forwarded),
 `app/* → crates/openehr-*`. The SM Platform Service Model is realized as the
 *structure* of `ferroehr::service` — one module per SM chapter, concrete
 methods (no trait catalog), SM call semantics as the design authority — with
@@ -233,6 +238,7 @@ The service layer realizes the openEHR **SM Platform Service Model**
 | `ferroehr-rest` | ITS-REST protocol adapter (axum) + auth + ATNA audit middleware; `access` module = RBAC/ABAC authz; calls the concrete `FerroEhrService` | application |
 | `ferroehr` | The platform library: storage, service layer (one module per SM chapter), AQL engine, versioning, the full config tree, telemetry, `signing` + `system_log` | application |
 | `ferroehr-server` | The wiring-only binary (config → pool → migrations → service → serve); bin name `ferroehr` | application |
+| `ferroehr-ext` | Optional integrations behind additive features (`fhir`, `events`, `multimedia`): FHIR mapping/reverse/feeder-audit cores, the AMQP events transport, the content-addressed multimedia store | application |
 | `cnf-runner` | CNF 2.0 conformance runner + the measured-performance, step-load stress, and AQL-probe instruments (`tools/*`; consumed by nothing — terminal instrument) | tooling |
 | `testkit` | Shared test-database harness: one PG18 server + template-database cloning (`tools/*`) | tooling |
 
