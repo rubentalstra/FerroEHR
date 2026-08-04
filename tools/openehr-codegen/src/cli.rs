@@ -793,6 +793,7 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
             &base.own_schema,
             &base.external,
             base.doc,
+            base.spec_version,
             &sibling_impls("openehr-base"),
         ),
     )?;
@@ -808,6 +809,7 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
         &rm_aug,
         &rm.external,
         rm.doc,
+        rm.spec_version,
         &sibling_impls("openehr-rm"),
     );
     inject_rm_model(&mut rm_files, emit_rm_model::emit_files(&rm.model));
@@ -829,6 +831,7 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
             &crate_generations(&lang),
             &lang.external,
             lang.doc,
+            lang.spec_version,
             &sibling_impls("openehr-lang"),
         ),
     )?;
@@ -862,6 +865,7 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
         ],
         &am24.external,
         am24.doc,
+        am24.spec_version,
         &sibling_impls("openehr-am"),
     );
     write_crate("openehr-am", &am_files)?;
@@ -877,6 +881,7 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
             &term.own_schema,
             &term.external,
             term.doc,
+            term.spec_version,
             &sibling_impls("openehr-term"),
         ),
     )?;

@@ -100,8 +100,8 @@ mod tests {
     fn build_info_is_populated() {
         let info = BuildInfo::current();
         assert_eq!(info.name, "ferroehr");
-        // The pins are the crate versions themselves — no re-typed literals
-        // anywhere in the chain, so a pin bump cannot silently diverge.
+        // The pins are the owning crates' `SPEC_VERSION` constants — no
+        // re-typed literals in the chain, so a pin bump cannot silently diverge.
         assert_eq!(info.spec.rm, openehr_rm::SPEC_VERSION);
         assert_eq!(info.spec.its_rest, openehr_its::SPEC_VERSION);
         assert_eq!(

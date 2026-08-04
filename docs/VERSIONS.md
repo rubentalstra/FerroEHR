@@ -17,11 +17,21 @@ changelog-driven (`CHANGELOG.md`, Keep a Changelog 1.1.0) and published as
 official releases (owner sign-off 2026-07-31); only an explicitly suffixed
 tag (`vX.Y.Z-rc1`, ...) publishes as a pre-release.
 
-The `openehr-*` **spec crates** are versioned by the openEHR specification
-they implement (the pins below): `openehr-base` 1.3.0, `openehr-rm` 1.2.0,
-`openehr-am` 2.4.0, `openehr-adl` 2.4.0, `openehr-term` 3.1.0, `openehr-lang` 1.0.0,
-`openehr-query` 1.1.0, `openehr-its` 1.1.0. They bump only on a spec-pin
-bump, never with the product version.
+The `openehr-*` **spec crates** are published on crates.io on their own
+**pre-stabilisation `0.0.x` line** (owner ruling 2026-08-04, issue #1886:
+published versions are immutable, so the crates start at `0.0.1` and iterate
+freely; at stabilisation each crate adopts the version of the openEHR
+specification it implements — `openehr-base` 1.3.0, `openehr-rm` 1.2.0,
+`openehr-am` 2.4.0, `openehr-adl` 2.4.0, `openehr-term` 3.1.0,
+`openehr-lang` 1.0.0, `openehr-query` 1.1.0, `openehr-its` 1.1.0 — after
+which the spec version is the crate's major.minor and the patch digit is
+ours). The implemented spec version is decoupled from the package version:
+each crate's `SPEC_VERSION` constant carries the pin (emitted by
+`openehr-codegen` from the declarative composition table for the generated
+crates; a literal in the hand-written ones), and the crates release in
+lockstep — a `0.0.x` bump bumps all eight plus their internal version
+requirements (cargo treats every `0.0.x` as its own compatibility set).
+Spec-crate releases never ride the product version.
 
 ## Language and runtime
 

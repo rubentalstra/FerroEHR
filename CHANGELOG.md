@@ -17,6 +17,17 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The eight `openehr-*` spec crates are published on crates.io** —
+  `openehr-base`, `openehr-rm`, `openehr-am`, `openehr-adl`, `openehr-term`,
+  `openehr-lang`, `openehr-query`, `openehr-its` — each with its own README,
+  packaged license texts (MIT, plus Apache-2.0 where openEHR-derived material
+  is embedded), and docs.rs documentation. Packages start on a
+  pre-stabilisation `0.0.x` line; the implemented openEHR spec version is
+  carried by each crate's `SPEC_VERSION` constant, now decoupled from the
+  package version. Releases after the first go through an OIDC
+  trusted-publishing workflow (`publish-crates.yml`) — no long-lived
+  registry token (#1886).
+
 - RM validation now realizes every remaining register-visible class invariant: RESOURCE_DESCRIPTION(_ITEM), AUTHORED_RESOURCE, EXTRACT and EXTRACT_UPDATE_SPEC gained generated invariant cores wired into the typed dispatch — the machine-classified Unrealized register is at ZERO rows (#1623); EXTRACT_SPEC criteria and OPT-carried REVISION_HISTORY refusals are pinned by twins (#1648, #1737).
 - EHR-Extract export now evaluates `EXTRACT_SPEC.criteria`: AQL criteria queries select each entity's primary set `$ehr`-bound (the entity's EHR scopes the query and a literal `$ehr` parameter binds to its id); a non-AQL formalism or an unparseable criterion is refused with `400`. The former blanket criteria refusal is gone (#1736).
 - **On-demand CPU flamegraph of the running server:**

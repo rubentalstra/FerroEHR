@@ -1,10 +1,10 @@
 //! Build/spec provenance constants.
 //!
-//! The spec pins are **derived from the `openehr-*` crate versions** (each spec
-//! crate is versioned by the openEHR specification it implements, so its
-//! `SPEC_VERSION` constant is the pin), never hand-typed literals: a pin bump
-//! in a crate manifest propagates here at compile time, so the identity
-//! surfaces cannot drift.
+//! The spec pins are **read from each `openehr-*` crate's `SPEC_VERSION`
+//! constant** (emitted from the vendored spec inputs, independent of the
+//! crates.io package version), never hand-typed literals: a pin bump in the
+//! spec layer propagates here at compile time, so the identity surfaces
+//! cannot drift.
 
 /// The openEHR ITS-REST contract version this server implements.
 ///
@@ -24,8 +24,8 @@ pub const BASE: &str = openehr_base::SPEC_VERSION;
 /// ships both extant generations side by side; this one is the `am14`
 /// module's own pin).
 pub const AM14: &str = openehr_am::am14::SPEC_VERSION;
-/// The ADL 2 generation of the Archetype Model (= the `openehr-am` crate
-/// version, its primary generation).
+/// The ADL 2 generation of the Archetype Model (the `openehr-am` crate's
+/// primary generation — its crate-level pin equals the `am24` module's).
 pub const AM24: &str = openehr_am::SPEC_VERSION;
 /// The openEHR Terminology version.
 pub const TERM: &str = openehr_term::SPEC_VERSION;
@@ -49,10 +49,10 @@ mod tests {
     use super::*;
 
     /// The derivation chain holds end to end: every pin is the owning
-    /// crate's own `SPEC_VERSION`, and the AM crate version is its ADL 2
-    /// generation.
+    /// crate's own `SPEC_VERSION`, and the AM crate-level pin is its ADL 2
+    /// generation's.
     #[test]
-    fn pins_are_the_crate_versions() {
+    fn pins_are_the_crate_spec_versions() {
         assert_eq!(ITS_REST, openehr_its::SPEC_VERSION);
         assert_eq!(AQL, openehr_query::SPEC_VERSION);
         assert_eq!(RM, openehr_rm::SPEC_VERSION);
