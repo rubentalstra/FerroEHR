@@ -999,7 +999,6 @@ fn the_pinned_openehr_odin_schemas_read_their_persisted_interfaces() {
     // `(P_BMM_INTERFACE)`-marked members of `class_definitions`. Those real
     // artefacts (not a fixture) pin that the reader materialises each one with
     // its declared functions, and that the whole schema still reads.
-    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(CODEGEN_VENDOR_ODIN);
     for (file, interfaces) in [
         (
             "RM/odin/openehr_rm_1.2.0.bmm",
@@ -1010,11 +1009,7 @@ fn the_pinned_openehr_odin_schemas_read_their_persisted_interfaces() {
             ["Env", "Locale", "Math", "Quantity_converter"].as_slice(),
         ),
     ] {
-        let full = root.join(file);
-        let src = std::fs::read_to_string(&full)
-            .unwrap_or_else(|e| panic!("read {}: {e}", full.display()));
-        let schema =
-            read_schema(&src).unwrap_or_else(|e| panic!("{file}: the pinned schema reads: {e}"));
+        let schema = read_pinned(file);
         for name in interfaces {
             let class = schema
                 .primitive_types
@@ -1046,13 +1041,6 @@ fn the_pinned_openehr_odin_schemas_materialise_their_interfaces_as_abstract_clas
     // has to resolve those references — which it does by materialising each
     // interface as an abstract `BMM_CLASS` with no properties (see
     // `create_model::Builder::build_class`).
-    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(CODEGEN_VENDOR_ODIN);
-    let read_pinned = |file: &str| -> PBmmSchema {
-        let full = root.join(file);
-        let src = std::fs::read_to_string(&full)
-            .unwrap_or_else(|e| panic!("read {}: {e}", full.display()));
-        read_schema(&src).unwrap_or_else(|e| panic!("{file}: the pinned schema reads: {e}"))
-    };
     let base = read_pinned("BASE/odin/openehr_base_1.3.0.bmm");
     let rm = read_pinned("RM/odin/openehr_rm_1.2.0.bmm");
     let mut available: BTreeMap<String, PBmmSchema> = BTreeMap::new();
