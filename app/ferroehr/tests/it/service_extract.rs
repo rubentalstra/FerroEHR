@@ -379,3 +379,135 @@ async fn extract_spec_flags_are_honoured() {
         .expect_err("masked item carrying content must be rejected");
     assert!(err.message.contains("Item_validity"), "{}", err.message);
 }
+
+/// The `EXTRACT_SPEC` skeleton the criteria tests share: one entity, no
+/// `item_list`, the given criteria list (RM ehr_extract
+/// `master04-common_package.adoc` §`EXTRACT_SPEC` — criteria "defines in the
+/// form of generic queries … which items are to be retrieved from each
+/// entity's record").
+fn criteria_spec(ehr: &str, criteria: Value) -> ExtractSpec {
+    openehr_its::json::from_canonical_value(&json!({
+        "_type": "EXTRACT_SPEC",
+        "version_spec": {
+            "_type": "EXTRACT_VERSION_SPEC",
+            "include_all_versions": false,
+            "include_revision_history": false,
+            "include_data": true
+        },
+        "manifest": {
+            "_type": "EXTRACT_MANIFEST",
+            "entities": [ {
+                "_type": "EXTRACT_ENTITY_MANIFEST",
+                "extract_id_key": ehr,
+                "ehr_id": ehr,
+                "other_ids": [],
+                "item_list": []
+            } ]
+        },
+        "extract_type": {
+            "_type": "DV_CODED_TEXT",
+            "value": "openehr-ehr",
+            "defining_code": {
+                "_type": "CODE_PHRASE",
+                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                "code_string": "openehr-ehr"
+            }
+        },
+        "include_multimedia": true,
+        "priority": 0,
+        "link_depth": 0,
+        "criteria": criteria
+    }))
+    .expect("EXTRACT_SPEC")
+}
+
+/// #1736 — `EXTRACT_SPEC.criteria` selects the primary set: an AQL criterion
+/// whose rows identify the `EHR_STATUS` version container yields an extract
+/// carrying exactly that container, not the whole EHR (master04
+/// §`EXTRACT_SPEC`: criteria define "which items are to be retrieved";
+/// "Query expressions use variables such as $ehr to mean the current EHR").
+#[tokio::test]
+async fn criteria_select_the_primary_set_ehr_bound() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let (ehr, _status_vo) = seed_ehr(&svc).await;
+
+    let spec = criteria_spec(
+        &ehr.to_string(),
+        json!([{
+            "_type": "DV_PARSABLE",
+            "value": "SELECT s/uid/value FROM EHR e CONTAINS EHR_STATUS s",
+            "formalism": "AQL"
+        }]),
+    );
+    let extracts = svc
+        .export_ehr_extracts(spec)
+        .await
+        .expect("criteria-driven export");
+    assert_eq!(extracts.len(), 1, "one entity → one EXTRACT");
+    let its = items(&extracts[0]);
+    assert_eq!(
+        its.len(),
+        1,
+        "the criterion selects exactly the EHR_STATUS container: {its:#?}"
+    );
+    assert!(
+        find_by_xtype(&extracts[0], "X_VERSIONED_EHR_STATUS").is_some(),
+        "the selected container is the EHR_STATUS"
+    );
+}
+
+/// #1736, refusal twin (a): a criterion in a formalism this service does not
+/// evaluate is a typed precondition refusal — never a silent skip or a silent
+/// whole-EHR over-export.
+#[tokio::test]
+async fn criteria_in_a_foreign_formalism_are_refused() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let (ehr, _status_vo) = seed_ehr(&svc).await;
+
+    let spec = criteria_spec(
+        &ehr.to_string(),
+        json!([{ "_type": "DV_PARSABLE", "value": "irrelevant", "formalism": "xquery" }]),
+    );
+    let err = svc
+        .export_ehr_extracts(spec)
+        .await
+        .expect_err("a non-AQL criteria formalism must be refused");
+    assert_eq!(
+        err.status,
+        ferroehr::service::status::CallStatusType::PreconditionViolation
+    );
+    assert!(
+        err.message.contains("formalism"),
+        "the refusal names the formalism: {}",
+        err.message
+    );
+}
+
+/// #1736, refusal twin (b): a criterion that does not parse as AQL is a typed
+/// precondition refusal naming the criterion index.
+#[tokio::test]
+async fn criteria_that_do_not_parse_as_aql_are_refused() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let (ehr, _status_vo) = seed_ehr(&svc).await;
+
+    let spec = criteria_spec(
+        &ehr.to_string(),
+        json!([{ "_type": "DV_PARSABLE", "value": "THIS IS NOT AQL", "formalism": "aql" }]),
+    );
+    let err = svc
+        .export_ehr_extracts(spec)
+        .await
+        .expect_err("an unparseable AQL criterion must be refused");
+    assert_eq!(
+        err.status,
+        ferroehr::service::status::CallStatusType::PreconditionViolation
+    );
+    assert!(
+        err.message.contains("criteria[0]"),
+        "the refusal names the criterion: {}",
+        err.message
+    );
+}

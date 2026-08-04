@@ -17,6 +17,7 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- EHR-Extract export now evaluates `EXTRACT_SPEC.criteria`: AQL criteria queries select each entity's primary set `$ehr`-bound (the entity's EHR scopes the query and a literal `$ehr` parameter binds to its id); a non-AQL formalism or an unparseable criterion is refused with `400`. The former blanket criteria refusal is gone (#1736).
 - EHR Extract import now enforces the copy closure (RM common master06 §Copying): a received branch version is refused with `400` unless its fork-point trunk version and same-branch predecessor travel in the same extract or are already stored (#1770).
 - **FOLDER (DIRECTORY) resources can now carry ITEM_TAGs.** ITS-REST overview
   `Requests_and_responses.md` §openehr-item-tag and openehr-version-item-tag
