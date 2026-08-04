@@ -17,3 +17,7 @@ pub mod extract_request;
 pub mod extract_spec;
 pub mod extract_update_spec;
 pub mod extract_version_spec;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod extract_impl;
+pub mod extract_update_spec_impl;

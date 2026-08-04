@@ -389,6 +389,28 @@ pub fn dispatch_typed(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>
         "SECTION" => run_shallow::<Section>(ty, value, out),
         "FOLDER" => run_shallow::<Folder>(ty, value, out),
         "ITEM_TAG" => run::<ItemTag>(ty, value, out),
+        // authored-resource metadata + the EHR_EXTRACT request classes (#1623):
+        // scalar-only own invariants, shallow where child collections are
+        // large. RESOURCE_DESCRIPTION keeps the full decode — its
+        // Details_valid reads the `details` map.
+        "RESOURCE_DESCRIPTION" => {
+            run::<crate::common::resource::resource_description::ResourceDescription>(
+                ty, value, out,
+            );
+        }
+        "RESOURCE_DESCRIPTION_ITEM" => {
+            run::<crate::common::resource::resource_description_item::ResourceDescriptionItem>(
+                ty, value, out,
+            );
+        }
+        "EXTRACT" => {
+            run_shallow::<crate::ehr_extract::common::extract::Extract>(ty, value, out);
+        }
+        "EXTRACT_UPDATE_SPEC" => {
+            run::<crate::ehr_extract::common::extract_update_spec::ExtractUpdateSpec>(
+                ty, value, out,
+            );
+        }
         // base identification
         "OBJECT_REF" => run::<ObjectRefData>(ty, value, out),
         "PARTY_REF" => run::<PartyRef>(ty, value, out),

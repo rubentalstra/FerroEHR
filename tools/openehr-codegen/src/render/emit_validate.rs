@@ -346,6 +346,15 @@ const MODULE_DOC_INTRO: &str = "\
 //! - `nonempty_list_core` — the whole `x /= Void implies not x.is_empty`
 //!   family, decidable on the typed model now that an optional container emits
 //!   as `Option<Vec<T>>`.
+//! - `resource_description_core` — RESOURCE_DESCRIPTION `Original_author_valid`,
+//!   `Lifecycle_state_valid`, `Details_valid`.
+//! - `resource_description_item_core` — RESOURCE_DESCRIPTION_ITEM
+//!   `Purpose_valid`, `Use_valid`, `misuse_valid`, `copyright_valid`.
+//! - `authored_resource_core` — AUTHORED_RESOURCE `Revision_history_valid`
+//!   (evaluated only when `is_controlled` is present — the `xor` is not
+//!   evaluable against a Void operand and the attribute is `0..1`).
+//! - `extract_core` — EXTRACT `Sequence_nr_valid`.
+//! - `extract_update_spec_core` — EXTRACT_UPDATE_SPEC `Overall_validity`.
 //!
 //! Complex invariants stay hand-written where the projection is non-trivial:
 //! ELEMENT's null-flavour XOR (`element_impl`), DV_EHR_URI's `Scheme_valid`
@@ -683,6 +692,101 @@ pub(crate) fn nonempty_list_core(
             "{ty}.{attribute} is present but empty — a present list must be \
              non-empty ({ty}.{invariant})"
         )));
+    }
+}
+
+/// RESOURCE_DESCRIPTION `Original_author_valid` / `Lifecycle_state_valid` /
+/// `Details_valid`: the three own non-empty rules.
+pub(crate) fn resource_description_core(
+    original_author_empty: bool,
+    lifecycle_state: &str,
+    details_empty: bool,
+    out: &mut Vec<InvariantViolation>,
+) {
+    if original_author_empty {
+        out.push(InvariantViolation::here(
+            "Invariant Original_author_valid failed on type RESOURCE_DESCRIPTION",
+        ));
+    }
+    if lifecycle_state.is_empty() {
+        out.push(InvariantViolation::here(
+            "Invariant Lifecycle_state_valid failed on type RESOURCE_DESCRIPTION",
+        ));
+    }
+    if details_empty {
+        out.push(InvariantViolation::here(
+            "Invariant Details_valid failed on type RESOURCE_DESCRIPTION",
+        ));
+    }
+}
+
+/// RESOURCE_DESCRIPTION_ITEM `Purpose_valid` (`not purpose.is_empty`) plus the
+/// three present-implies-non-empty string rules (`Use_valid`, `misuse_valid`,
+/// `copyright_valid`).
+pub(crate) fn resource_description_item_core(
+    purpose: &str,
+    use_: Option<&str>,
+    misuse: Option<&str>,
+    copyright: Option<&str>,
+    out: &mut Vec<InvariantViolation>,
+) {
+    if purpose.is_empty() {
+        out.push(InvariantViolation::here(
+            "Invariant Purpose_valid failed on type RESOURCE_DESCRIPTION_ITEM",
+        ));
+    }
+    for (value, invariant) in [
+        (use_, "Use_valid"),
+        (misuse, "misuse_valid"),
+        (copyright, "copyright_valid"),
+    ] {
+        if value.is_some_and(str::is_empty) {
+            out.push(invariant_failed(invariant, "RESOURCE_DESCRIPTION_ITEM"));
+        }
+    }
+}
+
+/// AUTHORED_RESOURCE `Revision_history_valid`
+/// (`is_controlled xor revision_history = Void`): a controlled resource
+/// carries a revision history and an uncontrolled one does not. Evaluated
+/// only when `is_controlled` is PRESENT — the attribute is `0..1` and an
+/// `xor` against a Void operand is not evaluable, so an absent flag asserts
+/// nothing (never an invented prohibition).
+pub(crate) fn authored_resource_core(
+    is_controlled: Option<bool>,
+    has_revision_history: bool,
+    out: &mut Vec<InvariantViolation>,
+) {
+    if let Some(controlled) = is_controlled
+        && controlled != has_revision_history
+    {
+        out.push(InvariantViolation::here(
+            "Invariant Revision_history_valid failed on type AUTHORED_RESOURCE",
+        ));
+    }
+}
+
+/// EXTRACT `Sequence_nr_valid`: `sequence_nr >= 1`.
+pub(crate) fn extract_core(sequence_nr: i32, out: &mut Vec<InvariantViolation>) {
+    if sequence_nr < 1 {
+        out.push(InvariantViolation::here(
+            "Invariant Sequence_nr_valid failed on type EXTRACT",
+        ));
+    }
+}
+
+/// EXTRACT_UPDATE_SPEC `Overall_validity`
+/// (`repeat_period /= Void or trigger_events /= Void`): an update
+/// specification names at least one update mode.
+pub(crate) fn extract_update_spec_core(
+    has_repeat_period: bool,
+    has_trigger_events: bool,
+    out: &mut Vec<InvariantViolation>,
+) {
+    if !has_repeat_period && !has_trigger_events {
+        out.push(InvariantViolation::here(
+            "Invariant Overall_validity failed on type EXTRACT_UPDATE_SPEC",
+        ));
     }
 }
 "#;
