@@ -146,9 +146,7 @@ pub(crate) async fn attest(
         // A 666 attestation adds no new version; it is announced in the
         // contribution's outbox envelope as a change to the existing version.
         // The code lives on the ATTESTATION's OWN inherited `change_type`, not
-        // on a `commit_audit` it does not have (register AMB-190 — the
-        // §Contributions row's `ATTESTATION._commit_audit_._change_type_` path
-        // names no attribute of the class).
+        // on a `commit_audit` it does not have.
         change_type: change_type::ATTESTATION.to_owned(),
         template_id: None,
         // The contribution's commit-act time — a 666 attestation adds no new

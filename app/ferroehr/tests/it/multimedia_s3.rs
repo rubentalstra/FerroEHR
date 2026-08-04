@@ -33,9 +33,9 @@ use testcontainers::runners::AsyncRunner;
 use testcontainers::{ContainerAsync, GenericImage, ImageExt};
 use uuid::Uuid;
 
-use ferroehr::extensions::multimedia::MultimediaEngine;
+use ferroehr_ext::multimedia::MultimediaEngine;
 use ferroehr::extensions::multimedia::config::MultimediaConfig;
-use ferroehr::extensions::multimedia::store::BlobStore;
+use ferroehr_ext::multimedia::store::BlobStore;
 use ferroehr::service::FerroEhrService;
 use ferroehr::service::admin::types::ExportSpec;
 
@@ -101,7 +101,7 @@ impl Seaweed {
 
     fn engine(&self) -> Arc<MultimediaEngine> {
         Arc::new(
-            MultimediaEngine::from_config(&self.config())
+            ferroehr::extensions::multimedia::engine_from_config(&self.config())
                 .expect("build engine")
                 .expect("engine enabled"),
         )
@@ -227,7 +227,15 @@ fn blob_key(status: &Value) -> String {
 #[tokio::test]
 async fn blob_store_round_trips_against_seaweedfs() {
     let sw = Seaweed::start().await;
-    let store = BlobStore::from_config(&sw.config()).expect("store");
+    let store = BlobStore::from_params(ferroehr_ext::multimedia::store::BlobStoreParams {
+        endpoint: sw.config().endpoint,
+        bucket: sw.config().bucket,
+        region: sw.config().region,
+        access_key_id: None,
+        secret_access_key: None,
+        allow_http: true,
+    })
+    .expect("store");
 
     assert!(!store.exists("k1").await.unwrap());
     store.put_if_absent("k1", b"hello".to_vec()).await.unwrap();

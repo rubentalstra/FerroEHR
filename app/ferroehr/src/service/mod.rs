@@ -167,7 +167,8 @@ pub struct FerroEhrService {
     /// governs media externalization — our own extension,
     /// [`crate::extensions::multimedia`]). `None` (default) = inline
     /// behaviour byte-identical.
-    pub(crate) multimedia: Option<Arc<crate::extensions::multimedia::MultimediaEngine>>,
+    #[cfg(feature = "multimedia")]
+    pub(crate) multimedia: Option<Arc<ferroehr_ext::multimedia::MultimediaEngine>>,
     /// The optional Subject Proxy FHIR-frame executor, selected when a
     /// deployment configures FHIR systems ([`crate::service::subject_proxy::config::SubjectProxyConfig`]). `None`
     /// (default) makes every FHIR frame a typed rejection (fail-closed).
@@ -229,6 +230,7 @@ impl FerroEhrService {
             audit: None,
             audit_store: None,
             terminology: None,
+            #[cfg(feature = "multimedia")]
             multimedia: None,
             subject_proxy_fhir: None,
             tenant_cache: tenant_cache(),
@@ -327,9 +329,10 @@ impl FerroEhrService {
     /// Install the `DV_MULTIMEDIA` externalization engine (opt-in extension).
     /// Without it, inline media is stored verbatim (byte-identical).
     #[must_use]
+    #[cfg(feature = "multimedia")]
     pub fn with_multimedia(
         mut self,
-        engine: Arc<crate::extensions::multimedia::MultimediaEngine>,
+        engine: Arc<ferroehr_ext::multimedia::MultimediaEngine>,
     ) -> Self {
         self.multimedia = Some(engine);
         self
@@ -427,6 +430,7 @@ impl FerroEhrService {
         SigningCtx {
             system_id: self.effective_system_id(),
             signer: &self.signer,
+            #[cfg(feature = "multimedia")]
             multimedia: self.multimedia.as_deref(),
             outbox_enabled: self.outbox_enabled,
         }

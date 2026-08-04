@@ -775,13 +775,25 @@ impl<'a> HttpDriver<'a> {
                     vars,
                 ),
                 Assertion::Equivalent { to, ignoring } => {
+                    // An unresolvable REFERENCE is a defect of the case, not a
+                    // missing commit (#1853): reporting both as "no committed
+                    // payload" sent triage after the wrong artifact.
                     let expected = match to {
-                        EquivalentTarget::Committed => self.committed.last().cloned(),
-                        EquivalentTarget::Ref(r) => self.resolver.resolve_ref(r, vars).ok(),
+                        EquivalentTarget::Committed => Ok(self.committed.last().cloned()),
+                        EquivalentTarget::Ref(r) => {
+                            self.resolver.resolve_ref(r, vars).map(Some).map_err(|e| {
+                                AssertionFailure(format!(
+                                    "equivalent: target reference unresolvable ({e})"
+                                ))
+                            })
+                        }
                     };
                     match expected {
-                        None => Err(AssertionFailure("equivalent: no committed payload".into())),
-                        Some(expected) => {
+                        Err(failure) => Err(failure),
+                        Ok(None) => {
+                            Err(AssertionFailure("equivalent: no committed payload".into()))
+                        }
+                        Ok(Some(expected)) => {
                             let ignored = assertions::resolve_ignore_sets(
                                 &ignoring.0,
                                 &binding.server_assigned,
@@ -1107,6 +1119,10 @@ fn diff_paths(got: &Value, want: &Value, path: &str, out: &mut Vec<String>) {
 
 /// Parse an IMF-fixdate `Date` header ("Sun, 06 Nov 1994 08:49:37 GMT") to
 /// epoch milliseconds (RFC 9110 §5.6.7); `None` on any other form.
+///
+/// NOTE: every `None` here is ABSENCE, not a swallowed defect (#1853) — the
+/// caller only WIDENS its own commit window with this value, so an unparsable
+/// `Date` leaves the runner-clock window standing rather than skipping a check.
 fn parse_http_date_ms(value: &str) -> Option<i64> {
     let parts: Vec<&str> = value.split_whitespace().collect();
     let [_, day, month, year, time, zone] = parts.as_slice() else {
@@ -2579,6 +2595,10 @@ impl HttpDriver<'_> {
     /// (`object_id::creating_system_id::version_tree_id`, RM common master06
     /// §Version Identification): `[n]` on the trunk, `[n, branch, version]` on
     /// a branch.
+    ///
+    /// NOTE: `None` is ABSENCE — "this string is not an `OBJECT_VERSION_ID`"
+    /// (#1853); the `Option<Vec<_>>` collect refuses a partly-numeric tree
+    /// outright, and the one caller turns it into a typed, uid-naming error.
     fn version_tree_id(uid: &str) -> Option<Vec<u64>> {
         let (_, tree) = uid.rsplit_once("::")?;
         tree.split('.').map(|s| s.parse::<u64>().ok()).collect()

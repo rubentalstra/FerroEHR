@@ -16,7 +16,7 @@
 //!   release defines no dedicated `/directory/…/tags` operations, so a FOLDER
 //!   tag is set through the wrapper and read through the EHR-wide listing.
 //! * **Validate-first** — a wrapper-header tag that breaks an RM `ITEM_TAG`
-//!   invariant refuses the write with NOTHING committed (register AMB-204).
+//!   invariant refuses the write with NOTHING committed.
 //!
 //! Every assertion is strict-spec: where the implementation disagrees the test
 //! is meant to FAIL (the code is fixed, never the test).
@@ -332,7 +332,7 @@ async fn the_demographic_tag_put_is_strict_in_the_same_way() {
     }
 
     // The accepting twin, including the `target_path: ""` normalization the
-    // register fixes identically on both families (AMB-96: "" folds to absent).
+    // register fixes identically on both families.
     let req = Request::builder()
         .method("PUT")
         .uri(format!("{BASE}/demographic/person/{vo}/tags"))
@@ -348,8 +348,7 @@ async fn the_demographic_tag_put_is_strict_in_the_same_way() {
     assert_eq!(tags[0]["key"], "reviewed");
     assert!(
         tags[0].get("target_path").is_none(),
-        "an empty target_path normalizes to ABSENT on the demographic family too \
-         (register AMB-96): {text}"
+        "an empty target_path normalizes to ABSENT on the demographic family too: {text}"
     );
 }
 
@@ -496,7 +495,7 @@ async fn an_invalid_wrapper_tag_refuses_before_the_content_commits() {
 
 /// A wrapper header whose entry carries no `key` is refused too — `key` is the
 /// one REQUIRED member of the operation the header wraps, so the wrapper cannot
-/// admit what the operation refuses (register AMB-203).
+/// admit what the operation refuses.
 #[tokio::test]
 async fn a_keyless_wrapper_entry_refuses_the_write() {
     let (_pg, app) = common::test_router().await;
@@ -665,8 +664,7 @@ async fn a_tag_put_preferring_an_identifier_applies_the_minimal_default() {
 /// (`key`, `target_path`) pair (ITS-REST overview
 /// `Requests_and_responses.md` §openehr-item-tag and
 /// openehr-version-item-tag) — are ONE tag afterwards, and the LAST occurrence
-/// wins (register AMB-95: the released array declares no `uniqueItems` and no
-/// merge rule).
+/// wins.
 #[tokio::test]
 async fn a_duplicate_identity_pair_in_one_tag_put_keeps_the_last() {
     let (_pg, app) = common::test_router().await;

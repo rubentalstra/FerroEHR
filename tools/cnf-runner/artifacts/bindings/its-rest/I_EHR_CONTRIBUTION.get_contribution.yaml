@@ -44,8 +44,13 @@ formats: [canonical-json, canonical-xml, wt-flat, wt-structured]
 # identifier, so the entity tag is that identifier (the same one the create's
 # 201 already carries) and Last-Modified is its one modification instant, the
 # committal. The ETag payload is asserted against the case's own
-# `contribution_uid` capture; an unresolved placeholder wildcards, leaving the
-# weak-tag SHAPE (the §Deprecated-headers `W/` MUST) as the assertion.
+# `contribution_uid` capture — taken from the COMMIT's body `uid.value`, a
+# different response on a different channel, so this is a real cross-response
+# identity assertion, not a header compared with itself. `contribution_uid` is
+# NOT one of the structural grammar tokens (`<versioned_object_uid>`,
+# `<template_id>`, `<n>`, `<system_id>`), which resolve BEFORE case variables;
+# a placeholder that is neither resolves to nothing and the row FAILS LOUD
+# (#1865) — it never degrades to a `.*` wildcard. See bindings/README.md.
 # NOTE: header matchers are EXECUTED assertions (#403, exec/headers.rs) — a
 # violated declaration is a red row.
 outcomes:

@@ -264,7 +264,7 @@ impl FerroEhrService {
     /// `{namespace: local, type: SYSTEM, id: HIER_OBJECT_ID}` — the "other
     /// relevant owning entity" limb read as the serving system. This server
     /// emits exactly that, with the configured system identifier as the `id`,
-    /// for every ehr-less demographic container (register AMB-69).
+    /// for every ehr-less demographic container.
     ///
     /// The body is constructed as the generated [`VersionedObject`] subtype and
     /// serialized through the native codec, so it carries `_type` first and the

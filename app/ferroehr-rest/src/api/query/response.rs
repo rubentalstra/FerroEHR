@@ -436,7 +436,7 @@ mod tests {
     #[test]
     fn ehr_id_both_forms_agreeing_is_accepted() {
         // Both forms naming the SAME EHR: the request names one EHR, so there
-        // is nothing to arbitrate (register AMB-59).
+        // is nothing to arbitrate.
         let h = headers(&[(H_EHR_ID, "same-ehr")]);
         assert_eq!(
             ehr_id_from_request(Some("same-ehr".to_owned()), &h)

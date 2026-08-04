@@ -1449,7 +1449,7 @@ async fn tag_collection_disciplines() {
         { "key": "workflow", "value": "open" }
     ]);
     let (status, h, _b) = send(&app, put(seed, Some("return=identifier"))).await;
-    // return=identifier resolves to the APPLIED minimal default (AMB-92).
+    // return=identifier resolves to the APPLIED minimal default.
     assert_eq!(status, StatusCode::NO_CONTENT);
     assert_eq!(
         h.get("preference-applied").and_then(|v| v.to_str().ok()),

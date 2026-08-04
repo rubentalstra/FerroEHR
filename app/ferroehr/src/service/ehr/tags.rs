@@ -276,7 +276,7 @@ impl FerroEhrService {
     ///
     /// NOTE: two shape decisions, both register-adjudicated rather than
     /// settled by any single released sentence.
-    /// `_type: "ITEM_TAG"` IS on the wire (register AMB-201): the released
+    /// `_type: "ITEM_TAG"` IS on the wire: the released
     /// `ItemTag.yaml` is `additionalProperties: false` without declaring
     /// `_type`, while the same group's `discriminator.propertyName` names that
     /// member — an OAS-internal self-contradiction, reported upstream, whose
@@ -284,7 +284,7 @@ impl FerroEhrService {
     /// `ITEM_TAG` carries no `uid` and no archetype id and `_type` is its only
     /// self-description.
     /// `target` is a BARE `UID_BASED_ID`, the RM's shape, not the OAS's
-    /// `OBJECT_REF` wrapper (register AMB-202): the OAS is the wire projection
+    /// `OBJECT_REF` wrapper: the OAS is the wire projection
     /// of a model and the RM is the released definition of the model being
     /// projected, so where the projection disagrees with its subject about what
     /// an attribute IS, the subject decides.

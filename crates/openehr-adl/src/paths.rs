@@ -4,8 +4,10 @@
 //! [`CComplexObject`] tree — the model-level half of the ADL path grammar
 //! (`docs/specs/openehr/AM/docs/ADL2/master05-paths.adoc`; the outer lexer
 //! already tokenises paths). These are used by the phase-1 validation
-//! catalogue (VRANP annotation paths, VTTBK binding paths, VRRLP rule paths).
-//! TODO(#1875): reuse for the VUNP `C_COMPLEX_OBJECT_PROXY`-target check.
+//! catalogue (VRANP annotation paths, VTTBK binding paths, VRRLP rule paths)
+//! and by the VUNP `C_COMPLEX_OBJECT_PROXY`-target check, which resolves and
+//! compares proxy targets through [`locate`], [`resolve`] and
+//! [`is_ancestor_path`] rather than any grammar of its own.
 //!
 //! Model-level only: this walks attribute + node-id predicates over the
 //! archetype's own constraint tree and knows **nothing** about the reference
@@ -233,6 +235,34 @@ pub fn locate<'a>(root: &'a CComplexObject, path: &str) -> Option<&'a CObject> {
         }
     }
     None
+}
+
+/// True when `target` addresses an ancestor of (or the same node as) `proxy`.
+///
+/// An internal reference whose target lies on its own ancestor path expands
+/// into an infinitely recursive deep copy, which is why
+/// `AM/docs/ADL2/master04.3-cadl_complex_types.adoc` §Internal References
+/// requires that "the path must not be in the parent path of the proxy object
+/// itself, but may be a sibling".
+///
+/// Both sides go through [`parse_path`], so the ancestor relation is decided
+/// segment-wise on attribute name + node-id predicate rather than on the raw
+/// string — a string prefix would false-positive on `/items[id2]` against
+/// `/items[id22]`. A target segment carrying no node-id predicate names the
+/// attribute only and so cannot exclude the proxy's own branch; a root target
+/// (zero segments) is the ultimate ancestor. Sibling and cross-branch targets
+/// differ in some segment and stay legal.
+#[must_use]
+pub fn is_ancestor_path(target: &str, proxy: &str) -> bool {
+    let target_segments = parse_path(target);
+    let proxy_segments = parse_path(proxy);
+    if target_segments.len() > proxy_segments.len() {
+        return false;
+    }
+    target_segments
+        .iter()
+        .zip(&proxy_segments)
+        .all(|(t, p)| t.attribute == p.attribute && (t.node_id.is_none() || t.node_id == p.node_id))
 }
 
 /// True if `path` carries at least one node-id predicate (`[idN]`/`[atN]`) — an

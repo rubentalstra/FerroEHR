@@ -41,8 +41,7 @@ pub struct TagRow {
     /// explicitly allows, and one that resolved paths at commit would invent a
     /// precondition no released text states. So the value round-trips
     /// byte-for-byte and participates only in the (`key`, `target_path`)
-    /// identity. (Register AMB-96 covers the one normalization we do apply:
-    /// `""` folds to absent.)
+    /// identity.
     pub target_path: Option<String>,
 }
 

@@ -381,7 +381,15 @@ jobs:
       # The CNF artifact validation (catalogue/fixture/register gates over
       # tools/cnf-runner/artifacts) — the binary is already linked by the
       # build step above, so this is seconds of pure execution.
-      - run: cargo run --locked -q -p cnf-runner --bin cnf-runner -- validate --root tools/cnf-runner/artifacts --specs docs/specs/openehr
+      # `--write-report` refreshes the committed wire-surface coverage report
+      # in place; the diff gate below is what makes it a guard. The flag is
+      # off by default so a local `validate` never mutates the tree.
+      - run: cargo run --locked -q -p cnf-runner --bin cnf-runner -- validate --root tools/cnf-runner/artifacts --specs docs/specs/openehr --write-report
+      # Coverage-report drift gate: the regenerated report must match the
+      # committed one. Without this the file rots silently — it is generated
+      # output that only ever refreshed when someone remembered (#1851).
+      - name: Coverage-report drift gate (regenerated report matches the committed artifact)
+        run: git diff --exit-code docs/conformance/coverage-report.md
 
   # ── Coverage: develop pushes only ────────────────────────────────────────────
   # An instrumented build can NEVER reuse the test job's artifacts —

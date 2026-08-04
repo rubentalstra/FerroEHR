@@ -7872,19 +7872,39 @@ AMB-185:
     `UML/classes/org.openehr.rm.ehr_extract.extract_{spec,version_spec}.adoc`
     spell them `include_multimedia` / `include_revision_history` /
     `include_data`.
-    (3) OURS, RECORDED HONESTLY — two further divergences the same sweep finds
-    are defects on OUR side, not upstream's, and are registered here so the
-    pinned list stays complete: `TRANSLATION_DETAILS.accreditaton` and
-    `RESOURCE_DESCRIPTION_ITEM.copyright`. Both come from the RM BMM's stale
-    in-component copy of the resource package. BASE
+    (3) RE-GROUNDED 2026-08-04 (the #1665 re-adjudication, read first-hand):
+    this clause previously called `TRANSLATION_DETAILS.accreditaton` and
+    `RESOURCE_DESCRIPTION_ITEM.copyright` "defects on OUR side … the RM BMM's
+    stale in-component copy". BOTH HALVES OF THAT WERE WRONG, for the same
+    reason: the RM's resource package is not a stale copy of BASE's, it is a
+    DELIBERATELY RETAINED SECOND GENERATION. RM
+    `docs/common/master08-resource_package.adoc` opens by saying so — "the
+    version of the Resource package described below is used only in ADL 1.4
+    archetypes … with the older form here retained only while needed by AOM
+    1.4 based archetypes and tools" — so RM and BASE are expected to carry
+    DIFFERENT shapes, and agreement with BASE is not the test.
+    (3a) `copyright` IS NOT A DIVERGENCE AT ALL. The retained generation's own
+    published schema places it exactly where `openehr_rm::common::resource`
+    does: `components/AM/Release-1.4/Resource.xsd` declares `copyright` on
+    complexType `RESOURCE_DESCRIPTION_ITEM`, while
+    `components/BASE/latest/Resource.xsd` declares it on
+    `RESOURCE_DESCRIPTION`. Two generations, two correct shapes; the sweep
+    compares an ADL-1.4-generation class against a newer-generation schema
+    and the mismatch is the comparison's, not the model's.
+    (3b) `accreditaton` IS AN UPSTREAM RM DEFECT, not ours. BASE
     `resource/master00-amendment_record.adoc` records SPECPUB-6, "Correct
-    spelling error in `TRANSLATION_DETAILS._accreditation_`", and BASE
-    `UML/classes/org.openehr.base.resource.resource_description.adoc` places
-    `copyright` on RESOURCE_DESCRIPTION; `openehr-base` (generated from the
-    BASE 1.3.0 BMM) is correct on both counts, while
-    `openehr_rm::common::resource` reproduces the pre-correction shapes. These
-    classes are AUTHORED_RESOURCE metadata and are not part of any RM document
-    the CDR serves on the ITS-REST wire.
+    spelling error in `TRANSLATION_DETAILS._accreditation_`" — applied to
+    BASE's copy ONLY. The RM component's retained package still spells
+    `accreditaton` in its BMM, while EVERY published `Resource.xsd` in BOTH
+    lineages spells `accreditation` (verified across
+    `its-xml-1.0.2-nsv1/ALL`, `its-xml-1.0.2-nsv1/AOM2`,
+    `its-xml-2.0.0-nsv2/AM/Release-1.4` and every BASE release folder). The
+    generator reproduces its vendored input verbatim and must, so the
+    misspelling is upstream's to fix; filed as the `upstream-report` issue
+    recorded in `upstream_issue` below.
+    Unchanged and still true: these classes are AUTHORED_RESOURCE metadata and
+    are not part of any RM document the CDR serves on the ITS-REST wire, so
+    neither item touches the served wire this entry governs.
   handling: >-
     Fixed handling — the served wire is UNCHANGED, and the boundary is
     recorded instead of papered over.
@@ -7927,12 +7947,17 @@ AMB-185:
     XSD-vs-RM-text `include*` spelling conflict plus the missing `EHR.tags`
     (2d). They do not change our behaviour, which is why this entry is
     `fixed_handling` rather than `report_only`.
-    (g) OUR OWN TWO (3) ARE DEFECTS TO FIX IN THE GENERATOR'S INPUTS, not
-    workarounds to add in a consumer: the RM BMM's stale copy of the resource
-    package is the wrong source for classes BASE now owns. Until that is
-    resolved they are pinned here so the sweep stays green honestly instead of
-    being filtered out.
+    (g) THE TWO ITEMS OF (3) NEED NO CHANGE HERE (re-grounded 2026-08-04 with
+    the rest of (3)). `copyright` is not a divergence — it is the retained
+    ADL-1.4 generation's own published shape — so nothing is pinned for it
+    beyond the note that the sweep compares across generations. `accreditaton`
+    is upstream's misspelling to correct in the RM component's retained
+    package; the generator reproduces its vendored input verbatim and must, so
+    there is nothing to fix on our side and nothing to work around in a
+    consumer. Both stay named here so the sweep's output stays fully accounted
+    for rather than filtered out, and neither reaches the served wire.
   disposition: fixed_handling
+  upstream_issue: 1849
 AMB-186:
   ambiguity: >-
     THE RELEASED COMMIT SCHEMA NARROWS `FOLDER.items` REFERENCE IDS TO TWO OF
@@ -9020,4 +9045,64 @@ AMB-208:
     length. The complementary template-INDEPENDENT half is AMB-207's 400.
     Pinned by `SF-FLAT-reject_datatype_mismatch`, `SF-CTX-missing_mandatory`
     and `SF-FLAT-reject_terminology_binding`.
+  disposition: fixed_handling
+
+AMB-209:
+  ambiguity: >-
+    Which refusal row a MALFORMED-URI value takes is unassigned. The
+    parse/semantic boundary the released OAS draws — `responses/400.yaml`
+    "syntactically invalid header, parameter or content" versus
+    `responses/422.yaml` "could be converted to a resource, but there are
+    semantic validation errors" — separates a body that cannot become the
+    resource from one that becomes it and then fails validation. A `DV_URI`
+    whose `value` is a present String that is not an RFC 3986 URI sits on the
+    seam: the JSON is well-formed, every member the request-body schemas
+    declare `required` is present, and the String IS a String, so the
+    structure converts; but the word "syntactically" in the 400 row can also
+    be read to reach a value whose own lexical form is wrong. Nothing
+    released picks a side, and the RM does not settle it either: the only
+    invariant `DV_URI` declares is `Value_valid: not value.is_empty`, while
+    the RFC 3986 requirement lives in the class DESCRIPTION — which in the
+    same breath permits "so-called 'plain-text URIs' that contain RFC-3986
+    forbidden characters such as spaces etc". So the status is ours to fix.
+  source: >-
+    ITS-REST specifications/responses/400.yaml ("returned when the request
+    could not be parsed or is invalid (e.g. malformed request URL syntax,
+    missing required header or parameter, or syntactically invalid header,
+    parameter or content)"); specifications/responses/422.yaml ("returned
+    when the content type and syntax is correct, could be converted to a
+    resource, but there are semantic validation errors");
+    specifications/docs/overview/Requests_and_responses.md §HTTP status codes
+    (the two rows, neither drawing the boundary). RM
+    UML/classes/org.openehr.rm.data_types.dv_uri.adoc §Description ("A
+    reference to an object which structurally conforms to the Universal
+    Resource Identifier (URI) RFC-3986 standard", plus the plain-text
+    allowance) and §Invariants (`Value_valid: not value.is_empty` — the ONLY
+    declared invariant); RM
+    UML/classes/org.openehr.rm.data_types.dv_ehr_uri.adoc §Invariants
+    (`Scheme_valid`). All read first-hand.
+  handling: >-
+    Fixed handling: a malformed-URI value is refused 422, NOT 400. The
+    discriminator is convertibility, applied literally: the body decodes into
+    the declared `DV_URI` structure — a present String in a String-typed
+    mandatory attribute — so it HAS been "converted to a resource" in the
+    words of `responses/422.yaml`, and what fails afterwards is a check on
+    that value's domain. That places it with the `rm_invariant(...)` and
+    interval-bound refusals, not with the missing-mandatory-attribute
+    refusals that never convert at all. The practical reason to hold this
+    line: the 400 row's trigger is "the request could not be PARSED", and a
+    parser that produced the value cannot claim it failed to parse it.
+    The NOTED ALTERNATIVE, recorded because it is a defensible reading of the
+    same sentence: "syntactically invalid ... content" can be read to cover a
+    value whose own lexical form is invalid, which would move this class to
+    400 and make the boundary "does every value satisfy its lexical grammar"
+    rather than "does the body convert". That reading is not taken, because
+    it has no stopping point — every format-constrained leaf (ISO 8601
+    durations, terminology codes, archetype ids) would migrate to 400 with
+    it, collapsing the 422 branch that `responses/422.yaml` explicitly
+    provides for content that converted. Pinned by row 1 of
+    `CONT-DV_URI-validate_open` and row 1 of `CONT-DV_EHR_URI-validate_open`,
+    whose authored `violates` clause is a `rm_schema:` entry about a VALUE's
+    form and therefore does NOT carry the `mandatory` word the
+    content-table refusal split keys on (schedule/content/README.md).
   disposition: fixed_handling

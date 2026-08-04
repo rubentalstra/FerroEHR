@@ -156,7 +156,7 @@ fn classify(
             // VERSIONED_OBJECT.commit_attestation pre has_version_id). Absent →
             // the request cannot name its target: a 400, not a 422.
             //
-            // NOTE (register AMB-190): the same §Contributions row spells the
+            // NOTE: the same §Contributions row spells the
             // code's home `ATTESTATION._commit_audit_._change_type_`, a path
             // ATTESTATION cannot have — it IS an AUDIT_DETAILS subtype
             // (`…org.openehr.rm.common.attestation.adoc` §Inherit) and owns
@@ -272,7 +272,7 @@ const COMMITTABLE_MEMBER_TYPES: [&str; 2] = ["UPDATE_VERSION", "ORIGINAL_VERSION
 /// freshly minted local uid, discarding the declared foreign identity and its
 /// provenance without a diagnostic. Refused as the shape failure it is
 /// (`400_CONTRIBUTION`: "syntactically invalid header, parameter or content"),
-/// exactly as the sibling `other_input_version_uids` refusal is (AMB-196).
+/// exactly as the sibling `other_input_version_uids` refusal is.
 ///
 /// NOTE: `_type` is the one of the three that has a LEGAL value here. The
 /// overview docs text makes it a general metadata attribute — "the `_type`
@@ -528,7 +528,7 @@ pub(crate) async fn commit_version_set(
         // released `UPDATE_VERSION` declares no such property (ITS-REST
         // `schemas/ehr/UpdateVersion.yaml`), and `NewContribution.versions`
         // items are `UpdateVersion` — the merge commit has no released shape at
-        // all, exactly as the import commit has none (register AMB-89). Merge
+        // all, exactly as the import commit has none. Merge
         // provenance is PRODUCE-only: `OriginalVersion.yaml` declares it on the
         // read side, and it reaches storage only through the routes that carry
         // a foreign `ORIGINAL_VERSION` verbatim (the EHR-Extract import, the
@@ -1072,7 +1072,7 @@ fn parse_audit(
 /// demographic contribution (`party_only`) may carry only party roots +
 /// `PARTY_RELATIONSHIP`, and an EHR contribution may carry neither.
 ///
-/// NOTE (register AMB-184 — why `FOLDER` is not a demographic kind):
+/// NOTE:
 /// RM common `master05-directory_package.adoc` §Overview says a
 /// `VERSIONED_FOLDER` is "useful in the EHR, Demographics service or anywhere
 /// else where Folders are used". That sentence is aspirational prose, not a
@@ -1611,7 +1611,7 @@ mod tests {
         // `400_CONTRIBUTION` trigger ("the modification type does not match
         // the operation - i.e. first version of a MODIFICATION") → 400;
         // creation WITH a preceding is its unassigned mirror → the
-        // register-documented 422 (AMB-54, narrowed).
+        // register-documented 422.
         // Each refusal is asserted on its DATA — the attribute path it is
         // about, the named rule it breaks — not on a substring of the prose.
         let creation_with_preceding = classify_err(Some("249"), true, true);

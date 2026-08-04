@@ -604,7 +604,7 @@ pub(crate) fn build_original_version(
         // and import the preceding version may carry a different
         // creating_system_id (RM common master06 §Distributed Versioning).
         //
-        // NOTE (register AMB-189): `VERSION.Preceding_version_uid_validity`
+        // NOTE: `VERSION.Preceding_version_uid_validity`
         // (`uid.version_tree_id.is_first xor preceding_version_uid /= Void`) is
         // enforced in its TRUNK-ONLY sense, because BASE defines `is_first` as
         // "trunk_version is 1" alone (`VERSION_TREE_ID.Is_first_validity`),

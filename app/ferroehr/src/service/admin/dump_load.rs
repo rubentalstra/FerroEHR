@@ -1120,6 +1120,13 @@ impl FerroEhrService {
         archive: &mut ArchiveWriter,
         records: &[EhrRecord],
     ) -> Result<Vec<String>, SmError> {
+        #[cfg(not(feature = "multimedia"))]
+        {
+            let _ = (archive, records);
+            return Ok(Vec::new());
+        }
+        #[cfg(feature = "multimedia")]
+        {
         let Some(engine) = &self.multimedia else {
             return Ok(Vec::new());
         };
@@ -1137,6 +1144,7 @@ impl FerroEhrService {
             archive.write(&format!("{BLOB_PREFIX}{hex}"), &bytes)?;
         }
         Ok(keys)
+        }
     }
 
     /// Re-put each archived blob (`blobs/<hex>`) into the object store on load
@@ -1150,6 +1158,16 @@ impl FerroEhrService {
         if blobs.is_empty() {
             return Ok(());
         }
+        #[cfg(not(feature = "multimedia"))]
+        {
+            let _ = archive;
+            return Err(SmError::precondition(
+                "archive carries externalized multimedia blobs but this binary \
+                 was built without the `multimedia` cargo feature",
+            ));
+        }
+        #[cfg(feature = "multimedia")]
+        {
         let Some(engine) = &self.multimedia else {
             // The archive carries blobs but this target has no store configured.
             return Err(SmError::precondition(
@@ -1168,6 +1186,7 @@ impl FerroEhrService {
                 })?;
         }
         Ok(())
+        }
     }
 
     /// Whether an EHR with `ehr_id` already exists in the target repository.

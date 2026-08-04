@@ -312,9 +312,11 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         service = service.with_subject_proxy(Arc::new(fhir));
     }
 
-    // Opt-in DV_MULTIMEDIA externalization.
+    // Opt-in DV_MULTIMEDIA externalization (the `multimedia` cargo feature; a
+    // slim build refuses an enabled config loudly).
+    #[cfg(feature = "multimedia")]
     if let Some(engine) =
-        ferroehr::extensions::multimedia::MultimediaEngine::from_config(&config.multimedia)
+        ferroehr::extensions::multimedia::engine_from_config(&config.multimedia)
             .context("initialising the multimedia object store")?
     {
         tracing::info!(
@@ -324,6 +326,9 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         );
         service = service.with_multimedia(Arc::new(engine));
     }
+    #[cfg(not(feature = "multimedia"))]
+    ferroehr::extensions::multimedia::require_disabled(&config.multimedia)
+        .map_err(|e| anyhow::anyhow!(e))?;
 
     let service = Arc::new(service);
 

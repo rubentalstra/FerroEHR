@@ -561,6 +561,7 @@ async fn apply_change(
         } => {
             // Externalize large inline DV_MULTIMEDIA before decompose/sign, so
             // the stored, served and signed form is the offloaded one.
+            #[cfg(feature = "multimedia")]
             if let Some(engine) = ctx.multimedia {
                 engine
                     .offload(&mut canonical)
@@ -611,6 +612,7 @@ async fn apply_change(
             lifecycle_state,
             attestations,
         } => {
+            #[cfg(feature = "multimedia")]
             if let Some(engine) = ctx.multimedia {
                 engine
                     .offload(&mut canonical)

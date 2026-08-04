@@ -2679,6 +2679,7 @@ dependencies = [
  "bytes",
  "config",
  "criterion",
+ "ferroehr-ext",
  "futures",
  "http",
  "http-body-util",
@@ -2775,6 +2776,23 @@ dependencies = [
  "urlencoding",
  "wasm-bindgen",
  "wasm-bindgen-futures",
+]
+
+[[package]]
+name = "ferroehr-ext"
+version = "3.17.2"
+dependencies = [
+ "base64 0.22.1",
+ "bytes",
+ "object_store",
+ "openehr-base",
+ "openehr-its",
+ "openehr-rm",
+ "secrecy",
+ "serde_json",
+ "sha2 0.11.0",
+ "thiserror 2.0.19",
+ "tokio",
 ]
 
 [[package]]

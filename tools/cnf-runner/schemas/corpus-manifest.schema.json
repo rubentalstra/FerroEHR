@@ -70,7 +70,8 @@
           "opt-xml",
           "aql-text",
           "adl2-text",
-          "adl14-text"
+          "adl14-text",
+          "raw-json"
         ]
       },
       "template_id": {

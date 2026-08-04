@@ -765,7 +765,7 @@ async fn inline_relationships_are_stored_and_served_verbatim() {
             })
         ),
         "an inline by-value relationship must not create a relationship \
-         container (register AMB-187), got {not_a_relationship:?}"
+         container, got {not_a_relationship:?}"
     );
 }
 

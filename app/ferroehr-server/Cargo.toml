@@ -17,6 +17,13 @@ publish = false
 name = "ferroehr"
 path = "src/main.rs"
 
+[features]
+# Forward the optional-integration gates (#1890); default mirrors ferroehr's.
+default = ["fhir", "events", "multimedia"]
+fhir = ["ferroehr/fhir"]
+events = ["ferroehr/events"]
+multimedia = ["ferroehr/multimedia"]
+
 [dependencies]
 ferroehr = { path = "../ferroehr" }
 ferroehr-rest = { path = "../ferroehr-rest" }

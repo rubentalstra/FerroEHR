@@ -326,6 +326,18 @@ pub enum CorpusFormat {
     /// archetype-provisioning extension routes exchange as `text/plain`).
     #[serde(rename = "adl14-text")]
     Adl14Text,
+    /// A JSON payload delivered BYTE-FOR-BYTE, unparsed.
+    ///
+    /// `canonical-json` round-trips its source through `serde_json::Value`
+    /// before the send, which silently repairs every byte-level defect a JSON
+    /// document can carry — a repeated member, member ordering, an exotic
+    /// number lexeme. Those are wire behaviours the reader must refuse, so
+    /// they need a carrier that does not normalise: this format loads the
+    /// file verbatim and the driver writes those bytes as the request body.
+    /// The media type is unchanged (it is still JSON on the wire) — that
+    /// comes from the case/step `format` axis, not from here.
+    #[serde(rename = "raw-json")]
+    RawJson,
 }
 
 /// HTTP method of a binding request (the ITS-REST realization layer).
@@ -935,6 +947,7 @@ impl CorpusFormat {
         CorpusFormat::AqlText,
         CorpusFormat::Adl2Text,
         CorpusFormat::Adl14Text,
+        CorpusFormat::RawJson,
     ];
 }
 
@@ -1032,6 +1045,6 @@ mod all_consts_tests {
         assert_eq!(Tier::ALL.len(), 7);
         assert_eq!(Disposition::ALL.len(), 6);
         assert_eq!(FormatName::ALL.len(), 5);
-        assert_eq!(CorpusFormat::ALL.len(), 8);
+        assert_eq!(CorpusFormat::ALL.len(), 9);
     }
 }

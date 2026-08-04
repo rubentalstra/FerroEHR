@@ -13,7 +13,17 @@ keywords.workspace = true
 categories.workspace = true
 publish = false
 
+[features]
+# The optional-integration gates (#1890): default = all on, so the shipped
+# binary and every existing consumer keep today's surface; a
+# --no-default-features build is the slim CDR. Additive only.
+default = ["fhir", "events", "multimedia"]
+fhir = ["dep:ferroehr-ext", "ferroehr-ext/fhir"]
+events = ["dep:ferroehr-ext", "ferroehr-ext/events"]
+multimedia = ["dep:ferroehr-ext", "ferroehr-ext/multimedia"]
+
 [dependencies]
+ferroehr-ext = { path = "../ferroehr-ext", optional = true }
 http.workspace = true
 secrecy.workspace = true
 urlencoding.workspace = true
@@ -105,6 +115,7 @@ openehr-adl = { path = "../../crates/openehr-adl" }
 openehr-query = { path = "../../crates/openehr-query" }
 
 [dev-dependencies]
+ferroehr-ext = { path = "../ferroehr-ext", features = ["multimedia"] }
 testkit = { path = "../../tools/testkit" }
 serde_norway.workspace = true
 # Temp config files for the pure-loader (`config` module) tests.

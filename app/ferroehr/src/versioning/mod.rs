@@ -192,7 +192,8 @@ pub(crate) struct SigningCtx<'a> {
     /// governs media externalization — our own extension). When set, the commit
     /// path offloads large inline `DV_MULTIMEDIA.data` before the canonical body
     /// is decomposed and signed.
-    pub(crate) multimedia: Option<&'a crate::extensions::multimedia::MultimediaEngine>,
+    #[cfg(feature = "multimedia")]
+    pub(crate) multimedia: Option<&'a ferroehr_ext::multimedia::MultimediaEngine>,
     /// Whether to write the transactional event outbox on this commit. `false`
     /// when no eventing consumer is configured, so the per-commit `event_outbox`
     /// INSERT + envelope serialization is skipped entirely. No openEHR spec
