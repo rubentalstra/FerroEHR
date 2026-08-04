@@ -1,9 +1,11 @@
-//! The EHR-detail Directory tab: a complete directory experience over the
-//! ITS-REST DIRECTORY API — a structured `FOLDER` tree editor (add / rename /
-//! delete folders, add / remove item references), an advanced raw-JSON mode,
-//! version history with time-travel and restore, a `version_at_time` view, a
-//! `?path=` subtree query, and directory deletion — plus the create-empty path
-//! for an EHR that has no directory yet.
+//! The EHR-detail Directory tab.
+//!
+//! A complete directory experience over the ITS-REST DIRECTORY API — a
+//! structured `FOLDER` tree editor (add / rename / delete folders, add /
+//! remove item references), an advanced raw-JSON mode, version history with
+//! time-travel and restore, a `version_at_time` view, a `?path=` subtree
+//! query, and directory deletion — plus the create-empty path for an EHR that
+//! has no directory yet.
 //!
 //! No openEHR spec governs an admin UI (our own design / product extension);
 //! the wire it reads/writes IS spec-bound: the DIRECTORY operations
@@ -18,6 +20,12 @@
 //! [`tree`] (the structured editor), [`panels`] (history / time / path /
 //! delete), [`create`] (the empty-directory create flow), and the pure
 //! [`edit`] helpers.
+
+#![expect(
+    clippy::disallowed_types,
+    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+              (#1694)"
+)]
 
 pub mod create;
 pub mod edit;
@@ -40,12 +48,12 @@ use crate::pages::ehr_detail::directory::tree::{EditorState, seed, tree_editor};
 use crate::pages::ehrs::ResultPage;
 
 /// The EHR's directory as its canonical FOLDER JSON body plus the current
-/// version uid (the FOLDER's `uid.value`, an `OBJECT_VERSION_ID`). The uid is
-/// the `If-Match` value on update/delete:
+/// version uid (the FOLDER's `uid.value`, an `OBJECT_VERSION_ID`).
+///
+/// The uid is the `If-Match` value on update/delete:
 /// [`CdrResponse`](crate::cdr::CdrResponse) carries no header map, so it is
-/// read from the returned FOLDER body — a FOLDER is
-/// `VERSIONABLE` and always carries `uid` (ITS-REST
-/// `specifications/schemas/ehr/Folder.yaml`; RM common
+/// read from the returned FOLDER body — a FOLDER is `VERSIONABLE` and always
+/// carries `uid` (ITS-REST `specifications/schemas/ehr/Folder.yaml`; RM common
 /// `master05-directory_package`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DirectoryState {
@@ -56,8 +64,10 @@ pub struct DirectoryState {
 }
 
 /// One row of the directory version history: a past (or the current) FOLDER
-/// version summarized for the history panel. Carries fixed-size ints only so
-/// it is WASM-safe over the server-fn boundary (rules §1).
+/// version summarized for the history panel.
+///
+/// Carries fixed-size ints only so it is WASM-safe over the server-fn boundary
+/// (rules §1).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DirectoryVersion {
     /// The version's `OBJECT_VERSION_ID` (`uid.value`).

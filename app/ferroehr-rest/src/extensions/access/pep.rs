@@ -53,6 +53,11 @@
     reason = "the Err variant of every decision point in this module is a \
               ready-to-return axum `Response`, which is large by nature"
 )]
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 7): RFC 7519 leaves the claim set open; \
+              decided-on claims lift into typed fields"
+)]
 
 use axum::response::{IntoResponse, Response};
 

@@ -15,6 +15,12 @@
 //! [`assemble`] is a **pure function** of `(file, env_map, overrides)` — no
 //! process-global env — so the whole test plan runs on injected inputs.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 8): genuinely open operational JSON (config \
+              dump, management env, validity-checker input, OpenAPI schema literals)"
+)]
+
 mod alias;
 pub mod loader;
 

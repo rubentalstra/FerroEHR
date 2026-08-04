@@ -1,9 +1,17 @@
-//! The directory tab's supporting panels: the toolbar (history / time / path
-//! toggles + delete), the version-history panel with time-travel and restore,
-//! the `version_at_time` panel, and the `?path=` subtree panel. All are
-//! rendered outside the main directory `<Suspense>` with their own
-//! `<Transition>` boundaries; their read resources are created once in the
-//! section orchestrator and only fetch when their panel is open (rules §4/§6).
+//! The directory tab's supporting panels.
+//!
+//! The toolbar (history / time / path toggles + delete), the version-history
+//! panel with time-travel and restore, the `version_at_time` panel, and the
+//! `?path=` subtree panel. All are rendered outside the main directory
+//! `<Suspense>` with their own `<Transition>` boundaries; their read resources
+//! are created once in the section orchestrator and only fetch when their
+//! panel is open (rules §4/§6).
+
+#![expect(
+    clippy::disallowed_types,
+    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+              (#1694)"
+)]
 
 use leptos::prelude::*;
 use serde_json::Value;

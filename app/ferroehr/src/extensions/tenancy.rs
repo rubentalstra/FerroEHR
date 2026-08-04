@@ -21,7 +21,6 @@
 // The helpers below read the `pub(crate)` `pool` + `tenant_cache` fields of
 // `crate::service::FerroEhrService`.
 
-use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;
 
@@ -35,25 +34,46 @@ use crate::service::status::{CallStatusType, SmError};
 /// (`migrations/ext/0002_tenant_context.sql`) and cannot be deleted.
 const DEFAULT_TENANT_ID: Uuid = Uuid::nil();
 
+/// A stored tenant registry record (the tenant admin API's response row).
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct TenantRecord {
+    /// The tenant's surrogate UUID key.
+    pub id: Uuid,
+    /// The unique tenant name (the claim/header resolution key).
+    pub name: String,
+    /// The tenant's openEHR `system_id`.
+    pub system_id: String,
+    /// The registry row's creation instant.
+    pub created_at: jiff::Timestamp,
+}
+
+/// A client-submitted tenant definition (`{name, system_id}`, create + update).
+///
+/// Both fields are required at parse; emptiness-after-trim is validated by the
+/// service (`400` either way).
+#[derive(Debug, serde::Deserialize)]
+pub struct TenantDefinition {
+    /// The tenant name (required; non-empty after trimming).
+    pub name: String,
+    /// The tenant's openEHR `system_id` (required; non-empty after trimming).
+    pub system_id: String,
+}
+
 impl FerroEhrService {
-    /// Map a `tenant` row to its JSON record.
-    fn tenant_row(row: &sqlx::postgres::PgRow) -> Result<Value, ServiceError> {
-        let id: Uuid = row.try_get("id")?;
-        let name: String = row.try_get("name")?;
-        let system_id: String = row.try_get("system_id")?;
-        let created_at = row
-            .try_get::<jiff_sqlx::Timestamp, _>("created_at")?
-            .to_jiff();
-        Ok(json!({
-            "id": id.to_string(),
-            "name": name,
-            "system_id": system_id,
-            "created_at": created_at.to_string(),
-        }))
+    /// Map a `tenant` row to its typed record.
+    fn tenant_row(row: &sqlx::postgres::PgRow) -> Result<TenantRecord, ServiceError> {
+        Ok(TenantRecord {
+            id: row.try_get("id")?,
+            name: row.try_get("name")?,
+            system_id: row.try_get("system_id")?,
+            created_at: row
+                .try_get::<jiff_sqlx::Timestamp, _>("created_at")?
+                .to_jiff(),
+        })
     }
 
     /// List every tenant (newest first).
-    async fn list_tenants(&self) -> Result<Vec<Value>, ServiceError> {
+    async fn list_tenants(&self) -> Result<Vec<TenantRecord>, ServiceError> {
         let rows = sqlx::query(
             "SELECT id, name, system_id, created_at FROM tenant ORDER BY created_at DESC, id",
         )
@@ -63,7 +83,7 @@ impl FerroEhrService {
     }
 
     /// Fetch one tenant by id, or `NotFound`.
-    async fn get_tenant(&self, id: Uuid) -> Result<Value, ServiceError> {
+    async fn get_tenant(&self, id: Uuid) -> Result<TenantRecord, ServiceError> {
         let row = sqlx::query("SELECT id, name, system_id, created_at FROM tenant WHERE id = $1")
             .bind(id)
             .fetch_optional(&self.pool)
@@ -76,10 +96,10 @@ impl FerroEhrService {
         })?
     }
 
-    /// Create a tenant from `{name, system_id}` (both required, non-empty).
-    async fn create_tenant(&self, body: &Value) -> Result<Value, ServiceError> {
-        let name = required_str(body, "name")?;
-        let system_id = required_str(body, "system_id")?;
+    /// Create a tenant from a [`TenantDefinition`] (both fields non-empty).
+    async fn create_tenant(&self, body: &TenantDefinition) -> Result<TenantRecord, ServiceError> {
+        let name = required_str(&body.name, "name")?;
+        let system_id = required_str(&body.system_id, "system_id")?;
         let row = sqlx::query(
             "INSERT INTO tenant (name, system_id) VALUES ($1, $2) \
              RETURNING id, name, system_id, created_at",
@@ -93,10 +113,14 @@ impl FerroEhrService {
         Self::tenant_row(&row)
     }
 
-    /// Update a tenant's `name`/`system_id` (both required, non-empty).
-    async fn update_tenant(&self, id: Uuid, body: &Value) -> Result<Value, ServiceError> {
-        let name = required_str(body, "name")?;
-        let system_id = required_str(body, "system_id")?;
+    /// Update a tenant's `name`/`system_id` (both non-empty).
+    async fn update_tenant(
+        &self,
+        id: Uuid,
+        body: &TenantDefinition,
+    ) -> Result<TenantRecord, ServiceError> {
+        let name = required_str(&body.name, "name")?;
+        let system_id = required_str(&body.system_id, "system_id")?;
         let row = sqlx::query(
             "UPDATE tenant SET name = $2, system_id = $3 WHERE id = $1 \
              RETURNING id, name, system_id, created_at",
@@ -200,13 +224,15 @@ impl FerroEhrService {
     }
 }
 
-/// Read a required non-empty string field from the JSON body, else `400`.
-fn required_str<'a>(body: &'a Value, field: &str) -> Result<&'a str, ServiceError> {
-    body.get(field)
-        .and_then(Value::as_str)
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-        .ok_or_else(|| ServiceError::BadRequest(format!("`{field}` is required and non-empty")))
+/// Trim a submitted field and require it non-empty, else `400`.
+fn required_str<'a>(raw: &'a str, field: &str) -> Result<&'a str, ServiceError> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return Err(ServiceError::BadRequest(format!(
+            "`{field}` is required and non-empty"
+        )));
+    }
+    Ok(trimmed)
 }
 
 /// Map a unique-name violation to `Conflict` (409); other DB errors pass through.
@@ -220,20 +246,20 @@ fn map_insert_error(e: sqlx::Error) -> ServiceError {
 }
 
 impl FerroEhrService {
-    /// List every tenant (newest first) as PHI-free JSON records.
+    /// List every tenant (newest first) as PHI-free typed records.
     ///
     /// # Errors
     /// [`SmError`] wrapping a database failure.
-    pub async fn tenant_list(&self) -> Result<Vec<Value>, SmError> {
+    pub async fn tenant_list(&self) -> Result<Vec<TenantRecord>, SmError> {
         Ok(self.list_tenants().await?)
     }
 
-    /// Create a tenant from a `{name, system_id}` JSON body.
+    /// Create a tenant from a [`TenantDefinition`].
     ///
     /// # Errors
-    /// `BadRequest` when `name`/`system_id` is missing or empty; `Conflict`
+    /// `BadRequest` when `name`/`system_id` is empty after trimming; `Conflict`
     /// when the name is already taken; otherwise a database failure.
-    pub async fn tenant_create(&self, a_tenant: Value) -> Result<Value, SmError> {
+    pub async fn tenant_create(&self, a_tenant: TenantDefinition) -> Result<TenantRecord, SmError> {
         Ok(self.create_tenant(&a_tenant).await?)
     }
 
@@ -241,20 +267,21 @@ impl FerroEhrService {
     ///
     /// # Errors
     /// `NotFound` when the id is unknown; otherwise a database failure.
-    pub async fn tenant_get(&self, a_tenant_id: Uuid) -> Result<Value, SmError> {
+    pub async fn tenant_get(&self, a_tenant_id: Uuid) -> Result<TenantRecord, SmError> {
         Ok(self.get_tenant(a_tenant_id).await?)
     }
 
     /// Replace a tenant's `name`/`system_id`.
     ///
     /// # Errors
-    /// `BadRequest` when a field is missing or empty; `Conflict` on a duplicate
-    /// name; `NotFound` when the id is unknown; otherwise a database failure.
+    /// `BadRequest` when a field is empty after trimming; `Conflict` on a
+    /// duplicate name; `NotFound` when the id is unknown; otherwise a database
+    /// failure.
     pub async fn tenant_update(
         &self,
         a_tenant_id: Uuid,
-        a_tenant: Value,
-    ) -> Result<Value, SmError> {
+        a_tenant: TenantDefinition,
+    ) -> Result<TenantRecord, SmError> {
         Ok(self.update_tenant(a_tenant_id, &a_tenant).await?)
     }
 

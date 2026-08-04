@@ -9,6 +9,13 @@
 //! short-circuit deny (§5.4). Unlike v1, the client has explicit connect/request
 //! timeouts (v1 defect #4).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 8): the external policy-server request body \
+              is an open operational contract — its resolved attribute keys are \
+              configuration-driven"
+)]
+
 use std::collections::BTreeMap;
 use std::time::Duration;
 

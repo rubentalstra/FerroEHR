@@ -9,6 +9,12 @@
 //! drift. Draft: JSON Schema 2020-12. `$id`s are versioned URNs pending the
 //! upstream repository's canonical URLs.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694)"
+)]
+
 use serde::Serialize;
 use serde_json::{Value, json};
 

@@ -3,6 +3,10 @@
 //! The openEHR `BMM_INTERVAL_VALUE` spec class, generated from the vendored BMM
 //! meta-model.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "adjudicated free-form JSON slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only where the spec leaves the slot open, and each adjudicated field's NOTE names its citation"
+)]
 /// Meta-type for literal intervals of type `Interval<Ordered>`.
 #[doc(alias = "BMM_INTERVAL_VALUE")]
 #[derive(Debug, Clone, PartialEq)]

@@ -13,6 +13,12 @@
 //! qualified/listed terminology constraints, the pipe-ordinal shorthand and
 //! the inline dADL domain blocks).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "ODIN-to-JSON conversion targets the JSON data model by specification (LANG odin \
+              spec) (#1694)"
+)]
+
 use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
 use openehr_am::am24::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
 use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;

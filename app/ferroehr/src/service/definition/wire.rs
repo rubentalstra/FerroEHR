@@ -7,6 +7,12 @@
 //! wiring is the ITS-REST layer's concern. The retrieval/store behaviour rides
 //! on the SM logic in the sibling interface files.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): stored template/query artefacts served verbatim + \
+              ADL/OPT wire envelopes"
+)]
+
 use regex::Regex;
 use serde_json::Value;
 

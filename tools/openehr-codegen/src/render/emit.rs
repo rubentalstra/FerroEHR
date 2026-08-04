@@ -41,6 +41,54 @@ use crate::plan::{Emission, decide};
 use crate::render::naming;
 use std::collections::{BTreeMap, BTreeSet};
 
+/// Prepend a file-root `#![expect(clippy::disallowed_types)]` to a generated
+/// body whose CODE mentions the workspace-banned `serde_json::Value` (#1694).
+///
+/// Free-form JSON in generated output is admitted only where the model
+/// adjudicates it (`plan::overrides::UNTYPED_FIELDS` writes the citation NOTE
+/// at the field) or where the spec itself leaves the slot open (BMM `Any`,
+/// `xs:anyType`, an out-of-closure reference). The `expect` is scoped to the
+/// one file and stays honest: comment-only mentions insert nothing, and a
+/// regeneration that stops carrying the type drops the attribute with it.
+pub(crate) fn guard_value_carriers(body: &str) -> String {
+    let code_carries = body.lines().any(|l| {
+        let t = l.trim_start();
+        !t.starts_with("//") && l.contains("serde_json::Value")
+    });
+    if !code_carries {
+        return body.to_owned();
+    }
+    // Insert after the leading header (`//`) + module-doc (`//!`) block AND
+    // after any existing inner-attribute (`#![…]`) blocks: a later same-level
+    // blanket `#![allow(clippy::all, …)]` would mask the lint and leave the
+    // expectation unfulfilled, so the guard must come last. An outer doc
+    // comment (`///`) already belongs to the first item and stops the scan.
+    let mut at = 0usize;
+    let mut attr_depth = 0usize;
+    for line in body.split_inclusive('\n') {
+        let t = line.trim_start();
+        let is_header = t.starts_with("//!") || (t.starts_with("//") && !t.starts_with("///"));
+        let in_attr = attr_depth > 0 || t.starts_with("#![");
+        if t.is_empty() || is_header || in_attr {
+            if in_attr {
+                attr_depth = (attr_depth + line.matches(['[', '(']).count())
+                    .saturating_sub(line.matches([']', ')']).count());
+            }
+            at += line.len();
+        } else {
+            break;
+        }
+    }
+    let guard = "#![expect(\n    clippy::disallowed_types,\n    reason = \"adjudicated free-form JSON \
+                 slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only \
+                 where the spec leaves the slot open, and each adjudicated field's NOTE names its \
+                 citation\"\n)]\n";
+    // `at` accumulates whole-line lengths from `split_inclusive`, so it is a
+    // char boundary by construction.
+    let (head, tail) = body.split_at(at);
+    format!("{head}{guard}{tail}")
+}
+
 /// A generated Rust source file (path relative to the crate `src/`, plus body).
 pub(crate) struct GenFile {
     /// Relative path under the crate `src/`, e.g. `data_types/quantity/dv_quantity.rs`.

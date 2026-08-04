@@ -37,7 +37,6 @@
     unused_qualifications,
     reason = "mechanically generated dispatch text: one uniform arm per emitted class, every item named by its full path — length and style lints do not apply, the hand-written runtime carries the lint bar"
 )]
-
 // Shadowed twins (139):
 //   AUTHORED_RESOURCE: openehr_rm::prelude::AuthoredResource wins over openehr_base::prelude::AuthoredResource
 //   CODE_PHRASE: openehr_rm::prelude::CodePhrase wins over openehr_base::prelude::CodePhrase
@@ -409,7 +408,10 @@
 //   TerminologyRelation: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   VisibilityType: BMM enumeration: a literal token/integer on the wire, never `_type`-tagged
 //   TerminologyStatus: BMM enumeration: a literal token/integer on the wire, never `_type`-tagged
-
+#![expect(
+    clippy::disallowed_types,
+    reason = "adjudicated free-form JSON slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only where the spec leaves the slot open, and each adjudicated field's NOTE names its citation"
+)]
 /// Deserialize `node` as the emitted spec class named by `ty` and discard the
 /// value: `Some(Ok(()))` when the node conforms structurally,
 /// `Some(Err(_))` when it does not, `None` when `ty` names no emitted

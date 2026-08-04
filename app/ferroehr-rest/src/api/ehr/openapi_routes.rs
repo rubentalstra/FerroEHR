@@ -5,6 +5,12 @@
 //! the group dispatcher through `guarded_dispatch`, so wire behaviour is
 //! identical to the former `mount()` adapter.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 8): genuinely open operational JSON (config \
+              dump, management env, validity-checker input, OpenAPI schema literals)"
+)]
+
 use axum::extract::State;
 use axum::response::Response;
 use utoipa_axum::router::OpenApiRouter;

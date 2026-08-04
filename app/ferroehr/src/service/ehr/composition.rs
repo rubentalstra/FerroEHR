@@ -9,6 +9,12 @@
 //! validation is 422, not 400). Versioned-object mechanics are RM common
 //! master06, delegated to [`crate::versioning`].
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the commit interior carries the canonical \
+              fragment the seam produced once; stored-content serving"
+)]
+
 use openehr_base::base_types::identification::lexical::composite_ids_equal;
 use openehr_base::prelude::ObjectVersionId;
 use serde_json::Value;

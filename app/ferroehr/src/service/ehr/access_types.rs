@@ -28,6 +28,13 @@
 //! current `EHR_ACCESS` scheme settings so the protocol adapter — the
 //! out-of-band decision point — can enforce them after authentication.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 10): EHR_ACCESS.settings is the RM-mandated \
+              open slot (RM ehr access_control_settings.adoc — abstract, implementation-dependent \
+              by specification)"
+)]
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 

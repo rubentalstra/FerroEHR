@@ -3,6 +3,10 @@
 //! The openEHR `P_BMM_ENUMERATION_INTEGER` spec class, generated from the vendored BMM
 //! meta-model.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "adjudicated free-form JSON slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only where the spec leaves the slot open, and each adjudicated field's NOTE names its citation"
+)]
 use crate::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger;
 use crate::bmm_persistence::p_bmm_constant::PBmmConstant;
 use crate::bmm_persistence::p_bmm_function::PBmmFunction;

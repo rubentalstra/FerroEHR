@@ -17,6 +17,12 @@
 //! functions are a public HTTP API (rules §0) — and the CDR credential never
 //! reaches client-visible state.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+              (#1694)"
+)]
+
 use leptos::prelude::*;
 use leptos::{component, server};
 use leptos_meta::Title;
@@ -42,9 +48,10 @@ const LIST_EHRS_AQL: &str =
 
 /// One page of an AQL `RESULT_SET`, flattened for rendering: the column
 /// headers, the raw row cells, and the offset that produced it (so the view
-/// can build prev/next links). Shared across the EHR browse surfaces; carries
-/// only fixed-size ints so it is WASM-safe over the server-fn boundary
-/// (rules §1).
+/// can build prev/next links).
+///
+/// Shared across the EHR browse surfaces; carries only fixed-size ints so it
+/// is WASM-safe over the server-fn boundary (rules §1).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ResultPage {
     /// The result-set column names (falling back to the column path).

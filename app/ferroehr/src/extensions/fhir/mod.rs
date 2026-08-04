@@ -19,6 +19,13 @@
 //! * the **read façade** ([`FerroEhrService::fhir_search`]) and the **outbound
 //!   reverse-map** (`FerroEhrService::fhir_outbound_messages`) — the inverse
 //!   transform (`reverse`).
+
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 6): FHIR resources are an external standard \
+              with no RM type (typed-FHIR evaluation tracked separately)"
+)]
+
 //
 // Cross-area seams: the `pub(crate)` `FerroEhrService.pool` field,
 // `service::query::execute_aql` and `service::ehr::create_composition`

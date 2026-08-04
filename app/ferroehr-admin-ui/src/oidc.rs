@@ -1,6 +1,7 @@
 //! The console's OIDC authorization-code login (with PKCE): two plain axum
-//! routes (`/auth/oidc/login`, `/auth/oidc/callback`) on the BFF. The
-//! bearer token is stored server-side in the session; the browser only
+//! routes (`/auth/oidc/login`, `/auth/oidc/callback`) on the BFF.
+//!
+//! The bearer token is stored server-side in the session; the browser only
 //! ever holds the console's session cookie.
 
 use axum::response::{IntoResponse, Redirect, Response};

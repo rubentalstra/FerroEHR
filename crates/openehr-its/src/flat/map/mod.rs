@@ -33,6 +33,13 @@
 //! families, so a walker may route them either way; it must not route the same
 //! `_`-segment to both.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
+              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
+              (#1694)"
+)]
+
 pub(crate) mod data_values;
 pub(crate) mod parties;
 pub(crate) mod structures;

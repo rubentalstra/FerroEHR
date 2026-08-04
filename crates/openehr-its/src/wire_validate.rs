@@ -29,6 +29,13 @@
 //! surfaces `does not conform to RM type …` (see
 //! [`openehr_rm::validate::typed_dispatch::record_type_mismatch`]).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
+              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
+              (#1694)"
+)]
+
 use serde_json::Value;
 
 use openehr_base::validate::InvariantViolation;

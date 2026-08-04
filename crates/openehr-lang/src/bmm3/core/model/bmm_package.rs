@@ -3,6 +3,10 @@
 //! The openEHR `BMM_PACKAGE` spec class, generated from the vendored BMM
 //! meta-model.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "adjudicated free-form JSON slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only where the spec leaves the slot open, and each adjudicated field's NOTE names its citation"
+)]
 use crate::bmm3::core::entity::bmm_module::BmmModule;
 
 /// Abstraction of a package as a tree structure whose nodes can contain other packages and classes.

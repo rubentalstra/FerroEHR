@@ -17,9 +17,11 @@
 use crate::error::AdminUiError;
 
 /// Actionable copy for a failed write: names `object`, what went wrong, and
-/// the next action. `object` is a noun phrase for the thing being written
-/// ("the operational template", "the new EHR", "the stored query"), so every
-/// arm reads as one sentence about that object.
+/// the next action.
+///
+/// `object` is a noun phrase for the thing being written ("the operational
+/// template", "the new EHR", "the stored query"), so every arm reads as one
+/// sentence about that object.
 ///
 /// The CDR's own diagnostic travels verbatim — a `422` body naming the
 /// offending path is exactly what the user needs.
@@ -83,9 +85,10 @@ pub fn write_failure_copy(object: &str, error: &AdminUiError) -> String {
     }
 }
 
-/// Actionable copy for a refused openEHR **logical delete** — the versioned
-/// delete of a COMPOSITION or a directory, which is a normal write on the
-/// versioned object (not the destructive admin delete
+/// Actionable copy for a refused openEHR **logical delete**.
+///
+/// The versioned delete of a COMPOSITION or a directory, which is a normal
+/// write on the versioned object (not the destructive admin delete
 /// [`delete_failure_copy`](crate::admin::delete_failure_copy) covers).
 ///
 /// The concurrency family gets its own next action: a `409` is returned "when
@@ -132,8 +135,10 @@ pub fn logical_delete_failure_copy(object: &str, error: &AdminUiError) -> String
 }
 
 /// Toast a failed write with [`write_failure_copy`] — the failure half of the
-/// rule this module records. `title` is the short outcome ("Upload failed",
-/// "Commit failed"); `object` is the noun phrase the copy is built around.
+/// rule this module records.
+///
+/// `title` is the short outcome ("Upload failed", "Commit failed"); `object`
+/// is the noun phrase the copy is built around.
 pub fn toast_write_failure(
     toaster: thaw::ToasterInjection,
     title: &str,

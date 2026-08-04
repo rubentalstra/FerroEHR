@@ -8,6 +8,12 @@
 //! §Folders. The EHR-table and folder-membership SQL is a storage seam
 //! (no openEHR spec governs the schema — our own design).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the commit interior carries the canonical \
+              fragment the seam produced once; stored-content serving"
+)]
+
 use crate::ids::EhrId;
 use crate::service::ehr::handle::EhrSummary;
 use crate::service::ehr_index::types::SubjectRef;

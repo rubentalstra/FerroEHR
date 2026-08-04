@@ -50,6 +50,12 @@
 //! demanded an audit trail it cannot currently deliver); the auth records never
 //! gate the response.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 6): FHIR resources are an external standard \
+              with no RM type (typed-FHIR evaluation tracked separately)"
+)]
+
 use std::net::SocketAddr;
 
 use axum::extract::{ConnectInfo, Request, State};

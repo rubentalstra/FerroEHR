@@ -28,6 +28,13 @@
 //! [`require_session`](crate::session::require_session) first (rules §0), and
 //! the CDR credential never reaches client-visible state.
 
+#![allow(
+    clippy::disallowed_types,
+    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+              (#1694); the carriers here are ssr-only, so #[expect] would be unfulfilled on the \
+              hydrate target"
+)]
+
 pub mod compositions;
 pub mod contributions;
 pub mod directory;

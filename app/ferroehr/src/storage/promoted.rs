@@ -29,6 +29,12 @@
 //! this; `FOLDER` does **not** (folders nest), so a future `FOLDER` leaf would
 //! need an explicit `num = 0` guard on the read side before it could be added.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 1): stored canonical fragments — a typed \
+              round-trip drops forward-compatible keys (docs/VERSIONS.md §Spec version policy)"
+)]
+
 use serde_json::Value;
 
 /// The physical type a promoted column carries.

@@ -7,6 +7,12 @@
 //! with the Nth recorded response (matching = method + path suffix), so a
 //! fixture file fully determines what any conformant runner must conclude.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694)"
+)]
+
 use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};

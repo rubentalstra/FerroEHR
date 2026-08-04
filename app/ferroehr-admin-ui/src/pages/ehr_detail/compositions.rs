@@ -1,6 +1,12 @@
 //! The EHR-detail Compositions tab: the AQL-driven composition list plus the
 //! "Commit composition" form.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+              (#1694)"
+)]
+
 use leptos::prelude::*;
 use leptos::server;
 use leptos_router::components::A;

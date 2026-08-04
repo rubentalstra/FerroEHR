@@ -70,6 +70,12 @@
 //! `data: Value` — so `data` on those two classes accepts anything non-absent
 //! ([`generic_any_slot`]), mirroring the monomorphized `Value` payload.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "the wire-boundary validation reads the canonical JSON node before the typed decode \
+              (#1694 boundary class)"
+)]
+
 use serde_json::{Map, Value};
 
 use crate::model::{Container, RmClass};

@@ -12,6 +12,12 @@
 //! `docs/specs/openehr/BASE/docs/foundation_types/master05-interval.adoc`
 //! (`INTERVAL` / `MULTIPLICITY_INTERVAL`).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "ODIN-to-JSON conversion targets the JSON data model by specification (LANG odin \
+              spec) (#1694)"
+)]
+
 use openehr_am::am24::aom2::constraint_model::c_archetype_root::CArchetypeRoot;
 use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
 use openehr_am::am24::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;

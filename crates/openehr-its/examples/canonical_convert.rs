@@ -16,6 +16,13 @@
 //! `http://schemas.openehr.org/v1` (ITS-XML; vendored XSDs at
 //! `crates/openehr-its/schemas/xml/`).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
+              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
+              (#1694)"
+)]
+
 use std::error::Error;
 
 use openehr_rm::common::change_control::original_version::OriginalVersion;

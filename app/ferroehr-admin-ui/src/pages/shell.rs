@@ -1,7 +1,8 @@
-//! The application shell: the session guard plus the persistent chrome
-//! (static sidebar nav with icons, topbar with the wordmark + CDR status
-//! chip, user menu + access drawer, dark-mode toggle, footer) around the
-//! routed `<Outlet/>`.
+//! The application shell.
+//!
+//! The session guard plus the persistent chrome (static sidebar nav with
+//! icons, topbar with the wordmark + CDR status chip, user menu + access
+//! drawer, dark-mode toggle, footer) around the routed `<Outlet/>`.
 //!
 //! The access drawer ("View scopes") is the console's effective-identity
 //! surface: the authenticated principal, the policy source deciding what it may
@@ -21,6 +22,12 @@
 //! into unstyled text on the pre-hydration paint (seen live in the
 //! 2026-07-18 captures). thaw stays for genuinely interactive widgets
 //! (the user-menu popover, the scopes drawer, toasts).
+
+#![expect(
+    clippy::disallowed_types,
+    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+              (#1694)"
+)]
 
 use leptos::prelude::*;
 use leptos_icons::Icon;

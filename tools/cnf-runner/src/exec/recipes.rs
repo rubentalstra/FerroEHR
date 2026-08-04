@@ -6,6 +6,12 @@
 //! `corpus/recipes/*.md`. Every recipe here is a registered exception to
 //! the data-driven rule and is listed as such in the run report.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694)"
+)]
+
 use serde_json::{Value, json};
 
 use crate::model::case::MatrixCell;

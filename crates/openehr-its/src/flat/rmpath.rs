@@ -18,6 +18,12 @@
     dead_code,
     reason = "consumed by the RM ⇄ sim walkers landing in this same rewrite; drop this allow with their arrival"
 )]
+#![expect(
+    clippy::disallowed_types,
+    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
+              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
+              (#1694)"
+)]
 
 use openehr_rm::paths::{PathSegment, RmPath, select_children};
 use serde_json::Value;

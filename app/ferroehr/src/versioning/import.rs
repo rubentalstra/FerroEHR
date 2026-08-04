@@ -29,6 +29,13 @@
 //! `Last-Modified` header and every as-of-instant read are computed from the
 //! import, never from the source system's clock.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 2): the serialized version envelope is the \
+              signed artifact (RM common master06 §Digital Signature) — re-encoding breaks \
+              verification"
+)]
+
 use serde_json::Value;
 use sqlx::PgConnection;
 use uuid::Uuid;

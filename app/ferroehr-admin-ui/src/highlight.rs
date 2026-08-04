@@ -21,9 +21,10 @@ use std::iter::Peekable;
 use std::str::Chars;
 
 /// Which grammar a document body is tokenized as, decided from its first
-/// non-whitespace character rather than from a media type (the pane is handed a
-/// string, and FLAT / STRUCTURED / Web Template / stored-query bodies all arrive
-/// through the same prop).
+/// non-whitespace character rather than from a media type.
+///
+/// The pane is handed a string, and FLAT / STRUCTURED / Web Template /
+/// stored-query bodies all arrive through the same prop.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Language {
     /// Canonical JSON and every JSON-shaped simplified format.

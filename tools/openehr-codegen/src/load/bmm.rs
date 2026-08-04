@@ -31,6 +31,11 @@
 //! by design — but invariant EL text and function signatures remain available in
 //! the JSON for scaffolding.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev tooling over JSON artifacts (vendored BMM/OAS bundles, emitter reports) — not the \
+              application (#1694)"
+)]
 use serde_json::Value;
 use std::collections::BTreeMap;
 

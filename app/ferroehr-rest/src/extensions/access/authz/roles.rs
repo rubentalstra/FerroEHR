@@ -5,6 +5,12 @@
 //! configured role list (resolved in `ferroehr-rest`). [`authorize`] gates an
 //! [`OperationClass`] against a principal's roles and the [`RbacConfig`].
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 7): RFC 7519 leaves the claim set open; \
+              decided-on claims lift into typed fields"
+)]
+
 use serde_json::{Map, Value};
 
 use crate::extensions::access::authz::classify::OperationClass;

@@ -13,6 +13,12 @@
 //! One binary per crate, split into topic modules
 //! (`.claude/rules/testing.md` §One integration-test binary per crate).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "test fixtures and wire assertions are raw JSON by the testing rule \
+              (.claude/rules/testing.md §Test-fixture construction)"
+)]
+
 mod adl14_knowledge_archetypes;
 mod adl2_fixture;
 mod adl2_vetdf;
@@ -58,4 +64,3 @@ mod terminology_mtls;
 mod terminology_multi_provider;
 mod typed_body;
 mod validation_opt;
-mod value_carriers;

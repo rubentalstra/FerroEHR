@@ -11,6 +11,12 @@
 //! is enforced inside `commit_version_set` via the
 //! [`crate::versioning::CommitEnv`] `ensure_ehr_exists` hook.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the commit interior carries the canonical \
+              fragment the seam produced once; stored-content serving"
+)]
+
 use crate::ids::EhrId;
 use crate::service::list::Page;
 use crate::service::response::{ResourceMeta, ServiceResponse};

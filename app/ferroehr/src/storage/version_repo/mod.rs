@@ -31,6 +31,13 @@
 //!   history, existence/kind/count lookups) that skip node reassembly.
 //! - [`contribution`] — CONTRIBUTION reads (audit, affected versions,
 //!   listing/counting).
+
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 1): stored canonical fragments — a typed \
+              round-trip drops forward-compatible keys (docs/VERSIONS.md §Spec version policy)"
+)]
+
 //
 // The versioning layer owns the value types (`AuditInput`, `Kind`, `TreeId`,
 // `VersionRead`, `Committed`) and maps them onto the plain inputs and the

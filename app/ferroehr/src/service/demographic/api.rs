@@ -9,6 +9,12 @@
 //! relationship ids parse through the shared BASE decoder in
 //! [`crate::versioning`] (`object_version_id.rs`).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the commit interior carries the canonical \
+              fragment the seam produced once; stored-content serving"
+)]
+
 use openehr_base::base_types::identification::lexical::composite_ids_equal;
 use openehr_rm::prelude::ItemTag;
 use serde_json::Value;

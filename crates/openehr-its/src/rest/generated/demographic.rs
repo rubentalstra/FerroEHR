@@ -10,6 +10,10 @@
     unused_variables,
     reason = "mechanically generated contract text: the OAS is emitted in full (every DTO, param struct and route, whether or not this workspace consumes it yet), so style and dead-code lints do not apply — the hand-written runtime and the implementing adapter carry the lint bar"
 )]
+#![expect(
+    clippy::disallowed_types,
+    reason = "adjudicated free-form JSON slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only where the spec leaves the slot open, and each adjudicated field's NOTE names its citation"
+)]
 use serde::{Deserialize, Serialize};
 
 /// The `VersionOfParty` transport DTO of this API group (an ITS-REST OAS

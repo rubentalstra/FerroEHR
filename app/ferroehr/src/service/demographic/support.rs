@@ -12,6 +12,12 @@
 //! `versioned_object` builders are EHR-scoped, so this chapter maps the
 //! ehr-less `VersionMeta` rows into the wire shape itself.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the commit interior carries the canonical \
+              fragment the seam produced once; stored-content serving"
+)]
+
 use openehr_base::prelude::{HierObjectId, ObjectId, ObjectRef, ObjectRefData};
 use openehr_rm::prelude::{
     RevisionHistory, RevisionHistoryItem, VersionedObject, VersionedObjectData, VersionedParty,

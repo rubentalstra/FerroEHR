@@ -33,6 +33,12 @@
 //! - `store` — the content-addressed [`BlobStore`] over `object_store`.
 //! - `offload` — the pure canonical-JSON transforms (externalize / expand).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): external FHIR resources, tenancy/event CRUD rows, \
+              multimedia offload over stored fragments (families 3/6/8)"
+)]
+
 use std::collections::HashMap;
 
 use serde_json::Value;

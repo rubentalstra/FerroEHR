@@ -16,6 +16,12 @@
 //! determinism so any language reproduces the bytes identically). This is a
 //! framework-normative pin, not a spec silence.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694)"
+)]
+
 use base64::Engine as _;
 use serde_json::Value;
 use sha2::{Digest as _, Sha256};

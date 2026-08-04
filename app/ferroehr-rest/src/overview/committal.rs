@@ -56,6 +56,13 @@
 //! subtype); if the assembled `PARTY_IDENTIFIED` fails to type, the committer is
 //! left at the server default.
 
+#![allow(
+    clippy::disallowed_types,
+    reason = "test fixtures and wire assertions are raw JSON by the testing rule \
+              (.claude/rules/testing.md §Test-fixture construction); the carriers here are \
+              cfg(test)-only, so #[expect] would be unfulfilled in the non-test build"
+)]
+
 use http::HeaderMap;
 use indexmap::IndexMap;
 

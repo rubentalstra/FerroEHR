@@ -9,6 +9,13 @@
 //! embedded HDR V2 histograms, never read from the summary fields. Both
 //! charts style for light and dark via `prefers-color-scheme`.
 
+#![allow(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694); the carriers here are cfg(test)-only, so \
+              #[expect] would be unfulfilled in the non-test build"
+)]
+
 use std::fmt::Write;
 
 use crate::perf::{ClassVerdict, Measurement, PerformanceCase};

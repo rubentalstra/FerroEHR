@@ -10,6 +10,12 @@
 //! §"XML Format"); `unique` is aggregate (evaluated once after all rows);
 //! `message_exemplar` is informative only, never pass/fail.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694)"
+)]
+
 use serde::de::Error as DeError;
 use serde::{Deserialize, Deserializer};
 

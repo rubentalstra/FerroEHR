@@ -95,7 +95,7 @@ pub struct ResourceStatus {
 /// NOTE: the SM class is an **empty stub** (no attributes defined) — a
 /// recorded spec defect; the designed contract `{system_id, uri?,
 /// description?}` makes the optional location descriptor carry usable data.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct LocationDesc {
     /// Identifier of the system hosting the EHR.
     pub system_id: String,

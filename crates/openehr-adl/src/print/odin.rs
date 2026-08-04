@@ -4,6 +4,12 @@
 //! scalars, `TERM_CODE_REF`) — `LANG/docs/odin/master03` +
 //! `master07-leaf_data`.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "ODIN-to-JSON conversion targets the JSON data model by specification (LANG odin \
+              spec) (#1694)"
+)]
+
 use std::collections::BTreeMap;
 
 use openehr_base::prelude::TerminologyCode;

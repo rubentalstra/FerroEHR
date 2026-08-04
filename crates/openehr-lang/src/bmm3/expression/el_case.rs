@@ -3,6 +3,10 @@
 //! The openEHR `EL_CASE` spec class, generated from the vendored BMM
 //! meta-model.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "adjudicated free-form JSON slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only where the spec leaves the slot open, and each adjudicated field's NOTE names its citation"
+)]
 /// One branch of a Case table, consisting of a value constraint (the match criterion) and a result, of the generic parameter type T.
 #[doc(alias = "EL_CASE")]
 #[derive(Debug, Clone, PartialEq)]

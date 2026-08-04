@@ -5,6 +5,13 @@
 //! The register is normative: a runner that "resolves" an ambiguity privately
 //! is non-conformant to the schedule.
 
+#![allow(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694); the carriers here are cfg(test)-only, so \
+              #[expect] would be unfulfilled in the non-test build"
+)]
+
 use serde::Deserialize;
 
 use crate::ids::{AmbiguityId, OptionTag};

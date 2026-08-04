@@ -36,6 +36,11 @@
 //! (see [`crate::render::emit`]'s struct renderer), which can differ only where
 //! the self-recursion boxing check resolves differently for that descendant.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev tooling over JSON artifacts (vendored BMM/OAS bundles, emitter reports) — not the \
+              application (#1694)"
+)]
 use crate::analyze::{
     External, Model, augment_with_reemit, class_paths, cross_schema_reemit, emittable_specs,
 };

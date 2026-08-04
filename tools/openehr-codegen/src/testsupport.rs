@@ -8,6 +8,11 @@
 //! This module is test scaffolding, not part of the generator's output path; it
 //! only reads the same tables and functions `cli.rs` drives.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev tooling over JSON artifacts (vendored BMM/OAS bundles, emitter reports) — not the \
+              application (#1694)"
+)]
 use crate::analyze::invariants::{self, Bucket};
 use crate::analyze::{Model, augment_with_reemit, class_paths, cross_schema_reemit};
 use crate::load::bmm::BmmSchema;

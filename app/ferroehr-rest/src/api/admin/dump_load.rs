@@ -43,6 +43,12 @@
 //! operations carry `security: []`) and the `AppConfig::admin.enabled` config
 //! gate (`405` with an empty `Allow` when off) unchanged.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the handler carries the canonical fragment the \
+              negotiate seam produced once (stored-content serving / commit interior)"
+)]
+
 use axum::extract::State;
 use axum::response::{IntoResponse, Response};
 use http::StatusCode;

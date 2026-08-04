@@ -23,6 +23,12 @@
 //! id (the façade/emitter supply it — the COMPOSITION does not carry it), with
 //! `strip_prefix` re-applied so the reference matches the inbound form.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 6): FHIR resources are an external standard \
+              with no RM type (typed-FHIR evaluation tracked separately)"
+)]
+
 use std::collections::BTreeMap;
 
 use serde_json::{Map, Value, json};

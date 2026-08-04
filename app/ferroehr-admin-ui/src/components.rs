@@ -1,10 +1,11 @@
 //! Shared UI components used by several screens — the design-system kit.
-//! Screens compose these instead of hand-rolling markup: `PageHeader`
-//! opens every route, `table_shell` renders every listing, the `field`
-//! constants style every control, `StatCard`/`EmptyState` cover metrics
-//! and voids, `results_chart` draws every AQL result set, `activity_chart`
-//! draws every events-per-day timeline, `scope_grants` renders every SMART
-//! scope string, and `toast` reports every mutation outcome.
+//!
+//! Screens compose these instead of hand-rolling markup: `PageHeader` opens
+//! every route, `table_shell` renders every listing, the `field` constants
+//! style every control, `StatCard`/`EmptyState` cover metrics and voids,
+//! `results_chart` draws every AQL result set, `activity_chart` draws every
+//! events-per-day timeline, `scope_grants` renders every SMART scope string,
+//! and `toast` reports every mutation outcome.
 
 pub mod activity_chart;
 pub mod brand;

@@ -2,6 +2,12 @@
 //! (CNF 2.0 artifact-set design; shapes extracted from
 //! `CNF platform_test_schedule master03/04/06/07/08/09/15–17`).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694)"
+)]
+
 use serde::de::Error as DeError;
 use serde::{Deserialize, Deserializer};
 

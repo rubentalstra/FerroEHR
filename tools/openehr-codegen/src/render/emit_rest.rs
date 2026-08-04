@@ -9,6 +9,11 @@
 //! than being re-emitted. `ferroehr-rest` implements the trait and wires axum
 //! (the handler logic is hand-written application code, not generatable).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev tooling over JSON artifacts (vendored BMM/OAS bundles, emitter reports) — not the \
+              application (#1694)"
+)]
 use crate::load::oas::{Oas, Operation};
 use crate::plan::overrides::oas_monomorphization;
 use crate::render::naming;

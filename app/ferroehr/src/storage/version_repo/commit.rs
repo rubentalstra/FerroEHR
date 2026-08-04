@@ -9,6 +9,12 @@
 //! (§Committal and Audits, §The 'Virtual Version Tree'); `AUDIT_DETAILS` is
 //! master04.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 1): stored canonical fragments — a typed \
+              round-trip drops forward-compatible keys (docs/VERSIONS.md §Spec version policy)"
+)]
+
 use serde_json::Value;
 use sqlx::{PgConnection, Row};
 use uuid::Uuid;

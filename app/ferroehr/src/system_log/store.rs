@@ -15,6 +15,12 @@
 //! search keys, nothing more. Rows are append-only except the per-sink
 //! delivery stamps (the forwarding outbox) and retention reaping.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 6): FHIR resources are an external standard \
+              with no RM type (typed-FHIR evaluation tracked separately)"
+)]
+
 use jiff_sqlx::Timestamp;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;

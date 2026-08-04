@@ -34,6 +34,13 @@
 //! `WebTemplate`) lives in [`crate::flat::validation`]; [`validate_composition`]
 //! is the composed entry point that runs all three.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
+              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
+              (#1694)"
+)]
+
 pub mod terminology;
 
 use serde_json::Value;

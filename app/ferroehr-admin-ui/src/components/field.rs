@@ -1,9 +1,10 @@
 //! The shared form-control classes: ONE styled definition for text inputs,
-//! selects, and textareas (previously hand-duplicated per screen). These
-//! are class constants rather than wrapper components because half the
-//! console's inputs are deliberately uncontrolled (the login form) or
-//! carry bespoke wiring (the builder's per-datatype editors) — the kit
-//! standardizes the LOOK, each screen keeps its own behaviour.
+//! selects, and textareas (previously hand-duplicated per screen).
+//!
+//! These are class constants rather than wrapper components because half the
+//! console's inputs are deliberately uncontrolled (the login form) or carry
+//! bespoke wiring (the builder's per-datatype editors) — the kit standardizes
+//! the LOOK, each screen keeps its own behaviour.
 
 /// A single-line text input.
 pub const INPUT: &str = "rounded-control border border-edge-strong bg-raised px-3 py-1.5 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent";

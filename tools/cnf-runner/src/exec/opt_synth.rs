@@ -28,6 +28,12 @@
 //! axes are gated per-row N/A upstream (AMB-42,
 //! [`crate::exec::content_synth::unrealizable_row`]).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694)"
+)]
+
 use serde_json::Value;
 
 use core::fmt::Write as _;

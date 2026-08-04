@@ -42,6 +42,12 @@
 //! [`crate::storage::version_repo`]; no openEHR spec governs the schema — our
 //! own design).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the commit interior carries the canonical \
+              fragment the seam produced once; stored-content serving"
+)]
+
 pub(in crate::service) mod access;
 pub(in crate::service) mod category;
 mod composition;

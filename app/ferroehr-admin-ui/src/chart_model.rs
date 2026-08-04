@@ -17,6 +17,12 @@
 //! hydration-safe (`.claude/rules/leptos-ui.md` §8): the server pass and the
 //! browser hydration derive byte-identical series, axes, and tick labels.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+              (#1694)"
+)]
+
 use serde_json::Value;
 
 /// How many usable points a column needs before it is worth drawing: one point
@@ -87,8 +93,10 @@ impl AxisSpec {
 }
 
 /// A chartable result set: the derived series and the axes they can be drawn
-/// over. [`Self::axes`] is never empty, and its first entry is the default —
-/// a temporal axis when the result set offers one, the row order otherwise.
+/// over.
+///
+/// [`Self::axes`] is never empty, and its first entry is the default — a
+/// temporal axis when the result set offers one, the row order otherwise.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ChartModel {
     /// One series per mostly-numeric column, in result-set column order.

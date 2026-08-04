@@ -3,6 +3,10 @@
 //! The openEHR `C_COMPLEX_OBJECT` spec class, generated from the vendored BMM
 //! meta-model.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "adjudicated free-form JSON slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only where the spec leaves the slot open, and each adjudicated field's NOTE names its citation"
+)]
 use crate::am24::aom2::constraint_model::archetype_constraint::ArchetypeConstraint;
 use crate::am24::aom2::constraint_model::c_archetype_root::CArchetypeRoot;
 use crate::am24::aom2::constraint_model::c_attribute::CAttribute;

@@ -47,6 +47,13 @@
 //! PARTY_SELF (master05 §OBSERVATION `/subject` row Note), and a party invented
 //! here would put a fictitious identified person into an example document.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
+              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
+              (#1694)"
+)]
+
 use std::collections::HashSet;
 
 use serde_json::{Map, Value, json};

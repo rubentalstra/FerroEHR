@@ -27,6 +27,12 @@
 //! parties) have no Simplified-Formats mapping and are rejected uniformly
 //! (`guard_non_templated`).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 9): the wire boundary — one byte-to-JSON \
+              step per route, consumed by the typed decode"
+)]
+
 use axum::response::Response;
 use bytes::Bytes;
 use http::{HeaderMap, StatusCode};

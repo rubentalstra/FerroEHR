@@ -3,6 +3,10 @@
 //! The openEHR `BMM_SINGLETON` spec class, generated from the vendored BMM
 //! meta-model.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "adjudicated free-form JSON slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only where the spec leaves the slot open, and each adjudicated field's NOTE names its citation"
+)]
 use crate::bmm3::core::entity::bmm_type::BmmType;
 use crate::bmm3::core::feature::bmm_feature_extension::BmmFeatureExtension;
 use crate::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup;

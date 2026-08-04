@@ -30,6 +30,12 @@
 //! the conversion across every call site. Keep the layer; a new SM operation
 //! gets its SM-named method here even when the body is one expression.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): service-surface signatures over stored canonical \
+              fragments and dynamic shapes"
+)]
+
 pub mod admin;
 pub mod definition;
 pub mod demographic;

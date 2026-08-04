@@ -3,6 +3,10 @@
 //! The openEHR `EXPR_VALUE_REF` spec class, generated from the vendored BMM
 //! meta-model.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "adjudicated free-form JSON slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only where the spec leaves the slot open, and each adjudicated field's NOTE names its citation"
+)]
 use crate::am24::aom2::rules::expr_archetype_ref::ExprArchetypeRef;
 
 /// Path-based reference to a value in a data structure.

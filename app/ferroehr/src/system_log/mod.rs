@@ -52,6 +52,12 @@
 //!   + fail modes.
 //! - [`config`] — the `[audit]` section struct ([`config::AuditConfig`]).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 6): FHIR resources are an external standard \
+              with no RM type (typed-FHIR evaluation tracked separately)"
+)]
+
 pub mod codes;
 pub mod config;
 pub mod event;

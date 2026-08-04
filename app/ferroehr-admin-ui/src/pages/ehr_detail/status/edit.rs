@@ -18,6 +18,12 @@
 //! a non-object value is refused before any round trip — the CDR's own
 //! validation is still the authority and its diagnostic is rendered verbatim.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+              (#1694)"
+)]
+
 use leptos::prelude::*;
 use serde_json::Value;
 

@@ -1,10 +1,11 @@
-//! The structured directory tree editor: a recursive, editable view of the
-//! root `FOLDER` (add / rename / delete folders, add / remove item
-//! references) backed by a single working-tree signal, with a dirty-state
-//! save bar (PUT with `If-Match`), an advanced raw-JSON mode, and the
-//! composition picker for adding `OBJECT_REF` items. Also the shared
-//! read-only tree renderer used by the create preview and the history / time /
-//! path panels.
+//! The structured directory tree editor.
+//!
+//! A recursive, editable view of the root `FOLDER` (add / rename / delete
+//! folders, add / remove item references) backed by a single working-tree
+//! signal, with a dirty-state save bar (PUT with `If-Match`), an advanced
+//! raw-JSON mode, and the composition picker for adding `OBJECT_REF` items.
+//! Also the shared read-only tree renderer used by the create preview and the
+//! history / time / path panels.
 //!
 //! The working tree is one `RwSignal<serde_json::Value>` seeded from the
 //! loaded FOLDER, then stamped with an ephemeral, client-only `_key` identity
@@ -19,6 +20,12 @@
 //! `super::edit::find_item_index`). The `_key` is stripped
 //! (`super::edit::strip_keys`) from every body sent to the CDR and from the
 //! advanced-JSON view — it never leaves the console.
+
+#![expect(
+    clippy::disallowed_types,
+    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+              (#1694)"
+)]
 
 use leptos::prelude::*;
 use serde_json::Value;

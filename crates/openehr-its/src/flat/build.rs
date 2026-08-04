@@ -17,6 +17,13 @@
 //! (`master04 §Validation`: "Field identifiers match WT metadata
 //! structure").
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
+              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
+              (#1694)"
+)]
+
 use openehr_rm::paths::PathSegment;
 use serde_json::{Map, Value, json};
 

@@ -30,7 +30,9 @@ use openehr_its::rest::smart_scopes::{
 pub const RESOURCE_SCOPE_FORM: &str = "<compartment>/<resource>.<permission>";
 
 /// The standing capability-vs-authorization caveat the drawer states (master08
-/// §Scopes: the Platform validates every requested scope against the client
+/// §Scopes.
+///
+/// The Platform validates every requested scope against the client
 /// registration, the access-control policies and the user's own permissions).
 pub const CAPABILITY_NOTE: &str = "Scopes narrow access, they never grant it: they say what a token may ask for, and the CDR still decides every request against its own policies and your permissions. A grant shown here is an upper bound.";
 

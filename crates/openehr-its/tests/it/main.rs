@@ -9,6 +9,12 @@
 //! (`.claude/rules/testing.md` §One integration-test binary per crate);
 //! `common` is the shared corpus plumbing, never a test binary of its own.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "test fixtures and wire assertions are raw JSON by the testing rule \
+              (.claude/rules/testing.md §Test-fixture construction)"
+)]
+
 mod common;
 
 mod aom2_model_xml;

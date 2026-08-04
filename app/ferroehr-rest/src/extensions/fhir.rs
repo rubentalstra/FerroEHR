@@ -39,6 +39,12 @@
 //! stored). FHIR↔openEHR mapping is spec-silent — our own extension,
 //! so this is our own surface, excluded from the ITS-REST drift check.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 6): FHIR resources are an external standard \
+              with no RM type (typed-FHIR evaluation tracked separately)"
+)]
+
 use axum::Json;
 use axum::extract::State;
 use axum::response::{IntoResponse, Response};

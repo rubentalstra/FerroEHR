@@ -17,6 +17,12 @@
 //! enumerated by the `Accept` header but the response declares **no**
 //! `application/xml` body content, so an `Accept` naming only XML is a `406`.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the handler carries the canonical fragment the \
+              negotiate seam produced once (stored-content serving / commit interior)"
+)]
+
 use axum::response::{IntoResponse, Response};
 use http::{HeaderMap, HeaderValue, StatusCode, header};
 

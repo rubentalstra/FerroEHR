@@ -13,6 +13,13 @@
 //! resolved from the `openehr-term` bundle at the render edge, never a
 //! hardcoded rubric.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 2): the serialized version envelope is the \
+              signed artifact (RM common master06 §Digital Signature) — re-encoding breaks \
+              verification"
+)]
+
 use openehr_base::prelude::TerminologyId;
 use openehr_its::rest::generated::common::UpdateAudit;
 use openehr_rm::prelude::{

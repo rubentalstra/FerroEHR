@@ -26,6 +26,12 @@
 //! `docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
 //! §JSON Format.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "the canonical-JSON reader runtime buffers wire members as serde_json::Value before \
+              `_type` dispatch — the wire value IS the domain here (#1694 boundary class)"
+)]
+
 use serde::de::{DeserializeSeed, Deserializer, Error as _, MapAccess, Visitor};
 
 /// The canonical discriminator key.

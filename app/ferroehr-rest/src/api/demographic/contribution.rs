@@ -3,6 +3,12 @@
 //! `demographic_contribution_get.yaml`. Canonical content negotiation; the
 //! commit body is a `NewContribution` wrapper (`schemas/demographic/NewContribution.yaml`).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the handler carries the canonical fragment the \
+              negotiate seam produced once (stored-content serving / commit interior)"
+)]
+
 use axum::response::Response;
 use http::StatusCode;
 

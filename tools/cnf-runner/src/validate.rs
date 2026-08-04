@@ -10,6 +10,13 @@
 //! tree for the two resolution checks); every violation is one typed
 //! [`Finding`].
 
+#![allow(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694); the carriers here are cfg(test)-only, so \
+              #[expect] would be unfulfilled in the non-test build"
+)]
+
 use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};

@@ -17,6 +17,12 @@
 //! passes through), which no off-the-shelf crate does across all three sources
 //! at once.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 9): the wire boundary — one byte-to-JSON \
+              step per route, consumed by the typed decode"
+)]
+
 use http::{HeaderMap, HeaderValue};
 use indexmap::IndexMap;
 use serde::de::value::Error;

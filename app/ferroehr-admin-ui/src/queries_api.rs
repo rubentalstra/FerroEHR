@@ -6,6 +6,13 @@
 //! (`crate::query_namespace`), so it lives in the CDR and reads identically
 //! for every API client.
 
+#![allow(
+    clippy::disallowed_types,
+    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+              (#1694); the carriers here are ssr-only, so #[expect] would be unfulfilled on the \
+              hydrate target"
+)]
+
 use leptos::server;
 use serde::{Deserialize, Serialize};
 
