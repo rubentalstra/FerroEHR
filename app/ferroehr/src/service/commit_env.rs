@@ -8,6 +8,12 @@
 //! the one place those chapter seams are wired into
 //! [`crate::versioning::CommitEnv`].
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): commit-environment fragments are the canonical \
+              form the commit interior carries (stored-content class)"
+)]
+
 use serde_json::Value;
 use sqlx::PgPool;
 

@@ -5,6 +5,13 @@
 //! `errored` (ISO/IEC 9646 *inconclusive*, never a conformance finding); a
 //! *mapped but unexpected* outcome → `failed`.
 
+#![allow(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694); the carriers here are cfg(test)-only, so \
+              #[expect] would be unfulfilled in the non-test build"
+)]
+
 use crate::model::binding::{OperationBinding, WireExpectation};
 use crate::model::vocab_files::SelectorsVocab;
 use crate::vocab::OutcomeKind;

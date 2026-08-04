@@ -30,6 +30,12 @@
 //! in-process RM authority the interval/reference-range invariants use, and the
 //! two must stay semantically aligned.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "the wire-boundary validation reads the canonical JSON node before the typed decode \
+              (#1694 boundary class)"
+)]
+
 use crate::data_types::quantity::date_time::dv_date::DvDate;
 use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
 use crate::data_types::quantity::date_time::dv_duration::DvDuration;

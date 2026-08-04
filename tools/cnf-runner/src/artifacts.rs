@@ -23,6 +23,12 @@
 //! Loading never fails fast: every file error becomes a finding, so one
 //! validation run reports the whole tree.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694)"
+)]
+
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
 

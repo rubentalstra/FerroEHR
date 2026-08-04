@@ -46,6 +46,12 @@
 //! `Ehr_access_valid`; master04 §EHR Creation) with the local default
 //! ([`crate::service::FerroEhrService::commit_default_ehr_access`]).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 3): EHR-Extract/TDD/dump-load compose over \
+              verbatim stored content (RM common master06 §Copying)"
+)]
+
 use std::collections::BTreeMap;
 
 use serde_json::Value;

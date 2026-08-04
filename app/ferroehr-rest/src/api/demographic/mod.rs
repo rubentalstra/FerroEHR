@@ -29,6 +29,12 @@
 //! `demographic_tags_get`), `versioned_party`, `contribution`,
 //! `relationship` (extension), and `dispatch` as the operation-id match.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the handler carries the canonical fragment the \
+              negotiate seam produced once (stored-content serving / commit interior)"
+)]
+
 use axum::response::{IntoResponse, Response};
 use http::{HeaderMap, HeaderValue, header};
 

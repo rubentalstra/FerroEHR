@@ -12,6 +12,13 @@
 //! *gate* that consults it (RBAC/ABAC) is a Stage-2 enterprise concern
 //! (CLAUDE.md), not designed in this chapter.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 10): EHR_ACCESS.settings is the RM-mandated \
+              open slot (RM ehr access_control_settings.adoc — abstract, implementation-dependent \
+              by specification)"
+)]
+
 use std::sync::Arc;
 
 use crate::ids::EhrId;

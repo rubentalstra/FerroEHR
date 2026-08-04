@@ -9,6 +9,12 @@
 //! the `support` module; RM common master04 §Revision History / master06
 //! §Versioned Objects govern the wire shapes.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the commit interior carries the canonical \
+              fragment the seam produced once; stored-content serving"
+)]
+
 use serde_json::Value;
 
 use crate::ids::VoId;

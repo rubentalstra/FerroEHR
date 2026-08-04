@@ -6,6 +6,12 @@
 //! nested-set index (`num`/`num_cap`/`parent_num`/`citem_num`) exist to make AQL
 //! CONTAINS an integer interval join, never a JSON walk.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 1): stored canonical fragments — a typed \
+              round-trip drops forward-compatible keys (docs/VERSIONS.md §Spec version policy)"
+)]
+
 use serde_json::Value;
 
 /// One decomposed `node` row to write (content columns only — the storage

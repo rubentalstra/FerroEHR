@@ -37,6 +37,13 @@
 //! `NormalizePathLayer` is applied at serve time (it must wrap the router to run
 //! before routing); see [`crate::serve_with`].
 
+#![allow(
+    clippy::disallowed_types,
+    reason = "test fixtures and wire assertions are raw JSON by the testing rule \
+              (.claude/rules/testing.md §Test-fixture construction); the carriers here are \
+              cfg(test)-only, so #[expect] would be unfulfilled in the non-test build"
+)]
+
 use std::any::Any;
 use std::sync::Arc;
 use std::time::Duration;

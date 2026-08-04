@@ -20,6 +20,12 @@
 //! (INVALID class 2) + `master07-func_tc_ehr_composition.adoc` (the
 //! persistent-cardinality convention).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the commit interior carries the canonical \
+              fragment the seam produced once; stored-content serving"
+)]
+
 use openehr_base::validate::InvariantViolation;
 use serde_json::Value;
 use sqlx::PgConnection;

@@ -37,6 +37,12 @@
 //! The bundle codes themselves come from the vendored TERM assets in
 //! [`openehr_term::bundle`].
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "the wire-boundary validation reads the canonical JSON node before the typed decode \
+              (#1694 boundary class)"
+)]
+
 use openehr_base::validate::InvariantViolation;
 use openehr_term::bundle::{OpenehrTerminology, openehr};
 use serde_json::Value;

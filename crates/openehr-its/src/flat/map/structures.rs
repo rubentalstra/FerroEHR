@@ -9,6 +9,13 @@
 //! [`super::data_values`]; the party / participation / reference shapes reuse
 //! [`super::parties`].
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
+              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
+              (#1694)"
+)]
+
 use serde_json::{Map, Value, json};
 
 use super::{data_values, parties};

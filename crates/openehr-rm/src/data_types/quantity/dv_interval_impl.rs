@@ -23,6 +23,12 @@
 //! realisation of the same ordering is the AQL engine's `openehr_magnitude`
 //! function; this impl is the in-process authority.
 
+#![allow(
+    clippy::disallowed_types,
+    reason = "the carrier is #[cfg(test)]-only (an undecidable-element fixture), so an expect \
+              would be unfulfilled on the lib lane (#1694 boundary class)"
+)]
+
 use crate::data_types::quantity::dv_interval::DvInterval;
 use crate::data_types::quantity::dv_ordered_impl::OrderedLimit;
 use openehr_base::validate::{InvariantViolation, Validate};
@@ -72,16 +78,9 @@ impl<T: OrderedLimit> Validate for DvInterval<T> {
                 "Invariant Upper_included_valid failed on type DV_INTERVAL",
             ));
         }
-        // NOTE: an absent bound with a false `*_unbounded` flag is ACCEPTED.
-        // BASE `org.openehr.base.foundation_types.interval.adoc` declares
-        // `lower`/`upper` as 0..1 and its §Invariants set is closed
-        // (Limits_consistent, Limits_comparable, Lower/Upper_included_valid) —
-        // no invariant requires a bound VALUE when its flag is false; the
-        // guarded `Limits_consistent`/`Limits_comparable` implications are
-        // simply unevaluable then and are skipped, never a rejection
-        // (AMB-43 disposition in the CNF ambiguity register).
-        // Limits_consistent: bounded on both sides implies the limits are
-        // strictly comparable and lower <= upper.
+        // NOTE: BASE `foundation_types.interval.adoc` §Invariants requires no
+        // bound VALUE when its `*_unbounded` flag is false (AMB-43), so an
+        // absent bound is accepted and the guarded implications are skipped.
         if !self.lower_unbounded
             && !self.upper_unbounded
             && let (Some(lower), Some(upper)) = (self.lower.as_ref(), self.upper.as_ref())

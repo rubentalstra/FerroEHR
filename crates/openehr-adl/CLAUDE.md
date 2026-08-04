@@ -188,6 +188,7 @@ else; each helper has exactly ONE home.
   its accepting twin.
 - Dependencies point downward only: `openehr-am`, `openehr-base`, `openehr-lang`
   (ODIN/BEL), `openehr-term`. No app-crate knowledge, no SQL, no REST.
-- Versioned by the spec (ADL/AOM 2.4.0) — bumps only on a spec-pin bump.
+- Spec pin: ADL/AOM 2.4.0 via `SPEC_VERSION`; the package version is the
+  crate's own SemVer line (`.claude/rules/crates-publishing.md`).
 - Gates: `cargo clippy -p openehr-adl --all-targets` +
   `cargo nextest run -p openehr-adl`.

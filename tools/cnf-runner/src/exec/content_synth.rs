@@ -21,6 +21,12 @@
 //! NOTE: no openEHR spec governs the corpus template packaging — our own
 //! corpus-authoring design; the constraint SHAPES are the AOM1.4 ones cited above.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694)"
+)]
+
 use crate::exec::opt_synth::{self, SynthError};
 use core::fmt::Write as _;
 

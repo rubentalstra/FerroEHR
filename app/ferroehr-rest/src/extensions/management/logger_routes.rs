@@ -1,6 +1,12 @@
 //! Axum handlers for the logger-reload surface (model:
 //! [`ferroehr::telemetry::log_reload::LogReload`]).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 8): genuinely open operational JSON (config \
+              dump, management env, validity-checker input, OpenAPI schema literals)"
+)]
+
 use axum::Json;
 use axum::response::{IntoResponse, Response};
 use http::StatusCode;

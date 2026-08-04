@@ -2,6 +2,12 @@
 //! `openehr_sample.adoc`, `hl7v2_sample.adoc`, `hl7_fhir_sample.adoc`,
 //! `variable_sample.adoc`).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 6): FHIR resources are an external standard \
+              with no RM type (typed-FHIR evaluation tracked separately)"
+)]
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 

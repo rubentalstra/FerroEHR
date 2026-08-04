@@ -6,6 +6,12 @@
 //! and (b) strips credentials from DSN/URL values, keeping only the host and
 //! database. No secret substring ever leaves the process.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 8): genuinely open operational JSON (config \
+              dump, management env, validity-checker input, OpenAPI schema literals)"
+)]
+
 use axum::Json;
 use serde_json::Value;
 

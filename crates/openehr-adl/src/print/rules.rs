@@ -3,6 +3,12 @@
 //! are rendered with full parenthesization so they re-parse to the identical
 //! tree.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "ODIN-to-JSON conversion targets the JSON data model by specification (LANG odin \
+              spec) (#1694)"
+)]
+
 use openehr_am::am24::aom2::rules::expr_constraint::ExprConstraint;
 use openehr_am::am24::beom::core::expr_value::ExprValue;
 use openehr_am::am24::beom::core::expr_value_ref::ExprValueRef;

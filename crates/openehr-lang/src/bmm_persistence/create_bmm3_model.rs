@@ -65,6 +65,12 @@
 //! `BMM_MODEL.class_definitions` ("All classes in this model, keyed by type
 //! name", `…bmm3.bmm_model.adoc` §Attributes).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "ODIN-to-JSON conversion targets the JSON data model by specification (LANG odin \
+              spec) (#1694)"
+)]
+
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 

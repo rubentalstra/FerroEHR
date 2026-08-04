@@ -16,6 +16,7 @@ hand-written and corpus-validated.
   `app/ferroehr`; keep the boundary clean.
 - The parser corpus tests are the regression net — extend them with every
   grammar-touching change; never delete a corpus case to get green.
-- Versioned by the spec (QUERY 1.1.0).
+- Spec pin: QUERY 1.1.0 via `SPEC_VERSION`; the package version is the
+  crate's own SemVer line (`.claude/rules/crates-publishing.md`).
 - Gates: `cargo clippy -p openehr-query --all-targets` +
   `cargo nextest run -p openehr-query`.

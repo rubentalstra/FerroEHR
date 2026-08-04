@@ -109,10 +109,18 @@ entry points.
   are pure codecs; RM conversion is written once (`flatten.rs`/`build.rs`,
   entry points in `convert.rs`). Spec-example JSON blocks are the primary
   test vectors; the OPT corpus is regression.
-- MIME types (`master02 §MIME Types` + the OAS `Resources.md`):
-  `application/openehr.wt+json`, `…wt.flat+json`, `…wt.structured+json`;
-  the deprecated `.schema+json` names and the legacy
-  `application/openehr.nc.flat+json` are NOT implemented.
+- MIME types (`master02 §MIME Types` + the docs-text
+  `specifications/docs/overview/Resources.md` §Simplified Formats):
+  `application/openehr.wt+json`, `…wt.flat+json`, `…wt.structured+json` —
+  the release's exhaustive MUST-use set. The deprecated `.schema+json`
+  names (§Simplified Formats NOTE: "now deprecated and will be removed")
+  and the legacy `…nc.flat+json`/`…tds2+xml` (§Alternative data formats:
+  "might not be supported") are NOT implemented — spec-legal because the
+  same section makes simplified-format support optional and pins the
+  refusal codes (415 on `Content-Type`, 406 on `Accept`). Adjudicated on
+  issue #1872; asserted by `overview::negotiate`'s
+  `deprecated_and_legacy_types_unrecognized` unit test and the
+  `flat_http` 415/406 refusal pair over every banned name.
 
 ## Acceptance instruments
 

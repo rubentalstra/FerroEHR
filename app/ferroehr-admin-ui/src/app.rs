@@ -1,7 +1,9 @@
 //! The root Leptos application: the HTML document shell, the theme provider,
-//! and the route tree. `/login` is public; every other screen is nested
-//! under the session-guarded [`crate::pages::shell::AppShell`] layout, which
-//! renders the matched child through its `<Outlet/>`.
+//! and the route tree.
+//!
+//! `/login` is public; every other screen is nested under the session-guarded
+//! [`crate::pages::shell::AppShell`] layout, which renders the matched child
+//! through its `<Outlet/>`.
 //!
 //! Every routed view sets its own `<Title/>`.
 

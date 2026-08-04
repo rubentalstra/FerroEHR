@@ -7,6 +7,12 @@
 //! [`super::freshness`]; `frame_path` extraction in [`super::extract`]; the
 //! `sp_*` row mapping in [`super::store`].
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 6): FHIR resources are an external standard \
+              with no RM type (typed-FHIR evaluation tracked separately)"
+)]
+
 use serde_json::Value;
 
 use crate::service::FerroEhrService;

@@ -6,6 +6,12 @@
 //! load-time error (the reference/sentinel grammar check of the schedule's
 //! CI gate list).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694)"
+)]
+
 use serde::de::Error as DeError;
 use serde::{Deserialize, Deserializer};
 

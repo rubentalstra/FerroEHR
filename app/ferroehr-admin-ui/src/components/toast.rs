@@ -1,7 +1,8 @@
-//! Toast feedback helpers over `thaw`'s toaster: every mutation (upload,
-//! save, delete, commit, create) reports its outcome as a transient toast
-//! instead of scattered inline text. The shell mounts the
-//! `thaw::ToasterProvider`; screens call these with
+//! Toast feedback helpers over `thaw`'s toaster: every mutation (upload, save,
+//! delete, commit, create) reports its outcome as a transient toast instead of
+//! scattered inline text.
+//!
+//! The shell mounts the `thaw::ToasterProvider`; screens call these with
 //! `thaw::ToasterInjection::expect_context()`.
 
 use leptos::prelude::*;

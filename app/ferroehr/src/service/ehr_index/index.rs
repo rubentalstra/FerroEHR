@@ -15,7 +15,7 @@ use crate::service::FerroEhrService;
 use crate::service::ehr_index::types::{EhrIndexEntry, LocationDesc, ResourceStatus, SubjectRef};
 use crate::service::status::SmError;
 
-use super::{IndexError, location_json, parse_valid_time, require_association, row_to_entry};
+use super::{IndexError, location_binding, parse_valid_time, require_association, row_to_entry};
 
 /// Parse an `ehr_id` UUID. An unparseable id is a `400` precondition failure;
 /// a well-formed-but-unknown id surfaces as `ehr_id_does_not_exist` at the DB
@@ -80,7 +80,7 @@ impl FerroEhrService {
         .bind(start)
         .bind(end)
         .bind(status.notes.as_deref())
-        .bind(location_json(loc.as_ref()))
+        .bind(location_binding(loc.as_ref()))
         .execute(&self.pool)
         .await
         .map_err(IndexError::from)?;
@@ -151,7 +151,7 @@ impl FerroEhrService {
         .bind(ehr_id)
         .bind(&subject.id)
         .bind(&subject.namespace)
-        .bind(location_json(loc.as_ref()))
+        .bind(location_binding(loc.as_ref()))
         .execute(&self.pool)
         .await
         .map_err(IndexError::from)?;

@@ -24,6 +24,12 @@
 //!    NUMERIC VALUE, not lexeme — `140` = `140.0` (\[legislated\]); a void
 //!    cell is JSON `null` and equals only `null` (\[legislated\]).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694)"
+)]
+
 use serde_json::Value;
 
 /// One comparison failure, human-readable and stable.

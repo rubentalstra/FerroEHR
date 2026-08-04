@@ -43,6 +43,13 @@
 //!
 //! The PEP returns `Result<(), Response>` — the deny path is a ready `403`.
 
+#![allow(
+    clippy::disallowed_types,
+    reason = "test fixtures and wire assertions are raw JSON by the testing rule \
+              (.claude/rules/testing.md §Test-fixture construction); the carriers here are \
+              cfg(test)-only, so #[expect] would be unfulfilled in the non-test build"
+)]
+
 use axum::response::{IntoResponse, Response};
 use ferroehr::service::ehr::access_types::{AccessLevel, principal_matches};
 use ferroehr::service::ehr::access_types::{DefaultAccess, EhrAccessSettings};

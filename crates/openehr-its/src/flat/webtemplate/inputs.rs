@@ -24,6 +24,13 @@
 //!   uses the code string as its label — no openEHR spec governs the label
 //!   fallback (our own design/extension).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
+              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
+              (#1694)"
+)]
+
 use crate::opt14::{CAttribute, CObject, CPrimitive, Intervalofinteger, Intervalofreal};
 use indexmap::IndexMap;
 

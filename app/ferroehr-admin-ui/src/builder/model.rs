@@ -1,6 +1,8 @@
-//! The builder's editable state: selected template, columns, the n-ary
-//! AND/OR criterion tree (deliberately richer than the binary-only prior
-//! art), and the result shape. Plain serializable data — no components.
+//! The builder's editable state: selected template, columns, the n-ary AND/OR
+//! criterion tree (deliberately richer than the binary-only prior art), and
+//! the result shape.
+//!
+//! Plain serializable data — no components.
 
 use serde::{Deserialize, Serialize};
 

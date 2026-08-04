@@ -11,6 +11,12 @@
 //! duration form; BASE `foundation_types` master06) survives verbatim inside its
 //! `data` fragment.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 1): stored canonical fragments — a typed \
+              round-trip drops forward-compatible keys (docs/VERSIONS.md §Spec version policy)"
+)]
+
 use serde_json::{Map, Value};
 
 use crate::storage::error::StorageError;

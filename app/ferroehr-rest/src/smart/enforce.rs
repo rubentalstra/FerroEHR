@@ -23,6 +23,12 @@
 //! is a purely additive extension left to the authz engine; the built-in gate
 //! here is the spec-mandated floor.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 7): RFC 7519 leaves the claim set open; \
+              decided-on claims lift into typed fields"
+)]
+
 use crate::extensions::access::authz::request::{AccessMode, ResourceKind};
 
 use openehr_its::rest::smart_scopes::{Compartment, Permission, ResourceFamily, SmartScope};

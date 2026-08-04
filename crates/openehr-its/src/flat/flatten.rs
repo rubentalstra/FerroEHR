@@ -18,6 +18,13 @@
 //! `subject` that is not the PARTY_SELF default emits as a path key
 //! (`master05 §OBSERVATION` `/subject` row).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
+              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
+              (#1694)"
+)]
+
 use serde_json::Value;
 
 use crate::flat::ctx;

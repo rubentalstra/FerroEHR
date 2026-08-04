@@ -26,6 +26,13 @@
 //! one place the schema is *stricter* than a naive render is its `Tree.required`
 //! list — satisfied by [`serialize_root`].
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
+              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
+              (#1694)"
+)]
+
 use indexmap::IndexMap;
 use serde::{Serialize, Serializer};
 

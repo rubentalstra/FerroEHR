@@ -23,6 +23,12 @@
 //! variable context the `sp_sample` FK requires; a bare `get_frame` has no
 //! variable to attach a sample to.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 6): FHIR resources are an external standard \
+              with no RM type (typed-FHIR evaluation tracked separately)"
+)]
+
 use serde_json::Value;
 
 use crate::service::FerroEhrService;

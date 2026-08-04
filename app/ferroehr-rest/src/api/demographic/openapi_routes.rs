@@ -68,6 +68,12 @@
 //! The own-design `PARTY_RELATIONSHIP` extension is *not* here — it lives in
 //! [`super::relationship`] (no ITS-REST operation governs it).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 8): genuinely open operational JSON (config \
+              dump, management env, validity-checker input, OpenAPI schema literals)"
+)]
+
 use axum::extract::State;
 use axum::response::Response;
 use utoipa_axum::router::OpenApiRouter;

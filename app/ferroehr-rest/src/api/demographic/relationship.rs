@@ -21,6 +21,12 @@
 //! required. Both branches are declared per operation below so the served
 //! `OpenAPI` names every refusal a client can meet.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the handler carries the canonical fragment the \
+              negotiate seam produced once (stored-content serving / commit interior)"
+)]
+
 use axum::extract::State;
 use axum::response::Response;
 use http::StatusCode;

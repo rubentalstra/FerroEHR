@@ -11,6 +11,12 @@
 //! wire-shaped adapter (rich summary objects + a generated example COMPOSITION
 //! the SM `I_DEFINITION_ADL14` interface does not express).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the handler carries the canonical fragment the \
+              negotiate seam produced once (stored-content serving / commit interior)"
+)]
+
 use axum::response::{IntoResponse, Response};
 use http::{HeaderMap, HeaderValue, StatusCode, header};
 

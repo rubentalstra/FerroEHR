@@ -1,8 +1,10 @@
-//! The `/system` screen: an operational panel over the CDR — server status, the
-//! openEHR System API conformance manifest, SMART service-discovery, repository
-//! usage, the CDR's own served `OpenAPI` documents per API family (rendered by
-//! our own grouped-endpoint component, never a Swagger embed), the redacted
-//! runtime configuration, and a link into the `/audit` activity browser.
+//! The `/system` screen.
+//!
+//! An operational panel over the CDR — server status, the openEHR System API
+//! conformance manifest, SMART service-discovery, repository usage, the CDR's
+//! own served `OpenAPI` documents per API family (rendered by our own
+//! grouped-endpoint component, never a Swagger embed), the redacted runtime
+//! configuration, and a link into the `/audit` activity browser.
 //!
 //! No openEHR spec governs an admin UI — our own design / product extension.
 //! The wire it reads IS spec-bound: the conformance manifest is the STABLE
@@ -20,6 +22,12 @@
 //! `#[server]` fn guards with [`require_session`](crate::session::require_session)
 //! first — server functions are a public HTTP API (rules §0), and the CDR
 //! credential never reaches client-visible state.
+
+#![expect(
+    clippy::disallowed_types,
+    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+              (#1694)"
+)]
 
 use leptos::prelude::*;
 use leptos::{component, server};

@@ -16,6 +16,13 @@
 //! single), or an array of those forms (indexed); this is lossless against
 //! the FLAT `ctx/` forms of `master06-context_information.adoc`.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
+              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
+              (#1694)"
+)]
+
 use serde_json::{Map, Value};
 
 use crate::flat::error::FlatError;

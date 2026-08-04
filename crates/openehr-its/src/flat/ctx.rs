@@ -18,6 +18,13 @@
 //! action_ism_transition_current_state) and resolve through the openEHR
 //! terminology bundle via [`crate::flat::map::coded_from_group`].
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
+              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
+              (#1694)"
+)]
+
 use std::collections::BTreeMap;
 
 use serde_json::{Map, Value, json};

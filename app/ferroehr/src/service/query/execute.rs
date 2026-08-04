@@ -8,6 +8,12 @@
 //! 0-based start row. REST paging composes OVER the AQL `LIMIT`/`OFFSET`
 //! window — the page is cut out of the AQL-shaped result set.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 5): AQL result rows are arbitrary \
+              projections by specification (QUERY 1.1)"
+)]
+
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 

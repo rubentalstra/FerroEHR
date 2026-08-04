@@ -32,7 +32,10 @@ mode="${1:---all}"
 files=()
 case "$mode" in
 --all)
-  while IFS= read -r f; do files+=("$f"); done \
+  # `git ls-files` reads the index, so a file deleted from the worktree but
+  # not yet staged would still be listed — skip it rather than letting awk
+  # fail on a missing path.
+  while IFS= read -r f; do [ -f "$f" ] && files+=("$f"); done \
     < <(git ls-files 'crates/*.rs' 'app/*.rs' 'tools/*.rs')
   ;;
 --diff)

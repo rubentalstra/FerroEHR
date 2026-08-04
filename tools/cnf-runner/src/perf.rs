@@ -25,6 +25,13 @@
 //! read-heavy OLTP convention per YCSB/OLTP-Bench as the floor, ~50:1 as
 //! the audit-log-evidenced ceiling).
 
+#![allow(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694); the carriers here are cfg(test)-only, so \
+              #[expect] would be unfulfilled in the non-test build"
+)]
+
 use base64::Engine;
 use hdrhistogram::Histogram;
 use hdrhistogram::serialization::{Deserializer, Serializer, V2Serializer};

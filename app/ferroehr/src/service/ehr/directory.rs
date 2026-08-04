@@ -23,6 +23,12 @@
 //! implement, and this server does not invent an extension where no consumer
 //! needs one.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the commit interior carries the canonical \
+              fragment the seam produced once; stored-content serving"
+)]
+
 use crate::ids::{EhrId, VoId};
 use crate::service::response::ResourceMeta;
 use crate::service::response::ServiceResponse;

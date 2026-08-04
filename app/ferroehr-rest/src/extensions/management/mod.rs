@@ -24,6 +24,12 @@
 //! enabled but the caller is unauthenticated, `403` when the level is `AdminOnly`
 //! and the caller lacks the configured admin scope.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 8): genuinely open operational JSON (config \
+              dump, management env, validity-checker input, OpenAPI schema literals)"
+)]
+
 mod env;
 pub mod flamegraph;
 pub mod http_metrics;

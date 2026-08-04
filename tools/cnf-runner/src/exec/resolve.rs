@@ -5,6 +5,12 @@
 //! views, registered recipes, matrix/fixture row bindings, captures, and
 //! the fixed temporal expressions.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694)"
+)]
+
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 

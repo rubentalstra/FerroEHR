@@ -28,6 +28,12 @@
 //! rather than fabricate a fake archetype id — a deliberate deviation, since no
 //! archetype exists for a programmatically-built extract skeleton.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 3): EHR-Extract/TDD/dump-load compose over \
+              verbatim stored content (RM common master06 §Copying)"
+)]
+
 use serde_json::{Value, json};
 use sqlx::Row;
 use uuid::Uuid;

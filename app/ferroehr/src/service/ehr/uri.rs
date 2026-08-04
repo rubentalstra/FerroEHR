@@ -20,6 +20,12 @@
 //! [`FerroEhrService::resolve_ehr_uri_items`] returns every match
 //! (`items_at_path`).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the commit interior carries the canonical \
+              fragment the seam produced once; stored-content serving"
+)]
+
 use openehr_rm::paths::{EhrUri, TopLevelLocator, VersionLocator};
 use serde_json::Value;
 use uuid::Uuid;

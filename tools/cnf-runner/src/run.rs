@@ -6,6 +6,12 @@
 //! be interpreter-run is a REGISTERED EXCEPTION with its reason (the
 //! ≥90%-interpreter-run gate is computed, never asserted).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694)"
+)]
+
 use crate::artifacts::ArtifactSet;
 use crate::exec::driver::HttpDriver;
 use crate::exec::{CaseRecord, RowOutcome, run_case};

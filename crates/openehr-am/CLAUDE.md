@@ -17,7 +17,8 @@ vendored BMM** by `openehr-codegen -- emit`.
   (`app/ferroehr`), not here; this crate is the model only. The ADL2/AOM2 text
   engine (parser, validation, flattening, OPT2, 1.4→2 conversion) is
   `crates/openehr-adl`.
-- Versioned by the spec (AM 1.4 + 2.4.0); bumps only on a spec-pin bump. Gates:
+- Spec pin: AM 1.4 + 2.4.0 via `SPEC_VERSION`; the package version is the
+  crate's own SemVer line (`.claude/rules/crates-publishing.md`). Gates:
   the crate stays lib-clippy-clean by construction — fix the emitter, never the
   output.
 

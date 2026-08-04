@@ -4,6 +4,12 @@
 //! argument (SM `I_EHR_SERVICE` / `I_EHR_CONTRIBUTION`,
 //! `docs/specs/openehr/SM/docs/openehr_platform/master05-ehr_service.adoc`).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the commit interior carries the canonical \
+              fragment the seam produced once; stored-content serving"
+)]
+
 use serde_json::Value;
 
 /// SM `EHR_SUMMARY` (`ehr_summary.adoc`) — the `I_EHR_SERVICE.get_ehr` /

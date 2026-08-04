@@ -120,6 +120,14 @@ async fn version_count(pool: &PgPool) -> i64 {
     .expect("version count")
 }
 
+/// Decode a raw-JSON subscription fixture into the typed definition (the
+/// client-simulation input shape, exercised as submitted bytes).
+fn subscription_definition(
+    body: Value,
+) -> ferroehr::extensions::events::subscription::SubscriptionDefinition {
+    serde_json::from_value(body).expect("subscription fixture decodes")
+}
+
 fn events_config(url: String) -> EventsConfig {
     EventsConfig {
         enabled: true,
@@ -377,12 +385,14 @@ async fn subscriptions_route_by_predicate_and_wildcard_receives_all() {
     // key *.*.* → every event) and a kind filter (kind=COMPOSITION → binding key
     // COMPOSITION.*.* → composition events only). The publisher declares + binds
     // a durable per-subscription queue `ferroehr.events.<name>` for each.
-    svc.event_subscription_create(json!({ "name": "everything" }))
+    svc.event_subscription_create(subscription_definition(json!({ "name": "everything" })))
         .await
         .expect("wildcard subscription");
-    svc.event_subscription_create(json!({ "name": "compositions", "kind": "COMPOSITION" }))
-        .await
-        .expect("kind-filtered subscription");
+    svc.event_subscription_create(subscription_definition(
+        json!({ "name": "compositions", "kind": "COMPOSITION" }),
+    ))
+    .await
+    .expect("kind-filtered subscription");
 
     // Commit an EHR (EHR_STATUS + EHR_ACCESS ⇒ 2 versions) + a composition (1).
     let ehr = svc.create_ehr(None).await.expect("create_ehr");

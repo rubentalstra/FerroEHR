@@ -1,6 +1,8 @@
-//! The CDR's **operational surfaces** the console consumes: the public health
-//! family (`/health/readiness`) and the CDR's management surface (build info,
-//! metric views, the redacted effective config, the live log-filter control).
+//! The CDR's **operational surfaces** the console consumes.
+//!
+//! The public health family (`/health/readiness`) and the CDR's management
+//! surface (build info, metric views, the redacted effective config, the live
+//! log-filter control).
 //!
 //! NOTE: no openEHR spec governs any of this — our own operational surface /
 //! product extension. The vendored ITS-REST System API defines exactly one
@@ -31,6 +33,12 @@
 //! [`require_session`](crate::session::require_session) first (a server fn is a
 //! publicly reachable HTTP endpoint — rules §0) and keeps the CDR credential
 //! server-side.
+
+#![expect(
+    clippy::disallowed_types,
+    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+              (#1694)"
+)]
 
 use leptos::prelude::*;
 use leptos::server;
@@ -107,10 +115,11 @@ pub fn availability_of_status(status: u16) -> ManagementAvailability {
     }
 }
 
-/// The single predicate every management-gated affordance uses: render only for
-/// a probe that succeeded and found the surface mounted. A failed probe (CDR or
-/// management listener unreachable, expired session) hides it — never offer a
-/// screen that cannot work.
+/// The single predicate every management-gated affordance uses: render only
+/// for a probe that succeeded and found the surface mounted.
+///
+/// A failed probe (CDR or management listener unreachable, expired session)
+/// hides it — never offer a screen that cannot work.
 #[must_use]
 pub fn renders_management_ops(probe: &Result<ManagementAvailability, AdminUiError>) -> bool {
     probe

@@ -203,7 +203,8 @@ async fn run(
             Ok(negotiate::respond(h, StatusCode::OK, &items))
         }
         "event_subscription_create" => {
-            let body = negotiate::json_value(h, &parts.body)?;
+            let body: ferroehr::extensions::events::subscription::SubscriptionDefinition =
+                negotiate::typed_json(h, &parts.body)?;
             let created = state.backend().event_subscription_create(body).await?;
             Ok(negotiate::respond(h, StatusCode::CREATED, &created))
         }
@@ -214,7 +215,8 @@ async fn run(
         }
         "event_subscription_update" => {
             let id = subscription_id(&parts)?;
-            let body = negotiate::json_value(h, &parts.body)?;
+            let body: ferroehr::extensions::events::subscription::SubscriptionUpdate =
+                negotiate::typed_json(h, &parts.body)?;
             let updated = state.backend().event_subscription_update(id, body).await?;
             Ok(negotiate::respond(h, StatusCode::OK, &updated))
         }

@@ -7,6 +7,12 @@
 //! One binary per crate, split into topic modules
 //! (`.claude/rules/testing.md` §One integration-test binary per crate).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "test fixtures and wire assertions are raw JSON by the testing rule \
+              (.claude/rules/testing.md §Test-fixture construction)"
+)]
+
 mod adl14_assertions;
 mod adl14_cadl_gates;
 mod adl14_cnf_fixture_slot;

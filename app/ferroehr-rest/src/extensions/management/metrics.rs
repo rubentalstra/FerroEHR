@@ -5,6 +5,12 @@
 //! and `metrics/{name}` the per-metric samples — parsed from the same
 //! exposition text so the two views can never disagree.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 8): genuinely open operational JSON (config \
+              dump, management env, validity-checker input, OpenAPI schema literals)"
+)]
+
 use std::collections::BTreeMap;
 
 use axum::Json;

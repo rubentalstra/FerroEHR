@@ -10,6 +10,12 @@
 //! `I_DEFINITION_ADL2` is an admin surface — so parse-on-demand is cheap; the
 //! `openehr-adl` phases degrade gracefully when a parent is unresolved).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): stored template/query artefacts served verbatim + \
+              ADL/OPT wire envelopes"
+)]
+
 use std::collections::HashMap;
 use std::sync::Arc;
 

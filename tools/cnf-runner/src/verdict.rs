@@ -17,6 +17,13 @@
 //! 4. **Rollup** — per-capability evidence, per-tier profile verdicts, and
 //!    the coverage bound.
 
+#![allow(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694); the carriers here are cfg(test)-only, so \
+              #[expect] would be unfulfilled in the non-test build"
+)]
+
 use serde::Serialize;
 
 use crate::ids::{CapabilityName, CaseId, OptionTag};

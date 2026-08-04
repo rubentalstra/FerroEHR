@@ -71,6 +71,12 @@
 //!   standard/archetype/node predicates) — this module is the RM/URI path
 //!   engine, not the AQL one, and the AQL parser (`openehr-query`) is untouched.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "the wire-boundary validation reads the canonical JSON node before the typed decode \
+              (#1694 boundary class)"
+)]
+
 use serde_json::Value;
 use std::fmt;
 use std::str::FromStr;

@@ -23,6 +23,11 @@
     reason = "openEHR identifiers (CODE_PHRASE, DV_URI, …) read as prose in this \
               module's docs"
 )]
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): external FHIR resources, tenancy/event CRUD rows, \
+              multimedia offload over stored fragments (families 3/6/8)"
+)]
 
 use std::collections::HashMap;
 

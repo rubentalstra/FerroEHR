@@ -1,6 +1,6 @@
 [package]
 name = "openehr-query"
-version = "0.0.1"                 # crates.io pre-stabilisation line; adopts the openEHR spec version at stabilisation (docs/VERSIONS.md)
+version = "0.0.2"
 description = "openEHR QUERY (AQL 1.1.0): hand-written lexer + parser + AST from the ANTLR4 grammar (no ANTLR runtime)"
 edition.workspace = true
 rust-version.workspace = true

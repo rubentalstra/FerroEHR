@@ -31,6 +31,12 @@
 //! RM type surfaces `does not conform to RM type …` (see
 //! [`record_type_mismatch`]).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "the wire-boundary validation reads the canonical JSON node before the typed decode \
+              (#1694 boundary class)"
+)]
+
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 

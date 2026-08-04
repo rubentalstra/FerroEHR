@@ -41,6 +41,12 @@
 //! the document order is simply unused, which leaves the remaining `uid`s
 //! document-ordered and unique.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "ODIN-to-JSON conversion targets the JSON data model by specification (LANG odin \
+              spec) (#1694)"
+)]
+
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 

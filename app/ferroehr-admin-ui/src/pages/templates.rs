@@ -14,6 +14,13 @@
 //! `<tbody>` (hydration correctness — rules §8), paged by the shared
 //! [`table_footer`] whose page state lives in the URL.
 
+#![allow(
+    clippy::disallowed_types,
+    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+              (#1694); the carriers here are ssr-only, so #[expect] would be unfulfilled on the \
+              hydrate target"
+)]
+
 use leptos::prelude::*;
 use leptos::{component, server};
 use leptos_meta::Title;
@@ -35,9 +42,10 @@ use crate::error::AdminUiError;
 type TemplateDeleteAction = Action<String, (String, Result<(), AdminUiError>)>;
 
 /// One row of the template list, distilled from the ITS-REST Definition list
-/// shape (`template_id` / `concept` / `created_timestamp`). Shared across both
-/// compilation targets, so it carries only fixed-size, client-safe fields
-/// (rules §1 — no `usize` in serialized types).
+/// shape (`template_id` / `concept` / `created_timestamp`).
+///
+/// Shared across both compilation targets, so it carries only fixed-size,
+/// client-safe fields (rules §1 — no `usize` in serialized types).
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct TemplateRow {
     /// The operational-template id (the detail route segment).

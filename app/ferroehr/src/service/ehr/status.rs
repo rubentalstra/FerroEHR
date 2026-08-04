@@ -9,6 +9,12 @@
 //! (master04 §EHR Active Status), so its own commits are never gated by the
 //! content-write guard — that is how a deactivated EHR is flipped back on.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): the commit interior carries the canonical \
+              fragment the seam produced once; stored-content serving"
+)]
+
 use crate::ids::{EhrId, VoId};
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::{CallStatusType, SmError};

@@ -26,10 +26,11 @@ openehr-its = "0.0.1"
 
 ## Versioning
 
-The packages are on a **pre-stabilisation `0.0.x` line** while the public API
-settles — expect breaking changes between `0.0.x` releases, which always ship
-in lockstep across all eight crates. Once stable, each crate adopts the
-version of the openEHR specification it implements.
+The package version is the crates' **own independent SemVer line** — it
+tracks this implementation's code and moves freely with fixes and
+improvements, never with the vendored openEHR specification versions. While
+the line is `0.0.x`, expect breaking changes between releases, which always
+ship in lockstep across all eight crates.
 
 The implemented specification version is independent of the package version
 and always available at runtime:

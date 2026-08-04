@@ -6,6 +6,12 @@
 //! `instance_of`) need reads the driver performs; their FACT comparison
 //! still happens here so the judgement stays pure.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694)"
+)]
+
 use serde_json::Value;
 use std::collections::BTreeMap;
 

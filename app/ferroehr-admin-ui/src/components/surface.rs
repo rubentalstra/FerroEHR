@@ -1,7 +1,9 @@
 //! The card surface classes: the design-system replacement for widget-kit
-//! cards in static chrome. One look — token colors, hairline border, the
-//! single soft shadow level. [`titled_card`] is the assembled panel card every
-//! operational screen builds its sections from.
+//! cards in static chrome.
+//!
+//! One look — token colors, hairline border, the single soft shadow level.
+//! [`titled_card`] is the assembled panel card every operational screen builds
+//! its sections from.
 
 use leptos::prelude::*;
 

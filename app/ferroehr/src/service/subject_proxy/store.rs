@@ -5,6 +5,12 @@
 //! over time" (master10 §Overview) real across restarts. No openEHR spec
 //! governs the storage mechanics — our own design).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 6): FHIR resources are an external standard \
+              with no RM type (typed-FHIR evaluation tracked separately)"
+)]
+
 use serde_json::Value;
 use sqlx::Row;
 

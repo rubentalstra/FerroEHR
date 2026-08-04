@@ -9,6 +9,12 @@
 //! clauses. The grammar is normative (published with the schemas); every
 //! table cell must parse against it.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694)"
+)]
+
 use std::fmt;
 
 use thiserror::Error;

@@ -29,6 +29,12 @@
 //! `openehr-lang` cannot name (dependency arrows point `adl → lang`); the seam
 //! is exactly the boundary at which they enter, so beom stays free of them.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "ODIN-to-JSON conversion targets the JSON data model by specification (LANG odin \
+              spec) (#1694)"
+)]
+
 mod parser;
 
 use crate::beom::core::assertion::Assertion;

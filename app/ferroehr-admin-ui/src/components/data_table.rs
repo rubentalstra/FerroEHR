@@ -1,8 +1,10 @@
-//! The shared table kit: one styled `<table>` used by every listing screen
-//! (EHRs, compositions, stored queries, results) so tables stop being
-//! hand-rolled per page, the loading skeleton every listing falls back to,
-//! and the pagination footer the paged tables share. Headers are NAMED — raw
-//! AQL column indexes (`#0`…) must never reach a header cell.
+//! The shared table kit.
+//!
+//! One styled `<table>` used by every listing screen (EHRs, compositions,
+//! stored queries, results) so tables stop being hand-rolled per page, the
+//! loading skeleton every listing falls back to, and the pagination footer the
+//! paged tables share. Headers are NAMED — raw AQL column indexes (`#0`…) must
+//! never reach a header cell.
 //!
 //! Paging discipline (rules §9): a table's page and window size live in the
 //! URL (`?page=`/`?size=`), never in a private signal — the address bar is
@@ -26,9 +28,11 @@ pub const CELL: &str = "px-3 py-2 align-top";
 /// Class set for a monospace body cell (ids, paths, AQL).
 pub const CELL_MONO: &str = "px-3 py-2 align-top font-mono text-xs";
 
-/// Rows per page across the console's tables — the AQL fetch window
-/// (`fetch`/`_count` on the wire) and the default window of the tables that
-/// page rows already in hand, so every listing pages in the same size.
+/// Rows per page across the console's tables.
+///
+/// The AQL fetch window (`fetch`/`_count` on the wire) and the default window
+/// of the tables that page rows already in hand, so every listing pages in the
+/// same size.
 pub const PAGE_SIZE: u32 = 25;
 
 /// The smallest window a `?size=` may ask for: the parameter is user input and
@@ -84,8 +88,9 @@ pub fn table_shell(headers: &[&str], body: AnyView) -> AnyView {
 }
 
 /// The `<Transition>`/`<Suspense>` fallback every listing shares: three
-/// skeleton bars standing in for the rows while the data loads. ONE
-/// definition for the whole console — passed as the fallback itself
+/// skeleton bars standing in for the rows while the data loads.
+///
+/// ONE definition for the whole console — passed as the fallback itself
 /// (`fallback=table_skeleton`).
 #[must_use]
 pub fn table_skeleton() -> impl IntoView {
@@ -98,9 +103,11 @@ pub fn table_skeleton() -> impl IntoView {
     }
 }
 
-/// A paged table's state as it lives in the URL: the zero-based page index
-/// (`?page=`) and the row-window size (`?size=`), plus the rest of the query
-/// so a page link preserves the screen's other parameters.
+/// A paged table's state as it lives in the URL.
+///
+/// The zero-based page index (`?page=`) and the row-window size (`?size=`),
+/// plus the rest of the query so a page link preserves the screen's other
+/// parameters.
 ///
 /// Built with [`paging_from_url`]; both signals derive from the address bar
 /// alone, so the server pass and hydration agree on the rendered window
@@ -220,9 +227,10 @@ pub fn page_rows<T: Clone>(rows: &[T], window: PageWindow) -> Vec<T> {
     rows.get(start..end).map(<[T]>::to_vec).unwrap_or_default()
 }
 
-/// A row count as the fixed-size int the paging math and the footer use. WASM
-/// is 32-bit and no shared type may carry a `usize` (rules §1), so a list's
-/// `.len()` converts here once, saturating rather than wrapping.
+/// A row count as the fixed-size int the paging math and the footer use.
+///
+/// WASM is 32-bit and no shared type may carry a `usize` (rules §1), so a
+/// list's `.len()` converts here once, saturating rather than wrapping.
 #[must_use]
 pub fn row_total(len: usize) -> u32 {
     u32::try_from(len).unwrap_or(u32::MAX)

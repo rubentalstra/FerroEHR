@@ -18,6 +18,12 @@
 //! Gate: the connector's inbound routes are config-gated in `ferroehr-rest`;
 //! this builder only runs on the ingest path.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 6): FHIR resources are an external standard \
+              with no RM type (typed-FHIR evaluation tracked separately)"
+)]
+
 use openehr_rm::prelude::{DvDateTime, DvIdentifier, FeederAudit, FeederAuditDetails};
 use serde_json::Value;
 

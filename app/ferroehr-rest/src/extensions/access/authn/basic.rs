@@ -7,6 +7,12 @@
 //! authorization. Password verification uses `argon2` (never a hand-rolled
 //! comparison); only the PHC hash is ever stored.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 7): RFC 7519 leaves the claim set open; \
+              decided-on claims lift into typed fields"
+)]
+
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use base64::Engine as _;
 use base64::alphabet;

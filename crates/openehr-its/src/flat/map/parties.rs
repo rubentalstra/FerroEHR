@@ -6,6 +6,13 @@
 //! the ENTRY / EVENT_CONTEXT `_`-attribute families in [`super::structures`] and
 //! by the `_identifier:i` / performer inlining rules.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
+              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
+              (#1694)"
+)]
+
 use std::collections::BTreeMap;
 
 use serde_json::{Map, Value, json};

@@ -16,6 +16,12 @@
 //! series it touched — no remount, no re-measure, no colour reshuffle (each
 //! line pins its palette colour by its own index).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+              (#1694)"
+)]
+
 use leptos::prelude::*;
 use leptos_chartistry::{
     AspectRatio, AxisMarker, Chart, Colour, IntoInner, Line, SERIES_COLOUR_SCHEME, Series,

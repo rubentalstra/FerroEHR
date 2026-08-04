@@ -10,6 +10,13 @@
 //! date/time/duration values is covered by the RM-invariant pass; precise
 //! temporal-range and precision semantics are deferred).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
+              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
+              (#1694)"
+)]
+
 use openehr_base::base_types::definitions::definitions_impl::LOCAL_TERMINOLOGY_ID;
 use serde_json::Value;
 

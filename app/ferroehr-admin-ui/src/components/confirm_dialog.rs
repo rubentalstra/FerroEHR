@@ -1,7 +1,9 @@
-//! The destructive-confirmation modal: ONE dialog every delete affordance in
-//! the console opens, so "are you sure?" looks and behaves identically
-//! everywhere (owner directive 2026-07-25 — a modal confirm is the industry
-//! standard; the inline two-step confirm this replaced is retired).
+//! The destructive-confirmation modal.
+//!
+//! ONE dialog every delete affordance in the console opens, so "are you sure?"
+//! looks and behaves identically everywhere (owner directive 2026-07-25 — a
+//! modal confirm is the industry standard; the inline two-step confirm this
+//! replaced is retired).
 //!
 //! State is a single source of truth: the caller owns the signal saying WHICH
 //! object is awaiting confirmation, derives `open` from it, and clears it in

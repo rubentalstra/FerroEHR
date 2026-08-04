@@ -2,6 +2,13 @@
 //! (`vocab/capability_matrix.yaml`) — the Profiles book's capability×tier
 //! tables as data, the input the verdict machinery computes from.
 
+#![allow(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694); the carriers here are cfg(test)-only, so \
+              #[expect] would be unfulfilled in the non-test build"
+)]
+
 use serde::{Deserialize, Serialize};
 
 use crate::ids::{AmbiguityId, CapabilityName};

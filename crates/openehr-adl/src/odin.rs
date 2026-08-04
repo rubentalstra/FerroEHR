@@ -24,6 +24,12 @@
 //! a regular expression parser". Only the optional `;"assumed"` suffix beside a
 //! regex is decoded.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "ODIN-to-JSON conversion targets the JSON data model by specification (LANG odin \
+              spec) (#1694)"
+)]
+
 use std::collections::BTreeMap;
 
 use openehr_base::base_types::definitions::definitions_impl::LOCAL_TERMINOLOGY_ID;

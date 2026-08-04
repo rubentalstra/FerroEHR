@@ -3,6 +3,10 @@
 //! The openEHR `C_QUANTITY` spec class, generated from the vendored BMM
 //! meta-model.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "adjudicated free-form JSON slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only where the spec leaves the slot open, and each adjudicated field's NOTE names its citation"
+)]
 use crate::am14::aom14::openehr_archetype_profile::c_quantity_item::CQuantityItem;
 use openehr_base::prelude::Interval;
 

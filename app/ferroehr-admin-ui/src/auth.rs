@@ -1,4 +1,5 @@
 //! Console authentication: the login/logout/session server functions.
+//!
 //! Server functions are a public HTTP API — each one enforces auth itself
 //! (Leptos book `server/25`); the CDR credential never leaves the server.
 

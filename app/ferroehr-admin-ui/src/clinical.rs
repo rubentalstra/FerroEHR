@@ -1,7 +1,8 @@
 //! Template-free rendering of a canonical openEHR JSON document into a
-//! human-readable tree: section headings for the structural RM nodes,
-//! label/value rows for the `ELEMENT` leaves, and honest formatting for each
-//! `DV_*` data value.
+//! human-readable tree.
+//!
+//! Section headings for the structural RM nodes, label/value rows for the
+//! `ELEMENT` leaves, and honest formatting for each `DV_*` data value.
 //!
 //! It is **template-free on purpose**: the console never needs the operational
 //! template to show a document, so any composition — including one whose
@@ -16,6 +17,12 @@
 //! tables are `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.*.adoc`,
 //! with the narrative in `docs/specs/openehr/RM/docs/ehr/`,
 //! `.../data_structures/` and `.../data_types/`.
+
+#![expect(
+    clippy::disallowed_types,
+    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+              (#1694)"
+)]
 
 use serde_json::Value;
 
@@ -74,9 +81,11 @@ pub struct RenderedRow {
     pub code: Option<String>,
 }
 
-/// Render `body` as a clinical document, or `None` when it is not a JSON object
-/// carrying a `_type` (an XML body, a FLAT body, an AQL string, a non-RM JSON
-/// payload) — the pane hides the rendered mode in that case.
+/// Render `body` as a clinical document, or `None` when it is not a JSON
+/// object carrying a `_type` (an XML body, a FLAT body, an AQL string, a
+/// non-RM JSON payload).
+///
+/// The pane hides the rendered mode in that case.
 ///
 /// The walk below recurses with the document; it cannot recurse unboundedly
 /// because `serde_json` refuses to parse beyond its own nesting limit (128

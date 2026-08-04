@@ -1,6 +1,12 @@
 //! The `VARIABLE_VALUE` hierarchy (`variable_value.adoc` +
 //! `variable_value_{single,list,time_series}.adoc`).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 6): FHIR resources are an external standard \
+              with no RM type (typed-FHIR evaluation tracked separately)"
+)]
+
 use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};

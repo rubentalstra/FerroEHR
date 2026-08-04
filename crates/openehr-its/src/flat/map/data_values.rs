@@ -11,6 +11,13 @@
 //! `DV_IDENTIFIER` is a `DATA_VALUE` too but clusters with the identifier / party
 //! shapes, so it lives in [`super::parties`]; this module delegates to it.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
+              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
+              (#1694)"
+)]
+
 use serde_json::{Map, Value, json};
 
 use super::{base_type, code_phrase_obj, family, parties, wt_coded_value, wt_terminology};

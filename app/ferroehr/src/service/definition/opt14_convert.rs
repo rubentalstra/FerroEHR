@@ -39,6 +39,12 @@
 //! service layer already depends on both `openehr_its::opt14` and
 //! `openehr_adl::adl14`, so it is the existing meeting point.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): stored template/query artefacts served verbatim + \
+              ADL/OPT wire envelopes"
+)]
+
 use std::collections::BTreeMap;
 
 use openehr_adl::adl14::convert::{ConvertConfig, ConvertError, convert};

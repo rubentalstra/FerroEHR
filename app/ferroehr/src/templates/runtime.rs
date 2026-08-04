@@ -24,6 +24,12 @@
 //! §Composite Identifiers and Case identity law applied to the cache key here
 //! (see [`crate::templates::identity`]).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694): stored OPT/WebTemplate artefacts served verbatim \
+              (families 1/8)"
+)]
+
 use std::sync::Arc;
 
 use openehr_its::flat::example::{DetailLevel, ExampleType};

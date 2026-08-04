@@ -2,6 +2,12 @@
 //! `schemas/query/ResultSet`) and AQL parameter substitution
 //! (QUERY `master03-syntax.adoc` §Parameters).
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "owner-approved 2026-08-03 (#1694 family 5): AQL result rows are arbitrary \
+              projections by specification (QUERY 1.1)"
+)]
+
 use std::sync::LazyLock;
 
 use jiff::Timestamp;

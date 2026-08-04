@@ -19,6 +19,12 @@
 //! field updates only the live preview (which subscribes to the query), never
 //! the surrounding editor — inputs keep focus.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+              (#1694)"
+)]
+
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 

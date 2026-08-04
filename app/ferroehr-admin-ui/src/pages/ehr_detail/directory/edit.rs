@@ -1,5 +1,6 @@
-//! Pure, component-free helpers for the structured directory tree editor:
-//! navigation and mutation of a canonical `FOLDER` tree held as
+//! Pure, component-free helpers for the structured directory tree editor.
+//!
+//! Navigation and mutation of a canonical `FOLDER` tree held as
 //! `serde_json::Value`, `OBJECT_REF` construction, tree statistics, and the
 //! `version_at_time` datetime normalization. Kept out of the view code so the
 //! editing logic is unit-tested directly (rules §10 — business logic lives in
@@ -30,6 +31,12 @@
 //! (a folder's path with `find_path_by_key`, an item's index within its
 //! folder with `find_item_index`) so mutations keep targeting the `&[usize]`
 //! path + index pair, which stays correct after siblings shift.
+
+#![expect(
+    clippy::disallowed_types,
+    reason = "the console consumes the CDR JSON wire over ITS-REST — not the CDR internal seams \
+              (#1694)"
+)]
 
 use serde_json::{Value, json};
 

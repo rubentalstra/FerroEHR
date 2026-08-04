@@ -19,6 +19,12 @@
 //! earlier stage) is an honest error observation — that IS the
 //! measurement.
 
+#![expect(
+    clippy::disallowed_types,
+    reason = "dev/verification tooling over JSON artifacts (the catalogue, results, wire \
+              exchanges) — not the application (#1694)"
+)]
+
 use std::collections::HashMap;
 use std::sync::Mutex;
 
