@@ -2078,10 +2078,10 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
     InvariantRealization {
         class: "EXTRACT_UPDATE_SPEC",
         name: "Trigger_events_validity",
-        venue: InvariantVenue::Unrealized,
-        site: "",
+        venue: InvariantVenue::Core,
+        site: "nonempty_list_core",
         spec_file: "org.openehr.rm.ehr_extract.extract_update_spec.adoc",
-        reason: "EHR_EXTRACT family: no invariant realization in `openehr-rm` or `openehr-its`.",
+        reason: "the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`.",
     },
     InvariantRealization {
         class: "EXTRACT_VERSION_SPEC",
@@ -2166,10 +2166,10 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
     InvariantRealization {
         class: "ORIGINAL_VERSION",
         name: "Attestations_valid",
-        venue: InvariantVenue::Unrealized,
-        site: "",
+        venue: InvariantVenue::Core,
+        site: "nonempty_list_core",
         spec_file: "org.openehr.rm.common.original_version.adoc",
-        reason: "versioning layer: no invariant realization in `openehr-rm` or `openehr-its`.",
+        reason: "the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`.",
     },
     InvariantRealization {
         class: "ORIGINAL_VERSION",
@@ -2182,10 +2182,10 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
     InvariantRealization {
         class: "ORIGINAL_VERSION",
         name: "Other_input_version_uids_valid",
-        venue: InvariantVenue::Unrealized,
-        site: "",
+        venue: InvariantVenue::Core,
+        site: "nonempty_list_core",
         spec_file: "org.openehr.rm.common.original_version.adoc",
-        reason: "versioning layer: no invariant realization in `openehr-rm` or `openehr-its`.",
+        reason: "the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`.",
     },
     InvariantRealization {
         class: "ATTESTATION",
@@ -2198,18 +2198,18 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
     InvariantRealization {
         class: "DV_PARAGRAPH",
         name: "Items_valid",
-        venue: InvariantVenue::Unrealized,
+        venue: InvariantVenue::Excluded,
         site: "",
         spec_file: "org.openehr.rm.data_types.dv_paragraph.adoc",
-        reason: "no invariant realization in `openehr-rm` or `openehr-its`.",
+        reason: "`not items.is_empty`: `items` is a mandatory `1..*` list, emitted as `NonEmptyVec<DvText>`, so a present-but-empty value is unrepresentable and the strict reader refuses an empty wire list — the invariant holds by construction.",
     },
     InvariantRealization {
         class: "DV_PARSABLE",
         name: "Size_valid",
-        venue: InvariantVenue::Unrealized,
+        venue: InvariantVenue::Excluded,
         site: "",
         spec_file: "org.openehr.rm.data_types.dv_parsable.adoc",
-        reason: "no invariant realization in `openehr-rm` or `openehr-its` (the sibling DV_MULTIMEDIA rule is realized).",
+        reason: "`size >= 0`: `size` is the DERIVED function `size in bytes of value` (§Functions), realized as the Rust byte length (`dv_parsable_impl.rs::size`, a `usize`), so it cannot be negative — unlike DV_MULTIMEDIA, where `size` is a STORED attribute a wire value can contradict, nothing stored exists for this rule to constrain.",
     },
     InvariantRealization {
         class: "EHR_ACCESS",
@@ -2238,10 +2238,10 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
     InvariantRealization {
         class: "PARTY_IDENTIFIED",
         name: "Identifiers_valid",
-        venue: InvariantVenue::Unrealized,
-        site: "",
+        venue: InvariantVenue::Core,
+        site: "nonempty_list_core",
         spec_file: "org.openehr.rm.common.party_identified.adoc",
-        reason: "the present-but-empty list rule is not extended to `identifiers` at the wire boundary.",
+        reason: "the `x /= Void implies not x.is_empty` family: the rule is read from the BMM into the generated `NONEMPTY_LIST_RULES` table and evaluated by `nonempty_list_core`, decidable because an optional container emits as `Option<Vec<T>>`.",
     },
 ];
 

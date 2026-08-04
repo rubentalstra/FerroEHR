@@ -6,5 +6,6 @@
 //! (`.claude/rules/testing.md` §One integration-test binary per crate).
 
 mod enforcement_reach;
+mod nonempty_rules;
 mod rm_model;
 mod type_dispatch;
