@@ -860,7 +860,7 @@ async fn contribution_preserves_the_client_change_type_and_rejects_invalid_combo
     // (never narrowed to `modification` — RM change_control §"Contributions":
     // a correction is committed with change type 250|amendment|), and
     // spec-invalid combinations are rejected: creation on an existing object
-    // as 422 (the register-documented mirror of the directional released
+    // as 422 (the adjudicated mirror of the directional released
     // 400_CONTRIBUTION trigger), an out-of-group code as 422 (content
     // validation).
     let db = testkit::db().await.expect("testkit database");

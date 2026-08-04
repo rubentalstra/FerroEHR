@@ -168,7 +168,7 @@ pub(super) async fn run(
 /// response metadata per header so the echo confirms exactly what each target
 /// now holds. Both headers are accepted on create AND update — the released
 /// update declares `openehr-version-item-tag` and its own prose says
-/// "`openehr-item-tag` or `openehr-version-item-tag`" (register-documented).
+/// "`openehr-item-tag` or `openehr-version-item-tag`" (adjudicated).
 async fn persist_request_tags(
     state: &AppState,
     kind: PartyKind,

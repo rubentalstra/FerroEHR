@@ -1031,7 +1031,7 @@ async fn stale_delete_conflict_echoes_latest_version_etag() {
 
 /// The demographic CONTRIBUTION read carries the weak `ETag` (the contribution
 /// uid — the same identity the 201's `ETag` carries) and `Last-Modified` from
-/// `audit.time_committed`, mirroring the EHR sibling's register-documented
+/// `audit.time_committed`, mirroring the EHR sibling's adjudicated
 /// reading of the overview §"`ETag` and Last-Modified" SHOULD.
 #[tokio::test]
 async fn demographic_contribution_get_carries_etag_and_last_modified() {

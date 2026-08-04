@@ -257,7 +257,7 @@ pub(super) async fn run(
             // write to the path's object.
             // NOTE: the rule is OAS-grounded (docs text silent) with no
             // assigned status; the fitting released row is 422
-            // (Requests_and_responses.md §HTTP status codes) — register-documented.
+            // (Requests_and_responses.md §HTTP status codes) — adjudicated.
             if let Some(body_uid) = body.uid.as_ref() {
                 // The versioned object a body `uid` names is its
                 // OBJECT_VERSION_ID `object_id` (BASE `base_types` §Functions

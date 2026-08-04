@@ -104,7 +104,7 @@ fn classify(
                 // The released `400_CONTRIBUTION` trigger is DIRECTIONAL —
                 // "first version of a MODIFICATION" — and does not cover this
                 // mirror case; no released text assigns it, so it is the
-                // register-documented 422: a well-formed envelope whose
+                // adjudicated 422: a well-formed envelope whose
                 // change-control semantics cannot be followed (RM
                 // change_control §Contributions: creation commits a NEW
                 // VERSIONED_OBJECT).
@@ -1550,7 +1550,7 @@ mod tests {
         // `400_CONTRIBUTION` trigger ("the modification type does not match
         // the operation - i.e. first version of a MODIFICATION") → 400;
         // creation WITH a preceding is its unassigned mirror → the
-        // register-documented 422.
+        // adjudicated 422.
         // Each refusal is asserted on its DATA — the attribute path it is
         // about, the named rule it breaks — not on a substring of the prose.
         let creation_with_preceding = classify_err(Some("249"), true, true);

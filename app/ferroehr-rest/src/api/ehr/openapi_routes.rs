@@ -2538,7 +2538,7 @@ pub(crate) async fn composition_get(
                                       different versioned object than the path is \
                                       a semantic 422, not a 400 (no released \
                                       sentence assigns the rejection — our \
-                                      register-documented handling).",
+                                      adjudicated handling).",
          body = serde_json::Value),
         (status = 404, description = "Unknown `ehr_id`; no COMPOSITION with \
                                       `uid_based_id` in this EHR; or the \
@@ -2611,7 +2611,7 @@ pub(crate) async fn composition_get(
                                       well-formed body whose contradiction with \
                                       the URL cannot be followed — no released \
                                       sentence assigns this rejection; our \
-                                      register-documented handling), or the body \
+                                      adjudicated handling), or the body \
                                       declares a DIFFERENT `template_id` than the \
                                       stored composition it supersedes \
                                       (`Requests_and_responses.md` §\"HTTP status \
@@ -2724,7 +2724,7 @@ pub(crate) async fn composition_update(
                              just committed, not the superseded one named in the \
                              path. The released text never says which of the two \
                              the header carries, so this choice is OURS, \
-                             register-documented in the conformance catalogue; it \
+                             adjudicated; it \
                              follows from §\"ETag and Last-Modified\" (the tag \
                              \"changes as soon as the resource changes\", and the \
                              resource's current version is now the deleted one)."),
@@ -3439,8 +3439,7 @@ pub(crate) async fn versioned_composition_version_get_by_id(
                         \"Timezone SHOULD be only supplied when needed, \
                         otherwise the local timezone is assumed\"). No released \
                         text defines the extancy algorithm itself, so the \
-                        resolution is OURS, register-documented in the \
-                        conformance catalogue: a version is extant from its own \
+                        resolution is OURS, adjudicated: a version is extant from its own \
                         commit instant (inclusive) until the next commit, so a \
                         time at or after the newest commit serves that newest \
                         version — a future time is `200`, never `404` — and a \
@@ -3455,8 +3454,7 @@ pub(crate) async fn versioned_composition_version_get_by_id(
                         `i_ehr_directory.adoc` `has_path` repeats it) — and \
                         only the addressed sub-FOLDER is returned. The \
                         resolution grammar beyond that sentence is OUR OWN \
-                        DESIGN, register-documented in the conformance \
-                        catalogue: the path is rooted at the directory root, \
+                        DESIGN, adjudicated: the path is rooted at the directory root, \
                         which is implicit and is never named by a segment; a \
                         leading slash is tolerated and empty segments are \
                         skipped, so `a/b`, `/a/b` and `a//b` address the same \
@@ -3532,8 +3530,7 @@ pub(crate) async fn versioned_composition_version_get_by_id(
                                       deleted\"); the implicit-latest branch has \
                                       no released assignment at all, so \
                                       extending the same outcome to it is OUR \
-                                      OWN reading, register-documented in the \
-                                      conformance catalogue."),
+                                      OWN reading, adjudicated."),
         (status = 400, description = "`ehr_id` is not a UUID, or \
                                       `version_at_time` is not an extended ISO \
                                       8601 datetime (`Requests_and_responses.md` \
@@ -3858,8 +3855,7 @@ pub(crate) async fn directory_get_at_time(
                                       states the rule without a status code, so \
                                       answering `404` (the addressed resource \
                                       does not exist) is OUR OWN DESIGN, \
-                                      register-documented in the conformance \
-                                      catalogue.",
+                                      adjudicated.",
          body = serde_json::Value),
         (status = 406, description = "The `Accept` header cannot be satisfied: \
                                       the DIRECTORY resource has only the \
@@ -4179,8 +4175,7 @@ pub(crate) async fn directory_update(
                                       conflict\"). Two triggers, both of which \
                                       are OUR OWN DESIGN — no released ITS-REST \
                                       text assigns either a status, and both are \
-                                      register-documented in the conformance \
-                                      catalogue: (1) the EHR already holds a \
+                                      adjudicated: (1) the EHR already holds a \
                                       LIVE directory — the rule itself is SM \
                                       `i_ehr_directory.adoc` `create_directory` \
                                       `Pre_no_directory: not has_directory \
@@ -4344,7 +4339,7 @@ pub(crate) async fn directory_create(
                              resources, so serving them is the docs text's rule; \
                              WHICH of the two identities the tag carries is \
                              unstated, and picking the new one is OURS, \
-                             register-documented in the conformance catalogue — \
+                             adjudicated — \
                              it follows from the same section (the tag \"changes \
                              as soon as the resource changes\", and the \
                              resource's current version is now the deleted \
@@ -4377,8 +4372,7 @@ pub(crate) async fn directory_create(
                                       states the rule without a status code, so \
                                       answering `404` (the addressed resource \
                                       does not exist) is OUR OWN DESIGN, \
-                                      register-documented in the conformance \
-                                      catalogue. It is evaluated before the \
+                                      adjudicated. It is evaluated before the \
                                       `If-Match` precondition — there is no \
                                       resource whose version could match.",
          body = serde_json::Value),
@@ -4487,8 +4481,7 @@ pub(crate) async fn directory_delete(
                         adds: \"If `path` is supplied, retrieves from the \
                         directory only the sub-FOLDER that is associated with \
                         that path\"). The resolution grammar beyond that \
-                        sentence is OUR OWN DESIGN, register-documented in the \
-                        conformance catalogue: the path is rooted at the \
+                        sentence is OUR OWN DESIGN, adjudicated: the path is rooted at the \
                         directory root, which is implicit and is never named by \
                         a segment; a leading slash is tolerated and empty \
                         segments are skipped, so `a/b`, `/a/b` and `a//b` \
@@ -4554,8 +4547,7 @@ pub(crate) async fn directory_delete(
                                       scoped to \"at specified \
                                       `version_at_time`\" — so answering the \
                                       same `204` here is OUR OWN reading, \
-                                      register-documented in the conformance \
-                                      catalogue."),
+                                      adjudicated."),
         (status = 400, description = "`ehr_id` is not a UUID, or `version_uid` \
                                       is not a well-formed OBJECT_VERSION_ID — a \
                                       bare container id included, since this \
@@ -4634,7 +4626,7 @@ pub(crate) async fn directory_get_by_version_id(
 /// envelope `audit`. The section's merge MUST is scoped to the convenience
 /// methods, and the released text states no precedence for those headers
 /// arriving on the native route, so answering from the body alone is OUR OWN
-/// reading, register-documented in the conformance catalogue.
+/// reading, adjudicated.
 #[utoipa::path(
     post, path = "/ehr/{ehr_id}/contribution", tag = "CONTRIBUTION",
     params(
@@ -4837,7 +4829,7 @@ pub(crate) async fn directory_get_by_version_id(
                        common master06 §\"Logical Deletion\"), which is why \
                        this server does not enforce the released UpdateVersion \
                        schema's `data: required` on such a member \
-                       (register-documented in the conformance catalogue: we \
+                       (adjudicated: we \
                        follow RM). The example is canonical JSON with two \
                        members (a COMPOSITION creation + an EHR_STATUS \
                        modification). Under a Simplified-Format \
@@ -5022,8 +5014,7 @@ pub(crate) async fn directory_get_by_version_id(
                                       a resource with same identifier(s) \
                                       already exists\". The other three \
                                       triggers are OUR OWN DESIGN, \
-                                      register-documented in the conformance \
-                                      catalogue, because no released text \
+                                      adjudicated, because no released text \
                                       assigns them a code: the EHR is not \
                                       modifiable (`EHR_STATUS.is_modifiable = \
                                       false` and the change-set touches \
@@ -5046,8 +5037,7 @@ pub(crate) async fn directory_get_by_version_id(
                                       assigns this branch a code — the \
                                       `400_CONTRIBUTION` trigger is about the \
                                       change TYPE, not a stale target — so the \
-                                      choice is OURS, register-documented in \
-                                      the conformance catalogue: the member's \
+                                      choice is OURS, adjudicated: the member's \
                                       `preceding_version_uid` is the same \
                                       lost-update precondition the direct \
                                       routes carry in `If-Match`, which \
@@ -5077,8 +5067,7 @@ pub(crate) async fn directory_get_by_version_id(
                                       request was well-formed but was unable to \
                                       be followed due to semantic errors\"). \
                                       Every trigger below is OUR OWN \
-                                      assignment, register-documented in the \
-                                      conformance catalogue — the released \
+                                      assignment, adjudicated — the released \
                                       operation declares only \
                                       `400`/`404`/`409`: an empty `versions: \
                                       []` (NewContribution sets no `minItems` \
@@ -5152,7 +5141,7 @@ pub(crate) async fn contribution_create(
 /// GET on `/ehr/{ehr_id}/contribution`, so nothing about the shape below is
 /// spec-derived. The SM does declare a `list_contributions` operation (SM
 /// `i_ehr_contribution.adoc`) that the released REST API never surfaced — the
-/// unrealized-operation gap is register-documented in the conformance
+/// unrealized-operation gap is adjudicated in the conformance
 /// catalogue — but this route is not a binding of it either: it answers a
 /// SUMMARY row per CONTRIBUTION rather than the ids that operation returns.
 ///
@@ -5276,8 +5265,7 @@ pub(crate) async fn contribution_list(
                         `400` (`Requests_and_responses.md` §\"HTTP status \
                         codes\", the `400` row; the released text assigns the \
                         malformed-identifier case no branch of its own, so the \
-                        400/404 split is OUR OWN policy, register-documented in \
-                        the conformance catalogue).",
+                        400/404 split is OUR OWN policy, adjudicated).",
          example = "0826851c-c4c2-4d61-92b9-410fb8275ff0"),
         ("Prefer" = Option<String>, Header,
          description = "`return=representation, resolve_refs` asks for the \
@@ -5298,8 +5286,7 @@ pub(crate) async fn contribution_list(
                         (`schemas/common/Contribution.yaml`) has no `data` \
                         anywhere, and resolving the refs is the only state in \
                         which both hold — OUR resolution of that released \
-                        conflict, register-documented in the conformance \
-                        catalogue.",
+                        conflict, adjudicated.",
          example = "return=representation, resolve_refs")
     ),
     responses(
@@ -5348,8 +5335,7 @@ pub(crate) async fn contribution_list(
                                 unique state identifiers\" — a CONTRIBUTION is \
                                 immutable and has exactly one such identifier. \
                                 Reading that SHOULD as reaching this resource \
-                                is OURS, register-documented in the conformance \
-                                catalogue."),
+                                is OURS, adjudicated."),
                 ("Last-Modified" = String,
                  description = "The commit instant as an HTTP-date, taken from \
                                 the CONTRIBUTION `audit.time_committed` — the \
@@ -5492,7 +5478,7 @@ pub(crate) async fn contribution_get(
                         (`ehr_tags_get.yaml`). None of exactness, case \
                         sensitivity or the combination rule is fixed by the \
                         released text, so those semantics are OURS, \
-                        register-documented in the conformance catalogue. The \
+                        adjudicated. The \
                         parameter is SCALAR: the released description says the \
                         list \"can be filtered by the given one or more \
                         `tag_key`, `tag_value`, `tag_target_path` query \
@@ -5723,8 +5709,7 @@ pub(crate) async fn ehr_tags_get(
                                       reading is OURS — the released sentence \
                                       does not spell it out — and follows from \
                                       the route family naming the target's \
-                                      class; it is register-documented in the \
-                                      conformance catalogue. An EXISTING \
+                                      class; it is adjudicated. An EXISTING \
                                       COMPOSITION target with no tags is \
                                       `200 []`, not `404`.",
          body = serde_json::Value),
@@ -5809,8 +5794,7 @@ pub(crate) async fn composition_tags_get(
                         (e.g., the `uid`) of the affected resource\" and an \
                         ITEM_TAG has no uid — so the server applies, and \
                         declares, the default `return=minimal`; that \
-                        resolution is OURS, register-documented in the \
-                        conformance catalogue. Whichever branch runs, the \
+                        resolution is OURS, adjudicated. Whichever branch runs, the \
                         response states it in `Preference-Applied`.",
          example = "return=representation")
     ),
@@ -5852,14 +5836,14 @@ pub(crate) async fn composition_tags_get(
                                 `target_path` differs; a DUPLICATE pair inside \
                                 one body is resolved last-wins (no released \
                                 rule and no `uniqueItems` — ours, \
-                                register-documented). A `target_path` of `\"\"` \
+                                adjudicated). A `target_path` of `\"\"` \
                                 normalizes to ABSENT, so it is the same \
                                 identity as an entry with no `target_path` at \
                                 all: the RM models `target_path` 0..1 with no \
                                 non-empty invariant while the released \
                                 EHR_STATUS example uses `\"\"` — reconciling \
                                 the two on one identity is ours, \
-                                register-documented. Canonical JSON only: an \
+                                adjudicated. Canonical JSON only: an \
                                 XML (or Simplified-Format) `Content-Type` is \
                                 `415`.",
                  example = json!([ {
@@ -5964,8 +5948,7 @@ pub(crate) async fn composition_tags_get(
                                       uid whose stored kind is not a \
                                       COMPOSITION are all `404`. The \
                                       kind-mismatch reading is OURS \
-                                      (register-documented in the conformance \
-                                      catalogue): the released sentence does \
+                                      (adjudicated): the released sentence does \
                                       not spell it out, and it follows from \
                                       the route family naming the target's \
                                       class.",
@@ -6013,8 +5996,7 @@ pub(crate) async fn composition_tags_get(
                                       status codes\", the `422` row (\"The \
                                       request was well-formed but was unable \
                                       to be followed due to semantic errors\") \
-                                      and is OURS, register-documented in the \
-                                      conformance catalogue.",
+                                      and is OURS, adjudicated.",
          body = serde_json::Value)
     )
 )]
@@ -6126,8 +6108,7 @@ pub(crate) async fn composition_tags_update(
                                       uid whose stored kind is not a \
                                       COMPOSITION are all `404` — the \
                                       kind-mismatch reading being OURS, \
-                                      register-documented in the conformance \
-                                      catalogue.",
+                                      adjudicated.",
          body = serde_json::Value)
     )
 )]
@@ -6251,8 +6232,7 @@ pub(crate) async fn composition_tags_delete(
                                       reading is OURS — the released sentence \
                                       does not spell it out — and follows from \
                                       the route family naming the target's \
-                                      class; it is register-documented in the \
-                                      conformance catalogue. An EXISTING \
+                                      class; it is adjudicated. An EXISTING \
                                       EHR_STATUS target with no tags is \
                                       `200 []`, not `404`.",
          body = serde_json::Value),
@@ -6337,8 +6317,7 @@ pub(crate) async fn ehr_status_tags_get(
                         (e.g., the `uid`) of the affected resource\" and an \
                         ITEM_TAG has no uid — so the server applies, and \
                         declares, the default `return=minimal`; that \
-                        resolution is OURS, register-documented in the \
-                        conformance catalogue. Whichever branch runs, the \
+                        resolution is OURS, adjudicated. Whichever branch runs, the \
                         response states it in `Preference-Applied`.",
          example = "return=representation")
     ),
@@ -6380,14 +6359,14 @@ pub(crate) async fn ehr_status_tags_get(
                                 `target_path` differs; a DUPLICATE pair inside \
                                 one body is resolved last-wins (no released \
                                 rule and no `uniqueItems` — ours, \
-                                register-documented). A `target_path` of `\"\"` \
+                                adjudicated). A `target_path` of `\"\"` \
                                 normalizes to ABSENT, so it is the same \
                                 identity as an entry with no `target_path` at \
                                 all: the RM models `target_path` 0..1 with no \
                                 non-empty invariant while the released \
                                 EHR_STATUS example uses `\"\"` — reconciling \
                                 the two on one identity is ours, \
-                                register-documented. Canonical JSON only: an \
+                                adjudicated. Canonical JSON only: an \
                                 XML (or Simplified-Format) `Content-Type` is \
                                 `415`.",
                  example = json!([ {
@@ -6492,8 +6471,7 @@ pub(crate) async fn ehr_status_tags_get(
                                       uid whose stored kind is not an \
                                       EHR_STATUS are all `404`. The \
                                       kind-mismatch reading is OURS \
-                                      (register-documented in the conformance \
-                                      catalogue): the released sentence does \
+                                      (adjudicated): the released sentence does \
                                       not spell it out, and it follows from \
                                       the route family naming the target's \
                                       class.",
@@ -6541,8 +6519,7 @@ pub(crate) async fn ehr_status_tags_get(
                                       status codes\", the `422` row (\"The \
                                       request was well-formed but was unable \
                                       to be followed due to semantic errors\") \
-                                      and is OURS, register-documented in the \
-                                      conformance catalogue.",
+                                      and is OURS, adjudicated.",
          body = serde_json::Value)
     )
 )]
@@ -6654,8 +6631,7 @@ pub(crate) async fn ehr_status_tags_update(
                                       uid whose stored kind is not an \
                                       EHR_STATUS are all `404` — the \
                                       kind-mismatch reading being OURS, \
-                                      register-documented in the conformance \
-                                      catalogue.",
+                                      adjudicated.",
          body = serde_json::Value)
     )
 )]

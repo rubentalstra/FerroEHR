@@ -684,7 +684,7 @@ fn smart_decide(
 ///
 /// A `patient/` compartment permit needs no per-request EHR binding here:
 /// templates are unscoped and queries are cross-EHR — per-row patient scoping
-/// stays with the ABAC query subject-scope pre-filter (register-documented),
+/// stays with the ABAC query subject-scope pre-filter (adjudicated),
 /// exactly as the ABAC-integrated gate treats target-less operations.
 fn smart_skip_family_gate(
     state: &AppState,
