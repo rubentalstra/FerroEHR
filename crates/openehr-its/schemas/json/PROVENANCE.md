@@ -28,8 +28,13 @@ self-tagging; there are no JSON structs to generate. `openehr-its::json` reads
 `openehr_rm_1.1.0_all.json` (via `include_str!`) to validate canonical-JSON
 output in the fidelity gate (`tests/`).
 
-## Known version divergence (accepted Stage-1 parity nuance)
+## Known version divergence (adjudicated, machine-pinned — #1697)
 
-ITS-JSON tops out at RM 1.1.0 while our generated RM is 1.2.0 (from BMM). The
-schema validates against 1.1.0-era shapes; this is a documented parity
-consideration (see `docs/VERSIONS.md`), not something to reconcile here.
+ITS-JSON tops out at RM 1.1.0 while our generated RM is 1.2.0 (from BMM), and
+the all-schema is CLOSED (`additionalProperties: false` per class) — so the
+first RM 1.2.0-only attribute on the wire (e.g. `EHR.tags`) FAILS the oracle
+for a reason that is not a defect in our output. The full per-class attribute
+delta between this schema and the generated RM 1.2.0 model is machine-derived
+and pinned by `tests/it/its_json_delta.rs` (the XSD-gate precedent): the known
+1.1.0↔1.2.0 divergence is adjudicated there, and any NEW divergence fails that
+gate loudly instead of surfacing later as a spurious validation failure.

@@ -30,6 +30,7 @@ mod fidelity;
 mod fixture_twins;
 mod flat;
 mod format_parity;
+mod its_json_delta;
 mod json_codec_parity;
 mod master05_tables;
 mod model_walkgen;
