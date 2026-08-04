@@ -299,9 +299,11 @@ fn generated_rm_round_trips_the_openehr_sdk_corpus() {
 /// generated RM types, **validates against the vendored ITS-JSON schema**
 /// (`openehr_rm_1.1.0_all.json`). This proves our output conforms to the openEHR
 /// JSON contract, not merely that it round-trips. All 53 canonical files
-/// conform with no schema-specific exclusions (the RM 1.1↔1.2 divergence does
-/// not break validation — the schema's per-class definitions accept our output);
-/// only the shared readability/round-trip exclusions apply.
+/// conform with no schema-specific exclusions (none of the current corpus
+/// carries an RM 1.2.0-only attribute); the CLOSED schema's exact
+/// 1.1.0↔1.2.0 attribute delta — what WOULD fail here and why — is
+/// machine-pinned by `its_json_delta.rs` (#1697). Only the shared
+/// readability/round-trip exclusions apply.
 #[test]
 fn generated_rm_output_validates_against_its_json_schema() {
     let mut ok = 0;

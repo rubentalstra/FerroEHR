@@ -1610,3 +1610,72 @@ async fn distinct_order_by_limit_and_now_comparison() {
     let r = run_aql(&svc, aql, ehr_scope(&ehr_id)).await;
     assert_eq!(rows(&r).len(), 3, "all compositions precede NOW()");
 }
+
+/// #1448 — LIKE and `matches` on an anchored MULTI-VALUED path lower
+/// existentially (any-match), exactly as the comparison operators do: with two
+/// sibling ELEMENTs on the same `items[at0004]` path where only the SECOND
+/// satisfies the predicate, the row must still return. The scalar LIMIT-1
+/// extraction this replaces picked an order-undefined single node and could
+/// silently miss it. (QUERY master03 is silent on predicates over
+/// multi-valued paths — any-match is the adjudicated own-design semantics
+/// recorded on `data_leaf_exists`.)
+#[tokio::test]
+async fn like_and_matches_are_any_match_on_multi_valued_paths() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+    let ehr_id = create_ehr(&svc).await;
+
+    let mut c = composition("multi-item", 1.0);
+    // A second ELEMENT on the SAME items[at0004] path: first carries a
+    // non-matching DV_TEXT, the second the value the predicates target.
+    let items = c["content"][0]["data"]["events"][0]["data"]["items"]
+        .as_array_mut()
+        .expect("items");
+    let mut first = items[0].clone();
+    first["value"] = json!({ "_type": "DV_TEXT", "value": "alpha" });
+    let mut second = items[0].clone();
+    second["value"] = json!({ "_type": "DV_TEXT", "value": "zeta match" });
+    *items = vec![first, second];
+    svc.create_composition(ehr_id.parse().expect("ehr_id uuid"), uv(&c, "249", None))
+        .await
+        .expect("multi-item composition");
+
+    let like = run_aql(
+        &svc,
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c CONTAINS OBSERVATION o \
+         WHERE o/data[at0001]/events[at0002]/data[at0003]/items[at0004]/value/value \
+         LIKE 'zeta*'",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(
+        rows(&like).len(),
+        1,
+        "LIKE matches when ANY node on the multi-valued path satisfies it: {like}"
+    );
+
+    let matches = run_aql(
+        &svc,
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c CONTAINS OBSERVATION o \
+         WHERE o/data[at0001]/events[at0002]/data[at0003]/items[at0004]/value/value \
+         MATCHES {'zeta match'}",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(
+        rows(&matches).len(),
+        1,
+        "matches is any-match on the multi-valued path: {matches}"
+    );
+
+    // The non-matching pattern still returns nothing (no vacuous truth).
+    let none = run_aql(
+        &svc,
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c CONTAINS OBSERVATION o \
+         WHERE o/data[at0001]/events[at0002]/data[at0003]/items[at0004]/value/value \
+         LIKE 'omega*'",
+        ehr_scope(&ehr_id),
+    )
+    .await;
+    assert_eq!(rows(&none).len(), 0, "no node satisfies: {none}");
+}

@@ -10,7 +10,7 @@
 //!
 //! Two dispatch tables decide which tier judges an RM node: the allocation-free
 //! fast path (`openehr_rm::validate::fast::try_validate`) and the authoritative
-//! typed dispatch (`openehr_its::wire_validate::validate_rm_value_typed`). A
+//! typed dispatch (`openehr_rm::validate::typed_dispatch::dispatch_typed`). A
 //! class present in one and absent from the other silently changes which tier
 //! judges it, and a class whose DEPTH disagrees (`run` vs `run_shallow`) changes
 //! which of its children are decoded — both are wire-visible. Until now the only
@@ -33,8 +33,10 @@
 
 use std::collections::BTreeMap;
 
-/// The typed dispatch source (`validate_rm_value_typed`'s `match ty` block).
-const TYPED_SRC: &str = include_str!("../../src/wire_validate.rs");
+/// The typed dispatch source (`dispatch_typed`'s `match ty` block). It lives in
+/// `openehr-rm` beside the fast path; this crate keeps only the generated
+/// five-crate structural fallthrough and the thin wire entry points.
+const TYPED_SRC: &str = include_str!("../../../openehr-rm/src/validate/typed_dispatch.rs");
 /// The fast-path dispatch source (`try_validate`'s `let shallow = match ty`).
 const FAST_SRC: &str = include_str!("../../../openehr-rm/src/validate/fast.rs");
 
@@ -84,20 +86,20 @@ fn depth_of(text: &str) -> Option<Depth> {
     }
 }
 
-/// Extract the typed dispatch table from `validate_rm_value_typed`.
+/// Extract the typed dispatch table from `dispatch_typed`.
 ///
 /// Each arm is `<literals> => <body>`; the body names `run::<T>` (full) or
 /// `run_shallow::<T>` (shallow). The one block-bodied arm (`DV_INTERVAL`)
 /// spans several lines and is attributed by the first runner call inside it.
 fn typed_table(src: &str) -> BTreeMap<String, Depth> {
     let src = without_comments(src);
-    let start = src
-        .find("fn validate_rm_value_typed")
-        .expect("typed dispatch fn");
+    let start = src.find("fn dispatch_typed").expect("typed dispatch fn");
     let body = &src[start..];
     let m = body.find("match ty {").expect("typed match block");
     let body = &body[m..];
-    let end = body.find("other =>").expect("typed fallthrough arm");
+    let end = body
+        .find("_ => return false")
+        .expect("typed fallthrough arm");
     let block = &body[..end];
 
     let mut arms: Vec<(Vec<String>, Option<Depth>)> = Vec::new();

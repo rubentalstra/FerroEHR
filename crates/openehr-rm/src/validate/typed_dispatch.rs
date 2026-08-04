@@ -1,0 +1,409 @@
+//! The **typed dispatch tier** of the RM class-invariant check (hand-written):
+//! the `_type` → concrete-RM-type table that deserializes a canonical-JSON node
+//! into its class through the emitted canonical-JSON `serde` impls
+//! (`crate::json_serde`, `openehr-codegen -- emit-json`) and runs that class's
+//! [`Validate`] impl.
+//!
+//! It lives here, beside the fast path ([`super::try_fast_validate`]) and the
+//! invariant cores, because every decision it makes is RM model semantics: the
+//! set of classes carrying a class invariant, how deeply each is decoded before
+//! its invariants are read, and the message a non-conforming node produces. The
+//! spec types carry their own `serde` impls since the foundation-phase codec
+//! rewrite, so no downstream codec crate is needed to drive them.
+//!
+//! What is NOT here, and cannot be: the fallthrough for every class this table
+//! does not name. That is the GENERATED five-crate structural dispatch
+//! (`openehr_its::json_codec::generated::structural`), which spans
+//! `openehr-base`/`-rm`/`-am`/`-term`/`-lang` at once and therefore can only be
+//! emitted downstream of all of them. [`dispatch_typed`] reports the
+//! fallthrough as `false` and the wire-boundary entry point
+//! (`openehr_its::wire_validate::validate_rm_value_typed`) runs the generated
+//! dispatch for it, then closes out the inherited
+//! `LOCATABLE.Archetype_node_id_valid` rule
+//! ([`super::locatable_node_id_violation`]).
+//!
+//! # Fidelity to the reference implementation (archie)
+//!
+//! The RM class invariants (the `*_impl.rs` siblings) mirror openEHR's
+//! reference implementation archie; this module only routes a node to the right
+//! concrete type. A node that does not deserialize into its declared concrete
+//! RM type surfaces `does not conform to RM type …` (see
+//! [`record_type_mismatch`]).
+
+use serde::de::DeserializeOwned;
+use serde_json::Value;
+
+use openehr_base::validate::{InvariantViolation, Validate};
+
+/// Record a typed-deserialize failure as a validation violation.
+///
+/// A node that does not deserialize into its declared concrete RM type is NOT
+/// "caught by the codec/schema layer" on the commit path: the node codec stores
+/// the raw canonical-JSON fragment verbatim (no openEHR spec governs the storage
+/// mechanics — our own storage design) and the ITS-JSON schema is not enforced
+/// at commit, so a missing mandatory attribute (e.g. `COMPOSITION.composer [1]`)
+/// or a wrong nested type (e.g. an `EHR_STATUS.subject` that is not `PARTY_SELF`)
+/// reaches here and nowhere else. Per ITS-REST `422_COMPOSITION.yaml` ("converts,
+/// but does not validate") this is a validation failure — surface it. (The valid
+/// corpus deserializes cleanly at every node, so this never rejects a valid
+/// input; if it ever did, that would expose a codegen field-optionality bug to
+/// fix in the emitter.)
+///
+/// Public because the two tiers that report the SAME refusal live on both sides
+/// of the crate boundary: this module's typed decode, and the wire-boundary
+/// layer's undeclared-key door plus the generated structural fallthrough. One
+/// message shape, one source.
+pub fn record_type_mismatch(
+    ty: &str,
+    err: &dyn std::fmt::Display,
+    out: &mut Vec<InvariantViolation>,
+) {
+    out.push(InvariantViolation::here(format!(
+        "does not conform to RM type {ty}: {err}"
+    )));
+}
+
+/// Deserialize `value` into `T` through the emitted canonical-JSON `serde`
+/// impls, rendering a failure exactly as the canonical-JSON entry point
+/// `openehr_its::json::from_canonical_value` renders it: the `serde_json`
+/// message, then ` (at $<path>)` when the path tracker located the offending
+/// node.
+///
+/// Two-phase, for the same reason the entry point is: the happy path reads
+/// WITHOUT the path tracker (`serde_path_to_error` wraps every key and value
+/// seed, which costs a large fraction of total read time on this corpus), and a
+/// failed read re-runs the same deterministic decode WITH the tracker purely to
+/// build the diagnostic (<https://docs.rs/serde_path_to_error/0.1>).
+fn decode<T: DeserializeOwned>(value: &Value) -> Result<T, String> {
+    match T::deserialize(value) {
+        Ok(decoded) => Ok(decoded),
+        Err(plain) => Err(match serde_path_to_error::deserialize::<_, T>(value) {
+            Err(located) => render_path_error(&located),
+            // A deterministic re-read of the same value cannot succeed where the
+            // first read failed; if it ever does, the original diagnostic still
+            // describes the failure — just without its path.
+            Ok(_) => plain.to_string(),
+        }),
+    }
+}
+
+/// Render a tracked read failure as `<message> (at $<path>)`, the shape
+/// `openehr_its::json::JsonParseError` displays.
+fn render_path_error(error: &serde_path_to_error::Error<serde_json::Error>) -> String {
+    let path: Vec<String> = error
+        .path()
+        .iter()
+        .map(|segment| match segment {
+            serde_path_to_error::Segment::Seq { index } => format!("[{index}]"),
+            serde_path_to_error::Segment::Map { key } => format!(".{key}"),
+            serde_path_to_error::Segment::Enum { variant } => format!(".{variant}"),
+            serde_path_to_error::Segment::Unknown => ".?".to_owned(),
+        })
+        .collect();
+    let message = error.inner().to_string();
+    if path.is_empty() {
+        message
+    } else {
+        format!("{message} (at ${})", path.join(""))
+    }
+}
+
+fn run<T: DeserializeOwned + Validate>(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
+    match decode::<T>(value) {
+        Ok(v) => v.validate_invariants(out),
+        Err(e) => record_type_mismatch(ty, &e, out),
+    }
+}
+
+/// Like [`run`], but deserialize `T` from a copy of `value` whose nested
+/// RM-node child collections have been emptied ([`prune_child_nodes`]).
+///
+/// NOTE (settled perf design — no openEHR spec governs validation-pass
+/// mechanics; our own design): the RM-invariant pass
+/// (`openehr_its::wire_validate::validate_rm_value`) is called once per
+/// `_type` node while the composition validator recurses the live JSON tree, so
+/// deserializing each node's *whole* subtree re-parses every descendant once per
+/// ancestor — O(Σ subtree sizes) for overlapping subtrees. This shallow variant
+/// is used for
+/// the LOCATABLE structural containers whose own class invariants inspect only
+/// scalar / single-object attributes (never a child collection): with the child
+/// arrays emptied, each node deserializes only its own immediate shape, so the
+/// pass is O(total nodes) instead of O(Σ subtree sizes). The node's own
+/// single-valued attributes are KEPT (only collections are emptied), so its
+/// mandatory-attribute presence and single-object type conformance are still
+/// enforced on deserialize — the missing-mandatory-attribute rejection
+/// (`422_COMPOSITION`, e.g. a dropped `COMPOSITION.composer [1]`) and every class
+/// invariant result are unchanged. Types whose own invariants DO read a child
+/// collection (`HISTORY.events`, `ITEM_TABLE.rows`) keep the full [`run`]
+/// deserialize.
+///
+/// NOTE: emptying a child *collection* here means a malformation *inside*
+/// an array element is no longer reported at this ancestor's path — it is
+/// reported at that element's own recursion step instead (each collection member
+/// is a separate `_type` node the composition validator visits and dispatches).
+/// For array-element types the dispatcher does not cover (embedded non-LOCATABLE
+/// helpers such as `LINK` / `PARTICIPATION`, which carry no class invariant), a
+/// structural malformation that the full ancestor deserialize used to surface is
+/// no longer surfaced. This narrows only the redundant ancestor-cascade reporting
+/// on already-invalid input; the valid path and every test-pinned rejection are
+/// byte-identical, and the ITS-JSON schema gate remains the exhaustive
+/// structural oracle where one is required (this pass is the RM class-invariant
+/// check, not a schema validator — `422_COMPOSITION.yaml`).
+fn run_shallow<T: DeserializeOwned + Validate>(
+    ty: &str,
+    value: &Value,
+    out: &mut Vec<InvariantViolation>,
+) {
+    match decode::<T>(&prune_child_nodes(value)) {
+        Ok(v) => v.validate_invariants(out),
+        Err(e) => record_type_mismatch(ty, &e, out),
+    }
+}
+
+/// A shallow copy of an RM node with every nested RM-node **collection** emptied,
+/// recursing through single-valued nested nodes (which are kept, so the node's
+/// own mandatory single attributes stay enforced on deserialize). Scalar arrays
+/// (e.g. `DV_MULTIMEDIA.data` octets) are kept as-is. See [`run_shallow`] for why
+/// this is sound for the structural container types.
+fn prune_child_nodes(value: &Value) -> Value {
+    let Value::Object(map) = value else {
+        return value.clone();
+    };
+    let ty = map.get("_type").and_then(Value::as_str);
+    let mut out = serde_json::Map::with_capacity(map.len());
+    for (key, child) in map {
+        let pruned = match child {
+            // An array of RM nodes: the children are recursed into (and fully
+            // validated) individually by the composition validator, so this
+            // node's own invariants never need them.
+            //
+            // A `1..*` container keeps ONE member (itself pruned), because its
+            // emission shape is non-empty by construction
+            // (`openehr_base::containers::NonEmptyVec`) and an emptied array
+            // would fail to decode — a false structural violation on valid
+            // input. Everything else is emptied outright.
+            //
+            // NOTE: emptying leaves an OPTIONAL container decoding to
+            // `Some(vec![])` — a present-but-empty list, the state
+            // `x /= Void implies not x.is_empty` forbids. That is safe here
+            // because the run_shallow classes' own invariants never read a child
+            // collection (this function's documented precondition), and that
+            // invariant family is judged on the RAW node by
+            // `super::nonempty_list_violations`, a layer outside
+            // the fast/typed pair — never on this pruned copy.
+            Value::Array(items) if items.iter().any(Value::is_object) => {
+                if ty.is_some_and(|t| lower_bound_one(t, key)) {
+                    Value::Array(items.first().map(prune_child_nodes).into_iter().collect())
+                } else {
+                    Value::Array(Vec::new())
+                }
+            }
+            // A single nested node: keep it (its presence is a structural
+            // constraint this node's deserialize must still enforce), but recurse
+            // to empty ITS child collections.
+            Value::Object(_) => prune_child_nodes(child),
+            // Scalars and scalar arrays: keep verbatim.
+            other => other.clone(),
+        };
+        out.insert(key.clone(), pruned);
+    }
+    Value::Object(out)
+}
+
+/// Whether the static RM model declares `attribute` of `ty` as a container with
+/// a cardinality lower bound of 1 — the attributes whose emission shape is
+/// `NonEmptyVec<T>` and which therefore cannot decode from an emptied array.
+fn lower_bound_one(ty: &str, attribute: &str) -> bool {
+    crate::model::attributes(ty)
+        .any(|a| a.name == attribute && a.cardinality.is_some_and(|c| c.lower >= 1))
+}
+
+/// The `_type` → concrete-RM-type table: deserialize the node into the class its
+/// `_type` names and run that class's `Validate` impl. Returns `true` when the
+/// class was handled here, `false` for the fallthrough — the caller then runs the
+/// GENERATED five-crate structural dispatch
+/// (`openehr_its::json_codec::generated::structural`), which cannot live in this
+/// crate because it spans every spec crate at once.
+///
+/// Authoritative for every node it handles (the fast path
+/// [`super::try_fast_validate`] may only *skip* it when its result is provably
+/// identical); also the oracle the fast-path equivalence tests compare against.
+///
+/// The table below covers the concrete `openehr-rm` / `openehr-base` types that
+/// carry a non-terminology class invariant (the ones with a `*_impl.rs` sibling)
+/// — those need a typed value to run the invariant on. **Every other class falls
+/// through**, and the generated structural dispatch decodes the node into that
+/// class's own Rust type and discards it: the codec is the structural-conformance
+/// authority for the whole emitted model, so a class with no invariant is still
+/// refused when it is structurally defective (a missing mandatory attribute, a
+/// wrong JSON kind, an unresolvable nested slot `_type`). `DV_INTERVAL` is
+/// dispatched with a `DvOrdered` element type so the `Limits_consistent` ordering
+/// invariant is reached, falling back to `serde_json::Value` (own boundary-flag
+/// invariants only) when the limits do not deserialize as typed `DV_ORDERED`
+/// values. The other generic containers (`HISTORY`, `POINT_EVENT`,
+/// `INTERVAL_EVENT`) are checked with `serde_json::Value` as the element type —
+/// enough for their own (non-child) invariants.
+///
+/// # The inherited LOCATABLE invariant
+///
+/// The inherited `LOCATABLE.Archetype_node_id_valid`
+/// (`not archetype_node_id.is_empty`,
+/// `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
+/// §Invariants) is closed out for **every** concrete LOCATABLE descendant by the
+/// caller, via [`super::locatable_node_id_violation`], whose applicable-type set
+/// is the generated RM model's transitive concrete-descendant closure of
+/// LOCATABLE — not a hand-maintained list. The arms below realize it themselves
+/// through their typed `Validate` impls, so the violation is appended only when
+/// this node's own pass did not already report it (reported exactly once per
+/// node). The classes with no arm — `ITEM_TREE`, `ITEM_LIST`, `ITEM_SINGLE`,
+/// `EHR_STATUS`, and the demographic / EHR_EXTRACT LOCATABLEs — reach the
+/// generated structural fallthrough, which decodes but runs no invariant, so
+/// that is where the inherited invariant becomes theirs too.
+#[must_use]
+#[expect(
+    clippy::too_many_lines,
+    reason = "a flat `_type` -> concrete-type dispatch table; the length is the size of the RM type set, not logic"
+)]
+pub fn dispatch_typed(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) -> bool {
+    use openehr_base::base_types::identification::archetype_id::ArchetypeId;
+    use openehr_base::base_types::identification::internet_id::InternetId;
+    use openehr_base::base_types::identification::iso_oid::IsoOid;
+    use openehr_base::base_types::identification::object_ref::ObjectRefData;
+    use openehr_base::base_types::identification::object_version_id::ObjectVersionId;
+    use openehr_base::base_types::identification::party_ref::PartyRef;
+    use openehr_base::base_types::identification::terminology_id::TerminologyId;
+    use openehr_base::base_types::identification::version_tree_id::VersionTreeId;
+
+    use crate::common::archetyped::archetyped::Archetyped;
+    use crate::common::archetyped::feeder_audit_details::FeederAuditDetails;
+    use crate::common::directory::folder::Folder;
+    use crate::common::generic::attestation::Attestation;
+    use crate::common::generic::audit_details::AuditDetailsData;
+    use crate::common::generic::party_identified::PartyIdentifiedData;
+    use crate::common::generic::party_related::PartyRelated;
+    use crate::common::tags::item_tag::ItemTag;
+    use crate::composition::composition::Composition;
+    use crate::composition::content::entry::action::Action;
+    use crate::composition::content::entry::activity::Activity;
+    use crate::composition::content::entry::admin_entry::AdminEntry;
+    use crate::composition::content::entry::evaluation::Evaluation;
+    use crate::composition::content::entry::instruction::Instruction;
+    use crate::composition::content::entry::instruction_details::InstructionDetails;
+    use crate::composition::content::entry::observation::Observation;
+    use crate::composition::content::navigation::section::Section;
+    use crate::composition::event_context::EventContext;
+    use crate::data_structures::history::history::History;
+    use crate::data_structures::history::interval_event::IntervalEvent;
+    use crate::data_structures::history::point_event::PointEvent;
+    use crate::data_structures::item_structure::item_table::ItemTable;
+    use crate::data_structures::representation::cluster::Cluster;
+    use crate::data_structures::representation::element::Element;
+    use crate::data_types::basic::dv_identifier::DvIdentifier;
+    use crate::data_types::encapsulated::dv_multimedia::DvMultimedia;
+    use crate::data_types::encapsulated::dv_parsable::DvParsable;
+    use crate::data_types::quantity::date_time::dv_date::DvDate;
+    use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
+    use crate::data_types::quantity::date_time::dv_duration::DvDuration;
+    use crate::data_types::quantity::date_time::dv_time::DvTime;
+    use crate::data_types::quantity::dv_count::DvCount;
+    use crate::data_types::quantity::dv_interval::DvInterval;
+    use crate::data_types::quantity::dv_ordered::DvOrdered;
+    use crate::data_types::quantity::dv_ordinal::DvOrdinal;
+    use crate::data_types::quantity::dv_proportion::DvProportion;
+    use crate::data_types::quantity::dv_quantity::DvQuantity;
+    use crate::data_types::quantity::dv_scale::DvScale;
+    use crate::data_types::quantity::reference_range::ReferenceRange;
+    use crate::data_types::text::code_phrase::CodePhrase;
+    use crate::data_types::text::dv_text::DvText;
+    use crate::data_types::text::term_mapping::TermMapping;
+    use crate::data_types::time_specification::dv_periodic_time_specification::DvPeriodicTimeSpecification;
+    use crate::data_types::uri::dv_ehr_uri::DvEhrUri;
+    use crate::data_types::uri::dv_uri::DvUriData;
+    use crate::integration::generic_entry::GenericEntry;
+
+    match ty {
+        // data_types
+        "CODE_PHRASE" => run::<CodePhrase>(ty, value, out),
+        // DV_TEXT + DV_CODED_TEXT share the DvText enum (Valid_value /
+        // Formatting_valid, dv_text.adoc; DV_CODED_TEXT adds the structural
+        // defining_code 1..1 at deserialize).
+        "DV_TEXT" | "DV_CODED_TEXT" => run::<DvText>(ty, value, out),
+        "DV_URI" => run::<DvUriData>(ty, value, out),
+        "DV_EHR_URI" => run::<DvEhrUri>(ty, value, out),
+        "DV_IDENTIFIER" => run::<DvIdentifier>(ty, value, out),
+        "TERM_MAPPING" => run::<TermMapping>(ty, value, out),
+        "DV_MULTIMEDIA" => run::<DvMultimedia>(ty, value, out),
+        "DV_PROPORTION" => run::<DvProportion>(ty, value, out),
+        "DV_QUANTITY" => run::<DvQuantity>(ty, value, out),
+        "DV_COUNT" => run::<DvCount>(ty, value, out),
+        "DV_DURATION" => run::<DvDuration>(ty, value, out),
+        "DV_DATE" => run::<DvDate>(ty, value, out),
+        "DV_TIME" => run::<DvTime>(ty, value, out),
+        "DV_DATE_TIME" => run::<DvDateTime>(ty, value, out),
+        "DV_ORDINAL" => run::<DvOrdinal>(ty, value, out),
+        "DV_SCALE" => run::<DvScale>(ty, value, out),
+        "DV_PARSABLE" => run::<DvParsable>(ty, value, out),
+        "DV_PERIODIC_TIME_SPECIFICATION" => run::<DvPeriodicTimeSpecification>(ty, value, out),
+        "REFERENCE_RANGE" => run::<ReferenceRange>(ty, value, out),
+        // DV_INTERVAL: prefer the DV_ORDERED-typed element so the
+        // Limits_consistent ordering invariant runs; fall back to
+        // Value elements (boundary flags only) for non-DV_ORDERED payloads.
+        "DV_INTERVAL" => {
+            if let Ok(v) = decode::<DvInterval<DvOrdered>>(value) {
+                v.validate_invariants(out);
+            } else {
+                run::<DvInterval<Value>>(ty, value, out);
+            }
+        }
+        // data_structures. HISTORY and ITEM_TABLE keep the full deserialize —
+        // their own invariants read a child collection (`events` / `rows`); the
+        // rest are structural containers with scalar-only invariants, so they
+        // deserialize shallowly (see `run_shallow`).
+        "ELEMENT" => run::<Element>(ty, value, out),
+        "CLUSTER" => run_shallow::<Cluster>(ty, value, out),
+        "HISTORY" => run::<History<Value>>(ty, value, out),
+        "POINT_EVENT" => run_shallow::<PointEvent<Value>>(ty, value, out),
+        "INTERVAL_EVENT" => run_shallow::<IntervalEvent<Value>>(ty, value, out),
+        "ITEM_TABLE" => run::<ItemTable>(ty, value, out),
+        // common
+        "PARTY_IDENTIFIED" => run::<PartyIdentifiedData>(ty, value, out),
+        "PARTY_RELATED" => run::<PartyRelated>(ty, value, out),
+        "AUDIT_DETAILS" => run::<AuditDetailsData>(ty, value, out),
+        "ATTESTATION" => run::<Attestation>(ty, value, out),
+        "FEEDER_AUDIT_DETAILS" => run::<FeederAuditDetails>(ty, value, out),
+        "ARCHETYPED" => run::<Archetyped>(ty, value, out),
+        // ehr / composition — structural containers (scalar-only invariants),
+        // deserialized shallowly (see `run_shallow`). GENERIC_ENTRY's `data:
+        // ITEM [1..1]` is a single-valued node, so `run_shallow` keeps it and
+        // still enforces its presence.
+        "COMPOSITION" => run_shallow::<Composition>(ty, value, out),
+        "EVENT_CONTEXT" => run_shallow::<EventContext>(ty, value, out),
+        "ACTIVITY" => run_shallow::<Activity>(ty, value, out),
+        "INSTRUCTION_DETAILS" => run::<InstructionDetails>(ty, value, out),
+        "OBSERVATION" => run_shallow::<Observation>(ty, value, out),
+        "INSTRUCTION" => run_shallow::<Instruction>(ty, value, out),
+        "ACTION" => run_shallow::<Action>(ty, value, out),
+        "EVALUATION" => run_shallow::<Evaluation>(ty, value, out),
+        "ADMIN_ENTRY" => run_shallow::<AdminEntry>(ty, value, out),
+        "GENERIC_ENTRY" => run_shallow::<GenericEntry>(ty, value, out),
+        "SECTION" => run_shallow::<Section>(ty, value, out),
+        "FOLDER" => run_shallow::<Folder>(ty, value, out),
+        "ITEM_TAG" => run::<ItemTag>(ty, value, out),
+        // base identification
+        "OBJECT_REF" => run::<ObjectRefData>(ty, value, out),
+        "PARTY_REF" => run::<PartyRef>(ty, value, out),
+        "VERSION_TREE_ID" => run::<VersionTreeId>(ty, value, out),
+        "OBJECT_VERSION_ID" => run::<ObjectVersionId>(ty, value, out),
+        "ISO_OID" => run::<IsoOid>(ty, value, out),
+        "ARCHETYPE_ID" => run::<ArchetypeId>(ty, value, out),
+        "TERMINOLOGY_ID" => run::<TerminologyId>(ty, value, out),
+        "INTERNET_ID" => run::<InternetId>(ty, value, out),
+        // Every other class: not handled here. The caller runs the GENERATED
+        // structural dispatch, which decodes the node into that class's own Rust
+        // type and discards it, so the codec is the structural-conformance
+        // authority for the whole emitted model instead of only the
+        // invariant-bearing classes above.
+        _ => return false,
+    }
+    true
+}

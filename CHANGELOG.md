@@ -17,6 +17,7 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- EHR-Extract export now evaluates `EXTRACT_SPEC.criteria`: AQL criteria queries select each entity's primary set `$ehr`-bound (the entity's EHR scopes the query and a literal `$ehr` parameter binds to its id); a non-AQL formalism or an unparseable criterion is refused with `400`. The former blanket criteria refusal is gone (#1736).
 - EHR Extract import now enforces the copy closure (RM common master06 §Copying): a received branch version is refused with `400` unless its fork-point trunk version and same-branch predecessor travel in the same extract or are already stored (#1770).
 - **FOLDER (DIRECTORY) resources can now carry ITEM_TAGs.** ITS-REST overview
   `Requests_and_responses.md` §openehr-item-tag and openehr-version-item-tag
@@ -76,6 +77,7 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- AQL `LIKE` and `matches` predicates on multi-valued paths now use the existential (any-match) lowering the comparison operators already use — a row is matched when ANY node on the path satisfies the predicate, instead of an order-undefined single-node pick (#1448).
 - The admin EHR dump/load archive now carries every `vo_attestation` row (with its `at_committal` flag), and load re-persists them verbatim — a restored version keeps its attestations and its stored signature verifies under `verify_on_read = strict` (#1685).
 - **A node id carrying the at/id code leader but failing the code grammar is
   refused (`at0abc`).** AOM2's own code predicate is leader-based, so such a

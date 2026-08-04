@@ -37,14 +37,18 @@ every spec crate at once.
 `from_canonical_value` ARE the entry points (reads wrapped once in
 `serde_path_to_error`, so every refusal carries the JSON path);
 `json::JsonParseError` is the refusal type. `wire_validate::validate_rm_value` is the wire-boundary
-RM class-invariant DISPATCH LAYER that drives the reader — its hand-written
-table holds the invariant-bearing classes, and everything else falls through to
-the generated `structural_check` dispatch, so the codec is the
-structural-conformance authority for EVERY emitted class (a defective node of a
-class with no invariant is refused too). It only ROUTES: every value-level
-decision (the fast path, the invariant cores, the mandatory-container bounds,
-the JSON-level per-node checks, the terminology binding table) is defined in
-`openehr_rm::validate`. The template-independent whole-instance passes live in
+RM class-invariant DISPATCH LAYER — thin entry points that COMPOSE the tiers in
+a fixed order. Both tiers live upstream in `openehr_rm::validate` (the fast path
+`try_fast_validate`; the authoritative `_type` → concrete-type table
+`typed_dispatch::dispatch_typed`); what stays here is the part that needs this
+crate: the undeclared-key door over the generated `declared_fields` table, and
+the generated `structural_check` fallthrough for every class the typed table
+declines (`dispatch_typed` returns `false`) — which spans all five spec crates
+at once, so the codec is the structural-conformance authority for EVERY emitted
+class (a defective node of a class with no invariant is refused too). It only
+ROUTES: every value-level decision (the fast path, the typed table, the
+invariant cores, the mandatory-container bounds, the JSON-level per-node checks,
+the terminology binding table) is defined in `openehr_rm::validate`. The template-independent whole-instance passes live in
 `rm_instance` (`validate_rm_and_terminology{,_as}`, the composed
 `validate_composition`); `flat::validation` holds ONLY the template-driven
 archetype-conformance pass. Proven by
