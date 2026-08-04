@@ -21,8 +21,11 @@ terminology / management / tenant / event-subscription surfaces). Entry point:
   `/health`, `/health/liveness`, `/health/readiness`), mounted outside the API
   subtree — no auth, no audit, no overload shed, no config switch. The
   `/management` surface is ops introspection only (info/prometheus/metrics/env/
-  loggers) and carries no health route. No openEHR spec governs either — our own
-  operational surface.
+  loggers/flamegraph) and carries no health route. No openEHR spec governs
+  either — our own operational surface. `/management/flamegraph` is the
+  on-demand CPU profiler (pprof sampling → SVG; `extensions/management/
+  flamegraph.rs`, caps in `ferroehr::config::management::ProfilingConfig`) —
+  the `/flamegraph` skill documents all three profiling instruments.
 
 - **The wire is the spec:** status codes, headers (`ETag`, `Location`,
   `Last-Modified`, `Prefer`, committal merge), and content negotiation

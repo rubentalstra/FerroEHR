@@ -125,6 +125,7 @@ data:
       enabled = true
       [management.endpoints]
         env = "off"
+        flamegraph = "off"
         info = "off"
         loggers = "off"
         metrics = "off"
@@ -202,7 +203,7 @@ spec:
     metadata:
       annotations:
         # Roll pods when the rendered ferroehr.toml changes.
-        checksum/config: 95c5ce677743a8769a664a7cdf77ecf0f69aefad7ddcd22b686e397ee7bb09a7
+        checksum/config: 243e73a5210c0e28d175690cfe628dbb52e9964da8f75cb4f2f19abbbab3f8d3
       labels:
         app.kubernetes.io/name: ferroehr
         app.kubernetes.io/instance: ferroehr

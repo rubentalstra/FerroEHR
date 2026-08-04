@@ -327,6 +327,7 @@ thirtyfour = "0.37.2"               # E2E WebDriver client (dev-dep of the conso
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json", "registry"] }
 tracing-opentelemetry = "0.33"     # pairs with opentelemetry 0.31 line (verify matching set)
+tracing-flame = "0.2"              # span-timing flamegraph capture (folded stacks; render via inferno)
 opentelemetry = "0.32.0"
 opentelemetry_sdk = { version = "0.32.1", features = ["rt-tokio"] }
 opentelemetry-otlp = { version = "0.32.0", features = ["grpc-tonic"] }
@@ -334,6 +335,11 @@ opentelemetry-semantic-conventions = "0.32.1"
 metrics = "0.24"
 metrics-exporter-prometheus = "0.18.3"   # verify latest
 axum-prometheus = "0.10.0"                # verify latest
+# In-process sampling CPU profiler (flamegraph SVG via inferno). Its own
+# `criterion` feature is pinned to criterion ^0.5 (verified on crates.io
+# 2026-08-04) — incompatible with our criterion 0.8 — so benches implement
+# criterion's `Profiler` trait over this crate directly instead of enabling it.
+pprof = { version = "0.15.0", features = ["flamegraph"] }
 
 # ── Caching, rate limiting, resilience ───────────────────────────────────────
 moka = { version = "0.12", features = ["future"] }   # Caffeine equivalent (template/WebTemplate cache)

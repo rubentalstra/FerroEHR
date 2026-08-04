@@ -372,3 +372,104 @@ async fn separate_port_mode_keeps_management_off_the_main_app() {
         );
     }
 }
+
+// ── The on-demand CPU flamegraph (`/management/flamegraph`) ─────────────────
+
+/// Build an app with the management surface enabled and only the `flamegraph`
+/// endpoint mounted, at `level`, with the given profiling limits.
+async fn app_with_flamegraph(
+    level: AccessLevel,
+    profiling: ferroehr::config::management::ProfilingConfig,
+) -> Router {
+    let config = AppConfig {
+        server: ServerConfig {
+            swagger_ui: false,
+            ..Default::default()
+        },
+        auth: auth_config(None),
+        ..Default::default()
+    };
+    let observability = Observability {
+        management: ManagementConfig {
+            enabled: true,
+            endpoints: EndpointLevels {
+                flamegraph: level,
+                ..EndpointLevels::default()
+            },
+            profiling,
+            ..ManagementConfig::default()
+        },
+        ..Observability::default()
+    };
+    let (_pg, service) = common::test_service().await;
+    ferroehr_rest::build_full(config, service, None, observability).expect("build")
+}
+
+/// Off (the default) means the route is simply absent — a `404` answered
+/// before authentication.
+#[tokio::test]
+async fn flamegraph_off_is_404() {
+    let app = app_with_flamegraph(
+        AccessLevel::Off,
+        ferroehr::config::management::ProfilingConfig::default(),
+    )
+    .await;
+    assert_eq!(
+        status_of(app, get("/management/flamegraph")).await,
+        StatusCode::NOT_FOUND
+    );
+}
+
+/// Opted in: a short sample window answers `200` with a rendered SVG.
+#[tokio::test]
+async fn flamegraph_samples_and_renders_svg() {
+    let app = app_with_flamegraph(
+        AccessLevel::Public,
+        ferroehr::config::management::ProfilingConfig::default(),
+    )
+    .await;
+    let response = app
+        .oneshot(get("/management/flamegraph?seconds=1&frequency=99"))
+        .await
+        .expect("response");
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(
+        response
+            .headers()
+            .get(header::CONTENT_TYPE)
+            .expect("content type"),
+        "image/svg+xml"
+    );
+    let body = response
+        .into_body()
+        .collect()
+        .await
+        .expect("body")
+        .to_bytes();
+    let text = String::from_utf8(body.to_vec()).expect("svg is utf-8");
+    assert!(
+        text.contains("<svg"),
+        "the body must be a rendered flamegraph SVG"
+    );
+}
+
+/// A request beyond a configured cap is refused with `400` — never silently
+/// clamped.
+#[tokio::test]
+async fn flamegraph_over_cap_is_400() {
+    let app = app_with_flamegraph(
+        AccessLevel::Public,
+        ferroehr::config::management::ProfilingConfig::default(),
+    )
+    .await;
+    assert_eq!(
+        status_of(app.clone(), get("/management/flamegraph?seconds=31")).await,
+        StatusCode::BAD_REQUEST,
+        "seconds beyond management.profiling.max_seconds must refuse"
+    );
+    assert_eq!(
+        status_of(app, get("/management/flamegraph?frequency=1000")).await,
+        StatusCode::BAD_REQUEST,
+        "frequency beyond management.profiling.max_frequency must refuse"
+    );
+}

@@ -68,6 +68,10 @@ service_name = "ferroehr"
 environment = "dev"
 traces_sample_ratio = 1.0    # PROD: 0.1 is a common starting point
 metrics_push = false
+# Span-timing flamegraph capture (tracing-flame): write folded stack samples
+# to this file for offline rendering (inferno-flamegraph < file > flame.svg).
+# Unset ⇒ the layer is not installed (zero overhead). Diagnostic sessions only.
+#? flame_file = "/var/log/ferroehr/tracing.folded"
 
 # ── [auth] — authentication (PROD: configure a mechanism) ─────────────────────
 [auth]
@@ -159,8 +163,8 @@ capabilities = []   # extra (HL7 base) capabilities to advertise, e.g. ["launch-
 #? management_endpoint = "https://as.example/manage"
 
 # ── [management] — ops-introspection surface ───────────────────────────────────
-# Introspection only (info / prometheus / metrics / env / loggers), off by
-# default. Health probes are NOT here: /health, /health/liveness and
+# Introspection only (info / prometheus / metrics / env / loggers / flamegraph),
+# off by default. Health probes are NOT here: /health, /health/liveness and
 # /health/readiness are always mounted and public, whatever this section says.
 [management]
 enabled = false
@@ -174,6 +178,13 @@ metrics = "off"
 prometheus = "off"
 env = "off"
 loggers = "off"
+flamegraph = "off"            # on-demand CPU flamegraph (pprof sampling)
+
+# Limits for the on-demand CPU profiler (endpoints.flamegraph). A request
+# asking beyond a cap is refused with 400, never silently clamped.
+[management.profiling]
+max_seconds = 30              # longest sample window one request may take
+max_frequency = 999           # highest sampling frequency (Hz) a request may ask
 
 # ── [signing] — VERSION signing (RM common master06 §Digital Signature) ───────
 [signing]

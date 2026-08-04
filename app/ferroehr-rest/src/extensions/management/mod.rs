@@ -1,5 +1,5 @@
 //! The management surface: **ops introspection only** — info, Prometheus,
-//! metrics, env, and loggers.
+//! metrics, env, loggers, and the on-demand CPU flamegraph.
 //!
 //! NOTE: no openEHR spec governs this — our own operational surface;
 //! disposition recorded on issue #305. That disposition also draws the line
@@ -25,6 +25,7 @@
 //! and the caller lacks the configured admin scope.
 
 mod env;
+pub mod flamegraph;
 pub mod http_metrics;
 mod info_routes;
 mod logger_routes;
@@ -38,7 +39,7 @@ use ferroehr::telemetry::log_reload::LogReload;
 use std::sync::Arc;
 
 use axum::Router;
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::middleware::{Next, from_fn_with_state};
 use axum::response::{IntoResponse, Json, Response};
 use axum::routing::get;
@@ -69,6 +70,8 @@ pub struct ManagementState {
     pub build_info: BuildInfo,
     /// The effective configuration snapshot for `/env` (redacted at render).
     pub env_snapshot: Arc<Value>,
+    /// The one process-wide profiling permit (`/flamegraph` concurrency guard).
+    pub profiler: flamegraph::ProfilerSlot,
 }
 
 impl std::fmt::Debug for ManagementState {
@@ -96,6 +99,7 @@ impl ManagementState {
             log_reload: obs.log_reload,
             build_info: obs.build_info,
             env_snapshot: obs.env_snapshot,
+            profiler: flamegraph::ProfilerSlot::default(),
         }
     }
 }
@@ -212,6 +216,14 @@ pub fn router(state: ManagementState) -> Router {
         );
     }
 
+    // ── On-demand CPU flamegraph ─────────────────────────────────────────────
+    if cfg.endpoints.flamegraph.is_mounted() {
+        router = router.route(
+            &format!("{base}/flamegraph"),
+            get(flamegraph_view).route_layer(mk(cfg.endpoints.flamegraph)),
+        );
+    }
+
     // ── Loggers (only when a reloadable filter is present) ──────────────────
     if cfg.endpoints.loggers.is_mounted() && state.log_reload.is_some() {
         router = router.route(
@@ -245,6 +257,7 @@ pub fn openapi() -> utoipa::openapi::OpenApi {
         .routes(routes!(metrics_detail))
         .routes(routes!(env_view))
         .routes(routes!(loggers_get, loggers_post, loggers_reset))
+        .routes(routes!(flamegraph_view))
         .into_openapi()
 }
 
@@ -450,6 +463,45 @@ async fn loggers_reset(State(s): State<ManagementState>) -> Response {
     match &s.log_reload {
         Some(reload) => logger_routes::reset(reload),
         None => recorder_unavailable(),
+    }
+}
+
+/// Sample the process CPU and render a flamegraph SVG
+/// (`GET /management/flamegraph`).
+///
+/// OUR OWN EXTENSION — no openEHR spec governs this: the ITS-REST resource set
+/// defines no management or introspection surface.
+///
+/// Samples the whole process for `seconds` (default 10) at `frequency` Hz
+/// (default 99) via the `pprof` sampler and answers with the rendered
+/// flamegraph SVG — the "where does the time go" instrument. One sample window
+/// at a time (`409` while one runs); parameters beyond the configured
+/// `management.profiling` caps are refused with `400`, never clamped.
+/// Access-level gated by the `flamegraph` endpoint's configured
+/// [`AccessLevel`]; absent (a router `404`, answered before authentication)
+/// unless opted in.
+#[utoipa::path(
+    get, path = "/management/flamegraph", tag = "management",
+    params(
+        ("seconds" = Option<u16>, Query, description = "Sample window in seconds (default 10; capped by management.profiling.max_seconds)."),
+        ("frequency" = Option<i32>, Query, description = "Sampling frequency in Hz (default 99; capped by management.profiling.max_frequency).")
+    ),
+    responses(
+        (status = 200, description = "The rendered CPU flamegraph.", content_type = "image/svg+xml"),
+        (status = 400, description = "A parameter is outside the configured management.profiling caps.", body = serde_json::Value),
+        (status = 401, description = "Authentication required (access level Private/AdminOnly with auth enabled).", body = serde_json::Value),
+        (status = 403, description = "Caller lacks the configured admin scope (access level AdminOnly).", body = serde_json::Value),
+        (status = 409, description = "A profiling sample window is already running.", body = serde_json::Value),
+        (status = 500, description = "The profiler failed to start, sample, or render.", body = serde_json::Value)
+    )
+)]
+async fn flamegraph_view(
+    State(s): State<ManagementState>,
+    Query(params): Query<flamegraph::FlamegraphParams>,
+) -> Response {
+    match flamegraph::sample_flamegraph_svg(&s.profiler, s.config.profiling, &params).await {
+        Ok(svg) => ([(header::CONTENT_TYPE, "image/svg+xml")], svg).into_response(),
+        Err(err) => RestError(err).into_response(),
     }
 }
 

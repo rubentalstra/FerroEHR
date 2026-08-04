@@ -62,6 +62,48 @@ A few more conventions worth knowing before you open a pull request:
   the CLI, or the deployment artifacts) adds an entry to the changelog in the
   same pull request — a CI guard enforces this.
 
+## Profiling: finding where the time goes
+
+Four flamegraph instruments, all built on established crates (the sampling is
+[`pprof`](https://docs.rs/pprof/latest/pprof/), the rendering is
+[`inferno`](https://docs.rs/inferno/latest/inferno/)) — pick by situation:
+
+- **A running server** (composed stack, staging, production): the
+  `GET /management/flamegraph` endpoint — see
+  [Operations → Profiling](operations.md#profiling-the-on-demand-cpu-flamegraph).
+- **A code path in isolation**: the criterion benches carry a pprof profiler,
+  so any bench emits a flamegraph under `--profile-time`:
+
+  ```bash
+  cargo bench -p ferroehr --bench aql -- --profile-time 10
+  # → target/criterion/<bench>/profile/flamegraph.svg
+  ```
+
+- **Async attribution** (a sampled stack under tokio often blames the
+  executor's poll loop; a span flame blames the instrumented operation): set
+  `telemetry.flame_file = "/tmp/ferroehr.folded"` — the
+  [`tracing-flame`](https://docs.rs/tracing-flame/latest/tracing_flame/)
+  layer captures span timings as folded stacks, rendered offline:
+
+  ```bash
+  cargo install inferno
+  inferno-flamegraph < /tmp/ferroehr.folded > span-flame.svg
+  ```
+
+- **A whole local binary run** (no code changes needed):
+  [`cargo flamegraph`](https://crates.io/crates/flamegraph) — a dev tool,
+  not a dependency (`cargo install flamegraph`):
+
+  ```bash
+  cargo flamegraph --bin ferroehr            # Linux: perf; add -F 999 for finer sampling
+  cargo flamegraph --bench aql -- --bench    # profile a bench run end to end
+  ```
+
+  On macOS it uses `dtrace`, which needs elevated permissions — run with
+  `sudo cargo flamegraph …` or grant your terminal Developer-Tools access; on
+  Linux you may need `perf` installed and
+  `kernel.perf_event_paranoid` ≤ 2.
+
 ## Reporting issues and vulnerabilities
 
 Use the GitHub issue tracker for bugs and feature requests.

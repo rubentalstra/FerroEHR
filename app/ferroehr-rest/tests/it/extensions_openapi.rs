@@ -456,11 +456,19 @@ async fn full_app() -> Router {
         prometheus: AccessLevel::Public,
         env: AccessLevel::Public,
         loggers: AccessLevel::Public,
+        flamegraph: AccessLevel::Public,
     };
     let observability = Observability {
         management: ManagementConfig {
             enabled: true,
             endpoints: public,
+            // The routing parity test drives every documented op with default
+            // parameters; cap the sample window at 1 s so the flamegraph op
+            // answers quickly (the default window shrinks to the cap).
+            profiling: ferroehr::config::management::ProfilingConfig {
+                max_seconds: 1,
+                ..ferroehr::config::management::ProfilingConfig::default()
+            },
             ..ManagementConfig::default()
         },
         prometheus: Some(recorder().clone()),
