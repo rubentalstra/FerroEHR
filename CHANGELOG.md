@@ -15,6 +15,20 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- **The declared FHIR integration surface is now stated as R4B (4.3.0)
+  everywhere** — the served OpenAPI descriptions, configuration docs, and
+  website pages previously said "R4". Wire behaviour is unchanged: the
+  resources FerroEHR touches (AuditEvent/BALP, terminology
+  `Parameters`/`ValueSet`, the inbound connector starter set) are
+  byte-identical between R4 (4.0.1) and R4B (4.3.0); the `/fhir/r4/…`
+  connector paths are unchanged (#1885).
+- The `openehr-*` spec crates are republished as `0.0.3` (lockstep): the
+  generated sources are re-emitted in rustfmt-normalized form after the
+  emitter changes that shipped with the typed-DTO campaign — no semantic
+  change to any generated type or impl.
+
 ### Added
 
 - **The eight `openehr-*` spec crates are published on crates.io** —

@@ -1,5 +1,5 @@
 //! Simultaneous multi-terminology-server operation + terminology-server
-//! authentication, driven by `wiremock` — several hermetic FHIR R4 servers in
+//! authentication, driven by `wiremock` — several hermetic FHIR R4B servers in
 //! one process, no network.
 //!
 //! BASE `docs/architecture_overview/master12-terminology.adoc` §Overview names

@@ -7,7 +7,7 @@
 //! Two providers are exercised with no network:
 //! * the in-process `openehr-term` **bundle** (`service_api = "openehr"`,
 //!   `params_uri` = a group id) — group codes as the value set;
-//! * a **FHIR R4** terminology server faked by `wiremock`
+//! * a **FHIR R4B** terminology server faked by `wiremock`
 //!   (`service_api = "hl7.org/fhir/4.0"`, `ValueSet/$expand`).
 //!
 //! Spec: master03 §TERMINOLOGY (lines 748–767) + the matches-merge note (lines

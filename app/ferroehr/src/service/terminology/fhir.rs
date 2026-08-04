@@ -1,4 +1,4 @@
-//! [`FhirTerminologyProvider`] — a FHIR R4 terminology-server client
+//! [`FhirTerminologyProvider`] — a FHIR R4B terminology-server client
 //! realizing the SM `I_TERMINOLOGY_SERVICE` calls against a remote server,
 //! over `reqwest` (rustls).
 //!
@@ -14,7 +14,7 @@
 //!
 //! # SM call → FHIR operation mapping
 //!
-//! | SM call | FHIR R4 operation |
+//! | SM call | FHIR R4B operation |
 //! |---|---|
 //! | `value_set_validate` | `ValueSet/$validate-code` (or `$expand` + membership) |
 //! | `get_value_set` | `ValueSet/$expand` → [`TerminologyExtract`] |
@@ -78,12 +78,12 @@ use super::oauth2::TokenSource;
 /// The `Term_relationship.relation_name` under which a FHIR `$expand`
 /// parent→child `contains` nesting is preserved (`terminology_extract.adoc`).
 const CHILD_RELATION: &str = "child";
-/// The FHIR R4 concept-property URI that defines the parent→child relation,
+/// The FHIR R4B concept-property URI that defines the parent→child relation,
 /// carried as the `Terminology_relation.external_code`
 /// (`terminology_relation.adoc`).
 const FHIR_CHILD_PROPERTY: &str = "http://hl7.org/fhir/concept-properties#child";
 
-/// A FHIR R4 terminology-server client realizing the SM
+/// A FHIR R4B terminology-server client realizing the SM
 /// `I_TERMINOLOGY_SERVICE` lookup/validation calls against a remote server.
 #[derive(Debug, Clone)]
 pub struct FhirTerminologyProvider {
@@ -526,7 +526,7 @@ impl FhirTerminologyProvider {
     }
 }
 
-// ─── the FHIR R4 wire subset (only what these operations read) ───────────────
+// ─── the FHIR R4B wire subset (only what these operations read) ───────────────
 
 /// A FHIR `Parameters` resource (the `$validate-code`/`$subsumes`/`$lookup`
 /// response envelope) — only the fields these operations read.

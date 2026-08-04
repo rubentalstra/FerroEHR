@@ -174,7 +174,7 @@ else.
 
 An **external terminology server is part of the standard posture** too. An
 archetype can constrain a coded element to a value set that only an external
-terminology query server can resolve, so the pipeline composes a real FHIR R4
+terminology query server can resolve, so the pipeline composes a real FHIR R4B
 server beside the CDR (`--profile terminology` plus
 `docker/sut-terminology.yml`), seeded with synthetic test code systems and
 value sets, and the one committed record covers the terminology-routed

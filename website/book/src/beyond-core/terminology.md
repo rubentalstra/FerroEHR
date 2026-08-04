@@ -4,7 +4,7 @@ openEHR records carry coded values — a diagnosis, a route of administration, a
 laboratory unit. Some codes come from openEHR's own terminology; others must be
 validated against an external code system such as SNOMED CT or LOINC.
 FerroEHR serves the bundled openEHR terminology in-process and can
-additionally validate and expand coded values against any external FHIR R4
+additionally validate and expand coded values against any external FHIR R4B
 terminology server.
 
 ## The bundled openEHR terminology
@@ -37,7 +37,7 @@ A template can bind a coded element to an **external** value set via a
 `terminology://…` reference — for example a FHIR value-set expand or
 validate-code operation against a named value set. When external terminology is
 enabled, the composition validator routes each such coded element to the
-configured FHIR R4 terminology server: it resolves the coded value's system and
+configured FHIR R4B terminology server: it resolves the coded value's system and
 code and asks the server whether the code is a member of the value set. If it is
 not, the composition is rejected along with any other validation errors.
 
@@ -48,7 +48,7 @@ terminologies are still served by the in-process bundle.
 
 > [!NOTE]
 > **The CDR is only ever a client of the terminology server.** FerroEHR does
-> not implement a terminology server; you run an off-the-shelf FHIR R4 server
+> not implement a terminology server; you run an off-the-shelf FHIR R4B server
 > and point the CDR at it by URL. HAPI FHIR is a good open, single-container
 > default for development and CI; Snowstorm is the opt-in choice for genuine
 > SNOMED CT subsumption (heavier — it needs Elasticsearch and a SNOMED CT
@@ -67,7 +67,7 @@ nested keys:
 |---|---|
 | `FERROEHR__TERMINOLOGY__EXTERNAL__ENABLED` | master switch (default `false`) |
 | `FERROEHR__TERMINOLOGY__EXTERNAL__FAIL_ON_ERROR` | on a server error: `true` rejects (fail-closed), `false` accepts (fail-open) |
-| `FERROEHR__TERMINOLOGY__EXTERNAL__PROVIDERS__<NAME>__TYPE` | provider type — `fhir` (R4) |
+| `FERROEHR__TERMINOLOGY__EXTERNAL__PROVIDERS__<NAME>__TYPE` | provider type — `fhir` (R4B) |
 | `FERROEHR__TERMINOLOGY__EXTERNAL__PROVIDERS__<NAME>__URL` | the FHIR base URL, e.g. `http://terminology:8090/fhir` |
 
 A provider can carry per-provider OAuth2 client-credentials and mutual-TLS
@@ -129,7 +129,7 @@ that does not exist fails at startup, never at request time.
 
 ### The `terminology` compose profile (development and CI)
 
-The repository's `docker-compose.yml` can start a real FHIR R4 terminology
+The repository's `docker-compose.yml` can start a real FHIR R4B terminology
 server (HAPI FHIR JPA) beside the CDR, seeded with a small set of synthetic
 test code systems and value sets:
 

@@ -106,7 +106,7 @@ until you enable it:
   point the auth OIDC settings at `http://localhost:8081/auth/realms/ferroehr`.
   Its healthcheck probes the realm's OIDC discovery document, so services can
   gate their startup on it being fully ready.
-- **`terminology`** (`--profile terminology`) — a real FHIR R4 terminology
+- **`terminology`** (`--profile terminology`) — a real FHIR R4B terminology
   server (HAPI FHIR JPA) on port 8090, plus a one-shot container that seeds it
   with synthetic test code systems and value sets over the server's own FHIR
   API. The profile only starts the server; pointing the CDR at it is a small

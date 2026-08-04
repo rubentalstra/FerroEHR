@@ -20,7 +20,7 @@
 //! - `bundle` — the in-process `openehr-term` bundle provider (TERM 3.1.0):
 //!   the enumerable local default.
 //! - [`fhir`] — [`FhirTerminologyProvider`](fhir::FhirTerminologyProvider), a
-//!   remote FHIR R4 TS client (opt-in via
+//!   remote FHIR R4B TS client (opt-in via
 //!   [`ExternalTerminologyConfig`](config::ExternalTerminologyConfig)).
 //! - [`oauth2`] — [`TokenSource`](oauth2::TokenSource), the `OAuth2`
 //!   client-credentials authentication a provider may carry.
