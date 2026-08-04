@@ -114,6 +114,10 @@ pub(crate) struct CrateComposition {
     pub key: &'static str,
     /// Emitted crate directory (`am14` and `am24` share `openehr-am`).
     pub crate_name: &'static str,
+    /// The implemented openEHR specification version (the vendored-input pin),
+    /// emitted as the crate-level `SPEC_VERSION` constant — deliberately
+    /// independent of the crates.io package version.
+    pub spec_version: &'static str,
     /// Version-module prefix for a multi-version crate (`am14`/`am24`), else
     /// `None` (single-version crate).
     pub variant: Option<&'static str>,
@@ -139,6 +143,7 @@ pub(crate) struct CrateComposition {
 pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
     CrateComposition {
         key: "base",
+        spec_version: "1.3.0",
         crate_name: "openehr-base",
         variant: None,
         own: &[BASE_BMM],
@@ -150,6 +155,7 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
     },
     CrateComposition {
         key: "rm",
+        spec_version: "1.2.0",
         crate_name: "openehr-rm",
         variant: None,
         own: &[RM_BMM],
@@ -164,6 +170,7 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
     },
     CrateComposition {
         key: "lang",
+        spec_version: "1.0.0",
         crate_name: "openehr-lang",
         variant: None,
         own: &[LANG_BMM, LANG_BMM3],
@@ -186,6 +193,7 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
     },
     CrateComposition {
         key: "am14",
+        spec_version: "1.4.0",
         crate_name: "openehr-am",
         variant: Some("am14"),
         own: &[AM14_BMM],
@@ -200,6 +208,7 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
     },
     CrateComposition {
         key: "am24",
+        spec_version: "2.4.0",
         crate_name: "openehr-am",
         variant: Some("am24"),
         own: &[AM24_BMM],
@@ -216,6 +225,7 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
     },
     CrateComposition {
         key: "term",
+        spec_version: "3.1.0",
         crate_name: "openehr-term",
         variant: None,
         own: &[TERM_BMM],
@@ -294,6 +304,8 @@ pub(crate) struct Composed {
     pub external: External,
     /// The crate doc comment.
     pub doc: &'static str,
+    /// The implemented openEHR specification version (the entry's pin).
+    pub spec_version: &'static str,
 }
 
 /// Load a composition's own BMM files, one loaded schema per generation, in
@@ -417,5 +429,6 @@ pub(crate) fn compose(key: &str) -> Result<Composed, Box<dyn std::error::Error>>
         model,
         external,
         doc: comp.doc,
+        spec_version: comp.spec_version,
     })
 }

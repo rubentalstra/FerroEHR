@@ -33,10 +33,10 @@ pub mod support;
 
 /// The openEHR specification version this crate implements.
 ///
-/// It equals the crate version: the spec crates are versioned by the
-/// specification they implement, so consumers read the pin from the
-/// package, never from a hand-typed literal.
-pub const SPEC_VERSION: &str = env!("CARGO_PKG_VERSION");
+/// The pin is emitted by `openehr-codegen` from the vendored inputs and is
+/// deliberately independent of the crates.io package version, which follows
+/// its own pre-stabilisation line.
+pub const SPEC_VERSION: &str = "1.2.0";
 pub mod model;
 
 // hand-written modules (spec behaviour), auto-declared:

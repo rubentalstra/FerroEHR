@@ -264,7 +264,13 @@ pub fn generation_conflicts() -> Result<Vec<GenerationConflict>, Error> {
             }];
             // Path/ident conflicts are independent of the banner input, so an
             // empty sibling set is the right (and cheapest) view here.
-            for f in emit_generations(&gen_view, &c.external, c.doc, &SiblingImpls::default()) {
+            for f in emit_generations(
+                &gen_view,
+                &c.external,
+                c.doc,
+                c.spec_version,
+                &SiblingImpls::default(),
+            ) {
                 paths.entry(f.path).or_default().push(g.file.to_string());
             }
             for spec in &g.owned {
@@ -431,6 +437,7 @@ pub fn render_all_to_memory() -> Result<BTreeMap<String, String>, Error> {
             &base.own_schema,
             &base.external,
             base.doc,
+            base.spec_version,
             &sibling_impls("openehr-base"),
         ),
     );
@@ -441,6 +448,7 @@ pub fn render_all_to_memory() -> Result<BTreeMap<String, String>, Error> {
         &rm.own_schema,
         &rm.external,
         rm.doc,
+        rm.spec_version,
         &sibling_impls("openehr-rm"),
     );
     inject_rm_model(&mut rm_files, emit_rm_model::emit_files(&rm.model));
@@ -457,6 +465,7 @@ pub fn render_all_to_memory() -> Result<BTreeMap<String, String>, Error> {
             &crate_generations(&lang),
             &lang.external,
             lang.doc,
+            lang.spec_version,
             &sibling_impls("openehr-lang"),
         ),
     );
@@ -475,6 +484,7 @@ pub fn render_all_to_memory() -> Result<BTreeMap<String, String>, Error> {
             ],
             &am24.external,
             am24.doc,
+            am24.spec_version,
             &sibling_impls("openehr-am"),
         ),
     );
@@ -487,6 +497,7 @@ pub fn render_all_to_memory() -> Result<BTreeMap<String, String>, Error> {
             &term.own_schema,
             &term.external,
             term.doc,
+            term.spec_version,
             &sibling_impls("openehr-term"),
         ),
     );
@@ -604,6 +615,7 @@ pub fn rendered_files(key: &str) -> Result<Vec<String>, Error> {
         &crate_generations(&c),
         &c.external,
         c.doc,
+        c.spec_version,
         &SiblingImpls::default(),
     );
     Ok(files.into_iter().map(|f| f.path).collect())
