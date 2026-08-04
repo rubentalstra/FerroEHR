@@ -84,6 +84,12 @@ use ObjectClass::{Composition, Contribution, Demographic, Directory, Ehr, Query,
 )]
 pub fn lookup(op: &str) -> Option<Classification> {
     let c = match op {
+        // ── SYSTEM (the OPTIONS-and-Conformance manifest) ────────────────────
+        // A conformance probe touches no clinical resource: audited as an
+        // application-activity Execute (the same class the fail-closed
+        // default uses, made EXPLICIT so the completeness gate covers it).
+        "options" => Classification::audited(Execute, ObjectClass::ApplicationActivity),
+
         // ── EHR / Patient Record (DICOM EventID 110110) ──────────────────────
         "ehr_create" | "ehr_create_with_id" => Classification::audited(Create, Ehr),
         "ehr_get_by_subject" | "ehr_get_by_id" => Classification::audited(Read, Ehr),
@@ -265,6 +271,7 @@ mod tests {
             openehr_its::rest::generated::demographic::ROUTES,
             openehr_its::rest::generated::query::ROUTES,
             openehr_its::rest::generated::admin::ROUTES,
+            openehr_its::rest::generated::system::ROUTES,
         ] {
             for (_method, _path, op) in table {
                 ops.push(*op);
