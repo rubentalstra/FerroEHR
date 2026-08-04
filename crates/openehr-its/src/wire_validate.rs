@@ -20,11 +20,12 @@
 //!   [`validate_rm_invariants_relaxed_as`], [`validate_rm_value_typed`]), which
 //!   fix the ORDER the tiers and orthogonal layers run in.
 //!
-//! # Fidelity to the reference implementation (archie)
+//! # The invariant source
 //!
-//! The RM class invariants (in `openehr-rm`'s `*_impl.rs`) mirror openEHR's
-//! reference implementation archie; this module only routes a node to the right
-//! tier. A node that does not deserialize into its declared concrete RM type
+//! The RM class invariants live upstream (`openehr-rm`'s generated cores +
+//! `*_impl.rs`, per the released class tables' §Invariants — the generated
+//! register is the per-invariant authority); this module only routes a node
+//! to the right tier. A node that does not deserialize into its declared concrete RM type
 //! surfaces `does not conform to RM type …` (see
 //! [`openehr_rm::validate::typed_dispatch::record_type_mismatch`]).
 

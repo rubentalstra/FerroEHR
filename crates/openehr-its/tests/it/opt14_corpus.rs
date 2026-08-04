@@ -332,3 +332,47 @@ fn key_fields_populated() {
         );
     }
 }
+
+/// #1648 — the OPT 1.4 template upload is a real ingestion path for a
+/// client-supplied `REVISION_HISTORY` (Template.xsd's optional
+/// `revision_history` on `OPERATIONAL_TEMPLATE`), and
+/// `REVISION_HISTORY_ITEM.Audit_valid` (`not audits.is_empty` — RM
+/// `org.openehr.rm.common.revision_history_item.adoc` §Invariants) is
+/// enforced there BY CONSTRUCTION: the generated XML reader builds `audits`
+/// through `NonEmptyVec::new`, so an item with no audit refuses at parse.
+/// Both twins pinned.
+#[test]
+fn opt_revision_history_item_without_audits_is_refused_at_parse() {
+    let base = std::fs::read_to_string(corpus_dir().join("knowledge/opt/minimal_observation.opt"))
+        .expect("read the minimal corpus OPT");
+    let audit = r#"<audits><system_id>test.system</system_id><committer xsi:type="PARTY_IDENTIFIED"><name>author</name></committer><time_committed><value>2026-01-01T00:00:00Z</value></time_committed><change_type><value>creation</value><defining_code><terminology_id><value>openehr</value></terminology_id><code_string>249</code_string></defining_code></change_type></audits>"#;
+    let item = |audits: &str| {
+        format!(
+            "<revision_history><items><version_id><value>test::sys::1</value></version_id>{audits}</items></revision_history>"
+        )
+    };
+    // The optional element slots in after <uid> per the XSD sequence; the
+    // corpus minimal OPT starts `<template xmlns…><language>`, so insert the
+    // element right after the opening tag's first child boundary — the reader
+    // is order-tolerant on member elements.
+    let inject = |fragment: &str| {
+        let (head, tail) = base
+            .split_once("<language>")
+            .expect("minimal OPT carries <language>");
+        format!("{head}{fragment}<language>{tail}")
+    };
+
+    let valid = inject(&item(audit));
+    assert!(
+        openehr_its::opt14::from_xml(&valid).is_ok(),
+        "the audited revision_history twin parses"
+    );
+
+    let invalid = inject(&item(""));
+    let err = openehr_its::opt14::from_xml(&invalid)
+        .expect_err("an item with no audits must refuse at parse (NonEmptyVec)");
+    assert!(
+        err.to_string().contains("audits"),
+        "the refusal names the empty container: {err}"
+    );
+}

@@ -97,3 +97,40 @@ fn v2_document_round_trips() {
         "a v2-parsed value can be emitted as v1"
     );
 }
+
+/// #1775 — the published-roots table (the ONE statement of the
+/// published-document-element fact) agrees with the vendored schemas: each
+/// entry's element + declared type + abstractness is re-derived from the XSD
+/// text on every run.
+#[test]
+fn published_roots_table_matches_the_vendored_schemas() {
+    let dir =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("schemas/xml/its-xml-1.0.2-nsv1/ALL");
+    let read = |f: &str| std::fs::read_to_string(dir.join(f)).expect("vendored schema");
+    let composition = read("Composition.xsd");
+    let version = read("Version.xsd");
+    let structure = read("Structure.xsd");
+    for root in openehr_its::xml::PUBLISHED_ROOTS {
+        let decl = format!(
+            r#"<xs:element name="{}" type="{}"/>"#,
+            root.element, root.declared_type
+        );
+        let (schema, name) = match root.element {
+            "composition" => (&composition, "Composition.xsd"),
+            "version" => (&version, "Version.xsd"),
+            "items" => (&structure, "Structure.xsd"),
+            other => panic!("no vendored schema mapped for published root {other:?}"),
+        };
+        assert!(schema.contains(&decl), "{name} must declare {decl}");
+        let abstract_decl = format!(
+            r#"<xs:complexType name="{}" abstract="true">"#,
+            root.declared_type
+        );
+        assert_eq!(
+            schema.contains(&abstract_decl),
+            root.type_is_abstract,
+            "abstractness of {} in {name} must match the table",
+            root.declared_type
+        );
+    }
+}

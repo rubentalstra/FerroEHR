@@ -125,9 +125,9 @@ fn commit_instant(body: &Value) -> Option<jiff::Timestamp> {
 /// payloads and responses MUST conform to the [published XSDs]", and the
 /// schemas publish exactly one document element for a VERSION —
 /// `<xs:element name="version" type="VERSION"/>`
-/// (`crates/openehr-its/schemas/xml/its-xml-1.0.2-nsv1/ALL/Version.xsd`; the
-/// 2.0.0 lineage repeats the declaration in
-/// `RM/latest/documents/Version.xsd`). `VERSION` is abstract there, so the
+/// (the published-element fact is stated once in
+/// `openehr_its::xml::PUBLISHED_ROOTS`, the crate owning the schemas; both
+/// lineages spell it identically). `VERSION` is abstract there, so the
 /// concrete subtype is named by `xsi:type` on that same root rather than by a
 /// root element of its own — the serializer emits it from the declared type
 /// (`crate::overview::negotiate` §`ABSTRACT_ROOT_TYPES`), which is how an

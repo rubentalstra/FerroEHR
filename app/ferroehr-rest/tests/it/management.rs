@@ -449,7 +449,9 @@ async fn flamegraph_samples_and_renders_svg() {
     let text = String::from_utf8(body.to_vec()).expect("svg is utf-8");
     assert!(
         text.contains("<svg"),
-        "the body must be a rendered flamegraph SVG"
+        "the body must be a rendered flamegraph SVG, got ({} bytes): {}",
+        text.len(),
+        text.get(..400).unwrap_or(&text)
     );
 }
 

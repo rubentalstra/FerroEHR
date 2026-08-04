@@ -714,39 +714,12 @@ pub(crate) fn respond<T: Serialize>(
     }
 }
 
-/// The XSD-declared type of a published ITS-XML document element whose
-/// declared type is **abstract** — the roots where a conforming instance MUST
-/// name its concrete class with `xsi:type`.
-///
-/// XML Schema Part 1 forbids an element instance from using an abstract type
-/// directly: the instance must select a non-abstract derived type with
-/// `xsi:type` (<https://www.w3.org/TR/xmlschema-1/#xsi_type>, §2.6.1 +
-/// §3.4.6). Both published ITS-XML lineages declare exactly two such document
-/// elements, spelled identically:
-/// `<xs:element name="version" type="VERSION"/>` over
-/// `<xs:complexType name="VERSION" abstract="true">`
-/// (`schemas/xml/its-xml-1.0.2-nsv1/ALL/Version.xsd`,
-/// `its-xml-2.0.0-nsv2/RM/latest/documents/Version.xsd` +
-/// `RM/latest/Common.xsd`), and
-/// `<xs:element name="items" type="LOCATABLE"/>` over
-/// `<xs:complexType name="LOCATABLE" abstract="true">`
-/// (`.../ALL/Structure.xsd`, `.../RM/latest/documents/Structure.xsd` +
-/// `RM/latest/Common.xsd`). Every other published document element is
-/// concretely typed and needs no attribute; a root name the schemas publish no
-/// element for is absent here by construction (the ITS-REST §XML Format MUST
-/// — "responses MUST conform to the [published XSDs]" — has nothing to bind
-/// to for those resources, per the AMB-167 adjudication in
-/// `tools/cnf-runner/artifacts/registers/ambiguities.yaml`).
-const ABSTRACT_ROOT_TYPES: &[(&str, &str)] = &[("items", "LOCATABLE"), ("version", "VERSION")];
-
 /// The abstract XSD type declared for a published document element, when the
 /// element's declared type is abstract and the instance must therefore carry
-/// `xsi:type` ([`ABSTRACT_ROOT_TYPES`]).
+/// `xsi:type` — the published-element fact is stated ONCE, in the crate that
+/// owns the schemas ([`openehr_its::xml::PUBLISHED_ROOTS`]).
 fn declared_root_type(root_tag: &str) -> Option<&'static str> {
-    ABSTRACT_ROOT_TYPES
-        .iter()
-        .find(|(element, _)| *element == root_tag)
-        .map(|(_, declared)| *declared)
+    openehr_its::xml::declared_abstract_root_type(root_tag)
 }
 
 /// Render a canonical-JSON `Value` that IS a single spec-typed RM object,

@@ -1374,7 +1374,8 @@ const NON_SPEC_FAMILIES: &[NonSpecFamily] = &[
         label: "the ops-introspection management surface",
         prefixes: &["/management"],
         flag: "no openehr spec governs this",
-        operations: 8,
+        // 8 + /management/flamegraph (PR #1864, the on-demand CPU profiler).
+        operations: 9,
     },
     NonSpecFamily {
         label: "the terminology extension wire",
