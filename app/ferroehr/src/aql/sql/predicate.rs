@@ -10,8 +10,8 @@ use sea_query::{Expr, ExprTrait as _};
 
 use crate::aql::error::{AqlError, SqlError};
 use crate::aql::ir::{
-    ArchetypeConstraint, Bind, Coercion, EhrField, Expr as IrExpr, LikePattern, NameConstraint,
-    NodeConstraint, Operand, PathTarget, ScalarFn, StdPredicate, TypedLit,
+    ArchetypeConstraint, Bind, Coercion, EhrField, Expr as IrExpr, LeafPath, LikePattern,
+    NameConstraint, NodeConstraint, Operand, PathTarget, ScalarFn, StdPredicate, TypedLit,
 };
 use openehr_query::lexer::CompOp;
 
@@ -87,16 +87,29 @@ impl Builder<'_> {
             IrExpr::Exists(target) => Ok(self
                 .value_expr(target, ValueMode::Projection)?
                 .is_not_null()),
-            // TODO(#1448): unify `LIKE`/`matches` on anchored multi-valued paths
-            // with the existential lowering above (`exists_compare`) — they
-            // still take the scalar LIMIT-1 extraction, whose matched-node
-            // choice is order-undefined when a path matches several nodes.
             IrExpr::Like { path, pattern } => {
-                let lhs = self.value_expr(path, ValueMode::Value(Coercion::Text))?;
                 let pat = match pattern {
                     LikePattern::Literal(s) => aql_like_to_sql(s),
                     LikePattern::Param(p) => aql_like_to_sql(&self.param_str(p)?),
                 };
+                // Existential lowering on an anchored multi-valued path
+                // (any-match, the same #1448 unification as `exists_compare`
+                // above): the scalar LIMIT-1 extraction's matched-node choice
+                // is order-undefined when the path matches several nodes —
+                // positive polarity only, like every existential arm.
+                if positive && let Some(leaf) = Self::existential_leaf(path) {
+                    let leaf = leaf.clone();
+                    self.ensure_leaf_root(path)?;
+                    let pat = pat.clone();
+                    if let Some(expr) =
+                        self.data_leaf_exists(&leaf, ValueMode::Value(Coercion::Text), |extract| {
+                            extract.like(pat)
+                        })?
+                    {
+                        return Ok(expr);
+                    }
+                }
+                let lhs = self.value_expr(path, ValueMode::Value(Coercion::Text))?;
                 Ok(lhs.like(pat))
             }
             IrExpr::Const(b) => Ok(Expr::val(*b)),
@@ -111,10 +124,10 @@ impl Builder<'_> {
                     && values.iter().any(|b| {
                         matches!(b, Bind::Literal(TypedLit::Integer(_) | TypedLit::Real(_)))
                     });
-                let lhs = if numeric {
-                    self.value_expr(path, ValueMode::RawNumeric)?
+                let mode = if numeric {
+                    ValueMode::RawNumeric
                 } else {
-                    self.value_expr(path, ValueMode::Value(*coercion))?
+                    ValueMode::Value(*coercion)
                 };
                 let mut members = Vec::with_capacity(values.len());
                 for b in values {
@@ -125,6 +138,18 @@ impl Builder<'_> {
                         coerce_rhs(v, *coercion)
                     });
                 }
+                // The same #1448 existential unification as LIKE above.
+                if positive && let Some(leaf) = Self::existential_leaf(path) {
+                    let leaf = leaf.clone();
+                    self.ensure_leaf_root(path)?;
+                    let members = members.clone();
+                    if let Some(expr) =
+                        self.data_leaf_exists(&leaf, mode, |extract| extract.is_in(members))?
+                    {
+                        return Ok(expr);
+                    }
+                }
+                let lhs = self.value_expr(path, mode)?;
                 Ok(lhs.is_in(members))
             }
         }
@@ -277,6 +302,25 @@ impl Builder<'_> {
     /// literal/param/scalar-function (never a second path — correlating two
     /// walks stays scalar). Returns `Ok(None)` where the lowering does not
     /// apply; the caller falls back to the scalar comparison.
+    /// The anchored data leaf of an existential-lowering candidate path —
+    /// the same `PathTarget` arms [`exists_compare`](Self::exists_compare)
+    /// admits (#1448). `None` falls back to the scalar lowering.
+    fn existential_leaf(target: &PathTarget) -> Option<&LeafPath> {
+        match target {
+            PathTarget::Data(leaf) | PathTarget::EhrStatus(leaf) => Some(leaf),
+            _ => None,
+        }
+    }
+
+    /// The `EHR_STATUS` root join an existential `EhrStatus` leaf needs before
+    /// its walk (the `exists_compare` preamble, shared by LIKE/matches).
+    fn ensure_leaf_root(&mut self, target: &PathTarget) -> Result<(), AqlError> {
+        if let PathTarget::EhrStatus(leaf) = target {
+            self.ensure_ehr_status_root(leaf.source.0)?;
+        }
+        Ok(())
+    }
+
     fn exists_compare(
         &mut self,
         lhs: &Operand,

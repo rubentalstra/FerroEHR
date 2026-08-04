@@ -76,6 +76,7 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- AQL `LIKE` and `matches` predicates on multi-valued paths now use the existential (any-match) lowering the comparison operators already use — a row is matched when ANY node on the path satisfies the predicate, instead of an order-undefined single-node pick (#1448).
 - The admin EHR dump/load archive now carries every `vo_attestation` row (with its `at_committal` flag), and load re-persists them verbatim — a restored version keeps its attestations and its stored signature verifies under `verify_on_read = strict` (#1685).
 - **A node id carrying the at/id code leader but failing the code grammar is
   refused (`at0abc`).** AOM2's own code predicate is leader-based, so such a
