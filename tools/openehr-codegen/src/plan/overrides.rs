@@ -1937,7 +1937,7 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
         venue: InvariantVenue::Excluded,
         site: "",
         spec_file: "org.openehr.rm.common.revision_history_item.adoc",
-        reason: "`not audits.is_empty`: satisfied by construction. A REVISION_HISTORY is a read-only derived resource — no operation accepts one as a request body — and every builder of an item pushes that version's commit audit as the first audit before any attestation, which is what §Attributes means by \"there will always be at least one commit audit\".",
+        reason: "`not audits.is_empty`: satisfied by construction — `audits` emits as `NonEmptyVec<AuditDetails>`, so BOTH ingestion paths refuse an empty list at parse: the REST read side never accepts one as a request body (every builder pushes the commit audit first), and the OPT 1.4 template upload — the one real client-supplied REVISION_HISTORY carrier (Template.xsd) — constructs items through `NonEmptyVec::new` in the generated XML reader, pinned by the opt14 refusal twin (#1648).",
     },
     InvariantRealization {
         class: "DV_ORDERED",
