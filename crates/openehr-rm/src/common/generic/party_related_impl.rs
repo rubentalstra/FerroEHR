@@ -41,7 +41,7 @@ mod tests {
             value: "mother".to_owned(),
             hyperlink: None,
             formatting: None,
-            mappings: openehr_base::containers::present(Vec::new()),
+            mappings: openehr_base::containers::present_nonempty(Vec::new()),
             language: None,
             encoding: None,
             defining_code: CodePhrase {
@@ -58,7 +58,7 @@ mod tests {
         PartyRelated {
             external_ref: None,
             name: name.map(str::to_owned),
-            identifiers: openehr_base::containers::present(Vec::new()),
+            identifiers: openehr_base::containers::present_nonempty(Vec::new()),
             relationship: relationship(),
         }
     }

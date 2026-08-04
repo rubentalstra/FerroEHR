@@ -984,20 +984,26 @@ pub(crate) fn field_type(
             // here.
             //
             // The RM DOES distinguish Void from empty on a `0..1 List<T>`
-            // attribute, and states rules that are only expressible when the
-            // two states are distinct: `LOCATABLE.Links_valid: links /= Void
-            // implies not links.is_empty`
-            // (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
-            // §Invariants) is contentless unless a present-but-empty list is
-            // representable. FOLDER is the structural exemplar: RM common
+            // attribute — and where a class invariant of the
+            // `x /= Void implies not x.is_empty` family FORBIDS the
+            // present-but-empty state (`LOCATABLE.Links_valid`,
+            // `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
+            // §Invariants), no valid instance can carry it, so the attribute
+            // emits `Option<NonEmptyVec<T>>` and the state stops being
+            // representable at all (#1730 — parse-don't-validate, the same
+            // door the `1..*` mandatory containers took at leg 6b-i; the
+            // invariant then holds by construction and the strict readers
+            // refuse `[]` at parse). An optional container WITHOUT such an
+            // invariant (FOLDER.items/folders — RM common
             // `UML/classes/org.openehr.rm.common.folder.adoc` §Attributes
-            // types BOTH `items` ("The list of references to other (usually)
-            // versioned objects logically in this folder") and `folders`
-            // ("Sub-folders of this Folder") at 0..1, so "no items attribute"
-            // and "an empty items list" are two distinct model states.
-            // `Option<Vec<T>>` is the shape that carries them, so the
-            // present-implies-non-empty invariant family becomes a typed check
-            // over the model rather than a JSON-value-only side check.
+            // types both 0..1 with no non-empty rule) keeps `Option<Vec<T>>`:
+            // there, "absent" and "present-but-empty" are two legitimate
+            // model states and the type must carry both.
+            //
+            // The WIRE is unaffected in the write direction — the canonical
+            // JSON writer omits an empty list either way (Resources.md §JSON
+            // Format: attributes that are Null or an empty list SHOULD be
+            // absent).
             //
             // The WIRE is unaffected: the canonical-JSON writer omits an empty
             // list whether it is `None` or `Some(vec![])`, per the released
@@ -1018,10 +1024,23 @@ pub(crate) fn field_type(
             let item_ty = model.render_type(item, generics, subst, local, external);
             let lower_bound_one = cardinality.as_ref().is_some_and(|c| c.lower >= 1)
                 && !crate::plan::overrides::cardinality_contradicted(&class.name, &p.name);
-            match (p.is_mandatory, lower_bound_one) {
-                (true, true) => format!("{}::NonEmptyVec<{item_ty}>", external.containers_path()),
-                (true, false) => format!("Vec<{item_ty}>"),
-                (false, _) => format!("Option<Vec<{item_ty}>>"),
+            let nonempty_when_present = crate::analyze::nonempty_optional_lists_cached(model)
+                .iter()
+                .any(|(decl, attr)| {
+                    attr == &p.name && (decl == &class.name || model.inherits(&class.name, decl))
+                });
+            match (p.is_mandatory, lower_bound_one, nonempty_when_present) {
+                (true, true, _) => {
+                    format!("{}::NonEmptyVec<{item_ty}>", external.containers_path())
+                }
+                (true, false, _) => format!("Vec<{item_ty}>"),
+                (false, _, true) => {
+                    format!(
+                        "Option<{}::NonEmptyVec<{item_ty}>>",
+                        external.containers_path()
+                    )
+                }
+                (false, _, false) => format!("Option<Vec<{item_ty}>>"),
             }
         }
     }

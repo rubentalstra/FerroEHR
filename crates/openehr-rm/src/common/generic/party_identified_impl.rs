@@ -35,7 +35,7 @@ mod tests {
         PartyIdentifiedData {
             external_ref: None,
             name: name.map(str::to_owned),
-            identifiers: openehr_base::containers::present(Vec::new()),
+            identifiers: openehr_base::containers::present_nonempty(Vec::new()),
         }
     }
 

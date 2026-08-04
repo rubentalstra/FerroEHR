@@ -534,9 +534,19 @@ pub(crate) fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &X
                 } else if f.multiple && f.optional {
                     // Zero occurrences of a repeated element is indistinguishable
                     // from the attribute's absence in XML, so it reads back as
-                    // `None` (see `emit_write_field`).
+                    // `None` (see `emit_write_field`). A present-implies-non-empty
+                    // field (`Option<NonEmptyVec<T>>`, #1730) builds through the
+                    // fallible constructor — the branch guarantees non-emptiness,
+                    // so the error arm is unreachable but honest.
                     let var = acc_var(fname);
-                    format!("if {var}.is_empty() {{ None }} else {{ Some({var}) }}")
+                    if f.nonempty {
+                        format!(
+                            "if {var}.is_empty() {{ None }} else {{ Some(openehr_base::containers::NonEmptyVec::new({var}).map_err(|__e| crate::xml::runtime::XmlError::Parse(::std::format!(\"element {}: {{__e}}\", ).into()))?) }}",
+                            f.wire_name
+                        )
+                    } else {
+                        format!("if {var}.is_empty() {{ None }} else {{ Some({var}) }}")
+                    }
                 } else if f.nonempty {
                     // A `1..*` container goes through its own constructor, so a
                     // document with zero occurrences is refused at parse.

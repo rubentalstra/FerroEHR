@@ -35,7 +35,7 @@ pub struct Attestation {
     /// Proof of attestation.
     pub proof: Option<String>,
     /// Items attested, expressed as fully qualified runtime paths to the items in question. Although not recommended, these may include fine-grained items which have been attested in some other system. Otherwise it is assumed to be for the entire VERSION with which it is associated.
-    pub items: Option<Vec<DvEhrUri>>,
+    pub items: Option<openehr_base::containers::NonEmptyVec<DvEhrUri>>,
     /// Reason of this attestation. Optionally coded by the openEHR Terminology group  attestation reason ; includes values like  authorisation ,  witness  etc.
     pub reason: DvText,
     /// True if this attestation is outstanding; False means it has been completed.

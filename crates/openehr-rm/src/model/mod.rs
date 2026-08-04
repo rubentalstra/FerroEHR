@@ -85,6 +85,9 @@ pub struct RmAttribute {
     /// The BMM-declared container cardinality (`None` for a single-valued
     /// attribute, or a container attribute the BMM leaves unconstrained).
     pub cardinality: Option<Cardinality>,
+    /// An optional container carrying a present-implies-non-empty invariant:
+    /// emitted `Option<NonEmptyVec<T>>` (#1730), so `[]` refuses at parse.
+    pub nonempty: bool,
 }
 
 /// A resolved type reference: a root spec name plus its own generic arguments.

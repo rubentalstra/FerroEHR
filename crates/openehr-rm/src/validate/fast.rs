@@ -244,7 +244,8 @@ fn node_conforms(obj: &Map<String, Value>, class: &'static RmClass, shallow: boo
             }
             Container::List | Container::Set => match v {
                 Value::Array(items) => {
-                    let lower_bound_one = attr.cardinality.is_some_and(|c| c.lower >= 1);
+                    let lower_bound_one =
+                        attr.cardinality.is_some_and(|c| c.lower >= 1) || attr.nonempty;
                     if attr.is_mandatory {
                         mandatory_seen += 1;
                     }
@@ -255,23 +256,20 @@ fn node_conforms(obj: &Map<String, Value>, class: &'static RmClass, shallow: boo
                         return false;
                     }
                     if shallow {
-                        // Mirror `prune_child_nodes`: an array containing at
-                        // least one object is emptied before the shallow typed
-                        // deserialize (so its contents never matter) UNLESS the
-                        // attribute is `1..*`, where the prune keeps the first
-                        // member — which the typed decode then inspects, so this
-                        // checker must inspect it too. An empty array trivially
-                        // deserializes. A non-empty all-scalar array is kept by
-                        // the prune and typed-checked — don't vouch for it.
-                        if lower_bound_one {
-                            if !items
-                                .first()
-                                .is_some_and(|f| value_conforms(f, attr.declared_type, true))
-                            {
+                        // Mirror `prune_child_nodes`: the prune keeps the FIRST
+                        // member of any object array as the structural witness,
+                        // which the typed decode inspects — so this checker
+                        // inspects it too. An empty array on a non-NonEmptyVec
+                        // field trivially deserializes; a non-empty all-scalar
+                        // array is kept verbatim and typed-checked — don't
+                        // vouch for it.
+                        if let Some(first) = items.first() {
+                            if !items.iter().any(Value::is_object) {
                                 return false;
                             }
-                        } else if !(items.is_empty() || items.iter().any(Value::is_object)) {
-                            return false;
+                            if !value_conforms(first, attr.declared_type, true) {
+                                return false;
+                            }
                         }
                     } else {
                         for item in items {

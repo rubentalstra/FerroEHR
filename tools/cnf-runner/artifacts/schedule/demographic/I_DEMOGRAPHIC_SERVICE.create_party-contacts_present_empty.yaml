@@ -37,4 +37,4 @@ flow:
   - step: 1
     call: create_party
     with: { party: "${ds:cnf.demographic.person.contacts_empty}" }
-    expect: validation_failed            # overview §HTTP status codes, the 422 row
+    expect: bad_request                  # parse class since #1730: Option<NonEmptyVec> — the body "could not be parsed or is invalid" (overview §HTTP status codes, the 400 row; the #1727 ruling)

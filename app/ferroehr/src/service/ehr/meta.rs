@@ -259,7 +259,7 @@ pub(in crate::service) fn committer() -> PartyProxy {
         Some(identity) => PartyIdentifiedData {
             external_ref: None,
             name: Some(identity.subject.clone()),
-            identifiers: Some(vec![DvIdentifier {
+            identifiers: Some(openehr_base::containers::NonEmptyVec::of(DvIdentifier {
                 // DV_IDENTIFIER.issuer is the "authority which issues the kind
                 // of id used in the id field of this object" (RM data_types
                 // UML/classes/org.openehr.rm.data_types.dv_identifier.adoc
@@ -277,12 +277,12 @@ pub(in crate::service) fn committer() -> PartyProxy {
                 assigner: None,
                 id: identity.subject,
                 r#type: Some(identity.id_type.to_owned()),
-            }]),
+            })),
         },
         None => PartyIdentifiedData {
             external_ref: None,
             name: Some(crate::service::SYSTEM_COMMITTER_NAME.to_owned()),
-            identifiers: openehr_base::containers::present(Vec::new()),
+            identifiers: None,
         },
     };
     PartyProxy::PartyIdentified(PartyIdentified::PartyIdentified(party))

@@ -19,7 +19,7 @@ pub struct ArchetypeSlot {
     /// For C_PRIMITIVE_OBJECTs, it will have the special value Primitive_node_id.
     pub node_id: String,
     /// List of constraints defining other archetypes that could be included at this point.
-    pub includes: Option<Vec<Assertion>>,
+    pub includes: Option<openehr_base::containers::NonEmptyVec<Assertion>>,
     /// List of constraints defining other archetypes that cannot be included at this point.
-    pub excludes: Option<Vec<Assertion>>,
+    pub excludes: Option<openehr_base::containers::NonEmptyVec<Assertion>>,
 }

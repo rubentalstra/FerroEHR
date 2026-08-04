@@ -104,13 +104,19 @@ fn nonempty_list_rules(model: &Model) -> String {
     let mut rows: Vec<(String, String, String)> = Vec::new();
     for (class_name, class) in &model.classes {
         for (invariant, expression) in &class.invariants {
-            let Some(attribute) = nonempty_list_attribute(expression) else {
+            let Some(attribute) = crate::analyze::nonempty_list_attribute(expression) else {
                 continue;
             };
             // Only a container attribute: the same assertion shape also guards
-            // optional STRINGS, which are not this rule.
+            // optional STRINGS, which are not this rule. An OPTIONAL container
+            // carrying the invariant emits `Option<NonEmptyVec<T>>` (#1730 —
+            // `analyze::nonempty_optional_lists`), so present-but-empty is
+            // unrepresentable and the row would be dead: only a MANDATORY
+            // container with the invariant (existence 1..1, cardinality lower
+            // bound 0) still needs a runnable rule.
             if !class.properties.iter().any(|p| {
                 p.name == attribute
+                    && p.is_mandatory
                     && matches!(p.kind, crate::load::bmm::BmmPropKind::Container { .. })
             }) {
                 continue;
@@ -133,29 +139,6 @@ fn nonempty_list_rules(model: &Model) -> String {
     }
     b.push_str("];\n");
     b
-}
-
-/// The attribute named by a `x /= Void implies not x.is_empty` assertion, when
-/// the expression has exactly that shape (both operands the same attribute).
-/// `Void` is matched case-insensitively — the RM BMM spells it both ways
-/// (`DV_TEXT.Mappings_valid` uses lowercase `void`).
-fn nonempty_list_attribute(expression: &str) -> Option<String> {
-    let normalized = expression.split_whitespace().collect::<Vec<_>>().join(" ");
-    let (lhs, rhs) = normalized.split_once(" implies ")?;
-    let attribute = lhs
-        .strip_suffix(" /= Void")
-        .or_else(|| lhs.strip_suffix(" /= void"))?;
-    if rhs != format!("not {attribute}.is_empty") {
-        return None;
-    }
-    if attribute.is_empty()
-        || !attribute
-            .chars()
-            .all(|c| c.is_ascii_lowercase() || c == '_')
-    {
-        return None;
-    }
-    Some(attribute.to_owned())
 }
 
 /// The **emittable-invariant realization register**: every RM class invariant

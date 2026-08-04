@@ -54,7 +54,7 @@ mod tests {
         DvQuantity {
             normal_status: None,
             normal_range: None,
-            other_reference_ranges: openehr_base::containers::present(Vec::new()),
+            other_reference_ranges: openehr_base::containers::present_nonempty(Vec::new()),
             magnitude_status: None,
             accuracy: None,
             accuracy_is_percent: None,
@@ -71,7 +71,7 @@ mod tests {
             value: "normal".to_owned(),
             hyperlink: None,
             formatting: None,
-            mappings: openehr_base::containers::present(Vec::new()),
+            mappings: openehr_base::containers::present_nonempty(Vec::new()),
             language: None,
             encoding: None,
         })

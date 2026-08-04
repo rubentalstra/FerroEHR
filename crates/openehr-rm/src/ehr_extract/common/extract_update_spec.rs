@@ -25,7 +25,7 @@ pub struct ExtractUpdateSpec {
     /// * `|update|` - match updates (i.e. new versions) of included content items.
     ///
     /// Coded by openEHR Terminology group 'extract update trigger event type'.
-    pub trigger_events: Option<Vec<DvCodedText>>,
+    pub trigger_events: Option<openehr_base::containers::NonEmptyVec<DvCodedText>>,
     /// Indicate mode of update. Can be: send only items that are changed (including logical deletions) or new since last send. For `_persist_in_server_` Requests only.
     pub update_method: CodePhrase,
 }

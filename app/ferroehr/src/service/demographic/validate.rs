@@ -142,46 +142,11 @@ pub(super) fn party_invariants(
         crate::service::ehr::validation::validate_root_locatable(obj, rm_type)?;
     }
 
-    // NOTE: `PARTY.Identities_valid` ("not identities.is_empty",
-    // `demographic.party.adoc` §Invariants) needs NO check here. The generated
-    // party types type `identities` as
-    // `openehr_base::containers::NonEmptyVec<PARTY_IDENTITY>` (the 1..* bound
-    // made structural), so whichever typed door this body came through — the
-    // route's or [`party_check`]'s — already refused an absent or empty list:
-    // the Rust Book ch9.3 custom-validation-type pattern, where a value that
-    // exists is a value that satisfied the rule.
-
-    // "Present implies non-empty" list invariants — only checkable on the raw
-    // JSON (post-deserialize an absent and a present-empty list are the same
-    // Vec): PARTY.Contacts_valid + Relationships_validity (party.adoc),
-    // ACTOR.Roles_valid (actor.adoc), ROLE.Capabilities_valid (role.adoc).
-    // The same family `openehr_rm::validate::nonempty_list_violations` covers
-    // for every other kind, so it relaxes with it on a `553|incomplete|`
-    // commit (master06 §Incomplete Content: "container attributes may be
-    // empty, even though they may have minimum … cardinality … of one").
-    for (attr, invariant) in if incomplete {
-        [].as_slice()
-    } else {
-        [
-            ("contacts", "Contacts_valid"),
-            ("relationships", "Relationships_validity"),
-            ("roles", "Roles_valid"),
-            ("capabilities", "Capabilities_valid"),
-        ]
-        .as_slice()
-    } {
-        if data
-            .get(*attr)
-            .and_then(Value::as_array)
-            .is_some_and(Vec::is_empty)
-        {
-            return Err(ServiceError::Unprocessable(
-                Violation::new("is present but empty — a present list must be non-empty")
-                    .with_path(format!("{rm_type}.{attr}"))
-                    .with_invariant(*invariant),
-            ));
-        }
-    }
+    // NOTE: Identities_valid (1..* -> NonEmptyVec) and the present-implies-
+    // non-empty family (Contacts/Relationships/Roles/Capabilities -> #1730
+    // Option<NonEmptyVec>) hold by construction at the strict typed door; the
+    // 553|incomplete| lane skips typed construction (master06 §Incomplete
+    // Content relaxes empty containers).
 
     // Relationships_validity, second arm (party.adoc): every inline
     // relationship's `source` must reference THIS party. The party's identity
@@ -413,13 +378,13 @@ mod tests {
     fn present_but_empty_lists_are_rejected() {
         let mut body = person(&json!([identity()]));
         body["contacts"] = json!([]);
-        let msg = match party_check("PERSON", &body, false) {
-            Err(ServiceError::Unprocessable(v)) => v,
-            other => panic!("expected Unprocessable, got {other:?}"),
-        };
-        // The invariant name is DATA on the violation, not a substring.
-        assert_eq!(msg.invariant(), Some("Contacts_valid"));
-        assert_eq!(msg.path(), Some("PERSON.contacts"));
+        let err = party_check("PERSON", &body, false)
+            .expect_err("present-but-empty contacts must refuse (#1730 parse class)");
+        assert!(
+            format!("{err:?}").contains("contacts")
+                && format!("{err:?}").contains("at least one member"),
+            "got {err:?}"
+        );
     }
 
     /// a `PARTY_REF` whose `type` is outside the legal set is a `422`
@@ -557,8 +522,9 @@ mod tests {
         let err = party_check("PERSON", &nested_links, false)
             .expect_err("an empty links list must be refused");
         assert!(
-            format!("{err:?}").contains("Links_valid"),
-            "the refusal should name the invariant, got {err:?}"
+            format!("{err:?}").contains("links")
+                && format!("{err:?}").contains("at least one member"),
+            "the refusal names the empty container (#1730 parse class), got {err:?}"
         );
     }
 }
