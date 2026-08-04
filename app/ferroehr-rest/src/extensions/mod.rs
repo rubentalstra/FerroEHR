@@ -35,6 +35,7 @@
 pub mod access;
 #[cfg(feature = "events")]
 pub mod event_subscription;
+#[cfg(feature = "fhir")]
 pub mod fhir;
 pub mod health;
 pub mod management;

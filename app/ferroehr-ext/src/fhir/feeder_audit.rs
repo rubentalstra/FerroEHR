@@ -30,11 +30,11 @@ use serde_json::Value;
 /// The `system_id` recorded in the built COMPOSITION's `FEEDER_AUDIT`
 /// originating-system audit (RM common `FEEDER_AUDIT_DETAILS`), naming the
 /// import channel.
-pub(super) const ORIGINATING_SYSTEM: &str = "fhir-connector";
+pub const ORIGINATING_SYSTEM: &str = "fhir-connector";
 
 /// The resource's logical id (`id`), or a non-empty fallback (`DV_IDENTIFIER`'s
 /// `Id_valid` invariant forbids an empty id).
-pub(super) fn resource_id(resource: &Value, resource_type: &str) -> String {
+pub fn resource_id(resource: &Value, resource_type: &str) -> String {
     super::mapping::resolve(resource, "id")
         .and_then(Value::as_str)
         .filter(|s| !s.is_empty())
@@ -42,14 +42,15 @@ pub(super) fn resource_id(resource: &Value, resource_type: &str) -> String {
 }
 
 /// The resource version (`meta.versionId`), if present.
-pub(super) fn resource_version(resource: &Value) -> Option<String> {
+pub fn resource_version(resource: &Value) -> Option<String> {
     super::mapping::resolve(resource, "meta.versionId")
         .and_then(Value::as_str)
         .map(str::to_owned)
 }
 
 /// The FHIR import timestamp for `FEEDER_AUDIT` (ISO 8601, UTC).
-pub(super) fn now_iso() -> String {
+#[must_use]
+pub fn now_iso() -> String {
     jiff::Timestamp::now().to_string()
 }
 
@@ -57,7 +58,7 @@ pub(super) fn now_iso() -> String {
 /// originating system `fhir-connector`, the resource type/id as an
 /// originating-system item id, and the resource version + import time on the
 /// originating-system audit (RM common `FEEDER_AUDIT_DETAILS`).
-pub(super) fn feeder_audit(
+pub fn feeder_audit(
     resource_type: &str,
     resource_id: &str,
     version_id: Option<&str>,
@@ -94,7 +95,7 @@ pub(super) fn feeder_audit(
 }
 
 /// Attach a `FEEDER_AUDIT` to a canonical-JSON COMPOSITION object.
-pub(super) fn inject_feeder_audit(comp: &mut Value, feeder_audit: Value) {
+pub fn inject_feeder_audit(comp: &mut Value, feeder_audit: Value) {
     if let Value::Object(m) = comp {
         m.insert("feeder_audit".to_owned(), feeder_audit);
     }

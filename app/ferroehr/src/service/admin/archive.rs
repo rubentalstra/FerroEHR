@@ -12,7 +12,7 @@
 //! All-or-nothing — an unknown id aborts the transaction before any marker is
 //! written.
 //!
-//! TODO(perf): the physical movement of `vo_archive`-marked rows to a cold
+//! TODO(#1909): the physical movement of `vo_archive`-marked rows to a cold
 //! storage tier (and any read-path effect) is a later optimization —
 //! no openEHR spec governs storage mechanics, so the tiering is our own design
 //! and purely a performance concern, not a conformance one.

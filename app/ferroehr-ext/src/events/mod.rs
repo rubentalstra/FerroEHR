@@ -142,6 +142,7 @@ pub fn subscription_binding_key(
 }
 
 /// Derive the routing key from one stored version entry.
+#[must_use]
 pub fn routing_key_of_version(version: &serde_json::Value) -> String {
     let kind = version
         .get("kind")

@@ -43,7 +43,7 @@
 
 use std::collections::BTreeMap;
 
-use crate::service::ehr_index::types::SubjectRef;
+use crate::fhir::MappedSubject;
 use serde::Deserialize;
 use serde_json::{Map, Value, json};
 
@@ -51,7 +51,7 @@ use serde_json::{Map, Value, json};
 /// `fhir_mapping.definition`).
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(super) struct FhirMappingDefinition {
+pub struct FhirMappingDefinition {
     /// The FHIR resource type this mapping consumes (`Observation`, `Patient`, …).
     pub resource_type: String,
     /// The FHIR profile canonical URL this mapping binds (matched against the
@@ -74,7 +74,7 @@ pub(super) struct FhirMappingDefinition {
 /// How the connector resolves the target EHR's subject from the resource.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(super) struct SubjectMapping {
+pub struct SubjectMapping {
     /// `FHIRPath`-lite path to the subject identifier string (e.g.
     /// `subject.reference` on an Observation, or `id` on a Patient).
     pub reference_path: String,
@@ -91,7 +91,7 @@ pub(super) struct SubjectMapping {
 /// `transform`.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub(super) struct MappingEntry {
+pub struct MappingEntry {
     /// The template-relative openEHR FLAT path (the `id[:i]/…` key; a
     /// value-shaping transform appends the `|suffix`).
     pub openehr_path: String,
@@ -116,7 +116,7 @@ pub(super) struct MappingEntry {
 /// How an entry's source value is shaped into FLAT leaf(s).
 #[derive(Debug, Clone, Default, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
-pub(super) enum Transform {
+pub enum Transform {
     /// Plain scalar → the bare FLAT key (`DV_TEXT` value, or any bare leaf).
     #[default]
     Text,
@@ -148,7 +148,7 @@ pub(super) enum Transform {
 
 /// A FHIR→openEHR mapping transform failure.
 #[derive(Debug, thiserror::Error)]
-pub(super) enum FhirMapError {
+pub enum FhirMapError {
     /// A required source field was absent (or not a scalar where one was
     /// expected).
     #[error("required FHIR field '{fhir_path}' (→ '{openehr_path}') is absent")]
@@ -196,7 +196,8 @@ pub(super) enum FhirMapError {
 /// `component[0].valueQuantity.value`, `code.coding[0].code`,
 /// `subject.reference`, and `meta.profile[0]` all resolve. Anything richer
 /// (functions, filters, unions) is out of scope and yields `None`.
-pub(super) fn resolve<'a>(root: &'a Value, path: &str) -> Option<&'a Value> {
+#[must_use]
+pub fn resolve<'a>(root: &'a Value, path: &str) -> Option<&'a Value> {
     let mut cur = root;
     for seg in path.split('.') {
         let (name, index) = parse_segment(seg)?;
@@ -214,7 +215,8 @@ pub(super) fn resolve<'a>(root: &'a Value, path: &str) -> Option<&'a Value> {
 /// → `("component", Some(0))`, `reference` → `("reference", None)`. Returns
 /// `None` for a malformed segment (unbalanced/broken index). Shared with the
 /// reverse transform's writer ([`super::reverse`]).
-pub(super) fn parse_segment(seg: &str) -> Option<(&str, Option<usize>)> {
+#[must_use]
+pub fn parse_segment(seg: &str) -> Option<(&str, Option<usize>)> {
     match seg.split_once('[') {
         None => Some((seg, None)),
         Some((name, rest)) => {
@@ -227,7 +229,10 @@ pub(super) fn parse_segment(seg: &str) -> Option<(&str, Option<usize>)> {
 
 /// Build the FLAT map for a resource under a mapping definition: the seed
 /// `context` keys, then each entry's produced leaf(s).
-pub(super) fn build_flat(
+/// # Errors
+/// Returns [`FhirMapError`] when a mapping entry cannot be applied to the
+/// resource (missing/mistyped member, unresolvable path).
+pub fn build_flat(
     resource: &Value,
     def: &FhirMappingDefinition,
 ) -> Result<Map<String, Value>, FhirMapError> {
@@ -366,10 +371,13 @@ fn number(v: &Value, entry: &MappingEntry) -> Result<Value, FhirMapError> {
 
 /// Extract the target EHR subject from the resource per the mapping's
 /// `subject` rule.
-pub(super) fn extract_subject(
+/// # Errors
+/// Returns [`FhirMapError::MissingSubject`] when the mapping's subject
+/// reference path resolves to nothing usable.
+pub fn extract_subject(
     resource: &Value,
     def: &FhirMappingDefinition,
-) -> Result<SubjectRef, FhirMapError> {
+) -> Result<MappedSubject, FhirMapError> {
     let raw = resolve(resource, &def.subject.reference_path)
         .and_then(Value::as_str)
         .filter(|s| !s.is_empty())
@@ -380,10 +388,10 @@ pub(super) fn extract_subject(
         .as_deref()
         .and_then(|p| raw.strip_prefix(p))
         .unwrap_or(raw);
-    Ok(SubjectRef::person(
-        id.to_owned(),
-        def.subject.namespace.clone(),
-    ))
+    Ok(MappedSubject {
+        id: id.to_owned(),
+        namespace: def.subject.namespace.clone(),
+    })
 }
 
 #[cfg(test)]
@@ -542,7 +550,6 @@ mod tests {
             .expect("subject");
         assert_eq!(s.id, "abc");
         assert_eq!(s.namespace, "fhir");
-        assert_eq!(s.r#type, "PERSON");
     }
 
     #[test]
@@ -568,7 +575,7 @@ mod tests {
     // template's committable json-id leaves.
     fn bp_web_template() -> WebTemplate {
         let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("tests/resources/service/knowledge/opt/ehrbase_blood_pressure_simple.de.v0.opt");
+            .join("../ferroehr/tests/resources/service/knowledge/opt/ehrbase_blood_pressure_simple.de.v0.opt");
         let xml = std::fs::read_to_string(path).expect("read opt");
         let opt = opt14::from_xml(&xml).expect("parse opt");
         build_web_template(&opt).expect("build wt")
