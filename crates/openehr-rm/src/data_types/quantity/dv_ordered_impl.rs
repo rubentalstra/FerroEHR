@@ -542,8 +542,9 @@ impl DvOrdered {
     pub fn is_simple(&self) -> bool {
         macro_rules! simple {
             ($x:expr) => {
-                $x.normal_range.is_none()
-                    && $x.other_reference_ranges.as_ref().is_none_or(Vec::is_empty)
+                // `other_reference_ranges` is `Option<NonEmptyVec<..>>`
+                // (#1730): present means non-empty by construction.
+                $x.normal_range.is_none() && $x.other_reference_ranges.is_none()
             };
         }
         match self {
@@ -860,7 +861,7 @@ mod tests {
         DvQuantity {
             normal_status: None,
             normal_range: None,
-            other_reference_ranges: openehr_base::containers::present(Vec::new()),
+            other_reference_ranges: openehr_base::containers::present_nonempty(Vec::new()),
             magnitude_status: None,
             accuracy: None,
             accuracy_is_percent: None,
@@ -876,7 +877,7 @@ mod tests {
         DvDuration {
             normal_status: None,
             normal_range: None,
-            other_reference_ranges: openehr_base::containers::present(Vec::new()),
+            other_reference_ranges: openehr_base::containers::present_nonempty(Vec::new()),
             magnitude_status: None,
             accuracy: None,
             accuracy_is_percent: None,
@@ -888,7 +889,7 @@ mod tests {
         DvDate {
             normal_status: None,
             normal_range: None,
-            other_reference_ranges: openehr_base::containers::present(Vec::new()),
+            other_reference_ranges: openehr_base::containers::present_nonempty(Vec::new()),
             magnitude_status: None,
             accuracy: None,
             value: value.to_owned(),
@@ -899,7 +900,7 @@ mod tests {
         DvDateTime {
             normal_status: None,
             normal_range: None,
-            other_reference_ranges: openehr_base::containers::present(Vec::new()),
+            other_reference_ranges: openehr_base::containers::present_nonempty(Vec::new()),
             magnitude_status: None,
             accuracy: None,
             value: value.to_owned(),
@@ -910,7 +911,7 @@ mod tests {
         DvTime {
             normal_status: None,
             normal_range: None,
-            other_reference_ranges: openehr_base::containers::present(Vec::new()),
+            other_reference_ranges: openehr_base::containers::present_nonempty(Vec::new()),
             magnitude_status: None,
             accuracy: None,
             value: value.to_owned(),
@@ -1004,7 +1005,7 @@ mod tests {
         let mk = |n: f64, d: f64, ty: i32| DvProportion {
             normal_status: None,
             normal_range: None,
-            other_reference_ranges: openehr_base::containers::present(Vec::new()),
+            other_reference_ranges: openehr_base::containers::present_nonempty(Vec::new()),
             magnitude_status: None,
             accuracy: None,
             accuracy_is_percent: None,

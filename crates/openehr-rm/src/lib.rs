@@ -26,6 +26,7 @@ pub mod data_types;
 pub mod demographic;
 pub mod ehr;
 pub mod ehr_extract;
+pub mod foundation_types;
 pub mod integration;
 pub mod prelude;
 pub mod support;

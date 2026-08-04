@@ -170,34 +170,16 @@ fn prune_child_nodes(value: &Value) -> Value {
     let Value::Object(map) = value else {
         return value.clone();
     };
-    let ty = map.get("_type").and_then(Value::as_str);
     let mut out = serde_json::Map::with_capacity(map.len());
     for (key, child) in map {
         let pruned = match child {
-            // An array of RM nodes: the children are recursed into (and fully
-            // validated) individually by the composition validator, so this
-            // node's own invariants never need them.
-            //
-            // A `1..*` container keeps ONE member (itself pruned), because its
-            // emission shape is non-empty by construction
-            // (`openehr_base::containers::NonEmptyVec`) and an emptied array
-            // would fail to decode — a false structural violation on valid
-            // input. Everything else is emptied outright.
-            //
-            // NOTE: emptying leaves an OPTIONAL container decoding to
-            // `Some(vec![])` — a present-but-empty list, the state
-            // `x /= Void implies not x.is_empty` forbids. That is safe here
-            // because the run_shallow classes' own invariants never read a child
-            // collection (this function's documented precondition), and that
-            // invariant family is judged on the RAW node by
-            // `super::nonempty_list_violations`, a layer outside
-            // the fast/typed pair — never on this pruned copy.
+            // An array of RM nodes: children are validated individually by
+            // the composition validator, so keep ONE pruned member as the
+            // structural witness — an empty array stays empty so the decode
+            // judges it (NonEmptyVec refuses `[]` on 1..* and on the #1730
+            // present-implies-non-empty fields; a plain optional accepts it).
             Value::Array(items) if items.iter().any(Value::is_object) => {
-                if ty.is_some_and(|t| lower_bound_one(t, key)) {
-                    Value::Array(items.first().map(prune_child_nodes).into_iter().collect())
-                } else {
-                    Value::Array(Vec::new())
-                }
+                Value::Array(items.first().map(prune_child_nodes).into_iter().collect())
             }
             // A single nested node: keep it (its presence is a structural
             // constraint this node's deserialize must still enforce), but recurse
@@ -209,14 +191,6 @@ fn prune_child_nodes(value: &Value) -> Value {
         out.insert(key.clone(), pruned);
     }
     Value::Object(out)
-}
-
-/// Whether the static RM model declares `attribute` of `ty` as a container with
-/// a cardinality lower bound of 1 — the attributes whose emission shape is
-/// `NonEmptyVec<T>` and which therefore cannot decode from an emptied array.
-fn lower_bound_one(ty: &str, attribute: &str) -> bool {
-    crate::model::attributes(ty)
-        .any(|a| a.name == attribute && a.cardinality.is_some_and(|c| c.lower >= 1))
 }
 
 /// The `_type` → concrete-RM-type table: deserialize the node into the class

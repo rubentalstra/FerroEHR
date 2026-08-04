@@ -9,9 +9,7 @@ use crate::data_types::text::dv_coded_text::DvCodedText;
 use crate::data_types::text::term_mapping::TermMapping;
 use crate::data_types::uri::dv_uri::DvUri;
 
-/// A text item, which may contain any amount of legal characters arranged as e.g. words, sentences etc (i.e. one `DV_TEXT` may be more than one word).
-///
-/// Visual formatting and hyperlinks may be included via markdown.
+/// A text item, which may contain any amount of legal characters arranged as e.g. words, sentences etc (i.e. one `DV_TEXT` may be more than one word). Visual formatting and hyperlinks may be included via markdown.
 ///
 /// If the `_formatting_` field is set, the `_value_` field is affected as follows:
 ///
@@ -38,22 +36,16 @@ pub struct DvTextData {
     /// DEPRECATED usage: contains a string of the form `"name:value; name:value..."` , e.g. `"font-weight : bold; font-family : Arial; font-size : 12pt;"`. Values taken from W3C CSS2 properties lists for background and font .
     pub formatting: Option<String>,
     /// Terms from other terminologies most closely matching this term, typically used where the originator (e.g. pathology lab) of information uses a local terminology but also supplies one or more equivalents from well known terminologies (e.g. LOINC).
-    pub mappings: Option<Vec<TermMapping>>,
-    /// Optional indicator of the localised language in which the value is written.
-    ///
-    /// Coded from openEHR Code Set  languages . Only used when either the text object is in a different language from the enclosing `ENTRY`, or else the text object is being used outside of an `ENTRY` or other enclosing structure which indicates the language.
+    pub mappings: Option<openehr_base::containers::NonEmptyVec<TermMapping>>,
+    /// Optional indicator of the localised language in which the value is written. Coded from openEHR Code Set  languages . Only used when either the text object is in a different language from the enclosing `ENTRY`, or else the text object is being used outside of an `ENTRY` or other enclosing structure which indicates the language.
     pub language: Option<CodePhrase>,
-    /// Name of character encoding scheme in which this value is encoded.
-    ///
-    /// Coded from openEHR Code Set  character sets . Unicode is the default assumption in openEHR, with UTF-8 being the assumed encoding. This attribute allows for variations from these assumptions.
+    /// Name of character encoding scheme in which this value is encoded. Coded from openEHR Code Set  character sets . Unicode is the default assumption in openEHR, with UTF-8 being the assumed encoding. This attribute allows for variations from these assumptions.
     pub encoding: Option<CodePhrase>,
 }
 
 /// Polymorphic slot of `DV_TEXT`, dispatched on each payload's `_type`.
 ///
-/// A text item, which may contain any amount of legal characters arranged as e.g. words, sentences etc (i.e. one `DV_TEXT` may be more than one word).
-///
-/// Visual formatting and hyperlinks may be included via markdown.
+/// A text item, which may contain any amount of legal characters arranged as e.g. words, sentences etc (i.e. one `DV_TEXT` may be more than one word). Visual formatting and hyperlinks may be included via markdown.
 ///
 /// If the `_formatting_` field is set, the `_value_` field is affected as follows:
 ///

@@ -93,6 +93,9 @@ struct AttrModel {
     type_params: Vec<TypeRefModel>,
     /// The BMM-declared container cardinality (container attributes only).
     cardinality: Option<CardinalityModel>,
+    /// Optional container carrying a present-implies-non-empty invariant
+    /// (`Option<NonEmptyVec<T>>` emission, #1730).
+    nonempty: bool,
 }
 
 /// A resolved type reference: a root spec name plus its own generic arguments.
@@ -292,6 +295,13 @@ fn attributes_of(model: &Model, class: &BmmClass) -> Vec<AttrModel> {
                 is_mandatory: rp.prop.is_mandatory,
                 type_params,
                 cardinality,
+                nonempty: !rp.prop.is_mandatory
+                    && crate::analyze::nonempty_optional_lists_cached(model)
+                        .iter()
+                        .any(|(decl, attr)| {
+                            attr == &rp.prop.name
+                                && (decl == &rp.owner || model.inherits(&rp.owner, decl))
+                        }),
             }
         })
         .collect()
@@ -461,6 +471,9 @@ pub struct RmAttribute {
     /// The BMM-declared container cardinality (`None` for a single-valued
     /// attribute, or a container attribute the BMM leaves unconstrained).
     pub cardinality: Option<Cardinality>,
+    /// An optional container carrying a present-implies-non-empty invariant:
+    /// emitted `Option<NonEmptyVec<T>>` (#1730), so `[]` refuses at parse.
+    pub nonempty: bool,
 }
 
 /// A resolved type reference: a root spec name plus its own generic arguments.
@@ -642,13 +655,14 @@ fn emit_data(classes: &[ClassModel], enums: &[EnumModel]) -> String {
         b.push_str("        attributes: &[\n");
         for a in &c.attributes {
             b.push_str(&format!(
-                "            RmAttribute {{ name: {:?}, declared_type: {:?}, container: Container::{}, is_mandatory: {}, type_params: &{}, cardinality: {} }},\n",
+                "            RmAttribute {{ name: {:?}, declared_type: {:?}, container: Container::{}, is_mandatory: {}, type_params: &{}, cardinality: {}, nonempty: {} }},\n",
                 a.name,
                 a.declared_type,
                 a.container,
                 a.is_mandatory,
                 type_refs(&a.type_params),
                 cardinality(a.cardinality.as_ref()),
+                a.nonempty,
             ));
         }
         b.push_str("        ],\n");

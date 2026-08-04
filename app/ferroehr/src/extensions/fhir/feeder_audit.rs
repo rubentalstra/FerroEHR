@@ -74,7 +74,7 @@ pub(super) fn feeder_audit(
             time: Some(DvDateTime {
                 normal_status: None,
                 normal_range: None,
-                other_reference_ranges: openehr_base::containers::present(Vec::new()),
+                other_reference_ranges: None,
                 magnitude_status: None,
                 accuracy: None,
                 value: time_iso.to_owned(),

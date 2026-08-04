@@ -51,3 +51,5 @@ pub use crate::am14::aom14::openehr_archetype_profile::c_ordinal::COrdinal;
 pub use crate::am14::aom14::openehr_archetype_profile::c_quantity::CQuantity;
 pub use crate::am14::aom14::openehr_archetype_profile::c_quantity_item::CQuantityItem;
 pub use crate::am14::aom14::openehr_archetype_profile::ordinal::Ordinal;
+pub use crate::am14::resource::authored_resource::AuthoredResource;
+pub use crate::am14::resource::resource_description::ResourceDescription;

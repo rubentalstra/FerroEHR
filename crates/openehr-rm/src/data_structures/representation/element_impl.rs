@@ -64,7 +64,7 @@ mod tests {
             value: value.to_owned(),
             hyperlink: None,
             formatting: None,
-            mappings: openehr_base::containers::present(Vec::new()),
+            mappings: openehr_base::containers::present_nonempty(Vec::new()),
             language: None,
             encoding: None,
         })
@@ -75,7 +75,7 @@ mod tests {
             value: "unknown".to_owned(),
             hyperlink: None,
             formatting: None,
-            mappings: openehr_base::containers::present(Vec::new()),
+            mappings: openehr_base::containers::present_nonempty(Vec::new()),
             language: None,
             encoding: None,
             defining_code: CodePhrase {
@@ -93,7 +93,7 @@ mod tests {
             name: text("element"),
             archetype_node_id: "at0001".to_owned(),
             uid: None,
-            links: openehr_base::containers::present(Vec::new()),
+            links: openehr_base::containers::present_nonempty(Vec::new()),
             archetype_details: None,
             feeder_audit: None,
             null_flavour: None,

@@ -6,7 +6,7 @@ use crate::analyze::{augment_with_reemit, cross_schema_reemit, emittable_specs};
 use crate::load::bmm::BmmSchema;
 use crate::load::impls::SiblingImpls;
 use crate::load::{oas, xsd};
-use crate::plan::composition::{self, compose};
+use crate::plan::composition::{self, Composed, compose};
 use crate::render::emit::{
     GenFile, crate_generations, emit_crate, emit_generations, emit_multi_crate, type_module_path,
 };
@@ -271,6 +271,7 @@ fn cmd_emit_rest() -> Result<(), Box<dyn std::error::Error>> {
 fn cmd_emit_xml() -> Result<(), Box<dyn std::error::Error>> {
     let base = compose("base")?;
     let rm = compose("rm")?;
+    let rm_aug = augmented_schema(&rm);
 
     // The RM-instance wire shape (element names, order, xsi:type, attributes) is
     // identical across the two ITS-XML lineages; they differ only by the root
@@ -302,7 +303,11 @@ fn cmd_emit_xml() -> Result<(), Box<dyn std::error::Error>> {
         },
         emit_xml::XmlSchema {
             model: &rm.model,
-            schema: &rm.own_schema,
+            // The XML codec covers the crate's re-emitted closure twins too
+            // (#1699: the BASE Interval/Iso8601 family re-emitted into
+            // openehr-rm) — the impls must exist for every type a field of
+            // the augmented schema names.
+            schema: &rm_aug,
             prelude: "openehr_rm::prelude",
         },
     ];
@@ -345,13 +350,13 @@ fn cmd_emit_json() -> Result<(), Box<dyn std::error::Error>> {
     let am24 = compose("am24")?;
     let term = compose("term")?;
 
-    // AM 2.4 re-emits the reachable LANG beom expression/statement closure as
-    // crate-local types (see `cmd_emit`); those re-emitted types derive
-    // `OpenEhrType` too, so the JSON codec must cover them. Augment the AM 2.4
-    // schema identically so `json_types` sees the same class set `emit` does.
-    let reemit24 = cross_schema_reemit(&am24.model, &am24.own_schema);
-    let am24_dep_refs: Vec<&BmmSchema> = am24.dep_schemas.iter().collect();
-    let am24_aug = augment_with_reemit(&am24.own_schema, &am24.model, &reemit24, &am24_dep_refs);
+    // Every crate whose emission grafts a cross-schema re-emission closure
+    // (see `augmented_schema` — #1699: rm, am14, am24) needs the JSON codec to
+    // cover the re-emitted crate-local types too, so `json_types` must see
+    // exactly the class set `emit` renders.
+    let rm_aug = augmented_schema(&rm);
+    let am14_aug = augmented_schema(&am14);
+    let am24_aug = augmented_schema(&am24);
 
     // The codec is keyed by the crate PRELUDE path, and `_type` dispatch admits
     // exactly one impl per Rust type — so a crate composed of several BMM
@@ -394,7 +399,7 @@ fn cmd_emit_json() -> Result<(), Box<dyn std::error::Error>> {
     };
     let rm_schema = emit_json::JsonSchema {
         model: &rm.model,
-        schema: &rm.own_schema,
+        schema: &rm_aug,
         prelude: "openehr_rm::prelude",
         unexported: &no_unexported,
     };
@@ -412,7 +417,7 @@ fn cmd_emit_json() -> Result<(), Box<dyn std::error::Error>> {
     let meta_schemas = [
         emit_json::JsonSchema {
             model: &am14.model,
-            schema: &am14.own_schema,
+            schema: &am14_aug,
             prelude: "openehr_am::am14::prelude",
             unexported: &no_unexported,
         },
@@ -664,7 +669,8 @@ fn cmd_emit_rm_model() -> Result<(), Box<dyn std::error::Error>> {
 /// produces the identical output (via `inject_validate`).
 fn cmd_emit_validate() -> Result<(), Box<dyn std::error::Error>> {
     let rm = compose("rm")?;
-    let files = emit_validate::emit_files(&rm.model, &rm.own_schema);
+    let rm_aug = augmented_schema(&rm);
+    let files = emit_validate::emit_files(&rm.model, &rm_aug);
 
     let src = crates_root().join("openehr-rm").join("src");
     let mut written = Vec::new();
@@ -743,6 +749,22 @@ fn cmd_check_xsd() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// A composition's own schema with its cross-schema re-emission closure
+/// grafted in (`cross_schema_reemit` → `augment_with_reemit`): every upstream
+/// class whose Rust form WIDENS in this crate (a closed-subtype-set enum the
+/// crate's own classes extend) is re-emitted crate-locally at its source
+/// package path, so downstream references resolve against the widened local
+/// twin — the completeness hard rule (owner 2026-07-19), applied uniformly to
+/// EVERY composition rather than am24 alone (#1699: rm re-emits BASE's
+/// `Interval`/`Iso8601_type` family; am14 re-emits `AUTHORED_RESOURCE` +
+/// `RESOURCE_DESCRIPTION`). A composition with an empty closure comes back
+/// unchanged, so applying this unconditionally is safe by construction.
+fn augmented_schema(c: &Composed) -> BmmSchema {
+    let reemit = cross_schema_reemit(&c.model, &c.own_schema);
+    let dep_refs: Vec<&BmmSchema> = c.dep_schemas.iter().collect();
+    augment_with_reemit(&c.own_schema, &c.model, &reemit, &dep_refs)
+}
+
 /// The hand-written `*_impl.rs` siblings a generated crate already carries — an
 /// emitter INPUT (`crate::load::impls`), read before rendering so a type file's
 /// banner names a sibling only when one exists.
@@ -780,18 +802,16 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
     // self-consistent (lib.rs declares `model`, and a later `emit` regenerates it
     // byte-identically to the standalone `emit-rm-model` target).
     let rm = compose("rm")?;
+    let rm_aug = augmented_schema(&rm);
     let mut rm_files = emit_crate(
         &rm.model,
-        &rm.own_schema,
+        &rm_aug,
         &rm.external,
         rm.doc,
         &sibling_impls("openehr-rm"),
     );
     inject_rm_model(&mut rm_files, emit_rm_model::emit_files(&rm.model));
-    inject_validate(
-        &mut rm_files,
-        emit_validate::emit_files(&rm.model, &rm.own_schema),
-    );
+    inject_validate(&mut rm_files, emit_validate::emit_files(&rm.model, &rm_aug));
     write_crate("openehr-rm", &rm_files)?;
 
     // openehr-lang: the BMM/P_BMM object model, fully generated. The generator's
@@ -828,17 +848,16 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
     let am14 = compose("am14")?;
     let am24 = compose("am24")?;
     // `cross_schema_reemit` computes the COMPLETE set of upstream classes whose
-    // Rust form widens downstream and grafts them into the AM schema at their
-    // source package paths — a full, non-minimal re-emission (owner ruling
-    // 2026-07-19). AM 1.4 declares no cross-`include` subtypes → empty closure,
-    // unchanged emission. The augment sources are AM 2.4's model dependency
-    // schemas (BASE + LANG), so re-emitted classes mirror their source packages.
-    let reemit24 = cross_schema_reemit(&am24.model, &am24.own_schema);
-    let am24_dep_refs: Vec<&BmmSchema> = am24.dep_schemas.iter().collect();
-    let am24_aug = augment_with_reemit(&am24.own_schema, &am24.model, &reemit24, &am24_dep_refs);
+    // Rust form widens downstream and grafts them into each crate's schema at
+    // the source package paths — a full, non-minimal re-emission (owner ruling
+    // 2026-07-19), applied uniformly by `augmented_schema` (#1699): am14
+    // re-emits BASE's AUTHORED_RESOURCE + RESOURCE_DESCRIPTION (ARCHETYPE
+    // extends the former), am24 the reachable LANG beom closure.
+    let am14_aug = augmented_schema(&am14);
+    let am24_aug = augmented_schema(&am24);
     let am_files = emit_multi_crate(
         &[
-            ("am14", &am14.model, &am14.own_schema),
+            ("am14", &am14.model, &am14_aug),
             ("am24", &am24.model, &am24_aug),
         ],
         &am24.external,

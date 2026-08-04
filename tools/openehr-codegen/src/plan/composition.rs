@@ -192,8 +192,10 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
         model_deps: &["base"],
         prelude_deps: &["base", "lang"],
         doc: AM_DOC,
-        citation: "AM 1.4.0 BMM includes openehr_base_1.3.0; declares no cross-includes subtypes \
-                   (empty re-emission closure).",
+        citation: "AM 1.4.0 BMM includes openehr_base_1.3.0. ARCHETYPE extends BASE's \
+                   AUTHORED_RESOURCE, whose Rust form widens downstream, so the \
+                   AUTHORED_RESOURCE + RESOURCE_DESCRIPTION closure re-emits crate-locally \
+                   (#1699; `augmented_schema`).",
         reason: "ADL 1.4 archetype model; ancestors resolve to BASE.",
     },
     CrateComposition {

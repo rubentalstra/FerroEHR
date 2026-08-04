@@ -218,7 +218,7 @@ pub fn plain_text(value: &str) -> DvText {
         value: value.to_owned(),
         hyperlink: None,
         formatting: None,
-        mappings: openehr_base::containers::present(Vec::new()),
+        mappings: None,
         language: None,
         encoding: None,
     })
@@ -235,7 +235,7 @@ pub fn system_committer() -> PartyProxy {
     PartyProxy::PartyIdentified(PartyIdentified::PartyIdentified(PartyIdentifiedData {
         external_ref: None,
         name: Some(crate::service::SYSTEM_COMMITTER_NAME.to_owned()),
-        identifiers: openehr_base::containers::present(Vec::new()),
+        identifiers: None,
     }))
 }
 

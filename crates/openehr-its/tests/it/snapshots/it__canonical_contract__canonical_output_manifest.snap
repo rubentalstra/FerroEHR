@@ -1,6 +1,6 @@
 ---
 source: crates/openehr-its/tests/it/canonical_contract.rs
-assertion_line: 106
+assertion_line: 105
 expression: manifest
 ---
 twins/all_types_systematic_tests_feeder_audit.valid.json  5fe06a0bd1839af29f3a0f3e96ae9b1fe6d011ebe7f10e08fa3b35fed4a189ba  15238
@@ -55,5 +55,4 @@ openehr_sdk/composition/canonical_json/virology_finding_with_specimen_no_update.
 openehr_sdk/ehr/canonical_json/ehr_status_other_details_simple.json  ac38a94dab5f36383b9f14c900ab351b458d603cd1a011d760e1343ad782a7a1  732
 openehr_sdk/ehr/canonical_json/ehr_status_subject_external_ref.json  d5905c14017fdcaa4d1c748cb4058ba283567bcd5f6a202d86a1388487488822  368
 openehr_sdk/folder/canonical_json/duplicate_folder_names.json  2f02842cdf424a224734a898262606d5002f0af470f0f297f41bde6f0e398518  358
-openehr_sdk/folder/canonical_json/flat_folder_insert.json  a562a6c9eafc701d0b32a0dcb82f34ff435f13886876d857ed78a997dccaee6a  96
 openehr_sdk/folder/canonical_json/nested_folder.json  4ca92f333909fd3c2a1fff794dbf53c2ffaa448ea9cf1665f03abbf9a101c060  453

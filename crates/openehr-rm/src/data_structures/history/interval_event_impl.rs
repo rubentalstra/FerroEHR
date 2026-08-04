@@ -80,7 +80,7 @@ mod tests {
             value: value.to_owned(),
             hyperlink: None,
             formatting: None,
-            mappings: openehr_base::containers::present(Vec::new()),
+            mappings: openehr_base::containers::present_nonempty(Vec::new()),
             language: None,
             encoding: None,
         })
@@ -114,7 +114,7 @@ mod tests {
             name: text("event"),
             archetype_node_id: "at0003".to_owned(),
             uid: None,
-            links: openehr_base::containers::present(Vec::new()),
+            links: openehr_base::containers::present_nonempty(Vec::new()),
             archetype_details: None,
             feeder_audit: None,
             time: date_time(time),
@@ -126,7 +126,7 @@ mod tests {
                 value: "mean".to_owned(),
                 hyperlink: None,
                 formatting: None,
-                mappings: openehr_base::containers::present(Vec::new()),
+                mappings: openehr_base::containers::present_nonempty(Vec::new()),
                 language: None,
                 encoding: None,
                 defining_code: CodePhrase {

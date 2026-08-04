@@ -20,7 +20,7 @@ pub struct PartyRelated {
     /// Optional human-readable name (in String form).
     pub name: Option<String>,
     /// One or more formal identifiers (possibly computable).
-    pub identifiers: Option<Vec<DvIdentifier>>,
+    pub identifiers: Option<openehr_base::containers::NonEmptyVec<DvIdentifier>>,
     /// Relationship of subject of this ENTRY to the subject of the record. May be coded. If it is the patient, coded as  self.
     pub relationship: DvCodedText,
 }

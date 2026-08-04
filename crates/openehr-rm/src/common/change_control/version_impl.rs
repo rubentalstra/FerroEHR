@@ -241,7 +241,7 @@ mod tests {
                 time_committed: DvDateTime {
                     normal_status: None,
                     normal_range: None,
-                    other_reference_ranges: openehr_base::containers::present(Vec::new()),
+                    other_reference_ranges: openehr_base::containers::present_nonempty(Vec::new()),
                     magnitude_status: None,
                     accuracy: None,
                     value: "2026-07-07T10:11:12Z".to_owned(),
@@ -252,9 +252,9 @@ mod tests {
             }),
             uid: ObjectVersionId::new(value.to_owned()).expect("a well-formed identifier"),
             preceding_version_uid: None,
-            other_input_version_uids: openehr_base::containers::present(Vec::new()),
+            other_input_version_uids: openehr_base::containers::present_nonempty(Vec::new()),
             lifecycle_state: coded("532", "complete"),
-            attestations: openehr_base::containers::present(Vec::new()),
+            attestations: openehr_base::containers::present_nonempty(Vec::new()),
             data: Some("content".to_owned()),
         }
     }
@@ -269,7 +269,7 @@ mod tests {
             value: rubric.to_owned(),
             hyperlink: None,
             formatting: None,
-            mappings: openehr_base::containers::present(Vec::new()),
+            mappings: openehr_base::containers::present_nonempty(Vec::new()),
             language: None,
             encoding: None,
             defining_code: CodePhrase {
@@ -333,7 +333,7 @@ mod tests {
                 time_committed: DvDateTime {
                     normal_status: None,
                     normal_range: None,
-                    other_reference_ranges: openehr_base::containers::present(Vec::new()),
+                    other_reference_ranges: openehr_base::containers::present_nonempty(Vec::new()),
                     magnitude_status: None,
                     accuracy: None,
                     value: "2026-07-09T08:00:00Z".to_owned(),

@@ -42,7 +42,7 @@ mod tests {
             value: value.to_owned(),
             hyperlink: None,
             formatting: None,
-            mappings: openehr_base::containers::present(Vec::new()),
+            mappings: openehr_base::containers::present_nonempty(Vec::new()),
             language: None,
             encoding: None,
         })
@@ -63,13 +63,13 @@ mod tests {
             name: text("history"),
             archetype_node_id: "at0002".to_owned(),
             uid: None,
-            links: openehr_base::containers::present(Vec::new()),
+            links: openehr_base::containers::present_nonempty(Vec::new()),
             archetype_details: None,
             feeder_audit: None,
             origin: DvDateTime {
                 normal_status: None,
                 normal_range: None,
-                other_reference_ranges: openehr_base::containers::present(Vec::new()),
+                other_reference_ranges: openehr_base::containers::present_nonempty(Vec::new()),
                 magnitude_status: None,
                 accuracy: None,
                 value: "2021-01-01T00:00:00".to_owned(),
@@ -86,7 +86,7 @@ mod tests {
             name: text("BP"),
             archetype_node_id: "openEHR-EHR-OBSERVATION.bp.v1".to_owned(),
             uid: None,
-            links: openehr_base::containers::present(Vec::new()),
+            links: openehr_base::containers::present_nonempty(Vec::new()),
             archetype_details: Some(Archetyped {
                 archetype_id: ArchetypeId {
                     value: "openEHR-EHR-OBSERVATION.bp.v1".to_owned(),
@@ -97,7 +97,7 @@ mod tests {
             feeder_audit: None,
             language: code("ISO_639-1", "en"),
             encoding: code("IANA_character-sets", "UTF-8"),
-            other_participations: openehr_base::containers::present(Vec::new()),
+            other_participations: openehr_base::containers::present_nonempty(Vec::new()),
             workflow_id: None,
             subject: PartyProxy::PartySelf(PartySelf { external_ref: None }),
             provider: None,

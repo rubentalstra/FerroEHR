@@ -34,7 +34,7 @@ mod tests {
             value: value.to_owned(),
             hyperlink: None,
             formatting: None,
-            mappings: openehr_base::containers::present(Vec::new()),
+            mappings: openehr_base::containers::present_nonempty(Vec::new()),
             language: None,
             encoding: None,
         })
@@ -55,7 +55,7 @@ mod tests {
             name: text("Admission"),
             archetype_node_id: "openEHR-EHR-ADMIN_ENTRY.admission.v1".to_owned(),
             uid: None,
-            links: openehr_base::containers::present(Vec::new()),
+            links: openehr_base::containers::present_nonempty(Vec::new()),
             archetype_details: Some(Archetyped {
                 archetype_id: ArchetypeId {
                     value: "openEHR-EHR-ADMIN_ENTRY.admission.v1".to_owned(),
@@ -66,7 +66,7 @@ mod tests {
             feeder_audit: None,
             language: code("ISO_639-1", "en"),
             encoding: code("IANA_character-sets", "UTF-8"),
-            other_participations: openehr_base::containers::present(Vec::new()),
+            other_participations: openehr_base::containers::present_nonempty(Vec::new()),
             workflow_id: None,
             subject: PartyProxy::PartySelf(PartySelf { external_ref: None }),
             provider: None,
@@ -74,7 +74,7 @@ mod tests {
                 name: text("tree"),
                 archetype_node_id: "at0002".to_owned(),
                 uid: None,
-                links: openehr_base::containers::present(Vec::new()),
+                links: openehr_base::containers::present_nonempty(Vec::new()),
                 archetype_details: None,
                 feeder_audit: None,
                 items: openehr_base::containers::present(Vec::new()),

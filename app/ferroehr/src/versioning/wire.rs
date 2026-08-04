@@ -578,7 +578,7 @@ pub(crate) fn build_original_version(
                 value: lifecycle_rubric(parts.lifecycle_state).clone(),
                 hyperlink: None,
                 formatting: None,
-                mappings: openehr_base::containers::present(Vec::new()),
+                mappings: None,
                 language: None,
                 encoding: None,
                 defining_code: CodePhrase {

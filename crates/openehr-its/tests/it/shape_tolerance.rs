@@ -166,7 +166,9 @@ fn present_but_empty_participations_is_a_violation_and_omitted_is_not() {
     doc["context"]["participations"] = serde_json::json!([]);
     let dirty = verdicts(&doc);
     assert!(
-        dirty.iter().any(|m| m.contains("Participations_validity")),
+        dirty
+            .iter()
+            .any(|m| m.contains("participations") && m.contains("at least one member")),
         "present-but-empty participations must violate \
          Participations_validity, got: {dirty:?}"
     );

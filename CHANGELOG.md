@@ -453,6 +453,7 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **BREAKING (error class):** the spec model is now complete-by-construction across every crate: the cross-schema re-emission closure applies uniformly (openehr-rm re-emits BASE's `Interval`/`Iso8601` family, am14 re-emits `AUTHORED_RESOURCE`/`RESOURCE_DESCRIPTION`), and every `0..1` list carrying a present-implies-non-empty invariant is emitted `Option<NonEmptyVec<T>>` — a present-but-empty list (`"links": []`, `"contacts": []`, `"mappings": []`, …) now refuses with `400` at parse instead of `422`, on every strict write surface; the `553|incomplete|` relaxation is unchanged (#1699, #1730).
 - **BREAKING (v1-pinned XML consumers):** the default canonical-XML lineage served for `application/xml` is now the ITS-XML **v2** namespace (`http://schemas.openehr.org/v2`) — the only published schema bundle that models the RM 1.2.0 this server emits. The v1 lineage stays selectable per request with `Accept: application/xml; version=1` (a non-default v1 response is labelled `Content-Type: application/xml; version=1`). Request payloads are unaffected — both namespaces are read regardless (#1666).
 - **An `ITEM_TAG` whose key or value violates its own RM invariants is now
   refused when the payload is read, not after it is built.** RM
