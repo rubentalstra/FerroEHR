@@ -117,8 +117,26 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
   references), `create_bmm3_model.rs` (`P_BMM` → **v3** `BMM_MODEL` — its own
   module precisely because the two generations give the same Rust NAMES to
   different types and import renaming is forbidden), `loader.rs` (the composed
-  `load_model`), `error.rs` (the one typed `PBmmReadError`), plus
-  `p_bmm_*_impl.rs` spec functions. Class-name
+  `load_model`), `error.rs` (the one typed `PBmmReadError`), `validate.rs` (the
+  model validity checker), plus
+  `p_bmm_*_impl.rs` spec functions.
+  **Two failure layers, deliberately separate.** `PBmmReadError` is FAIL-FAST
+  and every variant names a condition under which no `BMM_*` object can be
+  constructed. `validate.rs` COLLECTS what construction survives: the
+  `bmm3/master05-core-model.adoc` §Packages rules ("every class is contained
+  within exactly one package"; "all classes in a BMM model should be uniquely
+  named", matched case-insensitively per §Naming Convention) plus
+  non-conformant property redefinition — that last one flagged in the finding's
+  own docs as our own extension, because the released text leaves it open
+  (`bmm3/master13-model_semantics.adoc` §Inheritance and Invariants,
+  Pre-conditions and Post-conditions is `TBD`). There is deliberately NO
+  sibling-package-prefix check: §Packages says package paths "are not used as
+  namespaces as in UML", so no prohibition exists to enforce. Moving a check
+  between the two layers changes what the pipeline REFUSES — adjudicate it,
+  never drift it. The vendored corpus and the pinned component schemas are
+  pinned finding-for-finding in `tests/it/vendor_bmm_schema.rs`: the released
+  RM 1.2.0 and AM 1.4.0 schemas genuinely violate §Packages, so those rows are
+  adjudicated, not clean. Class-name
   resolution is case-insensitive (`master04-syntax.adoc` §Non-primitive
   Classes: `name` — "any capitalisation can be used"); embedding depth and
   every other cycle/boundary decision is adjudicated in the module docs, with

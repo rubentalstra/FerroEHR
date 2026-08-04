@@ -45,3 +45,4 @@ pub mod p_bmm_enumeration_impl;
 pub mod p_bmm_schema_impl;
 pub mod p_bmm_type_impl;
 pub mod reader;
+pub mod validate;
