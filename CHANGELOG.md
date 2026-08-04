@@ -15,6 +15,22 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- Archiving an EHR or a party (`POST /admin/archive/ehrs`,
+  `POST /admin/archive/parties`) now **physically moves** the archived
+  objects' rows out of the primary storage tables into a cold storage tier
+  held in the same database (a new `cold` schema, added by migration
+  `0007_cold_archive_tier`), instead of only flagging them. The primary
+  tables — and their indexes — shrink by exactly what was archived, while
+  the wire is unchanged: an archived EHR, composition, folder or party is
+  still retrievable, still carries its full revision history, and is served
+  from the cold tier; unarchived reads are untouched and never consult it.
+  Writing to an archived object brings it back automatically, a physical
+  delete clears both tiers, and an admin export still dumps archived
+  content. Multi-tenant isolation is enforced on the new tier by the same
+  row-level-security policy as the primary tables.
+
 ### Removed
 
 - **BREAKING:** the deprecated `auth.admin_scope` configuration key is
@@ -94,6 +110,23 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **ADL2 slot-narrowing validation (VDSSM) no longer stops at the first
+  include it cannot read.** A specialised `ARCHETYPE_SLOT` whose `include`
+  list mixes archetype-id regexes with constraint-based assertions was
+  skipped entirely, so a genuinely widening literal after such an assertion
+  went unreported. Each `include` is now judged on its own — an unreadable
+  one is skipped, the rest are still checked. Symmetrically, no widening is
+  claimed when the PARENT slot's admitted set is itself unreadable, and a
+  restatement is now judged over all assertions rather than the regex ones
+  alone, so neither case invents a prohibition.
+- **Flattening a specialised archetype no longer drops an inherited tuple
+  constraint.** A child node's `[a, b]` attribute-tuple wholly replaced the
+  flat parent's tuple set, so a parent tuple over a disjoint attribute group
+  silently vanished from the flat form (and from every operational template
+  and Web Template built from it). Tuple overlay now merges by
+  member-attribute group: a child tuple redefines the parent tuple over the
+  same group, tuples over other groups are inherited, and a group the parent
+  does not carry is added.
 - **A ROLE carrying an empty `capabilities` list (and a party carrying an
   empty `relationships` list) is now refused at parse (`400`)** — the RM
   invariants `Capabilities_valid`/`Relationships_validity` forbid

@@ -31,6 +31,9 @@
 //!   history, existence/kind/count lookups) that skip node reassembly.
 //! - [`contribution`] — CONTRIBUTION reads (audit, affected versions,
 //!   listing/counting).
+//! - [`tier`] — the cold archival storage tier: the physical move behind SM
+//!   `I_ADMIN_ARCHIVE`, its reverse, and the primary-miss read fallback the
+//!   reads above use.
 
 #![expect(
     clippy::disallowed_types,
@@ -52,6 +55,7 @@ pub mod import;
 pub mod meta;
 pub mod placement;
 pub mod read;
+pub mod tier;
 
 /// `other_input_version_uids` stores NULL when empty (`Is_merged_validity`),
 /// else the JSON array.

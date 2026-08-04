@@ -86,6 +86,10 @@ pub async fn attestation_target(
     tree: (i32, i32, i32),
     kind: &str,
 ) -> Result<Option<AttestTargetRow>, StorageError> {
+    // Attesting an archived version appends a row that references it, so the
+    // object comes back to the primary tier first — same rule as the version
+    // commit path (`crate::storage::version_repo::tier`).
+    crate::storage::version_repo::tier::thaw_one(&mut *tx, vo_id).await?;
     let (t, b, v) = tree;
     let row = sqlx::query(
         "SELECT ehr_id, sys_version, creating_system_id, \
@@ -125,7 +129,7 @@ pub async fn read_attestations_all(
     vo_id: VoId,
 ) -> Result<Vec<(i32, Value)>, StorageError> {
     let rows = sqlx::query(
-        "SELECT sys_version, data FROM vo_attestation WHERE vo_id = $1 \
+        "SELECT sys_version, data FROM vo_attestation_all WHERE vo_id = $1 \
          ORDER BY time_committed, id",
     )
     .bind(vo_id)

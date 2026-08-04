@@ -9,6 +9,12 @@
 //! §Storage). The version-access semantics realized are RM common master06
 //! (§Versioned Objects, §Logical Deletion) and master08 §Change Management
 //! (time-travel).
+//!
+//! NOTE (no openEHR spec governs storage tiering — our own design): each read
+//! retries against the cold archival tier
+//! ([`crate::storage::version_repo::tier`]) ONLY when the primary tier has no
+//! such version, so an archived object stays retrievable while an unarchived
+//! read is untouched.
 
 #![expect(
     clippy::disallowed_types,
@@ -23,7 +29,8 @@ use uuid::Uuid;
 
 use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
-use crate::storage::node_repo::read_version_canonical;
+use crate::storage::node_repo::read_version_canonical_in;
+use crate::storage::version_repo::tier::{Tier, on_cold};
 
 /// A loaded `vo_version`⋈`audit` row plus its reassembled content and
 /// attestations — the storage read shape the versioning layer maps into a
@@ -144,13 +151,17 @@ macro_rules! version_select {
 }
 
 /// Build a [`StoredVersion`] from a `vo_version`⋈`audit` row, resolving the
-/// canonical body through [`read_version_canonical`] (which yields
+/// canonical body through [`read_version_canonical_in`] (which yields
 /// [`Value::Null`] for a logically deleted version — no node rows — so no
 /// lifecycle branch is needed here).
+///
+/// `tier` says which tier the row came from, so the body is reassembled from
+/// the same one ([`crate::storage::version_repo::tier`]).
 async fn stored_version(
     pool: &PgPool,
     vo_id: VoId,
     row: &PgRow,
+    tier: Tier,
 ) -> Result<StoredVersion, StorageError> {
     let sys_version: i32 = row.try_get("sys_version")?;
     // A stored `other_input_version_uids` that does not decode is OUR data
@@ -169,7 +180,7 @@ async fn stored_version(
             ))
         })?
         .unwrap_or_default();
-    let canonical = read_version_canonical(pool, vo_id, sys_version).await?;
+    let canonical = read_version_canonical_in(pool, vo_id, sys_version, tier).await?;
     // The attestations arrive folded into the version-select row (the LATERAL
     // aggregates in `version_select!`), in commit order and already split on
     // `at_committal` — no separate round trip.
@@ -225,16 +236,22 @@ pub async fn read_current(
     pool: &PgPool,
     vo_id: VoId,
 ) -> Result<Option<StoredVersion>, StorageError> {
-    let Some(row) = sqlx::query(version_select!(
-        "WHERE v.vo_id = $1 AND upper_inf(v.sys_period) AND v.branch_number = 0"
-    ))
-    .bind(vo_id)
-    .fetch_optional(pool)
-    .await?
+    const SQL: &str =
+        version_select!("WHERE v.vo_id = $1 AND upper_inf(v.sys_period) AND v.branch_number = 0");
+    let primary = sqlx::query(SQL).bind(vo_id).fetch_optional(pool).await?;
+    if let Some(row) = primary {
+        return Ok(Some(
+            stored_version(pool, vo_id, &row, Tier::Primary).await?,
+        ));
+    }
+    let Some(row) = on_cold!(pool, |conn| sqlx::query(SQL)
+        .bind(vo_id)
+        .fetch_optional(&mut *conn)
+        .await)
     else {
         return Ok(None);
     };
-    Ok(Some(stored_version(pool, vo_id, &row).await?))
+    Ok(Some(stored_version(pool, vo_id, &row, Tier::Cold).await?))
 }
 
 /// Read a specific version by its STORAGE ORDINAL (`sys_version`) — for internal
@@ -248,15 +265,26 @@ pub async fn read_version_by_ordinal(
     vo_id: VoId,
     ordinal: i32,
 ) -> Result<Option<StoredVersion>, StorageError> {
-    let Some(row) = sqlx::query(version_select!("WHERE v.vo_id = $1 AND v.sys_version = $2"))
+    const SQL: &str = version_select!("WHERE v.vo_id = $1 AND v.sys_version = $2");
+    let primary = sqlx::query(SQL)
         .bind(vo_id)
         .bind(ordinal)
         .fetch_optional(pool)
-        .await?
+        .await?;
+    if let Some(row) = primary {
+        return Ok(Some(
+            stored_version(pool, vo_id, &row, Tier::Primary).await?,
+        ));
+    }
+    let Some(row) = on_cold!(pool, |conn| sqlx::query(SQL)
+        .bind(vo_id)
+        .bind(ordinal)
+        .fetch_optional(&mut *conn)
+        .await)
     else {
         return Ok(None);
     };
-    Ok(Some(stored_version(pool, vo_id, &row).await?))
+    Ok(Some(stored_version(pool, vo_id, &row, Tier::Cold).await?))
 }
 
 /// Read a specific version by its `VERSION_TREE_ID` column ints (for
@@ -271,20 +299,33 @@ pub async fn read_version(
     branch_number: i32,
     branch_version: i32,
 ) -> Result<Option<StoredVersion>, StorageError> {
-    let Some(row) = sqlx::query(version_select!(
+    const SQL: &str = version_select!(
         "WHERE v.vo_id = $1 AND v.trunk_version = $2 \
          AND v.branch_number = $3 AND v.branch_version = $4"
-    ))
-    .bind(vo_id)
-    .bind(trunk_version)
-    .bind(branch_number)
-    .bind(branch_version)
-    .fetch_optional(pool)
-    .await?
+    );
+    let primary = sqlx::query(SQL)
+        .bind(vo_id)
+        .bind(trunk_version)
+        .bind(branch_number)
+        .bind(branch_version)
+        .fetch_optional(pool)
+        .await?;
+    if let Some(row) = primary {
+        return Ok(Some(
+            stored_version(pool, vo_id, &row, Tier::Primary).await?,
+        ));
+    }
+    let Some(row) = on_cold!(pool, |conn| sqlx::query(SQL)
+        .bind(vo_id)
+        .bind(trunk_version)
+        .bind(branch_number)
+        .bind(branch_version)
+        .fetch_optional(&mut *conn)
+        .await)
     else {
         return Ok(None);
     };
-    Ok(Some(stored_version(pool, vo_id, &row).await?))
+    Ok(Some(stored_version(pool, vo_id, &row, Tier::Cold).await?))
 }
 
 /// Read the version of an object current at a given instant (time-travel):
@@ -322,16 +363,28 @@ pub async fn version_at(
     vo_id: VoId,
     at: jiff::Timestamp,
 ) -> Result<Option<StoredVersion>, StorageError> {
-    let Some(row) = sqlx::query(version_select!(
+    const SQL: &str = version_select!(
         "WHERE v.vo_id = $1 AND v.sys_period @> $2::timestamptz \
          AND v.branch_number = 0"
-    ))
-    .bind(vo_id)
-    .bind(at.to_string())
-    .fetch_optional(pool)
-    .await?
+    );
+    let at = at.to_string();
+    let primary = sqlx::query(SQL)
+        .bind(vo_id)
+        .bind(&at)
+        .fetch_optional(pool)
+        .await?;
+    if let Some(row) = primary {
+        return Ok(Some(
+            stored_version(pool, vo_id, &row, Tier::Primary).await?,
+        ));
+    }
+    let Some(row) = on_cold!(pool, |conn| sqlx::query(SQL)
+        .bind(vo_id)
+        .bind(&at)
+        .fetch_optional(&mut *conn)
+        .await)
     else {
         return Ok(None);
     };
-    Ok(Some(stored_version(pool, vo_id, &row).await?))
+    Ok(Some(stored_version(pool, vo_id, &row, Tier::Cold).await?))
 }

@@ -122,8 +122,8 @@ pub async fn current_status_root(
     ehr_id: EhrId,
 ) -> Result<Option<Value>, StorageError> {
     Ok(sqlx::query_scalar(
-        "SELECT n.data FROM vo_version v \
-         JOIN node n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version AND n.num = 0 \
+        "SELECT n.data FROM vo_version_all v \
+         JOIN node_all n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version AND n.num = 0 \
          WHERE v.ehr_id = $1 AND v.kind = 'EHR_STATUS' \
            AND upper_inf(v.sys_period) AND v.branch_number = 0",
     )
@@ -207,17 +207,17 @@ pub async fn ehr_summary_read(
          LEFT JOIN LATERAL ( \
              SELECT vo_id, trunk_version, branch_number, branch_version, \
                     creating_system_id \
-             FROM vo_version WHERE ehr_id = e.id AND kind = 'EHR_STATUS' \
+             FROM vo_version_all WHERE ehr_id = e.id AND kind = 'EHR_STATUS' \
                AND upper_inf(sys_period) AND branch_number = 0 \
          ) s ON true \
          LEFT JOIN LATERAL ( \
-             SELECT vo_id FROM vo_version WHERE ehr_id = e.id AND kind = 'EHR_ACCESS' \
+             SELECT vo_id FROM vo_version_all WHERE ehr_id = e.id AND kind = 'EHR_ACCESS' \
                AND upper_inf(sys_period) AND branch_number = 0 \
          ) a ON true \
          LEFT JOIN LATERAL ( \
              SELECT array_agg(f.vo_id ORDER BY f.rank) AS folders \
              FROM ehr_folder f \
-             JOIN vo_version v ON v.vo_id = f.vo_id \
+             JOIN vo_version_all v ON v.vo_id = f.vo_id \
                AND upper_inf(v.sys_period) AND v.branch_number = 0 \
              WHERE f.ehr_id = e.id AND v.lifecycle_state <> '523' \
          ) f ON true \

@@ -14,10 +14,12 @@
 //! `DemographicArchive` CAPABILITY verdicts only.
 //!
 //! Both are all-or-nothing: every id in the list is existence-checked before
-//! any marker is written, so an unknown id leaves the repository untouched
+//! anything is written, so an unknown id leaves the repository untouched
 //! (the SM declares the not-found error on the operation, not per element).
-//! Archival is read-neutral — the archived objects remain retrievable — so no
-//! resource representation changes and the success is a bodyless `204`.
+//! Each call marks the objects archived AND physically moves their rows to the
+//! server's cold storage tier; archival stays read-neutral — the archived
+//! objects remain retrievable, served from that tier — so no resource
+//! representation changes and the success is a bodyless `204`.
 //!
 //! Gating: mounted under `/admin/`, so they inherit the group's RBAC Admin
 //! class (`401`/`403`, our own authorization design) and the
