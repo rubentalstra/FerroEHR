@@ -24,12 +24,6 @@
 //! beside the template-filler checks it shares its rule texts with; the
 //! invocation order from the walk is unchanged.
 //!
-//! The [`ValidationCode`] variants `Vtpnc`/`Vtpin` (tuple conformance vs the
-//! parent node, `master08` §Phase 2 gloss) are present as the parent-conformance
-//! vocabulary but not yet raised here.
-//! TODO(#1921): implement `C_PRIMITIVE_TUPLE` / `C_ATTRIBUTE_TUPLE`
-//! conformance (`master04.5` §`C_SECOND_ORDER` L729-804) to raise VTPNC/VTPIN.
-//!
 //! `Vunt` (`use_node` RM type validity, `master04.5` §`C_COMPLEX_OBJECT_PROXY`
 //! VUNT L479-480) is NOT raised here: the rule is "according to the reference
 //! model", so it lives in the RM pass ([`super::rm`]) where an [`RmModel`] decides
@@ -46,11 +40,13 @@ use openehr_base::prelude::MultiplicityInterval;
 
 use super::catalogue::ValidationCode;
 use super::conformance::{
-    self, ValueConformance, cardinality_conforms_to, collective_occurrences_of,
+    self, TupleConformance, ValueConformance, cardinality_conforms_to, collective_occurrences_of,
     effective_occurrences, existence_conforms_to, meta_type_conforms, node_id_conforms_to,
+    tuple_conforms_to, tuple_member_names,
 };
 use super::identification::languages;
 use super::rm::RmModel;
+use super::structure::complex_attribute_tuples;
 use super::{ValidationIssue, push_issue};
 use crate::aom::access::{
     aom_type, child_occurrences, complex_attributes, complex_rm_type, object_node_id,
@@ -129,8 +125,51 @@ impl<'a> ParentScan<'a> {
         parent_rm: &str,
         base_path: &str,
     ) {
+        self.check_attribute_tuples(child_obj, parent_obj, base_path);
         for attr in complex_attributes(child_obj) {
             self.check_attribute(attr, parent_obj, parent_rm, base_path);
+        }
+    }
+
+    /// VTPNC / VTPIN: second-order tuple conformance of a child node's
+    /// `C_ATTRIBUTE_TUPLE`s to the corresponding flat-parent node's
+    /// ([`tuple_conforms_to`], `master04.5` §`C_SECOND_ORDER` L729-804).
+    ///
+    /// NOTE: `master08` §Phase 2 glosses neither code, so the split is ours —
+    /// VTPIN for a tuple the conformance functions cannot compare, VTPNC for a
+    /// comparable tuple they refuse.
+    fn check_attribute_tuples(
+        &mut self,
+        child_obj: &'a CComplexObject,
+        parent_obj: &'a CComplexObject,
+        path: &str,
+    ) {
+        let parent_tuples = complex_attribute_tuples(parent_obj);
+        for tuple in complex_attribute_tuples(child_obj) {
+            let group = tuple_member_names(tuple).join(", ");
+            match tuple_conforms_to(tuple, parent_tuples) {
+                TupleConformance::Conforms => {}
+                TupleConformance::GroupMismatch => push_issue(
+                    &mut self.issues,
+                    ValidationCode::Vtpin,
+                    format!(
+                        "tuple [{group}] redefines a parent tuple over a different attribute group"
+                    ),
+                    path,
+                ),
+                TupleConformance::RowArityMismatch => push_issue(
+                    &mut self.issues,
+                    ValidationCode::Vtpin,
+                    format!("a tuple [{group}] row does not carry one member per attribute"),
+                    path,
+                ),
+                TupleConformance::RowViolates => push_issue(
+                    &mut self.issues,
+                    ValidationCode::Vtpnc,
+                    format!("a tuple [{group}] row narrows no row of the parent tuple"),
+                    path,
+                ),
+            }
         }
     }
 
@@ -1153,5 +1192,153 @@ terminology
             "",
             "VDSSP",
         );
+    }
+
+    // ── second-order tuple conformance (master04.5 §C_SECOND_ORDER) ───────
+    //
+    // The vendored ADL2 regression corpus carries no VTPNC/VTPIN case
+    // (`tests/corpus/INVENTORY.md` lists both as uncovered), so these
+    // hand-written fixtures are the coverage for the two codes.
+
+    /// The tuple parent: `ELEMENT[id2]`'s `DV_QUANTITY[id3]` carries the
+    /// two-row `[magnitude, units]` tuple of `ADL2/master09.05` §Tuple
+    /// Redefinition; `ELEMENT[id4]`'s `DV_QUANTITY[id5]` carries none.
+    const TUPLE_PARENT: &str = "\
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+\topenEHR-EHR-CLUSTER.p2_tuple_parent.v1.0.0
+
+language
+\toriginal_language = <[ISO_639-1::en]>
+
+description
+\tlifecycle_state = <\"draft\">
+
+definition
+\tCLUSTER[id1] matches {
+\t\titems cardinality matches {0..*} matches {
+\t\t\tELEMENT[id2] occurrences matches {0..1} matches {
+\t\t\t\tvalue matches {
+\t\t\t\t\tDV_QUANTITY[id3] matches {
+\t\t\t\t\t\t[magnitude, units] matches {
+\t\t\t\t\t\t\t[{|>=50.0|}, {\"mm[Hg]\"}],
+\t\t\t\t\t\t\t[{|>=68.0|}, {\"cm[H20]\"}]
+\t\t\t\t\t\t}
+\t\t\t\t\t}
+\t\t\t\t}
+\t\t\t}
+\t\t\tELEMENT[id4] occurrences matches {0..1} matches {
+\t\t\t\tvalue matches { DV_QUANTITY[id5] }
+\t\t\t}
+\t\t}
+\t}
+
+terminology
+\tterm_definitions = <
+\t\t[\"en\"] = <
+\t\t\t[\"id1\"] = <text=<\"\"> description=<\"\">>
+\t\t\t[\"id2\"] = <text=<\"\"> description=<\"\">>
+\t\t\t[\"id4\"] = <text=<\"\"> description=<\"\">>
+\t\t>
+\t>
+";
+
+    /// The error codes phase-2 raises for a child definition body specialising
+    /// [`TUPLE_PARENT`].
+    fn tuple_codes(def: &str) -> Vec<String> {
+        let src = format!(
+            "archetype (adl_version=2.0.5; rm_release=1.0.2)\n\
+             \topenEHR-EHR-CLUSTER.p2_tuple_child.v1.0.0\n\n\
+             specialize\n\topenEHR-EHR-CLUSTER.p2_tuple_parent.v1\n\n\
+             language\n\toriginal_language = <[ISO_639-1::en]>\n\n\
+             description\n\tlifecycle_state = <\"draft\">\n\n\
+             definition\n\tCLUSTER[id1.1] matches {{\n{def}\n\t}}\n\n\
+             terminology\n\tterm_definitions = <\n\t\t[\"en\"] = <\n\t\t>\n\t>\n"
+        );
+        let parent = parse_artefact(TUPLE_PARENT, Dialect::Adl2).unwrap();
+        let child = parse_artefact(&src, Dialect::Adl2).unwrap();
+        let issues = validate_against_flat_parent(
+            &child,
+            &parent,
+            &ProductionRmModel,
+            &ArchetypeRepository::new(),
+        );
+        issues
+            .iter()
+            .map(|i| i.code.mnemonic().to_owned())
+            .collect()
+    }
+
+    /// The child `DV_QUANTITY[id3]` body redefining `ELEMENT[id2]`'s value.
+    fn quantity_child(tuple: &str) -> String {
+        format!("\t\t/items[id2]/value matches {{ DV_QUANTITY[id3] matches {{\n{tuple}\n\t\t}} }}")
+    }
+
+    #[test]
+    fn tuple_row_narrowing_conforms() {
+        // Dropping a row and narrowing the surviving one is the sanctioned
+        // narrowing (`master04.5` §`C_SECOND_ORDER` `c_conforms_to`,
+        // `ADL2/master09.05` §Tuple Redefinition).
+        let raised = tuple_codes(&quantity_child(
+            "\t\t\t[magnitude, units] matches { [{|>=60.0|}, {\"mm[Hg]\"}] }",
+        ));
+        assert_eq!(raised, Vec::<String>::new());
+    }
+
+    #[test]
+    fn tuple_over_an_unconstrained_parent_node_conforms() {
+        // `DV_QUANTITY[id5]` carries no tuple, so a child tuple there is a new
+        // second-order constraint. `master04.5` §`C_SECOND_ORDER` defines
+        // conformance only against a corresponding parent tuple and no released
+        // text condemns adding one — this is an accepted boundary, not a
+        // refusal.
+        let raised = tuple_codes(
+            "\t\t/items[id4]/value matches { DV_QUANTITY[id5] matches {\n\
+             \t\t\t[magnitude, units] matches { [{|>=1.0|}, {\"mm\"}] }\n\t\t} }",
+        );
+        assert_eq!(raised, Vec::<String>::new());
+    }
+
+    #[test]
+    fn vtpnc_row_narrows_no_parent_row() {
+        // `>=20.0` is wider than the `>=50.0` of the only row whose units match,
+        // so the row narrows no parent row (`master04.5` §`C_SECOND_ORDER`
+        // `C_ATTRIBUTE_TUPLE.c_conforms_to`).
+        let raised = tuple_codes(&quantity_child(
+            "\t\t\t[magnitude, units] matches { [{|>=20.0|}, {\"mm[Hg]\"}] }",
+        ));
+        assert_eq!(raised, vec!["VTPNC".to_owned()]);
+    }
+
+    #[test]
+    fn vtpnc_member_of_a_different_primitive_type() {
+        // The `same_type` guard of `C_PRIMITIVE_TUPLE.c_conforms_to`
+        // (`master04.5` §`C_SECOND_ORDER` L785): a `C_INTEGER` member cannot
+        // narrow the parent's `C_REAL` member.
+        let raised = tuple_codes(&quantity_child(
+            "\t\t\t[magnitude, units] matches { [{60}, {\"mm[Hg]\"}] }",
+        ));
+        assert_eq!(raised, vec!["VTPNC".to_owned()]);
+    }
+
+    #[test]
+    fn vtpin_different_member_attribute_group() {
+        // A `[magnitude, units, precision]` tuple over the parent's
+        // `[magnitude, units]` group can never satisfy the `count = other.count`
+        // precondition (`master04.5` §`C_SECOND_ORDER` L784).
+        let raised = tuple_codes(&quantity_child(
+            "\t\t\t[magnitude, units, precision] matches { [{|>=50.0|}, {\"mm[Hg]\"}, {2}] }",
+        ));
+        assert_eq!(raised, vec!["VTPIN".to_owned()]);
+    }
+
+    #[test]
+    fn vtpin_row_member_count_is_not_the_group_arity() {
+        // Each row member corresponds to one member attribute (`master04.5`
+        // §`C_PRIMITIVE_TUPLE`), so a one-member row under a two-attribute
+        // group is not comparable with the parent's rows.
+        let raised = tuple_codes(&quantity_child(
+            "\t\t\t[magnitude, units] matches { [{|>=50.0|}] }",
+        ));
+        assert_eq!(raised, vec!["VTPIN".to_owned()]);
     }
 }
