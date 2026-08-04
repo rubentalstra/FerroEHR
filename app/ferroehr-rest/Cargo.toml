@@ -56,6 +56,9 @@ jiff = { workspace = true }
 # and the /management/prometheus render surface).
 metrics = { workspace = true }
 metrics-exporter-prometheus = { workspace = true }
+# The on-demand CPU flamegraph behind /management/flamegraph (sampling
+# profiler + inferno SVG render; Linux + macOS only, matching our targets).
+pprof = { workspace = true }
 # Trace-context propagation (W3C traceparent) + the OTel span extension used by
 # the root-span middleware; the export layer itself is installed in the binary.
 opentelemetry = { workspace = true }

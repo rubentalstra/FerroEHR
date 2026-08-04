@@ -223,6 +223,7 @@ data:
       port = 9100.0
       [management.endpoints]
         env = "admin_only"
+        flamegraph = "off"
         info = "admin_only"
         loggers = "admin_only"
         metrics = "admin_only"
@@ -333,7 +334,7 @@ spec:
     metadata:
       annotations:
         # Roll pods when the rendered ferroehr.toml changes.
-        checksum/config: a91ae973dbab78d873fc5a1f8b4883126cf8507e4df7987b5814f1617ccbc5ee
+        checksum/config: 9e588a7866c16a223d517366fc5a44d878f3103432598e8f97c8288aebd18b79
         prometheus.io/scrape: "true"
         prometheus.io/port: "9100"
         prometheus.io/path: "/management/prometheus"

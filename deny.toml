@@ -57,7 +57,14 @@ allow = [
   "CDLA-Permissive-2.0",
 ]
 confidence-threshold = 0.9
-exceptions = []
+exceptions = [
+  # inferno (the flamegraph renderer pprof's `flamegraph` feature uses) is
+  # CDDL-1.0 — a file-scoped weak copyleft (like MPL-2.0): obligations attach
+  # to inferno's own source files, which we consume unmodified as a build
+  # dependency of the profiling instrument; nothing of ours is derivative.
+  # Scoped exception, not a blanket allow (2026-08-04, issue #1861).
+  { allow = ["CDDL-1.0"], crate = "inferno" },
+]
 
 [bans]
 multiple-versions = "warn"

@@ -62,6 +62,13 @@ pub struct OtelConfig {
     /// Whether to also **push** metrics over OTLP (a periodic `OTel` meter
     /// provider alongside the Prometheus pull surface). Off by default.
     pub metrics_push: bool,
+    /// Span-timing flamegraph capture (the `tracing-flame` layer,
+    /// <https://docs.rs/tracing-flame/latest/tracing_flame/>): write folded
+    /// stack samples of every `tracing` span to this file, for offline
+    /// rendering with inferno. **Unset ⇒ the layer is not installed at all**
+    /// (zero overhead) — set it for a diagnostic session, not as a standing
+    /// production posture (the file grows with span traffic).
+    pub flame_file: Option<std::path::PathBuf>,
 }
 
 impl Default for OtelConfig {
@@ -72,6 +79,7 @@ impl Default for OtelConfig {
             environment: defaults::environment(),
             traces_sample_ratio: defaults::sample_ratio(),
             metrics_push: false,
+            flame_file: None,
         }
     }
 }
@@ -123,5 +131,6 @@ mod tests {
         assert_eq!(c.otel.service_name, "ferroehr");
         assert_eq!(c.log.format, LogFormat::Auto);
         assert!(!c.otel.metrics_push);
+        assert!(c.otel.flame_file.is_none());
     }
 }

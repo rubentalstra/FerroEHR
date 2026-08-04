@@ -434,10 +434,37 @@ The ops endpoints:
 | `GET {base}/metrics` | JSON registry view | `admin_only` |
 | `GET {base}/env` | effective configuration, with secrets redacted | `admin_only` |
 | `GET`/`POST`/`DELETE` `{base}/loggers` | read and change the log level at runtime | `admin_only` |
+| `GET {base}/flamegraph` | on-demand CPU flamegraph of the running server | `admin_only` |
 
 > [!WARNING]
 > `{base}/env` and `{base}/loggers` expose and change server internals — keep
 > them `admin_only`, and prefer binding the surface to an internal-only port.
+
+### Profiling: the on-demand CPU flamegraph
+
+When the server is measurably slow, the metrics tell you *how slow*;
+`{base}/flamegraph` tells you **where the time goes**. The endpoint samples the
+whole process with an in-process sampling profiler (the
+[`pprof`](https://docs.rs/pprof/latest/pprof/) crate) for a bounded window and
+answers with a rendered flamegraph SVG — open it in a browser and read the wide
+frames.
+
+```bash
+# sample 10 s at 99 Hz (the defaults) and open the result
+curl -u admin:… -o flamegraph.svg \
+  "http://cdr.internal:9100/management/flamegraph?seconds=10&frequency=99"
+```
+
+- `seconds` (default 10) and `frequency` (default 99 Hz) are capped by
+  `management.profiling.max_seconds` / `max_frequency`; a request beyond a cap
+  is refused with `400`, never silently clamped.
+- **One sample window at a time**: a second request while one runs answers
+  `409` — retry when the window completes.
+- Sampling is low-overhead but not free; profile under the real load you are
+  diagnosing, and keep the endpoint `admin_only` on an internal port like the
+  rest of the surface.
+- Best results come from the container images and release builds, which keep
+  line tables (`debug = "line-tables-only"`) so frames resolve to `file:line`.
 
 With the surface enabled, the admin console grows an **Operations** screen over
 it — dependency health, build provenance, the metric registry, and runtime log

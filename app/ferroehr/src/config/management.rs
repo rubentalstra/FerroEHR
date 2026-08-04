@@ -64,6 +64,34 @@ pub struct EndpointLevels {
     /// `/management/loggers` — the runtime `EnvFilter` control.
     #[serde(default)]
     pub loggers: AccessLevel,
+    /// `/management/flamegraph` — the on-demand CPU flamegraph (pprof sampling).
+    #[serde(default)]
+    pub flamegraph: AccessLevel,
+}
+
+/// Limits for the on-demand CPU profiler behind `/management/flamegraph`.
+///
+/// Sampling is cheap but not free (a `SIGPROF`-driven stack sample at the
+/// requested frequency, per the `pprof` crate —
+/// <https://docs.rs/pprof/latest/pprof/>), so the caps below bound what a
+/// request may ask for; a request outside them is refused with `400`, never
+/// silently clamped.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct ProfilingConfig {
+    /// The longest sample window a single request may ask for, in seconds.
+    pub max_seconds: u16,
+    /// The highest sampling frequency a request may ask for, in Hz.
+    pub max_frequency: i32,
+}
+
+impl Default for ProfilingConfig {
+    fn default() -> Self {
+        Self {
+            max_seconds: 30,
+            max_frequency: 999,
+        }
+    }
 }
 
 /// The management surface configuration.
@@ -88,6 +116,9 @@ pub struct ManagementConfig {
     /// Per-endpoint access levels.
     #[serde(default)]
     pub endpoints: EndpointLevels,
+    /// Limits for the on-demand CPU profiler (`endpoints.flamegraph`).
+    #[serde(default)]
+    pub profiling: ProfilingConfig,
 }
 
 impl Default for ManagementConfig {
@@ -98,6 +129,7 @@ impl Default for ManagementConfig {
             port: None,
             access_default: defaults::access_default(),
             endpoints: EndpointLevels::default(),
+            profiling: ProfilingConfig::default(),
         }
     }
 }
@@ -126,6 +158,9 @@ mod tests {
         assert_eq!(c.access_default, AccessLevel::AdminOnly);
         assert_eq!(c.endpoints.prometheus, AccessLevel::Off);
         assert_eq!(c.endpoints.info, AccessLevel::Off);
+        assert_eq!(c.endpoints.flamegraph, AccessLevel::Off);
+        assert_eq!(c.profiling.max_seconds, 30);
+        assert_eq!(c.profiling.max_frequency, 999);
     }
 
     /// The health probes are not part of this section any more (they are the

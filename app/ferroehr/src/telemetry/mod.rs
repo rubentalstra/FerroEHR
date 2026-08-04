@@ -56,6 +56,9 @@ pub enum TelemetryError {
     /// An OTLP exporter could not be built.
     #[error("otlp exporter: {0}")]
     Exporter(String),
+    /// The span-flamegraph capture file could not be created.
+    #[error("flame capture: {0}")]
+    Flame(String),
 }
 
 /// Initialize telemetry from configuration. Call once, early in `main`.
@@ -92,8 +95,14 @@ pub fn init(cfg: &TelemetryConfig, build: &BuildInfo) -> Result<TelemetryGuard, 
         opentelemetry::global::set_text_map_propagator(TraceContextPropagator::new());
     }
 
-    // 3) Logs + the (optional) OTel span layer.
-    let reload = layers::init_subscriber(cfg.log.format, &cfg.log.filter, tracer)?;
+    // 3) Logs + the (optional) OTel span layer + the (optional) span-flame
+    //    capture layer.
+    let (reload, flame) = layers::init_subscriber(
+        cfg.log.format,
+        &cfg.log.filter,
+        tracer,
+        cfg.otel.flame_file.as_deref(),
+    )?;
 
     Ok(TelemetryGuard {
         reload,
@@ -101,6 +110,7 @@ pub fn init(cfg: &TelemetryConfig, build: &BuildInfo) -> Result<TelemetryGuard, 
         tracer_provider,
         meter_provider,
         meter,
+        flame,
         sampler: None,
         shut: false,
     })
@@ -169,6 +179,7 @@ pub struct TelemetryGuard {
     tracer_provider: Option<SdkTracerProvider>,
     meter_provider: Option<SdkMeterProvider>,
     meter: Option<Meter>,
+    flame: Option<layers::FlameFlush>,
     sampler: Option<JoinHandle<()>>,
     shut: bool,
 }
@@ -178,6 +189,7 @@ impl std::fmt::Debug for TelemetryGuard {
         f.debug_struct("TelemetryGuard")
             .field("otel_traces", &self.tracer_provider.is_some())
             .field("otel_metrics_push", &self.meter_provider.is_some())
+            .field("flame_capture", &self.flame.is_some())
             .field("sampler_running", &self.sampler.is_some())
             .finish_non_exhaustive()
     }
@@ -214,6 +226,13 @@ impl TelemetryGuard {
         if let Some(sampler) = self.sampler.take() {
             sampler.abort();
         }
+        // Flush the span-flame capture first (a buffered local file; dropping
+        // the guard also flushes, but an explicit failure is logged, not lost).
+        if let Some(flame) = self.flame.take()
+            && let Err(e) = flame.flush()
+        {
+            tracing::warn!(error = %e, "span-flame flush at shutdown failed");
+        }
         let tracer = self.tracer_provider.take();
         let meter = self.meter_provider.take();
         self.shut = true;
@@ -248,6 +267,11 @@ impl Drop for TelemetryGuard {
             tracing::warn!(
                 "TelemetryGuard dropped without shutdown(); flushing exporters best-effort"
             );
+            if let Some(flame) = self.flame.take()
+                && let Err(e) = flame.flush()
+            {
+                tracing::warn!(error = %e, "span-flame flush in Drop failed");
+            }
             if let Some(t) = self.tracer_provider.take()
                 && let Err(e) = t.shutdown()
             {
