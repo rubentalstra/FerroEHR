@@ -171,9 +171,10 @@ async fn stamp_tenant_guc(conn: &mut PgConnection) -> Result<(), sqlx::Error> {
     Ok(())
 }
 
-/// Create the **tenant-scoped** application pool: [`connect`] plus hooks that
-/// stamp the `ferroehr.tenant_id` session GUC on every checked-out connection
-/// from the current request's tenant context
+/// Creates the **tenant-scoped** application pool.
+///
+/// Wraps [`connect`] with hooks that stamp the `ferroehr.tenant_id` session GUC
+/// on every checked-out connection from the current request's tenant context
 /// ([`crate::extensions::tenant_context::current`]). Multi-tenancy is our own
 /// deployment extension — no openEHR spec governs it.
 ///

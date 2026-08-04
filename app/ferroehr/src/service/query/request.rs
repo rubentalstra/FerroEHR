@@ -1,7 +1,9 @@
-//! Query execution requests/outcomes — the realization of
-//! `ADHOC_QUERY_EXECUTE_SPEC` / `STORED_QUERY_EXECUTE_SPEC`
-//! (`adhoc_query_execute_spec.adoc`, `stored_query_execute_spec.adoc`) plus
-//! the execute-call parameters (`i_query_service.adoc`).
+//! Query execution requests and outcomes.
+//!
+//! The realization of `ADHOC_QUERY_EXECUTE_SPEC` /
+//! `STORED_QUERY_EXECUTE_SPEC` (`adhoc_query_execute_spec.adoc`,
+//! `stored_query_execute_spec.adoc`) plus the execute-call parameters
+//! (`i_query_service.adoc`).
 
 use std::collections::BTreeMap;
 
@@ -58,11 +60,12 @@ impl AqlQueryRequest {
     }
 }
 
-/// The outcome of an AQL execution: the assembled `RESULT_SET`
-/// (`result_set.adoc`; rendered as ITS-REST canonical JSON) plus — when the
-/// caller asked for them ([`AqlQueryRequest::collect_attributes`]) — the
-/// distinct EHR ids and template ids the query touched, for the ABAC
-/// post-check.
+/// The outcome of an AQL execution.
+///
+/// Carries the assembled `RESULT_SET` (`result_set.adoc`; rendered as ITS-REST
+/// canonical JSON) plus — when the caller asked for them
+/// ([`AqlQueryRequest::collect_attributes`]) — the distinct EHR ids and
+/// template ids the query touched, for the ABAC post-check.
 #[derive(Debug, Clone, Default)]
 pub struct QueryOutcome {
     /// The `RESULT_SET` (canonical JSON) the adapter renders.

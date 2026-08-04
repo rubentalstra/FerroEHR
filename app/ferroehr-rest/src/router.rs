@@ -71,10 +71,12 @@ const REQUEST_BODY_LIMIT: usize = 16 * 1024 * 1024;
 /// Per-request timeout.
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 
-/// Assemble the full application router: the ITS-REST API (behind the auth
-/// layer) nested under the base path, the always-on public health family, the
-/// status + SMART-discovery endpoints, the System Options manifest, the optional
-/// Swagger UI, and the shared `tower-http` middleware stack.
+/// Assembles the full application router.
+///
+/// Mounts the ITS-REST API (behind the auth layer) nested under the base path,
+/// the always-on public health family, the status + SMART-discovery endpoints,
+/// the System Options manifest, the optional Swagger UI, and the shared
+/// `tower-http` middleware stack.
 pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
     let cfg = state.config().clone();
     let observability = state.observability().clone();

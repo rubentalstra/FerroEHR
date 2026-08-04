@@ -130,7 +130,7 @@ fn commit_instant(body: &Value) -> Option<jiff::Timestamp> {
 /// lineages spell it identically). `VERSION` is abstract there, so the
 /// concrete subtype is named by `xsi:type` on that same root rather than by a
 /// root element of its own — the serializer emits it from the declared type
-/// (`crate::overview::negotiate` §`ABSTRACT_ROOT_TYPES`), which is how an
+/// (`openehr_its::xml::declared_abstract_root_type`), which is how an
 /// `IMPORTED_VERSION` stays distinguishable from an `ORIGINAL_VERSION`
 /// (RM common master06 §Version and its Subtypes). Neither published lineage
 /// declares an `original_version` or `imported_version` document element, so

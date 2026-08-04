@@ -442,8 +442,9 @@ pub fn build_authz(
     Ok(AuthzHandle::build(config, base_path, engine, resolvers).map(Arc::new))
 }
 
-/// The DB-backed ABAC attribute resolvers
-/// (`ferroehr_rest::extensions::access::authz::AuthzResolvers`): the EHR
+/// The DB-backed ABAC attribute resolvers.
+///
+/// Builds `ferroehr_rest::extensions::access::authz::AuthzResolvers`: the EHR
 /// subject external-ref id (the promoted `ehr.subject_id` column — the same
 /// query the audit [`SubjectResolver`] runs) and the committed template of a
 /// COMPOSITION version (`vo_version.template_id` via the service read-back).

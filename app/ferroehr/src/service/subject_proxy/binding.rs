@@ -28,8 +28,9 @@ pub struct SystemCallBody {
     pub query_text: Option<String>,
 }
 
-/// `SYSTEM_CALL` — the type of `DATA_FRAME.primary_method`/`fallback_method`
-/// (`data_frame.adoc`, referencing the openEHR PROC Task Planning
+/// `SYSTEM_CALL` — the type of `DATA_FRAME.primary_method`/`fallback_method`.
+///
+/// Defined in `data_frame.adoc` (referencing the openEHR PROC Task Planning
 /// `SYSTEM_CALL` class), with the two descendants shown in master10
 /// §Specifying a Binding: `API_CALL` and `QUERY_CALL`.
 ///
@@ -92,11 +93,12 @@ pub struct DataFrame {
     pub fallback_method: Option<SystemCall>,
 }
 
-/// `ENV_BINDING` — "Binding for an execution environment to a set of subject
-/// variables … a set of retrieval methods (e.g. API invocations, queries)
-/// each defined by a _data frame_ …, for a particular execution environment,
-/// and _independent of any particular subject_" (`env_binding.adoc`; master10
-/// §Bindings).
+/// `ENV_BINDING` — an execution environment bound to subject variables.
+///
+/// "Binding for an execution environment to a set of subject variables … a set
+/// of retrieval methods (e.g. API invocations, queries) each defined by a
+/// _data frame_ …, for a particular execution environment, and _independent of
+/// any particular subject_" (`env_binding.adoc`; master10 §Bindings).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct EnvBinding {
     /// `env_id [1]` — identifier of the environment this binding is designed

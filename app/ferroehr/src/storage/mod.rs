@@ -1,6 +1,8 @@
-//! Greenfield decomposed node storage — the codec between canonical openEHR
-//! JSON and the stored `node` rows, plus the row I/O for the versioned-object
-//! spine (`vo_version`/`audit`/`contribution`/`vo_attestation`).
+//! Greenfield decomposed node storage.
+//!
+//! The codec between canonical openEHR JSON and the stored `node` rows, plus
+//! the row I/O for the versioned-object spine
+//! (`vo_version`/`audit`/`contribution`/`vo_attestation`).
 //!
 //! No openEHR spec governs the physical storage — this is our own PG18-native
 //! design (`docs/architecture.md` §Storage; grounded on docs-verified

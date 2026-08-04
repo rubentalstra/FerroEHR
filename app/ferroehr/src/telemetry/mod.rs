@@ -1,6 +1,8 @@
-//! Telemetry initialization: the single `tracing` instrumentation API fanned
-//! out to stdout logs + (opt-in) OTLP spans, the `metrics` facade pulled via a
-//! Prometheus recorder, and (opt-in) an OTLP metrics push path.
+//! Telemetry initialization.
+//!
+//! The single `tracing` instrumentation API fanned out to stdout logs +
+//! (opt-in) OTLP spans, the `metrics` facade pulled via a Prometheus recorder,
+//! and (opt-in) an OTLP metrics push path.
 //!
 //! **No openEHR spec governs this — our own design.** This is operational
 //! observability (spans, gauges, Prometheus scrape), categorically distinct

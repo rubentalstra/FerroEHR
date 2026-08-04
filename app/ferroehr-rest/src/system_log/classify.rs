@@ -60,11 +60,13 @@ impl Classification {
     }
 }
 
-/// The fail-closed classification for an operation id that is not in the table:
-/// audit it under the generic `ApplicationActivity` class as an `Execute`, so
-/// an unrecognised-but-dispatched operation is recorded rather than silently
-/// unaudited. Extension routes (terminology/subject-proxy/events/FHIR) and any
-/// future operation land here until given an explicit entry.
+/// The fail-closed classification for an operation id absent from the table.
+///
+/// Such an operation is audited under the generic `ApplicationActivity` class
+/// as an `Execute`, so an unrecognized-but-dispatched operation is recorded
+/// rather than silently unaudited. Extension routes
+/// (terminology/subject-proxy/events/FHIR) and any future operation land here
+/// until given an explicit entry.
 pub const DEFAULT: Classification =
     Classification::audited(Execute, ObjectClass::ApplicationActivity);
 
@@ -124,13 +126,9 @@ pub fn lookup(op: &str) -> Option<Classification> {
 
         // ── CONTRIBUTION (op ids shared by the ehr + demographic groups) ─────
         //
-        // ADJUDICATED SHARED IDS (#1707): the released OAS reuses these
-        // `operationId`s in BOTH bundles (the vendored artifact is never
-        // edited, so the emitter must not diverge from it), and ONE
-        // classification is deliberately correct for both families — RM
-        // change control governs demographic content exactly as it does EHR
-        // content (RM common master06 applies to every VERSIONED_OBJECT), so
-        // a demographic CONTRIBUTION audits as the same Contribution class.
+        // The released OAS reuses these `operationId`s in BOTH bundles, and one
+        // classification is correct for both families: RM common master06 change
+        // control governs every VERSIONED_OBJECT, demographic content included.
         // The `adjudicated_shared_ids` gate below fails on any NEW cross-group
         // duplicate, so a future reuse must be adjudicated here first.
         "contribution_create" => Classification::audited(Create, Contribution),
@@ -139,18 +137,9 @@ pub fn lookup(op: &str) -> Option<Classification> {
         // ── Item tags (clinical-resource metadata; audited on the parent
         //    resource — PHI-adjacent, so recorded) ─────────────────────────────
         //
-        // NOTE: no openEHR spec governs this — our own design/extension. RM ehr
-        // `master04-ehr_package.adoc` §Tags puts ITEM_TAGs outside change
-        // control outright ("they do not cause re-versioning of the content"),
-        // so a tag mutation correctly emits NO CONTRIBUTION and NO
-        // AUDIT_DETAILS — and no released text puts anything in their place.
-        // Leaving the whole family unaudited would therefore be spec-conformant
-        // and still wrong for a clinical repository: a tag carries clinical
-        // meaning, and a state change with no trail at all is a medico-legal
-        // blind spot. Every tag operation is therefore audited under its PARENT
-        // resource's DICOM class (an ITEM_TAG has no class of its own in
-        // PS3.15), which is also where an auditor would look for it. Pinned
-        // end-to-end by `tests/it/audit_e2e.rs`.
+        // NOTE: RM ehr `master04-ehr_package.adoc` §Tags puts ITEM_TAGs outside
+        // change control, so auditing them at all is our own design/extension:
+        // each is audited under its parent's DICOM class (a tag has none).
         "ehr_tags_get" | "ehr_status_tags_get" => Classification::audited(Read, Ehr),
         "ehr_status_tags_update" => Classification::audited(Update, Ehr),
         "ehr_status_tags_delete" => Classification::audited(Delete, Ehr),

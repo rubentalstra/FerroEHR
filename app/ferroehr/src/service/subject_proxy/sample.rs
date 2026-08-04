@@ -104,9 +104,11 @@ pub enum FramePayload {
     },
 }
 
-/// `DATA_FRAME_SAMPLE<T>` — "Abstract class with methods for extracting single
-/// variable values from data frames" (`data_frame_sample.adoc`); a `SAMPLE`
-/// whose payload is a back-end retrieval result ([`FramePayload`]).
+/// `DATA_FRAME_SAMPLE<T>` — a `SAMPLE` carrying a back-end retrieval result.
+///
+/// "Abstract class with methods for extracting single variable values from data
+/// frames" (`data_frame_sample.adoc`); the payload is the retrieval result
+/// ([`FramePayload`]).
 pub type DataFrameSample = Sample<FramePayload>;
 
 /// `VARIABLE_SAMPLE` — "Sample whose result is in the form of a `VARIABLE_VALUE`

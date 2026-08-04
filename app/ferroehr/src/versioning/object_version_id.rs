@@ -30,8 +30,10 @@ use uuid::Uuid;
 use crate::ids::VoId;
 use crate::service::error::ServiceError;
 
-/// A decoded `VERSION_TREE_ID`: the trunk version plus, for a branch version,
-/// the `(branch_number, branch_version)` pair (both `>= 1` per BASE
+/// A decoded `VERSION_TREE_ID`.
+///
+/// The trunk version plus, for a branch version, the
+/// `(branch_number, branch_version)` pair (both `>= 1` per BASE
 /// `VERSION_TREE_ID`; RM common master06 §Local Versioning: "a further pair of
 /// numbers is added … Both of these numbers also start at '1'").
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -298,9 +300,10 @@ pub(crate) fn components(ovid: &ObjectVersionId) -> Result<(VoId, TreeId), Versi
     Ok((VoId(object_id), tree))
 }
 
-/// The storage address a `uid_based_id` / `versioned_object_uid` wire value
-/// names: the versioned-object key, plus the exact VERSION when the value
-/// carried one (BASE `base_types` master05 §Syntaxes — a bare
+/// The storage address a `uid_based_id` / `versioned_object_uid` value names.
+///
+/// It carries the versioned-object key, plus the exact VERSION when the wire
+/// value carried one (BASE `base_types` master05 §Syntaxes — a bare
 /// `HIER_OBJECT_ID` addresses the container, a three-part
 /// `OBJECT_VERSION_ID` addresses one version of it).
 ///

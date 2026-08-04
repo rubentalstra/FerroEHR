@@ -1,6 +1,8 @@
-//! The authorization request types the ABAC PDP seam consumes: the resource kind, the access
-//! mode (the Cedar action axis), the resolved attributes, and the multi-valued
-//! fan-out semantics (§5.4) both engines share.
+//! The authorization request types the ABAC PDP seam consumes.
+//!
+//! Covers the resource kind, the access mode (the Cedar action axis), the
+//! resolved attributes, and the multi-valued fan-out semantics (§5.4) both
+//! engines share.
 //!
 //! Attributes (`organization`, `patient`, `template`) are resolved by the PEP
 //! before the engine is called; `patient`/`template` may be *sets* (query,

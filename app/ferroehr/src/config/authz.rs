@@ -1,5 +1,6 @@
-//! Authorization configuration ([`AuthzConfig`]) — the `[authz]` section of the
-//! one server configuration tree; it carries
+//! Authorization configuration ([`AuthzConfig`]).
+//!
+//! The `[authz]` section of the one server configuration tree; it carries
 //! **no loader of its own** — the whole tree is assembled once by
 //! `ferroehr::config` and this struct is deserialized as a field of it.
 //!

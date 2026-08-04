@@ -754,17 +754,12 @@ fn cases_phrase(total: u64) -> String {
     reason = "one linear chart emitter; counts/rows << 2^52"
 )]
 pub fn chapter_bars_svg(sut_label: &str, chapters: &[ChapterRow]) -> String {
-    // All bands share ONE scale, and it is DYNAMIC: the widest band in THIS
-    // chart is the full bar, so every chart spends its whole width on the
-    // data it has (owner ruling 2026-07-28 — a fixed shared ceiling wastes
-    // width on a SUT whose run is thinner). Two SUTs therefore compare
-    // band-for-band by position and by the printed counts, not by bar
-    // length; the legend states the scale in force.
+    // All bands share ONE scale, and it is DYNAMIC: the widest band in THIS chart
+    // is the full bar, so two SUTs compare band-for-band by position and by the
+    // printed counts, not by bar length — the legend states the scale in force.
     //
-    // Chapter rows carry NO bar: at 3-4x the widest band they would either
-    // clip or force a second scale into the same picture, and a reader
-    // cannot compare two scales in one chart. A chapter's magnitude is its
-    // printed total.
+    // Chapter rows carry NO bar: at 3-4x the widest band they would clip or force a
+    // second scale into one picture; a chapter's magnitude is its printed total.
     let max_band: u64 = chapters
         .iter()
         .flat_map(|row| row.bands.iter().map(|(_, counts)| counts.total()))

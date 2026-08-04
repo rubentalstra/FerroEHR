@@ -115,13 +115,15 @@ pub struct Placement {
     pub now: jiff::Timestamp,
 }
 
-/// The version-tree placement read, merged into ONE statement: the preceding
-/// lineage tip (the version `expected` names, or the open TRUNK tip), the next
-/// storage commit ordinal, and the transaction timestamp. The timestamp is the
-/// commit instant every row of this transaction stamps (`now()` is stable for
-/// the whole transaction), so the caller can compute the `VERSION.signature`
-/// over `time_committed` BEFORE any insert (RM common master06 §Digital
-/// Signature) and commit through the folded CTE unconditionally.
+/// The version-tree placement read, merged into ONE statement.
+///
+/// Returns the preceding lineage tip (the version `expected` names, or the open
+/// TRUNK tip), the next storage commit ordinal, and the transaction timestamp.
+/// The timestamp is the commit instant every row of this transaction stamps
+/// (`now()` is stable for the whole transaction), so the caller can compute the
+/// `VERSION.signature` over `time_committed` BEFORE any insert (RM common
+/// master06 §Digital Signature) and commit through the folded CTE
+/// unconditionally.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.

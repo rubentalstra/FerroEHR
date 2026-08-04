@@ -1,6 +1,8 @@
-//! The Message service (`service/message/`) — the openEHR **Message component**
-//! of the platform crate: SM `I_MESSAGE_SERVICE` / `I_EHR_EXTRACT_SERVICE` /
-//! `I_TDD_SERVICE` (`docs/specs/openehr/SM/docs/openehr_platform/master09-message_service.adoc`
+//! The Message service (`service/message/`) — the openEHR **Message component**.
+//!
+//! The platform crate's realization of SM `I_MESSAGE_SERVICE` /
+//! `I_EHR_EXTRACT_SERVICE` / `I_TDD_SERVICE`
+//! (`docs/specs/openehr/SM/docs/openehr_platform/master09-message_service.adoc`
 //! and the UML classes `i_message_service.adoc`, `i_ehr_extract_service.adoc`,
 //! `i_tdd_service.adoc`).
 //!

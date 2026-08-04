@@ -26,9 +26,11 @@ pub struct TemplateListFilter {
     pub version: Option<String>,
 }
 
-/// One served ADL2 operational template: the artefact's **resolved**
-/// `ARCHETYPE_HRID` (the addressed `template_id` may be a partial that selects
-/// the latest matching version) paired with the rendered representation.
+/// One served ADL2 operational template.
+///
+/// Pairs the artefact's **resolved** `ARCHETYPE_HRID` (the addressed
+/// `template_id` may be a partial that selects the latest matching version)
+/// with the rendered representation.
 ///
 /// The wire needs the resolved id as well as the payload, because the `ETag` of
 /// a template response identifies the served artefact — ITS-REST

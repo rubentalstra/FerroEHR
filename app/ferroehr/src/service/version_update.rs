@@ -198,7 +198,8 @@ pub fn audit_base_mut(audit: &mut UpdateAudit) -> AuditBaseMut<'_> {
     }
 }
 
-/// The displayable `value` of a `DV_TEXT`, whichever concrete form it is —
+/// Returns the displayable `value` of a `DV_TEXT`, in whichever concrete form.
+///
 /// `DV_CODED_TEXT` declares the same attribute as "the rubric of the complete
 /// term" (RM `data_types`
 /// `UML/classes/org.openehr.rm.data_types.text.dv_coded_text.adoc`).
@@ -273,11 +274,12 @@ pub fn direct_envelope<T>(data: T) -> UpdateVersion<T> {
     }
 }
 
-/// The client-supplied committal metadata of a **direct** commit whose
-/// `UPDATE_VERSION` envelope never travels in the request body — the bare
-/// `POST`/`PUT`/`DELETE` writes on a change-controlled resource, where the
-/// only channel for it is the `openehr-version` / `openehr-audit-details`
-/// request headers.
+/// The client-supplied committal metadata of a **direct** commit.
+///
+/// Such a commit's `UPDATE_VERSION` envelope never travels in the request body
+/// — the bare `POST`/`PUT`/`DELETE` writes on a change-controlled resource,
+/// where the only channel for it is the `openehr-version` /
+/// `openehr-audit-details` request headers.
 ///
 /// ITS-REST overview `Requests_and_responses.md` §"openehr-version and
 /// openehr-audit-details": "services MUST accept `openehr-version` and

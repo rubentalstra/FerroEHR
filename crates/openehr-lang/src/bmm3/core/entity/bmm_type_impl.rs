@@ -31,7 +31,7 @@
 //! siblings [`crate::bmm3::core::entity::bmm_class_impl`] and
 //! [`crate::bmm3::core::feature::bmm_feature_impl`].
 //!
-//! TODO: implement v3 MODEL-level navigation (a `BMM_MODEL` counterpart of
+//! TODO(#1876): implement v3 MODEL-level navigation (a `BMM_MODEL` counterpart of
 //! [`crate::bmm::core::bmm_model_impl`]'s `type_conforms_to` /
 //! `all_ancestor_classes` / `property_definition` over
 //! `crate::bmm3::core::model::bmm_model::BmmModel`). The type-level lattice above

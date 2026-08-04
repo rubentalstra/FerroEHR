@@ -1,5 +1,6 @@
-//! The **Terminology** component of the platform crate: the concrete
-//! realization of the SM `I_TERMINOLOGY_SERVICE` interface on
+//! The **Terminology** component of the platform crate.
+//!
+//! The concrete realization of the SM `I_TERMINOLOGY_SERVICE` interface on
 //! [`FerroEhrService`](crate::service::FerroEhrService), plus the AQL
 //! terminology seam.
 //!

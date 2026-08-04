@@ -5,7 +5,7 @@
 //! (`docs/specs/openehr/AM/docs/ADL2/master05-paths.adoc`; the outer lexer
 //! already tokenises paths). These are used by the phase-1 validation
 //! catalogue (VRANP annotation paths, VTTBK binding paths, VRRLP rule paths).
-//! TODO: reuse for the VUNP `C_COMPLEX_OBJECT_PROXY`-target check.
+//! TODO(#1875): reuse for the VUNP `C_COMPLEX_OBJECT_PROXY`-target check.
 //!
 //! Model-level only: this walks attribute + node-id predicates over the
 //! archetype's own constraint tree and knows **nothing** about the reference
@@ -35,11 +35,11 @@ pub struct PathSegment {
     pub node_id: Option<String>,
 }
 
-/// Parse an archetype path string into its ordered [`PathSegment`]s (master05
-/// grammar `('/'?
+/// Parses an archetype path string into its ordered [`PathSegment`]s.
 ///
-/// segment ('/' segment)+)`, `segment = attr ('[' id ']')?`). A leading `/`
-/// is ignored; the empty / root path yields an empty segment list.
+/// Grammar (master05): `'/'? segment ('/' segment)+` with
+/// `segment = attr ('[' id ']')?`. A leading `/` is ignored; the empty /
+/// root path yields an empty segment list.
 #[must_use]
 pub fn parse_path(path: &str) -> Vec<PathSegment> {
     let trimmed = path.trim();

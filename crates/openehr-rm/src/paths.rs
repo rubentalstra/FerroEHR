@@ -615,21 +615,9 @@ fn apply_conjunct(c: &str, predicate: &mut Predicate) -> Result<(), PathError> {
     if c.contains('\'') {
         return Err(PathError::UnsupportedPredicate(c.to_owned()));
     }
-    // NOTE (register AMB-183): RM common `master05-directory_package.adoc`
-    // §Paths states a SECOND, name-based bare-bracket form for directory paths
-    // ("Directory paths are built using the `_name_` attribute values inherited
-    // from `LOCATABLE`", `/folders[hospital episodes]`) with a parenthesised
-    // uniqueness modifier appended in the same brackets
-    // (`[hospital episodes(car accident Aug 1998)]`). This engine implements
-    // BASE `master11-paths`, the formal path-grammar chapter, whose bare
-    // bracket is the archetype_node_id shortcut ("the `[atNNNN]` predicates are
-    // a shortcut for `[@archetype_node_id = 'atNNNN']`", §Archetype path
-    // Predicate) and which defines no parenthesis production outside boolean
-    // grouping. A bare name token therefore binds as an archetype_node_id (the
-    // master11 answer, matching nothing in practice), but the parenthesised
-    // modifier is refused rather than bound whole — binding
-    // `hospital episodes(car accident Aug 1998)` as an archetype_node_id would
-    // silently conflate the two grammars into a predicate that can never match.
+    // NOTE (register AMB-183): the name-based bare-bracket form with a parenthesised
+    // uniqueness modifier that RM common `master05-directory_package.adoc` §Paths
+    // states has no production in BASE `master11-paths`, so it is refused, not bound.
     if c.contains('(') || c.contains(')') {
         return Err(PathError::UnsupportedPredicate(c.to_owned()));
     }

@@ -149,7 +149,7 @@ const LOCATABLE: [[&str; 14]; 6] = [
         "0..1",
         "List",
         "0..*",
-        "Option<Vec<Link>>",
+        "Option<openehr_base::containers::NonEmptyVec<Link>>",
     ],
     [
         "rm",
@@ -335,9 +335,13 @@ fn a_uniformly_inherited_container_emits_one_shape_for_every_carrier() {
         .skip(1)
         .filter_map(|l| l.split('\t').nth(13))
         .collect();
+    // NOTE: `Links_valid` (RM common `locatable.adoc` §Invariants) makes the
+    // optional list non-empty-when-present, hence `Option<NonEmptyVec<_>>`.
     assert_eq!(
         shapes,
-        ["Option<Vec<Link>>"].into_iter().collect(),
+        ["Option<openehr_base::containers::NonEmptyVec<Link>>"]
+            .into_iter()
+            .collect(),
         "LOCATABLE.links must emit one shape for every carrier"
     );
 }

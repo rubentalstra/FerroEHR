@@ -1,6 +1,8 @@
-//! The full version reads: one `vo_version`⋈`audit` statement (attestations
-//! folded in as a LATERAL aggregate) plus the node→canonical reassembly,
-//! yielding the [`StoredVersion`] shape the versioning layer maps into a
+//! The full version reads.
+//!
+//! One `vo_version`⋈`audit` statement (attestations folded in as a LATERAL
+//! aggregate) plus the node→canonical reassembly, yielding the
+//! [`StoredVersion`] shape the versioning layer maps into a
 //! `VERSION`/`ORIGINAL_VERSION`.
 //!
 //! No openEHR spec governs the SQL — our own design (`docs/architecture.md`

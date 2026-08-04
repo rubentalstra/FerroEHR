@@ -530,11 +530,9 @@ impl<'a> Converter<'a> {
         };
         self.synth.push(Synth {
             code: at.clone(),
-            // NOTE: the synthesised rubric uses the external code itself as its
-            // text/description. Resolving a human-readable name would require the
-            // external terminology (SNOMED CT, LOINC, an openEHR terminology group)
-            // to be resolved, which this network-free converter does not do. No
-            // openEHR spec governs 1.4→2 conversion — our own design/extension.
+            // NOTE: no openEHR spec governs 1.4→2 conversion — our own
+            // design/extension; the synthesised rubric reuses the external code
+            // as its text, this converter resolving no external terminology.
             text: code.to_owned(),
             description: code.to_owned(),
             binding: Some((terminology.to_owned(), uri)),
@@ -615,11 +613,9 @@ impl<'a> Converter<'a> {
             }
             // Add synthesised terms to every language.
             //
-            // NOTE: one rubric text is minted for all languages (a converter has
-            // no translator to produce per-language rubrics; the reference
-            // fixtures carry per-language translated text with a `(synthesised)`
-            // suffix, which the structural conversion does not reproduce). No
-            // openEHR spec governs 1.4→2 conversion — our own design/extension.
+            // NOTE: no openEHR spec governs 1.4→2 conversion — our own
+            // design/extension; one rubric text is minted for all languages, a
+            // converter having no translator for per-language rubrics.
             for s in &self.synth {
                 out.insert(
                     s.code.clone(),

@@ -50,9 +50,10 @@ pub fn is_versioned_root_type(rm_type: &str) -> bool {
     is_structure_type(rm_type) || rm_type == crate::versioning::Kind::PartyRelationship.as_str()
 }
 
-/// Parse an `archetype_node_id` that is a full archetype HRID into its
-/// `(qualified_rm_entity, domain_concept, major)` parts, lowercased for
-/// case-insensitive comparison (BASE `base_types` master05 §Archetype
+/// Parses a full archetype HRID `archetype_node_id` into its identifying parts.
+///
+/// Yields the `(qualified_rm_entity, domain_concept, major)` parts, lowercased
+/// for case-insensitive comparison (BASE `base_types` master05 §Archetype
 /// Identifiers and §"Composite Identifiers and Case"). Reuses the shared
 /// [`ArchetypeId`] parser (never a hand-rolled regex); returns `None` for
 /// at/id-codes and any value that is not a full HRID with a numeric major.

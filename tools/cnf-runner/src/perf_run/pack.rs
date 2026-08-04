@@ -1,6 +1,8 @@
-//! The journey template pack: the CKM OPTs + committed example skeletons
-//! the journey stages commit against, and the deterministic payload
-//! stamping that turns a committed skeleton into one arrival's body.
+//! The journey template pack.
+//!
+//! Carries the CKM OPTs + committed example skeletons the journey stages
+//! commit against, and the deterministic payload stamping that turns a
+//! committed skeleton into one arrival's body.
 //!
 //! Payload ground rules: the skeletons are committed artifacts (generated
 //! once from the SUT's example endpoint and vendored byte-identical —

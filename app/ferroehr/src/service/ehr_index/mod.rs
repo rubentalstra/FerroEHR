@@ -1,7 +1,8 @@
-//! The EHR Index service (`service/ehr_index/`) — SM `I_EHR_INDEX`
+//! The EHR Index service (`service/ehr_index/`) — SM `I_EHR_INDEX`.
+//!
+//! Holds N:M subject↔EHR associations with duplicate-management metadata
 //! (`docs/specs/openehr/SM/docs/openehr_platform/master07-ehr_index_service.adoc`
-//! and the UML class `i_ehr_index.adoc`): N:M subject↔EHR associations with
-//! duplicate-management metadata.
+//! and the UML class `i_ehr_index.adoc`).
 //!
 //! Layout: `index` = the SM write operations (I1–I5) + the design-filled
 //! reads, each public method parsing its `ehr_id` at the boundary;
@@ -38,12 +39,14 @@ use crate::service::ehr_index::types::{
 use crate::service::error::ServiceError;
 use crate::service::status::{CallStatusType, SmError};
 
-/// The precise EHR-index failure kind: `master07 §Errors` declares distinct
-/// `ehr_id_does_not_exist` and `subject_id_does_not_exist` statuses, which must
-/// NOT collapse to the generic `versioned_object_does_not_exist`
-/// (`i_ehr_index.adoc §Errors`). [`From<IndexError> for SmError`] maps each
-/// variant onto its dedicated [`CallStatusType`]; a generic [`ServiceError`]
-/// (a DB/codec fault) rides through unchanged.
+/// The precise EHR-index failure kind.
+///
+/// `master07 §Errors` declares distinct `ehr_id_does_not_exist` and
+/// `subject_id_does_not_exist` statuses, which must NOT collapse to the generic
+/// `versioned_object_does_not_exist` (`i_ehr_index.adoc §Errors`).
+/// [`From<IndexError> for SmError`] maps each variant onto its dedicated
+/// [`CallStatusType`]; a generic [`ServiceError`] (a DB/codec fault) rides
+/// through unchanged.
 // Nominal `pub`: `FerroEhrService::index_conflicts` (a `pub` method — the
 // design-filled detection read has no SM trait binding) carries this type in
 // its public signature.

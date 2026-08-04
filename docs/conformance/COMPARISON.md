@@ -19,14 +19,14 @@
 
 | | ferroehr | upstream (Java) |
 |---|---|---|
-| Product | ferroehr 3.15.3 | ehrbase-java 2.34.0 |
-| Run date | 2026-08-01 | 2026-07-28 |
+| Product | ferroehr 3.17.1 | ehrbase-java 2.34.0 |
+| Run date | 2026-08-03 | 2026-07-28 |
 | Party statement | `tools/cnf-runner/party/ferroehr/` | `tools/cnf-runner/party/ehrbase-java/` |
 | Stack | root compose, built from the current sources | `docker/sut-ehrbase-java.yml` (official images) |
 
 ## Methodology
 
-Both systems execute the **same committed CNF 2.0 catalogue** (863 case-by-format
+Both systems execute the **same committed CNF 2.0 catalogue** (973 case-by-format
 executions) through the same reference runner (`tools/cnf-runner`), each on
 fresh volumes with its own committed party set: the ixit names the reachable
 instances (upstream declares no readonly principal), and the statement (the
@@ -58,7 +58,7 @@ claimed. The verdict-bearing comparison below is therefore each party's
 
 ## In-scope outcomes
 
-Runs compared: **ferroehr** (run of 2026-08-01) vs **upstream EHRbase
+Runs compared: **ferroehr** (run of 2026-08-03) vs **upstream EHRbase
 2.34.0** (run of 2026-07-28) — the SAME catalogue through the same
 runner, each with its own committed party statement. Per the presentation
 rule, the headline is each party's VERDICT SCOPE (the cases its own
@@ -68,7 +68,7 @@ them.
 
 | | verdict scope (selected) | driven | in-scope passed | in-scope failed | in-scope inconclusive |
 |---|---|---|---|---|---|
-| **ferroehr** | 863 | 826 | 826 | 0 | 0 |
+| **ferroehr** | 973 | 936 | 936 | 0 | 0 |
 | **upstream (Java)** | 499 | 459 | 136 | 132 | 191 |
 
 An **inconclusive** row's wire answered outside the operation's bound outcome

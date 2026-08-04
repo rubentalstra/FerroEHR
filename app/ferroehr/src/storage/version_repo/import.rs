@@ -1,6 +1,8 @@
-//! The import write path: `vo_version` rows with an **explicit** `sys_period`
-//! — the EHR Extract import (master06 §Copying) and the admin archive load —
-//! plus the lineage close and container-state read the import policy needs.
+//! The import write path.
+//!
+//! Writes `vo_version` rows with an **explicit** `sys_period` — the EHR Extract
+//! import (master06 §Copying) and the admin archive load — plus the lineage
+//! close and container-state read the import policy needs.
 //!
 //! No openEHR spec governs the SQL — our own design (`docs/architecture.md`
 //! §Storage). The import *policy* (period-chain synthesis, Case 2/3
@@ -113,8 +115,9 @@ pub async fn insert_imported_vo_version(
     Ok(())
 }
 
-/// One `vo_version` row to re-persist **verbatim** during an archive load — the
-/// stored columns (`sys_period` bounds as ISO strings, `template_id`,
+/// One `vo_version` row to re-persist **verbatim** during an archive load.
+///
+/// The stored columns (`sys_period` bounds as ISO strings, `template_id`,
 /// `creating_system_id`) are preserved exactly as dumped (SM `I_ADMIN_DUMP_LOAD`
 /// round-trip; no openEHR spec governs the archive). Unlike
 /// [`ImportedVersionRow`] it keeps `template_id`, and unlike a local commit row
@@ -244,9 +247,10 @@ pub async fn insert_version_verbatim(
     Ok(())
 }
 
-/// Whether a specific version-tree position (`creating_system_id = None`
-/// matches any creating system — the trunk chain is per versioned object) of one creating system is already
-/// stored for `vo_id` — the receiver-side copy-closure probe (RM common
+/// Whether a specific version-tree position is already stored for `vo_id`.
+///
+/// `creating_system_id = None` matches any creating system — the trunk chain is
+/// per versioned object. This is the receiver-side copy-closure probe (RM common
 /// master06 §Copying: branch versions "cannot be copied without their
 /// corresponding preceding versions on the same branch (if any) and trunk
 /// versions also being copied"). Used by the import path to accept a Case-3

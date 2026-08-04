@@ -134,12 +134,13 @@ impl std::fmt::Debug for PreparedQuery {
     }
 }
 
-/// A built scope-collection query: `SELECT DISTINCT` of every bound VO root's
-/// `ehr_id` + `template_id` over the same containment/filter as the main query
-/// (no openEHR spec governs ABAC — our own extension). Its rows carry the set of EHRs and
-/// templates the query touches — across **all** bound variables and
-/// **independent of the projection** (fixes v1 defect #1) — for the ABAC query
-/// post-check.
+/// A built scope-collection query for the ABAC query post-check.
+///
+/// `SELECT DISTINCT` of every bound VO root's `ehr_id` + `template_id` over the
+/// same containment/filter as the main query (no openEHR spec governs ABAC —
+/// our own extension). Its rows carry the set of EHRs and templates the query
+/// touches — across **all** bound variables and **independent of the
+/// projection**.
 #[derive(Debug)]
 pub struct ScopeQuery {
     /// The generated SQL.

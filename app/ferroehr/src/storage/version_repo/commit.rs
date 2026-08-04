@@ -1,7 +1,8 @@
-//! The local commit write path: `audit` + `contribution` inserts, the folded
-//! one-statement version commit, the lineage-tip close, and the
-//! folder-membership + event-outbox writes that ride along inside the same
-//! commit transaction.
+//! The local commit write path.
+//!
+//! Covers the `audit` + `contribution` inserts, the folded one-statement
+//! version commit, the lineage-tip close, and the folder-membership +
+//! event-outbox writes that ride along inside the same commit transaction.
 //!
 //! No openEHR spec governs the SQL — our own design (`docs/architecture.md`
 //! §Storage). The change-control law realized here is RM common master06
@@ -15,8 +16,9 @@ use uuid::Uuid;
 use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
 
-/// The `AUDIT_DETAILS` fields to persist (master04 §Audit Details), as the
-/// `audit` row's own columns: `change_type` is the numeric `audit_change_type`
+/// The `AUDIT_DETAILS` fields to persist, as the `audit` row's own columns.
+///
+/// master04 §Audit Details: `change_type` is the numeric `audit_change_type`
 /// group code, never a rubric (`Change_type_valid`), and the three jsonb
 /// columns arrive as the canonical RM fragments they store
 /// (`DV_TEXT` / `PARTY_PROXY` / the `ATTESTATION`-declared attributes).
@@ -63,10 +65,11 @@ pub async fn advisory_lock(tx: &mut PgConnection, vo_id: VoId) -> Result<(), Sto
     Ok(())
 }
 
-/// Insert an `audit` row, returning its id and the server-computed
-/// `time_committed` (master06 §Committal m3), captured via `RETURNING` so the
-/// commit path can build the exact `ORIGINAL_VERSION` it will later serve — the
-/// signed bytes must match the read-time canonical form.
+/// Inserts an `audit` row, returning its id and the server-computed timestamp.
+///
+/// The `time_committed` (master06 §Committal m3) is captured via `RETURNING` so
+/// the commit path can build the exact `ORIGINAL_VERSION` it will later serve —
+/// the signed bytes must match the read-time canonical form.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver/insert failure.

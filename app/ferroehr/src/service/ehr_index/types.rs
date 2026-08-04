@@ -32,10 +32,10 @@ impl SubjectRef {
     }
 }
 
-/// `RESOURCE_INSTANCE_TYPE` — "Enumeration of resource instance types"
-/// (`resource_instance_type.adoc`): the kind of a subject↔EHR association,
-/// surfacing the N:M duplicate-management states master07 §Overview
-/// describes.
+/// `RESOURCE_INSTANCE_TYPE` — the kind of a subject↔EHR association.
+///
+/// "Enumeration of resource instance types" (`resource_instance_type.adoc`),
+/// surfacing the N:M duplicate-management states master07 §Overview describes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ResourceInstanceType {
     /// "Primary instance of the resource."

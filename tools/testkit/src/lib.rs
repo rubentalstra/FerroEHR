@@ -169,10 +169,9 @@ impl Drop for TestDb {
         // await, and the test process may exit before this lands; the init
         // sweep is the durable backstop.
         //
-        // NOTE: `WITH (FORCE)` is correct HERE and wrong in the sweep: this is
-        // our own clone, whose own pool may still hold connections, so the
-        // connections being terminated are ours. The sweep drops OTHER
-        // processes' leftovers and must never terminate a live test's sessions.
+        // NOTE: `WITH (FORCE)` is correct HERE and wrong in the sweep — the
+        // connections it terminates are our own clone's, while the sweep drops
+        // OTHER processes' leftovers and must never kill a live test's sessions.
         let admin_url = self.admin_url.clone();
         let name = self.name.clone();
         drop(std::thread::Builder::new().spawn(move || {
@@ -250,15 +249,13 @@ async fn provision(server: &str, template: Option<&str>) -> Result<TestDb, Testk
     let mut config = DbConfig::new(url.clone());
     config.max_connections = 10;
     config.min_connections = 0;
-    // The pool's validating first connect gets the same bounded-retry
-    // treatment `connect_ready` gives the admin connect, and for the same
-    // reason: under a full-parallel `nextest` run the shared server's accept
-    // path is briefly saturable, and a clone's first handshake can surface a
-    // transient protocol error (the #620 capture: "unexpected response from
-    // SSLRequest: 0x00" — the connection was accepted at TCP level and
-    // dropped before PostgreSQL answered the negotiation). That is server
-    // load, not a test defect: retry the ESTABLISHMENT briefly and loudly
-    // surface the last error at the deadline. Never a per-test retry.
+    // The pool's validating first connect gets the same bounded-retry treatment
+    // `connect_ready` gives the admin connect, and for the same reason: under a
+    // full-parallel `nextest` run the shared server's accept path is briefly
+    // saturable, so a clone's first handshake can surface a transient protocol
+    // error. That is server load, not a test defect — retry the ESTABLISHMENT
+    // briefly and surface the last error loudly at the deadline. Never a per-test
+    // retry.
     let start = Instant::now();
     let pool = loop {
         match db::connect(&config).await {

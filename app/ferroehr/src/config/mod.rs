@@ -97,16 +97,10 @@ impl FerroEhrConfig {
         // server.system_id is stamped into every AUDIT_DETAILS
         // (`System_id_valid`: "not system_id.is_empty", RM
         // `docs/UML/classes/org.openehr.rm.common.audit_details.adoc`
-        // §Invariants) and into every OBJECT_VERSION_ID this CDR mints, where
-        // it occupies the `creating_system_id` position — "object_version_id =
-        // object_id, '::', creating_system_id, '::', version_tree_id" with
-        // "creating_system_id = uid" (BASE
-        // `base_types/master05-identification_package.adoc` §Syntaxes). It is
-        // therefore judged by the SAME grammar the identifier types are built
-        // from — the validating `UID` constructor in `openehr-base` — so a
-        // value this server accepts at boot can never mint a version id its own
-        // reader refuses. Boot-time is the right moment: the alternative is a
-        // loud failure on the first write.
+        // §Invariants) and occupies the `creating_system_id` position of every
+        // OBJECT_VERSION_ID this CDR mints (BASE
+        // `base_types/master05-identification_package.adoc` §Syntaxes), so it is
+        // judged here by the SAME validating `UID` constructor the reader uses.
         if let Err(source) =
             openehr_base::base_types::identification::uid::Uid::new(&self.server.system_id)
         {

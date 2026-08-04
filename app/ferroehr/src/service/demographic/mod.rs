@@ -1,5 +1,6 @@
-//! DEMOGRAPHIC (PARTY + `PARTY_RELATIONSHIP`) service module — the platform-crate
-//! realization of the SM DEMOGRAPHIC group over the shared
+//! The DEMOGRAPHIC (PARTY + `PARTY_RELATIONSHIP`) service module.
+//!
+//! The platform-crate realization of the SM DEMOGRAPHIC group over the shared
 //! [`crate::versioning`] change-control machinery, with **no EHR scope**
 //! (`ehr_id = None` — our own design: a party has no owning EHR). Parties
 //! (PERSON / ORGANISATION / GROUP / AGENT / ROLE) and `PARTY_RELATIONSHIP`s are

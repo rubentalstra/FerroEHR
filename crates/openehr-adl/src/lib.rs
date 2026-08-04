@@ -26,7 +26,7 @@
 //! ([`openehr_lang::lexer::lex_adl`]). The `rules`
 //! body and slot assertion expressions are captured as raw text alongside a
 //! structured placeholder.
-//! TODO: model rule/slot assertion expressions as full BEL/beom trees.
+//! TODO(#1874): model rule/slot assertion expressions as full BEL/beom trees.
 
 // Doctests are copy-paste templates: they must use `?`, never unwrap
 // (C-QUESTION-MARK, https://rust-lang.github.io/api-guidelines/documentation.html#c-question-mark).

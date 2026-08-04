@@ -1,12 +1,15 @@
-//! Build/spec provenance constants — the spec pins **derived from the
-//! `openehr-*` crate versions** (each spec crate is versioned by the openEHR
-//! specification it implements, so its `SPEC_VERSION` constant is the pin),
-//! never hand-typed literals: a pin bump in a crate manifest propagates here
-//! at compile time, so the identity surfaces cannot drift.
+//! Build/spec provenance constants.
+//!
+//! The spec pins are **derived from the `openehr-*` crate versions** (each spec
+//! crate is versioned by the openEHR specification it implements, so its
+//! `SPEC_VERSION` constant is the pin), never hand-typed literals: a pin bump
+//! in a crate manifest propagates here at compile time, so the identity
+//! surfaces cannot drift.
 
-/// The openEHR ITS-REST contract version this server implements (the released
-/// `Release-1.1.0`, 19-Jul-2026; the vendored `-codegen` OAS at
-/// `crates/openehr-its/vendor/rest-oas/PROVENANCE.md` pins that release).
+/// The openEHR ITS-REST contract version this server implements.
+///
+/// The released `Release-1.1.0`, 19-Jul-2026; the vendored `-codegen` OAS at
+/// `crates/openehr-its/vendor/rest-oas/PROVENANCE.md` pins that release.
 /// Reported by management `/info`, the System Options manifest
 /// (`restapi_specs_version` — a plain version string, per the System API OAS
 /// example `restapi_specs_version: 1.1.0`), and `/status`.

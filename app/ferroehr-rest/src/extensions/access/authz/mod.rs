@@ -1,7 +1,7 @@
-//! Authorization for the `FerroEHR` CDR — the two composable layers,
-//! folded into the protocol adapter
-//! (authorization is an adapter concern by design; the former `ferroehr-authz`
-//! crate is dissolved here).
+//! Authorization for the `FerroEHR` CDR.
+//!
+//! Two composable layers inside the protocol adapter (authorization is an
+//! adapter concern by design).
 //!
 //! **No openEHR spec governs this.** The SM places authorization out of band
 //! (SM `openehr_platform/master02-overview.adoc` §General Assumptions) and no

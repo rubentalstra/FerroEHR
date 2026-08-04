@@ -1,6 +1,7 @@
-//! Row I/O for the `ehr` table and the `ehr_folder` membership index — the
-//! per-EHR reads/writes the EHR service chapter needs that are not part of the
-//! versioned-object spine ([`crate::storage::version_repo`]).
+//! Row I/O for the `ehr` table and the `ehr_folder` membership index.
+//!
+//! Covers the per-EHR reads/writes the EHR service chapter needs that are not
+//! part of the versioned-object spine ([`crate::storage::version_repo`]).
 //!
 //! No openEHR spec governs the `ehr` / `ehr_folder` schema — it is our own
 //! PG18-native design (`docs/architecture.md` §Storage). The EHR concepts these
@@ -18,10 +19,13 @@ use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
 use crate::storage::version_repo::meta::CurrentMeta;
 
-/// Insert the `ehr` root row (id + immutable `system_id`) with the promoted
+/// Inserts the `ehr` root row with its promoted `EHR_STATUS` columns.
+///
+/// The row carries the id + the immutable `system_id`, and the promoted
 /// `EHR_STATUS` columns (`subject_id` / `subject_namespace` / `is_queryable` /
-/// `is_modifiable`) set in the SAME statement — the create path knows these from the incoming
-/// `EHR_STATUS` before the row is written, so it never needs the follow-up
+/// `is_modifiable`) are set in the SAME statement — the create path knows these
+/// from the incoming `EHR_STATUS` before the row is written, so it never needs
+/// the follow-up
 /// `UPDATE ehr SET subject_id …` the [`crate::service`] sync hook runs on the
 /// update/contribution paths. Returns `Some(time_created)` — the server-assigned
 /// `EHR.time_created` (arch-overview master06 §The EHR), captured via `RETURNING`
@@ -174,12 +178,12 @@ pub async fn ehr_header(
     Ok(Some((system_id, time_created)))
 }
 
-/// Everything the `GET /ehr/{ehr_id}` representation needs in ONE statement
-/// (the former four serial reads — header, current `EHR_STATUS` identity,
-/// `EHR_ACCESS` ref, live folder hierarchies — merged; no openEHR spec governs
-/// read batching, our own design): the EHR header, the current `EHR_STATUS`
-/// version identity, the `EHR_ACCESS` versioned-object id, and the LIVE
-/// folder-hierarchy ids in `rank` order.
+/// Reads the whole `GET /ehr/{ehr_id}` representation in ONE statement.
+///
+/// Returns the EHR header, the current `EHR_STATUS` version identity, the
+/// `EHR_ACCESS` versioned-object id, and the LIVE folder-hierarchy ids in
+/// `rank` order, in one round trip (no openEHR spec governs read batching —
+/// our own design).
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
@@ -298,15 +302,17 @@ pub async fn directory_vo(pool: &PgPool, ehr_id: EhrId) -> Result<Option<VoId>, 
     .await?)
 }
 
-/// Resolve the EHR's directory slot **and** its current version metadata **and**
-/// the EHR's `is_modifiable` content-write flag in ONE statement: the
+/// Resolves the EHR's directory slot, current version metadata, and write flag.
+///
+/// One statement covers the directory slot **and** its current version metadata
+/// **and** the EHR's `is_modifiable` content-write flag: the
 /// `ehr_folder`⋈`vo_version`⋈`audit`⋈`ehr` join, ordered live-first by `rank`
 /// (the same slot resolution [`directory_vo`] applies), projecting the current
 /// trunk version's `VERSION_TREE_ID` column ints + stored `creating_system_id` +
 /// audit `time_committed`, plus the promoted `ehr.is_modifiable`. Folds the
-/// [`directory_vo`] slot lookup, the metadata-only current-version read, and the
-/// former standalone `is_modifiable` side-SELECT into one round trip for the
-/// directory `If-Match`/`412` write paths (`update`/`delete`). The
+/// [`directory_vo`] slot lookup, the metadata-only current-version read, and
+/// the `is_modifiable` read into one round trip for the directory
+/// `If-Match`/`412` write paths (`update`/`delete`). The
 /// full-`OBJECT_VERSION_ID` compare the caller builds from these columns is
 /// unchanged (ITS-REST overview §Concurrency control); the `is_modifiable` gate
 /// is RM ehr master04 §EHR Active Status. Returns `(meta, is_modifiable)`; `None`
@@ -350,13 +356,14 @@ pub async fn directory_current_meta(
     Ok(Some((meta, row.try_get("is_modifiable")?)))
 }
 
-/// Whether the EHR is modifiable, read from the promoted `ehr.is_modifiable`
-/// column (kept in lockstep with the current `EHR_STATUS.is_modifiable` by the
-/// service's `sync_ehr_subject` hook and its import/archive-load re-promotion
-/// over [`current_status_root`]; RM ehr master04 §EHR Active Status). `None`
-/// when the EHR does not exist (the caller treats that as modifiable so the
-/// guard never spuriously blocks). No openEHR spec governs the promoted column
-/// — our own storage design.
+/// Whether the EHR is modifiable.
+///
+/// Read from the promoted `ehr.is_modifiable` column (kept in lockstep with the
+/// current `EHR_STATUS.is_modifiable` by the service's `sync_ehr_subject` hook
+/// and its import/archive-load re-promotion over [`current_status_root`]; RM
+/// ehr master04 §EHR Active Status). `None` when the EHR does not exist (the
+/// caller treats that as modifiable so the guard never spuriously blocks). No
+/// openEHR spec governs the promoted column — our own storage design.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
@@ -420,11 +427,12 @@ pub async fn live_directory_exists(pool: &PgPool, ehr_id: EhrId) -> Result<bool,
     .await?)
 }
 
-/// Whether the EHR already has a LIVE folder hierarchy whose root carries the
-/// given `archetype_node_id` AND name — the LOCATABLE identity pair that
-/// distinguishes same-archetype siblings (RM common, paths: the name predicate
-/// disambiguates same-archetype nodes). Backs the CONTRIBUTION-route
-/// duplicate-directory rejection.
+/// Whether the EHR already has a LIVE folder hierarchy with that root identity.
+///
+/// The root must carry the given `archetype_node_id` AND name — the LOCATABLE
+/// identity pair that distinguishes same-archetype siblings (RM common, paths:
+/// the name predicate disambiguates same-archetype nodes). Backs the
+/// CONTRIBUTION-route duplicate-directory rejection.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.

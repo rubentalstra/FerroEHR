@@ -608,18 +608,9 @@ impl<'a> Builder<'a> {
                     cardinality: container.cardinality.as_ref().map(multiplicity_of),
                 }))
             }
-            // NOTE (adjudicated): a persisted `P_BMM_INDEXED_CONTAINER_PROPERTY`
-            // materialises as a `BMM_CONTAINER_PROPERTY` whose `type` is a
-            // `BMM_INDEXED_CONTAINER_TYPE`. The v2 feature model has no indexed
-            // *property* meta-type — `BMM_CONTAINER_PROPERTY` is the only
-            // container-valued property and it redefines `type` to
-            // `BMM_CONTAINER_TYPE`
-            // (`org.openehr.lang.bmm.bmm_container_property.adoc` §Attributes) —
-            // while `BMM_INDEXED_CONTAINER_TYPE` IS a `BMM_CONTAINER_TYPE`
-            // ("Type reference that specifies an indexed container such as
-            // `Hash<K,V>`", `org.openehr.lang.bmm.bmm_indexed_container_type.adoc`
-            // §Description + §Inherit). So the index lives on the TYPE, exactly
-            // where the v2 model puts it; nothing is dropped.
+            // NOTE: the v2 feature model has no indexed container PROPERTY, so the
+            // index lives on the TYPE — `BMM_INDEXED_CONTAINER_TYPE` IS a
+            // `BMM_CONTAINER_TYPE` (`…bmm.bmm_indexed_container_type.adoc` §Inherit).
             PBmmProperty::PBmmContainerProperty(
                 PBmmContainerProperty::PBmmIndexedContainerProperty(indexed),
             ) => {

@@ -1,7 +1,8 @@
-//! The promoted-leaf registry: the single source of truth for which canonical
-//! leaves are lifted onto a dedicated `node` column, so a hot AQL predicate /
-//! sort reads an indexed column instead of re-extracting the value through a
-//! correlated subtree scan.
+//! The promoted-leaf registry.
+//!
+//! The single source of truth for which canonical leaves are lifted onto a
+//! dedicated `node` column, so a hot AQL predicate / sort reads an indexed
+//! column instead of re-extracting the value through a correlated subtree scan.
 //!
 //! No openEHR spec governs storage columns or their derivation — this is our own
 //! design (`docs/architecture.md` §Storage; the first entry realizes the
@@ -30,9 +31,11 @@
 
 use serde_json::Value;
 
-/// The physical type a promoted column carries — it selects the write-time SQL
-/// conversion ([`crate::storage::node_repo`]) and the read-time coercion the
-/// column may substitute for (`crate::aql::sql::value`).
+/// The physical type a promoted column carries.
+///
+/// It selects the write-time SQL conversion ([`crate::storage::node_repo`]) and
+/// the read-time coercion the column may substitute for
+/// (`crate::aql::sql::value`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PromotedKind {
     /// An ISO-8601 date-time leaf. The column is `timestamptz`, populated via

@@ -323,19 +323,12 @@ pub(crate) type SiblingNameIndex = std::collections::HashMap<(String, String), V
 
 // ── pre-parsed archetype-conformance walk plan ─────────────────────────────────
 //
-// The archetype-conformance walk ([`Validator::walk`]) navigates the instance
-// guided by the constraint paths a [`WebTemplateNode`] carries
-// (`closed_attributes`, `existence`, `card_all`, `slots`, and the children's
-// `aqlPath`s). Those paths are **template-static**, so they are parsed once at
-// [`crate::flat::webtemplate::build_web_template`] time (via [`prepare_walk`]) and the
-// parsed form + sibling groups cached on the node as [`WebTemplateNode::walk`],
-// rather than re-parsed on every instance-node visit. A hand-built node that
-// never went through the builder has no cached plan; the walk then builds a
-// [`NodeWalk`] on the fly once per visit (identical result), so every consumer
-// reads exactly one code path.
-//
-// No openEHR spec governs the WebTemplate model or this plan — our own
-// design/extension (the walk *semantics* it serves cite AOM 1.4 / RM common).
+// The archetype-conformance walk ([`Validator::walk`]) is guided by the
+// constraint paths a [`WebTemplateNode`] carries, which are template-static:
+// [`prepare_walk`] parses them once at build time into the cached
+// [`WebTemplateNode::walk`]; a node without a cached plan gets an identical
+// [`NodeWalk`] built per visit, so there is one code path. No openEHR spec
+// governs the WebTemplate model or this plan — our own design/extension.
 
 /// A pre-parsed archetype-conformance walk plan for one [`WebTemplateNode`].
 ///
@@ -680,16 +673,9 @@ impl Validator {
                     if ca.allowed_ids.iter().any(|a| a == nid) {
                         continue; // Matches a fixed sibling alternative.
                     }
-                    // NOTE (the closed-world admission rule): an unmatched *archetype-rooted*
-                    // child (a node id in ARCHETYPE_ID lexical form —
-                    // [`openehr_rm::paths::is_archetype_root_node_id`]) is
-                    // tolerated when the attribute
-                    // carries no ARCHETYPE_SLOT constraint — OPT 1.4 flattening
-                    // does not enumerate the full slot-fill universe, and the
-                    // CNF corpus itself commits ENTRY archetypes the template
-                    // does not list. Where slots ARE declared, archetype-rooted
-                    // fillers stay subject to slot admission (include/exclude)
-                    // below.
+                    // NOTE: an unmatched archetype-rooted child is admitted where
+                    // the attribute declares no ARCHETYPE_SLOT, OPT 1.4 flattening
+                    // not enumerating the slot-fill universe; slots still gate.
                     if ca.slots.is_empty() && openehr_rm::paths::is_archetype_root_node_id(nid) {
                         continue;
                     }
@@ -795,16 +781,13 @@ impl Validator {
                 continue;
             };
             // An existence constraint on an attribute the RM does not declare
-            // cannot be satisfied by a conformant instance, so it is not
-            // enforceable. The deployed OPT 1.4 corpus carries such constraints
-            // (`EVENT.offset` and `DV_PROPORTION.is_integral` are computed
-            // FUNCTIONS in RM 1.2.0 —
+            // cannot be satisfied by a conformant instance, so it is skipped: the
+            // deployed OPT 1.4 corpus constrains computed FUNCTIONS as if stored
+            // (`EVENT.offset`, `DV_PROPORTION.is_integral` — RM
             // `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.event.adoc`
-            // §Functions — that RM-1.0.x-era tooling emitted as constrainable
-            // stored attributes; `ELEMENT.null_flavor` is the US spelling of
-            // `null_flavour`). Requiring them would demand a member the
-            // canonical reader refuses, so the constraint is skipped rather
-            // than the instance blamed. The generated RM model is the oracle.
+            // §Functions) and misspells `null_flavour`; requiring either would
+            // demand a member the canonical reader refuses. The generated RM model
+            // is the oracle.
             if !rm_declares_attribute(&last.attribute) {
                 continue;
             }
@@ -861,24 +844,13 @@ impl Validator {
             .rposition(|s| !s.predicate.is_empty())
             .unwrap_or(segments.len() - 1);
         // A node whose RM type does NOT inherit `LOCATABLE` carries no
-        // `archetype_node_id` in canonical JSON: only `LOCATABLE` adds
-        // `archetype_node_id`/`name` (RM common
-        // `UML/classes/org.openehr.rm.common.locatable.adoc`), and e.g.
-        // `EVENT_CONTEXT` inherits `PATHABLE` directly (RM
-        // `UML/classes/org.openehr.rm.composition.event_context.adoc` §Inherit).
-        // A template may still archetype such a node (`/context[at0001]`), but no
-        // conforming instance can bear that at-code — so the walk matches it
-        // STRUCTURALLY by its attribute position (predicate stripped) and never
-        // applies archetype-node-id occurrences to it. This is a correction toward
-        // the RM inheritance graph, not a relaxation: for a `LOCATABLE` node the
-        // node-id match + occurrences apply exactly as before.
-        //
-        // Only the TERMINAL-identity case consults `first.rm_type`: when a trailing
-        // plain-attribute path follows the identity segment (e.g.
-        // `items[at0004]/value`), the identity node is the archetyped intermediate
-        // (`ELEMENT`/`CLUSTER`/…, always `LOCATABLE`) and `first.rm_type` is the
-        // deeper leaf type (`DV_QUANTITY`, a non-`LOCATABLE` `DATA_VALUE`) — which
-        // must NOT strip the intermediate's node id.
+        // `archetype_node_id` in canonical JSON (only `LOCATABLE` adds it — RM
+        // common `UML/classes/org.openehr.rm.common.locatable.adoc`; `EVENT_CONTEXT`
+        // inherits `PATHABLE` directly — RM
+        // `UML/classes/org.openehr.rm.composition.event_context.adoc` §Inherit), so
+        // it is matched STRUCTURALLY by attribute position, predicate stripped. Only
+        // the TERMINAL-identity case reads `first.rm_type`: with a trailing plain
+        // attribute the identity node is the archetyped `LOCATABLE` intermediate.
         let raw_id_seg = &segments[identity_idx];
         let trailing = &segments[identity_idx + 1..];
         let identity_is_locatable = !trailing.is_empty() || is_locatable(&first.rm_type);
@@ -912,12 +884,9 @@ impl Validator {
         // are governed by RM cardinality/invariants, not archetype occurrences, so
         // they are not occurrence-checked here.
         //
-        // NOTE: `ism_transition` careflow steps are modelled by the
-        // WebTemplate builder as separate per-state nodes (careflow synthesis is
-        // a documented builder scope gap), yet an ACTION instance carries a
-        // single ISM_TRANSITION — occurrence-checking them would spuriously demand
-        // every state, so they are skipped (ISM_TRANSITION presence is an RM
-        // invariant). `in_context` nodes are supplied structurally.
+        // NOTE: `ism_transition` is skipped (the builder models careflow steps as
+        // per-state nodes while an ACTION instance carries one ISM_TRANSITION,
+        // whose presence is an RM invariant); `in_context` nodes are structural.
         let occ_applies = identity_is_locatable
             && id_seg.predicate.archetype_node_id.is_some()
             && id_seg.attribute != "ism_transition"
@@ -982,14 +951,9 @@ impl Validator {
 
     /// Emit occurrence violations for a matched-node `count` against `[min, max]`
     /// (`max == -1` is unbounded).
-    // NOTE (BASE primitives): occurrence/cardinality evaluation here uses
-    // the WebTemplate's flattened `(min, max)` integers (`max = -1` =
-    // unbounded). This is behaviorally equivalent to BASE
-    // `Multiplicity_interval.has(count)` for OPT 1.4, whose occurrence
-    // intervals are always closed integer bounds
-    // (org.openehr.base.foundation_types.multiplicity_interval.adoc); the
-    // spec-cited reference semantics + truth-table tests live in
-    // `openehr-base` `multiplicity_interval_impl.rs` / `cardinality_impl.rs`.
+    // NOTE: evaluation uses the WebTemplate's flattened `(min, max)` integers
+    // (`-1` unbounded) — equivalent to `Multiplicity_interval.has(count)` (BASE
+    // `…foundation_types.multiplicity_interval.adoc`) for OPT 1.4's closed bounds.
     fn emit_occurrences(&mut self, aql_path: &str, min: i32, max: i32, count: usize) {
         let count_i = i32::try_from(count).unwrap_or(i32::MAX);
         // The lower-bound occurrences checks (absent / too-few) are relaxed away
@@ -1037,15 +1001,11 @@ impl Validator {
             // Navigate all but the last segment to the container, then count the
             // last attribute's children (cardinality is over the whole set).
             //
-            // AOM 1.4 §cardinality vs §existence: cardinality constrains the
-            // container's membership **when the attribute is present**; whether
-            // the attribute may be absent at all is the C_ATTRIBUTE.existence
-            // constraint (the vendored Multi_list corpus template pairs
-            // `content` cardinality 1..* with existence 0..1, and its valid
-            // no-content composition relies on the distinction). An absent (or
-            // null) attribute field is therefore not a cardinality violation —
-            // a template that requires members expresses it as existence 1..1;
-            // the RM list invariants forbid the present-empty `[]` encoding.
+            // AOM 1.4 §cardinality constrains the container's membership only WHEN
+            // the attribute is present; absence is C_ATTRIBUTE.existence's business
+            // (the vendored Multi_list template pairs `content` cardinality 1..*
+            // with existence 0..1), so an absent or null attribute is no cardinality
+            // violation — and the RM list invariants forbid a present-empty `[]`.
             let containers = rmpath::navigate(&[instance], intermediate);
             for container in &containers {
                 if matches!(container.get(&last.attribute), None | Some(Value::Null)) {
@@ -2295,16 +2255,12 @@ mod tests {
 
     // ── name-differentiated same-archetype-id siblings ────────────────────────
     //
-    // A template may fill the same archetype twice under one container, the two
-    // fills differentiated by their runtime `name` (RM common
-    // `master03-archetyped_package.adoc` §"The `LOCATABLE` class" L33-35: a `name`
-    // distinguishes sibling nodes that share an `archetype_node_id`; AOM 1.4
-    // `master04-constraint_model_package.adoc` §`node_id` L41: node ids "guarantee
-    // sibling node unique identification"). Templates realise this by putting a
-    // fixed `name/value` `C_STRING` on all-but-one sibling, so one sibling stays
-    // *unqualified* (its `name` unconstrained). Each instance must be routed to
-    // exactly the sibling whose name it matches, and the unqualified sibling must
-    // admit only the instances no name-qualified sibling claims.
+    // A template may fill the same archetype twice under one container, the fills
+    // differentiated by their runtime `name` (RM common
+    // `master03-archetyped_package.adoc` §"The `LOCATABLE` class"; AOM 1.4
+    // `master04-constraint_model_package.adoc` §`node_id`). Templates fix
+    // `name/value` on all-but-one sibling, so the one *unqualified* sibling admits
+    // only the instances no name-qualified sibling claims.
 
     /// Two same-archetype siblings under `items`, one unqualified (name "A", inner
     /// `items` closed to `at0004`) and one name-qualified ('B', inner `items`

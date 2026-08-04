@@ -2624,15 +2624,13 @@ fn consumed_with_keys(
         None => {}
         Some(crate::model::binding::RequestBody::Named { name, .. }) => {
             let authored = |key: &str| step.with_entries().iter().any(|(k, _)| k == key);
-            // `select_body` resolves the payload in a fixed ORDER, and each
-            // arm short-circuits the ones after it. Modelling the order is
-            // what makes this gate sharp: once an earlier arm answers, the
-            // later arms read nothing, so a key they might have picked up is
-            // genuinely unread.
+            // `select_body` resolves the payload in a fixed ORDER, and each arm
+            // short-circuits the ones after it. Modelling that order is what makes
+            // this gate sharp: once an earlier arm answers, the later arms read
+            // nothing, so a key they might have picked up is genuinely unread.
             //
-            // 1. the bundled-CONTRIBUTION construct, when `versions:` is
-            //    authored: the envelope is built from `versions` + `audit`
-            //    (the client-supplied committal metadata) and NOTHING else.
+            // 1. the bundled-CONTRIBUTION construct, when `versions:` is authored:
+            //    the envelope is built from `versions` + `audit` and NOTHING else.
             if name == "contribution" && authored("versions") {
                 consumed.extend(CONTRIBUTION_KEYS.iter().map(|k| (*k).to_owned()));
             }

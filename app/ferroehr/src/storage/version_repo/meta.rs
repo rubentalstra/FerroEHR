@@ -1,7 +1,9 @@
-//! Lean metadata-only reads over `vo_version` (⋈ `audit` where the commit
-//! instant is needed): the `ETag`/`If-Match` identity reads, revision-history
-//! enumeration, and the existence/kind/ownership/count lookups — none of them
-//! pays the node reassembly or attestation aggregation the full
+//! Lean metadata-only reads over `vo_version`.
+//!
+//! Joined with `audit` where the commit instant is needed: the `ETag`/`If-Match`
+//! identity reads, revision-history enumeration, and the
+//! existence/kind/ownership/count lookups — none of them pays the node
+//! reassembly or attestation aggregation the full
 //! [`crate::storage::version_repo::read::read_current`] does.
 //!
 //! No openEHR spec governs the SQL — our own design (`docs/architecture.md`
@@ -17,9 +19,11 @@ use crate::storage::error::StorageError;
 
 // ── revision-history enumeration ──────────────────────────────────────────────
 
-/// One version's metadata row (`vo_version` ⋈ `audit`, no canonical body, no
-/// attestations) — the lean list shape for `REVISION_HISTORY` and version
-/// enumeration, where reassembling every body would be wasted work.
+/// One version's metadata row (`vo_version` ⋈ `audit`).
+///
+/// No canonical body and no attestations — the lean list shape for
+/// `REVISION_HISTORY` and version enumeration, where reassembling every body
+/// would be wasted work.
 #[derive(Debug, Clone)]
 pub struct VersionMeta {
     /// The owning EHR, or `None` for a demographic versioned object.
@@ -117,11 +121,12 @@ pub async fn time_created(
     .map(jiff_sqlx::Timestamp::to_jiff))
 }
 
-/// The commit instants bounding an object's held versions in one scalar read:
-/// the earliest (`VERSIONED_OBJECT.time_created` — RM common master06
+/// The commit instants bounding an object's held versions, in one scalar read.
+///
+/// The earliest is `VERSIONED_OBJECT.time_created` (RM common master06
 /// §Versioned Objects; earliest **held**, so a latest-only import clone starts
-/// above version 1) and the latest (the container resource's last-modified
-/// instant — ITS-REST overview `Requests_and_responses.md` §"`ETag` and
+/// above version 1) and the latest is the container resource's last-modified
+/// instant (ITS-REST overview `Requests_and_responses.md` §"`ETag` and
 /// Last-Modified" derives `Last-Modified` from
 /// `VERSION.commit_audit.time_committed.value`, and for a `VERSIONED_OBJECT`
 /// response the newest held version carries that instant). `None` when the
@@ -218,11 +223,13 @@ pub async fn object_kind(pool: &PgPool, vo_id: VoId) -> Result<Option<String>, S
     .await?)
 }
 
-/// The kind text of the current version of EVERY object in `vo_ids`, in one
-/// round trip (the CONTRIBUTION-commit target pre-check batches its per-version
-/// lookups — a K-change commit reads its targets with one statement). Absent
-/// objects are simply missing from the result; the caller maps absence to its
-/// 400. No openEHR spec governs read batching — our own design.
+/// The kind text of the current version of EVERY object in `vo_ids`.
+///
+/// One round trip (the CONTRIBUTION-commit target pre-check batches its
+/// per-version lookups — a K-change commit reads its targets with one
+/// statement). Absent objects are simply missing from the result; the caller
+/// maps absence to its 400. No openEHR spec governs read batching — our own
+/// design.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
@@ -259,10 +266,12 @@ pub async fn vo_owner(pool: &PgPool, vo_id: VoId) -> Result<Option<Option<EhrId>
     )
 }
 
-/// A versioned object's owning EHR (`None` = the ehr-less demographic store)
-/// **and its RM kind** — for callers that must verify a route family against
-/// the addressed object (a COMPOSITION route must not act on an `EHR_STATUS`
-/// container). `None` when no such versioned object exists.
+/// A versioned object's owning EHR **and its RM kind**.
+///
+/// The owning EHR is `None` for the ehr-less demographic store. This serves
+/// callers that must verify a route family against the addressed object (a
+/// COMPOSITION route must not act on an `EHR_STATUS` container). `None` when no
+/// such versioned object exists.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
@@ -350,10 +359,12 @@ pub async fn current_vo(
     }))
 }
 
-/// The current version's metadata only — the `vo_version`⋈`audit` columns the
-/// `ETag`/`If-Match` full-`OBJECT_VERSION_ID` compare needs (`VERSION_TREE_ID`
-/// column ints + the stored per-version `creating_system_id` + the audit
-/// `time_committed`), **without** node reassembly or the attestation read the
+/// The current version's metadata only.
+///
+/// The `vo_version`⋈`audit` columns the `ETag`/`If-Match`
+/// full-`OBJECT_VERSION_ID` compare needs (`VERSION_TREE_ID` column ints + the
+/// stored per-version `creating_system_id` + the audit `time_committed`),
+/// **without** node reassembly or the attestation read the
 /// full [`crate::storage::version_repo::read::read_current`] pays. `None` when the
 /// object has no current trunk version. The version identity is RM common
 /// master06 §Version Identification; the commit instant is master06 §Committal.
@@ -386,9 +397,10 @@ fn current_meta_row(row: &PgRow) -> Result<CurrentMeta, StorageError> {
     })
 }
 
-/// The current trunk version's metadata for an EHR's object of `kind`, resolved
-/// and read in **one** `vo_version`⋈`audit` statement (no node/attestation
-/// reads) — the metadata-only replacement for [`current_vo`] +
+/// The current trunk version's metadata for an EHR's object of `kind`.
+///
+/// Resolved and read in **one** `vo_version`⋈`audit` statement (no
+/// node/attestation reads) — the metadata-only replacement for [`current_vo`] +
 /// [`crate::storage::version_repo::read::read_current`] on the `ETag`/`If-Match`
 /// path.
 ///
@@ -416,8 +428,9 @@ pub async fn current_version_meta_by_kind(
     Ok(Some(current_meta_row(&row)?))
 }
 
-/// The current trunk version's metadata for an object addressed by its `vo_id`
-/// **scoped to one EHR** — one `vo_version`⋈`audit` statement (no node
+/// The current trunk version's metadata for one EHR's object, by `vo_id`.
+///
+/// Scoped to that one EHR in a single `vo_version`⋈`audit` statement (no node
 /// reassembly), returning `None` when the object is not the EHR's (a foreign or
 /// unknown id). The lean `ETag`/`If-Match` read for an EHR-owned object; the
 /// version identity is RM common master06 §Version Identification, the commit
@@ -447,12 +460,14 @@ pub async fn current_version_meta_scoped(
     Ok(Some(current_meta_row(&row)?))
 }
 
-/// The current trunk version's metadata for a **demographic** (ehr-less)
-/// versioned object addressed by its `vo_id`, in ONE `vo_version`⋈`audit`
-/// statement — `kind` + `lifecycle_state` alongside the `ETag`/`If-Match`
-/// identity parts (`VERSION_TREE_ID` ints + the stored per-version
-/// `creating_system_id`) and the commit instant, **without** the node
-/// reassembly the full [`crate::storage::version_repo::read::read_current`] pays.
+/// The current trunk version's metadata for a **demographic** versioned object.
+///
+/// Read for an ehr-less object addressed by its `vo_id`, in ONE
+/// `vo_version`⋈`audit` statement — `kind` + `lifecycle_state` alongside the
+/// `ETag`/`If-Match` identity parts (`VERSION_TREE_ID` ints + the stored
+/// per-version `creating_system_id`) and the commit instant, **without** the
+/// node reassembly the full
+/// [`crate::storage::version_repo::read::read_current`] pays.
 /// `ehr_id IS NULL` scopes the read to the demographic repository (a party /
 /// `PARTY_RELATIONSHIP` has no owning EHR — our own design; no openEHR spec
 /// governs the SQL). The caller gates the route on `kind` (a wrong-kind or
@@ -511,11 +526,12 @@ pub async fn current_demographic_meta(
     }))
 }
 
-/// The current trunk version of a COMPOSITION reduced to exactly what the
-/// modify/delete pre-checks need, in ONE `vo_version`⋈`audit`⋈`ehr` (LEFT JOIN
-/// `node`) statement — a single read that serves the whole write pre-check
-/// (folding the former separate `If-Match` meta read, modify pre-read, and
-/// `is_modifiable` side-SELECT):
+/// The current trunk version of a COMPOSITION, reduced for the write pre-checks.
+///
+/// Exactly what the modify/delete pre-checks need, in ONE
+/// `vo_version`⋈`audit`⋈`ehr` (LEFT JOIN `node`) statement — a single read
+/// serving the whole write pre-check (`If-Match` meta, modify pre-read, and
+/// `is_modifiable` together):
 ///
 /// - owning `ehr_id` (the ownership gate) + `lifecycle_state` (the deleted gate,
 ///   RM common master06 §Logical Deletion);

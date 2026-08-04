@@ -132,13 +132,10 @@ pub const OBJECT_ROLE_QUERY: &str = "24";
 
 // ── ATNA rendering of the event enums ────────────────────────────────────────
 // The event model (`super::event::{EventActionCode, EventOutcome, ObjectClass}`)
-// is a pure, transport-agnostic model with no methods. The DICOM
-// / RFC-3881 renderings live here, in the ATNA layer, as three focused extension
-// traits — one per enum — so the `message` serializer's call sites
-// (`event.action.as_char()`, `event.outcome.as_i32()`,
-// `event.object.event_id(action)`, `event_type.code()`)
-// resolve through them. One trait per type (rather than a single umbrella trait)
-// keeps every method meaningful for its receiver: no empty/`unreachable!` stubs.
+// is a pure, transport-agnostic model with no methods; the DICOM / RFC-3881
+// renderings live here, in the ATNA layer, as three focused extension traits —
+// one per enum, so every method stays meaningful for its receiver instead of
+// needing empty/`unreachable!` stubs under one umbrella trait.
 
 use super::event::{EventActionCode, EventOutcome, EventType, ObjectClass};
 
@@ -258,10 +255,8 @@ impl AtnaObject for ObjectClass {
             // (DICOM PS3.15 §A.5.1).
             ObjectClass::Query => (EVENT_QUERY_CODE, "Query"),
             // NOTE: DICOM PS3.15 §A.5.1 lists no EventID for template
-            // provisioning; templates are definitional metadata, not patient
-            // data, so they use the Application-Activity code (110100) with
-            // `originalText="template"` — the varied-display pattern DICOM
-            // EventID coding permits.
+            // provisioning, so definitional metadata uses Application-Activity
+            // (110100) with `originalText="template"`.
             ObjectClass::Template => (EVENT_APPLICATION_ACTIVITY_CODE, "template"),
             // NOTE: demographic parties are person-identifiable, so they
             // use the Patient-Record code (110110, DICOM PS3.15 §A.5.1) with
@@ -270,12 +265,8 @@ impl AtnaObject for ObjectClass {
             // EHR-Extract communication carries patient-identifiable clinical
             // data across systems, audited for non-repudiation (BASE
             // `master07-security.adoc` §Non-repudiation). DICOM PS3.15 §A.5.1
-            // defines the direction-coded EventIDs: Export (110106) for data
-            // leaving the system, Import (110107) for data entering it. The
-            // SM-5 message service emits `Create` on an inbound import and a
-            // read-side action on an outbound export
-            // (`FerroEhrService::emit_extract_audit`), so the action carries
-            // the direction.
+            // codes the direction — Import (110107) in, Export (110106) out —
+            // and `FerroEhrService::emit_extract_audit` carries it in the action.
             ObjectClass::Extract => match action {
                 EventActionCode::Create | EventActionCode::Update => (EVENT_IMPORT_CODE, "Import"),
                 EventActionCode::Read | EventActionCode::Execute | EventActionCode::Delete => {
