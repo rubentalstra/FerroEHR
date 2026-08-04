@@ -418,8 +418,15 @@ the design lineage is gratefully credited.
 
 **Licensing.** FerroEHR's own code — the application, the tooling, and the
 generated crates — is licensed under the [MIT License](LICENSE). Vendored
-third-party material keeps its upstream terms: the openEHR machine-readable
-specification artifacts (BMM, XSDs, OpenAPI) and CKM-derived clinical models
-are used under the [Apache License 2.0](LICENSE-APACHE-2.0), and each
-vendored tree documents its exact origin in a `PROVENANCE.md`. Upstream
-EHRbase itself remains Apache-2.0; no code from it is present in this tree.
+third-party material keeps its upstream terms, in two families: the openEHR
+machine-readable artifacts (BMM, XSDs, OpenAPI, JSON Schemas — the
+`specifications-ITS-*` repos) and the vendored test corpora (archie, Better
+`web-template-tests`, the EHRbase SDK) are used under the
+[Apache License 2.0](LICENSE-APACHE-2.0); the openEHR specification text
+vendored for conformance work and the CKM-derived clinical models are
+[CC-BY-SA 3.0](LICENSE-CC-BY-SA-3.0) (clinical models carry per-file
+`licence` metadata). Each vendored tree documents its exact origin and
+license in a `PROVENANCE.md`, with the upstream `LICENSE` vendored
+alongside. Upstream EHRbase itself remains Apache-2.0; no code from it is
+present in this tree. The full reckoning is on the documentation site's
+[Licensing](https://ferroehr.eu/docs/latest/licensing.html) page.

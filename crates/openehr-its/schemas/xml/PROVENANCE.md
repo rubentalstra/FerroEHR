@@ -5,6 +5,8 @@ upstream `components/` trees) for canonical-XML (de)serialization. Reference /
 validation inputs and the `emit-xml` codegen oracle; no code here.
 
 Source repo: https://github.com/openEHR/specifications-ITS-XML
+License: Apache-2.0 (the upstream repo's `LICENSE`; root reference copy
+`LICENSE-APACHE-2.0`)
 
 ## Two lineages are vendored — they differ by NAMESPACE **and by RM generation**
 

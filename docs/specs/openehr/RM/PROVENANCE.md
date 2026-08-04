@@ -3,6 +3,9 @@
 - Source: https://github.com/openEHR/specifications-RM
 - Ref: master (RM 1.2.0)
 - Commit: `66d3ac45587e4532a94d5fd27ca24bcf049f5bf3`
+- License: CC-BY-SA 3.0 Unported — the upstream `LICENSE` is vendored verbatim alongside
+  this file, from the same pinned commit. Root reference copies:
+  `LICENSE-CC-BY-SA-3.0` / `LICENSE-APACHE-2.0`.
 - Vendored by: `scripts/vendor-spec-docs.sh` (text formats only: adoc md txt csv json yaml yml robot xml opt g4)
 - Plus the 33 UML class-diagram SVG(s) under `docs/UML/diagrams/` that
   the vendored chapters reference as `image::{uml_diagrams_uri}/<name>.svg`,

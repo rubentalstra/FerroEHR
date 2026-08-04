@@ -6,6 +6,8 @@ upstream `components/` tree).
 Source repo: https://github.com/openEHR/specifications-ITS-JSON
 Pinned commit: `5acae056248e917a4b4c56f7e712f4fcfeb616a6` (master; ITS-JSON is
 DEVELOPMENT status with no numbered release — this is the latest available)
+License: Apache-2.0 (the upstream repo's `LICENSE`; root reference copy
+`LICENSE-APACHE-2.0`)
 Fetched: 2026-07-04.
 
 ## Layout (verbatim `components/`)

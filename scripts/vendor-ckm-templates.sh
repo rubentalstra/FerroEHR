@@ -132,6 +132,14 @@ if [[ "$MODE" != full ]]; then
     echo "slugs are a stable contract. The **full library** is a separate pack"
     echo "under \`full/\` with its own provenance file."
     echo
+    echo "## Licensing"
+    echo
+    echo "CKM publishes no repository-level license; each OPT embeds its source"
+    echo "archetypes' \`licence\` metadata (predominantly CC-BY-SA 3.0 where"
+    echo "stated — see the individual file). Vendored verbatim, so authorship"
+    echo "and licence metadata ride along; root reference copy:"
+    echo "\`LICENSE-CC-BY-SA-3.0\`."
+    echo
     echo "| cid | slug | display name | status | modified | journey role |"
     echo "|---|---|---|---|---|---|"
   } > "$PROV"
@@ -233,6 +241,12 @@ with open(prov_path, "w") as fh:
     w("WebTemplate builder gates. The curated hospital-simulation journey\n")
     w("pack is the parent directory (its own `PROVENANCE.md`); the slugs here\n")
     w("are derived from CKM display names and are NOT a naming contract.\n\n")
+    w("## Licensing\n\n")
+    w("CKM publishes no repository-level license; each OPT embeds its source\n")
+    w("archetypes' `licence` metadata (predominantly CC-BY-SA 3.0 where\n")
+    w("stated — see the individual file). Vendored verbatim, so authorship\n")
+    w("and licence metadata ride along; root reference copy:\n")
+    w("`LICENSE-CC-BY-SA-3.0`.\n\n")
     w(f"- published by CKM: **{len(rows)}**\n")
     w(f"- vendored: **{len(ok)}**\n")
     w(f"- unreachable: **{len(bad)}**\n\n")

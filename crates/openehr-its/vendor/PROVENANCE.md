@@ -4,7 +4,8 @@ Fetched directly from each `specifications-ITS-*` repo (NOT the
 `specifications-ITS` umbrella submodules, which can lag). Every surface is
 vendored **verbatim** (full upstream tree) — "literally everything
 machine-readable" — with the prose `.adoc`, diagrams, and PHP/Makefile build
-tooling deliberately excluded.
+tooling deliberately excluded. All four `specifications-ITS-*` repos are
+**Apache-2.0** (root reference copy `LICENSE-APACHE-2.0`).
 
 | Surface | Repo | Pinned ref | Vendored to |
 |---|---|---|---|
