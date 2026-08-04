@@ -42,7 +42,13 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
   `flat_features`, `BMM_ENUMERATION.name_map`),
   `src/bmm3/core/feature/bmm_feature_impl.rs` (`signature()`/`arity()`/
   `is_boolean()`), `src/bmm3/core/literal_value/bmm_literal_value_impl.rs`
-  (`value_literal`/`syntax` + the literal-evaluation boundary). When a v2/v3
+  (`value_literal`/`syntax` + the literal-evaluation boundary), and
+  `src/bmm3/core/model/bmm_model_impl.rs` — the MODEL-level navigation the type
+  lattice is the precondition for (`class_definition`, `all_ancestor_classes`,
+  `property_definition` over the model-flattened property set, and
+  `type_conforms_to` per `LANG/docs/bmm3/master06-core-types.adoc` §Type
+  Conformance, whose Tuple and Signature branches are empty upstream and are
+  therefore not realized). When a v2/v3
   boundary is recorded, name WHICH generation it belongs to — attributing a
   generation-specific gap to "the openEHR specs" is a misattribution the citation
   rule exists to prevent.
@@ -60,7 +66,9 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
   consequence to know: `BMM_ASSERTION.expression` is a `1..1`
   `EL_BOOLEAN_EXPRESSION`, so the P_BMM→v3 materialisation cannot land class
   invariants or routine pre/post-conditions (they stay opaque tagged strings in the
-  P_BMM graph) — the `TODO` is at `src/bmm_persistence/create_bmm3_model.rs`.
+  P_BMM graph); `create_bmm3_model.rs` states that skip in its module docs rather
+  than inventing an expression tree, and the EL grammar must be VENDORED before
+  the gap can close.
   `beom` is a DIFFERENT spec's object model (BEL, STABLE) and is never wired into
   `BMM_ASSERTION`; that would be a category error.
 - **Two abstract, attribute-free v3 classes emit as instantiable empty structs** —
@@ -121,9 +129,15 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
   `LANG/docs/bmm/master06-persistence.adoc`), while the **v3** classes DO declare
   all three (`org.openehr.lang.bmm3.bmm_class.adoc` §Attributes,
   `…bmm3.bmm_model_type.adoc` §Attributes) — and `create_bmm3_model.rs` lands
-  them. The one thing NO generation can land is a class invariant or routine
-  pre/post-condition, because that needs an EL parse (see the inert
-  expression/statement bullet above). Both transforms share one index +
+  them, together with the generic-substituted properties
+  `LANG/docs/bmm3/master13-model_semantics.adoc` §Generic Inheritance requires
+  (an ancestor's formal parameter replaced by the descendant's binding, stamped
+  `is_synthesised_generic`; a declared property is never displaced, and the
+  ancestor is rebuilt rather than read off its embedded stub, which is what
+  propagates a substitution down a partially-closed chain). The one thing NO
+  generation can land is a class invariant or routine pre/post-condition,
+  because that needs an EL parse (see the inert expression/statement bullet
+  above). Both transforms share one index +
   enumeration-validity check (`Builder`, `check_enumeration_validity`, module-
   private via `pub(super)`), so they can never disagree about what a class or a
   valid enumeration IS. A persisted `P_BMM_INTERFACE` IS a class-list

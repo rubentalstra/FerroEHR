@@ -25,7 +25,7 @@
 //!   through the storage codec (`node_repo::read_version_canonical` /
 //!   `decompose` + `write_nodes`).
 //! - **`archive`** marks EHR/party versioned objects archived; the physical
-//!   cold-tier storage movement is a spec-silent `TODO(perf)` carried at the
+//!   cold-tier storage movement is a spec-silent `TODO(#1909)` carried at the
 //!   top of that module.
 
 mod archive;

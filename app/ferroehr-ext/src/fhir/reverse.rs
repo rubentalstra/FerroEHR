@@ -40,7 +40,10 @@ use super::mapping::{FhirMapError, FhirMappingDefinition, MappingEntry, Transfor
 /// EHR's external subject id (placed back at the mapping's
 /// `subject.reference_path`, `strip_prefix` re-applied); `None` omits the
 /// subject.
-pub(super) fn to_fhir(
+/// # Errors
+/// Returns [`FhirMapError`] when the mapping definition cannot be applied
+/// in reverse over the stored FLAT projection.
+pub fn to_fhir(
     resource_type: &str,
     composition: &Value,
     wt: &openehr_its::flat::webtemplate::WebTemplate,
@@ -228,7 +231,7 @@ mod tests {
     /// `mapping::tests`): a small single-OBSERVATION blood-pressure OPT.
     fn bp_web_template() -> WebTemplate {
         let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("tests/resources/service/knowledge/opt/ehrbase_blood_pressure_simple.de.v0.opt");
+            .join("../ferroehr/tests/resources/service/knowledge/opt/ehrbase_blood_pressure_simple.de.v0.opt");
         let xml = std::fs::read_to_string(path).expect("read opt");
         let opt = opt14::from_xml(&xml).expect("parse opt");
         build_web_template(&opt).expect("build wt")

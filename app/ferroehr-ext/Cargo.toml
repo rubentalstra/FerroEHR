@@ -13,7 +13,16 @@ publish = false
 default = []
 # One additive feature per integration (#1890); each extraction child moves
 # its module here behind its feature.
-fhir = []
+fhir = [
+    "dep:indexmap",
+    "dep:jiff",
+    "dep:openehr-base",
+    "dep:openehr-its",
+    "dep:openehr-rm",
+    "dep:serde",
+    "dep:serde_json",
+    "dep:thiserror",
+]
 events = [
     "dep:async-trait",
     "dep:lapin",
@@ -45,10 +54,13 @@ openehr-rm = { path = "../../crates/openehr-rm", optional = true }
 async-trait = { workspace = true, optional = true }
 base64 = { workspace = true, optional = true }
 bytes = { workspace = true, optional = true }
+indexmap = { workspace = true, optional = true }
+jiff = { workspace = true, optional = true }
 lapin = { workspace = true, optional = true }
 object_store = { workspace = true, optional = true }
 secrecy = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
 sha2 = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true }
 thiserror = { workspace = true, optional = true }
