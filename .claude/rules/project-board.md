@@ -32,6 +32,27 @@ class `issue-relationships.md` §No duplication bans for issue bodies. If the
 board ever needs to show a new fact, give the fact a canonical home on the
 ISSUE (label, milestone, native edge) and let the board filter/group on it.
 
+**The ONE sanctioned derived field: `Target date`.** The roadmap layout
+places items only by date/iteration fields — milestone due dates draw
+timeline markers, never item bars (roadmap-layout docs, read 2026-08-04) — so
+`Target date` exists as a machine-derived mirror of the item's milestone due
+date. It is written ONLY by `scripts/gh-project.sh sync-dates` (re-run after
+changing a milestone due date or re-milestoning issues; the release
+procedure's cut steps re-run it), never by hand — a hand-set date is the
+duplication this file bans.
+
+**No fourth Status, no manual "Blocked/Stalled" column (adjudicated
+2026-08-04).** Blocked-ness already has an automatic canonical home: native
+`blocked-by` edges (GitHub renders the red "Blocked" badge on those cards in
+Projects by itself, and clears it the moment the blocker closes) and the
+`blocked-upstream`/`upstream-confirmed` labels. A hand-moved status would
+double-book that and keep claiming "stalled" after the blocker closes.
+"Needs extra attention" is served by the **Needs attention** view (filter
+`is:open label:P0,blocked-upstream,upstream-confirmed`) — label-driven, so it
+empties itself. (Projects filters expose no `is:blocked` qualifier —
+filtering-projects docs, read 2026-08-04 — which is exactly why the
+label/edge layer stays the source.)
+
 ## Status semantics + who moves it
 
 - **`Todo`** — every open issue starts here (the auto-add workflow sets it).
@@ -61,33 +82,63 @@ Requires the `project` token scope (`gh auth refresh -s project`).
 | Read #n's board status | `scripts/gh-project.sh show <n>` |
 | Print the whole board by column | `scripts/gh-project.sh board` |
 | Print the project URL | `scripts/gh-project.sh url` |
+| Post a status update | `scripts/gh-project.sh update <on-track\|at-risk\|off-track\|complete\|inactive> "<markdown>" [--start YYYY-MM-DD] [--target YYYY-MM-DD]` |
+| Read recent status updates | `scripts/gh-project.sh updates` |
 
 Never move `Done` by hand, never `gh project item-edit` raw, and never
 `item-archive`/`item-delete` — closed items stay visible as the shipped
 record (the built-in auto-archive workflow stays OFF).
 
+## Status updates (the board's progress narrative)
+
+GitHub project **status updates** (shown in the board header + side panel;
+`createProjectV2StatusUpdate` — verified live in the GraphQL schema
+2026-08-04, the concept docs describe the UI only) are the outward progress
+narrative. Post one via `scripts/gh-project.sh update …`:
+
+- **At every release cut** (part of the release procedure,
+  `.claude/rules/changelog.md`): status `on-track` (or the honest
+  alternative), a short markdown summary of what the release shipped and
+  what the next milestone targets, `--target` = the next milestone's due
+  date **only if that milestone actually has one** — never invent a date.
+- **When direction genuinely shifts** (a milestone re-scoped, a program
+  re-prioritized): post the change with the reason.
+- Write for the public reader: no internal codenames, phase markers, or
+  repo-internal file paths; numbers only when they come from committed
+  artifacts. The same honesty rules as everything published: `at-risk`/
+  `off-track` are used when true — the board never claims what the tracker
+  does not show.
+
 ## Board configuration (the intent, for anyone recreating it)
 
 Fields: the built-in `Status` with exactly `Todo` / `In Progress` / `Done`.
-Views (view creation is UI-only — no API):
+Views — name/layout/filter ARE scriptable
+(`createProjectV2View`/`updateProjectV2View`, `layout` ∈ `BOARD_LAYOUT`/
+`TABLE_LAYOUT`/`ROADMAP_LAYOUT` — verified live in the GraphQL schema
+2026-08-04; the concept docs don't mention them. Fine view configuration —
+grouping, the roadmap's date source, visible fields — is still UI-only):
 
-1. **Board** — kanban grouped by Status; the "what is going on right now"
-   surface.
-2. **Roadmap** — layout Roadmap, items placed by **milestone due date**; the
-   release timeline (every open `vX.Y.Z` milestone carries a due date —
-   set one when creating a milestone).
-3. **Current focus** — table filtered `label:P0,P1 is:open`, grouped by
-   milestone.
+1. **Board** — `BOARD_LAYOUT`, grouped by Status; the "what is going on
+   right now" surface.
+2. **Roadmap** — `ROADMAP_LAYOUT`, filter `is:open`; items placed by the
+   derived **`Target date`** field (date source picked in the UI; kept true
+   by `sync-dates`; every open `vX.Y.Z` milestone carries a due date — set
+   one when creating a milestone, and the milestone markers come from it).
+3. **Current focus** — `TABLE_LAYOUT`, filter `is:open label:P0,P1`;
+   columns Title/Status/Labels/Milestone/Sub-issues progress.
+4. **Needs attention** — `TABLE_LAYOUT`, filter
+   `is:open label:P0,blocked-upstream,upstream-confirmed`; same columns.
 
-Built-in workflows (verified gh 2.96.0 / docs 2026-08-04: **no API — UI-only
-toggles**; visibility + repo-link ARE scriptable via `gh project edit
---visibility` / `gh project link`): a new project ships **Item closed →
-`Done`** and **Pull request merged → `Done` enabled by default**; enable by
-hand **Auto-add to project** (filter `is:issue is:open`), **Item added to
-project → `Todo`**, and **Item reopened → `Todo`**; leave auto-archive OFF.
-(An Actions-based alternative — `actions/add-to-project` — exists but needs a
-PAT secret for a user-owned project; three one-time UI toggles beat a standing
-secret.) Visibility: public.
+Built-in workflows (verified 2026-08-04: only `deleteProjectV2Workflow`
+exists in the schema — **enabling/configuring them is UI-only**; visibility +
+repo-link ARE scriptable via `gh project edit --visibility` /
+`gh project link`): a new project ships **Item closed → `Done`** and **Pull
+request merged → `Done` enabled by default**; enable by hand **Auto-add to
+project** (filter `is:issue is:open`), **Item added to project → `Todo`**,
+and **Item reopened → `Todo`**; leave auto-archive OFF. (An Actions-based
+alternative — `actions/add-to-project` — exists but needs a PAT secret for a
+user-owned project; three one-time UI toggles beat a standing secret.)
+Visibility: public.
 
 ## Interaction with the rest of the workflow
 
