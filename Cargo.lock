@@ -2785,6 +2785,7 @@ dependencies = [
  "async-trait",
  "base64 0.22.1",
  "bytes",
+ "fhir-model",
  "indexmap 2.14.0",
  "jiff",
  "lapin",
@@ -2890,6 +2891,18 @@ dependencies = [
  "bitvec",
  "rand_core 0.6.4",
  "subtle",
+]
+
+[[package]]
+name = "fhir-model"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7fcb3e6576cb1b797b2e33b08f22fe284b6660f1407718042ecd73bd62293449"
+dependencies = [
+ "base64 0.22.1",
+ "derive_builder",
+ "serde",
+ "time",
 ]
 
 [[package]]
