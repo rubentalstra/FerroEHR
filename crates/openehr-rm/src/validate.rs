@@ -43,27 +43,32 @@
 //! `openehr_its::wire_validate::validate_rm_value` calls [`try_fast_validate`]
 //! then falls back to [`typed_dispatch::dispatch_typed`].
 //!
-//! # Fidelity to the reference implementation (archie)
+//! # The invariant source and the diagnostic form
 //!
-//! The RM class invariants mirror openEHR's reference implementation
-//! **archie** (`com.nedap.archie.rmobjectvalidator`). Archie runs each
-//! `@Invariant`-annotated boolean method and, on failure, emits one uniform
-//! message: `Invariant <Name> failed on type <RM_TYPE>`. We reproduce that
-//! message verbatim (see `invariant_failed`) so a violation is identifiable
-//! by archie's own invariant name.
+//! The RM class invariants realized here are the released class tables' own
+//! invariant expressions, machine-classified from the vendored BMM — the
+//! generated register at the head of [`generated`] is the per-invariant
+//! authority (venue + citation + adjudication). A failure renders the uniform
+//! message `Invariant <Name> failed on type <RM_TYPE>` (see
+//! `invariant_failed`): `<Name>` is the invariant's released class-table name
+//! (`docs/specs/openehr/RM/docs/UML/classes/*.adoc` §Invariants), so a
+//! violation is identifiable by the spec's own vocabulary. (The rendering
+//! matches openEHR's `archie` reference implementation — prior art the tests
+//! and stored diagnostics were pinned against, never the authority.)
 //!
-//! What we deliberately do **not** implement in the *core/typed* tiers
-//! (`// NOTE:`):
-//! - **Terminology-bound invariants** (archie's `Language_valid`,
-//!   `Encoding_valid`, `Category_validity`, `Setting_valid`, `Change_type_valid`,
-//!   `Normal_status_validity`, `Media_type_valid`, `Current_state_valid`, …).
-//!   They resolve a code against the openEHR terminology bundle rather than
+//! What deliberately does **not** run in the *core/typed* tiers:
+//! - **Terminology-bound invariants** (the class-table rules that invoke
+//!   `has_code_for_group_id` / `code_set (id).has_code` — `Language_valid`,
+//!   `Encoding_valid`, `Category_validity`, `Change_type_valid`, …). They
+//!   resolve a code against the openEHR terminology bundle rather than
 //!   inspecting the node alone, so they live in the sibling
 //!   [`terminology`] module (over `openehr-term`) and are run as a separate
 //!   post-core layer — never inside the fast/typed pair, whose equivalence
 //!   property is defined over the core invariants only.
-//! - **archie's `ignored = true` invariants** (never executed by archie —
-//!   implementing them would over-reject relative to the reference).
+//! - **Invariants adjudicated out of the per-node layer** — each carries a
+//!   citation-pinned `Excluded` adjudication in the generated register
+//!   (aggregate/cross-object rules owned by another layer, derived-function
+//!   constraints, and rules over undeclared attributes).
 //! - **Cross-child recursion**: each `Validate` impl checks only its own class
 //!   invariants; the composition validator recurses into children (and prefixes
 //!   the absolute RM path onto each [`InvariantViolation`]).
@@ -454,7 +459,9 @@ pub(crate) fn invariant_failed(name: &str, rm_type: &str) -> InvariantViolation 
     InvariantViolation::here(format!("Invariant {name} failed on type {rm_type}"))
 }
 
-/// `true` when a floating value denotes a whole number (archie `isInteger`).
+/// `true` when a floating value denotes a whole number — the integrality
+/// probe the DV_PROPORTION precision/fraction invariants need (RM
+/// `dv_proportion.adoc` §Invariants; archie's `isInteger` is the prior art).
 #[must_use]
 #[expect(
     clippy::float_cmp,

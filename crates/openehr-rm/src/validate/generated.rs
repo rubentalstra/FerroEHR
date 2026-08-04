@@ -395,11 +395,14 @@ pub(crate) fn temporal_value_core(ty: &str, valid: bool, out: &mut Vec<Invariant
 
 /// The DV_PROPORTION own invariants. The inherited DV_AMOUNT / DV_ORDERED
 /// invariants are pushed by the callers.
-// openEHR/archie compare denominator against 0/1/100 by exact value
-// (`denominator.equals(0d)` etc.), so exact float comparison is intended.
+// The released invariants compare the denominator against the exact values
+// 0/1/100 (RM `dv_proportion.adoc` §Invariants: `Valid_denominator`,
+// `Unitary_validity`, `Percent_validity` — `denominator = 1`, `= 100`,
+// `<> 0`), so exact float comparison IS the spec semantics (archie renders
+// them the same way — prior art, not the ground).
 #[expect(
     clippy::float_cmp,
-    reason = "openEHR/archie compare the denominator against 0/1/100 by exact value"
+    reason = "the released invariants compare the denominator against exact 0/1/100 values"
 )]
 pub(crate) fn dv_proportion_core(
     numerator: f64,
