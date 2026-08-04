@@ -53,7 +53,18 @@ workflow refuses a tag that has no matching section here.
   instead of a silent skip; nothing new is rejected.
 - The BMM v3 model gains MODEL-level navigation (`type_conforms_to`,
   ancestor walks, flattened property lookup) and generic-substituted
-  property synthesis per the LANG generic-inheritance semantics.
+  property synthesis per the LANG generic-inheritance semantics; a new
+  P_BMM schema-validity pass reports duplicate package listings,
+  case-folded class-name collisions, and non-conformant property
+  redefinitions with spec citations.
+- ADL rules and slot assertions are now modeled as full expression trees
+  (the BEL expression object model), with the string form derived from the
+  tree. Printed ADL 2 output changes minimally where the old form was
+  wrong: each assertion in a multi-assertion block carries its own string
+  form (previously the whole block repeated), `include`/`exclude` emit
+  their keyword once per list per the grammar, a symbolic `∈` prints as
+  `matches` (one operator in the model), and an archetype-id constraint's
+  `; "assumed"` value is no longer dropped.
 
 ### Fixed
 

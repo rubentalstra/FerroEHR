@@ -10,6 +10,7 @@
 )]
 
 use openehr_am::am24::aom2::rules::expr_constraint::ExprConstraint;
+use openehr_am::am24::beom::core::assertion::Assertion;
 use openehr_am::am24::beom::core::expr_value::ExprValue;
 use openehr_am::am24::beom::core::expr_value_ref::ExprValueRef;
 use openehr_am::am24::beom::core::expression::Expression;
@@ -17,7 +18,7 @@ use openehr_am::am24::beom::core::statement::Statement;
 use openehr_am::am24::beom::core::statement_set::StatementSet;
 
 use crate::print::Printer;
-use crate::print::definition::{bool_str, primitive_inline};
+use crate::print::definition::{bool_str, cstring_inline, primitive_inline};
 use crate::print::odin::quoted;
 
 impl Printer {
@@ -25,13 +26,7 @@ impl Printer {
     pub(super) fn rules(&mut self, set: &StatementSet) {
         for stmt in set.statement.iter().flatten() {
             match stmt {
-                Statement::Assertion(a) => {
-                    let expr = expression_str(&a.expression);
-                    match &a.tag {
-                        Some(tag) => self.line(1, &format!("{tag}: {expr}")),
-                        None => self.line(1, &expr),
-                    }
-                }
+                Statement::Assertion(a) => self.line(1, &assertion_str(a)),
                 Statement::Assignment(a) => {
                     self.line(
                         1,
@@ -48,13 +43,37 @@ impl Printer {
 
 // ── rules expression printing (full parenthesization) ──────────────────────
 
-/// A single slot include/exclude assertion — the verbatim `string_expression`
-/// is the round-trip carrier (`master04.6`); otherwise the expression tree.
-pub(super) fn assertion_str(a: &openehr_am::am24::beom::core::assertion::Assertion) -> String {
-    if let Some(s) = &a.string_expression {
-        return s.clone();
+/// A single assertion statement — a `rules` line or a slot include/exclude
+/// assertion — rendered from its expression tree.
+///
+/// The tree is the authority: `ASSERTION.expression` is the "Root of expression
+/// tree" and `string_expression` only its "String form of expression"
+/// (`LANG/docs/BEL/master04-expression_object_model.adoc` §Core Package,
+/// `ASSERTION`), so the printer never reads the string form back.
+pub(super) fn assertion_str(a: &Assertion) -> String {
+    let expr = statement_expression_str(&a.expression);
+    match &a.tag {
+        Some(tag) => format!("{tag}: {expr}"),
+        None => expr,
     }
-    expression_str(&a.expression)
+}
+
+/// A statement-level expression: the outermost operator needs no parentheses
+/// of its own (each operand is rendered fully parenthesized, so precedence
+/// stays explicit and the text re-parses to the identical tree).
+fn statement_expression_str(e: &Expression) -> String {
+    match e {
+        Expression::ExprBinaryOperator(b) => {
+            let sym = b.symbol.as_deref().unwrap_or(b.operator.as_str());
+            let left = expression_str(&b.left_operand);
+            if sym == "matches" {
+                format!("{left} matches {}", constraint_rhs(&b.right_operand))
+            } else {
+                format!("{left} {sym} {}", expression_str(&b.right_operand))
+            }
+        }
+        other => expression_str(other),
+    }
 }
 
 /// Render an [`Expression`] with full parenthesization so it re-parses to the
@@ -118,19 +137,9 @@ fn constraint_rhs(e: &Expression) -> String {
 fn constraint_leaf_str(c: &ExprConstraint) -> String {
     match c {
         ExprConstraint::ExprConstraint(d) => format!("{{{}}}", primitive_inline(&d.item)),
-        ExprConstraint::ExprArchetypeIdConstraint(a) => {
-            // A C_STRING regex matcher (`master04.3` §Archetype Slots).
-            format!(
-                "{{{}}}",
-                a.item
-                    .constraint
-                    .iter()
-                    .flatten()
-                    .next()
-                    .cloned()
-                    .unwrap_or_default()
-            )
-        }
+        // A C_STRING regex matcher (`master04.3` §Slots based on Lexical
+        // Archetype Identifiers).
+        ExprConstraint::ExprArchetypeIdConstraint(a) => format!("{{{}}}", cstring_inline(&a.item)),
     }
 }
 

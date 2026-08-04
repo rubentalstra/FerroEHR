@@ -373,7 +373,7 @@ impl BelBuilder for BeomBuilder {
 
     fn for_all(
         &mut self,
-        variable: &str,
+        _variable: &str,
         collection: Expression,
         condition: Expression,
     ) -> Result<Expression, BelError> {
@@ -382,7 +382,6 @@ impl BelBuilder for BeomBuilder {
         // NOTE: EXPR_FOR_ALL declares no bound-variable attribute
         // (`LANG/docs/BEL/master04-expression_object_model.adoc` §Core
         // Package), so the binding name has nowhere to land in the model.
-        let _ = variable;
         let operand = match collection {
             Expression::ExprValueRef(r) => r,
             _ => ExprValueRef { item: None },

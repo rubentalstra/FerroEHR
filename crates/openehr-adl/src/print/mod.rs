@@ -23,7 +23,9 @@
 //! and `odin` (the generic ODIN leaf/keyed-list rendering the other sections
 //! share). This module keeps only the printer state, the artefact-kind
 //! projection, and the top-level section driver; the [`print`](fn@print)
-//! function is the crate's whole serializer seam.
+//! function is the crate's serializer seam for a whole artefact, and
+//! [`assertion_text`] the one for a single assertion (the string form
+//! `ASSERTION.string_expression` carries).
 
 mod definition;
 mod header;
@@ -39,6 +41,7 @@ use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
 use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
 use openehr_am::am24::aom2::rm_overlay::rm_overlay::RmOverlay;
 use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
+use openehr_am::am24::beom::core::assertion::Assertion;
 use openehr_am::am24::beom::core::statement_set::StatementSet;
 use openehr_am::am24::resource::resource_description::ResourceDescription;
 use openehr_base::prelude::{ResourceAnnotations, TerminologyCode, TranslationDetails, Uuid};
@@ -52,6 +55,19 @@ pub fn print(archetype: &Archetype) -> String {
     let mut p = Printer { out: String::new() };
     p.archetype(archetype);
     p.out
+}
+
+/// Renders one [`Assertion`] to its ADL/BEL string form, from its expression
+/// tree.
+///
+/// This is the string form `ASSERTION.string_expression` carries
+/// (`LANG/docs/BEL/master04-expression_object_model.adoc` §Core Package: the
+/// tree is the root, the string its serialisation), so
+/// [`crate::rules::parse_slot_assertions`] fills that attribute through here
+/// and `parse → print → parse` stays a fixed point.
+#[must_use]
+pub fn assertion_text(assertion: &Assertion) -> String {
+    rules::assertion_str(assertion)
 }
 
 /// The output accumulator every section module writes its lines through.
