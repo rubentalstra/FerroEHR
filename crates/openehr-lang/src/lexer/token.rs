@@ -64,8 +64,14 @@ pub enum Token {
     #[token("or", ignore(case))]
     #[token("\u{2228}")]
     SymOr,
-    /// `xor` (`SYM_XOR`).
+    /// `xor` / `⊻` (`SYM_XOR`).
+    ///
+    /// The symbol form is the EL Logical Operators table's
+    /// (`LANG/docs/EL/master05-expressions.adoc` §Primitive Operators); the
+    /// vendored `ElLexer.g4` lists only the two word spellings, and the other
+    /// readings have no symbolic `xor` at all.
     #[token("xor", ignore(case))]
+    #[token("\u{22BB}")]
     SymXor,
     /// `not` / `~` / `∼` / `¬` / `!` (`SYM_NOT`).
     #[token("not", ignore(case))]
@@ -74,17 +80,33 @@ pub enum Token {
     #[token("\u{00AC}")]
     #[token("!")]
     SymNot,
-    /// `implies` / `®` / `->` (`SYM_IMPLIES`).
+    /// `implies` / `®` / `->` / `⇒` / `→` (`SYM_IMPLIES`).
+    ///
+    /// The two arrow forms are EL's (`ElLexer.g4` `SYM_IMPLIES : 'implies' |
+    /// '⇒' | '→'`; the `⇒` spelling is also the Logical Operators table's in
+    /// `LANG/docs/EL/master05-expressions.adoc` §Primitive Operators). No
+    /// other reading has an arrow spelling.
     #[token("implies", ignore(case))]
     #[token("\u{00AE}")]
     #[token("->")]
+    #[token("\u{21D2}")]
+    #[token("\u{2192}")]
     SymImplies,
+    /// `⇔` / `↔` — material equivalence (`ElLexer.g4` `SYM_IFF`), an
+    /// EL-only operator (`ElParser.g4` `elBooleanExpr`).
+    #[token("\u{21D4}")]
+    #[token("\u{2194}")]
+    SymIff,
     /// `for_all` / `∀` (`SYM_FOR_ALL`).
     #[token("for_all", ignore(case))]
     #[token("\u{2200}")]
     SymForAll,
-    /// `exists` (`SYM_EXISTS`).
+    /// `exists` / `□` (`SYM_EXISTS`).
+    ///
+    /// EL admits the modal-logic box as the non-null assertion operator
+    /// (`ElLexer.g4` `SYM_EXISTS : 'exists' | '□'`); no other reading has it.
     #[token("exists", ignore(case))]
+    #[token("\u{25A1}")]
     SymExists,
     /// `there_exists` / `∃` (`SYM_THERE_EXISTS`).
     ///
@@ -154,6 +176,20 @@ pub enum Token {
     /// `then` (`SYM_THEN`).
     #[token("then", ignore(case))]
     SymThen,
+
+    // ── EL-only word keywords (`ElLexer.g4`). No `#[token]`: the shared DFA
+    //    reads each as the identifier every other layer sees, and only the EL
+    //    reclassification re-tags it, so no other reading changes. ──
+    /// `Self` (`SYM_SELF`) — the current-object reference.
+    SymSelf,
+    /// `Result` (`SYM_RESULT`) — a function's automatic result variable.
+    SymResult,
+    /// `case` (`SYM_CASE`) — a decision-table case head.
+    SymCase,
+    /// `choice` (`SYM_CHOICE`) — a decision-table condition-chain head.
+    SymChoice,
+    /// `assert` (`SYM_ASSERT`).
+    SymAssert,
 
     // ── boolean word symbols (base_lexer.g4 SYM_TRUE / SYM_FALSE) ──
     /// `True` / `true` (case-insensitive per `base_lexer.g4` `SYM_TRUE`,
@@ -507,6 +543,10 @@ pub enum Token {
     /// `|` (`SYM_IVL_DELIM`).
     #[token("|")]
     SymIvlDelim,
+    /// `¦` (`SYM_BROKEN_BAR`) — the EL quantifier body separator
+    /// (`ElParser.g4` `elForAllExpr`/`elThereExistsExpr`). EL-only.
+    #[token("\u{00A6}")]
+    SymBrokenBar,
     /// `+/-` / `±` (`SYM_PLUS_OR_MINUS`).
     #[token("+/-")]
     #[token("\u{00B1}")]

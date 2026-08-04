@@ -220,6 +220,12 @@ pub(super) struct Builder<'a> {
     /// Upper-cased class name → the fully qualified path of the package that
     /// lists it.
     pub(super) owning_package: BTreeMap<String, String>,
+    /// Findings collected while materialising: the v3 transform records here
+    /// every persisted assertion string it could not turn into a
+    /// `BMM_ASSERTION`. Interior mutability, because a finding is discovered
+    /// deep inside an otherwise read-only class walk. The v2.x transform
+    /// records none.
+    pub(super) findings: std::cell::RefCell<Vec<super::validate::PBmmValidityFinding>>,
     /// Upper-cased class name → immediate inheritance descendants (their own
     /// names), sorted.
     descendants: BTreeMap<String, Vec<String>>,
@@ -276,6 +282,7 @@ impl<'a> Builder<'a> {
             classes,
             owning_package,
             descendants,
+            findings: std::cell::RefCell::new(Vec::new()),
         })
     }
 

@@ -11,6 +11,7 @@
 mod bel_parse;
 mod bmm3_model;
 mod bmm_enumeration_validity;
+mod el_assertions;
 mod escape_validation;
 mod lexer_equivalence;
 mod odin_spec_examples;

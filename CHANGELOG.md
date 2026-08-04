@@ -57,6 +57,13 @@ workflow refuses a tag that has no matching section here.
   P_BMM schema-validity pass reports duplicate package listings,
   case-folded class-name collisions, and non-conformant property
   redefinitions with spec citations.
+- The Expression Language has a native parser (hand-written over the
+  vendored normative EL grammars): BMM_ASSERTION class invariants and
+  routine pre/post-conditions in the BMM v3 model now parse into the
+  published EL expression classes, with unparseable published-schema
+  invariant strings collected as typed findings (319 of 400 pinned-schema
+  strings parse; the remainder are Eiffel-flavoured forms the normative
+  grammar does not admit, reported upstream).
 - ADL rules and slot assertions are now modeled as full expression trees
   (the BEL expression object model), with the string form derived from the
   tree. Printed ADL 2 output changes minimally where the old form was

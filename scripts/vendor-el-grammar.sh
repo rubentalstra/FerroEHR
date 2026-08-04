@@ -29,4 +29,11 @@ fetch() {
 
 fetch "reader_common/src/main/antlr/ElLexer.g4"  "${DEST}/ElLexer.g4"
 fetch "reader_common/src/main/antlr/ElParser.g4" "${DEST}/ElParser.g4"
+# The transitive grammar imports (ElLexer imports Cadl2Lexer/SymbolsLexer/
+# GeneralIdsLexer; ElParser imports Cadl2Parser) — vendored so the normative
+# syntax resolves standalone in-tree.
+fetch "reader_common/src/main/antlr/Cadl2Lexer.g4"      "${DEST}/Cadl2Lexer.g4"
+fetch "reader_common/src/main/antlr/Cadl2Parser.g4"     "${DEST}/Cadl2Parser.g4"
+fetch "reader_common/src/main/antlr/SymbolsLexer.g4"    "${DEST}/SymbolsLexer.g4"
+fetch "reader_common/src/main/antlr/GeneralIdsLexer.g4" "${DEST}/GeneralIdsLexer.g4"
 fetch "LICENSE" "${DEST}/LICENSE-openEHR-antlr4"
