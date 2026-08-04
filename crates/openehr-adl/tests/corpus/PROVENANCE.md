@@ -15,11 +15,12 @@
   `openEHR-EHR-EVALUATION.VPOV_code_list_constrained.v1.0.0.adls`) or a
   `FAIL_`/`W…` prefix; this is the validator-conformance oracle keyed by
   rule code.
-- Licensing: the repository carries no top-level LICENSE file; the content
-  is openEHR Foundation test material (openEHR specifications and
-  associated artefacts are published under CC-BY); individual archetype
-  descriptions may carry their own `licence` field. Recorded as-is —
-  test-fixture use with provenance retained.
+- Licensing: the repository carries no top-level LICENSE file (verified
+  2026-08-04); the content is openEHR Foundation test/reference material,
+  and individual archetype descriptions carry their own `licence` field
+  (predominantly CC-BY-SA 3.0 where stated; root reference copy
+  `LICENSE-CC-BY-SA-3.0`). Recorded as-is — test-fixture use with
+  provenance retained.
 
 ## `flattener/`
 

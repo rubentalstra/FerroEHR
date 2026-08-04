@@ -19,6 +19,14 @@ The ADL 2 side is NEVER produced by running our own ADL 1.4->2 converter
 over CKM output: that converter has no spec basis (our own design) and
 would then be validated against its own output.
 
+## Licensing
+
+The upstream repository carries no top-level LICENSE file; individual
+archetypes carry their own `licence` metadata (predominantly CC-BY-SA
+3.0 where stated — see the individual file). openEHR Foundation
+test/reference material, vendored verbatim with metadata retained;
+root reference copy: `LICENSE-CC-BY-SA-3.0`.
+
 ## Contents
 
 - ADL 2 archetypes (`*.adls`): **322**

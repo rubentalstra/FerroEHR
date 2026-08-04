@@ -2,6 +2,8 @@
 
 Source: https://github.com/openEHR/specifications-QUERY
 Pinned commit: `10cb73fe7e3dd7a7f239759f989377e963b52fe2` (master, vendored 2026-07-03)
+License: CC-BY-SA 3.0 Unported (the upstream repo's `LICENSE`; root reference
+copy `LICENSE-CC-BY-SA-3.0`) — redistributed verbatim with attribution.
 
 AQL has **no BMM meta-model** — it is a query *language*, so `openehr-query` is
 hand-written (a `logos` lexer + `chumsky`/`winnow` parser) against the

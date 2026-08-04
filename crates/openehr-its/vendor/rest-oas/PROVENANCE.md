@@ -3,6 +3,8 @@
 Source repo: https://github.com/openEHR/specifications-ITS-REST
 Pinned commit: `24058992d5fa96e8dfbd855d9c133f328387fc09` (tag Release-1.1.0, released 19-Jul-2026)
 Upstream path: `computable/OAS/` · Fetched: 2026-07-20.
+License: Apache-2.0 (the upstream repo's `LICENSE`; root reference copy
+`LICENSE-APACHE-2.0`)
 
 All **21** OpenAPI 3.0 bundles are vendored verbatim: **7 API groups** ×
 **3 variants**.

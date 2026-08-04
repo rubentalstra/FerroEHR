@@ -221,10 +221,14 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   code (root `CLAUDE.md` §Code generation). The wire contract stays pinned
   by the canonical-output gates.
 - **C-PERMISSIVE — MIT for the project's own code** (owner decision
-  2026-07-31): the project's own code is MIT-licensed; vendored openEHR
-  machine-readable
-  artifacts and CKM-derived data keep their upstream Apache-2.0 terms
-  (`LICENSE-APACHE-2.0`). Dependencies stay license-gated by `deny.toml`.
+  2026-07-31; coverage corrected 2026-08-04, issue #1883): the project's own
+  code is MIT-licensed; vendored third-party material keeps its upstream
+  terms — Apache-2.0 for the openEHR machine-readable artifacts and the
+  vendored test corpora (`LICENSE-APACHE-2.0`), CC-BY-SA 3.0 for the openEHR
+  spec docs text and CKM-derived clinical models (`LICENSE-CC-BY-SA-3.0`;
+  clinical models carry per-file `licence` metadata). Every vendored tree's
+  `PROVENANCE.md` names its license, with the upstream `LICENSE` vendored
+  alongside. Dependencies stay license-gated by `deny.toml`.
 - **C-STABLE — latent, neutralized by `publish = false`**: the `openehr-*`
   crates carry ≥1.0 spec versions while exposing pre-1.0 public deps
   (`jiff 0.2`, `sqlx 0.9`, `chumsky 0.13`, `leptos 0.8`). Harmless while

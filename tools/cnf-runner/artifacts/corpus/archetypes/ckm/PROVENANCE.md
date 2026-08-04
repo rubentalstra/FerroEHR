@@ -29,6 +29,14 @@ refusal HAPPENS and carries that code — a refusal is a negative test, not
 a skip. Never delete a refused file: that drops the negative case
 (`.claude/rules/vendored-corpora.md`, `.claude/rules/testing.md`).
 
+## Licensing
+
+CKM publishes no repository-level license; each archetype carries its
+own `description` > `licence` metadata (predominantly CC-BY-SA 3.0
+where stated — see the individual file). Vendored verbatim, so the
+authorship and licence metadata ride along in every file; root
+reference copy: `LICENSE-CC-BY-SA-3.0`.
+
 ## Inventory
 
 - published by CKM: **945**

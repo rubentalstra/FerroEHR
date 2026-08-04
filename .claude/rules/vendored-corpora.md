@@ -6,9 +6,12 @@ paths: ["scripts/vendor-*.sh", "tools/cnf-runner/artifacts/corpus/**", "crates/o
 
 Every externally-sourced corpus in this repo is fetched by a **committed
 `scripts/vendor-*.sh` script**, vendored **verbatim**, and stamped with a
-`PROVENANCE.md`. Never hand-download into the tree, never hand-edit a
-vendored file, never paste a corpus in from a chat transcript. To refresh or
-extend a corpus: change the script, re-run it, commit the result.
+`PROVENANCE.md` that records the source, the pin, **and the upstream
+license** (with the upstream `LICENSE` file vendored alongside where the
+source publishes one — issue #1883). Never hand-download into the tree,
+never hand-edit a vendored file, never paste a corpus in from a chat
+transcript. To refresh or extend a corpus: change the script, re-run it,
+commit the result.
 
 | corpus | script | destination |
 |---|---|---|

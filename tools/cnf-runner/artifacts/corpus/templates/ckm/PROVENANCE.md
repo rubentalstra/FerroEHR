@@ -13,6 +13,14 @@ manifest, the journey definitions and the example generator — the
 slugs are a stable contract. The **full library** is a separate pack
 under `full/` with its own provenance file.
 
+## Licensing
+
+CKM publishes no repository-level license; each OPT embeds its source
+archetypes' `licence` metadata (predominantly CC-BY-SA 3.0 where
+stated — see the individual file). Vendored verbatim, so authorship
+and licence metadata ride along; root reference copy:
+`LICENSE-CC-BY-SA-3.0`.
+
 | cid | slug | display name | status | modified | journey role |
 |---|---|---|---|---|---|
 | 1013.26.380 | vital-signs | Vital signs | DRAFT | 2021-03-08T13:30:44+01:00 | vitals_round (full observation round) |

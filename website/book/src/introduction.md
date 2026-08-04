@@ -71,5 +71,6 @@ user terms; if you are new to openEHR itself, start with the
 > the Peter L. Reichertz Institute) and keeps that lineage in its history, but
 > it is an independent, from-scratch Rust implementation and is not affiliated
 > with or endorsed by the upstream project. FerroEHR's own code is
-> MIT-licensed; vendored openEHR artifacts keep their upstream Apache-2.0
-> terms.
+> MIT-licensed; vendored openEHR material keeps its upstream terms —
+> Apache-2.0 for the machine-readable artifacts, CC-BY-SA 3.0 for the
+> specification text and clinical models (see [Licensing & legal](licensing.md)).
