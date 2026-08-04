@@ -55,9 +55,13 @@ optional:
   `rust-lang/crates-io-auth-action`, `id-token: write`, the `crates-io`
   environment) and runs `cargo publish --workspace` over the eight
   `crates/*` members in dependency order — no long-lived crates.io token
-  exists anywhere. Before a publish: bump every crate's `version` and the
-  internal `version =` requirements together (lockstep `0.0.x`), and verify
-  locally with `cargo publish --workspace --dry-run`. The very first release
+  exists anywhere. Version bumps happen in the CONTENT PR, not at publish
+  time: any PR changing packaged crate content bumps every crate's `version`
+  and the internal `version =` requirements together (lockstep `0.0.x` —
+  the `crate-version-guard` CI job and the local push hook enforce it; full
+  rule in `.claude/rules/crates-publishing.md`), so a publish just ships the
+  version already in the tree — verify locally with
+  `cargo publish --workspace --dry-run`. The very first release
   of a crate cannot use OIDC (crates.io requires an existing crate to
   configure a Trusted Publisher) — it is pushed manually with a scoped API
   token, after which each crate's Trusted Publisher is configured on
