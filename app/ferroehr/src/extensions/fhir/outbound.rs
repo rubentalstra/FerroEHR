@@ -44,8 +44,8 @@ use uuid::Uuid;
 
 use crate::ids::VoId;
 
-use crate::extensions::events::amqp::AmqpPublisher;
-use crate::extensions::events::{EventError, EventPublisher};
+use ferroehr_ext::events::amqp::AmqpPublisher;
+use ferroehr_ext::events::{EventError, EventPublisher};
 use crate::service::FerroEhrService;
 
 use super::config::FhirOutboundConfig;

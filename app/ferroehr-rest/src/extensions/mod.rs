@@ -33,6 +33,7 @@
 //! component and lives at [`crate::system_log`].
 
 pub mod access;
+#[cfg(feature = "events")]
 pub mod event_subscription;
 pub mod fhir;
 pub mod health;

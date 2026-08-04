@@ -218,6 +218,7 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
 
     // Contribution-outbox eventing + FHIR outbound emitter (both off by default).
     let outbox_enabled = config.events.enabled || config.fhir.outbound.enabled;
+    #[cfg(feature = "events")]
     let events_handle = if config.events.enabled {
         tracing::info!(exchange = %config.events.exchange, "contribution-outbox eventing enabled");
         Some(ferroehr::extensions::events::publisher::start(
@@ -227,6 +228,9 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     } else {
         None
     };
+    #[cfg(not(feature = "events"))]
+    ferroehr::extensions::events::require_disabled(&config.events)
+        .map_err(|e| anyhow::anyhow!(e))?;
 
     // Health indicators.
     let mut indicators: Vec<Arc<dyn HealthIndicator>> = vec![
@@ -236,6 +240,7 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     if let Some(sender) = &audit_sender {
         indicators.push(Arc::new(indicators::AuditHealth::new(sender.clone())));
     }
+    #[cfg(feature = "events")]
     if let Some(handle) = &events_handle {
         indicators.push(Arc::new(indicators::EventsHealth::new(handle.healthy())));
     }
@@ -333,6 +338,7 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     let service = Arc::new(service);
 
     // FHIR outbound emitter (off by default; carries PHI).
+    #[cfg(feature = "events")]
     let fhir_outbound_handle = if config.fhir.outbound.enabled {
         tracing::info!(
             exchange = %config.fhir.outbound.exchange,
@@ -346,6 +352,12 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     } else {
         None
     };
+    #[cfg(not(feature = "events"))]
+    if config.fhir.outbound.enabled {
+        return Err(anyhow::anyhow!(
+            "fhir.outbound.enabled = true, but this binary was built without the `events` cargo feature"
+        ));
+    }
 
     // Authorization — only wired when authentication is enabled: the RBAC gate
     // plus the ABAC engine + DB-backed attribute resolvers. A misconfigured
@@ -395,9 +407,11 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     if let Some(handle) = audit_handle {
         handle.shutdown(AUDIT_DRAIN_TIMEOUT).await;
     }
+    #[cfg(feature = "events")]
     if let Some(handle) = events_handle {
         handle.shutdown(AUDIT_DRAIN_TIMEOUT).await;
     }
+    #[cfg(feature = "events")]
     if let Some(handle) = fhir_outbound_handle {
         handle.shutdown(AUDIT_DRAIN_TIMEOUT).await;
     }

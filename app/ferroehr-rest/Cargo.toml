@@ -22,7 +22,7 @@ openehr-its = { path = "../../crates/openehr-its" }
 # The platform library: the SM-shaped service this crate dispatches to, plus its
 # response/query types. The audit tower layer emits through the platform's SM
 # `SystemLog` component; the ATNA event model + `EmitOutcome` come from here.
-ferroehr = { path = "../ferroehr" }
+ferroehr = { path = "../ferroehr", default-features = false }
 
 # Web framework & HTTP core.
 axum = { workspace = true }
@@ -118,7 +118,12 @@ tracing-subscriber = { workspace = true }
 wiremock = { workspace = true }
 
 [features]
+# Forward the optional-integration gates (#1890); default mirrors ferroehr's.
+default = ["fhir", "events", "multimedia"]
 admin-api = []
+fhir = ["ferroehr/fhir"]
+events = ["ferroehr/events"]
+multimedia = ["ferroehr/multimedia"]
 
 [lints]
 workspace = true

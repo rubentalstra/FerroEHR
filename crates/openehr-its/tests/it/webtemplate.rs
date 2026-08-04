@@ -545,3 +545,49 @@ fn no_party_node_is_inputless() {
         offenders.join("\n")
     );
 }
+
+/// Every OPT 1.4 constraint the archetype-conformance walk cannot evaluate is
+/// REPORTED rather than dropped: the deployed corpus constrains computed RM
+/// FUNCTIONS as if they were stored members (`EVENT.offset`,
+/// `DV_PROPORTION.is_integral`) and misspells `null_flavour`, none of which a
+/// conformant instance can carry. The skip is a template property, so it is
+/// enumerable from the template alone.
+#[test]
+fn unenforceable_constraints_are_reported_not_dropped() {
+    use openehr_its::flat::validation::{
+        UnenforceableReason, unenforceable_existence_constraints,
+    };
+
+    let mut seen: Vec<String> = Vec::new();
+    for path in opt_files(Path::new("tests/fixtures")) {
+        let Ok(wt) = build_from_file(&path) else {
+            continue;
+        };
+        for skipped in unenforceable_existence_constraints(&wt) {
+            assert_eq!(skipped.reason, UnenforceableReason::AttributeNotInRmModel);
+            assert!(
+                skipped.path.ends_with(&skipped.attribute),
+                "the reported path must end with the reported attribute, got {} / {}",
+                skipped.path,
+                skipped.attribute
+            );
+            seen.push(skipped.attribute.clone());
+        }
+    }
+    seen.sort();
+    seen.dedup();
+    assert!(
+        !seen.is_empty(),
+        "the vendored OPT corpus carries unenforceable existence constraints; \
+         reporting none means the skip went silent again"
+    );
+
+    // Whatever the corpus contains, NOTHING reported may be an attribute the RM
+    // actually declares — that would be a real constraint wrongly skipped.
+    for attr in &seen {
+        assert!(
+            !openehr_rm::model::classes().any(|c| c.attributes.iter().any(|a| a.name == attr)),
+            "'{attr}' IS declared by the RM: skipping it would drop an enforceable constraint"
+        );
+    }
+}

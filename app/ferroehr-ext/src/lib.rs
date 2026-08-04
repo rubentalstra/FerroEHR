@@ -5,3 +5,6 @@
 
 #[cfg(feature = "multimedia")]
 pub mod multimedia;
+
+#[cfg(feature = "events")]
+pub mod events;

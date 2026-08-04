@@ -609,6 +609,81 @@ fn rm_declares_attribute(attr: &str) -> bool {
     DECLARED.contains(attr)
 }
 
+/// Why a template constraint cannot be evaluated against any instance.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UnenforceableReason {
+    /// The constrained attribute is declared by no RM class, so no conformant
+    /// instance can carry it as a stored member.
+    ///
+    /// Two shapes reach this in the deployed OPT 1.4 corpus: a constraint on a
+    /// computed FUNCTION written as if it were stored (`EVENT.offset`,
+    /// `DV_PROPORTION.is_integral` — RM
+    /// `UML/classes/org.openehr.rm.data_structures.event.adoc` §Functions and
+    /// `UML/classes/org.openehr.rm.data_types.quantity.dv_proportion.adoc`
+    /// §Functions declare them as functions, not attributes), and the US
+    /// spelling `null_flavor` for the RM's `null_flavour`.
+    AttributeNotInRmModel,
+}
+
+/// A template constraint the archetype-conformance walk cannot evaluate.
+///
+/// Enforcing one would demand an instance member the canonical reader refuses,
+/// so the walk skips it. The skip is reported rather than dropped: template
+/// content that can never be checked is a property of the template a caller is
+/// entitled to see. These are NOT validation failures — a conformant instance
+/// is unaffected, and nothing here rejects a commit.
+#[derive(Debug, Clone)]
+pub struct UnenforceableConstraint {
+    /// Absolute archetype path of the constrained attribute.
+    pub path: String,
+    /// The constrained attribute name.
+    pub attribute: String,
+    /// Why the walk cannot evaluate it.
+    pub reason: UnenforceableReason,
+}
+
+/// Reports every existence constraint in `wt` that the conformance walk cannot
+/// evaluate.
+///
+/// A template-level property: the answer depends only on the template, so it is
+/// computed once per template rather than per commit. Pair it with
+/// [`validate_archetype_conformance`], which skips exactly these constraints.
+///
+/// # Examples
+///
+/// ```no_run
+/// # use openehr_its::flat::validation::unenforceable_existence_constraints;
+/// # fn demo(wt: &openehr_its::flat::webtemplate::WebTemplate) {
+/// for skipped in unenforceable_existence_constraints(wt) {
+///     eprintln!("unenforceable at {}: {}", skipped.path, skipped.attribute);
+/// }
+/// # }
+/// ```
+#[must_use]
+pub fn unenforceable_existence_constraints(wt: &WebTemplate) -> Vec<UnenforceableConstraint> {
+    let mut out = Vec::new();
+    collect_unenforceable(&wt.tree, &mut out);
+    out
+}
+
+/// Walks the node tree accumulating unenforceable existence constraints.
+fn collect_unenforceable(node: &WebTemplateNode, out: &mut Vec<UnenforceableConstraint>) {
+    for ex in &node.existence {
+        let attribute = ex.path.rsplit('/').next().unwrap_or_default();
+        if attribute.is_empty() || rm_declares_attribute(attribute) {
+            continue;
+        }
+        out.push(UnenforceableConstraint {
+            path: ex.path.clone(),
+            attribute: attribute.to_owned(),
+            reason: UnenforceableReason::AttributeNotInRmModel,
+        });
+    }
+    for child in &node.children {
+        collect_unenforceable(child, out);
+    }
+}
+
 impl Validator {
     fn push(&mut self, path: impl Into<String>, message: impl Into<String>, kind: ValidationKind) {
         self.out.push(ValidationMessage {
@@ -855,14 +930,12 @@ impl Validator {
             let Some((last, intermediate)) = segments.split_last() else {
                 continue;
             };
-            // An existence constraint on an attribute the RM does not declare
-            // cannot be satisfied by a conformant instance, so it is skipped: the
-            // deployed OPT 1.4 corpus constrains computed FUNCTIONS as if stored
-            // (`EVENT.offset`, `DV_PROPORTION.is_integral` — RM
-            // `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.event.adoc`
-            // §Functions) and misspells `null_flavour`; requiring either would
-            // demand a member the canonical reader refuses. The generated RM model
-            // is the oracle.
+            // An existence constraint on an attribute no RM class declares cannot
+            // be satisfied by a conformant instance — enforcing it would demand a
+            // member the canonical reader refuses. Skipped here and REPORTED by
+            // `unenforceable_existence_constraints`, which shares this predicate;
+            // see `UnenforceableReason::AttributeNotInRmModel` for the shapes and
+            // their RM citations.
             if !rm_declares_attribute(&last.attribute) {
                 continue;
             }

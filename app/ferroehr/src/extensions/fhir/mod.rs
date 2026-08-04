@@ -34,6 +34,7 @@
 pub mod config;
 mod feeder_audit;
 mod mapping;
+#[cfg(feature = "events")]
 pub mod outbound;
 mod reverse;
 
@@ -404,6 +405,7 @@ impl FerroEhrService {
     /// A database failure on the version/mapping/subject reads, or
     /// `Unprocessable` when a stored mapping definition no longer deserialises
     /// or the reverse transform fails (a stored mapping/template defect).
+    #[cfg(feature = "events")]
     pub(crate) async fn fhir_outbound_messages(
         &self,
         ehr_id: Option<Uuid>,

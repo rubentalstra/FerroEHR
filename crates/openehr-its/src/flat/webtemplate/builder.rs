@@ -26,9 +26,14 @@
 //!   produced COMPOSITION is RM-valid without the builder duplicating that
 //!   structure. Governing cardinalities: openEHR RM `common`/`composition`/
 //!   `data_structures`.
-//! * **`ISM_TRANSITION`/careflow-step synthesis**: `ACTION.ism_transition` is
-//!   RM-mandatory (`RM ehr §ACTION`) and is materialised downstream by the
-//!   composition builders, not expanded into careflow nodes in the tree.
+//! * **`ISM_TRANSITION`/careflow-step synthesis**: an ADL 1.4 ACTION constrains
+//!   `ism_transition` once per careflow step, and the tree currently carries one
+//!   node per such constraint (`planned`, `completed`, …). An ACTION INSTANCE
+//!   carries exactly one `ISM_TRANSITION`, and Simplified Formats master05
+//!   §ISM_TRANSITION maps it to a single `…/ism_transition/current_state` path,
+//!   so the per-state nodes are not the served shape.
+//!   TODO(#1880): synthesise one `ism_transition` node whose coded children take
+//!   the union of the per-state constraints.
 //! * **The "any" (unconstrained) `ELEMENT` value**: an ELEMENT with no value
 //!   constraint is emitted without an enumerated per-`DATA_VALUE` `inputs`
 //!   expansion. No openEHR spec governs the shape of an unconstrained value node —
@@ -640,16 +645,13 @@ fn capture_leaf_constraints(co: &CObject, node: &mut WebTemplateNode) {
     {
         node.quantity_property = Some(property.code_string.clone());
     }
-    // Explicit-local closed C_CODE_PHRASE on `defining_code` (DV_CODED_TEXT) or
-    // the node's own bare CODE_PHRASE: when the archetype author explicitly
-    // scopes the code list to the `local` terminology, the closed list admits
-    // ONLY local codes, so a foreign-terminology instance code is a violation
-    // (`AM/docs/UML/classes/org.openehr.am.aom14.c_coded_text.adoc` §C_CODED_TEXT:
-    // the `code_list` is "a list of codes FROM the terminology"). The wt+json
-    // `inputs` mapping strips the implicit/default `local`, so this explicit
-    // scoping is recorded on the node instead (validation-only). Only the
-    // EXPLICIT `local` case is flagged — a `C_CODE_PHRASE` with no terminology
-    // named keeps the confident-violations bias (unchanged).
+    // An explicitly `local`-scoped closed code list admits ONLY local codes, so
+    // a foreign-terminology instance code violates it
+    // (`AM/docs/UML/classes/org.openehr.am.aom14.c_coded_text.adoc`
+    // §C_CODED_TEXT: `code_list` is "a list of codes FROM the terminology").
+    // The `wt+json` `inputs` mapping strips the implicit `local`, so the
+    // explicit scoping is recorded on the node instead (validation-only); a
+    // `C_CODE_PHRASE` naming no terminology is not flagged.
     let defining_cp = match co {
         CObject::CCodePhrase(cp) => Some(cp),
         _ => inputs::attr_children(co, "defining_code").find_map(|c| match c {
@@ -666,24 +668,9 @@ fn capture_leaf_constraints(co: &CObject, node: &mut WebTemplateNode) {
     {
         node.coded_terminology_local = true;
     }
-    // NOTE — CONSTRAINT_REF (an `ac`-code proxy under a coded attribute, e.g.
-    // `defining_code`) is intentionally NOT captured as a leaf constraint.
-    // A CONSTRAINT_REF is "a proxy for a set of constraints … expressed in the
-    // binding of the constraint reference (e.g. 'ac0004') to a query … into an
-    // external service (e.g. a terminology service)"
-    // (`AM/docs/AOM1.4/master04-constraint_model_package.adoc` §Reference
-    // Objects). Its resolution is a `constraint_binding` to an external
-    // terminology-query URI (`AM/docs/ADL1.4/master08-adl.adoc`
-    // §Constraint_bindings), not a local code list. AOM 1.4 requires the ac-code
-    // be DEFINED in `constraint_definitions` (VATDF/VACDF, master08 §Coded Term
-    // Validity) but nowhere states what a DATA validator must do for an ac-code
-    // with no binding — the case is spec-silent, and no local fallback is
-    // defined. The honest reading is therefore that an unbound/externally-bound
-    // CONSTRAINT_REF constrains nothing enforceable at commit time (no openEHR
-    // spec governs the no-binding case — our own design/extension), so it admits
-    // any well-formed CODE_PHRASE; well-formedness stays the RM-invariant pass's
-    // job. A local terminology service integration could resolve a present
-    // binding in future (`TerminologyService` seam).
+    // NOTE: `AM/docs/AOM1.4/master04-constraint_model_package.adoc` §Reference
+    // Objects resolves a CONSTRAINT_REF through an external terminology query,
+    // not a local code list, so it is not captured as a leaf constraint.
     for attr in inputs::attributes(co) {
         let attr_name = inputs::attribute_name(attr);
         if attr_name == "defining_code" {
@@ -828,15 +815,12 @@ fn existence_constraints(co: &CObject, node_path: &str) -> Vec<WebTemplateExiste
         };
         let (min, max) = occurrences(&s.existence);
         let min = min.unwrap_or(0);
-        // Require at least one non-primitive (object-valued) constraint child —
-        // this targets real structural attributes (`value`, `language`, `data`,
-        // `events`, `items`, …) and excludes function/primitive constraints
-        // (`is_integral`, `lower_included`, …) that never appear as navigable
-        // instance attributes. A **childless** mandatory attribute also counts:
-        // AOM 1.4 (`master04-constraint_model_package.adoc` §existence) lets an
-        // archetype demand an attribute's presence without constraining its
-        // value (a bare `C_SINGLE_ATTRIBUTE` with existence `1..1`, e.g. a
-        // mandatory `COMPOSITION.context` or `HISTORY.summary`).
+        // Require one object-valued constraint child, which selects real
+        // structural attributes and excludes function/primitive constraints
+        // (`is_integral`, `lower_included`, …) that are never navigable instance
+        // attributes. A CHILDLESS mandatory attribute also counts: AOM 1.4
+        // `master04-constraint_model_package.adoc` §existence lets an archetype
+        // demand presence without constraining the value.
         let object_valued = s.children.is_empty()
             || s.children
                 .iter()
