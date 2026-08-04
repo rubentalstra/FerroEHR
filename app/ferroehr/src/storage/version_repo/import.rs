@@ -242,7 +242,8 @@ pub async fn insert_version_verbatim(
     Ok(())
 }
 
-/// Whether a specific version-tree position of one creating system is already
+/// Whether a specific version-tree position (`creating_system_id = None`
+/// matches any creating system — the trunk chain is per versioned object) of one creating system is already
 /// stored for `vo_id` — the receiver-side copy-closure probe (RM common
 /// master06 §Copying: branch versions "cannot be copied without their
 /// corresponding preceding versions on the same branch (if any) and trunk
@@ -254,14 +255,15 @@ pub async fn insert_version_verbatim(
 pub async fn has_version_tree(
     tx: &mut PgConnection,
     vo_id: VoId,
-    creating_system_id: &str,
+    creating_system_id: Option<&str>,
     trunk_version: i32,
     branch_number: i32,
     branch_version: i32,
 ) -> Result<bool, StorageError> {
     let exists: bool = sqlx::query_scalar(
         "SELECT EXISTS (SELECT 1 FROM vo_version WHERE vo_id = $1 \
-         AND creating_system_id = $2 AND trunk_version = $3 \
+         AND ($2::text IS NULL OR creating_system_id = $2) \
+         AND trunk_version = $3 \
          AND branch_number = $4 AND branch_version = $5)",
     )
     .bind(vo_id)
