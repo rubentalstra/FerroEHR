@@ -397,36 +397,36 @@ public issues.
 
 ## Acknowledgments and license
 
-FerroEHR began as a fork of **EHRbase**, developed
-by [vitasystems GmbH](https://www.vitagroup.ag/) and the
-[Peter L. Reichertz Institute](https://www.plri.de/), and keeps that lineage
-in its git history; it is not affiliated with or endorsed by the upstream
-project. The openEHR specifications and the machine-readable models this
-project generates from are published by the
-[openEHR Foundation](https://www.openehr.org/).
+### Acknowledgments
 
-openEHR® is the registered trademark of the openEHR Foundation. FerroEHR is
-an independent implementation of the openEHR® specifications and is not
-endorsed by the openEHR Foundation.
+- **[EHRbase](https://github.com/ehrbase/ehrbase)** — FerroEHR began as a
+  fork of EHRbase, developed by
+  [vitasystems GmbH](https://www.vitagroup.ag/) and the
+  [Peter L. Reichertz Institute](https://www.plri.de/), and keeps that
+  lineage in its git history. It is not affiliated with or endorsed by the
+  upstream project; upstream EHRbase remains Apache-2.0, and no code from it
+  is present in this tree.
+- **[openEHR Foundation](https://www.openehr.org/)** — publishes the openEHR
+  specifications and the machine-readable models this project generates
+  from. openEHR® is the registered trademark of the openEHR Foundation;
+  FerroEHR is an independent implementation of the openEHR® specifications
+  and is not endorsed by the Foundation.
+- **[Cabolabs EHRServer](https://github.com/ppazos/cabolabs-ehrserver)** —
+  the admin console's feature set (the Template Manager, the point-and-click
+  Query Builder, saved/grouped/cohort queries) is inspired by EHRServer by
+  Pablo Pazos / CaboLabs Health Informatics (Apache-2.0). The UX is
+  reimplemented fresh in Rust over this project's own AQL engine — no code
+  is copied — but the design lineage is gratefully credited.
 
-The admin console's feature set — the Template Manager, the point-and-click
-Query Builder, and saved/grouped/cohort queries — is inspired by
-[Cabolabs EHRServer](https://github.com/ppazos/cabolabs-ehrserver) by Pablo
-Pazos / CaboLabs Health Informatics (Apache-2.0). The UX is reimplemented
-fresh in Rust over this project's own AQL engine — no code is copied — but
-the design lineage is gratefully credited.
+### Licensing
 
-**Licensing.** FerroEHR's own code — the application, the tooling, and the
-generated crates — is licensed under the [MIT License](LICENSE). Vendored
-third-party material keeps its upstream terms, in two families: the openEHR
-machine-readable artifacts (BMM, XSDs, OpenAPI, JSON Schemas — the
-`specifications-ITS-*` repos) and the vendored test corpora (archie, Better
-`web-template-tests`, the EHRbase SDK) are used under the
-[Apache License 2.0](LICENSE-APACHE-2.0); the openEHR specification text
-vendored for conformance work and the CKM-derived clinical models are
-[CC-BY-SA 3.0](LICENSE-CC-BY-SA-3.0) (clinical models carry per-file
-`licence` metadata). Each vendored tree documents its exact origin and
-license in a `PROVENANCE.md`, with the upstream `LICENSE` vendored
-alongside. Upstream EHRbase itself remains Apache-2.0; no code from it is
-present in this tree. The full reckoning is on the documentation site's
-[Licensing](https://ferroehr.eu/docs/latest/licensing.html) page.
+| Material | License |
+|---|---|
+| **FerroEHR's own code** — the application, the tooling, and the generated crates | [MIT](LICENSE) |
+| openEHR **machine-readable artifacts** (BMM, XSDs, OpenAPI, JSON Schemas — the `specifications-ITS-*` repos) and the vendored **test corpora** (archie, Better `web-template-tests`, the EHRbase SDK) | [Apache-2.0](LICENSE-APACHE-2.0) |
+| openEHR **specification text** (vendored for conformance work) and **CKM-derived clinical models** | [CC-BY-SA 3.0](LICENSE-CC-BY-SA-3.0); clinical models carry per-file `licence` metadata |
+
+Each vendored tree documents its exact origin and license in a
+`PROVENANCE.md`, with the upstream `LICENSE` vendored alongside. The full
+reckoning is on the documentation site's
+[Licensing & legal](https://ferroehr.eu/docs/latest/licensing.html) page.
