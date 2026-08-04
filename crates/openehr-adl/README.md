@@ -21,9 +21,9 @@ parser is native Rust (`logos` + `chumsky`), no ANTLR runtime.
 
 ## Versioning
 
-The package version follows a **pre-stabilisation `0.0.x` line** while the API
-settles; once stable, the crate adopts the version of the openEHR
-specification it implements (ADL/AOM 2.4.0). The implemented spec version is always
+The package version is the crate's **own independent SemVer line** — it
+tracks this implementation's code and moves freely with fixes and
+improvements, never with the vendored openEHR specification (ADL/AOM 2.4.0). The implemented spec version is always
 available at runtime as `openehr_adl::SPEC_VERSION` (`"2.4.0"`), independent of
 the package version.
 

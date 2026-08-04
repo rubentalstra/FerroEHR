@@ -28,9 +28,9 @@ never rewrites. Changes belong in the emitter, never in the generated output.
 
 ## Versioning
 
-The package version follows a **pre-stabilisation `0.0.x` line** while the API
-settles; once stable, the crate adopts the version of the openEHR
-specification it implements (BASE 1.3.0). The implemented spec version is always
+The package version is the crate's **own independent SemVer line** — it
+tracks this implementation's code and moves freely with fixes and
+improvements, never with the vendored openEHR specification (BASE 1.3.0). The implemented spec version is always
 available at runtime as `openehr_base::SPEC_VERSION` (`"1.3.0"`), independent of
 the package version.
 

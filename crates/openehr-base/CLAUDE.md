@@ -1,8 +1,9 @@
 # `openehr-base` — BASE 1.3.0 (GENERATED)
 
 Foundation + base types, **generated from the vendored BMM** by
-`openehr-codegen -- emit`. Versioned by the spec it implements
-(1.3.0), never by the product version.
+`openehr-codegen -- emit`. Spec pin: BASE 1.3.0 via `SPEC_VERSION`; the
+package version is the crate's own SemVer line, never the spec's and never
+the product's (`.claude/rules/crates-publishing.md`).
 
 - **NEVER hand-edit a file with a `// @generated … DO NOT EDIT` header.**
   To change emitted output, edit the emitter

@@ -21,10 +21,10 @@ workflow refuses a tag that has no matching section here.
   `openehr-base`, `openehr-rm`, `openehr-am`, `openehr-adl`, `openehr-term`,
   `openehr-lang`, `openehr-query`, `openehr-its` — each with its own README,
   packaged license texts (MIT, plus Apache-2.0 where openEHR-derived material
-  is embedded), and docs.rs documentation. Packages start on a
-  pre-stabilisation `0.0.x` line; the implemented openEHR spec version is
-  carried by each crate's `SPEC_VERSION` constant, now decoupled from the
-  package version. Releases after the first go through an OIDC
+  is embedded), and docs.rs documentation. Packages version on their own
+  independent SemVer line (starting at `0.0.x`, permanently decoupled from
+  the openEHR spec versions); the implemented spec version is carried by
+  each crate's `SPEC_VERSION` constant. Releases after the first go through an OIDC
   trusted-publishing workflow (`publish-crates.yml`) — no long-lived
   registry token (#1886).
 

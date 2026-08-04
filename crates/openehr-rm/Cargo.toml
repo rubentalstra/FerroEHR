@@ -1,6 +1,6 @@
 [package]
 name = "openehr-rm"
-version = "0.0.1"                 # crates.io pre-stabilisation line; adopts the openEHR spec version at stabilisation (docs/VERSIONS.md)
+version = "0.0.2"
 description = "openEHR RM 1.2.0 Reference Model, generated from BMM"
 edition.workspace = true
 rust-version.workspace = true
@@ -14,11 +14,11 @@ categories = ["data-structures", "science"]
 include = ["src/**", "README.md", "LICENSE-MIT", "LICENSE-APACHE-2.0"]
 
 [dependencies]
-openehr-base = { path = "../openehr-base", version = "0.0.1" }
+openehr-base = { path = "../openehr-base", version = "0.0.2" }
 # The terminology-backed RM class invariants (`validate::terminology`) resolve
 # openEHR terminology groups + code sets against the vendored TERM 3.1.0 bundle.
 # `openehr-term` itself depends only on `openehr-base`, so this is acyclic.
-openehr-term = { path = "../openehr-term", version = "0.0.1" }
+openehr-term = { path = "../openehr-term", version = "0.0.2" }
 # Canonical-JSON (de)serialization is EMITTED manual `serde` impls on the spec
 # types (`openehr-codegen -- emit-json`, into `src/json_serde.rs`) — never a
 # derive. `serde_json` also backs the untyped `Value` RM representation used by

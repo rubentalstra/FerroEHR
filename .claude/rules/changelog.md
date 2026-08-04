@@ -42,11 +42,12 @@ optional:
   follows the re-milestoned issues.
 - **Versioning split:** the product (workspace, `ferroehr-*`, tools, codegen
   tooling) follows the product SemVer (3.x line). The `openehr-*` **spec
-  crates** publish to crates.io on their own pre-stabilisation `0.0.x` line
-  (owner ruling 2026-08-04, issue #1886; each crate's `SPEC_VERSION`
-  constant carries the implemented spec pin — full policy + the
-  stabilisation plan in `docs/VERSIONS.md` §Product and crate versioning);
-  they release in lockstep and never with the product version.
+  crates** publish to crates.io on their own independent SemVer line —
+  permanently decoupled from the vendored spec versions (owner rulings
+  2026-08-04, issue #1886 + same-day correction; each crate's `SPEC_VERSION`
+  constant carries the implemented spec pin — full policy in
+  `docs/VERSIONS.md` §Product and crate versioning); they release in
+  lockstep and never with the product version.
 
 - **Publishing the `openehr-*` crates (crates.io):** releases go through
   `.github/workflows/publish-crates.yml` — a manual `workflow_dispatch` lane
