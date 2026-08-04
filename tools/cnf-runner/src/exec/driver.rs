@@ -3081,11 +3081,14 @@ impl StepDriver for HttpDriver<'_> {
         if observation == Observation::Kind(expected)
             && let Some(expectation) = binding.outcome(expected)
         {
+            // The SAME merged scope request building used (#1852): a step
+            // that supplies a value inline (`with:`) instead of capturing it
+            // must be able to pin it in its outcome matchers too.
             assertion_failures.extend(self.eval_wire_expectation(
                 expectation,
                 &exchange,
                 &headers,
-                vars,
+                &header_vars,
             ));
         }
         Ok(StepObservation {
