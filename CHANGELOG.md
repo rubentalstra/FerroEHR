@@ -34,6 +34,27 @@ workflow refuses a tag that has no matching section here.
   neutral instrument. The rendered comparison charts and generated tables
   carry the new labeling; provenance and licensing statements are unchanged.
 
+### Added
+
+- **`ferroehr-ext` — the optional-integration crate.** The FHIR conversion
+  core (mapping model + FLAT builder, outbound reverse-map, feeder-audit
+  probe), the events transport (the `EventPublisher` seam, the AMQP
+  publisher, the routing-key grammar), and the multimedia engine
+  (content-addressed S3-compatible blob store + offload/expand transforms)
+  now live in their own crate behind one additive cargo feature each
+  (`fhir`, `events`, `multimedia`). Default builds are unchanged (all
+  features on, wire-identical); a `--no-default-features` build produces a
+  slim CDR that compiles the integrations out entirely and refuses an
+  enabled-but-unbuilt integration loudly at boot. Configuration sections
+  are unchanged and stay in the one config tree.
+- The OPT 1.4 constraints that target computed RM functions (`EVENT.offset`,
+  `DV_PROPORTION.is_integral`, the US-spelled `null_flavor`) are now
+  visible as a typed per-template report of unenforceable constraints
+  instead of a silent skip; nothing new is rejected.
+- The BMM v3 model gains MODEL-level navigation (`type_conforms_to`,
+  ancestor walks, flattened property lookup) and generic-substituted
+  property synthesis per the LANG generic-inheritance semantics.
+
 ### Fixed
 
 - **A ROLE carrying an empty `capabilities` list (and a party carrying an

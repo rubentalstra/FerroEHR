@@ -19,8 +19,11 @@ compile integrations out.
 - Heavy external model dependencies (a generated FHIR model, brokers,
   codecs) land HERE, never in `ferroehr` (#1885 adopts `fhir-sdk` in this
   crate when it lands).
-- Zero re-exports; config types move with their integration and the
-  `ferroehr` config tree composes them.
+- Zero re-exports. The serde CONFIG sections stay in the `ferroehr` config
+  tree (they carry `Secret`/`SecretUrl` and the tree's redaction semantics);
+  this crate takes plain runtime parameter structs at construction
+  (`BlobStoreParams`, the events/AMQP url, `MappedSubject`) — the platform's
+  gated glue maps config → params.
 - Features are additive — no `compile_error!` pairs; the `--all-features`
   workspace lanes stay valid.
 - Gates: `cargo clippy -p ferroehr-ext --all-targets --all-features` +
