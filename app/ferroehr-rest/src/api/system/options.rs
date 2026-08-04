@@ -14,10 +14,13 @@
 //! bundle is `emit-rest` codegen-input provenance only, never a behavioural
 //! oracle.
 //!
-//! TODO(#1822): the generated ITS-REST contract now emits the System group
-//! (`crates/openehr-its/src/rest/generated/system.rs`, `SystemApi::options`);
-//! this module predates it and is still hand-written — adopt the generated
-//! trait and diff [`SystemManifest`] against the emitted `Options` DTO.
+//! The response body is the GENERATED contract DTO
+//! (`openehr_its::rest::generated::system::Options`, #1822) — no hand wire
+//! shape survives; [`OptionsDoc`] below is the utoipa DOCUMENTATION
+//! projection only (never serialized on the wire), pinned field-lockstep to
+//! the generated DTO by `options_doc_matches_the_generated_dto`. The handler
+//! stays hand-written like every group's (the generated traits are the
+//! route-table/parity oracle, not the dispatch mechanism).
 //!
 //! This module owns the manifest's *shape and content*; the wiring layer
 //! (`crate::router::router`) constructs the [`SystemManifest`] from config plus the
@@ -70,10 +73,14 @@ use ferroehr::config::server::SystemOptionsConfig;
 /// the conformance profile it claims, "exposing service capabilities for a
 /// conformance manifest" (`operations/options.yaml`).
 ///
-/// Borrows from the [`SystemManifest`] so the manifest owns the data and this
-/// is a zero-copy view rendered per request.
+/// The utoipa DOCUMENTATION projection of the generated wire DTO
+/// (`openehr_its::rest::generated::system::Options`) — the served OpenAPI
+/// must be our own generated document (owner hard rule), and the contract
+/// DTO carries no utoipa derive. NEVER serialized on the wire; the lockstep
+/// test pins the field sets identical so this cannot drift from the carrier.
 #[derive(Debug, Serialize, utoipa::ToSchema)]
 #[schema(
+    as = Options,
     title = "Options",
     example = json!({
         "solution": "FerroEHR",
@@ -84,7 +91,7 @@ use ferroehr::config::server::SystemOptionsConfig;
         "endpoints": ["/ehr", "/demographic", "/definition", "/query"]
     })
 )]
-struct Options<'a> {
+struct OptionsDoc<'a> {
     /// The product implementing the API.
     solution: &'a str,
     /// The product's own version.
@@ -132,15 +139,17 @@ impl SystemManifest {
         }
     }
 
-    /// A borrowing view of the manifest as the OAS `Options` body.
-    fn body(&self) -> Options<'_> {
-        Options {
-            solution: &self.config.solution,
-            solution_version: &self.config.solution_version,
-            vendor: &self.config.vendor,
-            restapi_specs_version: &self.config.restapi_specs_version,
-            conformance_profile: &self.config.conformance_profile,
-            endpoints: &self.endpoints,
+    /// The manifest as the GENERATED contract `Options` DTO (#1822) — the
+    /// wire carrier; every field is populated, so the DTO's skip-if-none
+    /// serialization is byte-identical to the former always-present view.
+    fn body(&self) -> openehr_its::rest::generated::system::Options {
+        openehr_its::rest::generated::system::Options {
+            solution: Some(self.config.solution.clone()),
+            solution_version: Some(self.config.solution_version.clone()),
+            vendor: Some(self.config.vendor.clone()),
+            restapi_specs_version: Some(self.config.restapi_specs_version.clone()),
+            conformance_profile: Some(self.config.conformance_profile.clone()),
+            endpoints: Some(self.endpoints.clone()),
         }
     }
 
@@ -223,7 +232,7 @@ where
     ),
     responses(
         (status = 200, description = "The Options and Conformance manifest.",
-            body = Options<'_>, content_type = "application/json",
+            body = OptionsDoc<'_>, content_type = "application/json",
             headers(
                 ("Allow" = String,
                     description = "The set of HTTP methods this API surface \
@@ -267,7 +276,7 @@ fn options_documented() {}
 pub(crate) fn openapi(base_path: &str) -> utoipa::openapi::OpenApi {
     use utoipa::OpenApi;
     #[derive(OpenApi)]
-    #[openapi(paths(options_documented), components(schemas(Options<'_>)))]
+    #[openapi(paths(options_documented), components(schemas(OptionsDoc<'_>)))]
     struct SystemApiDoc;
     let mut doc = SystemApiDoc::openapi();
     crate::extensions::openapi::rehome_path(&mut doc, "/ferroehr/rest/openehr/v1", base_path);
@@ -276,6 +285,37 @@ pub(crate) fn openapi(base_path: &str) -> utoipa::openapi::OpenApi {
 
 #[cfg(test)]
 mod tests {
+
+    /// The doc-only [`OptionsDoc`] stays field-lockstep with the GENERATED
+    /// wire carrier (#1822): serializing a fully-populated sample of each
+    /// yields the same key set, so the served OpenAPI cannot drift from the
+    /// contract DTO it documents.
+    #[test]
+    fn options_doc_matches_the_generated_dto() {
+        let endpoints = vec!["/ehr".to_owned()];
+        let doc = serde_json::to_value(OptionsDoc {
+            solution: "s",
+            solution_version: "v",
+            vendor: "o",
+            restapi_specs_version: "r",
+            conformance_profile: "p",
+            endpoints: &endpoints,
+        })
+        .expect("doc projection serializes");
+        let wire = serde_json::to_value(openehr_its::rest::generated::system::Options {
+            solution: Some("s".to_owned()),
+            solution_version: Some("v".to_owned()),
+            vendor: Some("o".to_owned()),
+            restapi_specs_version: Some("r".to_owned()),
+            conformance_profile: Some("p".to_owned()),
+            endpoints: Some(endpoints.clone()),
+        })
+        .expect("wire carrier serializes");
+        assert_eq!(
+            doc, wire,
+            "the OpenAPI projection drifted from the generated carrier"
+        );
+    }
     use super::*;
     use http_body_util::BodyExt;
 

@@ -276,6 +276,7 @@ impl RbacGate {
             openehr_its::rest::generated::demographic::ROUTES,
             openehr_its::rest::generated::query::ROUTES,
             openehr_its::rest::generated::admin::ROUTES,
+            openehr_its::rest::generated::system::ROUTES,
         ] {
             for (method, path, op) in table {
                 let (Ok(method), Some(class)) = (method.parse::<Method>(), class_of(op)) else {

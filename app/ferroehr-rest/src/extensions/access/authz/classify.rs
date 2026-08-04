@@ -49,6 +49,12 @@ pub fn class_of(op: &str) -> Option<OperationClass> {
         // ── ADMIN API (the only Admin-class generated routes) ────────────────
         "admin_ehr_delete" | "admin_ehr_delete_all" => Admin,
 
+        // ── SYSTEM (the OPTIONS-and-Conformance manifest) ────────────────────
+        // Readable by any AUTHENTICATED principal: the STABLE System API is an
+        // ordinary API-surface read (service discovery), not an Admin surface
+        // (ITS-REST system `Description.md`); it carries no PHI.
+        "options" => Clinical,
+
         // ── EHR ──────────────────────────────────────────────────────────────
         "ehr_get_by_subject" | "ehr_create" | "ehr_get_by_id" | "ehr_create_with_id" => Clinical,
 
