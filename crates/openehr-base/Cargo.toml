@@ -1,6 +1,6 @@
 [package]
 name = "openehr-base"
-version = "0.0.3"
+version = "0.0.4"
 description = "openEHR BASE 1.3.0: foundation + base types (generated from BMM)"
 edition.workspace = true
 rust-version.workspace = true

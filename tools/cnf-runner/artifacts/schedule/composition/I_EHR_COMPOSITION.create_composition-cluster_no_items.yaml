@@ -1,17 +1,18 @@
-# A CLUSTER with no items is a 422: RM data_structures declares
+# A CLUSTER with no items is refused: RM data_structures declares
 # `CLUSTER.items: List<ITEM>` with multiplicity `1..*`
-# (`org.openehr.rm.data_structures.cluster.adoc` §Attributes), so a committed
-# CLUSTER node whose `items` member is absent (or empty — the canonical-JSON
-# reader treats the two spellings as the same empty list) does not conform to
-# the RM. The wire-reachable representative of the mandatory 1..* container
-# family (#1461); the sibling family member on the contribution surface is
-# the long-standing `commit_contribution-empty` case (CONTRIBUTION.versions).
+# (`org.openehr.rm.data_structures.cluster.adoc` §Attributes), and the
+# release's own request-body schema says the same — ITS-REST OAS
+# `schemas/data_structures/Clstr.yaml` `required: [items]`.
 #
-# Derived from the RM attribute declaration + the ITS-REST status table
-# (Requests_and_responses.md: 422 "well-formed but was unable to be followed
-# due to semantic errors"), not from any SUT. The payload is the CKM
-# generic-lab-test-result example (the committed, SUT-accepted valid twin)
-# with the single specimen CLUSTER's `items` deleted — one defect, one case.
+# WHICH BRANCH THE REFUSAL TAKES: a body missing a member the release
+# declares `required` is invalid CONTENT, so it never becomes a resource.
+# `responses/400.yaml` scopes 400 to "syntactically invalid header, parameter
+# or content"; `responses/422.yaml` scopes 422 to content that "could be
+# converted to a resource" and then fails semantic validation. This body
+# cannot be converted — the 400 row.
+#
+# The payload is the CKM generic-lab-test-result example (the committed valid
+# twin) with the single specimen CLUSTER's `items` deleted — one defect.
 id: I_EHR_COMPOSITION.create_composition-cluster_no_items
 kind: functional
 component: EHR_COMPOSITION
@@ -20,11 +21,14 @@ capabilities: [CompositionOps]
 profiles: [CORE]
 test_purpose: >-
   A COMPOSITION containing a CLUSTER without its RM-mandatory 1..* items is
-  rejected 422, and nothing is committed.
-description: "Reject a CLUSTER with no items (422)"
+  rejected as invalid content, and nothing is committed.
+description: "Reject a CLUSTER with no items (400)"
 spec_refs:
   - "RM data_structures §CLUSTER (items: List<ITEM> 1..*)"
-  - "ITS-REST overview Requests_and_responses §HTTP status codes (422)"
+  - "ITS-REST OAS schemas/data_structures/Clstr.yaml §required (items)"
+  - "ITS-REST OAS responses/400.yaml"
+  - "ITS-REST OAS responses/422.yaml"
+  - "ITS-REST overview Requests_and_responses §HTTP status codes"
   - "SM openehr_platform §I_EHR_COMPOSITION.create_composition"
 applies: { rm: ">=1.0.2" }
 requires:
@@ -36,7 +40,7 @@ flow:
   - step: 1
     call: create_composition
     with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.composition.lab_result.cluster_no_items}" }
-    expect: validation_failed
+    expect: bad_request                   # the `required: [items]` member is absent — the body never converts
     assert:
       - { assert: message_exemplar, text: "information about the errors in the provided COMPOSITION" }
 postconditions:

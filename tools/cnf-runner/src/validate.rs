@@ -23,11 +23,12 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use crate::artifacts::ArtifactSet;
+use crate::exec::headers::structural_token;
 use crate::ids::{CapabilityName, CaseId, CorpusKey, SmOperationRef, ViewName};
 use crate::literal::{Literal, ViolationRef};
 use crate::load::LoadError;
 use crate::model::assertion::{Assertion, EquivalentTarget, assertion_refs};
-use crate::model::binding::OperationBinding;
+use crate::model::binding::{HeaderMatcher, OperationBinding, placeholder_names};
 use crate::model::capability::Realization;
 use crate::model::case::{
     CaseCore, ExpectSpec, FlowStep, ImportRequirement, MatrixCell, Parameters,
@@ -66,6 +67,12 @@ pub enum CheckId {
     /// reads is decoration the SUT never sees, so the case's assertion about
     /// it passes vacuously — the whole reason the gate exists.
     StepArguments,
+    /// Every `pattern:` header-matcher placeholder a driven outcome declares
+    /// can RESOLVE at the step it is judged on (issue #1852, the un-evaluable
+    /// side of #1830): a name that is neither a structural token nor a
+    /// variable in scope refuses at drive time, reddening the row on the
+    /// runner's own resolution failure instead of on the SUT's behaviour.
+    MatcherPlaceholder,
     /// `verified_by` targets exist.
     VerifiedBy,
     /// Corpus keys/views/sources exist; entry invariants hold.
@@ -133,6 +140,7 @@ impl CheckId {
             Self::BindingCompleteness => "binding-completeness",
             Self::BindingFilename => "binding-filename",
             Self::StepArguments => "step-arguments",
+            Self::MatcherPlaceholder => "matcher-placeholder",
             Self::VerifiedBy => "verified-by",
             Self::CorpusIntegrity => "corpus-integrity",
             Self::AmbiguityLink => "ambiguity-link",
@@ -216,6 +224,7 @@ pub fn validate(ctx: &Context<'_>) -> Vec<Finding> {
     }
     check_binding_completeness(ctx.set, &mut findings);
     check_step_arguments(ctx.set, &mut findings);
+    check_matcher_placeholders(ctx.set, &mut findings);
     for (path, binding) in &ctx.set.bindings {
         let who = path.display().to_string();
         if let Err(message) = binding.check_invariants() {
@@ -2677,6 +2686,114 @@ fn consumed_with_keys(
     consumed
 }
 
+/// The binding `crate::exec::driver` would select for `step`, mirroring its
+/// variant resolution: an explicitly named variant when one exists, otherwise
+/// the bare binding.
+fn step_binding<'a>(
+    set: &'a ArtifactSet,
+    anchor: &SmOperationRef,
+    step: &FlowStep,
+) -> Option<&'a OperationBinding> {
+    let op = if step.call.contains('.') {
+        SmOperationRef::parse(&step.call).ok()?
+    } else {
+        anchor.sibling(&step.call)
+    };
+    let mut bindings: Vec<&OperationBinding> = set
+        .bindings
+        .iter()
+        .map(|(_, b)| b)
+        .filter(|b| b.sm_operation == op)
+        .collect();
+    if let Some(v) = &step.variant
+        && bindings
+            .iter()
+            .any(|b| b.variant.as_deref() == Some(v.as_str()))
+    {
+        bindings.retain(|b| b.variant.as_deref() == Some(v.as_str()));
+    } else if bindings.iter().any(|b| b.variant.is_none()) {
+        bindings.retain(|b| b.variant.is_none());
+    }
+    bindings.first().copied()
+}
+
+/// Every `pattern:` header matcher a driven step could be judged by resolves
+/// (issue #1852).
+///
+/// `crate::exec::headers::resolve_placeholders` substitutes a `<name>`
+/// placeholder from exactly two sources: the closed STRUCTURAL vocabulary
+/// (`crate::exec::headers::structural_token`, a released grammar per name),
+/// and the step's template scope — `requires`-minted handles, the captures
+/// earlier steps declared, and the step's own `with:` arguments
+/// (`crate::exec::driver`'s `merge_with_vars`). A name in neither is a hard
+/// refusal at drive time, which books the row as a conformance FAILURE of the
+/// SUT even though nothing about the response was inspected. The parse-time
+/// probe cannot see this: it only compiles the pattern with every placeholder
+/// wildcarded, so the whole class was run-time-only.
+///
+/// Two deliberate boundaries, because an accusation must be certain. The gate
+/// judges AUTHORED flows only — a content case's flow is synthesized at run
+/// time (`crate::run::synthesize_content_case`) and provisioning drives no
+/// matcher, so neither is enumerable here. And it counts a `with:` key by
+/// NAME, though the driver promotes only scalar-valued ones, since which
+/// value an argument resolves to is a runtime property.
+fn check_matcher_placeholders(set: &ArtifactSet, findings: &mut Vec<Finding>) {
+    for (_, case) in &set.cases {
+        let Some(anchor) = &case.sm_operation else {
+            continue;
+        };
+        let who = case.id.to_string();
+        let mut captured: BTreeSet<String> = case
+            .requires
+            .minted_handles()
+            .iter()
+            .map(ToString::to_string)
+            .collect();
+        for step in &case.flow {
+            if let Some(binding) = step_binding(set, anchor, step)
+                && !binding.is_unrealized()
+            {
+                let mut in_scope = captured.clone();
+                in_scope.extend(step.with_entries().iter().map(|(key, _)| key.clone()));
+                for kind in step_observable_kinds(case, step) {
+                    let Some(expectation) = binding.outcome(kind) else {
+                        continue; // reported by binding-completeness
+                    };
+                    for (header, declared) in expectation.headers.iter().flatten() {
+                        let HeaderMatcher::Pattern(pattern) = &declared.matcher else {
+                            continue;
+                        };
+                        for name in placeholder_names(pattern) {
+                            if structural_token(name).is_some() || in_scope.contains(name) {
+                                continue;
+                            }
+                            push(
+                                findings,
+                                CheckId::MatcherPlaceholder,
+                                &who,
+                                format!(
+                                    "step {}: the {} `{}` outcome matches header {header} with \
+                                     <{name}>, which is neither a structural token nor in the \
+                                     template scope at that step (requires-minted handles + \
+                                     earlier captures + this step's `with:` arguments) — the \
+                                     matcher refuses instead of judging, so the row reddens on \
+                                     the runner's own resolution failure",
+                                    step.step,
+                                    binding.sm_operation,
+                                    kind.token(),
+                                ),
+                            );
+                        }
+                    }
+                }
+            }
+            for (name, _source) in step.captures() {
+                captured.insert(name.to_string());
+            }
+        }
+    }
+}
+
 /// No flow step authors a `with:` key its binding never reads (issue #1830).
 ///
 /// A `with:` key is an ARGUMENT, and an argument the request form does not
@@ -2706,31 +2823,8 @@ fn check_step_arguments(set: &ArtifactSet, findings: &mut Vec<Finding>) {
             if step.with_entries().is_empty() {
                 continue;
             }
-            let op = if step.call.contains('.') {
-                match SmOperationRef::parse(&step.call) {
-                    Ok(op) => op,
-                    Err(_) => continue, // reported by the SM check
-                }
-            } else {
-                anchor.sibling(&step.call)
-            };
-            let mut bindings: Vec<&OperationBinding> = set
-                .bindings
-                .iter()
-                .map(|(_, b)| b)
-                .filter(|b| b.sm_operation == op)
-                .collect();
-            if let Some(v) = &step.variant
-                && bindings
-                    .iter()
-                    .any(|b| b.variant.as_deref() == Some(v.as_str()))
-            {
-                bindings.retain(|b| b.variant.as_deref() == Some(v.as_str()));
-            } else if bindings.iter().any(|b| b.variant.is_none()) {
-                bindings.retain(|b| b.variant.is_none());
-            }
-            let Some(binding) = bindings.first() else {
-                continue; // reported by binding-completeness
+            let Some(binding) = step_binding(set, anchor, step) else {
+                continue; // reported by the SM / binding-completeness checks
             };
             if binding.is_unrealized() {
                 continue;
@@ -3014,6 +3108,101 @@ mod binding_filename_tests {
             expected_binding_stem(&binding(Some("wrong_media_type"))),
             "I_EHR_SERVICE.create_ehr-wrong_media_type"
         );
+    }
+}
+
+#[cfg(test)]
+mod matcher_placeholder_tests {
+    use super::*;
+
+    /// A create binding whose `created` `ETag` matcher names `<{placeholder}>`.
+    fn world(placeholder: &str, capture_on_step_one: bool) -> ArtifactSet {
+        let binding: OperationBinding = serde_json::from_value(serde_json::json!({
+            "sm_operation": "I_EHR_COMPOSITION.create_composition",
+            "its": "its-rest",
+            "request": { "method": "POST", "path": "/ehr/{ehr_id}/composition", "body": "composition" },
+            "outcomes": {
+                "created": {
+                    "status": 201,
+                    "headers": { "ETag": format!("pattern:W/\"<{placeholder}>::<system_id>::1\"") }
+                }
+            },
+            "captures": { "versioned_object_uid": { "from": "header ETag", "strip": "weak-quotes" } }
+        }))
+        .unwrap();
+        let mut step = serde_json::json!({
+            "step": 1,
+            "call": "create_composition",
+            "with": { "ehr_id": "${ehr_id}", "composition": "${ds:cnf.x}" },
+            "expect": "created"
+        });
+        if capture_on_step_one && let Some(map) = step.as_object_mut() {
+            map.insert(
+                "capture".to_owned(),
+                serde_json::json!({ placeholder: format!("created.{placeholder}") }),
+            );
+        }
+        let case: CaseCore = serde_json::from_value(serde_json::json!({
+            "id": "X-matcher", "kind": "functional", "component": "EHR_COMPOSITION",
+            "sm_operation": "I_EHR_COMPOSITION.create_composition",
+            "test_purpose": "t", "description": "d", "spec_refs": [],
+            "requires": { "ehr": { "commits": "none" } },
+            "flow": [step]
+        }))
+        .unwrap();
+        let mut set = ArtifactSet::default();
+        set.bindings.push((PathBuf::from("b.yaml"), binding));
+        set.cases.push((PathBuf::from("c.yaml"), case));
+        set
+    }
+
+    fn findings_for(placeholder: &str, capture_on_step_one: bool) -> Vec<Finding> {
+        let mut findings = Vec::new();
+        check_matcher_placeholders(&world(placeholder, capture_on_step_one), &mut findings);
+        findings
+    }
+
+    /// The #1852 vocabulary gap, at VALIDATE time: a placeholder that is
+    /// neither a structural token nor in the step's template scope guarantees
+    /// a refused matcher at drive time, and the parse-time compile probe
+    /// (which wildcards every placeholder) cannot see it.
+    #[test]
+    fn an_unresolvable_placeholder_is_a_finding() {
+        let findings = findings_for("no_such_name", false);
+        assert_eq!(findings.len(), 1, "{findings:?}");
+        let finding = findings.first().unwrap();
+        assert_eq!(finding.check, CheckId::MatcherPlaceholder);
+        assert!(
+            finding.message.contains("<no_such_name>"),
+            "{}",
+            finding.message
+        );
+    }
+
+    /// A capture declared on the SAME step is bound only after the response
+    /// arrives, so it is not in the matcher's scope — the exact shape the
+    /// create-time `ETag` matchers had before `versioned_object_uid` became a
+    /// structural token.
+    #[test]
+    fn a_same_step_capture_does_not_put_a_name_in_scope() {
+        assert_eq!(findings_for("no_such_name", true).len(), 1);
+    }
+
+    /// The two names the vocabulary gained resolve structurally, so the
+    /// server-assigned container id and the resolved HRID need no capture.
+    #[test]
+    fn structural_tokens_need_no_capture() {
+        assert!(findings_for("versioned_object_uid", false).is_empty());
+        assert!(findings_for("template_id", false).is_empty());
+    }
+
+    /// A `requires`-minted handle and a `with:` argument are both in scope —
+    /// the identity names (`ehr_id`, `contribution_uid`) the catalogue pins
+    /// against the request are not accused.
+    #[test]
+    fn minted_handles_and_step_arguments_are_in_scope() {
+        assert!(findings_for("ehr_id", false).is_empty());
+        assert!(findings_for("composition", false).is_empty());
     }
 }
 

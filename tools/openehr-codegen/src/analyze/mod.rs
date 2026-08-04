@@ -306,6 +306,7 @@ impl Model {
     }
 
     // ── type rendering ──────────────────────────────────────────────────────
+
     // TODO(#1452): `render_type` (and the type-resolution cluster it anchors —
     // `effective_roots`, `referenced_specs`, `generic_param_bounds`,
     // `scope_content_types`) produces a Rust type *string*, which is a stage-4
@@ -888,24 +889,35 @@ pub(crate) fn class_paths(schema: &BmmSchema) -> BTreeMap<String, String> {
     out
 }
 
-/// The attribute named by a `x /= Void implies not x.is_empty` assertion, when
-/// the expression has exactly that shape (both operands the same attribute).
-/// `Void` is matched case-insensitively — the RM BMM spells it both ways
-/// (`DV_TEXT.Mappings_valid` uses lowercase `void`).
+/// The attribute named by a `x /= Void implies not x.is_empty` assertion,
+/// including the BMM's variant spellings of the same predicate.
+///
+/// `Void` is matched case-insensitively (`DV_TEXT.Mappings_valid` uses
+/// lowercase `void`), `.empty` is accepted beside `.is_empty`
+/// (`ROLE.Capabilities_valid` uses the Eiffel spelling), and a parenthesized
+/// conjunction whose FIRST conjunct is the non-empty predicate matches too
+/// (`PARTY.Relationships_validity`) — the remaining conjuncts stay the
+/// responsibility of their classified venue.
 pub(crate) fn nonempty_list_attribute(expression: &str) -> Option<String> {
     let normalized = expression.split_whitespace().collect::<Vec<_>>().join(" ");
     let (lhs, rhs) = normalized.split_once(" implies ")?;
     let attribute = lhs
         .strip_suffix(" /= Void")
         .or_else(|| lhs.strip_suffix(" /= void"))?;
-    if rhs != format!("not {attribute}.is_empty") {
-        return None;
-    }
     if attribute.is_empty()
         || !attribute
             .chars()
             .all(|c| c.is_ascii_lowercase() || c == '_')
     {
+        return None;
+    }
+    let is_empty = format!("not {attribute}.is_empty");
+    let empty = format!("not {attribute}.empty");
+    let matches_predicate = rhs == is_empty
+        || rhs == empty
+        || rhs.starts_with(&format!("({is_empty} and "))
+        || rhs.starts_with(&format!("({empty} and "));
+    if !matches_predicate {
         return None;
     }
     Some(attribute.to_owned())

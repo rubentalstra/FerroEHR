@@ -42,10 +42,10 @@
 //!   Case). When the row committed nothing the runner can compare against
 //!   (no tracked uid), the matcher degrades to `present` — honest, never a
 //!   false red.
-//! - `pattern:<regex>` — full-value match after `<name>` placeholders
-//!   resolve: a case variable named `name` substitutes its regex-escaped
-//!   value; an unresolvable placeholder wildcards to `.*` (the same rule the
-//!   parse-time compile probe uses).
+//! - `pattern:<regex>` — full-value match after `<name>` placeholders resolve
+//!   (`resolve_placeholders`): a STRUCTURAL token substitutes its released
+//!   grammar, any other name substitutes the regex-escaped scalar of the
+//!   same-named case variable, and anything else is a loud refusal.
 //! - a literal — template-rendered against the case variables, exact match.
 
 #![allow(
@@ -198,7 +198,8 @@ fn judge(
                     return Some(format!(
                         "header {name}: pattern {pattern:?} names <{missing}>, which is \
                          neither a captured/with-supplied case variable nor a structural \
-                         token (<n>, <system_id>) — refusing the vacuous wildcard (#1852)"
+                         token (<n>, <system_id>, <versioned_object_uid>, <template_id>) — \
+                         refusing the vacuous wildcard (#1852)"
                     ));
                 }
             };
@@ -249,15 +250,74 @@ fn strip_entity_tag(value: &str) -> &str {
     v.trim_matches('"')
 }
 
-/// Substitute `<name>` placeholders. A resolvable case variable inserts its
-/// regex-escaped scalar; the two STRUCTURAL tokens the catalogue vocabulary
-/// declares resolve to their grammars when no variable shadows them —
-/// `<n>` to the `VERSION_TREE_ID` shape (BASE `base_types` master05
-/// §`VERSION_TREE_ID`: a trunk ordinal or `trunk.branch.version`) and
-/// `<system_id>` to a non-empty `::`-free segment. Any OTHER unresolvable
-/// placeholder is a LOUD error, never a silent `.*` wildcard: a matcher like
-/// `W/"<versioned_object_uid>::…"` degrading to a near-tautology is the
-/// vacuous-assertion class of #1830, on the expectation side (#1852).
+/// The `version_tree_id` segment of an `OBJECT_VERSION_ID`: a trunk ordinal,
+/// optionally a dotted branch triple (BASE `base_types` master05 §Syntaxes,
+/// `version_tree_id = trunk_version, [ '.', branch_number, '.',
+/// branch_version ]`).
+const VERSION_TREE_ID: &str = r"[1-9][0-9]*(?:\.[0-9]+\.[0-9]+)?";
+
+/// A `creating_system_id` segment: non-empty, free of the `::` separator and
+/// of the quote that closes a weak `ETag`.
+const CREATING_SYSTEM_ID: &str = r#"[^:"]+"#;
+
+/// The `object_id` segment of an `OBJECT_VERSION_ID` — a `uid`, i.e. a UUID,
+/// an ISO OID, or a reverse-domain internet id (BASE `base_types` master05
+/// §Syntaxes: `object_id = uid`, `uid = iso_oid | uuid | internet_id`).
+///
+/// None of the three alternatives admits `:` or `"`, so the fragment is
+/// anchored to its own `::`-delimited segment by construction.
+const OBJECT_ID: &str = concat!(
+    r"(?:[0-9A-Fa-f]+(?:-[0-9A-Fa-f]+){4}",
+    r"|[0-9]+(?:\.[0-9]+)*",
+    r"|(?:[A-Za-z0-9]|[A-Za-z][A-Za-z0-9_-]*[A-Za-z0-9])",
+    r"(?:\.(?:[A-Za-z0-9]|[A-Za-z][A-Za-z0-9_-]*[A-Za-z0-9]))*)",
+);
+
+/// An archetype/template human-readable identifier: an optional publisher
+/// namespace, the 3-part qualified RM class name, the concept id, and the
+/// `.v` release version (AM Identification master03 §Human-readable
+/// Identifier (HRID) + master04 §Artefact Versioning).
+const ARCHETYPE_HRID: &str = concat!(
+    r"(?:[A-Za-z][A-Za-z0-9_-]*(?:\.[A-Za-z][A-Za-z0-9_-]*)*::)?",
+    r"[A-Za-z][A-Za-z0-9_]+-[A-Za-z][A-Za-z0-9_]+-[A-Za-z][A-Za-z0-9_]+",
+    r"\.[A-Za-z][A-Za-z0-9_-]+",
+    r"\.v[0-9]+\.[0-9]+\.[0-9]+(?:-(?:rc|alpha)(?:\.[0-9]+)?)?",
+);
+
+/// The regex fragment a STRUCTURAL placeholder name denotes, or `None` when
+/// the name is not one of the closed structural vocabulary.
+///
+/// A structural token names a segment whose LEXICAL FORM a released spec
+/// defines, so the matcher asserts that grammar instead of an identity, and it
+/// OUTRANKS a same-named case variable: the two names below are server-assigned
+/// or resolved identities that no request argument spells and that the response
+/// itself is the source of, so binding either would compare the response with
+/// itself. Every other name must resolve to a case variable.
+#[must_use]
+pub fn structural_token(name: &str) -> Option<&'static str> {
+    match name {
+        "n" => Some(VERSION_TREE_ID),
+        "system_id" => Some(CREATING_SYSTEM_ID),
+        // NOTE: BASE base_types master05 §Syntaxes (`object_id = uid`) — the
+        // container id is server-assigned, so a create-time ETag can only be
+        // asserted as that grammar.
+        "versioned_object_uid" => Some(OBJECT_ID),
+        // NOTE: AM Identification master03 §Human-readable Identifier (HRID)
+        // — the stored template identity is the RESOLVED HRID, which no
+        // request argument (a possibly partial prefix) spells.
+        "template_id" => Some(ARCHETYPE_HRID),
+        _ => None,
+    }
+}
+
+/// Substitute `<name>` placeholders in a matcher pattern.
+///
+/// A STRUCTURAL token ([`structural_token`]) inserts its released grammar; any
+/// other name inserts the regex-escaped scalar of the same-named case
+/// variable. Any placeholder that is neither is a LOUD error, never a silent
+/// `.*` wildcard: a matcher like `W/"<versioned_object_uid>::…"` degrading to
+/// a near-tautology is the vacuous-assertion class of #1830, on the
+/// expectation side (#1852).
 ///
 /// # Errors
 /// The name of the first placeholder that is neither a case variable nor a
@@ -273,15 +333,10 @@ fn resolve_placeholders(pattern: &str, vars: &VarStore) -> Result<String, String
             let captured = crate::ids::CaptureName::parse(name)
                 .ok()
                 .and_then(|n| vars.scalar(&n).map(str::to_owned));
-            match (captured, name) {
-                (Some(value), _) => out.push_str(&regex::escape(&value)),
-                // VERSION_TREE_ID: `[1-9][0-9]*` or dotted triple (BASE
-                // base_types master05 §VERSION_TREE_ID).
-                (None, "n") => out.push_str(r"[1-9][0-9]*(?:\.[0-9]+\.[0-9]+)?"),
-                // A creating-system-id segment: non-empty, free of the `::`
-                // separator and the quote that closes a weak ETag.
-                (None, "system_id") => out.push_str(r#"[^:"]+"#),
-                (None, missing) => return Err(missing.to_owned()),
+            match (structural_token(name), captured) {
+                (Some(grammar), _) => out.push_str(grammar),
+                (None, Some(value)) => out.push_str(&regex::escape(&value)),
+                (None, None) => return Err(name.to_owned()),
             }
             rest = tail.get(end + 1..).unwrap_or_default();
         } else {
@@ -376,12 +431,14 @@ mod tests {
 
     #[test]
     fn pattern_resolves_placeholders_from_vars() {
+        // `contribution_uid` is an IDENTITY name (not a structural token), so
+        // the case variable is what the matcher pins.
         let e = expectation(&serde_json::json!({
-            "ETag": "pattern:W/\"<versioned_object_uid>::<system_id>::<n>\""
+            "ETag": "pattern:W/\"<contribution_uid>::<system_id>::<n>\""
         }));
         let mut vars = VarStore::default();
         vars.set(
-            CaptureName::parse("versioned_object_uid").unwrap(),
+            CaptureName::parse("contribution_uid").unwrap(),
             Captured::Scalar("abc-123".to_owned()),
         );
         let ok = response(&[("etag", "W/\"abc-123::any.system::2\"")]);
@@ -396,6 +453,87 @@ mod tests {
         assert_eq!(evaluate(&e, &empty_system, &ctx(), &vars).len(), 1);
         let zero_led = response(&[("etag", "W/\"abc-123::any.system::02\"")]);
         assert_eq!(evaluate(&e, &zero_led, &ctx(), &vars).len(), 1);
+    }
+
+    /// The `object_id` segment is the BASE `base_types` master05 §Syntaxes
+    /// `uid` — UUID, ISO OID, or reverse-domain internet id — and nothing
+    /// else, so a create-time `ETag` whose container id is server-assigned is
+    /// still a real assertion rather than a refusal (#1852).
+    #[test]
+    fn object_id_token_is_the_released_uid_grammar() {
+        let e = expectation(&serde_json::json!({
+            "ETag": "pattern:W/\"<versioned_object_uid>::<system_id>::1\""
+        }));
+        for uid in [
+            "019fcd81-9968-7511-90d8-9f9750ea042a",
+            "1.2.840.113554.1.2.2",
+            "uk.nhs.ehr1",
+            "a",
+        ] {
+            let etag = format!("W/\"{uid}::ferroehr.local::1\"");
+            let ok = response(&[("etag", etag.as_str())]);
+            assert!(
+                evaluate(&e, &ok, &ctx(), &VarStore::default()).is_empty(),
+                "{uid} is a released uid form"
+            );
+        }
+        // Not a uid: an empty segment, a leading hyphen, and a segment that
+        // swallows the `::` separator.
+        for payload in ["::ferroehr.local::1", "-bad::ferroehr.local::1"] {
+            let etag = format!("W/\"{payload}\"");
+            let bad = response(&[("etag", etag.as_str())]);
+            assert_eq!(
+                evaluate(&e, &bad, &ctx(), &VarStore::default()).len(),
+                1,
+                "{payload} is not a released uid form"
+            );
+        }
+    }
+
+    /// A structural token OUTRANKS a same-named case variable: the #1852
+    /// regression is a step passing a FULL version uid as the
+    /// `versioned_object_uid` PATH argument (which
+    /// `operations/composition_get.yaml` expressly permits), which used to be
+    /// substituted into the matcher and produce a doubled `::sys::n` tail.
+    #[test]
+    fn structural_tokens_outrank_a_same_named_variable() {
+        let e = expectation(&serde_json::json!({
+            "ETag": "pattern:W/\"<versioned_object_uid>::<system_id>::<n>\""
+        }));
+        let mut vars = VarStore::default();
+        vars.set(
+            CaptureName::parse("versioned_object_uid").unwrap(),
+            Captured::Scalar("019fcd6c-d514-7703-9491-b2c8d8413408::ferroehr.local::1".to_owned()),
+        );
+        let ok = response(&[(
+            "etag",
+            "W/\"019fcd6c-d514-7703-9491-b2c8d8413408::ferroehr.local::1\"",
+        )]);
+        assert!(evaluate(&e, &ok, &ctx(), &vars).is_empty());
+    }
+
+    /// `<template_id>` is the AM Identification master03 §Human-readable
+    /// Identifier form (with the master04 release version), so the ADL2
+    /// upload/read `ETag` asserts the RESOLVED HRID rather than the possibly
+    /// partial prefix the request addressed.
+    #[test]
+    fn template_id_token_is_the_archetype_hrid_grammar() {
+        let e = expectation(&serde_json::json!({ "ETag": "pattern:W/\"<template_id>\"" }));
+        for hrid in [
+            "openEHR-EHR-COMPOSITION.cnf_minimal.v1.0.0",
+            "org.openehr::openEHR-EHR-OBSERVATION.blood_pressure.v2.1.0",
+            "openEHR-EHR-COMPOSITION.cnf_minimal.v1.0.0-rc.3",
+        ] {
+            let etag = format!("W/\"{hrid}\"");
+            let ok = response(&[("etag", etag.as_str())]);
+            assert!(
+                evaluate(&e, &ok, &ctx(), &VarStore::default()).is_empty(),
+                "{hrid} is a released HRID"
+            );
+        }
+        // The ADDRESSED prefix is not the resolved HRID: no release version.
+        let prefix = response(&[("etag", "W/\"openEHR-EHR-COMPOSITION.cnf_minimal.v1\"")]);
+        assert_eq!(evaluate(&e, &prefix, &ctx(), &VarStore::default()).len(), 1);
     }
 
     /// #1852 seeded defect: a placeholder naming neither a case variable nor

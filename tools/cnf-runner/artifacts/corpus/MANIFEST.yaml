@@ -901,6 +901,15 @@ cnf.directory.with_items:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "derived 2026-08-01 from cnf.directory.root_only by adding two sibling FOLDERs whose `items` lists carry OBJECT_REFs (RM common UML/classes/org.openehr.rm.common.folder.adoc §Attributes: items: List<OBJECT_REF>, 0..1): ONE target (1e0a7f34-…) is referenced from BOTH siblings — the multiple-classification shape RM common master05-directory_package.adoc §Overview and RM ehr master04-ehr_package.adoc §Folders describe — beside one distinct second target (7c4d2b81-…). The refs are `local`/VERSIONED_COMPOSITION with HIER_OBJECT_ID ids (BASE base_types UML/classes/org.openehr.base.base_types.object_ref.adoc §Attributes: namespace `local`, type = the referenced class, id = a globally unique OBJECT_ID); no released sentence makes target existence a precondition of the reference, so the ids stand free"
+cnf.directory.invalid.root_archetype_id_mismatch:
+  source: fixtures/directory/root_archetype_id_mismatch.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "RM: a root FOLDER whose archetype_node_id (openEHR-EHR-FOLDER.generic.v1) contradicts its archetype_details.archetype_id (openEHR-EHR-FOLDER.other.v1) — an archetype root carries its archetype identifier AS its node id"
+    spec_ref: "RM common UML/classes/org.openehr.rm.common.locatable.adoc §Attributes (archetype_node_id) + §Invariants Archetyped_valid"
+  provenance: "derived 2026-08-04 from cnf.directory.root_only by adding an ARCHETYPED archetype_details whose archetype_id names a DIFFERENT archetype than the root archetype_node_id, leaving the payload well-formed and convertible with exactly ONE semantic defect — the 422-class twin beside the seam's 400-class fixtures"
 cnf.directory.invalid.items_by_value:
   source: fixtures/directory/items_by_value.json
   format: canonical-json
@@ -1672,9 +1681,9 @@ cnf.ehr_status.invalid.invalid-other-details:
   rm_versions: [">=1.0.2"]
   validity:
     verdict: invalid
-    defect: "EHR_STATUS carries no _type discriminator"
-    spec_ref: "ITS-JSON (canonical JSON: _type is required on polymorphic RM objects)"
-  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-21 to spec-text-only evidence"
+    defect: "other_details carries no _type discriminator on the abstract ITEM_STRUCTURE slot"
+    spec_ref: "ITS-REST specifications/docs/overview/Resources.md §JSON Format (_type 'should be used to specify the RM type whenever polymorphism is involved, or when the underlying definition in RM type is abstract') + RM ehr ehr_status.adoc (other_details: ITEM_STRUCTURE, abstract per RM data_structures master04-item_structure_package §Class Descriptions)"
+  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-21 to spec-text-only evidence; re-authored 2026-08-04 to carry the declared defect (it previously omitted archetype_details and no other_details at all — the Archetyped_valid defect its sibling fixture already owns)"
 cnf.ehr_status.invalid.empty-rm-version:
   source: fixtures/ehr/invalid/ehr_status.empty_rm_version.json
   format: canonical-json
@@ -1916,6 +1925,15 @@ cnf.demographic.person.contacts_empty:
     defect: "contacts is present as an empty list"
     spec_ref: "RM demographic party.adoc §Invariants (Contacts_valid: contacts /= Void implies not contacts.is_empty)"
   provenance: "authored 2026-07-28 from the RM class model — cnf.demographic.person.v1 with an explicit empty contacts list; everything else valid"
+cnf.demographic.person.relationships_empty:
+  source: fixtures/demographic/person.relationships_empty.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "relationships is present as an empty list"
+    spec_ref: "RM demographic party.adoc §Invariants (Relationships_validity: relationships /= Void implies (not relationships.is_empty and then relationships.for_all (r | r.source = self)))"
+  provenance: "authored 2026-08-04 from the RM class model — cnf.demographic.person.v1 with an explicit empty relationships list; everything else valid. Closes the coverage gap beside the contacts_empty / roles_empty / capabilities_empty siblings: PARTY carries the same optional-list invariant arm on relationships and had no refusal case"
 cnf.demographic.person.roles_empty:
   source: fixtures/demographic/person.roles_empty.json
   format: canonical-json
@@ -2063,6 +2081,18 @@ cnf.messaging.ehr_extract.branch_lineage_v2:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "authored 2026-08-03 as the SECOND half of the branch-lineage pair: the SAME version-container uid at trunk version 2, naming trunk 1 as its preceding_version_uid. It lands into a container whose lineage set already carries a branch — master06 §Copying's third receiving situation ('previous copies have been made for the item in question') over a branched tree, where §Distributed Versioning has the trunk and each branch as coexisting lineages"
+cnf.messaging.ehr_extract.branch_lineage_v1b:
+  source: fixtures/messaging/ehr_extract.branch_lineage_v1b.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-08-04 as the identity-disjoint TWIN of cnf.messaging.ehr_extract.branch_lineage_v1 — same content, fresh uuids throughout the lineage (container, source EHR, both CONTRIBUTIONs). RM common master06 §Semantics in Distributed Systems requires that 'any version of any object is uniquely identified globally', so one version-container uid can exist in exactly one EHR: two cases each provisioning their own EHR need two identities, not one shared fixture"
+cnf.messaging.ehr_extract.branch_lineage_v2b:
+  source: fixtures/messaging/ehr_extract.branch_lineage_v2b.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-08-04 as the identity-disjoint TWIN of cnf.messaging.ehr_extract.branch_lineage_v2 — the SECOND half of the twin pair, carrying the twin container uid at trunk version 2 and naming its trunk 1 as preceding_version_uid, per RM common master06 §Semantics in Distributed Systems (one object_id, one version container)"
 cnf.messaging.ehr_extract.branch_read:
   source: fixtures/messaging/ehr_extract.branch_read.json
   format: canonical-json

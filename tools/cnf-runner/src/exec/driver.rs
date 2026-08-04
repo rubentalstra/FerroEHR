@@ -3072,8 +3072,11 @@ impl StepDriver for HttpDriver<'_> {
             && let Some(expectation) = binding.outcome(expected)
         {
             // The SAME merged scope request building used (#1852): a step
-            // that supplies a value inline (`with:`) instead of capturing it
-            // must be able to pin it in its outcome matchers too.
+            // that supplies an identity inline (`with:`) instead of capturing
+            // it must be able to pin it in its outcome matchers too.
+            // NOTE: a name in `crate::exec::headers::structural_token` outranks
+            // that scope — ITS-REST `operations/composition_get.yaml` lets a
+            // `uid_based_id` argument be spelled two ways, so it is not an identity.
             assertion_failures.extend(self.eval_wire_expectation(
                 expectation,
                 &exchange,

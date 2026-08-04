@@ -26,11 +26,14 @@
 # structure is a valid instance of the relevant RM classes" — which a FOLDER
 # whose declared `List<OBJECT_REF>` slot holds a COMPOSITION is not.
 #
-# WHICH BRANCH THE REFUSAL TAKES (ITS-REST overview Requests_and_responses.md
-# §HTTP status codes): "422 | Unprocessable Entity | The request was
-# well-formed but was unable to be followed due to semantic errors". The 400
-# row of the same table is scoped to "malformed request syntax, syntactically
-# invalid content", which this well-formed body is not.
+# WHICH BRANCH THE REFUSAL TAKES: the docs-text status table does not say
+# where "invalid content" ends and "semantic error" begins; the released OAS
+# does. `schemas/ehr/Folder.yaml` types `items` as an array of
+# `base_types/UObjectRefOfUidBasedId.yaml`, whose OBJECT_REF form declares
+# `required: [namespace, type, id]` — none of which a COMPOSITION carries.
+# `responses/400.yaml` scopes 400 to "syntactically invalid header, parameter
+# or content"; `responses/422.yaml` scopes 422 to content that "could be
+# converted to a resource". This body never converts — the 400 row.
 #
 # The ACCEPTING twin is cnf.directory.with_items, driven by
 # create_directory-with_items and read back by
@@ -48,7 +51,7 @@ capabilities: [DirectoryOps]
 profiles: [STANDARD]
 test_purpose: >-
   create_directory with a FOLDER whose items slot holds a COMPOSITION by value
-  instead of an OBJECT_REF is rejected as a semantic error and creates no
+  instead of an OBJECT_REF is rejected as invalid content and creates no
   directory.
 description: "Create a directory from a FOLDER holding content by value in items"
 spec_refs:
@@ -57,6 +60,10 @@ spec_refs:
   - "RM common §folder (items: List<OBJECT_REF>, 0..1)"
   - "RM common master05-directory_package §Overview"
   - "RM ehr master04-ehr_package §Folders"
+  - "ITS-REST OAS schemas/ehr/Folder.yaml §items (array of UObjectRefOfUidBasedId)"
+  - "ITS-REST OAS schemas/base_types/ObjectRef.yaml §required (namespace, type, id)"
+  - "ITS-REST OAS responses/400.yaml"
+  - "ITS-REST OAS responses/422.yaml"
   - "ITS-REST overview Requests_and_responses §HTTP status codes"
 applies: { rm: ">=1.0.2" }
 requires:
@@ -69,7 +76,7 @@ flow:
     with:
       ehr_id: "${ehr_id}"
       directory: "${ds:cnf.directory.invalid.items_by_value}"
-    expect: validation_failed
+    expect: bad_request                    # a COMPOSITION is not the declared OBJECT_REF — the body never converts
   - step: 2                              # nothing was created by the refused request
     call: has_directory
     with: { ehr_id: "${ehr_id}" }

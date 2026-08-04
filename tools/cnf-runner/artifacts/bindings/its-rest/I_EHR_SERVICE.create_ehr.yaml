@@ -1,6 +1,7 @@
 # Wire realization of I_EHR_SERVICE.create_ehr for ITS-REST 1.1.0.
 # Sources: specifications/operations/ehr_create.yaml (+ ehr_create_with_id),
-# responses/201_EHR.yaml, 409_EHR.yaml; overview Requests_and_responses.
+# responses/201_EHR.yaml, 400.yaml, 409_EHR.yaml; overview
+# Requests_and_responses.
 sm_operation: I_EHR_SERVICE.create_ehr
 its: its-rest
 applies: { its_rest: ">=1.0.0" }
@@ -35,6 +36,15 @@ outcomes:
     body: prefer_conditional              # oneOf [Ehr | {uid} | empty] per Prefer
   already_exists:
     status: 409                           # 409_EHR.yaml (subject/ehr_id conflict)
+  bad_request:
+    # The PARSE class the operation itself declares: `ehr_create.yaml` lists
+    # '400' -> `responses/400.yaml`, "returned when the request could not be
+    # parsed or is invalid (e.g. ... syntactically invalid header, parameter
+    # or content)". An EHR_STATUS body missing a member the release's own
+    # request-body schema declares `required` never converts to the resource
+    # `responses/422.yaml` presupposes, so it lands here, not on 422.
+    status: 400
+    body: error_loose
   validation_failed:
     status: 422                           # ITS-REST overview §HTTP status codes — 422 = semantic errors
 captures:
