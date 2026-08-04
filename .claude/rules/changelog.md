@@ -34,7 +34,13 @@ optional:
 - **After the tag:** close the `vX.Y.Z` milestone (`gh api … milestones/N
   -f state=closed`) and make sure the NEXT milestone exists so triage always
   has a target. The milestone's closed-issue list + the changelog section
-  together are the release's record.
+  together are the release's record. Then post a **status update on the
+  public roadmap board** (`scripts/gh-project.sh update on-track "…"` —
+  policy + honesty rules in `.claude/rules/project-board.md`): what the
+  release shipped, what the next milestone targets, `--target` only from a
+  real milestone due date. Give the next milestone its due date, then
+  `scripts/gh-project.sh sync-dates` so the board's Roadmap timeline
+  follows the re-milestoned issues.
 - **Versioning split:** the product (workspace, `ferroehr-*`, tools, codegen
   tooling) follows the product SemVer (3.x line).
   The `openehr-*` **spec crates** carry the version of the openEHR

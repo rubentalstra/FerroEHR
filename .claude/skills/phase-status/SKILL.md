@@ -47,6 +47,12 @@ cd "${CLAUDE_PROJECT_DIR}" && git status --short | head -40 && echo "---" && git
 3. Summarize the git state from the injected output: current branch work,
    uncommitted files, last commits — flag uncommitted work that looks
    finished (the owner rule: never leave finished work sitting unmerged).
-4. **Do not** modify any issue, plan file, or make any commit — this is a
+4. If the user asks how things look publicly, `scripts/gh-project.sh board`
+   prints the public roadmap board grouped by Status — a presentation VIEW
+   over the same issues, never a second source of truth
+   (`.claude/rules/project-board.md`); the issue list above stays the
+   working ground truth. Flag any `In Progress` item nobody is actually
+   working on (it should be parked back to `todo`).
+5. **Do not** modify any issue, plan file, or make any commit — this is a
    read-only status check. If the user wants the next task turned into a
    work plan, point them at `/next-task` instead.

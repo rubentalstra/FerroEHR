@@ -54,5 +54,12 @@ separate step the caller takes after seeing the plan.
      `## Acceptance criteria` checklist, plus what proves it: the CNF pipeline's
      zero-drift gate (`docs/conformance/ferroehr/results.json` +
      `verdicts.json`), the `openehr-its` fidelity gates, or corpus tests.
-3. **Do not edit the issue or commit** — recording progress happens after
+3. **When work on the picked issue actually starts** (the plan is accepted
+   and the session proceeds), move it to `In Progress` on the public roadmap
+   board: `scripts/gh-project.sh status <n> in-progress` — the one manual
+   board move in the lifecycle (`.claude/rules/project-board.md`). If the
+   session parks the issue unfinished, move it back
+   (`scripts/gh-project.sh status <n> todo`) — a stale In Progress column is
+   a false public claim.
+4. **Do not edit the issue or commit** — recording progress happens after
    the work is actually done, not as part of planning it.

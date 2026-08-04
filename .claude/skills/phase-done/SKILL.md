@@ -78,7 +78,13 @@ does not decide the work is done on your behalf.
    `docs/plans/WORKLIST.md` (the tracker pointer stub), `docs/plans/README.md`
    (the lifecycle guide), and `docs/conformance/cnf-design.md` (the
    permanent CNF 2.0 design record, owner ruling 2026-07-22).
-8. **Remind the user to commit** the close on the current
+8. **Roadmap-board check** (`.claude/rules/project-board.md`): `Done` is set
+   by the built-in workflow when the merge closes the issue — never by hand.
+   After the merge, `scripts/gh-project.sh show <n>` should say `Done`; if
+   the issue is missing from the board entirely, `scripts/gh-project.sh add
+   <n>` and let the closed→Done workflow settle it. Do not archive or delete
+   board items.
+9. **Remind the user to commit** the close on the current
    conventional-type branch (`feat/…` etc., per the CLAUDE.md branch hard
    rule).
 
