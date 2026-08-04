@@ -431,6 +431,7 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **BREAKING (v1-pinned XML consumers):** the default canonical-XML lineage served for `application/xml` is now the ITS-XML **v2** namespace (`http://schemas.openehr.org/v2`) — the only published schema bundle that models the RM 1.2.0 this server emits. The v1 lineage stays selectable per request with `Accept: application/xml; version=1` (a non-default v1 response is labelled `Content-Type: application/xml; version=1`). Request payloads are unaffected — both namespaces are read regardless (#1666).
 - **An `ITEM_TAG` whose key or value violates its own RM invariants is now
   refused when the payload is read, not after it is built.** RM
   `UML/classes/org.openehr.rm.common.item_tag.adoc` §Invariants states

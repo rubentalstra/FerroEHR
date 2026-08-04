@@ -39,8 +39,8 @@ own namespace:
 
 | Lineage | Root namespace | Status |
 |---|---|---|
-| v1 (**default**) | `http://schemas.openehr.org/v1` | The stable schema release most openEHR tooling reads |
-| v2 | `http://schemas.openehr.org/v2` | The newer schema release, still marked *trial* by openEHR |
+| v1 | `http://schemas.openehr.org/v1` | The stable schema release most openEHR tooling reads |
+| v2 (**default**) | `http://schemas.openehr.org/v2` | The newer schema release, still marked *trial* by openEHR — the only one that models the current Reference Model |
 
 The documents FerroEHR writes for the two lineages are byte-identical apart
 from that root namespace — the same elements, the same order, the same
@@ -58,9 +58,15 @@ resources the v1 bundle never modelled at all (EHR, EHR_STATUS, CONTRIBUTION,
 the demographic party types). FerroEHR does not drop clinical content to fit
 the older bundle.
 
+That content gap is why **v2 is the default**: the lineage a
+schema-validating client receives without asking has to be one its documents
+can actually validate against. If you need the v1 namespace — for tooling
+pinned to the stable bundle — select it per request, as shown below.
+
 > [!TIP]
-> If you validate XML responses against the published XSDs, use the v2
-> lineage — it is the one that models the current Reference Model. Note that
+> If you validate XML responses against the published XSDs, stay on the
+> default v2 lineage — it is the one that models the current Reference
+> Model. Note that
 > openEHR's v2 bundle currently contains an invalid regular expression in one
 > schema, which some strict XSD processors refuse to compile; that is an
 > upstream issue, not something the response can work around.
@@ -68,25 +74,24 @@ the older bundle.
 Pick one per request with a `version` parameter on the XML media type:
 
 ```shell
-# Read a composition in the v2 namespace
+# Read a composition in the v1 namespace
 curl -u ferroehr:ferroehr \
-  -H 'Accept: application/xml; version=2' \
+  -H 'Accept: application/xml; version=1' \
   "http://localhost:8080/ferroehr/rest/openehr/v1/ehr/$EHR_ID/composition/$UID"
 
-# Commit one whose payload already uses the v2 namespace
+# Commit one whose payload already uses the v1 namespace
 curl -u ferroehr:ferroehr \
-  -H 'Content-Type: application/xml; version=2' \
-  -H 'Accept: application/xml; version=2' \
-  --data-binary @composition-v2.xml \
+  -H 'Content-Type: application/xml; version=1' \
+  -H 'Accept: application/xml; version=1' \
+  --data-binary @composition-v1.xml \
   "http://localhost:8080/ferroehr/rest/openehr/v1/ehr/$EHR_ID/composition"
 ```
 
 What to expect:
 
-- **Leave the parameter off and nothing changes.** No parameter (or
-  `version=1`) means v1, exactly as before, and the response header stays
-  `Content-Type: application/xml`.
-- A v2 response says so: `Content-Type: application/xml; version=2`.
+- **No parameter (or `version=2`) means the v2 default**, and the response
+  header stays `Content-Type: application/xml`.
+- A v1 response says so: `Content-Type: application/xml; version=1`.
 - **On requests the parameter is a courtesy, not a requirement.** The server
   reads both namespaces regardless of what you declare, so you only need it
   when you want the declaration to be accurate.

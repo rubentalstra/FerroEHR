@@ -7038,7 +7038,10 @@ AMB-169:
     than failing it). `xml-namespace-negotiated` is the branch with an
     executable case: the service reads a `version` media-type parameter on the
     XML type (`application/xml; version=1|2`), serves the named lineage, and
-    keeps v1 the default so a parameter-less request is unchanged. THE
+    defaults a parameter-less request to v2 — the only published lineage whose
+    schemas model the RM 1.2.0 the server emits (owner ruling 2026-08-03 on
+    tracker issue #1666, superseding the earlier v1 default; the content delta
+    that forced the flip is AMB-185). THE
     PARAMETER IS NOT SPEC-DERIVED — it is the declaring party's own
     design/extension, and this register entry exists precisely so it can never
     be mistaken for a released mechanism; the case
@@ -7885,13 +7888,17 @@ AMB-185:
   handling: >-
     Fixed handling — the served wire is UNCHANGED, and the boundary is
     recorded instead of papered over.
-    (a) THE SERVED DEFAULT STAYS v1. Nothing released assigns a lineage
-    (AMB-169), the schema repository still presents `Release-1.0.2` as the
-    STABLE release and marks 2.0.0 TRIAL, and the CDR keeps serving v1 by
-    default with v2 available through the `version` media-type parameter. A
-    party that would rather be judged against the newer schemas already has
-    that switch. Re-opening the default is an owner decision, not a
-    consequence of this entry.
+    (a) THE SERVED DEFAULT IS v2 (owner ruling 2026-08-03, tracker issue
+    #1666, superseding the initial stays-v1 handling). The premise of the v1
+    default — that the lineages differ only by root namespace — is exactly
+    what this entry refutes: the v1 bundle cannot describe 50 concrete RM
+    classes and 23 attributes this server legitimately serves, so a
+    schema-validating client on the default lineage was guaranteed spurious
+    invalidity. Correctness beat the STABLE label: the CDR serves v2 by
+    default, with v1 still selectable through the `version` media-type
+    parameter (AMB-169 records the selection mechanism). The TRIAL status and
+    the nsv2 facet defect (d) are unchanged facts, reported upstream
+    (tracker issues #1663/#1664).
     (b) THE CODEC KEEPS WRITING THE FULL RM 1.2.0 MODEL. Suppressing
     `FOLDER.details` (or any other member) to make a v1 document validate
     would silently DROP CLINICAL CONTENT the RM mandates and the canonical
