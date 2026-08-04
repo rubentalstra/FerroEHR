@@ -252,17 +252,6 @@ pub(crate) fn excluded(name: &str) -> Option<&'static str> {
         // document's identifier defects, but the FOLDER it corrects also carries
         // an RM-1.1-era `details` ITEM_TREE with neither `name` nor
         // `archetype_node_id`, both mandatory on `LOCATABLE` in RM 1.2
-        // (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
-        // §Attributes) — the SAME class as `ehr_other_details.json` above.
-        // Completing it means AUTHORING a name and a node id the source document
-        // never stated, which is a fixture-authoring decision, not a re-tagging;
-        // it is registered here rather than left to a silent shape skip (which
-        // is how this twin went unexercised by every gate until the exclusion
-        // mechanisms were unified).
-        "twins/folder_with_items.valid.json" => reason(
-            "RM 1.1-era: FOLDER.details ITEM_TREE omits mandatory LOCATABLE.name + \
-                    archetype_node_id (RM 1.2); completing the twin needs authored values",
-        ),
         _ => None,
     }
 }

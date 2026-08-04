@@ -56,6 +56,11 @@
   "items": [],
   "details": {
     "_type": "ITEM_TREE",
+    "name": {
+      "_type": "DV_TEXT",
+      "value": "Folder details"
+    },
+    "archetype_node_id": "at0001",
     "items": [
       {
         "_type": "ELEMENT",
@@ -74,5 +79,6 @@
   "name": {
     "_type": "DV_TEXT",
     "value": " 2nd Updated Root name on 27th nov 2019"
-  }
+  },
+  "archetype_node_id": "at0001"
 }
