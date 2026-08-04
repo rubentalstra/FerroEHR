@@ -22,6 +22,8 @@ pub(crate) mod invariants;
 /// resolution across schema boundaries.
 pub(crate) struct Model {
     pub(crate) classes: BTreeMap<String, BmmClass>,
+    /// Lazy memo of [`nonempty_optional_lists`] (consulted per field).
+    nonempty_memo: std::sync::OnceLock<BTreeSet<(String, String)>>,
 }
 
 /// Spec types provided by *dependency* crates. When a schema references a type
@@ -108,7 +110,10 @@ impl Model {
                 classes.insert(name.clone(), class.clone());
             }
         }
-        Model { classes }
+        Model {
+            classes,
+            nonempty_memo: std::sync::OnceLock::new(),
+        }
     }
 
     pub(crate) fn get(&self, name: &str) -> Option<&BmmClass> {
@@ -879,6 +884,56 @@ pub(crate) fn class_paths(schema: &BmmSchema) -> BTreeMap<String, String> {
     let mut out = BTreeMap::new();
     for p in &schema.packages {
         walk(p, "", &mut out);
+    }
+    out
+}
+
+/// The attribute named by a `x /= Void implies not x.is_empty` assertion, when
+/// the expression has exactly that shape (both operands the same attribute).
+/// `Void` is matched case-insensitively — the RM BMM spells it both ways
+/// (`DV_TEXT.Mappings_valid` uses lowercase `void`).
+pub(crate) fn nonempty_list_attribute(expression: &str) -> Option<String> {
+    let normalized = expression.split_whitespace().collect::<Vec<_>>().join(" ");
+    let (lhs, rhs) = normalized.split_once(" implies ")?;
+    let attribute = lhs
+        .strip_suffix(" /= Void")
+        .or_else(|| lhs.strip_suffix(" /= void"))?;
+    if rhs != format!("not {attribute}.is_empty") {
+        return None;
+    }
+    if attribute.is_empty()
+        || !attribute
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c == '_')
+    {
+        return None;
+    }
+    Some(attribute.to_owned())
+}
+
+/// The `(declaring class, attribute)` pairs of every OPTIONAL container
+/// attribute carrying a present-implies-non-empty class invariant — emitted
+/// `Option<NonEmptyVec<T>>` so present-but-empty is unrepresentable (#1730).
+pub(crate) fn nonempty_optional_lists_cached(model: &Model) -> &BTreeSet<(String, String)> {
+    model
+        .nonempty_memo
+        .get_or_init(|| nonempty_optional_lists(model))
+}
+
+fn nonempty_optional_lists(model: &Model) -> BTreeSet<(String, String)> {
+    let mut out = BTreeSet::new();
+    for (class_name, class) in &model.classes {
+        for expression in class.invariants.values() {
+            let Some(attribute) = nonempty_list_attribute(expression) else {
+                continue;
+            };
+            let Some(p) = class.properties.iter().find(|p| p.name == attribute) else {
+                continue;
+            };
+            if !p.is_mandatory && matches!(p.kind, BmmPropKind::Container { .. }) {
+                out.insert((class_name.clone(), attribute));
+            }
+        }
     }
     out
 }

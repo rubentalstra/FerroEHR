@@ -134,8 +134,10 @@ pub(crate) struct XmlField {
     /// both flags are set.
     pub optional: bool,
     pub multiple: bool,
-    /// The container is `NonEmptyVec<T>` (a `1..*` bound): the reader builds it
-    /// through the type's fallible constructor.
+    /// The container is `NonEmptyVec<T>` — a `1..*` bound, or an optional
+    /// container carrying a present-implies-non-empty invariant
+    /// (`Option<NonEmptyVec<T>>`, #1730): the reader builds it through the
+    /// type's fallible constructor.
     pub nonempty: bool,
     pub target: String,
     /// For a `Hash<String, V>` field (`target == "Hash"`), the value type's spec
@@ -480,11 +482,27 @@ impl Model {
                     optional: !p.is_mandatory,
                     multiple,
                     nonempty: multiple
-                        && p.is_mandatory
-                        && matches!(&p.kind,
-                            BmmPropKind::Container { cardinality, .. }
-                                if cardinality.as_ref().is_some_and(|c| c.lower >= 1))
-                        && !cardinality_contradicted(&rp.owner, &p.name),
+                        && ((p.is_mandatory
+                            && matches!(&p.kind,
+                                BmmPropKind::Container { cardinality, .. }
+                                    if cardinality.as_ref().is_some_and(|c| c.lower >= 1))
+                            && !cardinality_contradicted(&rp.owner, &p.name))
+                            // An OPTIONAL container carrying a
+                            // present-implies-non-empty invariant emits
+                            // `Option<NonEmptyVec<T>>` (#1730), so its reader
+                            // builds through the same fallible constructor.
+                            // The invariant's declaring class may be an
+                            // ANCESTOR of the flattened property's owner (a
+                            // subclass overriding the attribute to narrow its
+                            // type keeps the inherited rule).
+                            || (!p.is_mandatory
+                                && crate::analyze::nonempty_optional_lists_cached(self)
+                                    .iter()
+                                    .any(|(decl, attr)| {
+                                        attr == &p.name
+                                            && (decl == &rp.owner
+                                                || self.inherits(&rp.owner, decl))
+                                    }))),
                     target,
                     map_value,
                     default: field_default(&rp.owner, p),

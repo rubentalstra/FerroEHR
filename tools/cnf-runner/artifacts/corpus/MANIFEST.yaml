@@ -1880,6 +1880,15 @@ cnf.demographic.party_relationship.root_identity_mismatch:
     defect: "the archetype root's node_id and its archetype_details.archetype_id disagree — construction-valid, refused by the semantic pass"
     spec_ref: "RM common UML/classes/org.openehr.rm.common.locatable.adoc §Attributes (archetype_node_id: at an archetype root, the stringified archetype_details.archetype_id)"
   provenance: "authored 2026-08-03 from party_relationship.v1 — the semantic (422-class) twin restoring validation_failed coverage after the structural cases moved to the 400 parse class (owner ruling 2026-08-03)"
+cnf.demographic.role.root_identity_mismatch:
+  source: fixtures/demographic/role.root_identity_mismatch.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "the archetype root's node_id and its archetype_details.archetype_id disagree — construction-valid, refused by the semantic pass"
+    spec_ref: "RM common UML/classes/org.openehr.rm.common.locatable.adoc §Attributes (archetype_node_id: at an archetype root, the stringified archetype_details.archetype_id)"
+  provenance: "authored 2026-08-03 from party_relationship.v1 — the semantic (422-class) twin restoring validation_failed coverage after the structural cases moved to the 400 parse class (owner ruling 2026-08-03)"
 cnf.demographic.person.no_archetype_details:
   source: fixtures/demographic/person.no_archetype_details.json
   format: canonical-json

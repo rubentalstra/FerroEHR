@@ -18996,6 +18996,1001 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ItemTree {
     }
 }
 
+impl<T: ::serde::Serialize> ::serde::Serialize for crate::prelude::Interval<T> {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        match self {
+            crate::prelude::Interval::DvInterval(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+            crate::prelude::Interval::PointInterval(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+            crate::prelude::Interval::ProperInterval(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+        }
+    }
+}
+
+impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
+    for crate::prelude::Interval<T>
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __TAGS: &[&str] = &[
+            "DV_INTERVAL",
+            "Multiplicity_interval",
+            "Point_interval",
+            "Proper_interval",
+        ];
+        struct __Visitor<T>(::core::marker::PhantomData<(T,)>);
+        impl<'de, T: ::serde::de::DeserializeOwned> ::serde::de::Visitor<'de> for __Visitor<T> {
+            type Value = crate::prelude::Interval<T>;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `Interval` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let (__tag, __buffered) =
+                    ::openehr_base::serde_support::read_slot_tag(&mut __map, __TAGS)?;
+                match __tag {
+                    Some(::openehr_base::serde_support::TagMatch::Known(__t)) => {
+                        let __rest = ::openehr_base::serde_support::TaggedRest::new(
+                            Some(__t),
+                            __buffered,
+                            __map,
+                        );
+                        match __t {
+                            "DV_INTERVAL" => {
+                                ::core::result::Result::Ok(crate::prelude::Interval::DvInterval(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ))
+                            }
+                            "Multiplicity_interval" => ::core::result::Result::Ok(
+                                crate::prelude::Interval::ProperInterval(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ),
+                            ),
+                            "Point_interval" => {
+                                ::core::result::Result::Ok(crate::prelude::Interval::PointInterval(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ))
+                            }
+                            "Proper_interval" => ::core::result::Result::Ok(
+                                crate::prelude::Interval::ProperInterval(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ),
+                            ),
+                            __other => ::core::result::Result::Err(
+                                ::openehr_base::serde_support::unexpected_type(
+                                    "Interval",
+                                    __other,
+                                    "DV_INTERVAL, Multiplicity_interval, Point_interval, Proper_interval",
+                                ),
+                            ),
+                        }
+                    }
+                    Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
+                        ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
+                            "Interval",
+                            &__other,
+                            "DV_INTERVAL, Multiplicity_interval, Point_interval, Proper_interval",
+                        ))
+                    }
+                    None => {
+                        ::core::result::Result::Err(::openehr_base::serde_support::missing_type(
+                            "Interval",
+                            "DV_INTERVAL, Multiplicity_interval, Point_interval, Proper_interval",
+                        ))
+                    }
+                }
+            }
+        }
+        ::serde::Deserializer::deserialize_map(
+            __deserializer,
+            __Visitor(::core::marker::PhantomData),
+        )
+    }
+}
+
+impl ::serde::Serialize for crate::prelude::Iso8601DateData {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 2usize;
+        let mut __st = ::serde::Serializer::serialize_struct(__serializer, "Iso8601_date", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "Iso8601_date")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "value", &self.value)?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601DateData {
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["value"];
+        enum __Field {
+            __Type,
+            __F0,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "value" => ::core::result::Result::Ok(__Field::__F0),
+                            _ => ::core::result::Result::Err(
+                                ::openehr_base::serde_support::unknown_field(
+                                    __v,
+                                    "Iso8601_date",
+                                    __FIELDS,
+                                ),
+                            ),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::prelude::Iso8601DateData;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `Iso8601_date` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                ::openehr_base::serde_support::ExpectedType("Iso8601_date"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("value"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(crate::prelude::Iso8601DateData {
+                    value: __s0
+                        .flatten()
+                        .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
+                })
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "Iso8601_date",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize for crate::prelude::Iso8601Date {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        match self {
+            crate::prelude::Iso8601Date::DvDate(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+            crate::prelude::Iso8601Date::Iso8601Date(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+        }
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601Date {
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __TAGS: &[&str] = &["DV_DATE", "Iso8601_date"];
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::prelude::Iso8601Date;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `Iso8601_date` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let (__tag, __buffered) =
+                    ::openehr_base::serde_support::read_slot_tag(&mut __map, __TAGS)?;
+                match __tag {
+                    Some(::openehr_base::serde_support::TagMatch::Known(__t)) => {
+                        let __rest = ::openehr_base::serde_support::TaggedRest::new(
+                            Some(__t),
+                            __buffered,
+                            __map,
+                        );
+                        match __t {
+                            "DV_DATE" => {
+                                ::core::result::Result::Ok(crate::prelude::Iso8601Date::DvDate(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ))
+                            }
+                            "Iso8601_date" => ::core::result::Result::Ok(
+                                crate::prelude::Iso8601Date::Iso8601Date(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ),
+                            ),
+                            __other => ::core::result::Result::Err(
+                                ::openehr_base::serde_support::unexpected_type(
+                                    "Iso8601_date",
+                                    __other,
+                                    "DV_DATE, Iso8601_date",
+                                ),
+                            ),
+                        }
+                    }
+                    Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
+                        ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
+                            "Iso8601_date",
+                            &__other,
+                            "DV_DATE, Iso8601_date",
+                        ))
+                    }
+                    None => {
+                        let __rest =
+                            ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);
+                        ::core::result::Result::Ok(crate::prelude::Iso8601Date::Iso8601Date(
+                            ::serde::Deserialize::deserialize(__rest)?,
+                        ))
+                    }
+                }
+            }
+        }
+        ::serde::Deserializer::deserialize_map(__deserializer, __Visitor)
+    }
+}
+
+impl ::serde::Serialize for crate::prelude::Iso8601DateTimeData {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 2usize;
+        let mut __st =
+            ::serde::Serializer::serialize_struct(__serializer, "Iso8601_date_time", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "Iso8601_date_time")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "value", &self.value)?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601DateTimeData {
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["value"];
+        enum __Field {
+            __Type,
+            __F0,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "value" => ::core::result::Result::Ok(__Field::__F0),
+                            _ => ::core::result::Result::Err(
+                                ::openehr_base::serde_support::unknown_field(
+                                    __v,
+                                    "Iso8601_date_time",
+                                    __FIELDS,
+                                ),
+                            ),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::prelude::Iso8601DateTimeData;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `Iso8601_date_time` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                ::openehr_base::serde_support::ExpectedType("Iso8601_date_time"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("value"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(crate::prelude::Iso8601DateTimeData {
+                    value: __s0
+                        .flatten()
+                        .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
+                })
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "Iso8601_date_time",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize for crate::prelude::Iso8601DateTime {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        match self {
+            crate::prelude::Iso8601DateTime::DvDateTime(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+            crate::prelude::Iso8601DateTime::Iso8601DateTime(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+        }
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601DateTime {
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __TAGS: &[&str] = &["DV_DATE_TIME", "Iso8601_date_time"];
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::prelude::Iso8601DateTime;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `Iso8601_date_time` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let (__tag, __buffered) =
+                    ::openehr_base::serde_support::read_slot_tag(&mut __map, __TAGS)?;
+                match __tag {
+                    Some(::openehr_base::serde_support::TagMatch::Known(__t)) => {
+                        let __rest = ::openehr_base::serde_support::TaggedRest::new(
+                            Some(__t),
+                            __buffered,
+                            __map,
+                        );
+                        match __t {
+                            "DV_DATE_TIME" => ::core::result::Result::Ok(
+                                crate::prelude::Iso8601DateTime::DvDateTime(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ),
+                            ),
+                            "Iso8601_date_time" => ::core::result::Result::Ok(
+                                crate::prelude::Iso8601DateTime::Iso8601DateTime(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ),
+                            ),
+                            __other => ::core::result::Result::Err(
+                                ::openehr_base::serde_support::unexpected_type(
+                                    "Iso8601_date_time",
+                                    __other,
+                                    "DV_DATE_TIME, Iso8601_date_time",
+                                ),
+                            ),
+                        }
+                    }
+                    Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
+                        ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
+                            "Iso8601_date_time",
+                            &__other,
+                            "DV_DATE_TIME, Iso8601_date_time",
+                        ))
+                    }
+                    None => {
+                        let __rest =
+                            ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);
+                        ::core::result::Result::Ok(
+                            crate::prelude::Iso8601DateTime::Iso8601DateTime(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            ),
+                        )
+                    }
+                }
+            }
+        }
+        ::serde::Deserializer::deserialize_map(__deserializer, __Visitor)
+    }
+}
+
+impl ::serde::Serialize for crate::prelude::Iso8601DurationData {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 2usize;
+        let mut __st =
+            ::serde::Serializer::serialize_struct(__serializer, "Iso8601_duration", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "Iso8601_duration")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "value", &self.value)?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601DurationData {
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["value"];
+        enum __Field {
+            __Type,
+            __F0,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "value" => ::core::result::Result::Ok(__Field::__F0),
+                            _ => ::core::result::Result::Err(
+                                ::openehr_base::serde_support::unknown_field(
+                                    __v,
+                                    "Iso8601_duration",
+                                    __FIELDS,
+                                ),
+                            ),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::prelude::Iso8601DurationData;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `Iso8601_duration` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                ::openehr_base::serde_support::ExpectedType("Iso8601_duration"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("value"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(crate::prelude::Iso8601DurationData {
+                    value: __s0
+                        .flatten()
+                        .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
+                })
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "Iso8601_duration",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize for crate::prelude::Iso8601Duration {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        match self {
+            crate::prelude::Iso8601Duration::DvDuration(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+            crate::prelude::Iso8601Duration::Iso8601Duration(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+        }
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601Duration {
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __TAGS: &[&str] = &["DV_DURATION", "Iso8601_duration"];
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::prelude::Iso8601Duration;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `Iso8601_duration` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let (__tag, __buffered) =
+                    ::openehr_base::serde_support::read_slot_tag(&mut __map, __TAGS)?;
+                match __tag {
+                    Some(::openehr_base::serde_support::TagMatch::Known(__t)) => {
+                        let __rest = ::openehr_base::serde_support::TaggedRest::new(
+                            Some(__t),
+                            __buffered,
+                            __map,
+                        );
+                        match __t {
+                            "DV_DURATION" => ::core::result::Result::Ok(
+                                crate::prelude::Iso8601Duration::DvDuration(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ),
+                            ),
+                            "Iso8601_duration" => ::core::result::Result::Ok(
+                                crate::prelude::Iso8601Duration::Iso8601Duration(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ),
+                            ),
+                            __other => ::core::result::Result::Err(
+                                ::openehr_base::serde_support::unexpected_type(
+                                    "Iso8601_duration",
+                                    __other,
+                                    "DV_DURATION, Iso8601_duration",
+                                ),
+                            ),
+                        }
+                    }
+                    Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
+                        ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
+                            "Iso8601_duration",
+                            &__other,
+                            "DV_DURATION, Iso8601_duration",
+                        ))
+                    }
+                    None => {
+                        let __rest =
+                            ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);
+                        ::core::result::Result::Ok(
+                            crate::prelude::Iso8601Duration::Iso8601Duration(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            ),
+                        )
+                    }
+                }
+            }
+        }
+        ::serde::Deserializer::deserialize_map(__deserializer, __Visitor)
+    }
+}
+
+impl ::serde::Serialize for crate::prelude::Iso8601TimeData {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 2usize;
+        let mut __st = ::serde::Serializer::serialize_struct(__serializer, "Iso8601_time", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "Iso8601_time")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "value", &self.value)?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601TimeData {
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["value"];
+        enum __Field {
+            __Type,
+            __F0,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "value" => ::core::result::Result::Ok(__Field::__F0),
+                            _ => ::core::result::Result::Err(
+                                ::openehr_base::serde_support::unknown_field(
+                                    __v,
+                                    "Iso8601_time",
+                                    __FIELDS,
+                                ),
+                            ),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::prelude::Iso8601TimeData;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `Iso8601_time` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                ::openehr_base::serde_support::ExpectedType("Iso8601_time"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("value"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(crate::prelude::Iso8601TimeData {
+                    value: __s0
+                        .flatten()
+                        .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
+                })
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "Iso8601_time",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize for crate::prelude::Iso8601Time {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        match self {
+            crate::prelude::Iso8601Time::DvTime(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+            crate::prelude::Iso8601Time::Iso8601Time(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+        }
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601Time {
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __TAGS: &[&str] = &["DV_TIME", "Iso8601_time"];
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::prelude::Iso8601Time;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `Iso8601_time` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let (__tag, __buffered) =
+                    ::openehr_base::serde_support::read_slot_tag(&mut __map, __TAGS)?;
+                match __tag {
+                    Some(::openehr_base::serde_support::TagMatch::Known(__t)) => {
+                        let __rest = ::openehr_base::serde_support::TaggedRest::new(
+                            Some(__t),
+                            __buffered,
+                            __map,
+                        );
+                        match __t {
+                            "DV_TIME" => {
+                                ::core::result::Result::Ok(crate::prelude::Iso8601Time::DvTime(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ))
+                            }
+                            "Iso8601_time" => ::core::result::Result::Ok(
+                                crate::prelude::Iso8601Time::Iso8601Time(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ),
+                            ),
+                            __other => ::core::result::Result::Err(
+                                ::openehr_base::serde_support::unexpected_type(
+                                    "Iso8601_time",
+                                    __other,
+                                    "DV_TIME, Iso8601_time",
+                                ),
+                            ),
+                        }
+                    }
+                    Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
+                        ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
+                            "Iso8601_time",
+                            &__other,
+                            "DV_TIME, Iso8601_time",
+                        ))
+                    }
+                    None => {
+                        let __rest =
+                            ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);
+                        ::core::result::Result::Ok(crate::prelude::Iso8601Time::Iso8601Time(
+                            ::serde::Deserialize::deserialize(__rest)?,
+                        ))
+                    }
+                }
+            }
+        }
+        ::serde::Deserializer::deserialize_map(__deserializer, __Visitor)
+    }
+}
+
+impl ::serde::Serialize for crate::prelude::Iso8601Type {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        match self {
+            crate::prelude::Iso8601Type::Iso8601Date(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+            crate::prelude::Iso8601Type::Iso8601DateTime(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+            crate::prelude::Iso8601Type::Iso8601Duration(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+            crate::prelude::Iso8601Type::Iso8601Time(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+            crate::prelude::Iso8601Type::Iso8601Timezone(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+        }
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601Type {
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __TAGS: &[&str] = &[
+            "DV_DATE",
+            "DV_DATE_TIME",
+            "DV_DURATION",
+            "DV_TIME",
+            "Iso8601_date",
+            "Iso8601_date_time",
+            "Iso8601_duration",
+            "Iso8601_time",
+            "Iso8601_timezone",
+        ];
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::prelude::Iso8601Type;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `Iso8601_type` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let (__tag, __buffered) =
+                    ::openehr_base::serde_support::read_slot_tag(&mut __map, __TAGS)?;
+                match __tag {
+                    Some(::openehr_base::serde_support::TagMatch::Known(__t)) => {
+                        let __rest = ::openehr_base::serde_support::TaggedRest::new(
+                            Some(__t),
+                            __buffered,
+                            __map,
+                        );
+                        match __t {
+                            "DV_DATE" => ::core::result::Result::Ok(
+                                crate::prelude::Iso8601Type::Iso8601Date(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ),
+                            ),
+                            "DV_DATE_TIME" => ::core::result::Result::Ok(
+                                crate::prelude::Iso8601Type::Iso8601DateTime(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ),
+                            ),
+                            "DV_DURATION" => ::core::result::Result::Ok(
+                                crate::prelude::Iso8601Type::Iso8601Duration(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ),
+                            ),
+                            "DV_TIME" => ::core::result::Result::Ok(
+                                crate::prelude::Iso8601Type::Iso8601Time(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ),
+                            ),
+                            "Iso8601_date" => ::core::result::Result::Ok(
+                                crate::prelude::Iso8601Type::Iso8601Date(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ),
+                            ),
+                            "Iso8601_date_time" => ::core::result::Result::Ok(
+                                crate::prelude::Iso8601Type::Iso8601DateTime(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ),
+                            ),
+                            "Iso8601_duration" => ::core::result::Result::Ok(
+                                crate::prelude::Iso8601Type::Iso8601Duration(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ),
+                            ),
+                            "Iso8601_time" => ::core::result::Result::Ok(
+                                crate::prelude::Iso8601Type::Iso8601Time(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ),
+                            ),
+                            "Iso8601_timezone" => ::core::result::Result::Ok(
+                                crate::prelude::Iso8601Type::Iso8601Timezone(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ),
+                            ),
+                            __other => ::core::result::Result::Err(
+                                ::openehr_base::serde_support::unexpected_type(
+                                    "Iso8601_type",
+                                    __other,
+                                    "DV_DATE, DV_DATE_TIME, DV_DURATION, DV_TIME, Iso8601_date, Iso8601_date_time, Iso8601_duration, Iso8601_time, Iso8601_timezone",
+                                ),
+                            ),
+                        }
+                    }
+                    Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
+                        ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
+                            "Iso8601_type",
+                            &__other,
+                            "DV_DATE, DV_DATE_TIME, DV_DURATION, DV_TIME, Iso8601_date, Iso8601_date_time, Iso8601_duration, Iso8601_time, Iso8601_timezone",
+                        ))
+                    }
+                    None => {
+                        ::core::result::Result::Err(::openehr_base::serde_support::missing_type(
+                            "Iso8601_type",
+                            "DV_DATE, DV_DATE_TIME, DV_DURATION, DV_TIME, Iso8601_date, Iso8601_date_time, Iso8601_duration, Iso8601_time, Iso8601_timezone",
+                        ))
+                    }
+                }
+            }
+        }
+        ::serde::Deserializer::deserialize_map(__deserializer, __Visitor)
+    }
+}
+
 impl ::serde::Serialize for crate::prelude::Link {
     fn serialize<__S: ::serde::Serializer>(
         &self,

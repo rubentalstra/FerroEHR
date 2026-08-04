@@ -66,7 +66,7 @@ Versioning: { family: Platform, tier: CORE, required: true, min_cases: 69, sourc
 # set, so resolving it at ingestion is archetype-constraint validation like any
 # other — it just reaches an external terminology query server to do it.
 ArchetypeValidation: { family: Platform, tier: CORE, required: true, min_cases: 125, source: "CNF profiles master03-profiles.adoc §Functional (EHR Persistence: Archetype Validation)" }
-PartyOperations: { family: Platform, tier: OPTIONS, required: false, min_cases: 56, source: "CNF profiles master03-profiles.adoc §Functional (Demographic Persistence: Party Operations)" }
+PartyOperations: { family: Platform, tier: OPTIONS, required: false, min_cases: 58, source: "CNF profiles master03-profiles.adoc §Functional (Demographic Persistence: Party Operations)" }
 # REALIZATION DERIVED FIRST-HAND 2026-07-28 (#623), outcome (b): the RELEASED
 # wire does not exist — the ITS-REST docs text never names a PARTY_RELATIONSHIP
 # resource and specifications/demographic.openapi.yaml declares no

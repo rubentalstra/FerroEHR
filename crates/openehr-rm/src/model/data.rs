@@ -29,6 +29,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "type",
@@ -37,6 +38,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "id",
@@ -45,6 +47,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -69,6 +72,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -77,6 +81,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -85,6 +90,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -96,6 +102,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -104,6 +111,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -112,6 +120,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "language",
@@ -120,6 +129,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "encoding",
@@ -128,6 +138,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_participations",
@@ -139,6 +150,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "workflow_id",
@@ -147,6 +159,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "subject",
@@ -155,6 +168,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "provider",
@@ -163,6 +177,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "protocol",
@@ -171,6 +186,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "guideline_id",
@@ -179,6 +195,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "time",
@@ -187,6 +204,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "ism_transition",
@@ -195,6 +213,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "instruction_details",
@@ -203,6 +222,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "description",
@@ -211,6 +231,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: true,
@@ -229,6 +250,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -237,6 +259,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -245,6 +268,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -256,6 +280,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -264,6 +289,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -272,6 +298,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "timing",
@@ -280,6 +307,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "action_archetype_id",
@@ -288,6 +316,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "description",
@@ -296,6 +325,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: true,
@@ -314,6 +344,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -322,6 +353,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -330,6 +362,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -341,6 +374,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -349,6 +383,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -357,6 +392,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "identities",
@@ -368,6 +404,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 1,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "contacts",
@@ -379,6 +416,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "details",
@@ -387,6 +425,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "relationships",
@@ -398,6 +437,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "languages",
@@ -409,6 +449,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "roles",
@@ -420,6 +461,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
         ],
         is_structure_root: false,
@@ -438,6 +480,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -446,6 +489,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -454,6 +498,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -465,6 +510,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -473,6 +519,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -481,6 +528,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "details",
@@ -489,6 +537,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -507,6 +556,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "sender_reference",
@@ -515,6 +565,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "addressees",
@@ -526,6 +577,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 1,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "urgency",
@@ -534,6 +586,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "message",
@@ -542,6 +595,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -560,6 +614,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -568,6 +623,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -576,6 +632,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -587,6 +644,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -595,6 +653,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -603,6 +662,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "language",
@@ -611,6 +671,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "encoding",
@@ -619,6 +680,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_participations",
@@ -630,6 +692,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "workflow_id",
@@ -638,6 +701,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "subject",
@@ -646,6 +710,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "provider",
@@ -654,6 +719,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "data",
@@ -662,6 +728,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: true,
@@ -680,6 +747,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -688,6 +756,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -696,6 +765,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -707,6 +777,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -715,6 +786,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -723,6 +795,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "identities",
@@ -734,6 +807,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 1,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "contacts",
@@ -745,6 +819,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "details",
@@ -753,6 +828,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "relationships",
@@ -764,6 +840,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "languages",
@@ -775,6 +852,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "roles",
@@ -786,6 +864,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
         ],
         is_structure_root: false,
@@ -804,6 +883,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "template_id",
@@ -812,6 +892,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "rm_version",
@@ -820,6 +901,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -837,6 +919,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: true,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -854,6 +937,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "time_committed",
@@ -862,6 +946,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "change_type",
@@ -870,6 +955,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "description",
@@ -878,6 +964,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "committer",
@@ -886,6 +973,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "attested_view",
@@ -894,6 +982,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "proof",
@@ -902,6 +991,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "items",
@@ -913,6 +1003,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "reason",
@@ -921,6 +1012,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "is_pending",
@@ -929,6 +1021,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -947,6 +1040,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "time_committed",
@@ -955,6 +1049,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "change_type",
@@ -963,6 +1058,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "description",
@@ -971,6 +1067,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "committer",
@@ -979,6 +1076,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -997,6 +1095,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "is_controlled",
@@ -1005,6 +1104,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "translations",
@@ -1022,6 +1122,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     },
                 ],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "description",
@@ -1030,6 +1131,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "revision_history",
@@ -1038,6 +1140,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -1056,6 +1159,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -1064,6 +1168,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -1072,6 +1177,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -1083,6 +1189,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -1091,6 +1198,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -1099,6 +1207,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "credentials",
@@ -1107,6 +1216,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "time_validity",
@@ -1118,6 +1228,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     params: &[],
                 }],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -1136,6 +1247,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -1144,6 +1256,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -1152,6 +1265,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -1163,6 +1277,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -1171,6 +1286,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -1179,6 +1295,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "language",
@@ -1187,6 +1304,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "encoding",
@@ -1195,6 +1313,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_participations",
@@ -1206,6 +1325,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "workflow_id",
@@ -1214,6 +1334,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "subject",
@@ -1222,6 +1343,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "provider",
@@ -1230,6 +1352,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "protocol",
@@ -1238,6 +1361,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "guideline_id",
@@ -1246,6 +1370,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -1264,6 +1389,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -1272,6 +1398,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -1280,6 +1407,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -1291,6 +1419,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -1299,6 +1428,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -1307,6 +1437,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "items",
@@ -1318,6 +1449,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 1,
                     upper: None,
                 }),
+                nonempty: false,
             },
         ],
         is_structure_root: true,
@@ -1336,6 +1468,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "code_string",
@@ -1344,6 +1477,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "preferred_term",
@@ -1352,6 +1486,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -1379,6 +1514,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -1387,6 +1523,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -1395,6 +1532,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -1406,6 +1544,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -1414,6 +1553,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -1422,6 +1562,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "language",
@@ -1430,6 +1571,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "territory",
@@ -1438,6 +1580,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "category",
@@ -1446,6 +1589,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "context",
@@ -1454,6 +1598,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "composer",
@@ -1462,6 +1607,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "content",
@@ -1473,6 +1619,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
         ],
         is_structure_root: true,
@@ -1491,6 +1638,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -1499,6 +1647,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -1507,6 +1656,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -1518,6 +1668,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -1526,6 +1677,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -1534,6 +1686,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "addresses",
@@ -1545,6 +1698,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 1,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "time_validity",
@@ -1556,6 +1710,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     params: &[],
                 }],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -1582,6 +1737,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -1590,6 +1746,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -1598,6 +1755,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -1609,6 +1767,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -1617,6 +1776,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -1625,6 +1785,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -1643,6 +1804,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "versions",
@@ -1654,6 +1816,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 1,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "audit",
@@ -1662,6 +1825,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -1680,6 +1844,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "is_ordered",
@@ -1688,6 +1853,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "is_unique",
@@ -1696,6 +1862,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -1720,6 +1887,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -1728,6 +1896,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -1736,6 +1905,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -1747,6 +1917,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -1755,6 +1926,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -1763,6 +1935,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -1813,6 +1986,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "normal_range",
@@ -1821,6 +1995,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_reference_ranges",
@@ -1835,6 +2010,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "magnitude_status",
@@ -1843,6 +2019,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "accuracy",
@@ -1851,6 +2028,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -1869,6 +2047,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "normal_range",
@@ -1877,6 +2056,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_reference_ranges",
@@ -1891,6 +2071,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "magnitude_status",
@@ -1899,6 +2080,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "accuracy",
@@ -1907,6 +2089,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "accuracy_is_percent",
@@ -1915,6 +2098,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -1932,6 +2116,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: true,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -1949,6 +2134,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "hyperlink",
@@ -1957,6 +2143,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "formatting",
@@ -1965,6 +2152,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "mappings",
@@ -1976,6 +2164,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "language",
@@ -1984,6 +2173,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "encoding",
@@ -1992,6 +2182,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "defining_code",
@@ -2000,6 +2191,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -2018,6 +2210,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "normal_range",
@@ -2029,6 +2222,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     params: &[],
                 }],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_reference_ranges",
@@ -2043,6 +2237,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "magnitude_status",
@@ -2051,6 +2246,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "accuracy",
@@ -2059,6 +2255,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "accuracy_is_percent",
@@ -2067,6 +2264,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "magnitude",
@@ -2075,6 +2273,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -2101,6 +2300,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "normal_range",
@@ -2109,6 +2309,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_reference_ranges",
@@ -2123,6 +2324,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "magnitude_status",
@@ -2131,6 +2333,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "accuracy",
@@ -2139,6 +2342,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "value",
@@ -2147,6 +2351,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -2173,6 +2378,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "normal_range",
@@ -2181,6 +2387,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_reference_ranges",
@@ -2195,6 +2402,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "magnitude_status",
@@ -2203,6 +2411,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "accuracy",
@@ -2211,6 +2420,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "value",
@@ -2219,6 +2429,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -2244,6 +2455,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "normal_range",
@@ -2252,6 +2464,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_reference_ranges",
@@ -2266,6 +2479,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "magnitude_status",
@@ -2274,6 +2488,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "accuracy",
@@ -2282,6 +2497,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "accuracy_is_percent",
@@ -2290,6 +2506,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "value",
@@ -2298,6 +2515,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -2315,6 +2533,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: true,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -2332,6 +2551,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "language",
@@ -2340,6 +2560,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -2357,6 +2578,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: true,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -2374,6 +2596,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "assigner",
@@ -2382,6 +2605,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "id",
@@ -2390,6 +2614,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "type",
@@ -2398,6 +2623,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -2416,6 +2642,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "upper",
@@ -2424,6 +2651,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "lower_unbounded",
@@ -2432,6 +2660,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "upper_unbounded",
@@ -2440,6 +2669,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "lower_included",
@@ -2448,6 +2678,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "upper_included",
@@ -2456,6 +2687,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -2477,6 +2709,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "language",
@@ -2485,6 +2718,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "alternate_text",
@@ -2493,6 +2727,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uri",
@@ -2501,6 +2736,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "data",
@@ -2512,6 +2748,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "media_type",
@@ -2520,6 +2757,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "compression_algorithm",
@@ -2528,6 +2766,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "integrity_check",
@@ -2539,6 +2778,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "integrity_check_algorithm",
@@ -2547,6 +2787,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "thumbnail",
@@ -2555,6 +2796,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "size",
@@ -2563,6 +2805,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -2591,6 +2834,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "normal_range",
@@ -2599,6 +2843,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_reference_ranges",
@@ -2613,6 +2858,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
         ],
         is_structure_root: false,
@@ -2631,6 +2877,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "normal_range",
@@ -2639,6 +2886,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_reference_ranges",
@@ -2653,6 +2901,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "symbol",
@@ -2661,6 +2910,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "value",
@@ -2669,6 +2919,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -2689,6 +2940,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 lower: 1,
                 upper: None,
             }),
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -2706,6 +2958,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "language",
@@ -2714,6 +2967,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "value",
@@ -2722,6 +2976,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "formalism",
@@ -2730,6 +2985,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -2747,6 +3003,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: true,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -2770,6 +3027,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "normal_range",
@@ -2781,6 +3039,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     params: &[],
                 }],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_reference_ranges",
@@ -2795,6 +3054,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "magnitude_status",
@@ -2803,6 +3063,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "accuracy",
@@ -2811,6 +3072,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "accuracy_is_percent",
@@ -2819,6 +3081,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "numerator",
@@ -2827,6 +3090,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "denominator",
@@ -2835,6 +3099,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "type",
@@ -2843,6 +3108,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "precision",
@@ -2851,6 +3117,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -2877,6 +3144,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "normal_range",
@@ -2885,6 +3153,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_reference_ranges",
@@ -2899,6 +3168,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "magnitude_status",
@@ -2907,6 +3177,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "accuracy",
@@ -2915,6 +3186,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -2933,6 +3205,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "normal_range",
@@ -2944,6 +3217,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     params: &[],
                 }],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_reference_ranges",
@@ -2958,6 +3232,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "magnitude_status",
@@ -2966,6 +3241,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "accuracy",
@@ -2974,6 +3250,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "accuracy_is_percent",
@@ -2982,6 +3259,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "magnitude",
@@ -2990,6 +3268,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "precision",
@@ -2998,6 +3277,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "units",
@@ -3006,6 +3286,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "units_system",
@@ -3014,6 +3295,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "units_display_name",
@@ -3022,6 +3304,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -3040,6 +3323,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "normal_range",
@@ -3048,6 +3332,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_reference_ranges",
@@ -3062,6 +3347,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "symbol",
@@ -3070,6 +3356,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "value",
@@ -3078,6 +3365,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -3096,6 +3384,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "is_terminal",
@@ -3104,6 +3393,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -3127,6 +3417,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "normal_range",
@@ -3135,6 +3426,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_reference_ranges",
@@ -3149,6 +3441,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "magnitude_status",
@@ -3157,6 +3450,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "accuracy",
@@ -3165,6 +3459,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -3183,6 +3478,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "hyperlink",
@@ -3191,6 +3487,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "formatting",
@@ -3199,6 +3496,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "mappings",
@@ -3210,6 +3508,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "language",
@@ -3218,6 +3517,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "encoding",
@@ -3226,6 +3526,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -3252,6 +3553,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "normal_range",
@@ -3260,6 +3562,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_reference_ranges",
@@ -3274,6 +3577,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "magnitude_status",
@@ -3282,6 +3586,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "accuracy",
@@ -3290,6 +3595,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "value",
@@ -3298,6 +3604,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -3318,6 +3625,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: true,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -3334,6 +3642,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: true,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -3351,6 +3660,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "ehr_id",
@@ -3359,6 +3669,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "contributions",
@@ -3370,6 +3681,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "ehr_status",
@@ -3378,6 +3690,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "ehr_access",
@@ -3386,6 +3699,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "compositions",
@@ -3397,6 +3711,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "directory",
@@ -3405,6 +3720,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "time_created",
@@ -3413,6 +3729,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "folders",
@@ -3424,6 +3741,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "tags",
@@ -3435,6 +3753,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -3453,6 +3772,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -3461,6 +3781,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -3469,6 +3790,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -3480,6 +3802,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -3488,6 +3811,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -3496,6 +3820,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "settings",
@@ -3504,6 +3829,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: true,
@@ -3522,6 +3848,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -3530,6 +3857,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -3538,6 +3866,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -3549,6 +3878,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -3557,6 +3887,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -3565,6 +3896,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "subject",
@@ -3573,6 +3905,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "is_queryable",
@@ -3581,6 +3914,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "is_modifiable",
@@ -3589,6 +3923,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_details",
@@ -3597,6 +3932,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: true,
@@ -3615,6 +3951,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -3623,6 +3960,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -3631,6 +3969,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -3642,6 +3981,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -3650,6 +3990,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -3658,6 +3999,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "null_flavour",
@@ -3666,6 +4008,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "value",
@@ -3674,6 +4017,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "null_reason",
@@ -3682,6 +4026,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: true,
@@ -3706,6 +4051,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -3714,6 +4060,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -3722,6 +4069,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -3733,6 +4081,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -3741,6 +4090,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -3749,6 +4099,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "language",
@@ -3757,6 +4108,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "encoding",
@@ -3765,6 +4117,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_participations",
@@ -3776,6 +4129,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "workflow_id",
@@ -3784,6 +4138,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "subject",
@@ -3792,6 +4147,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "provider",
@@ -3800,6 +4156,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -3824,6 +4181,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -3832,6 +4190,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -3840,6 +4199,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -3851,6 +4211,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -3859,6 +4220,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -3867,6 +4229,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "language",
@@ -3875,6 +4238,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "encoding",
@@ -3883,6 +4247,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_participations",
@@ -3894,6 +4259,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "workflow_id",
@@ -3902,6 +4268,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "subject",
@@ -3910,6 +4277,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "provider",
@@ -3918,6 +4286,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "protocol",
@@ -3926,6 +4295,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "guideline_id",
@@ -3934,6 +4304,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "data",
@@ -3942,6 +4313,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: true,
@@ -3960,6 +4332,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -3968,6 +4341,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -3976,6 +4350,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -3987,6 +4362,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -3995,6 +4371,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -4003,6 +4380,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "time",
@@ -4011,6 +4389,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "state",
@@ -4019,6 +4398,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "data",
@@ -4027,6 +4407,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -4048,6 +4429,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "end_time",
@@ -4056,6 +4438,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "location",
@@ -4064,6 +4447,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "setting",
@@ -4072,6 +4456,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_context",
@@ -4080,6 +4465,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "health_care_facility",
@@ -4088,6 +4474,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "participations",
@@ -4099,6 +4486,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
         ],
         is_structure_root: true,
@@ -4131,6 +4519,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -4139,6 +4528,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -4147,6 +4537,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -4158,6 +4549,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -4166,6 +4558,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -4174,6 +4567,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "chapters",
@@ -4185,6 +4579,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "specification",
@@ -4193,6 +4588,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "request_id",
@@ -4201,6 +4597,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "time_created",
@@ -4209,6 +4606,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "system_id",
@@ -4217,6 +4615,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "sequence_nr",
@@ -4225,6 +4624,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "participations",
@@ -4236,6 +4636,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -4254,6 +4655,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -4262,6 +4664,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -4270,6 +4673,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -4281,6 +4685,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -4289,6 +4694,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -4297,6 +4703,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "request_id",
@@ -4305,6 +4712,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "action",
@@ -4313,6 +4721,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -4331,6 +4740,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -4339,6 +4749,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -4347,6 +4758,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -4358,6 +4770,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -4366,6 +4779,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -4374,6 +4788,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "items",
@@ -4385,6 +4800,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -4403,6 +4819,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -4411,6 +4828,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -4419,6 +4837,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -4430,6 +4849,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -4438,6 +4858,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -4446,6 +4867,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "is_primary",
@@ -4454,6 +4876,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "is_changed",
@@ -4462,6 +4885,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "is_masked",
@@ -4470,6 +4894,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "item",
@@ -4478,6 +4903,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -4496,6 +4922,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -4504,6 +4931,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -4512,6 +4940,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -4523,6 +4952,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -4531,6 +4961,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -4539,6 +4970,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "items",
@@ -4550,6 +4982,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "extract_id_key",
@@ -4558,6 +4991,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -4576,6 +5010,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "ehr_id",
@@ -4584,6 +5019,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "subject_id",
@@ -4592,6 +5028,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_ids",
@@ -4603,6 +5040,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "item_list",
@@ -4614,6 +5052,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -4632,6 +5071,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "reason",
@@ -4640,6 +5080,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -4658,6 +5099,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -4666,6 +5108,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -4674,6 +5117,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -4685,6 +5129,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -4693,6 +5138,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -4701,6 +5147,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "items",
@@ -4712,6 +5159,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -4734,6 +5182,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -4742,6 +5191,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -4750,6 +5200,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -4761,6 +5212,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -4769,6 +5221,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -4777,6 +5230,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -4797,6 +5251,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 lower: 1,
                 upper: None,
             }),
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -4817,6 +5272,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     params: &[],
                 }],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "function",
@@ -4825,6 +5281,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "mode",
@@ -4833,6 +5290,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "performer",
@@ -4841,6 +5299,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -4859,6 +5318,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -4867,6 +5327,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -4875,6 +5336,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -4886,6 +5348,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -4894,6 +5357,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -4902,6 +5366,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "extract_spec",
@@ -4910,6 +5375,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "update_spec",
@@ -4918,6 +5384,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -4936,6 +5403,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "manifest",
@@ -4944,6 +5412,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "extract_type",
@@ -4952,6 +5421,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "include_multimedia",
@@ -4960,6 +5430,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "priority",
@@ -4968,6 +5439,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "link_depth",
@@ -4976,6 +5448,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "criteria",
@@ -4987,6 +5460,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_details",
@@ -4995,6 +5469,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -5013,6 +5488,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "repeat_period",
@@ -5021,6 +5497,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "trigger_events",
@@ -5032,6 +5509,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "update_method",
@@ -5040,6 +5518,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -5058,6 +5537,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "commit_time_interval",
@@ -5069,6 +5549,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     params: &[],
                 }],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "include_revision_history",
@@ -5077,6 +5558,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "include_data",
@@ -5085,6 +5567,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -5106,6 +5589,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_system_item_ids",
@@ -5117,6 +5601,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "original_content",
@@ -5125,6 +5610,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "originating_system_audit",
@@ -5133,6 +5619,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_system_audit",
@@ -5141,6 +5628,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: true,
@@ -5159,6 +5647,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "location",
@@ -5167,6 +5656,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "subject",
@@ -5175,6 +5665,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "provider",
@@ -5183,6 +5674,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "time",
@@ -5191,6 +5683,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "version_id",
@@ -5199,6 +5692,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_details",
@@ -5207,6 +5701,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -5225,6 +5720,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -5233,6 +5729,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -5241,6 +5738,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -5252,6 +5750,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -5260,6 +5759,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -5268,6 +5768,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "items",
@@ -5279,6 +5780,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "folders",
@@ -5290,6 +5792,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "details",
@@ -5298,6 +5801,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: true,
@@ -5321,6 +5825,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -5329,6 +5834,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -5337,6 +5843,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -5348,6 +5855,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -5356,6 +5864,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -5364,6 +5873,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "is_primary",
@@ -5372,6 +5882,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "is_changed",
@@ -5380,6 +5891,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "is_masked",
@@ -5388,6 +5900,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "item",
@@ -5396,6 +5909,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "item_type",
@@ -5404,6 +5918,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "item_type_version",
@@ -5412,6 +5927,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "author",
@@ -5420,6 +5936,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "creation_time",
@@ -5428,6 +5945,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "authoriser",
@@ -5436,6 +5954,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "authorisation_time",
@@ -5444,6 +5963,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "item_status",
@@ -5452,6 +5972,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "version_id",
@@ -5460,6 +5981,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "version_set_id",
@@ -5468,6 +5990,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "system_id",
@@ -5476,6 +5999,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_details",
@@ -5493,6 +6017,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     },
                 ],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -5511,6 +6036,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -5519,6 +6045,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -5527,6 +6054,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -5538,6 +6066,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -5546,6 +6075,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -5554,6 +6084,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "data",
@@ -5562,6 +6093,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: true,
@@ -5580,6 +6112,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "scheme",
@@ -5588,6 +6121,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -5606,6 +6140,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -5614,6 +6149,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -5622,6 +6158,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -5633,6 +6170,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -5641,6 +6179,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -5649,6 +6188,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "identities",
@@ -5660,6 +6200,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 1,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "contacts",
@@ -5671,6 +6212,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "details",
@@ -5679,6 +6221,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "relationships",
@@ -5690,6 +6233,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "languages",
@@ -5701,6 +6245,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "roles",
@@ -5712,6 +6257,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
         ],
         is_structure_root: false,
@@ -5729,6 +6275,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: true,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -5746,6 +6293,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -5754,6 +6302,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -5762,6 +6311,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -5773,6 +6323,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -5781,6 +6332,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -5789,6 +6341,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "origin",
@@ -5797,6 +6350,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "period",
@@ -5805,6 +6359,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "duration",
@@ -5813,6 +6368,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "summary",
@@ -5821,6 +6377,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "events",
@@ -5835,6 +6392,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
         ],
         is_structure_root: true,
@@ -5856,6 +6414,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "signature",
@@ -5864,6 +6423,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "commit_audit",
@@ -5872,6 +6432,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "item",
@@ -5880,6 +6441,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -5907,6 +6469,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -5915,6 +6478,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -5923,6 +6487,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -5934,6 +6499,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -5942,6 +6508,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -5950,6 +6517,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "language",
@@ -5958,6 +6526,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "encoding",
@@ -5966,6 +6535,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_participations",
@@ -5977,6 +6547,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "workflow_id",
@@ -5985,6 +6556,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "subject",
@@ -5993,6 +6565,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "provider",
@@ -6001,6 +6574,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "protocol",
@@ -6009,6 +6583,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "guideline_id",
@@ -6017,6 +6592,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "narrative",
@@ -6025,6 +6601,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "expiry_time",
@@ -6033,6 +6610,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "wf_definition",
@@ -6041,6 +6619,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "activities",
@@ -6052,6 +6631,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
         ],
         is_structure_root: true,
@@ -6070,6 +6650,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "activity_id",
@@ -6078,6 +6659,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "wf_details",
@@ -6086,6 +6668,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -6103,6 +6686,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: true,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -6120,6 +6704,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -6128,6 +6713,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -6136,6 +6722,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -6147,6 +6734,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -6155,6 +6743,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -6163,6 +6752,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "time",
@@ -6171,6 +6761,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "state",
@@ -6179,6 +6770,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "data",
@@ -6187,6 +6779,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "width",
@@ -6195,6 +6788,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "sample_count",
@@ -6203,6 +6797,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "math_function",
@@ -6211,6 +6806,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: true,
@@ -6232,6 +6828,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "transition",
@@ -6240,6 +6837,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "careflow_step",
@@ -6248,6 +6846,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "reason",
@@ -6259,6 +6858,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -6276,6 +6876,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: true,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -6293,6 +6894,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -6301,6 +6903,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -6309,6 +6912,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -6320,6 +6924,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -6328,6 +6933,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -6336,6 +6942,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -6354,6 +6961,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -6362,6 +6970,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -6370,6 +6979,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -6381,6 +6991,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -6389,6 +7000,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -6397,6 +7009,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "items",
@@ -6408,6 +7021,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
         ],
         is_structure_root: true,
@@ -6426,6 +7040,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -6434,6 +7049,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -6442,6 +7058,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -6453,6 +7070,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -6461,6 +7079,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -6469,6 +7088,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "item",
@@ -6477,6 +7097,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: true,
@@ -6495,6 +7116,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -6503,6 +7125,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -6511,6 +7134,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -6522,6 +7146,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -6530,6 +7155,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -6538,6 +7164,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -6556,6 +7183,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -6564,6 +7192,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -6572,6 +7201,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -6583,6 +7213,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -6591,6 +7222,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -6599,6 +7231,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "rows",
@@ -6610,6 +7243,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
         ],
         is_structure_root: true,
@@ -6628,6 +7262,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "value",
@@ -6636,6 +7271,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "target",
@@ -6644,6 +7280,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "target_path",
@@ -6652,6 +7289,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "owner_id",
@@ -6660,6 +7298,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -6678,6 +7317,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -6686,6 +7326,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -6694,6 +7335,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -6705,6 +7347,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -6713,6 +7356,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -6721,6 +7365,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "items",
@@ -6732,6 +7377,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
         ],
         is_structure_root: true,
@@ -6755,6 +7401,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "upper",
@@ -6763,6 +7410,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "lower_unbounded",
@@ -6771,6 +7419,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "upper_unbounded",
@@ -6779,6 +7428,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "lower_included",
@@ -6787,6 +7437,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "upper_included",
@@ -6795,6 +7446,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -6815,6 +7467,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: true,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -6831,6 +7484,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: true,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -6847,6 +7501,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: true,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -6863,6 +7518,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: true,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -6879,6 +7535,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: true,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -6905,6 +7562,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: true,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -6922,6 +7580,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "type",
@@ -6930,6 +7589,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "target",
@@ -6938,6 +7598,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -6996,6 +7657,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -7004,6 +7666,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -7012,6 +7675,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -7023,6 +7687,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -7031,6 +7696,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -7039,6 +7705,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -7057,6 +7724,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "type",
@@ -7065,6 +7733,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "id",
@@ -7073,6 +7742,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "path",
@@ -7081,6 +7751,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -7108,6 +7779,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "author",
@@ -7116,6 +7788,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "content",
@@ -7124,6 +7797,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "signature",
@@ -7132,6 +7806,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -7159,6 +7834,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "upper",
@@ -7167,6 +7843,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "lower_unbounded",
@@ -7175,6 +7852,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "upper_unbounded",
@@ -7183,6 +7861,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "lower_included",
@@ -7191,6 +7870,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "upper_included",
@@ -7199,6 +7879,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -7223,6 +7904,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: true,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -7245,6 +7927,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "type",
@@ -7253,6 +7936,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "id",
@@ -7261,6 +7945,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -7278,6 +7963,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: true,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -7301,6 +7987,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -7309,6 +7996,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -7317,6 +8005,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -7328,6 +8017,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -7336,6 +8026,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -7344,6 +8035,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "language",
@@ -7352,6 +8044,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "encoding",
@@ -7360,6 +8053,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_participations",
@@ -7371,6 +8065,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "workflow_id",
@@ -7379,6 +8074,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "subject",
@@ -7387,6 +8083,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "provider",
@@ -7395,6 +8092,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "protocol",
@@ -7403,6 +8101,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "guideline_id",
@@ -7411,6 +8110,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "data",
@@ -7422,6 +8122,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     params: &[],
                 }],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "state",
@@ -7433,6 +8134,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     params: &[],
                 }],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: true,
@@ -7465,6 +8167,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -7473,6 +8176,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -7481,6 +8185,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -7492,6 +8197,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -7500,6 +8206,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -7508,6 +8215,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "is_primary",
@@ -7516,6 +8224,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "is_changed",
@@ -7524,6 +8233,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "is_masked",
@@ -7532,6 +8242,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "item",
@@ -7540,6 +8251,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -7570,6 +8282,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -7578,6 +8291,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -7586,6 +8300,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -7597,6 +8312,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -7605,6 +8321,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -7613,6 +8330,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "identities",
@@ -7624,6 +8342,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 1,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "contacts",
@@ -7635,6 +8354,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "details",
@@ -7643,6 +8363,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "relationships",
@@ -7654,6 +8375,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "languages",
@@ -7665,6 +8387,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "roles",
@@ -7676,6 +8399,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
         ],
         is_structure_root: false,
@@ -7694,6 +8418,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "signature",
@@ -7702,6 +8427,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "commit_audit",
@@ -7710,6 +8436,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -7718,6 +8445,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "preceding_version_uid",
@@ -7726,6 +8454,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_input_version_uids",
@@ -7737,6 +8466,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "lifecycle_state",
@@ -7745,6 +8475,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "attestations",
@@ -7756,6 +8487,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "data",
@@ -7764,6 +8496,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -7785,6 +8518,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "mode",
@@ -7793,6 +8527,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "performer",
@@ -7801,6 +8536,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "time",
@@ -7812,6 +8548,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     params: &[],
                 }],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -7830,6 +8567,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -7838,6 +8576,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -7846,6 +8585,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -7857,6 +8597,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -7865,6 +8606,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -7873,6 +8615,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "identities",
@@ -7884,6 +8627,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 1,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "contacts",
@@ -7895,6 +8639,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "details",
@@ -7903,6 +8648,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "relationships",
@@ -7914,6 +8660,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -7932,6 +8679,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "name",
@@ -7940,6 +8688,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "identifiers",
@@ -7951,6 +8700,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
         ],
         is_structure_root: false,
@@ -7969,6 +8719,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -7977,6 +8728,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -7985,6 +8737,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -7996,6 +8749,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -8004,6 +8758,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -8012,6 +8767,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "details",
@@ -8020,6 +8776,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -8037,6 +8794,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: false,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -8054,6 +8812,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "type",
@@ -8062,6 +8821,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "id",
@@ -8070,6 +8830,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -8088,6 +8849,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "name",
@@ -8096,6 +8858,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "identifiers",
@@ -8107,6 +8870,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "relationship",
@@ -8115,6 +8879,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -8133,6 +8898,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -8141,6 +8907,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -8149,6 +8916,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -8160,6 +8928,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -8168,6 +8937,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -8176,6 +8946,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "details",
@@ -8184,6 +8955,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "target",
@@ -8192,6 +8964,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "time_validity",
@@ -8203,6 +8976,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     params: &[],
                 }],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "source",
@@ -8211,6 +8985,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -8228,6 +9003,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: false,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -8297,6 +9073,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -8305,6 +9082,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -8313,6 +9091,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -8324,6 +9103,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -8332,6 +9112,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -8340,6 +9121,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "identities",
@@ -8351,6 +9133,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 1,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "contacts",
@@ -8362,6 +9145,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "details",
@@ -8370,6 +9154,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "relationships",
@@ -8381,6 +9166,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "languages",
@@ -8392,6 +9178,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "roles",
@@ -8403,6 +9190,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
         ],
         is_structure_root: false,
@@ -8421,6 +9209,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -8429,6 +9218,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -8437,6 +9227,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -8448,6 +9239,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -8456,6 +9248,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -8464,6 +9257,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "time",
@@ -8472,6 +9266,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "state",
@@ -8480,6 +9275,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "data",
@@ -8488,6 +9284,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: true,
@@ -8518,6 +9315,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "upper",
@@ -8526,6 +9324,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "lower_unbounded",
@@ -8534,6 +9333,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "upper_unbounded",
@@ -8542,6 +9342,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "lower_included",
@@ -8550,6 +9351,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "upper_included",
@@ -8558,6 +9360,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -8579,6 +9382,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "upper",
@@ -8587,6 +9391,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "lower_unbounded",
@@ -8595,6 +9400,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "upper_unbounded",
@@ -8603,6 +9409,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "lower_included",
@@ -8611,6 +9418,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "upper_included",
@@ -8619,6 +9427,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -8640,6 +9449,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "range",
@@ -8648,6 +9458,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -8695,6 +9506,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 },
             ],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -8721,6 +9533,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     },
                 ],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_contributors",
@@ -8732,6 +9545,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "lifecycle_state",
@@ -8740,6 +9554,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "resource_package_uri",
@@ -8748,6 +9563,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_details",
@@ -8765,6 +9581,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     },
                 ],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "parent_resource",
@@ -8773,6 +9590,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "details",
@@ -8790,6 +9608,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     },
                 ],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -8808,6 +9627,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "purpose",
@@ -8816,6 +9636,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "keywords",
@@ -8827,6 +9648,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "use",
@@ -8835,6 +9657,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "misuse",
@@ -8843,6 +9666,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "copyright",
@@ -8851,6 +9675,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "original_resource_uri",
@@ -8868,6 +9693,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     },
                 ],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_details",
@@ -8885,6 +9711,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     },
                 ],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -8905,6 +9732,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 lower: 1,
                 upper: None,
             }),
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -8922,6 +9750,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "audits",
@@ -8933,6 +9762,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 1,
                     upper: None,
                 }),
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -8951,6 +9781,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -8959,6 +9790,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -8967,6 +9799,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -8978,6 +9811,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -8986,6 +9820,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -8994,6 +9829,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "identities",
@@ -9005,6 +9841,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 1,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "contacts",
@@ -9016,6 +9853,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "details",
@@ -9024,6 +9862,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "relationships",
@@ -9035,6 +9874,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "time_validity",
@@ -9046,6 +9886,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     params: &[],
                 }],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "performer",
@@ -9054,6 +9895,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "capabilities",
@@ -9065,6 +9907,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -9083,6 +9926,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "archetype_node_id",
@@ -9091,6 +9935,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uid",
@@ -9099,6 +9944,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "links",
@@ -9110,6 +9956,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
             RmAttribute {
                 name: "archetype_details",
@@ -9118,6 +9965,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "feeder_audit",
@@ -9126,6 +9974,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "items",
@@ -9137,6 +9986,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: true,
             },
         ],
         is_structure_root: true,
@@ -9155,6 +10005,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "items",
@@ -9166,6 +10017,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -9183,6 +10035,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: true,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -9200,6 +10053,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "contribution_list",
@@ -9211,6 +10065,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
             RmAttribute {
                 name: "contributions_since",
@@ -9219,6 +10074,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "all_contributions",
@@ -9227,6 +10083,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -9244,6 +10101,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: true,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -9269,6 +10127,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: true,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -9298,6 +10157,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "purpose",
@@ -9306,6 +10166,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "target",
@@ -9314,6 +10175,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -9332,6 +10194,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "author",
@@ -9349,6 +10212,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     },
                 ],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "accreditaton",
@@ -9357,6 +10221,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "other_details",
@@ -9374,6 +10239,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     },
                 ],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -9392,6 +10258,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "terminology_version",
@@ -9400,6 +10267,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "code_string",
@@ -9408,6 +10276,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "uri",
@@ -9416,6 +10285,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -9434,6 +10304,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "text",
@@ -9442,6 +10313,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -9459,6 +10331,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: true,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -9475,6 +10348,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: true,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -9491,6 +10365,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: true,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -9517,6 +10392,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "signature",
@@ -9525,6 +10401,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "commit_audit",
@@ -9533,6 +10410,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -9554,6 +10432,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "owner_id",
@@ -9562,6 +10441,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "time_created",
@@ -9570,6 +10450,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -9588,6 +10469,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "owner_id",
@@ -9596,6 +10478,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "time_created",
@@ -9604,6 +10487,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -9622,6 +10506,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "owner_id",
@@ -9630,6 +10515,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "time_created",
@@ -9638,6 +10524,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -9656,6 +10543,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "owner_id",
@@ -9664,6 +10552,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "time_created",
@@ -9672,6 +10561,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -9697,6 +10587,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "owner_id",
@@ -9705,6 +10596,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "time_created",
@@ -9713,6 +10605,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -9734,6 +10627,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "owner_id",
@@ -9742,6 +10636,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "time_created",
@@ -9750,6 +10645,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -9776,6 +10672,7 @@ pub(super) static CLASSES: &[RmClass] = &[
             is_mandatory: true,
             type_params: &[],
             cardinality: None,
+            nonempty: false,
         }],
         is_structure_root: false,
         generic_params: &[],
@@ -9793,6 +10690,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "audit",
@@ -9801,6 +10699,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "versions",
@@ -9815,6 +10714,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -9833,6 +10733,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "owner_id",
@@ -9841,6 +10742,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "time_created",
@@ -9849,6 +10751,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "total_version_count",
@@ -9857,6 +10760,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "extract_version_count",
@@ -9865,6 +10769,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "revision_history",
@@ -9873,6 +10778,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "versions",
@@ -9887,6 +10793,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -9905,6 +10812,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "owner_id",
@@ -9913,6 +10821,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "time_created",
@@ -9921,6 +10830,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "total_version_count",
@@ -9929,6 +10839,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "extract_version_count",
@@ -9937,6 +10848,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "revision_history",
@@ -9945,6 +10857,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "versions",
@@ -9959,6 +10872,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -9977,6 +10891,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "owner_id",
@@ -9985,6 +10900,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "time_created",
@@ -9993,6 +10909,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "total_version_count",
@@ -10001,6 +10918,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "extract_version_count",
@@ -10009,6 +10927,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "revision_history",
@@ -10017,6 +10936,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "versions",
@@ -10031,6 +10951,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -10049,6 +10970,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "owner_id",
@@ -10057,6 +10979,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "time_created",
@@ -10065,6 +10988,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "total_version_count",
@@ -10073,6 +10997,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "extract_version_count",
@@ -10081,6 +11006,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "revision_history",
@@ -10089,6 +11015,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "versions",
@@ -10103,6 +11030,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -10128,6 +11056,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "owner_id",
@@ -10136,6 +11065,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "time_created",
@@ -10144,6 +11074,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "total_version_count",
@@ -10152,6 +11083,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "extract_version_count",
@@ -10160,6 +11092,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "revision_history",
@@ -10168,6 +11101,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "versions",
@@ -10182,6 +11116,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
         ],
         is_structure_root: false,
@@ -10203,6 +11138,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "owner_id",
@@ -10211,6 +11147,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "time_created",
@@ -10219,6 +11156,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "total_version_count",
@@ -10227,6 +11165,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "extract_version_count",
@@ -10235,6 +11174,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: true,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "revision_history",
@@ -10243,6 +11183,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                 is_mandatory: false,
                 type_params: &[],
                 cardinality: None,
+                nonempty: false,
             },
             RmAttribute {
                 name: "versions",
@@ -10257,6 +11198,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
+                nonempty: false,
             },
         ],
         is_structure_root: false,

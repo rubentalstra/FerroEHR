@@ -32,7 +32,7 @@ pub struct Action {
     /// Optional globally unique object identifier for root points of archetyped structures.
     pub uid: Option<UidBasedId>,
     /// Links to other archetyped structures (data whose root object inherits from `ARCHETYPED`, such as `ENTRY`, `SECTION` and so on). Links may be to structures in other compositions.
-    pub links: Option<Vec<Link>>,
+    pub links: Option<openehr_base::containers::NonEmptyVec<Link>>,
     /// Details of archetyping used on this node.
     pub archetype_details: Option<Archetyped>,
     /// Audit trail from non-openEHR system of original commit of information forming the content of this node, or from a conversion gateway which has synthesised this node.
@@ -44,7 +44,7 @@ pub struct Action {
     /// Name of character set in which text values in this Entry are encoded. Coded from openEHR Code Set  character sets.
     pub encoding: CodePhrase,
     /// Other participations at `ENTRY` level.
-    pub other_participations: Option<Vec<Participation>>,
+    pub other_participations: Option<openehr_base::containers::NonEmptyVec<Participation>>,
     /// Identifier of externally held workflow engine data for this workflow execution, for this subject of care.
     pub workflow_id: Option<ObjectRef>,
     /// Id of human subject of this `ENTRY`, e.g.:

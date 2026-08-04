@@ -16,16 +16,12 @@ use openehr_base::validate::{InvariantViolation, Validate};
 
 impl Validate for ExtractUpdateSpec {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
+        // `Trigger_events_validity` holds by construction since #1730:
+        // `trigger_events` is `Option<NonEmptyVec<..>>`, so a present list is
+        // non-empty. Only `Overall_validity` needs a runnable check.
         crate::validate::generated::extract_update_spec_core(
             self.repeat_period.is_some(),
             self.trigger_events.is_some(),
-            out,
-        );
-        crate::validate::generated::nonempty_list_core(
-            "EXTRACT_UPDATE_SPEC",
-            "trigger_events",
-            "Trigger_events_validity",
-            self.trigger_events.as_ref().is_some_and(Vec::is_empty),
             out,
         );
     }
@@ -37,7 +33,11 @@ mod tests {
 
     fn spec(
         repeat: bool,
-        triggers: Option<Vec<crate::data_types::text::dv_coded_text::DvCodedText>>,
+        triggers: Option<
+            openehr_base::containers::NonEmptyVec<
+                crate::data_types::text::dv_coded_text::DvCodedText,
+            >,
+        >,
     ) -> ExtractUpdateSpec {
         ExtractUpdateSpec {
             persist_in_server: true,

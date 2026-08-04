@@ -42,7 +42,7 @@ mod tests {
             value: value.to_owned(),
             hyperlink: None,
             formatting: None,
-            mappings: openehr_base::containers::present(Vec::new()),
+            mappings: openehr_base::containers::present_nonempty(Vec::new()),
             language: None,
             encoding: None,
         })
@@ -63,7 +63,7 @@ mod tests {
             value: "event".to_owned(),
             hyperlink: None,
             formatting: None,
-            mappings: openehr_base::containers::present(Vec::new()),
+            mappings: openehr_base::containers::present_nonempty(Vec::new()),
             language: None,
             encoding: None,
             defining_code: code("openehr", "433"),
@@ -75,7 +75,7 @@ mod tests {
             name: text("Encounter"),
             archetype_node_id: "openEHR-EHR-COMPOSITION.encounter.v1".to_owned(),
             uid: None,
-            links: openehr_base::containers::present(Vec::new()),
+            links: openehr_base::containers::present_nonempty(Vec::new()),
             archetype_details: Some(Archetyped {
                 archetype_id: ArchetypeId {
                     value: "openEHR-EHR-COMPOSITION.encounter.v1".to_owned(),
@@ -89,7 +89,7 @@ mod tests {
             category: category(),
             context: None,
             composer: PartyProxy::PartySelf(PartySelf { external_ref: None }),
-            content: openehr_base::containers::present(Vec::new()),
+            content: openehr_base::containers::present_nonempty(Vec::new()),
         }
     }
 

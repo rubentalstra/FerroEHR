@@ -248,6 +248,12 @@ pub(crate) fn excluded(name: &str) -> Option<&'static str> {
         "item_structure/canonical_json/ehr_other_details.json" => {
             reason("RM 1.1-era: ITEM_TREE omits mandatory LOCATABLE.name (RM 1.2)")
         }
+        // Defective per `dv_text.adoc` §Invariants Mappings_valid: a
+        // present-but-empty `name.mappings` — refused at parse since #1730
+        // (Option<NonEmptyVec>); the refusal twin is pinned in nonempty_wire.rs.
+        "folder/canonical_json/flat_folder_insert.json" => reason(
+            "defective: DV_TEXT.mappings present but empty (Mappings_valid; #1730 parse refusal)",
+        ),
         // The repo-authored twin for `folder_with_items.json` corrects that
         // document's identifier defects, but the FOLDER it corrects also carries
         // an RM-1.1-era `details` ITEM_TREE with neither `name` nor

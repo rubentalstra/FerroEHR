@@ -438,3 +438,19 @@ fn a_cluster_without_items_is_refused_by_the_canonical_xml_reader() {
         "the refusal must state the cardinality bound, got: {rendered}"
     );
 }
+
+/// The #1730 optional-list twin (`dv_text.adoc` §Invariants `Mappings_valid`):
+/// a present-but-empty 0..1 list refuses at parse; absent passes. Pins the
+/// corpus adjudication of `flat_folder_insert.json` (`common::excluded`).
+#[test]
+fn a_present_but_empty_optional_nonempty_list_refuses_at_parse() {
+    let refused = openehr_its::json::from_canonical_json::<
+        openehr_rm::data_types::text::dv_text::DvTextData,
+    >(r#"{"_type":"DV_TEXT","value":"x","mappings":[]}"#)
+    .expect_err("Mappings_valid holds by construction (#1730)");
+    assert!(refused.to_string().contains("mappings"), "{refused}");
+    openehr_its::json::from_canonical_json::<openehr_rm::data_types::text::dv_text::DvTextData>(
+        r#"{"_type":"DV_TEXT","value":"x"}"#,
+    )
+    .expect("absent mappings is legal (0..1)");
+}

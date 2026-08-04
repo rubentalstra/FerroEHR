@@ -9,7 +9,7 @@ use crate::common::archetyped::link::Link;
 use crate::common::archetyped::locatable::Locatable;
 use crate::data_types::text::dv_coded_text::DvCodedText;
 use crate::data_types::text::dv_text::DvText;
-use openehr_base::prelude::Iso8601DateTime;
+use crate::foundation_types::time::iso8601_date_time::Iso8601DateTime;
 use openehr_base::prelude::UidBasedId;
 
 /// Single item in generic extract, designed for 13606 and CDA data.
@@ -26,7 +26,7 @@ pub struct GenericContentItem {
     /// Optional globally unique object identifier for root points of archetyped structures.
     pub uid: Option<UidBasedId>,
     /// Links to other archetyped structures (data whose root object inherits from `ARCHETYPED`, such as `ENTRY`, `SECTION` and so on). Links may be to structures in other compositions.
-    pub links: Option<Vec<Link>>,
+    pub links: Option<openehr_base::containers::NonEmptyVec<Link>>,
     /// Details of archetyping used on this node.
     pub archetype_details: Option<Archetyped>,
     /// Audit trail from non-openEHR system of original commit of information forming the content of this node, or from a conversion gateway which has synthesised this node.

@@ -31,7 +31,7 @@ mod tests {
             value: "other care".to_owned(),
             hyperlink: None,
             formatting: None,
-            mappings: openehr_base::containers::present(Vec::new()),
+            mappings: openehr_base::containers::present_nonempty(Vec::new()),
             language: None,
             encoding: None,
             defining_code: CodePhrase {
@@ -49,7 +49,7 @@ mod tests {
             start_time: DvDateTime {
                 normal_status: None,
                 normal_range: None,
-                other_reference_ranges: openehr_base::containers::present(Vec::new()),
+                other_reference_ranges: openehr_base::containers::present_nonempty(Vec::new()),
                 magnitude_status: None,
                 accuracy: None,
                 value: "2021-01-01T09:00:00".to_owned(),
@@ -59,7 +59,7 @@ mod tests {
             setting: setting(),
             other_context: None,
             health_care_facility: None,
-            participations: openehr_base::containers::present(Vec::new()),
+            participations: openehr_base::containers::present_nonempty(Vec::new()),
         }
     }
 

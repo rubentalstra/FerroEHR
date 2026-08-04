@@ -28,7 +28,7 @@ pub struct Person {
     /// Optional globally unique object identifier for root points of archetyped structures.
     pub uid: Option<UidBasedId>,
     /// Links to other archetyped structures (data whose root object inherits from `ARCHETYPED`, such as `ENTRY`, `SECTION` and so on). Links may be to structures in other compositions.
-    pub links: Option<Vec<Link>>,
+    pub links: Option<openehr_base::containers::NonEmptyVec<Link>>,
     /// Details of archetyping used on this node.
     pub archetype_details: Option<Archetyped>,
     /// Audit trail from non-openEHR system of original commit of information forming the content of this node, or from a conversion gateway which has synthesised this node.
@@ -38,7 +38,7 @@ pub struct Person {
     /// Identities used by the party to identify itself, such as legal name, stage names, aliases, nicknames and so on.
     pub identities: openehr_base::containers::NonEmptyVec<PartyIdentity>,
     /// Contacts for this party.
-    pub contacts: Option<Vec<Contact>>,
+    pub contacts: Option<openehr_base::containers::NonEmptyVec<Contact>>,
     /// All other details for this Party.
     pub details: Option<ItemStructure>,
     /// Relationships in which this Party takes part as source.
@@ -48,5 +48,5 @@ pub struct Person {
     /// Languages which can be used to communicate with this actor, in preferred order of use (if known, else order irrelevant).
     pub languages: Option<Vec<DvText>>,
     /// Identifiers of the Version container for each Role played by this Party.
-    pub roles: Option<Vec<PartyRef>>,
+    pub roles: Option<openehr_base::containers::NonEmptyVec<PartyRef>>,
 }

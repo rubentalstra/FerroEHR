@@ -26,7 +26,7 @@ mod tests {
             value: value.to_owned(),
             hyperlink: None,
             formatting: None,
-            mappings: openehr_base::containers::present(Vec::new()),
+            mappings: openehr_base::containers::present_nonempty(Vec::new()),
             language: None,
             encoding: None,
         })
@@ -52,7 +52,7 @@ mod tests {
             name: text("cluster"),
             archetype_node_id: node_id.to_owned(),
             uid: None,
-            links: openehr_base::containers::present(Vec::new()),
+            links: openehr_base::containers::present_nonempty(Vec::new()),
             archetype_details: None,
             feeder_audit: None,
             items: openehr_base::containers::NonEmptyVec::of(element()),

@@ -852,8 +852,8 @@ fn present_empty_lists_are_rejected() {
     let msgs = validate_rm_and_terminology(&empty);
     assert!(
         msgs.iter()
-            .any(|m| m.kind == ValidationKind::Invariant && m.message.contains("Content_valid")),
-        "present-empty content must violate Content_valid, got {msgs:?}"
+            .any(|m| m.message.contains("content") && m.message.contains("at least one member")),
+        "present-empty content must refuse at the typed decode (#1730), got {msgs:?}"
     );
     // A nested SECTION with empty items: Items_valid violation at its path.
     let mut nested = base;
@@ -867,8 +867,9 @@ fn present_empty_lists_are_rejected() {
     );
     let msgs = validate_rm_and_terminology(&nested);
     assert!(
-        msgs.iter()
-            .any(|m| m.message.contains("Items_valid") && m.path.contains("content")),
+        msgs.iter().any(|m| m.message.contains("items")
+            && m.message.contains("at least one member")
+            && m.path.contains("content")),
         "present-empty SECTION.items must violate Items_valid, got {msgs:?}"
     );
 }

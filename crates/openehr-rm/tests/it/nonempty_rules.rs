@@ -2,65 +2,57 @@
     clippy::expect_used,
     reason = "test fixtures/diagnostics — a malformed fixture should fail loudly"
 )]
-//! Pins for the `x /= Void implies not x.is_empty` rules the #1623 register
-//! sweep moved out of the Unrealized bucket: each rule of the generated
-//! `NONEMPTY_LIST_RULES` table refuses a PRESENT-but-empty optional list and
-//! accepts both the absent and the populated forms
-//! (`openehr_rm::validate::nonempty_list_violations`, evaluated at the wire
-//! boundary by `openehr-its`).
+//! Pins for the `x /= Void implies not x.is_empty` invariant family: since
+//! #1730 an OPTIONAL container carrying the invariant emits
+//! `Option<NonEmptyVec<T>>`, so a present-but-empty list is UNREPRESENTABLE
+//! and the strict reader refuses `[]` at parse — these pins retarget the
+//! #1623 behaviour pins from the retired `NONEMPTY_LIST_RULES` evaluator onto
+//! the construction door (the issue's "refusal twins retargeted to
+//! construction/parse" criterion).
 
 use serde_json::json;
 
-/// `(class, attribute, invariant)` — the four rows #1623 re-adjudicated from
-/// Unrealized to the generated core (RM `UML/classes` §Invariants of
-/// `org.openehr.rm.common.party_identified.adoc`,
-/// `org.openehr.rm.common.original_version.adoc`,
-/// `org.openehr.rm.ehr_extract.extract_update_spec.adoc`).
-const REGISTERED: &[(&str, &str, &str)] = &[
-    ("PARTY_IDENTIFIED", "identifiers", "Identifiers_valid"),
-    ("ORIGINAL_VERSION", "attestations", "Attestations_valid"),
-    (
-        "ORIGINAL_VERSION",
-        "other_input_version_uids",
-        "Other_input_version_uids_valid",
-    ),
-    (
-        "EXTRACT_UPDATE_SPEC",
-        "trigger_events",
-        "Trigger_events_validity",
-    ),
-];
-
+/// A representative flipped field per re-adjudicated #1623 row:
+/// `PARTY_IDENTIFIED.identifiers` (RM
+/// `org.openehr.rm.common.party_identified.adoc` §Invariants,
+/// `Identifiers_valid`).
 #[test]
-fn present_but_empty_refuses_absent_and_populated_pass() {
-    for (class, attribute, invariant) in REGISTERED {
-        // A silently-dropped table row fails the violation assertion below,
-        // so table presence needs no direct probe (the table is crate-private
-        // by design — the public seam is `nonempty_list_violations`).
-        let mut out = Vec::new();
-        openehr_rm::validate::nonempty_list_violations(class, &json!({ *attribute: [] }), &mut out);
-        assert!(
-            out.iter()
-                .any(|v| v.message.contains(invariant) && v.message.contains(class)),
-            "{class}.{attribute} = [] must violate {invariant}, got {out:?}"
-        );
+fn present_but_empty_refuses_at_parse_absent_and_populated_pass() {
+    use openehr_rm::common::generic::party_identified::PartyIdentifiedData;
 
-        let mut absent = Vec::new();
-        openehr_rm::validate::nonempty_list_violations(class, &json!({}), &mut absent);
-        assert!(
-            absent.is_empty(),
-            "an ABSENT {class}.{attribute} is legal (0..1), got {absent:?}"
-        );
+    let empty = json!({ "name": "x", "identifiers": [] });
+    let err = openehr_its_free_decode::<PartyIdentifiedData>(&empty)
+        .expect_err("a present-but-empty identifiers list must refuse at parse");
+    assert!(
+        err.contains("identifiers"),
+        "the refusal names the container: {err}"
+    );
 
-        let mut populated = Vec::new();
-        openehr_rm::validate::nonempty_list_violations(
-            class,
-            &json!({ *attribute: [{"_type": "X"}] }),
-            &mut populated,
-        );
-        assert!(
-            populated.is_empty(),
-            "a populated {class}.{attribute} passes this rule, got {populated:?}"
-        );
-    }
+    let absent = json!({ "name": "x" });
+    openehr_its_free_decode::<PartyIdentifiedData>(&absent).expect("absent is legal (0..1)");
+
+    let populated = json!({ "name": "x", "identifiers": [{ "id": "i1" }] });
+    openehr_its_free_decode::<PartyIdentifiedData>(&populated).expect("populated passes");
+}
+
+/// The typed model itself: `Option<NonEmptyVec<..>>` construction has no
+/// empty-present state (the `EXTRACT_UPDATE_SPEC.trigger_events` /
+/// `ORIGINAL_VERSION.attestations` rows share the shape by generation).
+#[test]
+fn the_flipped_shape_is_option_nonemptyvec() {
+    let one = openehr_base::containers::present_nonempty(vec![1_i32]);
+    assert_eq!(one.as_deref().map(<[i32]>::len), Some(1));
+    assert!(
+        openehr_base::containers::present_nonempty::<i32>(Vec::new()).is_none(),
+        "empty input is the ABSENT state, never a present-empty value"
+    );
+}
+
+/// Decode through the crate's own emitted manual serde impls (the same door
+/// `openehr_its::json::from_canonical_value` wraps — openehr-rm is upstream
+/// of the codec crate, so the wrapper is not importable here).
+fn openehr_its_free_decode<T: serde::de::DeserializeOwned>(
+    value: &serde_json::Value,
+) -> Result<T, String> {
+    serde_path_to_error::deserialize(value).map_err(|e| e.to_string())
 }
