@@ -85,6 +85,23 @@ for entry in "${COMPONENTS[@]}"; do
   mkdir -p "$out"
   rsync -a --prune-empty-dirs "${rsync_args[@]}" "$src/" "$out/"
 
+  # The upstream LICENSE rides along verbatim (redistribution keeps the
+  # source's own terms): the spec-docs repos carry CC-BY-SA 3.0, the ITS
+  # artifact repos Apache-2.0. Anything else is unadjudicated — fail loud.
+  if [ ! -f "$src/LICENSE" ]; then
+    echo "ERROR: $name has no LICENSE at $sha — adjudicate before vendoring" >&2
+    exit 1
+  fi
+  cp "$src/LICENSE" "$out/LICENSE"
+  if grep -q "Attribution-ShareAlike 3.0" "$src/LICENSE"; then
+    license="CC-BY-SA 3.0 Unported"
+  elif grep -q "Apache License" "$src/LICENSE"; then
+    license="Apache-2.0"
+  else
+    echo "ERROR: $name LICENSE at $sha is neither CC-BY-SA 3.0 nor Apache-2.0 — adjudicate before vendoring" >&2
+    exit 1
+  fi
+
   # The UML class diagrams the vendored chapters reference (see the header
   # note): derive the file list from the vendored text itself, then take
   # exactly those out of the same pinned checkout.
@@ -154,6 +171,9 @@ for entry in "${COMPONENTS[@]}"; do
 - Source: https://github.com/openEHR/$repo
 - Ref: $ref
 - Commit: \`$sha\`
+- License: $license — the upstream \`LICENSE\` is vendored verbatim alongside
+  this file, from the same pinned commit. Root reference copies:
+  \`LICENSE-CC-BY-SA-3.0\` / \`LICENSE-APACHE-2.0\`.
 - Vendored by: \`scripts/vendor-spec-docs.sh\` (text formats only: ${INCLUDE_EXT[*]})
 $diagram_note
 $figure_note
@@ -183,6 +203,19 @@ cat >"$REQ_OUT/PROVENANCE.md" <<'EOF'
   Communication, Privacy & Security, Medico-legal, Ethical, Consumer/Cultural,
   Evolution) to openEHR features. A requirements-level reference statement;
   it is not a conformance oracle (the released openEHR components are).
+
+## Licensing
+
+The PDF predates the spec repos' CC-BY-SA licensing and carries its own
+2006-era copyright notice (© Copyright openEHR Foundation 2001-2006, all
+rights reserved): reading/printing for private non-commercial use and use
+for non-commercial presentations and education that inform third parties
+about openEHR are permitted, modification is not, and any use must include
+the acknowledgement below. It is redistributed here unmodified, on that
+non-commercial reference basis, with the required acknowledgement:
+
+> © Copyright openEHR Foundation 2001-2006. All rights reserved.
+> www.openEHR.org
 
 Do not hand-edit files under this directory; re-run scripts/vendor-spec-docs.sh.
 EOF

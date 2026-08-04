@@ -3,6 +3,11 @@
 Source: https://github.com/openEHR/specifications-ITS-BMM
 Pinned commit: `37b317396eb9b5f03c4c422296a15bdd665028dd` (master)
 Fetched: 2026-07-04 · Layout: **verbatim upstream `components/`** mirror.
+License: Apache-2.0 (the ITS-BMM repo's `LICENSE`; root reference copy
+`LICENSE-APACHE-2.0`). The one BASE-exception file below comes from
+`specifications-BASE`, whose repo is CC-BY-SA 3.0 — it is the same BMM
+artifact ITS-BMM redistributes under Apache-2.0, vendored from the component
+repo only until ITS-BMM republishes it.
 
 **Exception — BASE 1.3.0 json (2026-07-25):**
 `components/BASE/json/openehr_base_1.3.0.bmm.json` is vendored verbatim from

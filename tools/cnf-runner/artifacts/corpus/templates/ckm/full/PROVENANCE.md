@@ -9,6 +9,14 @@ WebTemplate builder gates. The curated hospital-simulation journey
 pack is the parent directory (its own `PROVENANCE.md`); the slugs here
 are derived from CKM display names and are NOT a naming contract.
 
+## Licensing
+
+CKM publishes no repository-level license; each OPT embeds its source
+archetypes' `licence` metadata (predominantly CC-BY-SA 3.0 where
+stated — see the individual file). Vendored verbatim, so authorship
+and licence metadata ride along; root reference copy:
+`LICENSE-CC-BY-SA-3.0`.
+
 - published by CKM: **306**
 - vendored: **305**
 - unreachable: **1**

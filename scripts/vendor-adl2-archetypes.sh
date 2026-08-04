@@ -33,10 +33,10 @@
 #     grounds the ADL 2 wire cases of the DEFINITION API and gives the 1.4->2
 #     conversion an INDEPENDENT reference (upstream's conversion, not ours).
 #
-# Licensing: the repository carries no top-level LICENSE file; the content is
-# openEHR Foundation test material (openEHR specifications and associated
-# artefacts are published under CC-BY), and individual archetypes may carry
-# their own `licence` field. Recorded as-is, provenance retained.
+# Licensing: the repository carries no top-level LICENSE file (verified
+# 2026-08-04); the content is openEHR Foundation test/reference material, and
+# individual archetypes carry their own `licence` field (predominantly
+# CC-BY-SA 3.0 where stated). Recorded as-is, provenance retained.
 #
 # Usage:
 #   scripts/vendor-adl2-archetypes.sh            # vendor at the pin below
@@ -128,6 +128,12 @@ with open(pathlib.Path(dest) / "PROVENANCE.md", "w") as fh:
     w("The ADL 2 side is NEVER produced by running our own ADL 1.4->2 converter\n")
     w("over CKM output: that converter has no spec basis (our own design) and\n")
     w("would then be validated against its own output.\n\n")
+    w("## Licensing\n\n")
+    w("The upstream repository carries no top-level LICENSE file; individual\n")
+    w("archetypes carry their own `licence` metadata (predominantly CC-BY-SA\n")
+    w("3.0 where stated — see the individual file). openEHR Foundation\n")
+    w("test/reference material, vendored verbatim with metadata retained;\n")
+    w("root reference copy: `LICENSE-CC-BY-SA-3.0`.\n\n")
     w("## Contents\n\n")
     w(f"- ADL 2 archetypes (`*.adls`): **{len(adls)}**\n")
     w(f"- ADL 1.4 twins (`*.adl`): **{len(adl)}**\n")

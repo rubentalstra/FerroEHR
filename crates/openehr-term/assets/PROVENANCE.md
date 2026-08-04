@@ -3,6 +3,9 @@
 - Source: https://github.com/openEHR/specifications-TERM
 - Ref: master (TERM 3.1.0)
 - Commit: `007d0dddcdd77648711681878b54ace021b2fbd5`
+- License: CC-BY-SA 3.0 Unported (the upstream repo's `LICENSE`; root
+  reference copy `LICENSE-CC-BY-SA-3.0`) — redistributed verbatim with
+  attribution.
 - Upstream paths:
   - `computable/XML/{en,es,ja,pt,zh}/openehr_terminology.xml` → `assets/<lang>/openehr_terminology.xml`
   - `computable/XML/openehr_external_terminologies.xml` → `assets/openehr_external_terminologies.xml`
