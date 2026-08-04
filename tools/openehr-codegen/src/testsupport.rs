@@ -569,7 +569,7 @@ pub fn am24_reemit_closure() -> Result<BTreeSet<String>, Error> {
 }
 
 /// One composition's raw downstream re-emission closure — the upstream classes
-/// [`cross_schema_reemit`] reports for crate `key`.
+/// `analyze::cross_schema_reemit` (crate-private) reports for crate `key`.
 ///
 /// Queryable per composition (not just AM 2.4) so the "which compositions have a
 /// non-empty closure, and does the emitter act on it" question is answered from

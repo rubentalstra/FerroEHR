@@ -107,11 +107,12 @@ const SECURITY_SCHEME: &str = "openehr_auth";
                        STABLE bundle) and `http://schemas.openehr.org/v2` (ITS-XML Release-2.0.0, \
                        TRIAL upstream). Every operation whose media type is `application/xml` \
                        accepts a `version` media-type parameter selecting one — \
-                       `Accept: application/xml; version=2` for the response, \
-                       `Content-Type: application/xml; version=2` to declare a request payload. \
-                       Omitting it (or sending `version=1`) means the v1 default, so existing XML \
-                       clients are unaffected; a v2 response is labelled \
-                       `Content-Type: application/xml; version=2`. No openEHR specification \
+                       `Accept: application/xml; version=1` for the response, \
+                       `Content-Type: application/xml; version=1` to declare a request payload. \
+                       Omitting it (or sending `version=2`) means the v2 default — the only \
+                       published lineage whose schemas model the RM 1.2.0 this server serves; a \
+                       non-default v1 response is labelled \
+                       `Content-Type: application/xml; version=1`. No openEHR specification \
                        governs the parameter — the ITS-REST text predates the dual bundles — but \
                        its refusal branches are the released ones: an unrecognized `version` on \
                        `Accept` is `406 Not Acceptable` and on `Content-Type` is `415 Unsupported \

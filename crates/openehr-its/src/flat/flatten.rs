@@ -385,6 +385,26 @@ fn emit_direct_rm_paths(node: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
 /// `/transition`, `/careflow_step` (DV_CODED_TEXT) and the `/_reason:i`
 /// DV_TEXT list (master05 §ISM_TRANSITION). The mirror of
 /// [`crate::flat::build`]'s `build_ism_transition`.
+///
+/// NOTE (the #1719 adjudication — WT careflow children never resolve from the
+/// RM side, and the GENERIC spelling is the spec wire form): `ISM_TRANSITION`
+/// inherits `PATHABLE`, not `LOCATABLE`
+/// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.ism_transition.adoc`
+/// §Inherit), so an RM instance carries no `name`/`archetype_node_id` for a
+/// node-id-specialized web-template careflow child (`ism_transition[at0109,…]`,
+/// ids `intended`/`completed`/…) to match on — template-path predicate
+/// matching is `LOCATABLE`-attribute matching by definition (BASE
+/// `master11-paths` §Name-based Predicate). That is not a resolution gap to
+/// engineer around: the Simplified Formats spec's OWN worked example
+/// (`docs/specs/openehr/ITS-REST/docs/simplified_formats/master05-rm_mapping.adoc`
+/// §ISM_TRANSITION) flattens a careflow-stepped transition
+/// (`careflow_step|code: at0006`, terminology `local`) under the GENERIC
+/// `…/ism_transition/…` path, never under a careflow-state child id. So the
+/// RM→FLAT direction always emits this generic spelling — the careflow step
+/// itself travels as the `/careflow_step` datum — and the FLAT→RM direction
+/// accepts it back ([`crate::flat::build`]'s `DirectPath::Ism`). The
+/// careflow-child spelling remains ACCEPTED on input (vendor Web Templates
+/// emit it — prior art, tolerated, never produced).
 fn emit_ism_transition(ism: &Value, out: &mut SimNode) {
     for attr in ["current_state", "transition", "careflow_step"] {
         if let Some(cs) = ism.get(attr).filter(|v| !v.is_null()) {

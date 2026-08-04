@@ -378,7 +378,7 @@ pub(crate) fn original_version(read: &VersionRead, signer: &Signer) -> Result<Va
 /// already-built (and already-verified) version value, extending the
 /// at-committal list the builder put there when both are present (RM common
 /// master06 §Attestation). A no-op when there are none.
-fn append_after_committal_attestations(ov: &mut Value, after_committal: &[Value]) {
+pub(crate) fn append_after_committal_attestations(ov: &mut Value, after_committal: &[Value]) {
     if after_committal.is_empty() {
         return;
     }

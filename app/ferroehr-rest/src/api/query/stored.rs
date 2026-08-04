@@ -10,7 +10,7 @@
 //! `q`). This module normalizes both into an [`AqlQueryRequest`] and calls the
 //! [`QueryService`] stored seam (`version = None` → latest).
 //!
-//! [`QueryService`]: ferroehr::service::QueryService
+//! [`QueryService`]: ferroehr::service::FerroEhrService
 
 use http::HeaderMap;
 

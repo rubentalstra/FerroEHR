@@ -9,7 +9,7 @@
 //! 'ac' code ('ac' = archetype constraint), and this is bound to queries to one
 //! or more external terminologies, whose result would be a (possibly
 //! structured) value set from that terminology". The query is not part of the
-//! archetype — the archetype "simply hold[s] an identifier for a query; the
+//! archetype — the archetype "simply hold\[s\] an identifier for a query; the
 //! query itself is defined within a 'terminology query server'". AOM 1.4
 //! `AM/docs/AOM1.4/master04-constraint_model_package.adoc` §Reference Objects
 //! says the same from the constraint-model side: a `CONSTRAINT_REF` is "a proxy

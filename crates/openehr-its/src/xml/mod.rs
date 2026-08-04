@@ -28,13 +28,15 @@ pub use runtime::{
 /// lineage, namespace `http://schemas.openehr.org/v1`. `root_tag` is the root
 /// element name (e.g. `"composition"`).
 ///
-/// NOTE: the v1 default is the RELEASED-STABLE ITS-XML lineage. The upstream
-/// repository README marks the 2.0.0 schemas *TRIAL* ("These schemas are in
-/// *TRIAL* state and subject to change") and directs stable consumers to
-/// `Release-1.0.2` — `docs/specs/openehr/ITS-XML/README.adoc` §"Releases and
-/// IM Versions" — which is exactly what the single-pin-but-latest-RELEASED
-/// policy asks a server to emit by default. Use [`to_canonical_xml_ns`] to
-/// serialize the v2 lineage on request.
+/// NOTE: this LIBRARY default is the RELEASED-STABLE ITS-XML lineage (the
+/// upstream repository README marks the 2.0.0 schemas *TRIAL* and directs
+/// stable consumers to `Release-1.0.2` —
+/// `docs/specs/openehr/ITS-XML/README.adoc` §"Releases and IM Versions").
+/// The REST layer chooses its lineage explicitly per request via
+/// [`to_canonical_xml_ns`] and SERVES v2 by default (owner ruling 2026-08-03,
+/// #1666: the v1 bundle cannot describe the RM 1.2.0 the server emits —
+/// register AMB-185); this function is the fixed-lineage convenience for
+/// gates and tools, not the wire default.
 ///
 /// # Errors
 /// Propagates serialization errors.
