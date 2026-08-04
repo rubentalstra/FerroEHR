@@ -18,7 +18,9 @@ pub mod subscription;
 /// binary compiled without the `events` cargo feature is a boot error,
 /// never a silent ignore.
 #[cfg(not(feature = "events"))]
-pub fn require_disabled(cfg: &crate::extensions::events::config::EventsConfig) -> Result<(), String> {
+pub fn require_disabled(
+    cfg: &crate::extensions::events::config::EventsConfig,
+) -> Result<(), String> {
     if cfg.enabled {
         return Err(
             "events.enabled = true, but this binary was built without the \

@@ -554,9 +554,7 @@ fn no_party_node_is_inputless() {
 /// enumerable from the template alone.
 #[test]
 fn unenforceable_constraints_are_reported_not_dropped() {
-    use openehr_its::flat::validation::{
-        UnenforceableReason, unenforceable_existence_constraints,
-    };
+    use openehr_its::flat::validation::{UnenforceableReason, unenforceable_existence_constraints};
 
     let mut seen: Vec<String> = Vec::new();
     for path in opt_files(Path::new("tests/fixtures")) {

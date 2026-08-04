@@ -105,7 +105,14 @@ pub fn build_web_template_am24(
     // terminology (constituents' terminologies live in `component_terminologies`
     // and are switched in as `C_ARCHETYPE_ROOT`s are entered).
     let root_co = CObject::CComplexObject(opt.definition.clone());
-    let mut tree = build_node(&ctx, &opt.terminology, None, &root_co, "");
+    let mut tree = build_node(
+        &ctx,
+        &opt.terminology,
+        None,
+        &root_co,
+        "",
+        shape::Identity::Archetyped,
+    );
     // master04 §"Web Template Metadata": the root `nodeId` is the archetype id
     // (interface form), not the internal concept code.
     tree.node_id = Some(interface_id_of_hrid(&opt.archetype_id));
@@ -251,6 +258,7 @@ fn build_node(
     attr_name: Option<&str>,
     co: &CObject,
     parent_path: &str,
+    identity: shape::Identity,
 ) -> WebTemplateNode {
     // A `C_ARCHETYPE_ROOT` switches the terminology scope to its constituent's
     // for its CHILDREN (OPT2 master03 §Terminology). The root node's OWN rubric
@@ -265,7 +273,7 @@ fn build_node(
         }
         _ => term,
     };
-    let mut node = create_node(ctx, term, child_term, attr_name, co, parent_path);
+    let mut node = create_node(ctx, term, child_term, attr_name, co, parent_path, identity);
     build_children(ctx, child_term, co, &mut node);
     node
 }
@@ -277,9 +285,15 @@ fn create_node(
     attr_name: Option<&str>,
     co: &CObject,
     parent_path: &str,
+    identity: shape::Identity,
 ) -> WebTemplateNode {
+    let archetyped = identity == shape::Identity::Archetyped;
     let rm_type = object_rm_type(co).to_owned();
-    let arch_node_id = object_archetype_node_id(co);
+    let arch_node_id = if archetyped {
+        object_archetype_node_id(co)
+    } else {
+        String::new()
+    };
     let (min, max) = occurrences(object_occurrences(co));
 
     let path = build_path(parent_path, attr_name, &arch_node_id);
@@ -292,7 +306,7 @@ fn create_node(
     node.min = min;
     node.max = max;
 
-    let code = object_node_id(co);
+    let code = if archetyped { object_node_id(co) } else { "" };
     if !code.is_empty() {
         // Resolve the rubric in the introducing artefact's scope first (for a
         // filler root that is the OUTER template terminology, which ADL2
@@ -331,17 +345,43 @@ fn build_children(
             if attr.rm_attribute_name == "name" {
                 continue; // The name attribute names the node (master04 §"Field Identifiers").
             }
+            // The careflow-state alternatives of `ism_transition` collapse into
+            // the one transition node master05 §ISM_TRANSITION maps, so they are
+            // built without their at-code identity (see
+            // [`shape::MERGED_ATTRIBUTE`]).
+            let merged = attr.rm_attribute_name == shape::MERGED_ATTRIBUTE;
+            let identity = if merged {
+                shape::Identity::AttributeOnly
+            } else {
+                shape::Identity::Archetyped
+            };
+            let mut built = Vec::new();
             for child_co in attr.children.iter().flatten() {
                 if is_leaf_ignored(child_co) {
                     continue; // Unfilled slot / proxy: no node.
                 }
-                children.push(build_node(
+                built.push(build_node(
                     ctx,
                     term,
                     Some(&attr.rm_attribute_name),
                     child_co,
                     &node.aql_path,
+                    identity,
                 ));
+            }
+            if merged {
+                if let Some(mut transition) = shape::merge_alternatives(built) {
+                    // The merged node's occurrences are the ATTRIBUTE's — one
+                    // required transition per ACTION instance, not one per
+                    // careflow state. AOM2 leaves `existence` unset unless it
+                    // overrides the RM, where `ACTION.ism_transition` is 1..1.
+                    let (min, max) = attr.existence.as_ref().map_or((Some(1), 1), occ);
+                    transition.min = min;
+                    transition.max = max;
+                    children.push(transition);
+                }
+            } else {
+                children.extend(built);
             }
         }
     }
@@ -865,15 +905,12 @@ fn requires_cardinality(card: &Cardinality, children_count: usize) -> bool {
 
 // ── archetype-conformance constraint capture (validation-only fields) ─────────
 //
-// The am24 front end fills the same validation-only constraint fields the OPT-1.4
-// front end does ([`super::builder`]), so
-// [`crate::flat::validation::validate_archetype_conformance`] runs identically
-// for both dialects. AOM2 expresses these as `C_ATTRIBUTE.existence` /
-// `C_ATTRIBUTE.cardinality` / node-identified `C_OBJECT` alternatives /
-// `ARCHETYPE_SLOT` (AOM2 `AM/docs/AOM2/master02-archetype_definition.adoc`
-// §C_ATTRIBUTE, §ARCHETYPE_SLOT). Captured from the raw `co` (before the shared
-// [`super::shape`] compaction hoists wrappers and re-homes these — by absolute
-// archetype path — onto the surviving parent), so no constraint is lost.
+// The am24 front end fills the same validation-only constraint fields the
+// OPT-1.4 one does, so the archetype-conformance walk runs identically for both
+// dialects. AOM2 expresses them as `C_ATTRIBUTE.existence`/`.cardinality`,
+// node-identified `C_OBJECT` alternatives, and `ARCHETYPE_SLOT` (AOM2
+// `AM/docs/AOM2/master02-archetype_definition.adoc` §C_ATTRIBUTE,
+// §ARCHETYPE_SLOT), captured before compaction hoists wrappers.
 
 /// Capture EVERY constraining `C_ATTRIBUTE.cardinality` (AOM2 §C_ATTRIBUTE:
 /// "Cardinality constraint of attribute, if a container attribute") for the
