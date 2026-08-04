@@ -157,7 +157,15 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
   never drift it. The vendored corpus and the pinned component schemas are
   pinned finding-for-finding in `tests/it/vendor_bmm_schema.rs`: the released
   RM 1.2.0 and AM 1.4.0 schemas genuinely violate §Packages, so those rows are
-  adjudicated, not clean. Class-name
+  adjudicated, not clean. That module's third table covers ALL 18 vendored
+  component ODIN generations — seven materialise, and **eleven are adjudicated
+  refusals of released schemas that reference a class their own inclusion
+  closure does not define** (TERM/RM-1.0.x/LANG-1.0.0 declare no `includes` at
+  all against `master04-syntax.adoc` §Classes for Primitive Types;
+  `BMM_ENUMERATION.item_values: List<T>` names a formal parameter its owner
+  never declares; LANG v3's `EL_CASE.value_constraint: C_OBJECT` reaches into
+  AM). Those are upstream defects, not reader gaps: never loosen a check to
+  make one pass. Class-name
   resolution is case-insensitive (`master04-syntax.adoc` §Non-primitive
   Classes: `name` — "any capitalisation can be used"); embedding depth and
   every other cycle/boundary decision is adjudicated in the module docs, with

@@ -17,9 +17,12 @@
 //! A defect that breaks no `BMM_*` construction surfaces ABOVE the pipeline
 //! instead, in the collecting model-validity pass
 //! (`openehr_lang::bmm_persistence::validate`); its second table
-//! ([`finding_cases`], plus [`PINNED_FINDINGS`] for the openEHR component
-//! schemas this project pins) is adjudicated the same way, and a schema absent
-//! from it must validate clean.
+//! ([`finding_cases`]) is adjudicated the same way, and a schema absent from it
+//! must validate clean.
+//!
+//! A third table ([`pinned_cases`]) covers the openEHR component schemas
+//! `openehr-codegen` vendors — all 18 released generations, each with its class
+//! count + findings or its adjudicated refusal.
 //!
 //! Spec oracle: `docs/specs/openehr/LANG/docs/bmm_persistence/`
 //! (`master02-overview.adoc` §Conceptual Approach for the three stages,
@@ -479,40 +482,241 @@ fn finding_cases() -> Vec<FindingCase> {
     ]
 }
 
-/// The adjudicated findings of the openEHR component schemas this project
-/// pins, as ODIN.
+/// What the pipeline must do with one vendored openEHR component schema.
+enum PinnedOutcome {
+    /// Reads, resolves and materialises: the class count and every
+    /// model-validity finding, in the order the pass emits them.
+    Model(usize, &'static [&'static str]),
+    /// An adjudicated refusal: the stage, the typed discriminant, and a
+    /// substring of the message pinning WHICH element is at fault.
+    Refused(Stage, Kind, &'static str),
+}
+
+/// One row of the pinned-generation outcome table.
+struct PinnedCase {
+    /// Path relative to [`CODEGEN_VENDOR_ODIN`].
+    file: &'static str,
+    /// The adjudicated outcome.
+    outcome: PinnedOutcome,
+    /// The spec ground for the outcome. Documentation for the reader; not
+    /// asserted.
+    #[expect(dead_code, reason = "the adjudication rationale documents the row")]
+    adjudication: &'static str,
+}
+
+/// The schemas offered for inclusion resolution, one file per `schema_id`.
 ///
-/// Only the pinned generations that MATERIALISE from
-/// [`CODEGEN_VENDOR_ODIN`] are listed; the table is explicit (never a filter)
-/// so a schema dropping out of it is a visible change.
-const PINNED_FINDINGS: &[(&str, &[&str], &str)] = &[
-    (
-        "BASE/odin/openehr_base_1.3.0.bmm",
-        &[],
-        "the pinned BASE generation is self-contained and model-valid",
-    ),
-    (
-        "RM/odin/openehr_rm_1.2.0.bmm",
-        &[
-            "class `AUTHORED_RESOURCE` is contained within 2 package listing(s) (org.openehr.base.resource, org.openehr.rm.common.resource); a class must be contained within exactly one package",
-            "class `RESOURCE_DESCRIPTION` is contained within 2 package listing(s) (org.openehr.base.resource, org.openehr.rm.common.resource); a class must be contained within exactly one package",
-            "class `TRANSLATION_DETAILS` is contained within 2 package listing(s) (org.openehr.base.resource, org.openehr.rm.common.resource); a class must be contained within exactly one package",
-            "class `RESOURCE_DESCRIPTION_ITEM` is contained within 2 package listing(s) (org.openehr.base.resource, org.openehr.rm.common.resource); a class must be contained within exactly one package",
-            "class `CODE_PHRASE` is contained within 2 package listing(s) (org.openehr.base.foundation_types.terminology, org.openehr.rm.data_types.text); a class must be contained within exactly one package",
-        ],
-        "RM 1.2.0 includes openehr_base_1.3.0 and both schemas list these five classes in a package of their own, so each is contained twice after the merge — master05-core-model.adoc §Packages",
-    ),
-    (
-        "AM/odin/openehr_am_1.4.0.bmm",
-        &[
-            "class `Cardinality` is contained within 2 package listing(s) (org.openehr.am.aom14.archetype.constraint_model, org.openehr.base.foundation_types.interval); a class must be contained within exactly one package",
-            "class `CARDINALITY` is contained within 2 package listing(s) (org.openehr.am.aom14.archetype.constraint_model, org.openehr.base.foundation_types.interval); a class must be contained within exactly one package",
-            "2 class definitions share one name (Cardinality, CARDINALITY); all classes in a BMM model must be uniquely named",
-            "class `ARCHETYPE` redefines property `uid` as `HIER_OBJECT_ID`, which does not conform to `UUID` as declared by `AUTHORED_RESOURCE`",
-        ],
-        "AM 1.4.0's own CARDINALITY and the included BASE 1.3.0's Cardinality are DIFFERENT classes whose names are equal under master05-core-model.adoc §Naming Convention ('the class name \"Hashable\" refers to the same class as \"HASHABLE\"'), so §Packages' uniqueness rule is violated and the two containment rows are that collision seen through the same case-insensitive fold; separately ARCHETYPE redefines the inherited `uid: UUID` as HIER_OBJECT_ID, which is not a UUID descendant",
-    ),
+/// `LANG/odin/openehr_lang_1.1.0-bmm3.bmm` is deliberately absent: it renders
+/// the same `schema_id` (`openehr_lang_1.1.0`) as the v2.x LANG file, so the
+/// two published files cannot both answer one `includes` entry. The
+/// tie-break is exercised from both sides —
+/// [`am_2_4_0_is_refused_against_either_published_lang_1_1_0_schema`] pins that
+/// neither choice materialises AM 2.4.0.
+const INCLUDE_SOURCES: &[&str] = &[
+    "AM/odin/openehr_am_1.4.0.bmm",
+    "AM/odin/openehr_am_2.2.0.bmm",
+    "AM/odin/openehr_am_2.3.0.bmm",
+    "AM/odin/openehr_am_2.4.0.bmm",
+    "BASE/odin/openehr_base_1.0.4.bmm",
+    "BASE/odin/openehr_base_1.1.0.bmm",
+    "BASE/odin/openehr_base_1.2.0.bmm",
+    "BASE/odin/openehr_base_1.3.0.bmm",
+    "LANG/odin/openehr_lang_1.0.0.bmm",
+    "LANG/odin/openehr_lang_1.1.0.bmm",
+    "RM/odin/openehr_rm_1.0.2.bmm",
+    "RM/odin/openehr_rm_1.0.3.bmm",
+    "RM/odin/openehr_rm_1.0.4.bmm",
+    "RM/odin/openehr_rm_1.1.0.bmm",
+    "RM/odin/openehr_rm_1.2.0.bmm",
+    "TERM/odin/openehr_term_3.0.0.bmm",
+    "TERM/odin/openehr_term_3.1.0.bmm",
 ];
+
+/// The adjudicated outcome of EVERY openEHR component schema `openehr-codegen`
+/// vendors, as ODIN — 18 files, the complete pinned matrix.
+///
+/// Seven materialise; eleven are refused, and each refusal is a first-hand
+/// adjudication that the RELEASED schema references something its own
+/// inclusion closure does not define. The pipeline is fail-fast
+/// (`master02-overview.adoc` §Conceptual Approach), so a refusal row names the
+/// FIRST unresolvable element, not the schema's whole defect set.
+#[expect(
+    clippy::too_many_lines,
+    reason = "one row per vendored component schema; splitting the table hides the pinned matrix"
+)]
+fn pinned_cases() -> Vec<PinnedCase> {
+    vec![
+        PinnedCase {
+            file: "AM/odin/openehr_am_1.4.0.bmm",
+            outcome: PinnedOutcome::Model(
+                110,
+                &[
+                    "class `Cardinality` is contained within 2 package listing(s) (org.openehr.am.aom14.archetype.constraint_model, org.openehr.base.foundation_types.interval); a class must be contained within exactly one package",
+                    "class `CARDINALITY` is contained within 2 package listing(s) (org.openehr.am.aom14.archetype.constraint_model, org.openehr.base.foundation_types.interval); a class must be contained within exactly one package",
+                    "2 class definitions share one name (Cardinality, CARDINALITY); all classes in a BMM model must be uniquely named",
+                    "class `ARCHETYPE` redefines property `uid` as `HIER_OBJECT_ID`, which does not conform to `UUID` as declared by `AUTHORED_RESOURCE`",
+                ],
+            ),
+            adjudication: "AM 1.4.0's own CARDINALITY and the included BASE 1.3.0's Cardinality are DIFFERENT classes whose names are equal under master05-core-model.adoc §Naming Convention ('the class name \"Hashable\" refers to the same class as \"HASHABLE\"'), so §Packages' uniqueness rule is violated and the two containment rows are that collision seen through the same case-insensitive fold; separately ARCHETYPE redefines the inherited `uid: UUID` as HIER_OBJECT_ID, which is not a UUID descendant",
+        },
+        PinnedCase {
+            file: "AM/odin/openehr_am_2.2.0.bmm",
+            outcome: PinnedOutcome::Refused(
+                Stage::Model,
+                Kind::UnknownType,
+                "class `ARCHETYPE` property `rules`: type `STATEMENT`",
+            ),
+            adjudication: "AM 2.2.0 includes openehr_base_1.1.0 and nothing else, yet types ARCHETYPE.rules as List<STATEMENT> — a class published only in the LANG schema. master04-syntax.adoc §Package Definition, second NOTE ('only classes defined in the same schema can be referenced') and §Inclusions make the inclusion list the only way to widen the class pool, and BMM_CONTAINER_TYPE's target roots in a BMM_CLASS, so the reference is unresolvable",
+        },
+        PinnedCase {
+            file: "AM/odin/openehr_am_2.3.0.bmm",
+            outcome: PinnedOutcome::Refused(
+                Stage::Model,
+                Kind::UnknownType,
+                "class `ARCHETYPE` property `rules`: type `STATEMENT_SET`",
+            ),
+            adjudication: "AM 2.3.0 includes openehr_lang_1.0.0, which defines no STATEMENT_SET (that class is published in LANG 1.1.0's beom package); the include therefore names the wrong LANG generation and the reference stays unresolvable",
+        },
+        PinnedCase {
+            file: "AM/odin/openehr_am_2.4.0.bmm",
+            outcome: PinnedOutcome::Refused(
+                Stage::Model,
+                Kind::UnknownType,
+                "class `BMM_ENUMERATION` property `item_values`: type `T`",
+            ),
+            adjudication: "AM 2.4.0 includes openehr_lang_1.1.0 and so inherits that schema's own defect below; against the other published openehr_lang_1.1.0 file it is refused for STATEMENT_SET instead — see am_2_4_0_is_refused_against_either_published_lang_1_1_0_schema",
+        },
+        PinnedCase {
+            file: "BASE/odin/openehr_base_1.0.4.bmm",
+            outcome: PinnedOutcome::Refused(
+                Stage::Model,
+                Kind::UnknownType,
+                "class `P_BMM_SINGLE_PROPERTY_OPEN` property `bmm_property`: type `BMM_OPEN_TYPE`",
+            ),
+            adjudication: "the schema declares no includes and defines no BMM_OPEN_TYPE, yet types P_BMM_SINGLE_PROPERTY_OPEN.bmm_property as BMM_PROPERTY<BMM_OPEN_TYPE>; BMM_GENERIC_TYPE's actual parameters root in BMM_CLASS, so the generic parameter cannot be materialised",
+        },
+        PinnedCase {
+            file: "BASE/odin/openehr_base_1.1.0.bmm",
+            outcome: PinnedOutcome::Model(66, &[]),
+            adjudication: "self-contained (its own primitive_types block) and model-valid",
+        },
+        PinnedCase {
+            file: "BASE/odin/openehr_base_1.2.0.bmm",
+            outcome: PinnedOutcome::Model(71, &[]),
+            adjudication: "self-contained and model-valid",
+        },
+        PinnedCase {
+            file: "BASE/odin/openehr_base_1.3.0.bmm",
+            outcome: PinnedOutcome::Model(72, &[]),
+            adjudication: "the pinned BASE generation is self-contained and model-valid",
+        },
+        PinnedCase {
+            file: "LANG/odin/openehr_lang_1.0.0.bmm",
+            outcome: PinnedOutcome::Refused(
+                Stage::Model,
+                Kind::UnknownType,
+                "class `BMM_ACTION_TABLE` property `items`: type `List`",
+            ),
+            adjudication: "LANG 1.0.0 declares no includes and no primitive_types block, so none of the container and primitive classes it references exists: master04-syntax.adoc §Classes for Primitive Types is explicit that 'all container types such as List<T>, Hash<V,K> etc are exlicit in a BMM schema, and consequently, such types are normally defined ... in a BMM schema'. Every property of the schema is affected; List on BMM_ACTION_TABLE.items is simply the first",
+        },
+        PinnedCase {
+            file: "LANG/odin/openehr_lang_1.1.0.bmm",
+            outcome: PinnedOutcome::Refused(
+                Stage::Model,
+                Kind::UnknownType,
+                "class `BMM_ENUMERATION` property `item_values`: type `T`",
+            ),
+            adjudication: "BMM_ENUMERATION types item_values as List<T> while declaring no generic_parameter_defs, and its only ancestor BMM_CLASS declares none either — the released class doc (org.openehr.lang.bmm.bmm_enumeration.adoc, Inherit: BMM_CLASS, no generic parameter) says the same. bmm_open_type.adoc §Description requires 'The parameter must be in the type declaration of the owning BMM_CLASS', so T is neither an open type nor a class here. This is the schema's ONLY defect: with item_values removed the schema materialises 158 classes",
+        },
+        PinnedCase {
+            file: "LANG/odin/openehr_lang_1.1.0-bmm3.bmm",
+            outcome: PinnedOutcome::Refused(
+                Stage::Model,
+                Kind::UnknownType,
+                "class `EL_CASE` property `value_constraint`: type `C_OBJECT`",
+            ),
+            adjudication: "the v3 LANG schema types EL_CASE.value_constraint as C_OBJECT, an AM AOM2 class, while including only openehr_base_1.3.0; AM includes LANG, so the missing include would also be circular. This is the schema's ONLY defect: with value_constraint removed it materialises 191 classes",
+        },
+        PinnedCase {
+            file: "RM/odin/openehr_rm_1.0.2.bmm",
+            outcome: PinnedOutcome::Refused(
+                Stage::Model,
+                Kind::UnknownType,
+                "class `LOCATABLE` property `archetype_node_id`: type `String`",
+            ),
+            adjudication: "RM 1.0.2 declares no includes and no primitive_types block, so String, List, Integer and every other foundation class it references is undefined; the RM line first declares an include at 1.0.4",
+        },
+        PinnedCase {
+            file: "RM/odin/openehr_rm_1.0.3.bmm",
+            outcome: PinnedOutcome::Refused(
+                Stage::Model,
+                Kind::UnknownType,
+                "class `OBJECT_REF` property `id_namespace`: type `String`",
+            ),
+            adjudication: "the 1.0.3 generation of the same defect",
+        },
+        PinnedCase {
+            file: "RM/odin/openehr_rm_1.0.4.bmm",
+            outcome: PinnedOutcome::Model(
+                206,
+                &[
+                    "class `AUTHORED_RESOURCE` is contained within 2 package listing(s) (org.openehr.base.resource, org.openehr.rm.common.resource); a class must be contained within exactly one package",
+                    "class `RESOURCE_DESCRIPTION` is contained within 2 package listing(s) (org.openehr.base.resource, org.openehr.rm.common.resource); a class must be contained within exactly one package",
+                    "class `TRANSLATION_DETAILS` is contained within 2 package listing(s) (org.openehr.base.resource, org.openehr.rm.common.resource); a class must be contained within exactly one package",
+                    "class `RESOURCE_DESCRIPTION_ITEM` is contained within 2 package listing(s) (org.openehr.base.resource, org.openehr.rm.common.resource); a class must be contained within exactly one package",
+                    "class `OPENEHR_DEFINITIONS` is contained within 2 package listing(s) (org.openehr.base.base_types.definitions, org.openehr.rm.support.definition); a class must be contained within exactly one package",
+                    "class `BASIC_DEFINITIONS` is contained within 2 package listing(s) (org.openehr.base.base_types.definitions, org.openehr.rm.support.definition); a class must be contained within exactly one package",
+                ],
+            ),
+            adjudication: "the first RM generation to declare an include (openehr_base_1.1.0); the six classes it lists in its own packages are listed again by BASE, against master05-core-model.adoc §Packages",
+        },
+        PinnedCase {
+            file: "RM/odin/openehr_rm_1.1.0.bmm",
+            outcome: PinnedOutcome::Model(
+                222,
+                &[
+                    "class `AUTHORED_RESOURCE` is contained within 2 package listing(s) (org.openehr.base.resource, org.openehr.rm.common.resource); a class must be contained within exactly one package",
+                    "class `RESOURCE_DESCRIPTION` is contained within 2 package listing(s) (org.openehr.base.resource, org.openehr.rm.common.resource); a class must be contained within exactly one package",
+                    "class `TRANSLATION_DETAILS` is contained within 2 package listing(s) (org.openehr.base.resource, org.openehr.rm.common.resource); a class must be contained within exactly one package",
+                    "class `RESOURCE_DESCRIPTION_ITEM` is contained within 2 package listing(s) (org.openehr.base.resource, org.openehr.rm.common.resource); a class must be contained within exactly one package",
+                ],
+            ),
+            adjudication: "the same double containment against BASE 1.2.0, less the two definitions classes BASE 1.2.0 no longer duplicates",
+        },
+        PinnedCase {
+            file: "RM/odin/openehr_rm_1.2.0.bmm",
+            outcome: PinnedOutcome::Model(
+                213,
+                &[
+                    "class `AUTHORED_RESOURCE` is contained within 2 package listing(s) (org.openehr.base.resource, org.openehr.rm.common.resource); a class must be contained within exactly one package",
+                    "class `RESOURCE_DESCRIPTION` is contained within 2 package listing(s) (org.openehr.base.resource, org.openehr.rm.common.resource); a class must be contained within exactly one package",
+                    "class `TRANSLATION_DETAILS` is contained within 2 package listing(s) (org.openehr.base.resource, org.openehr.rm.common.resource); a class must be contained within exactly one package",
+                    "class `RESOURCE_DESCRIPTION_ITEM` is contained within 2 package listing(s) (org.openehr.base.resource, org.openehr.rm.common.resource); a class must be contained within exactly one package",
+                    "class `CODE_PHRASE` is contained within 2 package listing(s) (org.openehr.base.foundation_types.terminology, org.openehr.rm.data_types.text); a class must be contained within exactly one package",
+                ],
+            ),
+            adjudication: "RM 1.2.0 includes openehr_base_1.3.0 and both schemas list these five classes in a package of their own, so each is contained twice after the merge — master05-core-model.adoc §Packages",
+        },
+        PinnedCase {
+            file: "TERM/odin/openehr_term_3.0.0.bmm",
+            outcome: PinnedOutcome::Refused(
+                Stage::Model,
+                Kind::UnknownType,
+                "class `CODE` property `description`: type `String`",
+            ),
+            adjudication: "TERM 3.0.0 declares no includes and no primitive_types block, so String, List and Iso8601_date are all undefined; primitives are ordinary class definitions a schema must carry or include (master04-syntax.adoc §Classes for Primitive Types), never implicit",
+        },
+        PinnedCase {
+            file: "TERM/odin/openehr_term_3.1.0.bmm",
+            outcome: PinnedOutcome::Refused(
+                Stage::Model,
+                Kind::UnknownType,
+                "class `CODE` property `description`: type `String`",
+            ),
+            adjudication: "the pinned TERM generation carries the same defect as 3.0.0",
+        },
+    ]
+}
 
 /// Runs the three stages over `path` and returns the observed outcome, or the
 /// stage + error it failed at.
@@ -613,38 +817,143 @@ fn the_finding_table_names_only_schemas_that_materialise() {
     }
 }
 
-#[test]
-fn the_pinned_openehr_odin_schemas_reach_their_adjudicated_findings() {
-    // The schemas docs/VERSIONS.md pins, validated as models rather than just
-    // read: BASE 1.3.0 is clean, and the RM 1.2.0 + AM 1.4.0 findings are
-    // genuine §Packages violations of the released schemas, adjudicated in
-    // PINNED_FINDINGS.
-    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(CODEGEN_VENDOR_ODIN);
-    let read_pinned = |file: &str| -> PBmmSchema {
-        let full = root.join(file);
-        let src = std::fs::read_to_string(&full)
-            .unwrap_or_else(|e| panic!("read {}: {e}", full.display()));
-        read_schema(&src).unwrap_or_else(|e| panic!("{file}: the pinned schema reads: {e}"))
-    };
+/// Reads one file under [`CODEGEN_VENDOR_ODIN`] as a `P_BMM_SCHEMA`.
+fn read_pinned(file: &str) -> PBmmSchema {
+    let full = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join(CODEGEN_VENDOR_ODIN)
+        .join(file);
+    let src =
+        std::fs::read_to_string(&full).unwrap_or_else(|e| panic!("read {}: {e}", full.display()));
+    read_schema(&src).unwrap_or_else(|e| panic!("{file}: the pinned schema reads: {e}"))
+}
+
+/// [`INCLUDE_SOURCES`] keyed by `schema_id`.
+fn pinned_include_map() -> BTreeMap<String, PBmmSchema> {
     let mut available: BTreeMap<String, PBmmSchema> = BTreeMap::new();
-    for (file, _, _) in PINNED_FINDINGS {
-        let schema = read_pinned(file);
-        available.insert(schema.schema_id(), schema);
-    }
-    for (file, claimed, _) in PINNED_FINDINGS {
+    for file in INCLUDE_SOURCES {
         let schema = read_pinned(file);
         let id = schema.schema_id();
-        let resolved = resolve_includes(schema, &available)
-            .unwrap_or_else(|e| panic!("{id}: inclusion resolution: {e}"));
-        let model =
-            create_bmm_model(&resolved).unwrap_or_else(|e| panic!("{id}: materialisation: {e}"));
-        let observed: Vec<String> = validate_schema(&resolved, &model)
-            .iter()
-            .map(ToString::to_string)
-            .collect();
+        assert!(
+            available.insert(id.clone(), schema).is_none(),
+            "{file}: a second inclusion source renders the schema_id {id}"
+        );
+    }
+    available
+}
+
+#[test]
+fn every_pinned_openehr_odin_schema_reaches_its_adjudicated_outcome() {
+    // The complete matrix openehr-codegen vendors, run as models rather than
+    // just read: seven materialise (their class count + §Packages findings
+    // pinned) and eleven are refused where the RELEASED schema references a
+    // class its own inclusion closure does not define.
+    let available = pinned_include_map();
+    for case in pinned_cases() {
+        let schema = read_pinned(case.file);
+        let id = schema.schema_id();
+        let observed = resolve_includes(schema, &available)
+            .map_err(|error| (Stage::Resolve, error))
+            .and_then(|resolved| match create_bmm_model(&resolved) {
+                Ok(model) => {
+                    let findings: Vec<String> = validate_schema(&resolved, &model)
+                        .iter()
+                        .map(ToString::to_string)
+                        .collect();
+                    Ok((
+                        model.class_definitions.as_ref().map_or(0, BTreeMap::len),
+                        findings,
+                    ))
+                }
+                Err(error) => Err((Stage::Model, error)),
+            });
+        match (case.outcome, observed) {
+            (
+                PinnedOutcome::Model(classes, findings),
+                Ok((observed_classes, observed_findings)),
+            ) => {
+                assert_eq!(
+                    observed_classes, classes,
+                    "{id}: class count changed — re-adjudicate before updating"
+                );
+                assert_eq!(
+                    observed_findings, findings,
+                    "{id}: model-validity findings changed — re-adjudicate before updating"
+                );
+            }
+            (PinnedOutcome::Model(..), Err((stage, error))) => {
+                panic!("{id}: expected a model, got {stage:?} error {error}")
+            }
+            (PinnedOutcome::Refused(stage, kind, detail), Err((observed_stage, error))) => {
+                assert_eq!(observed_stage, stage, "{id}: wrong stage");
+                assert_eq!(kind_of(&error), kind, "{id}: wrong error kind");
+                let message = error.to_string();
+                assert!(
+                    message.contains(detail),
+                    "{id}: message {message:?} does not name {detail:?}"
+                );
+            }
+            (PinnedOutcome::Refused(stage, kind, _), Ok((classes, _))) => {
+                panic!("{id}: expected {stage:?} refusal {kind:?}, got a {classes}-class model")
+            }
+        }
+    }
+}
+
+#[test]
+fn the_pinned_table_covers_every_vendored_component_schema() {
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(CODEGEN_VENDOR_ODIN);
+    let mut on_disk: Vec<String> = Vec::new();
+    collect_bmm(&root, &root, &mut on_disk);
+    on_disk.sort();
+    let mut claimed: Vec<String> = pinned_cases()
+        .iter()
+        .map(|case| case.file.to_owned())
+        .collect();
+    claimed.sort();
+    assert_eq!(
+        claimed, on_disk,
+        "the pinned-generation table and the vendored component ODIN schemas disagree"
+    );
+    // Five components × their released generations.
+    assert_eq!(on_disk.len(), 18);
+}
+
+#[test]
+fn am_2_4_0_is_refused_against_either_published_lang_1_1_0_schema() {
+    // openEHR publishes TWO openehr_lang_1.1.0 schemas — the v2.x BMM and the
+    // v3 line — so AM 2.4.0's `includes = <["openehr_lang_1.1.0"]>` names no
+    // unique schema. Neither choice materialises it, and each is refused for a
+    // class the other file defines: master04-syntax.adoc §Inclusions keys an
+    // include by schema id alone, so no third reading exists.
+    for (lang, detail) in [
+        (
+            "LANG/odin/openehr_lang_1.1.0.bmm",
+            "class `BMM_ENUMERATION` property `item_values`: type `T`",
+        ),
+        (
+            "LANG/odin/openehr_lang_1.1.0-bmm3.bmm",
+            "class `ARCHETYPE` property `rules`: type `STATEMENT_SET`",
+        ),
+    ] {
+        let mut available: BTreeMap<String, PBmmSchema> = BTreeMap::new();
+        for file in ["BASE/odin/openehr_base_1.3.0.bmm", lang] {
+            let schema = read_pinned(file);
+            available.insert(schema.schema_id(), schema);
+        }
+        let resolved = resolve_includes(read_pinned("AM/odin/openehr_am_2.4.0.bmm"), &available)
+            .unwrap_or_else(|e| panic!("{lang}: inclusion resolution: {e}"));
+        let error = create_bmm_model(&resolved)
+            .err()
+            .unwrap_or_else(|| panic!("{lang}: AM 2.4.0 unexpectedly materialised"));
         assert_eq!(
-            observed, *claimed,
-            "{id}: model-validity findings changed — re-adjudicate before updating"
+            kind_of(&error),
+            Kind::UnknownType,
+            "{lang}: wrong error kind"
+        );
+        let message = error.to_string();
+        assert!(
+            message.contains(detail),
+            "{lang}: message {message:?} does not name {detail:?}"
         );
     }
 }
