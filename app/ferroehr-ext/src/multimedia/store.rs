@@ -1,8 +1,8 @@
 //! Content-addressed blob store over `object_store`.
 //!
-//! **No openEHR spec governs this — our own design/extension.** Active only
-//! when [`MultimediaConfig::enabled`](super::MultimediaConfig) is set; with the
-//! feature off nothing here is constructed.
+//! **No openEHR spec governs this — our own design/extension.** Constructed
+//! only when the platform enables externalization; off means nothing here is
+//! ever built.
 //!
 //! Blobs are keyed by the lowercase hex SHA-256 of their (unencoded) bytes, so
 //! identical media dedups naturally and a key is immutable — matching openEHR
@@ -20,8 +20,28 @@ use std::sync::Arc;
 use bytes::Bytes;
 use object_store::{ObjectStore, ObjectStoreExt, aws::AmazonS3Builder, path::Path};
 
+use secrecy::{ExposeSecret as _, SecretString};
+
 use super::MultimediaError;
-use super::config::MultimediaConfig;
+
+/// Runtime connection parameters for the S3-compatible backend — supplied by
+/// the platform's config glue (the serde config section stays in the
+/// platform's one config tree).
+#[derive(Debug)]
+pub struct BlobStoreParams {
+    /// S3-compatible endpoint URL; `None` uses default AWS resolution.
+    pub endpoint: Option<String>,
+    /// Target bucket for content-addressed blobs.
+    pub bucket: String,
+    /// AWS region (S3 requires one even for non-AWS endpoints).
+    pub region: String,
+    /// Access key id; `None` with no secret runs the client unsigned.
+    pub access_key_id: Option<String>,
+    /// Secret access key (paired with `access_key_id`); never rendered.
+    pub secret_access_key: Option<SecretString>,
+    /// Allow plain-HTTP endpoints (dev/test only).
+    pub allow_http: bool,
+}
 
 /// The URI scheme our externalized `DV_MULTIMEDIA.uri` values use.
 pub const URI_SCHEME: &str = "s3";
@@ -43,27 +63,27 @@ impl std::fmt::Debug for BlobStore {
 }
 
 impl BlobStore {
-    /// Build an S3-backed blob store from configuration.
+    /// Build an S3-backed blob store from runtime parameters.
     ///
-    /// A keyless config (`is_anonymous`) runs the client unsigned — the mode a
-    /// dev SeaweedFS accepts with no credentials configured.
+    /// A keyless parameter set runs the client unsigned — the mode a dev
+    /// SeaweedFS accepts with no credentials configured.
     ///
     /// # Errors
     /// Returns [`MultimediaError::Config`] if the object_store builder rejects
     /// the settings.
-    pub fn from_config(cfg: &MultimediaConfig) -> Result<Self, MultimediaError> {
+    pub fn from_params(params: BlobStoreParams) -> Result<Self, MultimediaError> {
         let mut builder = AmazonS3Builder::new()
-            .with_bucket_name(&cfg.bucket)
-            .with_region(&cfg.region)
-            .with_allow_http(cfg.allow_http);
-        if let Some(endpoint) = &cfg.endpoint {
+            .with_bucket_name(&params.bucket)
+            .with_region(&params.region)
+            .with_allow_http(params.allow_http);
+        if let Some(endpoint) = &params.endpoint {
             builder = builder.with_endpoint(endpoint);
         }
-        match (&cfg.access_key_id, &cfg.secret_access_key) {
+        match (&params.access_key_id, &params.secret_access_key) {
             (Some(id), Some(secret)) => {
                 builder = builder
                     .with_access_key_id(id)
-                    .with_secret_access_key(secret.expose());
+                    .with_secret_access_key(secret.expose_secret());
             }
             // No credentials → run unsigned/anonymous (dev SeaweedFS).
             _ => builder = builder.with_skip_signature(true),
@@ -73,7 +93,7 @@ impl BlobStore {
             .map_err(|e| MultimediaError::Config(e.to_string()))?;
         Ok(Self {
             inner: Arc::new(store),
-            bucket: cfg.bucket.clone(),
+            bucket: params.bucket,
         })
     }
 

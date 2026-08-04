@@ -96,6 +96,7 @@ pub fn synthesize_value_opt(
     cells: &[MatrixCell],
 ) -> Result<String, SynthError> {
     let row = Row { columns, cells };
+    reject_droppable_list_members(&row)?;
     let (value_children, extra_terms) = match rm_class {
         "DV_DATE" => (build_date(&row), Vec::new()),
         "DV_TIME" => (build_time(&row), Vec::new()),
@@ -499,6 +500,84 @@ fn build_duration(row: &Row<'_>) -> String {
     }
     item.push_str("</item>");
     dv_leaf("DV_DURATION", "value", "DURATION", Some(&item))
+}
+
+/// The list-bearing constraint columns whose members become OPT value-set
+/// entries, and which therefore may not lose one silently.
+const LIST_COLUMNS: &[&str] = &[
+    "C_STRING.list",
+    "C_CODE_PHRASE.code_list",
+    "C_CODE_PHRASE",
+    "C_INTEGER.list",
+    "C_REAL.list",
+];
+
+/// The ordinal/scale list columns, whose cells are authored as
+/// `[<value>|[<terminology>::<code>], …]` text rather than JSON arrays.
+const ORDINAL_LIST_COLUMNS: &[&str] = &[
+    "ordinal_list",
+    "interval_ordinal_list",
+    "lower_c_dv_ordinal_list",
+    "upper_c_dv_ordinal_list",
+];
+
+/// Refuse a row whose list cells carry a member the lenient parsers would
+/// DROP (issue #1853).
+///
+/// A dropped member shrinks the synthesized OPT's value set, so the SUT is
+/// judged against a NARROWER constraint than the row declares — a value the
+/// row expects to be rejected can then be accepted, and the red row accuses
+/// the SUT of the interpreter's omission. The parsers stay lenient (their
+/// callers build XML infallibly); this pre-flight is where the defect
+/// becomes a typed error, once, before any building starts.
+///
+/// # Errors
+/// [`SynthError::Unsupported`] naming the column and the offending member.
+fn reject_droppable_list_members(row: &Row<'_>) -> Result<(), SynthError> {
+    for column in LIST_COLUMNS {
+        let Some(Value::Array(items)) = row.literal(column) else {
+            continue;
+        };
+        if let Some(dropped) = items.iter().find(|v| v.as_str().is_none()) {
+            return Err(SynthError::Unsupported(format!(
+                "{column}: member {dropped} is not a string, so the value set the OPT bakes \
+                 would be SMALLER than the row declares — author every member as a string"
+            )));
+        }
+    }
+    for column in ORDINAL_LIST_COLUMNS {
+        let Some(cell) = row.text(column) else {
+            continue;
+        };
+        if let Some(dropped) = malformed_ordinal_entry(cell) {
+            return Err(SynthError::Unsupported(format!(
+                "{column}: entry {dropped:?} is not `<value>|[<terminology>::<code>]`, so the \
+                 ordinal value set the OPT bakes would be SMALLER than the row declares"
+            )));
+        }
+    }
+    Ok(())
+}
+
+/// The first entry of an authored ordinal-list cell that
+/// [`parse_ordinal_list_cell`] would drop, if any.
+fn malformed_ordinal_entry(cell: &str) -> Option<String> {
+    if cell.trim() == "default" {
+        return None;
+    }
+    let inner = cell
+        .trim()
+        .strip_prefix('[')
+        .and_then(|t| t.strip_suffix(']'))
+        .unwrap_or(cell);
+    inner
+        .split("], ")
+        .find(|entry| {
+            entry
+                .split_once("|[")
+                .is_none_or(|(_, rest)| !rest.trim_end_matches(']').contains("::"))
+        })
+        .map(ToOwned::to_owned)
 }
 
 /// Parse a list cell authored as `[a, b, c]` or a JSON array or a single value.
@@ -1267,6 +1346,118 @@ mod tests {
 
     fn synth(case: &str, rm: &str, c: &[&str], cells: Vec<MatrixCell>) -> String {
         synthesize_value_opt(case, rm, "cnf.tpl.x.r0", &cols(c), &cells).unwrap()
+    }
+
+    /// A list member the lenient parsers would DROP is a typed synthesis
+    /// error, never a silently smaller value set (issue #1853): the OPT would
+    /// bake a NARROWER constraint than the row declares, so a value the row
+    /// expects to be rejected could be accepted and the red row would accuse
+    /// the SUT of the interpreter's omission.
+    #[test]
+    fn a_droppable_list_member_is_a_typed_error() {
+        let cells = vec![
+            MatrixCell::Literal(json!("x")),
+            MatrixCell::Literal(json!(["a", 3])),
+        ];
+        let refused = synthesize_value_opt(
+            "CONT-DV_TEXT-validate_list",
+            "DV_TEXT",
+            "cnf.tpl.x.r0",
+            &cols(&["value", "C_STRING.list"]),
+            &cells,
+        );
+        let Err(SynthError::Unsupported(message)) = refused else {
+            panic!("a non-string list member must not synthesize: {refused:?}");
+        };
+        assert!(message.contains("C_STRING.list"), "{message}");
+        assert!(message.contains("SMALLER"), "{message}");
+
+        // The all-string twin still synthesizes.
+        let cells = vec![
+            MatrixCell::Literal(json!("x")),
+            MatrixCell::Literal(json!(["a", "b"])),
+        ];
+        assert!(
+            synthesize_value_opt(
+                "CONT-DV_TEXT-validate_list",
+                "DV_TEXT",
+                "cnf.tpl.x.r0",
+                &cols(&["value", "C_STRING.list"]),
+                &cells,
+            )
+            .is_ok()
+        );
+
+        // The ordinal half: an entry missing its `|[terminology::code]` tail.
+        let cells = vec![MatrixCell::Literal(json!("[1|[local::at0005], 2]"))];
+        assert!(
+            synthesize_value_opt(
+                "CONT-DV_ORDINAL-validate_list",
+                "DV_ORDINAL",
+                "cnf.tpl.x.r0",
+                &cols(&["ordinal_list"]),
+                &cells,
+            )
+            .is_err()
+        );
+    }
+
+    /// Every committed content row still synthesizes an OPT — the guard the
+    /// new list-member pre-flight needs, and the coverage hole it closes: no
+    /// gate exercised the synthesizer over the catalogue, so a synthesis
+    /// refusal only ever surfaced mid-run as an errored row.
+    #[test]
+    fn every_committed_content_row_synthesizes() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("artifacts");
+        let loaded = crate::artifacts::load_root(&root).expect("the committed artifact root");
+        assert!(
+            loaded.errors.is_empty(),
+            "artifact load: {:?}",
+            loaded.errors
+        );
+        let set = loaded.set;
+        let mut rows = 0_usize;
+        for (_, authored) in &set.cases {
+            if !matches!(authored.kind, crate::vocab::CaseKind::Content) {
+                continue;
+            }
+            // The driver synthesizes a per-row OPT only for a VARYING-
+            // constraint case; a constant-constraint one commits against its
+            // baked template (`driver::provision_synthesized_opt`).
+            if authored
+                .constraint_context
+                .as_ref()
+                .is_none_or(|c| c.constraint_columns.is_empty())
+            {
+                continue;
+            }
+            let case = crate::run::synthesize_content_case(authored);
+            let (Some(rm_class), Some(matrix)) = (
+                case.rm_class.as_deref(),
+                case.parameters.as_ref().and_then(|p| p.matrix.as_ref()),
+            ) else {
+                continue;
+            };
+            let case_id = case.id.to_string();
+            for (row, cells) in matrix.rows.iter().enumerate() {
+                if crate::exec::content_synth::unrealizable_row(rm_class, &matrix.columns, cells)
+                    .is_some()
+                {
+                    continue;
+                }
+                let template_id = crate::exec::recipes::synth_template_id(&case_id, row, cells);
+                let synthesized = crate::exec::content_synth::synthesize_opt(
+                    &case_id,
+                    rm_class,
+                    &template_id,
+                    &matrix.columns,
+                    cells,
+                );
+                assert!(synthesized.is_ok(), "{case_id} row {row}: {synthesized:?}");
+                rows += 1;
+            }
+        }
+        assert!(rows > 100, "the sweep must actually reach the rows: {rows}");
     }
 
     #[test]

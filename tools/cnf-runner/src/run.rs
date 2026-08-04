@@ -850,10 +850,11 @@ pub fn coverage_accounting(set: &ArtifactSet) -> RunReport {
 /// "syntactically invalid header, parameter or content"; a body missing a
 /// member the release's own request-body schema lists as `required:` never
 /// converts, so it cannot reach the 422 branch. The discriminator is the
-/// authored `rm_schema:` clause: an existence/mandatory-attribute breach is
-/// the parse class, while a `rm_schema:` clause about a VALUE's lexical form
-/// (a non-RFC-3986 `DV_URI.value`) converts first and fails afterwards.
+/// authored `rm_schema:` clause.
 fn refused_at_parse(columns: &[String], row: &[serde_json::Value]) -> bool {
+    // NOTE: register AMB-209 is the home of the boundary — a `rm_schema:`
+    // clause about a VALUE's lexical form (a non-RFC-3986 `DV_URI.value`)
+    // converts first, so only the mandatory-attribute class refuses at parse.
     columns
         .iter()
         .position(|column| column == "violates")
@@ -964,7 +965,9 @@ mod tests {
     /// never converts to the resource (`responses/400.yaml`, "syntactically
     /// invalid … content"), while a value that converts and then fails a
     /// constraint, an RM invariant, or its lexical form is the 422 branch
-    /// (`responses/422.yaml`, "could be converted to a resource").
+    /// (`responses/422.yaml`, "could be converted to a resource"). Row 1 is
+    /// the malformed-URI class issue #1899 adjudicated onto the 422 side and
+    /// register AMB-209 records.
     #[test]
     fn a_rejected_row_splits_on_its_violation_class() {
         let case: CaseCore = serde_json::from_value(serde_json::json!({

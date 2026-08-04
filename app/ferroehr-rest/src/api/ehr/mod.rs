@@ -361,7 +361,7 @@ pub(super) struct PendingItemTags {
 /// The release gives the wrapper headers no atomicity semantics at all
 /// (`Requests_and_responses.md` §openehr-item-tag and openehr-version-item-tag
 /// says what the header MEANS and nothing about what happens when it cannot be
-/// honoured), so the ordering is ours (register AMB-204). We refuse first: a
+/// honoured), so the ordering is ours. We refuse first: a
 /// header defect the server can detect without touching storage — a keyless
 /// entry, a key with surrounding whitespace, a set-but-empty value — rejects
 /// the whole request while NOTHING has been committed. Applying the tags after

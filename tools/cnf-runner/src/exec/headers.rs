@@ -256,17 +256,15 @@ fn strip_entity_tag(value: &str) -> &str {
 /// branch_version ]`).
 const VERSION_TREE_ID: &str = r"[1-9][0-9]*(?:\.[0-9]+\.[0-9]+)?";
 
-/// A `creating_system_id` segment: non-empty, free of the `::` separator and
-/// of the quote that closes a weak `ETag`.
-const CREATING_SYSTEM_ID: &str = r#"[^:"]+"#;
-
-/// The `object_id` segment of an `OBJECT_VERSION_ID` — a `uid`, i.e. a UUID,
-/// an ISO OID, or a reverse-domain internet id (BASE `base_types` master05
-/// §Syntaxes: `object_id = uid`, `uid = iso_oid | uuid | internet_id`).
+/// A `uid` — an ISO OID, a UUID, or a reverse-domain internet id (BASE
+/// `base_types` master05 §Syntaxes: `uid = iso_oid | uuid | internet_id`).
 ///
-/// None of the three alternatives admits `:` or `"`, so the fragment is
-/// anchored to its own `::`-delimited segment by construction.
-const OBJECT_ID: &str = concat!(
+/// BOTH composite segments of an `OBJECT_VERSION_ID` the matcher vocabulary
+/// names are this one production — `object_id = uid` and
+/// `creating_system_id = uid` — so they share the fragment. None of the three
+/// alternatives admits `:` or `"`, which anchors it to its own
+/// `::`-delimited segment by construction.
+const UID: &str = concat!(
     r"(?:[0-9A-Fa-f]+(?:-[0-9A-Fa-f]+){4}",
     r"|[0-9]+(?:\.[0-9]+)*",
     r"|(?:[A-Za-z0-9]|[A-Za-z][A-Za-z0-9_-]*[A-Za-z0-9])",
@@ -297,11 +295,10 @@ const ARCHETYPE_HRID: &str = concat!(
 pub fn structural_token(name: &str) -> Option<&'static str> {
     match name {
         "n" => Some(VERSION_TREE_ID),
-        "system_id" => Some(CREATING_SYSTEM_ID),
-        // NOTE: BASE base_types master05 §Syntaxes (`object_id = uid`) — the
-        // container id is server-assigned, so a create-time ETag can only be
-        // asserted as that grammar.
-        "versioned_object_uid" => Some(OBJECT_ID),
+        // NOTE: BASE base_types master05 §Syntaxes — `object_id` and
+        // `creating_system_id` are BOTH `uid`, and neither is spelled by a
+        // request argument (server-assigned / a deployment fact).
+        "system_id" | "versioned_object_uid" => Some(UID),
         // NOTE: AM Identification master03 §Human-readable Identifier (HRID)
         // — the stored template identity is the RESOLVED HRID, which no
         // request argument (a possibly partial prefix) spells.
@@ -480,6 +477,39 @@ mod tests {
         // Not a uid: an empty segment, a leading hyphen, and a segment that
         // swallows the `::` separator.
         for payload in ["::ferroehr.local::1", "-bad::ferroehr.local::1"] {
+            let etag = format!("W/\"{payload}\"");
+            let bad = response(&[("etag", etag.as_str())]);
+            assert_eq!(
+                evaluate(&e, &bad, &ctx(), &VarStore::default()).len(),
+                1,
+                "{payload} is not a released uid form"
+            );
+        }
+    }
+
+    /// `creating_system_id` is the SAME `uid` production as `object_id`
+    /// (BASE `base_types` master05 §Syntaxes), so the emitting system's id is
+    /// asserted as that grammar rather than as "any `::`-free text".
+    #[test]
+    fn system_id_token_is_the_released_uid_grammar() {
+        let e = expectation(&serde_json::json!({ "ETag": "pattern:W/\"<system_id>\"" }));
+        for system_id in [
+            "ferroehr.local",
+            "openEHRSys.example.com",
+            "uk.nhs.ehr1",
+            "1.2.840.113554",
+            "8849182c-82ad-4088-a07f-48ead4180515",
+        ] {
+            let etag = format!("W/\"{system_id}\"");
+            let ok = response(&[("etag", etag.as_str())]);
+            assert!(
+                evaluate(&e, &ok, &ctx(), &VarStore::default()).is_empty(),
+                "{system_id} is a released uid form"
+            );
+        }
+        // A `::`-carrying segment (the composite, not one part of it), a
+        // quote-carrying one, and text that is no uid at all.
+        for payload in ["a::b", "sys\\\"tem", "not a uid!", ""] {
             let etag = format!("W/\"{payload}\"");
             let bad = response(&[("etag", etag.as_str())]);
             assert_eq!(

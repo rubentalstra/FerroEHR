@@ -951,15 +951,21 @@ impl FerroEhrService {
     /// [`SmError`] when the configured multimedia engine fails to expand a
     /// reference (e.g. the external object store is unreachable).
     pub async fn expand_multimedia(&self, body: Value) -> Result<Value, SmError> {
-        // Off by default: no engine ⇒ serve the stored form unchanged.
-        let Some(engine) = &self.multimedia else {
-            return Ok(body);
-        };
-        let mut body = body;
-        engine
-            .expand(&mut body)
-            .await
-            .map_err(|e| internal_fault("expand a multimedia reference", &e))?;
+        // Off by default: no engine (or a slim build) serves the stored form
+        // unchanged.
+        #[cfg(feature = "multimedia")]
+        {
+            let Some(engine) = &self.multimedia else {
+                return Ok(body);
+            };
+            let mut body = body;
+            engine
+                .expand(&mut body)
+                .await
+                .map_err(|e| internal_fault("expand a multimedia reference", &e))?;
+            Ok(body)
+        }
+        #[cfg(not(feature = "multimedia"))]
         Ok(body)
     }
 }

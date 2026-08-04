@@ -625,7 +625,7 @@ pub(crate) async fn admin_template_delete(
 /// `Post_query_deleted: not has_query (a_query_name)` — so it removes every
 /// version of the query, whereas this route removes exactly one
 /// `(name, version)` row and leaves the query's other versions in place. The
-/// SM operation therefore stays unrealized on this server (register AMB-127);
+/// SM operation therefore stays unrealized on this server;
 /// naming it here would be a false claim.
 #[utoipa::path(
     delete, path = "/admin/query/{qualified_query_name}/{version}", tag = "ADMIN",

@@ -6278,7 +6278,7 @@ pub(crate) async fn contribution_get(
 // released `ItemTagOf*` examples' unanimous `{namespace: local, type: SYSTEM}`
 // shape carrying the server's system identifier — no demographic RM class
 // declares a `tags` containment, so nothing released fixes the owner of an
-// EHR-less tag; the position is register-documented (AMB-137).
+// EHR-less tag; the position is register-documented.
 
 /// List `ITEM_TAG`s across the whole Demographic space
 /// (`GET /demographic/tags`).

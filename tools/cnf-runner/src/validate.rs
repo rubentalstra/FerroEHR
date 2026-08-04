@@ -2686,6 +2686,21 @@ fn consumed_with_keys(
     consumed
 }
 
+/// The case whose FLOW the step-level gates judge.
+///
+/// An authored flow is judged as written. A CONTENT case authors no flow at
+/// all — `crate::run::synthesize_content_case` turns its decision table into
+/// the generate→commit→expect flow the driver actually runs — so the gates
+/// judge that synthesis instead of skipping the case, which is how a content
+/// case's one driven step used to escape both of them (issue #1903).
+fn driven_case(case: &CaseCore) -> std::borrow::Cow<'_, CaseCore> {
+    if matches!(case.kind, CaseKind::Content) {
+        std::borrow::Cow::Owned(crate::run::synthesize_content_case(case))
+    } else {
+        std::borrow::Cow::Borrowed(case)
+    }
+}
+
 /// The binding `crate::exec::driver` would select for `step`, mirroring its
 /// variant resolution: an explicitly named variant when one exists, otherwise
 /// the bare binding.
@@ -2732,13 +2747,14 @@ fn step_binding<'a>(
 /// wildcarded, so the whole class was run-time-only.
 ///
 /// Two deliberate boundaries, because an accusation must be certain. The gate
-/// judges AUTHORED flows only — a content case's flow is synthesized at run
-/// time (`crate::run::synthesize_content_case`) and provisioning drives no
-/// matcher, so neither is enumerable here. And it counts a `with:` key by
-/// NAME, though the driver promotes only scalar-valued ones, since which
-/// value an argument resolves to is a runtime property.
+/// judges the flow the driver runs ([`driven_case`], so content cases are
+/// included) but not provisioning, which drives no matcher. And it counts a
+/// `with:` key by NAME, though the driver promotes only scalar-valued ones,
+/// since which value an argument resolves to is a runtime property.
 fn check_matcher_placeholders(set: &ArtifactSet, findings: &mut Vec<Finding>) {
-    for (_, case) in &set.cases {
+    for (_, authored) in &set.cases {
+        let driven = driven_case(authored);
+        let case = driven.as_ref();
         let Some(anchor) = &case.sm_operation else {
             continue;
         };
@@ -2755,7 +2771,12 @@ fn check_matcher_placeholders(set: &ArtifactSet, findings: &mut Vec<Finding>) {
             {
                 let mut in_scope = captured.clone();
                 in_scope.extend(step.with_entries().iter().map(|(key, _)| key.clone()));
-                for kind in step_observable_kinds(case, step) {
+                // One accusation per (step, outcome, placeholder): a fixture
+                // set or matrix that expects the same kind on many rows
+                // observes it once.
+                let kinds: BTreeSet<OutcomeKind> =
+                    step_observable_kinds(case, step).into_iter().collect();
+                for kind in kinds {
                     let Some(expectation) = binding.outcome(kind) else {
                         continue; // reported by binding-completeness
                     };
@@ -2814,7 +2835,9 @@ fn check_matcher_placeholders(set: &ArtifactSet, findings: &mut Vec<Finding>) {
 /// A step whose binding is `unrealized` is skipped — nothing is driven, so
 /// nothing can be vacuous; its case is not-applicable with the citation.
 fn check_step_arguments(set: &ArtifactSet, findings: &mut Vec<Finding>) {
-    for (_, case) in &set.cases {
+    for (_, authored) in &set.cases {
+        let driven = driven_case(authored);
+        let case = driven.as_ref();
         let Some(anchor) = &case.sm_operation else {
             continue;
         };
@@ -3203,6 +3226,88 @@ mod matcher_placeholder_tests {
     fn minted_handles_and_step_arguments_are_in_scope() {
         assert!(findings_for("ehr_id", false).is_empty());
         assert!(findings_for("composition", false).is_empty());
+    }
+
+    /// A CONTENT case authors no flow — the driver runs
+    /// `crate::run::synthesize_content_case`'s generate→commit→expect flow —
+    /// so both step-level gates judge THAT (issue #1903). `content_path` is
+    /// the create binding's request path: dropping `{ehr_id}` from it makes
+    /// the synthesized `with.ehr_id` unread, which is the `step-arguments`
+    /// half of the same escape.
+    fn content_world(placeholder: &str, content_path: &str) -> ArtifactSet {
+        let binding: OperationBinding = serde_json::from_value(serde_json::json!({
+            "sm_operation": "I_EHR_COMPOSITION.create_composition",
+            "its": "its-rest",
+            "request": { "method": "POST", "path": content_path, "body": "composition" },
+            "outcomes": {
+                "created": {
+                    "status": 201,
+                    "headers": { "ETag": format!("pattern:W/\"<{placeholder}>::<system_id>::1\"") }
+                },
+                "validation_failed": { "status": 422 }
+            }
+        }))
+        .unwrap();
+        let case: CaseCore = serde_json::from_value(serde_json::json!({
+            "id": "CONT-X-validate_open", "kind": "content", "component": "CONTENT",
+            "rm_class": "DV_COUNT",
+            "test_purpose": "t", "description": "d", "spec_refs": [],
+            "constraint_context": {
+                "template": "cnf.content.minimal",
+                "path": "/content[at0001]",
+                "constraint_columns": []
+            },
+            "decision_table": {
+                "columns": ["magnitude", "expected", "violates"],
+                "rows": [[1, "accepted", []]]
+            }
+        }))
+        .unwrap();
+        let mut set = ArtifactSet::default();
+        set.bindings.push((PathBuf::from("b.yaml"), binding));
+        set.cases.push((PathBuf::from("c.yaml"), case));
+        set
+    }
+
+    #[test]
+    fn a_content_cases_synthesized_flow_is_judged_by_both_step_gates() {
+        let clean = content_world("versioned_object_uid", "/ehr/{ehr_id}/composition");
+        let mut findings = Vec::new();
+        check_matcher_placeholders(&clean, &mut findings);
+        check_step_arguments(&clean, &mut findings);
+        assert!(findings.is_empty(), "{findings:?}");
+
+        // The matcher half: an unresolvable placeholder on the outcome the
+        // synthesized step expects.
+        let mut findings = Vec::new();
+        check_matcher_placeholders(
+            &content_world("no_such_name", "/ehr/{ehr_id}/composition"),
+            &mut findings,
+        );
+        assert_eq!(findings.len(), 1, "{findings:?}");
+        let finding = findings.first().unwrap();
+        assert_eq!(finding.check, CheckId::MatcherPlaceholder);
+        assert!(
+            finding.message.contains("<no_such_name>"),
+            "{}",
+            finding.message
+        );
+
+        // The argument half: the synthesized `with.ehr_id` reaches no request
+        // form once the path stops naming it.
+        let mut findings = Vec::new();
+        check_step_arguments(
+            &content_world("versioned_object_uid", "/composition"),
+            &mut findings,
+        );
+        assert_eq!(findings.len(), 1, "{findings:?}");
+        let finding = findings.first().unwrap();
+        assert_eq!(finding.check, CheckId::StepArguments);
+        assert!(
+            finding.message.contains("`with.ehr_id`"),
+            "{}",
+            finding.message
+        );
     }
 }
 

@@ -232,7 +232,7 @@ pub(crate) struct ItemTagHeaderEntry {
 /// worked example (`Requests_and_responses.md` §openehr-item-tag and
 /// openehr-version-item-tag), which shows quoted values and both separators
 /// but defines no escaping and no quoting rules. Treating a quoted run as
-/// opaque is OUR reading of that example (register AMB-203), and it is the only
+/// opaque is OUR reading of that example, and it is the only
 /// reading under which the section's own `target_path="/composition/start_time/value"`
 /// token has a defined meaning when a path contains a separator.
 fn split_item_tag_entries(input: &str) -> Vec<&str> {

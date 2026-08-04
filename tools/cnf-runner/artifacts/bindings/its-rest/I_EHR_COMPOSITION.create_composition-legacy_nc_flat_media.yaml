@@ -34,4 +34,15 @@ format_headers:
     Content-Type: application/openehr.nc.flat+json   # the LEGACY ECISFLAT media type under test
     openehr-template-id: required
 outcomes:
+  created:
+    # The SUPPORTED branch of the AMB-61 option pair: a server that declares
+    # the legacy type accepts the commit like any other simplified-format
+    # body. Resources.md §Data representation permits the support ("other
+    # alternative formats MAY be supported as well"), so the branch is real
+    # and needs its own declared outcome, not an absence.
+    status: 201                           # 201_COMPOSITION.yaml
+    headers:
+      ETag: { match: 'pattern:W/"<versioned_object_uid>::<system_id>::1"', applies: { its_rest: ">=1.1.0" } }
+      Location: present
+      Content-Type: negotiated
   unsupported_media: { status: 415 }      # Resources.md §Simplified Formats 415 MUST

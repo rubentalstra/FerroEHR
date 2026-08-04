@@ -136,9 +136,7 @@ impl FerroEhrService {
         //
         // The invariants and the `target_path: ""` normalization are the EHR
         // family's, called rather than restated: one implementation of each,
-        // so the two families cannot diverge (register AMB-96 says the
-        // normalization is "applied identically on the EHR and demographic
-        // families" — this is what makes that structurally true).
+        // so the two families cannot diverge.
         let target = match target_version {
             Some(version) => UidBasedId::ObjectVersionId(version.clone()),
             // A bare container key is a UUID by type, so the conversion is
@@ -258,7 +256,7 @@ fn party_item_tag(system_id: &str, row: &tag_repo::TagRow) -> Result<ItemTag, Se
 /// The `ITEM_TAG.owner_id` of a demographic (ehr-less) tag — the `OBJECT_REF`
 /// `{namespace: local, type: SYSTEM}` of every released
 /// `schemas/demographic/ItemTagOf<T>.yaml` example, whose `id` carries the
-/// server's configured system identifier (register AMB-137). One function so
+/// server's configured system identifier. One function so
 /// the shape a tag is VALIDATED under is the shape it is SERVED under.
 ///
 /// # Errors

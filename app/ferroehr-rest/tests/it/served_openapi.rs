@@ -888,7 +888,7 @@ async fn demographic_item_tag_operations_are_fully_documented() {
         assert_eq!(
             first["owner_id"]["type"], "SYSTEM",
             "GET {path} 200 example's owner_id follows the released \
-             local/SYSTEM shape (register AMB-137)"
+             local/SYSTEM shape"
         );
         let retrieved = op["responses"]["200"]["description"]
             .as_str()

@@ -961,8 +961,7 @@ async fn contribution_preserves_the_client_change_type_and_rejects_invalid_combo
         ),
         "creation on an existing object is the UNASSIGNED mirror of the \
          released 400_CONTRIBUTION trigger (which is directional: 'first \
-         version of a MODIFICATION') — the register-documented 422 \
-         (AMB-54, narrowed); got {bad_creation:?}"
+         version of a MODIFICATION') — the adjudicated 422; got {bad_creation:?}"
     );
 
     // Invalid code: not a member of the audit_change_type group
@@ -1679,8 +1678,7 @@ async fn item_tag_put_replaces_the_whole_collection() {
         );
     }
     // …and the ACCEPTING twins: a bare key, a key with a real value, and an
-    // empty `target_path` (register AMB-96: `""` normalizes to ABSENT, so it is
-    // the same identity as no path at all — never a second tag).
+    // empty `target_path`.
     let accepted = svc
         .target_tags_replace(
             ehr_uuid,
