@@ -556,8 +556,11 @@ pub(in crate::service) fn validate_ehr_access(
                 .to_owned(),
         ));
     }
-    // NOTE: `settings` is excluded from the whole-instance RM pass, and only
-    // from it. `EHR_ACCESS.settings` is the RM's one implementation-defined
+    // NOTE (owner-ruled 2026-08-03, #1694 family 10; #1624): `settings` is
+    // excluded from the whole-instance RM pass, and only from it — the one
+    // RM-mandated OPEN slot, approved as a permanent Value exception; no
+    // emitter change (an open emitter representation is what the open slot
+    // IS), no register row (spec-grounded, not silent). `EHR_ACCESS.settings` is the RM's one implementation-defined
     // slot — "Instance is a subtype of the type `ACCESS_CONTROL_SETTINGS`,
     // allowing for the use of different access control schemes"
     // (`RM/docs/UML/classes/org.openehr.rm.ehr.ehr_access.adoc` §Attributes) —

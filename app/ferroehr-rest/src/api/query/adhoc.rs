@@ -8,7 +8,7 @@
 //! (`POST`, `AdhocQueryExecute`); this module normalizes both into an
 //! [`AqlQueryRequest`] and calls the [`QueryService`] ad-hoc seam.
 //!
-//! [`QueryService`]: ferroehr::service::QueryService
+//! [`QueryService`]: ferroehr::service::FerroEhrService
 
 use openehr_its::rest::generated::query::{AdhocQueryExecute, QueryExecuteAdhocQueryParams};
 use openehr_its::rest::runtime::ApiError;

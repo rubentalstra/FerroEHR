@@ -3,7 +3,7 @@
 //!
 //! **No openEHR spec governs this — our own design/extension.** Gate: the
 //! connector's routes are config-gated in `ferroehr-rest`; the outbound emitter
-//! behind [`FhirOutboundConfig`](super::FhirOutboundConfig).
+//! behind [`FhirOutboundConfig`](super::config::FhirOutboundConfig).
 //!
 //! The exact inverse of [`build_flat`](super::mapping::build_flat): the
 //! COMPOSITION is flattened to the same FLAT map

@@ -70,14 +70,14 @@
 //! (OPT 1.4 / ADL2 templates via `vo_version.template_id` → `template_ref`,
 //! `stored_query`) are NOT carried — they are provisioned through the
 //! DEFINITION API and must pre-exist (a COMPOSITION referencing an absent
-//! template fails its FK on load, reported per EHR). Demographic parties (ehr-less versioned objects) and
-//! `vo_attestation` rows are out of this EHR-scoped dump; a whole-repository
-//! back-up would need a demographic dump wave (deferred).
-//! TODO(#1685): carry the `vo_attestation` rows (with their `at_committal`
-//! flag) — an at-committal attestation is inside the version's signed canonical
-//! form (RM common master06 §Digital Signature: "serialising the entire Version
-//! object"), so restoring the version's `signature` without its attestations
-//! leaves a restored version whose signature cannot verify.
+//! template fails its FK on load, reported per EHR). Demographic parties
+//! (ehr-less versioned objects) are out of this EHR-scoped dump; a
+//! whole-repository back-up would need a demographic dump wave (deferred).
+//! `vo_attestation` rows ARE carried, with their `at_committal` flag — an
+//! at-committal attestation is inside the version's signed canonical form
+//! (RM common master06 §Digital Signature: "serialising the entire Version
+//! object"), so a restored version's stored `signature` verifies only if its
+//! attestations restore with it.
 //! The verbatim version-row re-persist is a storage seam
 //! ([`crate::storage::version_repo::import::insert_version_verbatim`]); this module
 //! keeps the archive format and orchestration.
@@ -159,6 +159,28 @@ struct EhrRecord {
     folder_ranks: Vec<FolderRankRow>,
     item_tags: Vec<ItemTagRow>,
     archives: Vec<ArchiveRow>,
+    /// Every `vo_attestation` row of the EHR's versioned objects (RM common
+    /// master06 §Attestation), in commit order. `default` tolerates archives
+    /// dumped before attestations were carried (#1685).
+    #[serde(default)]
+    attestations: Vec<AttestationRow>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct AttestationRow {
+    id: Uuid,
+    vo_id: VoId,
+    sys_version: i32,
+    contribution_id: Uuid,
+    /// `ATTESTATION.time_committed` as an RFC 3339 instant (the same lossless
+    /// `jiff` rendering [`AuditRow::time_committed`] uses).
+    time_committed: String,
+    /// Whether the ATTESTATION was on the VERSION at committal and is
+    /// therefore inside its signed canonical form (RM common master06
+    /// §Attestation / §Digital Signature).
+    at_committal: bool,
+    /// The canonical `ATTESTATION` fragment, verbatim.
+    data: Value,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -605,15 +627,21 @@ fn version_entry_name(version_uid: &str) -> Result<String, SmError> {
 /// common master06 §Version and its Subtypes: `VERSION.commit_audit` 1..1) —
 /// used only for a locally created version; an imported one renders the WRAPPED
 /// original's own foreign provenance instead (§Committal and Audits).
-/// Attestations are absent because this EHR-scoped dump carries no
-/// `vo_attestation` rows at all (the module docs).
+/// `attestations` are the version's [`AttestationRow`]s: the at-committal ones
+/// render inside the built (signed) form and the after-committal ones append
+/// outside it — the same split the served read makes (RM common master06
+/// §Attestation / §Digital Signature; #1685).
 ///
 /// # Errors
 /// [`ServiceError::Internal`] when the archived audit carries a commit time
 /// that is not an RFC 3339 instant, or an imported record's wrapped original is
 /// missing a mandatory `VERSION` attribute; the [`AuditInput::canonical`]
 /// rejection when the committer is not a canonical `PARTY_PROXY`.
-fn original_version_envelope(v: &VersionRecord, audit: &AuditRow) -> Result<Value, ServiceError> {
+fn original_version_envelope(
+    v: &VersionRecord,
+    audit: &AuditRow,
+    attestations: &[&AttestationRow],
+) -> Result<Value, ServiceError> {
     // Same discipline as the version read-back: an archived
     // `other_input_version_uids` that does not decode is a corrupt record, not
     // an absent merge list — restoring the version without its merge inputs
@@ -687,7 +715,17 @@ fn original_version_envelope(v: &VersionRecord, audit: &AuditRow) -> Result<Valu
             v.signature.clone(),
         )
     };
-    build_original_version(&OriginalVersionParts {
+    let at_committal: Vec<Value> = attestations
+        .iter()
+        .filter(|a| a.at_committal)
+        .map(|a| a.data.clone())
+        .collect();
+    let after_committal: Vec<Value> = attestations
+        .iter()
+        .filter(|a| !a.at_committal)
+        .map(|a| a.data.clone())
+        .collect();
+    let mut ov = build_original_version(&OriginalVersionParts {
         creating_system_id: &v.creating_system_id,
         vo_id: v.vo_id,
         tree,
@@ -697,12 +735,11 @@ fn original_version_envelope(v: &VersionRecord, audit: &AuditRow) -> Result<Valu
         commit_audit: &commit_audit,
         lifecycle_state: &v.lifecycle_state,
         data: &v.body,
-        // The archive carries no `vo_attestation` rows, so no version document
-        // can render an `attestations` list (module docs).
-        attestations: &[],
+        attestations: &at_committal,
         signature: signature.as_deref(),
-    })
-    .map_err(Into::into)
+    })?;
+    crate::versioning::wire::append_after_committal_attestations(&mut ov, &after_committal);
+    Ok(ov)
 }
 
 /// Serialize an `ORIGINAL_VERSION` envelope as a canonical-XML document under
@@ -796,10 +833,15 @@ fn externalize_version_documents(
         // the loop below rewrites `record.versions`.
         let audits: std::collections::HashMap<Uuid, &AuditRow> =
             record.audits.iter().map(|a| (a.id, a)).collect();
+        let all_attestations = &record.attestations;
         for v in &mut record.versions {
             if v.body.is_null() {
                 continue;
             }
+            let attestation_rows: Vec<&AttestationRow> = all_attestations
+                .iter()
+                .filter(|a| a.vo_id == v.vo_id && a.sys_version == v.sys_version)
+                .collect();
             let audit = audits.get(&v.audit_id).ok_or_else(|| {
                 SmError::exception(format!(
                     "version {} of {} names commit audit {}, which the exported record does not \
@@ -807,7 +849,7 @@ fn externalize_version_documents(
                     v.sys_version, v.vo_id, v.audit_id
                 ))
             })?;
-            let envelope = original_version_envelope(v, audit)?;
+            let envelope = original_version_envelope(v, audit, &attestation_rows)?;
             let document = version_document(&v.kind, &envelope)?;
             let name = version_entry_name(&object_version_id(
                 v.vo_id,
@@ -1309,6 +1351,31 @@ impl FerroEhrService {
             });
         }
 
+        let attestation_rows = sqlx::query(
+            "SELECT id, vo_id, sys_version, contribution_id, time_committed, at_committal, \
+             data FROM vo_attestation \
+             WHERE vo_id IN (SELECT DISTINCT vo_id FROM vo_version WHERE ehr_id = $1) \
+             ORDER BY vo_id, sys_version, time_committed, id",
+        )
+        .bind(ehr_id)
+        .fetch_all(&self.pool)
+        .await?;
+        let mut attestations = Vec::with_capacity(attestation_rows.len());
+        for r in attestation_rows {
+            attestations.push(AttestationRow {
+                id: r.try_get("id")?,
+                vo_id: r.try_get("vo_id")?,
+                sys_version: r.try_get("sys_version")?,
+                contribution_id: r.try_get("contribution_id")?,
+                time_committed: r
+                    .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
+                    .to_jiff()
+                    .to_string(),
+                at_committal: r.try_get("at_committal")?,
+                data: r.try_get("data")?,
+            });
+        }
+
         Ok(EhrRecord {
             ehr,
             audits,
@@ -1317,6 +1384,7 @@ impl FerroEhrService {
             folder_ranks,
             item_tags,
             archives,
+            attestations,
         })
     }
 
@@ -1359,6 +1427,8 @@ impl FerroEhrService {
         for v in &record.versions {
             insert_version(&mut tx, ehr_id, v).await?;
         }
+
+        load_attestations(&mut tx, &record.attestations).await?;
 
         // The load re-decomposed the EHR_STATUS versions directly, so the
         // promoted `ehr` columns are re-derived from the loaded current status
@@ -1490,6 +1560,37 @@ async fn insert_ehr_row(tx: &mut PgConnection, ehr: &EhrRow) -> Result<(), Servi
         }
         ServiceError::Database(e)
     })?;
+    Ok(())
+}
+
+/// Re-persist the archived `vo_attestation` rows verbatim, once their FK
+/// targets (the version and contribution rows) exist — an at-committal
+/// attestation is inside the version's signed canonical form (RM common
+/// master06 §Digital Signature), so a restore without them would break
+/// `verify_on_read` on the restored version (#1685).
+///
+/// # Errors
+/// The underlying insert failure as [`ServiceError::Database`].
+async fn load_attestations(
+    tx: &mut PgConnection,
+    attestations: &[AttestationRow],
+) -> Result<(), ServiceError> {
+    for a in attestations {
+        sqlx::query(
+            "INSERT INTO vo_attestation (id, vo_id, sys_version, contribution_id, \
+             time_committed, at_committal, data) \
+             VALUES ($1, $2, $3, $4, $5::timestamptz, $6, $7)",
+        )
+        .bind(a.id)
+        .bind(a.vo_id)
+        .bind(a.sys_version)
+        .bind(a.contribution_id)
+        .bind(&a.time_committed)
+        .bind(a.at_committal)
+        .bind(&a.data)
+        .execute(&mut *tx)
+        .await?;
+    }
     Ok(())
 }
 

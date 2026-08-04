@@ -957,3 +957,58 @@ fn bogus_action_segment_is_still_rejected() {
         "the rejection is an UnknownPath naming the offending segment: {err}"
     );
 }
+
+/// The #1719 adjudication pinned on the wire: a careflow-stepped
+/// `ISM_TRANSITION` flattens to the GENERIC `…/ism_transition/…` spelling —
+/// the form master05 §ISM_TRANSITION's own worked example uses
+/// (`careflow_step|code: at0006`, terminology `local`) — never to a
+/// careflow-state WT-child id, because `ISM_TRANSITION` inherits PATHABLE and
+/// carries no `name`/`archetype_node_id` for such a child to match on
+/// (RM `ism_transition.adoc` §Inherit). Round-trip both directions.
+#[test]
+fn careflow_stepped_ism_transition_flattens_to_the_generic_master05_spelling() {
+    let wt = minimal_action_wt();
+    let mut flat = minimal_action_flat();
+    // A careflow-stepped transition, spelled exactly as the master05 example.
+    flat.insert(
+        "minimal/minimal:0/ism_transition/careflow_step|code".to_owned(),
+        Value::String("at0006".into()),
+    );
+    flat.insert(
+        "minimal/minimal:0/ism_transition/careflow_step|value".to_owned(),
+        Value::String("transition".into()),
+    );
+    flat.insert(
+        "minimal/minimal:0/ism_transition/careflow_step|terminology".to_owned(),
+        Value::String("local".into()),
+    );
+
+    let rm = composition_from_flat(&flat, &wt, NOW).expect("from_flat");
+    assert_eq!(
+        rm.pointer("/content/0/ism_transition/careflow_step/defining_code/code_string")
+            .and_then(Value::as_str),
+        Some("at0006"),
+        "the careflow step builds onto ISM_TRANSITION.careflow_step"
+    );
+    assert!(
+        rm.pointer("/content/0/ism_transition/archetype_node_id")
+            .is_none(),
+        "no LOCATABLE identity is stamped on a PATHABLE (RM ism_transition.adoc §Inherit)"
+    );
+
+    let flat_again = composition_to_flat(&rm, &wt).expect("to_flat");
+    assert_eq!(
+        flat_again
+            .get("minimal/minimal:0/ism_transition/careflow_step|code")
+            .and_then(Value::as_str),
+        Some("at0006"),
+        "RM→FLAT emits the generic master05 spelling: {:?}",
+        flat_again.keys().collect::<Vec<_>>()
+    );
+    let rm2 = composition_from_flat(&flat_again, &wt, NOW).expect("from_flat again");
+    assert_eq!(
+        rm.pointer("/content/0/ism_transition"),
+        rm2.pointer("/content/0/ism_transition"),
+        "the careflow-stepped ism_transition is round-trip stable"
+    );
+}

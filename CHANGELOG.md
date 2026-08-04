@@ -17,6 +17,7 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- EHR Extract import now enforces the copy closure (RM common master06 §Copying): a received branch version is refused with `400` unless its fork-point trunk version and same-branch predecessor travel in the same extract or are already stored (#1770).
 - **FOLDER (DIRECTORY) resources can now carry ITEM_TAGs.** ITS-REST overview
   `Requests_and_responses.md` §openehr-item-tag and openehr-version-item-tag
   names FOLDER among the change-controlled resources the wrapper headers
@@ -74,6 +75,13 @@ workflow refuses a tag that has no matching section here.
   `I_EHR_EXTRACT_SERVICE.export_ehr_extracts-latest_across_lineages`.
 
 ### Fixed
+
+- The admin EHR dump/load archive now carries every `vo_attestation` row (with its `at_committal` flag), and load re-persists them verbatim — a restored version keeps its attestations and its stored signature verifies under `verify_on_read = strict` (#1685).
+- **A node id carrying the at/id code leader but failing the code grammar is
+  refused (`at0abc`).** AOM2's own code predicate is leader-based, so such a
+  string claims code-hood and must satisfy the code syntax — previously it
+  fell between the code family (whose grammar it fails) and the free-text
+  family (whose leader-freedom it lacks) and no rule caught it.
 
 - **The `OPTIONS /` conformance manifest serves the generated contract DTO,
   and the System API group joins the authorization and audit classifiers.**
@@ -424,6 +432,7 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **BREAKING (v1-pinned XML consumers):** the default canonical-XML lineage served for `application/xml` is now the ITS-XML **v2** namespace (`http://schemas.openehr.org/v2`) — the only published schema bundle that models the RM 1.2.0 this server emits. The v1 lineage stays selectable per request with `Accept: application/xml; version=1` (a non-default v1 response is labelled `Content-Type: application/xml; version=1`). Request payloads are unaffected — both namespaces are read regardless (#1666).
 - **An `ITEM_TAG` whose key or value violates its own RM invariants is now
   refused when the payload is read, not after it is built.** RM
   `UML/classes/org.openehr.rm.common.item_tag.adoc` §Invariants states

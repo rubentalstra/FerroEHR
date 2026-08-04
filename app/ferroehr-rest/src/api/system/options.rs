@@ -16,7 +16,7 @@
 //!
 //! The response body is the GENERATED contract DTO
 //! (`openehr_its::rest::generated::system::Options`, #1822) — no hand wire
-//! shape survives; [`OptionsDoc`] below is the utoipa DOCUMENTATION
+//! shape survives; `OptionsDoc` below is the utoipa DOCUMENTATION
 //! projection only (never serialized on the wire), pinned field-lockstep to
 //! the generated DTO by `options_doc_matches_the_generated_dto`. The handler
 //! stays hand-written like every group's (the generated traits are the

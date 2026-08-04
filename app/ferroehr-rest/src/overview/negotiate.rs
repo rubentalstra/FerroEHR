@@ -39,10 +39,13 @@
 //! (`Release-2.0.0v2`, TRIAL upstream); see
 //! `docs/specs/openehr/ITS-XML/README.adoc` §"Releases and IM Versions".
 //! A client selects one per request with a media-type parameter on the XML
-//! type — `Accept: application/xml; version=2` for the response,
-//! `Content-Type: application/xml; version=2` to declare a request payload.
-//! Absent (or `version=1`) means the v1 default, so an existing XML client
-//! sees no drift whatsoever.
+//! type — `Accept: application/xml; version=1` for the response,
+//! `Content-Type: application/xml; version=1` to declare a request payload.
+//! Absent (or `version=2`) means the v2 default — the only published lineage
+//! whose schemas model the RM 1.2.0 this server serves (owner ruling
+//! 2026-08-03, #1666; the v1 bundle lacks 50 concrete RM classes, register
+//! AMB-185), so the default a schema-validating client receives actually
+//! validates.
 //!
 //! NOTE: no openEHR spec governs this — our own design/extension. The
 //! ITS-REST text predates the dual bundles: `Resources.md` §XML Format
@@ -262,15 +265,15 @@ fn choose(
 /// Parameter names are case-insensitive (RFC 9110 §8.3.1).
 const XML_VERSION_PARAM: &str = "version";
 
-/// `application/xml` labelled with the non-default v2 lineage — the response
-/// `Content-Type` when v2 was negotiated, so a client is told which lineage it
+/// `application/xml` labelled with the non-default v1 lineage — the response
+/// `Content-Type` when v1 was negotiated, so a client is told which lineage it
 /// received rather than having to sniff the root `xmlns`.
-const APPLICATION_XML_V2: &str = "application/xml; version=2";
+const APPLICATION_XML_V1: &str = "application/xml; version=1";
 
 /// What the `version` parameter of ONE media range says about the lineage.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum XmlLineage {
-    /// No `version` parameter: the default (v1) lineage.
+    /// No `version` parameter: the default (v2) lineage.
     Default,
     /// A recognized lineage selector.
     Selected(Namespace),
@@ -345,13 +348,13 @@ fn best_xml_range(accept: &str) -> Option<&str> {
 /// design/extension — so nothing released is bent either way.
 pub(crate) fn accept_xml_namespace(headers: &HeaderMap) -> Option<Namespace> {
     let Some(accept) = header_str(headers, header::ACCEPT) else {
-        return Some(Namespace::V1);
+        return Some(Namespace::V2);
     };
     let Some(range) = best_xml_range(&accept) else {
-        return Some(Namespace::V1);
+        return Some(Namespace::V2);
     };
     match xml_lineage_of(range) {
-        XmlLineage::Default => Some(Namespace::V1),
+        XmlLineage::Default => Some(Namespace::V2),
         XmlLineage::Selected(ns) => Some(ns),
         XmlLineage::Unrecognized => None,
     }
@@ -384,7 +387,7 @@ pub(crate) fn require_known_xml_lineage(headers: &HeaderMap) -> Result<(), ApiEr
         XmlLineage::Default | XmlLineage::Selected(_) => Ok(()),
         XmlLineage::Unrecognized => Err(ApiError::UnsupportedMediaType(format!(
             "canonical XML is served in the openEHR ITS-XML lineages \
-             `version=1` (default) and `version=2`, got {declared}"
+             `version=1` and `version=2` (default), got {declared}"
         ))),
     }
 }
@@ -1210,10 +1213,11 @@ pub(crate) fn xml_body(status: StatusCode, xml: String) -> Response {
 
 /// Serve a canonical-XML RM document, labelling the ITS-XML lineage it carries.
 ///
-/// The default (v1) response `Content-Type` is exactly `application/xml` —
-/// byte-identical to what every XML client has always received — and only the
-/// negotiated v2 response adds the `version=2` parameter, so the client that
-/// asked for the non-default lineage is told it got it. Either way the media
+/// The default (v2) response `Content-Type` is exactly `application/xml`, and
+/// only the negotiated non-default v1 response adds the `version=1` parameter,
+/// so the client that asked for the non-default lineage is told it got it
+/// (owner ruling 2026-08-03, #1666: v2 is the served default — the only
+/// published lineage whose schemas model the RM 1.2.0 this server serves). Either way the media
 /// type itself is `application/xml`, which is what `Resources.md` §XML Format
 /// makes a MUST ("Proper header `Content-Type: application/xml` MUST be
 /// present in the response of the service unless the response has no content
@@ -1223,8 +1227,8 @@ fn xml_body_ns(status: StatusCode, xml: String, ns: Namespace) -> Response {
     resp.headers_mut().insert(
         header::CONTENT_TYPE,
         HeaderValue::from_static(match ns {
-            Namespace::V1 => APPLICATION_XML,
-            Namespace::V2 => APPLICATION_XML_V2,
+            Namespace::V1 => APPLICATION_XML_V1,
+            Namespace::V2 => APPLICATION_XML,
         }),
     );
     resp
@@ -1648,10 +1652,10 @@ mod tests {
 
         assert_eq!(
             accept_xml_namespace(&HeaderMap::new()),
-            Some(Namespace::V1),
-            "no Accept at all is the v1 default"
+            Some(Namespace::V2),
+            "no Accept at all is the v2 default (#1666)"
         );
-        assert_eq!(ns("application/xml"), Some(Namespace::V1));
+        assert_eq!(ns("application/xml"), Some(Namespace::V2));
         assert_eq!(ns("application/xml; version=1"), Some(Namespace::V1));
         assert_eq!(ns("application/xml; version=2"), Some(Namespace::V2));
         assert_eq!(ns("application/xml;version=2"), Some(Namespace::V2));
@@ -1659,12 +1663,12 @@ mod tests {
         assert_eq!(ns("text/xml; version=2"), Some(Namespace::V2));
         assert_eq!(
             ns("*/*"),
-            Some(Namespace::V1),
+            Some(Namespace::V2),
             "a wildcard names no lineage, so the default stands"
         );
         assert_eq!(
             ns("application/json"),
-            Some(Namespace::V1),
+            Some(Namespace::V2),
             "a JSON-only Accept leaves the XML default in place"
         );
         // The highest-q XML range carries the governing parameter.
@@ -1673,13 +1677,13 @@ mod tests {
             Some(Namespace::V2)
         );
         assert_eq!(
-            ns("application/xml;version=2;q=0.2, application/xml;q=0.9"),
-            Some(Namespace::V1)
+            ns("application/xml;version=1;q=0.2, application/xml;q=0.9"),
+            Some(Namespace::V2)
         );
         // …and a q=0 rejection does not get to choose the lineage.
         assert_eq!(
-            ns("application/xml;version=2;q=0, application/xml"),
-            Some(Namespace::V1)
+            ns("application/xml;version=1;q=0, application/xml"),
+            Some(Namespace::V2)
         );
         for unknown in [
             "application/xml; version=3",
@@ -1695,8 +1699,9 @@ mod tests {
         }
     }
 
-    /// `Accept: application/xml; version=2` serves the v2 lineage and labels
-    /// it; a bare `application/xml` is unchanged (v1, bare `Content-Type`).
+    /// A bare `application/xml` serves the v2 default (owner ruling
+    /// 2026-08-03, #1666); `Accept: application/xml; version=1` selects the
+    /// non-default v1 lineage and labels it.
     #[tokio::test]
     async fn respond_rm_serves_the_negotiated_xml_lineage() {
         async fn body_of(accept: &str) -> (Option<String>, StatusCode, String) {
@@ -1721,24 +1726,24 @@ mod tests {
         assert_eq!(
             ct.as_deref(),
             Some(APPLICATION_XML),
-            "the default response Content-Type is unchanged"
+            "the default response Content-Type carries no version parameter"
         );
-        assert!(xml.contains(V1_NS), "default lineage is v1: {xml}");
-
-        let (ct, status, xml) = body_of("application/xml; version=2").await;
-        assert_eq!(status, StatusCode::OK);
-        assert_eq!(
-            ct.as_deref(),
-            Some(APPLICATION_XML_V2),
-            "a v2 response names the lineage it carries"
-        );
-        assert!(xml.contains(V2_NS), "negotiated lineage is v2: {xml}");
+        assert!(xml.contains(V2_NS), "default lineage is v2 (#1666): {xml}");
         assert!(!xml.contains(V1_NS), "v1 namespace not declared: {xml}");
 
         let (ct, status, xml) = body_of("application/xml; version=1").await;
         assert_eq!(status, StatusCode::OK);
+        assert_eq!(
+            ct.as_deref(),
+            Some(APPLICATION_XML_V1),
+            "a v1 response names the non-default lineage it carries"
+        );
+        assert!(xml.contains(V1_NS), "negotiated lineage is v1: {xml}");
+
+        let (ct, status, xml) = body_of("application/xml; version=2").await;
+        assert_eq!(status, StatusCode::OK);
         assert_eq!(ct.as_deref(), Some(APPLICATION_XML));
-        assert!(xml.contains(V1_NS), "explicit v1 is the default: {xml}");
+        assert!(xml.contains(V2_NS), "explicit v2 is the default: {xml}");
     }
 
     /// An `Accept` naming a lineage this server does not serve is an aspect of

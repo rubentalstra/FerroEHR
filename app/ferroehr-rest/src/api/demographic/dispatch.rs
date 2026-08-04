@@ -3,7 +3,7 @@
 //! `openehr_its::rest::generated::demographic::ROUTES` (from the vendored
 //! `demographic.openapi.yaml`, via the `mount` adapter) and the native
 //! `utoipa-axum` `PARTY_RELATIONSHIP` extension router
-//! ([`relationship_routes`](super::relationship_routes)) are both routed onto
+//! ([`relationship_routes`](super::relationship::relationship_routes)) are both routed onto
 //! this one dispatcher. It classifies the
 //! operation id and forwards to the resource module: [`party`](super::party),
 //! [`tags`](super::tags), [`versioned_party`](super::versioned_party),

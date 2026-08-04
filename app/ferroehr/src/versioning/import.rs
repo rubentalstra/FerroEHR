@@ -208,6 +208,86 @@ pub(crate) async fn commit_demographic_import(
     Ok(())
 }
 
+/// Enforce the copy closure on one received container (#1770; RM common
+/// master06 §Copying L275: branch versions "cannot be copied without their
+/// corresponding preceding versions on the same branch (if any) and trunk
+/// versions also being copied"). The rule binds the SENDER, but a
+/// receiver-side check is the only way this repository keeps the invariant
+/// its own read semantics rely on (`version_at` answers from the trunk chain
+/// — a branch-only container has no as-of answer at all). Each branch version
+/// requires its same-branch predecessor and its fork-point trunk version, in
+/// THIS import or already stored (Case-3 appends).
+///
+/// # Errors
+/// [`ServiceError::BadRequest`] naming the missing fork-point trunk or
+/// same-branch predecessor; [`ServiceError`] on a storage probe failure.
+async fn enforce_copy_closure(
+    tx: &mut PgConnection,
+    container: &ImportContainer,
+) -> Result<(), ServiceError> {
+    for version in &container.versions {
+        let (trunk_version, branch_number, branch_version) = version.tree.columns();
+        if branch_number == 0 {
+            continue;
+        }
+        let in_set = |sys: &str, t: i32, b: i32, bv: i32| {
+            container.versions.iter().any(|v| {
+                let (vt, vb, vbv) = v.tree.columns();
+                v.creating_system_id == sys && vt == t && vb == b && vbv == bv
+            })
+        };
+        // (a) The fork-point trunk version (same creating system).
+        if !in_set(&version.creating_system_id, trunk_version, 0, 0)
+            && !crate::storage::version_repo::import::has_version_tree(
+                tx,
+                container.vo_id,
+                &version.creating_system_id,
+                trunk_version,
+                0,
+                0,
+            )
+            .await?
+        {
+            return Err(ServiceError::BadRequest(format!(
+                "the extract violates the copy closure (RM common master06 §Copying): \
+                 branch version {}::{}::{} arrives without its fork-point trunk \
+                 version {trunk_version} (neither in the extract nor already stored)",
+                container.vo_id, version.creating_system_id, version.tree
+            )));
+        }
+        // (b) The same-branch predecessor, when one must exist.
+        if branch_version > 1
+            && !in_set(
+                &version.creating_system_id,
+                trunk_version,
+                branch_number,
+                branch_version - 1,
+            )
+            && !crate::storage::version_repo::import::has_version_tree(
+                tx,
+                container.vo_id,
+                &version.creating_system_id,
+                trunk_version,
+                branch_number,
+                branch_version - 1,
+            )
+            .await?
+        {
+            return Err(ServiceError::BadRequest(format!(
+                "the extract violates the copy closure (RM common master06 §Copying): \
+                 branch version {}::{}::{} arrives without its same-branch \
+                 predecessor (branch version {}) — neither in the extract nor \
+                 already stored",
+                container.vo_id,
+                version.creating_system_id,
+                version.tree,
+                branch_version - 1
+            )));
+        }
+    }
+    Ok(())
+}
+
 /// NOTE (local temporal periods, master06 §Copying): all versions of an
 /// imported container are committed in the single local import act, so they get
 /// a synthetic strictly-increasing local `sys_period` chain (base = import time,
@@ -258,6 +338,7 @@ async fn commit_import_scoped(
         if container.versions.is_empty() {
             continue;
         }
+        enforce_copy_closure(tx, &container).await?;
         // Version-tree order; reject a duplicated version identity within one
         // import (the identity tuple is {object_id, creating_system_id,
         // version_tree_id} — master06 §Distributed Versioning).

@@ -442,7 +442,8 @@ async fn xml_response_lineage_is_negotiated_by_the_version_parameter() {
     assert_eq!(status, StatusCode::CREATED);
     let ehr_id = etag_uid(&headers).expect("ETag carries the new ehr_id");
 
-    // Default (bare `application/xml`): the v1 lineage, bare Content-Type.
+    // Default (bare `application/xml`): the v2 lineage (owner ruling
+    // 2026-08-03, #1666), bare Content-Type.
     let (status, headers, xml) = send(app.clone(), read(&ehr_id, "application/xml")).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(
@@ -450,21 +451,21 @@ async fn xml_response_lineage_is_negotiated_by_the_version_parameter() {
         "application/xml"
     );
     assert!(
-        xml.contains("xmlns=\"http://schemas.openehr.org/v1\""),
-        "the default XML response stays v1: {xml}"
+        xml.contains("xmlns=\"http://schemas.openehr.org/v2\""),
+        "the default XML response is v2 (#1666): {xml}"
     );
 
-    // Negotiated v2: the v2 root namespace, and the response says so.
+    // Negotiated non-default v1: the v1 root namespace, and the response says so.
     let (status, headers, xml) =
-        send(app.clone(), read(&ehr_id, "application/xml; version=2")).await;
+        send(app.clone(), read(&ehr_id, "application/xml; version=1")).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(
         headers.get(header::CONTENT_TYPE).unwrap(),
-        "application/xml; version=2"
+        "application/xml; version=1"
     );
     assert!(
-        xml.contains("xmlns=\"http://schemas.openehr.org/v2\""),
-        "the negotiated XML response is v2: {xml}"
+        xml.contains("xmlns=\"http://schemas.openehr.org/v1\""),
+        "the negotiated XML response is v1: {xml}"
     );
 
     // A lineage this server does not serve cannot be fulfilled → 406.
