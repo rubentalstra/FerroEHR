@@ -107,7 +107,7 @@ Conformance Statement and Certificate.
 - **Change events** — a transactional outbox publishes every commit to
   AMQP/RabbitMQ with per-EHR ordering, filterable server-side
   subscriptions, and PHI-free payloads by default
-- **FHIR R4 connectors** — bidirectional and mapping-driven: ingest FHIR
+- **FHIR R4B connectors** — bidirectional and mapping-driven: ingest FHIR
   resources as validated compositions with full provenance, expose
   committed data through a FHIR read façade, emit FHIR resources on change
 - **Binary & object storage** — large multimedia is content-addressed into

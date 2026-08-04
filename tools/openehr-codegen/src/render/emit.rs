@@ -565,7 +565,7 @@ fn emit_lib(
          ///\n\
          /// The pin is emitted by `openehr-codegen` from the vendored inputs and is\n\
          /// deliberately independent of the crates.io package version, which is the\n\
-         /// crate's own SemVer line and moves only with this implementation's code.\n\
+         /// crate's own `SemVer` line and moves only with this implementation's code.\n\
          pub const SPEC_VERSION: &str = \"{spec_version}\";\n",
     ));
     GenFile {

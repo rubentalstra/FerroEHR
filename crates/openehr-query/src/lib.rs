@@ -27,6 +27,6 @@ pub mod printer;
 /// The openEHR specification version this crate implements.
 ///
 /// The pin is deliberately independent of the crates.io package version,
-/// which is the crate's own SemVer line and moves only with this
+/// which is the crate's own `SemVer` line and moves only with this
 /// implementation's code.
 pub const SPEC_VERSION: &str = "1.1.0";

@@ -1,5 +1,5 @@
 //! `FhirTerminologyProvider` wire-contract tests,
-//! driven by `wiremock` — a hermetic FHIR R4 terminology server: canned
+//! driven by `wiremock` — a hermetic FHIR R4B terminology server: canned
 //! `$validate-code`/`$expand`/`$subsumes`/`$lookup` responses + fault injection
 //! (timeout, `5xx`, malformed). No network.
 

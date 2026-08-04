@@ -5,7 +5,7 @@
 //! The request path only [`AuditSender::emit`]s (a `try_send`, never blocking
 //! or awaiting). The drain task optionally enriches the patient subject
 //! (background only — never on the request path), renders the record — the
-//! FHIR R4 `AuditEvent` (IHE BALP, [`super::fhir`]) and/or the DICOM PS3.15
+//! FHIR R4B `AuditEvent` (IHE BALP, [`super::fhir`]) and/or the DICOM PS3.15
 //! §A.5 XML ([`super::message`]) — and delivers it:
 //!
 //! - **store** (`[audit.store]`, the durability anchor): the record is

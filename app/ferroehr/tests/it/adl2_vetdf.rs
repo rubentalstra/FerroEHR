@@ -4,7 +4,7 @@
 //! An uploaded archetype whose external SNOMED CT term binding the (mocked)
 //! FHIR terminology server does not know (`CodeSystem/$lookup` → `404`) is
 //! rejected `422` with the VETDF rule code; one the server knows (`200`) is
-//! accepted. The terminology backend is a hermetic `wiremock` FHIR R4 server —
+//! accepted. The terminology backend is a hermetic `wiremock` FHIR R4B server —
 //! no live network. Real `PostgreSQL` 18 via the shared testkit harness.
 
 #![expect(

@@ -1,4 +1,4 @@
-//! HTTP dispatch for the **FHIR R4 inbound connector** + mapping-store CRUD
+//! HTTP dispatch for the **FHIR R4B inbound connector** + mapping-store CRUD
 //! over the `ferroehr::service::FhirConnectorAdapter` seam.
 //!
 //! **No openEHR spec governs this — our own enterprise feature (E3, FHIR
@@ -13,7 +13,7 @@
 //! `false`): when disabled every route answers `404` (an `OperationOutcome`)
 //! without touching the backend.
 //!
-//! * `POST /fhir/r4/{resource_type}` — the inbound connector. A FHIR R4
+//! * `POST /fhir/r4/{resource_type}` — the inbound connector. A FHIR R4B
 //!   resource is accepted, its mapping resolved by type + `meta.profile`, a
 //!   COMPOSITION built and committed through the NORMAL validated path with
 //!   `FEEDER_AUDIT` provenance. Only the starter resource
@@ -65,7 +65,7 @@ use crate::negotiate;
 use crate::overview::error::RestError;
 use crate::state::AppState;
 
-/// FHIR R4 media type for the `OperationOutcome` / connector responses.
+/// FHIR R4B media type for the `OperationOutcome` / connector responses.
 const FHIR_JSON: &str = "application/fhir+json";
 
 /// The starter resource set the inbound connector maps;
@@ -94,7 +94,7 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
         ))
 }
 
-/// Inbound connector: commit a FHIR R4 resource as an openEHR COMPOSITION
+/// Inbound connector: commit a FHIR R4B resource as an openEHR COMPOSITION
 /// (`POST /fhir/r4/{resource_type}`).
 ///
 /// Only the starter set (Patient, Observation, Condition, `DocumentReference`)
@@ -107,8 +107,8 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
 /// so the whole group (paths, payloads, status codes) is our own design.
 #[utoipa::path(
     post, path = "/fhir/r4/{resource_type}", tag = "fhir",
-    params(("resource_type" = String, Path, description = "The FHIR R4 resource type (starter set only).")),
-    request_body(content = serde_json::Value, description = "A FHIR R4 resource (JSON)."),
+    params(("resource_type" = String, Path, description = "The FHIR R4B resource type (starter set only).")),
+    request_body(content = serde_json::Value, description = "A FHIR R4B resource (JSON)."),
     responses(
         (status = 201, description = "Committed as a COMPOSITION (informational OperationOutcome + ETag/Location pointing at the openEHR COMPOSITION).", content_type = "application/fhir+json"),
         (status = 400, description = "The request body is not valid JSON, or a mapping precondition failed (OperationOutcome).", content_type = "application/fhir+json"),
@@ -139,7 +139,7 @@ pub(crate) async fn fhir_ingest(
 #[utoipa::path(
     get, path = "/fhir/r4/{resource_type}", tag = "fhir",
     params(
-        ("resource_type" = String, Path, description = "The FHIR R4 resource type (starter set only)."),
+        ("resource_type" = String, Path, description = "The FHIR R4B resource type (starter set only)."),
         ("patient" = String, Query, description = "The patient scope (EHR subject or id) — required, non-empty."),
         ("_count" = Option<i64>, Query, description = "Optional page size.")
     ),
@@ -161,7 +161,7 @@ pub(crate) async fn fhir_search(
 /// The RESTful-ATNA **ITI-81 Retrieve ATNA Audit Event** transaction
 /// (`GET /fhir/r4/AuditEvent`): a FHIR search over the local Audit Record
 /// Repository, returning a `searchset`
-/// Bundle of stored FHIR R4 `AuditEvent` documents (IHE BALP shape). Gated by
+/// Bundle of stored FHIR R4B `AuditEvent` documents (IHE BALP shape). Gated by
 /// the local store (`[audit.store]`; 404 when off — independent of the FHIR
 /// connector gate) and admin-only under RBAC (the node's security log is an
 /// operator surface). Supported parameter subset: `date` (`ge`/`le`

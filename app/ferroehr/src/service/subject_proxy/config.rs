@@ -55,7 +55,7 @@ pub struct SubjectProxyConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SpFhirSystem {
-    /// FHIR R4 base URL, e.g. `https://fhir.example.org/r4` — the frame's
+    /// FHIR R4B base URL, e.g. `https://fhir.example.org/r4` — the frame's
     /// `query_text` is resolved relative to this after `$subject_id`
     /// substitution.
     pub base_url: String,
