@@ -382,16 +382,14 @@ const BLOB_PREFIX: &str = "blobs/";
 /// The entry-name prefix of an externalized version payload document
 /// (`EXPORT_FORMAT.openehr_canonical_xml`).
 const VERSIONS_PREFIX: &str = "versions/";
-/// The ITS-XML global element a `VERSION` document is written under
-/// (`its-xml-1.0.2-nsv1/ALL/Version.xsd`: `<xs:element name="version"
-/// type="VERSION"/>` — the only published root for the change-control
-/// package).
+/// The ITS-XML global element a `VERSION` document is written under — the
+/// published-element fact is stated once, in the crate owning the schemas
+/// (`openehr_its::xml::PUBLISHED_ROOTS`: `version` over the abstract
+/// `VERSION`, so the instance names its concrete type with `xsi:type` — the
+/// reason the archive serializes through
+/// [`openehr_its::xml::to_canonical_xml_declared`]).
 const VERSION_ROOT_TAG: &str = "version";
-/// That element's declared XSD type. It is `abstract="true"`, so the
-/// `ORIGINAL_VERSION` instance names its concrete type with `xsi:type` —
-/// the reason the archive serializes through
-/// [`openehr_its::xml::to_canonical_xml_declared`] rather than the plain
-/// entry point.
+/// That element's declared (abstract) XSD type, from the same table.
 const VERSION_ROOT_TYPE: &str = "VERSION";
 
 /// Where an export's entries land. The entry NAMES are identical in both

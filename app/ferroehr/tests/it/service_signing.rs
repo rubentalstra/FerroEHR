@@ -548,8 +548,13 @@ async fn canonical_xml_carries_the_signature() {
     }))
     .expect("typed ORIGINAL_VERSION");
 
-    let xml =
-        openehr_its::xml::to_canonical_xml(&ov, "original_version").expect("to_canonical_xml");
+    let xml = openehr_its::xml::to_canonical_xml_declared(
+        &ov,
+        "version",
+        "VERSION",
+        openehr_its::xml::Namespace::V1,
+    )
+    .expect("to_canonical_xml_declared");
     assert!(
         xml.contains("sha256:jtWX/CULavvzX0ehjowv2XZPICTQhN1t0+AXHfbEaNc="),
         "canonical XML must carry the signature; got:\n{xml}"
