@@ -71,11 +71,12 @@ pub static PROMOTED_LEAVES: &[PromotedLeaf] = &[
     },
 ];
 
-/// The raw promoted-leaf text for one node row, aligned to [`PROMOTED_LEAVES`]
-/// (entry `i` ↔ index `i`). An entry is `Some` only on the versioned-object
-/// root (`num == 0`) whose `rm_type` matches and whose leaf value is present;
-/// `None` everywhere else, so non-root rows and context-less compositions carry
-/// all-`None`.
+/// The raw promoted-leaf text for one node row, aligned to
+/// [`PROMOTED_LEAVES`] (entry `i` ↔ index `i`).
+///
+/// An entry is `Some` only on the versioned-object root (`num == 0`) whose
+/// `rm_type` matches and whose leaf value is present; `None` everywhere else,
+/// so non-root rows and context-less compositions carry all-`None`.
 ///
 /// Called at decomposition time with the node's **pre-pruning** JSON, so the
 /// leaf (which may sit inside an about-to-be-split structure child, e.g.

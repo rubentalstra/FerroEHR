@@ -103,8 +103,10 @@ const SWEEP_LOCK_KEY: i64 = 0x0EB2_7E57_0002;
 const SWEEP_GRACE: Duration = Duration::from_mins(30);
 
 /// Failures of the harness itself (server acquisition, template build,
-/// cloning). Test call sites `.expect()` on these — a testkit error always
-/// means broken test infrastructure, never application behaviour.
+/// cloning).
+///
+/// Test call sites `.expect()` on these — a testkit error always means broken
+/// test infrastructure, never application behaviour.
 #[derive(Debug, thiserror::Error)]
 pub enum TestkitError {
     /// Starting or adopting the reusable `PostgreSQL` container failed.
@@ -129,8 +131,10 @@ pub enum TestkitError {
 }
 
 /// One fresh, fully migrated database for one test: a clone of the migrated
-/// template. Dropping the guard best-effort-drops the database; a sweep at
-/// harness init reclaims anything a killed process left behind.
+/// template.
+///
+/// Dropping the guard best-effort-drops the database; a sweep at harness init
+/// reclaims anything a killed process left behind.
 #[derive(Debug)]
 pub struct TestDb {
     pool: PgPool,

@@ -7,7 +7,9 @@ use crate::data_types::text::code_phrase::CodePhrase;
 use crate::data_types::text::term_mapping::TermMapping;
 use crate::data_types::uri::dv_uri::DvUri;
 
-/// A text item whose value must be the rubric from a controlled terminology, the key (i.e. the 'code') of which is the `_defining_code_` attribute. In other words: a `DV_CODED_TEXT` is a combination of a `CODE_PHRASE` (effectively a code) and the rubric of that term, from a terminology service, in the language in which the data were authored.
+/// A text item whose value must be the rubric from a controlled terminology, the key (i.e. the 'code') of which is the `_defining_code_` attribute.
+///
+/// In other words: a `DV_CODED_TEXT` is a combination of a `CODE_PHRASE` (effectively a code) and the rubric of that term, from a terminology service, in the language in which the data were authored.
 ///
 /// Since `DV_CODED_TEXT` is a subtype of `DV_TEXT`, it can be used in place of it, effectively allowing the type `DV_TEXT` to mean  a text item, which may optionally be coded.
 ///
@@ -32,9 +34,13 @@ pub struct DvCodedText {
     pub formatting: Option<String>,
     /// Terms from other terminologies most closely matching this term, typically used where the originator (e.g. pathology lab) of information uses a local terminology but also supplies one or more equivalents from well known terminologies (e.g. LOINC).
     pub mappings: Option<Vec<TermMapping>>,
-    /// Optional indicator of the localised language in which the value is written. Coded from openEHR Code Set  languages . Only used when either the text object is in a different language from the enclosing `ENTRY`, or else the text object is being used outside of an `ENTRY` or other enclosing structure which indicates the language.
+    /// Optional indicator of the localised language in which the value is written.
+    ///
+    /// Coded from openEHR Code Set  languages . Only used when either the text object is in a different language from the enclosing `ENTRY`, or else the text object is being used outside of an `ENTRY` or other enclosing structure which indicates the language.
     pub language: Option<CodePhrase>,
-    /// Name of character encoding scheme in which this value is encoded. Coded from openEHR Code Set  character sets . Unicode is the default assumption in openEHR, with UTF-8 being the assumed encoding. This attribute allows for variations from these assumptions.
+    /// Name of character encoding scheme in which this value is encoded.
+    ///
+    /// Coded from openEHR Code Set  character sets . Unicode is the default assumption in openEHR, with UTF-8 being the assumed encoding. This attribute allows for variations from these assumptions.
     pub encoding: Option<CodePhrase>,
     /// The term of which the  `_value_` attribute is the textual rendition (i.e. rubric).
     pub defining_code: CodePhrase,

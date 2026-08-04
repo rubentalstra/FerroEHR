@@ -119,10 +119,12 @@ impl StepObservation {
 }
 
 /// One step execution seam: the live HTTP driver and the transcript player
-/// both implement this. The driver resolves the step's operation against
-/// the bindings, performs the call on the selected instance, classifies the
-/// response (law c), binds the step's captures into `vars`, and evaluates
-/// the step's post-step assertions.
+/// both implement this.
+///
+/// The driver resolves the step's operation against the bindings, performs
+/// the call on the selected instance, classifies the response (law c), binds
+/// the step's captures into `vars`, and evaluates the step's post-step
+/// assertions.
 pub trait StepDriver {
     /// Perform one flow step for the given expected kind.
     ///

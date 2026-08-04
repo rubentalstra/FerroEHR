@@ -47,7 +47,9 @@ pub struct PackTemplate {
     pub skeleton: Value,
 }
 
-/// The Simplified-FLAT payload one journey stage commits: the OPT that
+/// The Simplified-FLAT payload one journey stage commits.
+///
+/// Carries the OPT that
 /// constrains it, that OPT's `template_id` (the `openehr-template-id`
 /// channel — ITS-REST overview `Requests_and_responses` §openehr-template-id)
 /// and the committed FLAT body.
@@ -72,10 +74,12 @@ pub struct TddPayload {
 }
 
 /// The committed payloads the journey stages that do NOT commit a CKM
-/// COMPOSITION carry. Every one is a corpus fixture the functional
-/// catalogue already adjudicates — the load instrument invents no payload
-/// of its own. A field is `Some` exactly when the catalogue names an
-/// operation that needs it (see [`crate::perf::PerfOp::aux_payload`]).
+/// COMPOSITION carry.
+///
+/// Every one is a corpus fixture the functional catalogue already adjudicates
+/// — the load instrument invents no payload of its own. A field is `Some`
+/// exactly when the catalogue names an operation that needs it (see
+/// [`crate::perf::PerfOp::aux_payload`]).
 #[derive(Debug, Clone, Default)]
 pub struct AuxPayloads {
     /// The Simplified-FLAT commit payload, when a stage commits FLAT.
@@ -91,10 +95,11 @@ pub struct AuxPayloads {
     pub party_relationship: Option<Value>,
 }
 
-/// The corpus keys the auxiliary payloads come from. Fixed, because they
-/// are the payloads the functional batteries already adjudicate; the
-/// `journey-envelope` validate gate checks the manifest carries them
-/// whenever the catalogue names an operation that needs one.
+/// The corpus keys the auxiliary payloads come from.
+///
+/// Fixed, because they are the payloads the functional batteries already
+/// adjudicate; the `journey-envelope` validate gate checks the manifest
+/// carries them whenever the catalogue names an operation that needs one.
 pub const FLAT_OPT_KEY: &str = "cnf.opt.minimal_action";
 /// The FLAT body the FLAT-commit stage posts.
 pub const FLAT_BODY_KEY: &str = "cnf.flat.vitals.minimal_ctx";
@@ -104,11 +109,12 @@ pub const PERSON_KEY: &str = "cnf.demographic.person.v1";
 pub const PERSON_AMENDED_KEY: &str = "cnf.demographic.person.v2";
 /// The `PARTY_RELATIONSHIP` body the demographic stage creates.
 pub const PARTY_RELATIONSHIP_KEY: &str = "cnf.demographic.party_relationship.v1";
-/// The TDD stage's operational template. `nested.en.v1` is category
-/// `433|event|`, so a sustained arrival commits a fresh COMPOSITION each
-/// time; a `431|persistent|` template would hold exactly one per EHR (RM ehr
-/// master04 §COMPOSITION category) and every arrival after the first would
-/// be a conflict the instrument manufactured.
+/// The TDD stage's operational template.
+///
+/// `nested.en.v1` is category `433|event|`, so a sustained arrival commits a
+/// fresh COMPOSITION each time; a `431|persistent|` template would hold
+/// exactly one per EHR (RM ehr master04 §COMPOSITION category) and every
+/// arrival after the first would be a conflict the instrument manufactured.
 pub const TDD_OPT_KEY: &str = "cnf.opt.nested";
 /// The Template Data Document the TDD-import stage sends.
 pub const TDD_BODY_KEY: &str = "cnf.messaging.tdd.nested";

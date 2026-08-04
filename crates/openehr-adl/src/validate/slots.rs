@@ -304,9 +304,11 @@ fn assertion_regex(a: &Assertion) -> Option<String> {
 
 // ── template / external-reference fillers (VTPL + VARXR) ──────────────────
 
-/// Validate an archetype's `use_archetype` fillers against `repo`: VARXR (a
-/// reference that does not resolve) and — for templates only — VTPL (a filler
-/// that does not support the template's `original_language`).
+/// Validates an archetype's `use_archetype` fillers against `repo`.
+///
+/// The checks are VARXR (a reference that does not resolve) and — for templates
+/// only — VTPL (a filler that does not support the template's
+/// `original_language`).
 ///
 /// The artefact is flattened first so inherited fillers are seen; a flatten
 /// failure yields no filler issues (the flattener's own errors surface through

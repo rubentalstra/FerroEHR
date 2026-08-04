@@ -5,14 +5,13 @@
 # Formats an edited .rs file with rustfmt. Never blocks; swallows all failures
 # (rustfmt failing to parse a draft is expected and fine).
 #
-# NOTE: this hook used to also run a scoped `cargo clippy --fix` on the owning
-# crate after every edit. That was removed 2026-07-08: with the full workspace
-# built, it triggered a check-build of the crate + its dependency cone per
-# file edit — and because it ran per-package (from the crate dir), resolver-v3
-# feature unification differed from the workspace build, invalidating shared
-# artifacts and thrashing the cargo cache (target/ grew past 190 GB; dev
-# builds hit 10+ minutes). Clippy remains a per-phase gate the agent runs
-# explicitly (`cargo clippy --workspace --all-targets`), not a per-edit hook.
+# NOTE: this hook never runs clippy. A per-edit `cargo clippy` on the owning
+# crate check-builds that crate plus its dependency cone on every file edit,
+# and running it per-package (from the crate dir) gives resolver-v3 feature
+# unification that differs from the workspace build — invalidating shared
+# artifacts and thrashing the cargo cache (target/ past 190 GB, 10+ minute dev
+# builds). Clippy is a per-phase gate the agent runs explicitly
+# (`cargo clippy --workspace --all-targets`), never a per-edit hook.
 
 set -uo pipefail
 
@@ -31,5 +30,15 @@ esac
 [ -f "$file_path" ] || exit 0
 
 rustfmt --edition 2024 "$file_path" >/dev/null 2>&1 || true
+
+# Comment-style guard (.claude/rules/comments.md): block comments, TODO(#N)
+# form, NOTE/essay budgets. Exit 2 feeds the findings back as a correction.
+repo_root="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
+if [ -x "$repo_root/scripts/check-comment-style.sh" ]; then
+  findings="$("$repo_root/scripts/check-comment-style.sh" --files "$file_path" 2>&1)" || {
+    printf '%s\n' "$findings" >&2
+    exit 2
+  }
+fi
 
 exit 0

@@ -1,5 +1,7 @@
-//! Deterministic conformance SVG assets rendered FROM the committed party
-//! artifacts (`verdicts.json` + `results.json` + the capability matrix) —
+//! Deterministic conformance SVG assets rendered from committed artifacts.
+//!
+//! The inputs are the committed party artifacts (`verdicts.json` +
+//! `results.json` + the capability matrix) —
 //! the `perf_assets` pattern applied to functional conformance: no
 //! hand-drawn numbers, CI-guarded regeneration, light+dark via
 //! `prefers-color-scheme`, evidence encoded twice (a CVD-safe fill AND a
@@ -281,9 +283,10 @@ impl BandCounts {
 }
 
 /// One chapter of the two-level taxonomy: the chapter, its rolled-up counts,
-/// and its bands in [`TAXONOMY`] declaration order. Bands the SUT recorded no
-/// outcome for stay in the list with zero counts, so two SUTs' charts compare
-/// band-for-band.
+/// and its bands in [`TAXONOMY`] declaration order.
+///
+/// Bands the SUT recorded no outcome for stay in the list with zero counts,
+/// so two SUTs' charts compare band-for-band.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ChapterRow {
     /// The chapter name (also the taxonomy key).
@@ -303,7 +306,9 @@ fn xml_escape(s: &str) -> String {
         .replace('>', "&gt;")
 }
 
-/// The two-level presentation taxonomy: `(chapter, bands)` in the order both
+/// The two-level presentation taxonomy.
+///
+/// `(chapter, bands)` in the order both
 /// charts render them (chapters in this declaration order, bands in theirs —
 /// never alphabetical, so a chapter reads in resource/lifecycle order).
 ///

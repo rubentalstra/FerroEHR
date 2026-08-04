@@ -60,7 +60,9 @@ use crate::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
 use crate::bmm3::core::entity::bmm_type::BmmType;
 use crate::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType;
 
-/// The name of the top `Any` type, used wherever an unconstrained generic
+/// The name of the top `Any` type.
+///
+/// Used wherever an unconstrained generic
 /// parameter has to be reduced to a concrete conformance name
 /// (`org.openehr.lang.bmm3.bmm_definitions.adoc` §Functions `Any_class`:
 /// "built-in class definition corresponding to the top `Any` class").

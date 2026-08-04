@@ -9,13 +9,19 @@ use crate::common::generic::party_proxy::PartyProxy;
 use crate::data_structures::item_structure::item_structure::ItemStructure;
 use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
 
-/// Audit details for any system in a feeder system chain. Audit details here means the general notion of who/where/when the information item to which the audit is attached was created. None of the attributes is defined as mandatory, however, in different scenarios, various combinations of attributes will usually be mandatory. This can be controlled by specifying feeder audit details in legacy archetypes.
+/// Audit details for any system in a feeder system chain.
+///
+/// Audit details here means the general notion of who/where/when the information item to which the audit is attached was created. None of the attributes is defined as mandatory, however, in different scenarios, various combinations of attributes will usually be mandatory. This can be controlled by specifying feeder audit details in legacy archetypes.
 #[doc(alias = "FEEDER_AUDIT_DETAILS")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct FeederAuditDetails {
-    /// Identifier of the system which handled the information item. This is the IT system owned by the organisation legally responsible for handling the data, and at which the data were previously created or passed by an earlier system.
+    /// Identifier of the system which handled the information item.
+    ///
+    /// This is the IT system owned by the organisation legally responsible for handling the data, and at which the data were previously created or passed by an earlier system.
     pub system_id: String,
-    /// Identifier of the particular site/facility within an organisation which handled the item. For computability, this identifier needs to be e.g. a PKI identifier which can be included in the identifier list of the `PARTY_IDENTIFIED` object.
+    /// Identifier of the particular site/facility within an organisation which handled the item.
+    ///
+    /// For computability, this identifier needs to be e.g. a PKI identifier which can be included in the identifier list of the `PARTY_IDENTIFIED` object.
     pub location: Option<PartyIdentified>,
     /// Identifiers for subject of the received information item.
     pub subject: Option<PartyProxy>,

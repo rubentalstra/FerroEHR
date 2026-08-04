@@ -24,15 +24,21 @@ pub struct CComplexObjectData {
     // inherited: C_OBJECT
     /// Reference model type that this node corresponds to.
     pub rm_type_name: String,
-    /// Occurrences of this object node in the data, under the owning attribute. Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.
+    /// Occurrences of this object node in the data, under the owning attribute.
+    ///
+    /// Upper limit can only be greater than 1 if owning attribute has a cardinality of more than 1.
     /// Only set if it overrides the parent archetype in the case of specialised archetypes, or else the occurrences inferred from the underlying reference model existence and/or cardinality of the containing attribute.
     pub occurrences: Option<MultiplicityInterval>,
-    /// Semantic identifier of this node, used to distinguish sibling nodes. All nodes must have a `_node_id_`; for nodes under a container `C_ATTRIBUTE`. For at-coded archetypes `_node_id_` must be an at-code defined in the archetype terminology and for valid structures all node ids are at-codes. For id-coded archetypes  `_node_id_` must be an id-code defined in the archetype terminology and for valid structures all node ids are id-codes.
+    /// Semantic identifier of this node, used to distinguish sibling nodes.
+    ///
+    /// All nodes must have a `_node_id_`; for nodes under a container `C_ATTRIBUTE`. For at-coded archetypes `_node_id_` must be an at-code defined in the archetype terminology and for valid structures all node ids are at-codes. For id-coded archetypes  `_node_id_` must be an id-code defined in the archetype terminology and for valid structures all node ids are id-codes.
     ///
     /// For `C_PRIMITIVE_OBJECTs` represented in ADL inline form, this attribute will have the special value `Primitive_node_id`; otherwise it will have the node id read during parsing.
     ///
     pub node_id: String,
-    /// Additional identifiers of this node. openEHR archetypes can carry original ALD2 id-codes in this attribute and it can also carry human readable codes for future use. Alternative ids must be unique within the archetype.
+    /// Additional identifiers of this node.
+    ///
+    /// openEHR archetypes can carry original ALD2 id-codes in this attribute and it can also carry human readable codes for future use. Alternative ids must be unique within the archetype.
     pub alternative_ids: Option<Vec<String>>,
     /// True if this node and by implication all sub-nodes are deprecated for use.
     pub is_deprecated: Option<bool>,

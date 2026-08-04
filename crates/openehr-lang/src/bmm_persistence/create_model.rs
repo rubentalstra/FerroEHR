@@ -1,5 +1,7 @@
-//! The `P_BMM_SCHEMA` → `BMM_MODEL` transform: "the in-memory model-to-model
-//! transform step required to produce a materialised BMM model"
+//! The `P_BMM_SCHEMA` → `BMM_MODEL` transform.
+//!
+//! The spec calls it "the in-memory model-to-model transform step required to
+//! produce a materialised BMM model"
 //! (`LANG/docs/bmm_persistence/master02-overview.adoc` §Conceptual Approach).
 //!
 //! `P_BMM_SCHEMA.create_bmm_model` (precondition

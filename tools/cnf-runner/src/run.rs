@@ -836,7 +836,9 @@ pub fn coverage_accounting(set: &ArtifactSet) -> RunReport {
     report
 }
 
-/// Synthesize the functional execution of a content case: the decision
+/// Synthesizes the functional execution of a content case.
+///
+/// The decision
 /// table becomes a matrix (rows drive `${row.*}`), the flow is one commit of
 /// the generated instance against the constraint context's template, and the
 /// per-row `expected` column (accepted → created, rejected →

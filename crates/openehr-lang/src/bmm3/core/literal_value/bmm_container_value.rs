@@ -14,7 +14,9 @@ pub struct BmmContainerValue {
     pub value_literal: String,
     /// A native representation of the value, possibly derived by deserialising `_value_literal_`.
     pub value: Option<serde_json::Value>,
-    /// Optional specification of formalism of the `_value_literal_` attribute for complex values. Value may be any of `json | json5 | yawl | xml | odin | rdf` or another value agreed by the user community. If not set, `json` is assumed.
+    /// Optional specification of formalism of the `_value_literal_` attribute for complex values.
+    ///
+    /// Value may be any of `json | json5 | yawl | xml | odin | rdf` or another value agreed by the user community. If not set, `json` is assumed.
     pub syntax: Option<String>,
     /// Concrete type of this literal.
     pub r#type: BmmContainerType,

@@ -1,7 +1,8 @@
-//! The AQL optimization probe — the seeded-corpus troubleshooting loop as
-//! an instrument: fire the measurement machinery's own AQL vocabulary
-//! against a live SUT N times each, record wire-latency percentiles, and
-//! attribute the DB-side cost per probe via `pg_stat_statements` through
+//! The AQL optimization probe — the seeded-corpus troubleshooting loop.
+//!
+//! As an instrument it fires the measurement machinery's own AQL vocabulary
+//! against a live SUT N times each, records wire-latency percentiles, and
+//! attributes the DB-side cost per probe via `pg_stat_statements` through
 //! the container runtime (the ixit `containers` capability). A seeded
 //! database is the only place real bottlenecks show — an empty database
 //! hides every planner failure — so the probe always runs against the

@@ -11,11 +11,15 @@ use crate::am14::aom14::archetype::assertion::operator_kind::OperatorKind;
 #[derive(Debug, Clone, PartialEq)]
 pub struct ExprUnaryOperator {
     // inherited: EXPR_ITEM
-    /// Type name of this item in the mathematical sense. For leaf nodes, must be the name of a primitive type, or else a reference model type. The type for any relational or boolean operator will be “Boolean”, while the type for any arithmetic operator, will be “Real” or “Integer”.
+    /// Type name of this item in the mathematical sense.
+    ///
+    /// For leaf nodes, must be the name of a primitive type, or else a reference model type. The type for any relational or boolean operator will be “Boolean”, while the type for any arithmetic operator, will be “Real” or “Integer”.
     pub r#type: String,
 
     // inherited: EXPR_OPERATOR
-    /// True if the natural precedence of operators is overridden in the expression represented by this node of the expression tree. If True, parentheses should be introduced around the totality of the syntax expression corresponding to this operator node and its operands.
+    /// True if the natural precedence of operators is overridden in the expression represented by this node of the expression tree.
+    ///
+    /// If True, parentheses should be introduced around the totality of the syntax expression corresponding to this operator node and its operands.
     pub precedence_overridden: Option<bool>,
     /// Code of operator.
     pub operator: OperatorKind,

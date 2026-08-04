@@ -12,7 +12,9 @@ use crate::am24::aom2::constraint_model::primitive::c_time::CTime;
 
 /// Closed subtype set of `C_ORDERED`, dispatched on each payload's `_type`.
 ///
-/// Abstract parent of primitive constrainer classes based on `Ordered` base types, i.e. types like `Integer`, `Real`, and the Date/Time types. The model constraint is a List of Intervals, which may include point Intervals, and acts as a efficient and formally tractable representation of any number of point values and/or contiguous intervals of an ordered value domain.
+/// Abstract parent of primitive constrainer classes based on `Ordered` base types, i.e. types like `Integer`, `Real`, and the Date/Time types.
+///
+/// The model constraint is a List of Intervals, which may include point Intervals, and acts as a efficient and formally tractable representation of any number of point values and/or contiguous intervals of an ordered value domain.
 ///
 /// In its simplest form, the constraint accessor returns just a single point `Interval<T>` object, representing a single value.
 ///

@@ -72,8 +72,9 @@ pub struct RmAttr {
 }
 
 /// The declared literal set of an RM enumeration type (`master04.2`
-/// §Constraints on Enumeration Types), as reported by a [`RmModel`]. The
-/// underlying primitive determines which of the value sets is populated.
+/// §Constraints on Enumeration Types), as reported by a [`RmModel`].
+///
+/// The underlying primitive determines which of the value sets is populated.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RmEnum {
     /// The underlying primitive type of the enumeration.
@@ -95,10 +96,12 @@ pub enum EnumUnderlying {
 }
 
 /// A reference model against which an archetype is validated — the pluggable
-/// seam of `master11-rm_adaptation.adoc`. Implementors answer the questions the
-/// RM checks need: does a type exist, does one type conform to another, what are
-/// an attribute's declared type / multiplicity / existence / cardinality, and
-/// (for VCORMEN/VCORMENV/VCORMENU) is a type an enumeration and what are its
+/// seam of `master11-rm_adaptation.adoc`.
+///
+/// Implementors answer the questions the RM checks need: does a type exist,
+/// does one type conform to another, what are an attribute's declared type /
+/// multiplicity / existence / cardinality, and (for
+/// VCORMEN/VCORMENV/VCORMENU) is a type an enumeration and what are its
 /// declared literal values.
 ///
 /// Type-name arguments may be generic (`HISTORY<ITEM_LIST>`) and are matched
@@ -128,8 +131,9 @@ pub trait RmModel {
     fn enumeration(&self, rm_type: &str) -> Option<RmEnum>;
 }
 
-/// The base (outer) class name of a possibly-generic RM type name, with
-/// surrounding whitespace trimmed (`"Interval<Quantity>"` → `"Interval"`,
+/// The base (outer) class name of a possibly-generic RM type name.
+///
+/// Surrounding whitespace is trimmed (`"Interval<Quantity>"` → `"Interval"`,
 /// `"HISTORY <ITEM_LIST>"` → `"HISTORY"`), per `master04.3` §Reference Model
 /// Type Matching.
 #[must_use]
@@ -362,12 +366,14 @@ fn production_class(base: &str) -> Option<&'static model::RmClass> {
     model::class(base).or_else(|| model::class(&base.to_uppercase()))
 }
 
-/// Whether the openEHR [`ProductionRmModel`] governs `archetype` — decided from
-/// the HRID `rm_publisher`/`rm_package` (a lower-cased `openehr` publisher with
-/// a package that is not a test/foreign schema). Archetypes whose publisher or
-/// package name a model this build does not carry are not RM-checked by the
-/// production model (the caller supplies the appropriate [`RmModel`], or skips —
-/// see [`validate_source`](super::validate_source)).
+/// Whether the openEHR [`ProductionRmModel`] governs `archetype` — decided
+/// from the HRID `rm_publisher`/`rm_package` (a lower-cased `openehr`
+/// publisher with a package that is not a test/foreign schema).
+///
+/// Archetypes whose publisher or package name a model this build does not
+/// carry are not RM-checked by the production model (the caller supplies the
+/// appropriate [`RmModel`], or skips — see
+/// [`validate_source`](super::validate_source)).
 #[must_use]
 pub fn production_model_governs(archetype: &Archetype) -> bool {
     production_model_governs_view(&view(archetype))

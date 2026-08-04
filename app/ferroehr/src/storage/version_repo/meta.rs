@@ -149,6 +149,7 @@ pub async fn commit_bounds(
 
 /// The stored `template_id` of one version of an object — the current open
 /// trunk version when `tree` is `None`, else the addressed `VERSION_TREE_ID`.
+///
 /// A scalar `vo_version` read: the column is promoted at commit, so resolving
 /// a version's template never needs node reassembly. Outer `None` = no such
 /// version; inner `None` = the version carries no template (non-COMPOSITION).
@@ -305,8 +306,10 @@ pub async fn version_exists(
 
 /// The current version of an EHR-owned object of one kind: its `vo_id` and
 /// `VERSION_TREE_ID` column ints, from the current open trunk row
-/// (`upper_inf(sys_period)`, `branch_number = 0`). `None` when the EHR has no
-/// such object. Mapping the ints to a `TreeId` is the caller's.
+/// (`upper_inf(sys_period)`, `branch_number = 0`).
+///
+/// `None` when the EHR has no such object. Mapping the ints to a `TreeId` is
+/// the caller's.
 #[derive(Debug, Clone)]
 pub struct CurrentVoRow {
     /// The versioned object's id.

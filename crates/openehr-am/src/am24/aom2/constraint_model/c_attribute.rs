@@ -20,11 +20,17 @@ pub struct CAttribute {
     pub soc_parent: Option<CSecondOrder>,
     /// Reference model attribute within the enclosing type represented by a `C_OBJECT`.
     pub rm_attribute_name: String,
-    /// Constraint settable on every attribute, regardless of whether it is singular or of a container type, which indicates whether its target object exists or not (i.e. is mandatory or not). Only set if it overrides the underlying reference model or parent archetype in the case of specialised archetypes.
+    /// Constraint settable on every attribute, regardless of whether it is singular or of a container type, which indicates whether its target object exists or not (i.e. is mandatory or not).
+    ///
+    /// Only set if it overrides the underlying reference model or parent archetype in the case of specialised archetypes.
     pub existence: Option<MultiplicityInterval>,
-    /// Child `C_OBJECT` nodes. Each such node represents a constraint on the type of this attribute in its reference model. Multiples occur both for multiple items in the case of container attributes, and alternatives in the case of singular attributes.
+    /// Child `C_OBJECT` nodes.
+    ///
+    /// Each such node represents a constraint on the type of this attribute in its reference model. Multiples occur both for multiple items in the case of container attributes, and alternatives in the case of singular attributes.
     pub children: Option<Vec<CObject>>,
-    /// Path to the parent object of this attribute (i.e. doesn’t include the name of this attribute). Used only for attributes in differential form, specialised archetypes. Enables only the re-defined parts of a specialised archetype to be expressed, at the path where they occur.
+    /// Path to the parent object of this attribute (i.e. doesn’t include the name of this attribute).
+    ///
+    /// Used only for attributes in differential form, specialised archetypes. Enables only the re-defined parts of a specialised archetype to be expressed, at the path where they occur.
     pub differential_path: Option<String>,
     /// Cardinality constraint of attribute, if a container attribute.
     pub cardinality: Option<Cardinality>,

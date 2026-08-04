@@ -63,6 +63,7 @@ pub const TYPE_LOGOUT: Code = Code {
     original_text: "Logout",
 };
 /// The `codeSystemName` for ITS-REST operation-id `EventTypeCode`s.
+///
 /// NOTE: no external code system governs openEHR REST operations — our own
 /// design/extension; the generated operation id is emitted as the `csd-code`
 /// under this system name.

@@ -56,7 +56,9 @@ use crate::state::AppState;
 
 /// The `EHR_ACCESS` policy engine: the three spec-grounded evaluation points,
 /// as pure decisions over the parsed scheme settings + the authenticated
-/// caller. `Ok(())` permits; `Err(reason)` is a denial with its reason. Absent
+/// caller.
+///
+/// `Ok(())` permits; `Err(reason)` is a denial with its reason. Absent
 /// settings (`None`) always permit — the default-open disposition that keeps
 /// every existing EHR working (`master07` "sensible defaults").
 #[derive(Debug)]

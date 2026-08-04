@@ -1,17 +1,19 @@
-//! IR → SQL lowering. Turns a typed [`QueryIr`] into one `SELECT` over the
-//! greenfield `node`/`vo_version`/`ehr`/`audit` store, built entirely with
-//! `sea-query`'s **typed** expression API + `sea-query-sqlx` — no
-//! string-concatenated SQL (`.claude/rules/sqlx-conventions.md`). Every
-//! table/column reference is an [`sea_query::Expr::col`], every literal binds
-//! through `Expr::val` (parameterized on build), and the PostgreSQL-specific
-//! pieces use the sanctioned typed escape hatches: [`sea_query::Func::cust`] for
-//! functions sea-query does not model (`jsonb_path_query_first` / `to_jsonb` /
+//! IR → SQL lowering.
+//!
+//! Turns a typed [`QueryIr`] into one `SELECT` over the greenfield
+//! `node`/`vo_version`/`ehr`/`audit` store, built entirely with `sea-query`'s
+//! **typed** expression API + `sea-query-sqlx` — no string-concatenated SQL
+//! (`.claude/rules/sqlx-conventions.md`). Every table/column reference is an
+//! [`sea_query::Expr::col`], every literal binds through `Expr::val`
+//! (parameterized on build), and the PostgreSQL-specific pieces use the
+//! sanctioned typed escape hatches: [`sea_query::Func::cust`] for functions
+//! sea-query does not model (`jsonb_path_query_first` / `to_jsonb` /
 //! `upper_inf` / `openehr_magnitude`), the typed Postgres operators from
 //! [`sea_query::extension::postgres::PgExpr`] (`@>` = `contains`, `||` =
 //! `concatenate`), the built-in aggregates, and `cast_as` for casts. The only
-//! string-operator escapes are the sanctioned [`sea_query::BinOper::Custom`] set
-//! (`#>>`, `->>`). Runtime functions resolve unqualified (`search_path = ehr,
-//! ext, public`).
+//! string-operator escapes are the sanctioned [`sea_query::BinOper::Custom`]
+//! set (`#>>`, `->>`). Runtime functions resolve unqualified (`search_path =
+//! ehr, ext, public`).
 //!
 //! No openEHR spec governs the execution — openEHR defines the *language*, not
 //! its lowering; the SQL shapes are our own design.

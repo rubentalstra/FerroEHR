@@ -16,16 +16,22 @@ use crate::data_types::text::dv_text::DvText;
 use openehr_base::prelude::ObjectRef;
 use openehr_base::prelude::UidBasedId;
 
-/// Entry subtype for all clinical data in the past or present, i.e. which (by the time it is recorded) has already occurred. `OBSERVATION` data is expressed using the class `HISTORY<T>`, which guarantees that it is situated in time. `OBSERVATION` is used for all notionally objective (i.e. measured in some way) observations of phenomena, and patient-reported phenomena, e.g. pain.
+/// Entry subtype for all clinical data in the past or present, i.e. which (by the time it is recorded) has already occurred.
+///
+/// `OBSERVATION` data is expressed using the class `HISTORY<T>`, which guarantees that it is situated in time. `OBSERVATION` is used for all notionally objective (i.e. measured in some way) observations of phenomena, and patient-reported phenomena, e.g. pain.
 ///
 /// Not to be used for recording opinion or future statements of any kind, including instructions, intentions, plans etc.
 #[doc(alias = "OBSERVATION")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct Observation {
     // inherited: LOCATABLE
-    /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.
+    /// Runtime name of this fragment, used to build runtime paths.
+    ///
+    /// This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.
     pub name: DvText,
-    /// Design-time archetype identifier of this node taken from its generating archetype; used to build archetype paths. Always in the form of an at-code, e.g.  `at0005`. This value enables a 'standardised' name for this node to be generated, by referring to the generating archetype local terminology.
+    /// Design-time archetype identifier of this node taken from its generating archetype; used to build archetype paths.
+    ///
+    /// Always in the form of an at-code, e.g.  `at0005`. This value enables a 'standardised' name for this node to be generated, by referring to the generating archetype local terminology.
     ///
     /// At an archetype root point, the value of this attribute is always the stringified form of the `_archetype_id_` found in the `_archetype_details_` object.
     pub archetype_node_id: String,
@@ -65,12 +71,16 @@ pub struct Observation {
     pub provider: Option<PartyProxy>,
 
     // inherited: CARE_ENTRY
-    /// Description of the method (i.e. how) the information in this entry was arrived at. For `OBSERVATIONs`, this is a description of the method or instrument used. For `EVALUATIONs`, how the evaluation was arrived at. For `INSTRUCTIONs`, how to execute the Instruction. This may take the form of references to guidelines, including manually followed and executable; knowledge references such as a paper in Medline; clinical reasons within a larger care process.
+    /// Description of the method (i.e. how) the information in this entry was arrived at.
+    ///
+    /// For `OBSERVATIONs`, this is a description of the method or instrument used. For `EVALUATIONs`, how the evaluation was arrived at. For `INSTRUCTIONs`, how to execute the Instruction. This may take the form of references to guidelines, including manually followed and executable; knowledge references such as a paper in Medline; clinical reasons within a larger care process.
     pub protocol: Option<ItemStructure>,
     /// Optional external identifier of guideline creating this Entry if relevant.
     pub guideline_id: Option<ObjectRef>,
     /// The data of this observation, in the form of a history of values which may be of any complexity.
     pub data: History<ItemStructure>,
-    /// Optional recording of the state of subject of this observation during the observation process, in the form of a separate history of values which may be of any complexity. State may also be recorded within the History of the data attribute.
+    /// Optional recording of the state of subject of this observation during the observation process, in the form of a separate history of values which may be of any complexity.
+    ///
+    /// State may also be recorded within the History of the data attribute.
     pub state: Option<History<ItemStructure>>,
 }

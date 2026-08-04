@@ -34,9 +34,11 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-/// The complete server configuration. Every section has a `Default`, so the
-/// file may be empty or absent (zero-config boot, §3.16). `deny_unknown_fields`
-/// makes a misspelled top-level table a boot error (§P-5).
+/// The complete server configuration.
+///
+/// Every section has a `Default`, so the file may be empty or absent
+/// (zero-config boot, §3.16). `deny_unknown_fields` makes a misspelled
+/// top-level table a boot error (§P-5).
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct FerroEhrConfig {
@@ -308,9 +310,10 @@ fn validate_terminology(
 }
 
 /// Assemble the configuration from explicit inputs — the pure seam every test
-/// drives (§5.1/§6.6). Runs the alias sweep (warning once per set legacy var),
-/// the strict env + file passes, the layered merge, and `*_file` secret
-/// resolution.
+/// drives (§5.1/§6.6).
+///
+/// Runs the alias sweep (warning once per set legacy var), the strict env +
+/// file passes, the layered merge, and `*_file` secret resolution.
 ///
 /// # Errors
 /// [`ConfigErrors`] aggregating unknown-key, type, and file-resolution errors.
@@ -328,8 +331,9 @@ pub fn assemble(
 }
 
 /// Boot loader: a thin process-environment shim over [`assemble`] (§5.2).
-/// Discovers the config file (§5.4), snapshots the environment, assembles, and
-/// emits the dev-default-DB boot warning (§3.16 review condition).
+///
+/// Discovers the config file (§5.4), snapshots the environment, assembles,
+/// and emits the dev-default-DB boot warning (§3.16 review condition).
 ///
 /// # Errors
 /// [`ConfigErrors`] on discovery failure or any assembly error.

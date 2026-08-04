@@ -6,12 +6,16 @@
 
 use crate::base_types::identification::object_id::ObjectId;
 
-/// Identifier for parties in a demographic or identity service. There are typically a number of subtypes of the `PARTY` class, including `PERSON`, `ORGANISATION`, etc. Abstract supertypes are allowed if the referenced object is of a type not known by the current implementation of this class (in other words, if the demographic model is changed by the addition of a new `PARTY` or `ACTOR` subtypes, valid `PARTY_REFs` can still be constructed to them).
+/// Identifier for parties in a demographic or identity service.
+///
+/// There are typically a number of subtypes of the `PARTY` class, including `PERSON`, `ORGANISATION`, etc. Abstract supertypes are allowed if the referenced object is of a type not known by the current implementation of this class (in other words, if the demographic model is changed by the addition of a new `PARTY` or `ACTOR` subtypes, valid `PARTY_REFs` can still be constructed to them).
 #[doc(alias = "PARTY_REF")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct PartyRef {
     // inherited: OBJECT_REF
-    /// Namespace to which this identifier belongs in the local system context (and possibly in any other openEHR compliant environment) e.g.  terminology ,  demographic . These names are not yet standardised. Legal values for `_namespace_` are:
+    /// Namespace to which this identifier belongs in the local system context (and possibly in any other openEHR compliant environment) e.g.  terminology ,  demographic .
+    ///
+    /// These names are not yet standardised. Legal values for `_namespace_` are:
     ///
     /// * `"local"`
     /// * `"unknown"`
@@ -19,7 +23,9 @@ pub struct PartyRef {
     ///
     /// Note that the first two are just special values of the regex, and will be matched by it.
     pub namespace: String,
-    /// Name of the  class (concrete or abstract) of object to which this identifier type refers, e.g. `PARTY`, `PERSON`,  `GUIDELINE`  etc. These class names are from the relevant reference model. The type name `ANY` can be used to indicate that any type is accepted (e.g. if the type is unknown).
+    /// Name of the  class (concrete or abstract) of object to which this identifier type refers, e.g. `PARTY`, `PERSON`,  `GUIDELINE`  etc. These class names are from the relevant reference model.
+    ///
+    /// The type name `ANY` can be used to indicate that any type is accepted (e.g. if the type is unknown).
     pub r#type: String,
     /// Globally unique id of an object, regardless of where it is stored.
     pub id: ObjectId,

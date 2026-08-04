@@ -36,8 +36,7 @@ env:
   # bevy sets exactly these two vars; polars uses `-C debuginfo=0`).
   CARGO_PROFILE_DEV_DEBUG: "0"
   CARGO_PROFILE_TEST_DEBUG: "0"
-  # The "phases need not compile" gate was retired: every job here is
-  # REQUIRED. (The historical PORT_STRICT advisory switch is gone.)
+  # Every job here is REQUIRED — there is no advisory tier.
   #
   # Cache policy (the ruff/polars `save-if` idiom): only develop writes the
   # per-job rust-cache entries; PR branches restore develop's warm cache and
@@ -119,7 +118,7 @@ jobs:
             echo "admin_ui=false" >> "$GITHUB_OUTPUT"
           fi
           # The compose/local image target (docker/Dockerfile
-          # `runtime-from-source`) is no longer built by ui-e2e, which packages
+          # `runtime-from-source`) is not built by ui-e2e, which packages
           # the shipped `runtime-prebuilt` target instead — so that target gets
           # its own job, gated on the one file whose change can break it.
           if echo "$changed" | grep -qE '^docker/Dockerfile$' ; then
@@ -173,11 +172,30 @@ jobs:
           fi
           echo "OK: no attribution found."
 
+  # Comment-style guard (.claude/rules/comments.md, RFC 505/1574): block
+  # comments, TODO(#N) form, NOTE/essay line budgets — on the PR's changed
+  # hand-written .rs files. Diff-scoped until the legacy essay sweep (#1870)
+  # closes, then flips to --all.
+  comment-style:
+    name: comment-style
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Comment style on changed Rust files
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: bash scripts/check-comment-style.sh --diff "$BASE" "$HEAD"
+
   # ── Always required: supply-chain policy ────────────────────────────────────
   # cargo-deny alone: `cargo deny check` reads the SAME RustSec advisory DB as
   # cargo-audit and additionally enforces yanked = "deny" (deny.toml
-  # [advisories]), licenses, bans, and sources — the former cargo-audit job was
-  # a strict subset run twice (embarkstudios.github.io/cargo-deny/checks/advisories/cfg.html).
+  # [advisories]), licenses, bans, and sources — a separate cargo-audit job
+  # would be a strict subset run twice (embarkstudios.github.io/cargo-deny/checks/advisories/cfg.html).
   # Cargo.lock IS committed (workspace ships a binary); deny checks the real pins.
   deny:
     name: cargo-deny
@@ -294,7 +312,7 @@ jobs:
         run: bash scripts/check-codegen-drift.sh
 
   # ── Build + tests against PostgreSQL 18.4 (+ the CNF artifact validation) ───
-  # The former standalone "cnf coverage guard" job lives here now: its
+  # The CNF coverage guard lives here: its
   # `cargo nextest run -p cnf-runner` was a byte-for-byte subset of this job's
   # `--workspace` nextest run (cnf-runner is a workspace member — its ECC
   # catalogue guard, derivation-square guard, fixture-manifest and
@@ -932,6 +950,7 @@ jobs:
       - changes
       - fmt
       - no-attribution
+      - comment-style
       - deny
       - clippy
       - doc

@@ -3,7 +3,9 @@
 //! The openEHR `DV_BOOLEAN` spec class, generated from the vendored BMM
 //! meta-model.
 
-/// Items which are truly boolean data, such as true/false or yes/no answers. For such data, it is important to devise the meanings (usually questions in subjective data)  carefully, so that the only allowed results are in fact true or false.
+/// Items which are truly boolean data, such as true/false or yes/no answers.
+///
+/// For such data, it is important to devise the meanings (usually questions in subjective data)  carefully, so that the only allowed results are in fact true or false.
 ///
 /// Misuse: The DV_BOOLEAN class should not be used as a replacement for naively modelled enumerated types such as male/female etc. Such values should be coded, and in any case the enumeration often has more than two values.
 #[doc(alias = "DV_BOOLEAN")]

@@ -274,9 +274,11 @@ pub fn catalog() -> Vec<MetricSpec> {
     ]
 }
 
-/// Install the global Prometheus recorder with the catalog bucket ladders, then
-/// register descriptions and emit the `build_info` / `process_start_time`
-/// gauges. Returns the render handle for `/management/prometheus`.
+/// Install the global Prometheus recorder with the catalog bucket ladders,
+/// then register descriptions and emit the `build_info` /
+/// `process_start_time` gauges.
+///
+/// Returns the render handle for `/management/prometheus`.
 ///
 /// # Errors
 /// Returns [`BuildError`] if a recorder is already installed or bucket

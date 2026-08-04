@@ -16,6 +16,8 @@ pub struct BmmModelAccess {
     pub all_schemas: Option<std::collections::BTreeMap<String, BmmSchemaDescriptor>>,
     /// Top-level (root) models in use, keyed by `_model_id_`.
     pub bmm_models: Option<std::collections::BTreeMap<String, BmmModel>>,
-    /// Validated models, keyed by `_model_id()_` and any shorter forms of id, with some or no versioning information. For example, the keys `"openEHR_EHR_1.0.4"`, `"openEHR_EHR_1.0"`, `"openEHR_EHR_1"`, and `"openEHR_EHR"` will all match the `"openEHR_EHR_1.0.4"` model, assuming it is the most recent version available.
+    /// Validated models, keyed by `_model_id()_` and any shorter forms of id, with some or no versioning information.
+    ///
+    /// For example, the keys `"openEHR_EHR_1.0.4"`, `"openEHR_EHR_1.0"`, `"openEHR_EHR_1"`, and `"openEHR_EHR"` will all match the `"openEHR_EHR_1.0.4"` model, assuming it is the most recent version available.
     pub matching_bmm_models: Option<std::collections::BTreeMap<String, BmmModel>>,
 }

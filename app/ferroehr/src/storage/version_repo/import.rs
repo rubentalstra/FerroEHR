@@ -14,11 +14,12 @@ use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
 use crate::storage::version_repo::optional_json_array;
 
-/// One `vo_version` row to insert with an **explicit** `sys_period`
-/// (`[lower, upper)`, `upper = None` ⇒ still-open) — the import analogue of the
-/// local commit row, carrying no `template_id`. The import path builds a
-/// synthetic strictly-increasing local period chain per lineage (master06
-/// §Copying).
+/// One `vo_version` row to insert with an **explicit** `sys_period` (`[lower,
+/// upper)`, `upper = None` ⇒ still-open) — the import analogue of the local
+/// commit row, carrying no `template_id`.
+///
+/// The import path builds a synthetic strictly-increasing local period chain
+/// per lineage (master06 §Copying).
 ///
 /// The row is an `IMPORTED_VERSION`: `contribution_id` / `audit_id` /
 /// `signature` are the **local** act of committal and
@@ -167,8 +168,9 @@ pub struct VerbatimVersionRow<'a> {
 
 /// Insert one `vo_version` row verbatim from an archive record (explicit
 /// `sys_period` + preserved `template_id`) — the load side of the admin
-/// dump/load round-trip. The node rows are re-decomposed and written by the
-/// caller.
+/// dump/load round-trip.
+///
+/// The node rows are re-decomposed and written by the caller.
 ///
 /// This is the ONE version writer that does not derive the version tree
 /// position itself: the two live write paths compute the next
@@ -276,11 +278,13 @@ pub async fn has_version_tree(
     Ok(exists)
 }
 
-/// Close the open (`upper_inf`) version of one LINEAGE of `vo_id` at an explicit
-/// instant (the import base time). The trunk lineage is `branch_number = 0`; a
-/// branch lineage is one `(creating_system_id, trunk_version, branch_number)`.
-/// Used when importing further versions into an existing container (master06
-/// §Copying "previous copies have been made for the item").
+/// Close the open (`upper_inf`) version of one LINEAGE of `vo_id` at an
+/// explicit instant (the import base time).
+///
+/// The trunk lineage is `branch_number = 0`; a branch lineage is one
+/// `(creating_system_id, trunk_version, branch_number)`. Used when importing
+/// further versions into an existing container (master06 §Copying "previous
+/// copies have been made for the item").
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver/update failure.
@@ -319,8 +323,9 @@ pub async fn close_lineage_at(
 
 /// The current state of a to-be-imported container in the target store —
 /// `kind: None` when the container is not present (first receipt — master06
-/// §Copying Case 2). Mapping the kind text to a versioned-object kind is the
-/// caller's.
+/// §Copying Case 2).
+///
+/// Mapping the kind text to a versioned-object kind is the caller's.
 #[derive(Debug, Clone, Default)]
 pub struct ContainerStateRow {
     /// The stored kind text, if the `vo_id` already exists.

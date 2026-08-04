@@ -1,5 +1,7 @@
-//! The SMART on openEHR resource-scope grammar
-//! (`docs/specs/openehr/ITS-REST/docs/smart_app_launch/master08-scopes.adoc`),
+//! The SMART on openEHR resource-scope grammar.
+//!
+//! The grammar is
+//! `docs/specs/openehr/ITS-REST/docs/smart_app_launch/master08-scopes.adoc`,
 //! plus the launch-context scopes of master07 §Context Selection and master09
 //! §Experimental: Episode Context.
 //!

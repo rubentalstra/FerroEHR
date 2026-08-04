@@ -73,15 +73,19 @@ pub type ResolverFuture<T> = Pin<Box<dyn Future<Output = Result<T, ResolveError>
 pub type SubjectFn = Arc<dyn Fn(String) -> ResolverFuture<Option<String>> + Send + Sync>;
 
 /// `(vo_id, version) → template_id` (`vo_version.template_id`, read back via
-/// `ferroehr::service` in the binary). `version` is the `VERSION_TREE_ID` lexical
-/// form (`N` or `N.B.V` — trunk or branch, RM common master06 §The 'Virtual Version Tree');
-/// `None` = the current version.
+/// `ferroehr::service` in the binary).
+///
+/// `version` is the `VERSION_TREE_ID` lexical form (`N` or `N.B.V` — trunk or
+/// branch, RM common master06 §The 'Virtual Version Tree'); `None` = the
+/// current version.
 pub type TemplateOfVersionFn =
     Arc<dyn Fn(String, Option<String>) -> ResolverFuture<Option<String>> + Send + Sync>;
 
-/// The DB-backed attribute resolvers the ABAC PEP calls (§6). Defined here so
-/// the REST layer can hold them; the closures are built in the binary (which
-/// owns the pool + service), the audit-`SubjectResolver` precedent.
+/// The DB-backed attribute resolvers the ABAC PEP calls (§6).
+///
+/// Defined here so the REST layer can hold them; the closures are built in
+/// the binary (which owns the pool + service), the audit-`SubjectResolver`
+/// precedent.
 #[derive(Clone)]
 pub struct AuthzResolvers {
     /// EHR subject external-ref id lookup.
@@ -118,9 +122,11 @@ pub fn build_engine(config: &AbacConfig) -> Result<Option<Arc<dyn PolicyEngine>>
     Ok(Some(engine))
 }
 
-/// The per-server authorization handle. `None` on [`AppState`](crate::state::AppState)
-/// means authorization is off (authentication-only behaviour). Carries the
-/// coarse RBAC gate and/or the fine-grained ABAC gate.
+/// The per-server authorization handle.
+///
+/// `None` on [`AppState`](crate::state::AppState) means authorization is off
+/// (authentication-only behaviour). Carries the coarse RBAC gate and/or the
+/// fine-grained ABAC gate.
 #[derive(Debug)]
 pub struct AuthzHandle {
     rbac: Option<RbacGate>,

@@ -21,7 +21,9 @@ use openehr_base::prelude::Uuid;
 #[derive(Debug, Clone, PartialEq)]
 pub struct AuthoredArchetypeData {
     // inherited: ARCHETYPE
-    /// Archetype reference of the specialisation parent of this archetype, if applicable. May take the form of an archetype interface identifier, i.e. the identifier up to the major version only, or may be a full archetype identifier.
+    /// Archetype reference of the specialisation parent of this archetype, if applicable.
+    ///
+    /// May take the form of an archetype interface identifier, i.e. the identifier up to the major version only, or may be a full archetype identifier.
     pub parent_archetype_id: Option<String>,
     /// Identifier of this archetype.
     pub archetype_id: ArchetypeHrid,
@@ -39,7 +41,9 @@ pub struct AuthoredArchetypeData {
     // inherited: AUTHORED_RESOURCE
     /// Unique identifier of the family of archetypes having the same interface identifier (same major version).
     pub uid: Option<Uuid>,
-    /// Language in which this resource was initially authored. Although there is no language primacy of resources overall, the language of original authoring is required to ensure natural language translations can preserve quality. Language is relevant in both the description and ontology sections.
+    /// Language in which this resource was initially authored.
+    ///
+    /// Although there is no language primacy of resources overall, the language of original authoring is required to ensure natural language translations can preserve quality. Language is relevant in both the description and ontology sections.
     pub original_language: TerminologyCode,
     /// Description and lifecycle information of the resource.
     pub description: Option<Box<ResourceDescription>>,
@@ -47,15 +51,23 @@ pub struct AuthoredArchetypeData {
     pub is_controlled: Option<bool>,
     /// Annotations on individual items within the resource, keyed by path. The inner table takes the form of a Hash table of String values keyed by String tags.
     pub annotations: Option<ResourceAnnotations>,
-    /// List of details for each natural translation made of this resource, keyed by language code. For each translation listed here, there must be corresponding sections in all language-dependent parts of the resource. The `_original_language_` does not appear in this list.
+    /// List of details for each natural translation made of this resource, keyed by language code.
+    ///
+    /// For each translation listed here, there must be corresponding sections in all language-dependent parts of the resource. The `_original_language_` does not appear in this list.
     pub translations: Option<std::collections::BTreeMap<String, TranslationDetails>>,
     /// ADL version if archetype was read in from an ADL sharable archetype.
     pub adl_version: Option<String>,
-    /// Unique identifier of this archetype artefact instance. A new identifier is assigned every time the content is changed by a tool. Used by tools to distinguish different revisions and/or interim snapshots of the same artefact.
+    /// Unique identifier of this archetype artefact instance.
+    ///
+    /// A new identifier is assigned every time the content is changed by a tool. Used by tools to distinguish different revisions and/or interim snapshots of the same artefact.
     pub build_uid: Uuid,
-    /// Semver.org compatible release of the most recent reference model release on which the archetype in its current version is based. This does not imply conformance only to this release, since an archetype may be valid with respect to multiple releases of a reference model.
+    /// Semver.org compatible release of the most recent reference model release on which the archetype in its current version is based.
+    ///
+    /// This does not imply conformance only to this release, since an archetype may be valid with respect to multiple releases of a reference model.
     pub rm_release: String,
-    /// If True, indicates that this artefact was machine-generated from some other source, in which case, tools would expect to overwrite this artefact on a new generation. Editing tools should set this value to False when a user starts to manually edit an archetype.
+    /// If True, indicates that this artefact was machine-generated from some other source, in which case, tools would expect to overwrite this artefact on a new generation.
+    ///
+    /// Editing tools should set this value to False when a user starts to manually edit an archetype.
     pub is_generated: bool,
     /// The `other_meta_data` attribute of openEHR `AUTHORED_ARCHETYPE` (the vendored BMM carries no documentation for it).
     pub other_meta_data: std::collections::BTreeMap<String, String>,

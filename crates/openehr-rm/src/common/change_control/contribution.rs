@@ -13,7 +13,9 @@ use openehr_base::prelude::ObjectRef;
 pub struct Contribution {
     /// Unique identifier for this Contribution.
     pub uid: HierObjectId,
-    /// Set of references to Versions causing changes to this EHR. Each contribution contains a list of versions, which may include paths pointing to any number of versionable items, i.e. items of types such as `COMPOSITION` and `FOLDER`.
+    /// Set of references to Versions causing changes to this EHR.
+    ///
+    /// Each contribution contains a list of versions, which may include paths pointing to any number of versionable items, i.e. items of types such as `COMPOSITION` and `FOLDER`.
     pub versions: openehr_base::containers::NonEmptyVec<ObjectRef>,
     /// Audit trail corresponding to the committal of this Contribution.
     pub audit: AuditDetails,

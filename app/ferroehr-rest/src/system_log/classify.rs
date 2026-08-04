@@ -71,10 +71,11 @@ pub const DEFAULT: Classification =
 use EventActionCode::{Create, Delete, Execute, Read, Update};
 use ObjectClass::{Composition, Contribution, Demographic, Directory, Ehr, Query, Template};
 
-/// Look up the **explicit** classification for an operation id, or `None` when
-/// the id is not in the table. This is the raw table probe used by the coverage
-/// guard; the request path uses [`classify`], which applies the fail-closed
-/// [`DEFAULT`] to a `None`.
+/// Look up the **explicit** classification for an operation id, or `None`
+/// when the id is not in the table.
+///
+/// This is the raw table probe used by the coverage guard; the request path
+/// uses [`classify`], which applies the fail-closed [`DEFAULT`] to a `None`.
 #[must_use]
 #[expect(
     clippy::match_same_arms,
@@ -237,19 +238,23 @@ pub fn lookup(op: &str) -> Option<Classification> {
     Some(c)
 }
 
-/// Classify an operation id for the request path: its explicit [`lookup`] entry,
-/// or the fail-closed [`DEFAULT`] when the id is unrecognised (extension routes,
-/// future operations). Never yields "unknown" — an unrecognised operation is
-/// audited under the generic class rather than dropped.
+/// Classify an operation id for the request path: its explicit [`lookup`]
+/// entry, or the fail-closed [`DEFAULT`] when the id is unrecognised
+/// (extension routes, future operations).
+///
+/// Never yields "unknown" — an unrecognised operation is audited under the
+/// generic class rather than dropped.
 #[must_use]
 pub fn classify(op: &str) -> Classification {
     lookup(op).unwrap_or(DEFAULT)
 }
 
-/// The `(action, object)` an operation is audited under, or `None` when it is an
-/// explicit [`Classification::Unaudited`] opt-out. This is the entry point the
-/// audit middleware calls; an unrecognised id resolves through [`DEFAULT`] to
-/// `Some(...)`, so only a deliberate opt-out suppresses the operation record.
+/// The `(action, object)` an operation is audited under, or `None` when it is
+/// an explicit [`Classification::Unaudited`] opt-out.
+///
+/// This is the entry point the audit middleware calls; an unrecognised id
+/// resolves through [`DEFAULT`] to `Some(...)`, so only a deliberate opt-out
+/// suppresses the operation record.
 #[must_use]
 pub fn audit_for(op: &str) -> Option<(EventActionCode, ObjectClass)> {
     match classify(op) {

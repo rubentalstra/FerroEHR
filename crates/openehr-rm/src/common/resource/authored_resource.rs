@@ -13,11 +13,15 @@ use crate::data_types::text::code_phrase::CodePhrase;
 #[doc(alias = "AUTHORED_RESOURCE")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct AuthoredResource {
-    /// Language in which this resource was initially authored. Although there is no language primacy of resources overall, the language of original authoring is required to ensure natural language translations can preserve quality. Language is relevant in both the description and ontology sections.
+    /// Language in which this resource was initially authored.
+    ///
+    /// Although there is no language primacy of resources overall, the language of original authoring is required to ensure natural language translations can preserve quality. Language is relevant in both the description and ontology sections.
     pub original_language: CodePhrase,
     /// True if this resource is under any kind of change control (even file copying), in which case revision history is created.
     pub is_controlled: Option<bool>,
-    /// List of details for each natural-language translation made of this resource, keyed by language. For each translation listed here, there must be corresponding sections in all language-dependent parts of the resource. The `_original_language_` does not appear in this list.
+    /// List of details for each natural-language translation made of this resource, keyed by language.
+    ///
+    /// For each translation listed here, there must be corresponding sections in all language-dependent parts of the resource. The `_original_language_` does not appear in this list.
     pub translations: Option<std::collections::BTreeMap<String, TranslationDetails>>,
     /// Description and lifecycle information of the resource.
     pub description: Option<Box<ResourceDescription>>,

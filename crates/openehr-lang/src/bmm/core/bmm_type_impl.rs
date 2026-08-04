@@ -64,7 +64,9 @@ use crate::bmm::core::bmm_model::BmmModel;
 use crate::bmm::core::bmm_simple_type::BmmSimpleType;
 use crate::bmm::core::bmm_type::BmmType;
 
-/// The name of the top `Any` type, used wherever an unconstrained generic
+/// The name of the top `Any` type.
+///
+/// Used wherever an unconstrained generic
 /// parameter has to be reduced to a concrete conformance name
 /// (`org.openehr.lang.bmm.bmm_open_type.adoc` §Attributes: the generic
 /// constraint "will be 'Any' if nothing set in original model";

@@ -14,13 +14,17 @@ use crate::data_types::text::dv_text::DvText;
 #[doc(alias = "AUDIT_DETAILS")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct AuditDetailsData {
-    /// Identifier of the logical EHR system where the change was committed. This is almost always owned by the organisation legally responsible for the EHR, and is distinct from any application, or any hosting infrastructure.
+    /// Identifier of the logical EHR system where the change was committed.
+    ///
+    /// This is almost always owned by the organisation legally responsible for the EHR, and is distinct from any application, or any hosting infrastructure.
     pub system_id: String,
     /// Time of committal of the item.
     pub time_committed: DvDateTime,
     /// Type of change. Coded using the openEHR Terminology  audit change type  group.
     pub change_type: DvCodedText,
-    /// Reason for committal. This may be used to qualify the value in the `_change_type_` field. For example, if the change affects only the EHR directory, this field might be used to indicate 'Folder "episode 2018-02-16" added' or similar.
+    /// Reason for committal.
+    ///
+    /// This may be used to qualify the value in the `_change_type_` field. For example, if the change affects only the EHR directory, this field might be used to indicate 'Folder "episode 2018-02-16" added' or similar.
     pub description: Option<DvText>,
     /// Identity and optional reference into identity management service, of user who committed the item.
     pub committer: PartyProxy,

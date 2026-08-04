@@ -16,8 +16,7 @@ Runs the **CNF 2.0 pipeline** (`tools/cnf-runner`) via
 `scripts/conformance.sh` — compose up --build on FRESH volumes (the
 exclusive-server ground) → the committed catalogue → pure-function verdicts
 → artefacts under `docs/conformance/<sut>/` (our server:
-`docs/conformance/ferroehr/`). Rewritten 2026-07-22 for the CNF cutover
-(#202; the ECC harness is retired).
+`docs/conformance/ferroehr/`).
 
 ## Ground rules (before touching ANYTHING)
 

@@ -13,11 +13,12 @@ use uuid::Uuid;
 use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
 
-/// Insert one `ATTESTATION` row for a version (master06 §Attestation). Stores
-/// the completed canonical `ATTESTATION` verbatim in `data` (no synthetic
-/// fields); `vo_attestation.time_committed` takes the transaction timestamp
-/// (`now()`), equal to the `data.time_committed` stamped by the versioning
-/// layer with the same commit-act time.
+/// Insert one `ATTESTATION` row for a version (master06 §Attestation).
+///
+/// Stores the completed canonical `ATTESTATION` verbatim in `data` (no
+/// synthetic fields); `vo_attestation.time_committed` takes the transaction
+/// timestamp (`now()`), equal to the `data.time_committed` stamped by the
+/// versioning layer with the same commit-act time.
 ///
 /// `at_committal` records whether the attestation was on the version at the act
 /// of committal (`true`) or added afterwards (`false`) — the flag that decides
@@ -105,9 +106,11 @@ pub async fn attestation_target(
 }
 
 /// All `ATTESTATION`s of an object keyed by version ordinal, in commit order
-/// (for `REVISION_HISTORY` assembly). Ordered by `time_committed, id`:
-/// attestations committed in the same transaction share `now()`, so the
-/// `uuidv7()` `id` breaks ties in insertion order.
+/// (for `REVISION_HISTORY` assembly).
+///
+/// Ordered by `time_committed, id`: attestations committed in the same
+/// transaction share `now()`, so the `uuidv7()` `id` breaks ties in insertion
+/// order.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.

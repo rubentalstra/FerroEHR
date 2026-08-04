@@ -1,7 +1,9 @@
-//! The measured-window core: dispatch the built schedule open-loop,
-//! collect per-operation HDR histograms, aggregate the re-checkable
-//! measurement record. Shared by the class runs (conformance) and the
-//! stress ladder (exploration).
+//! The measured-window core: dispatch the built schedule open-loop, collect
+//! per-operation HDR histograms, aggregate the re-checkable measurement
+//! record.
+//!
+//! Shared by the class runs (conformance) and the stress ladder
+//! (exploration).
 
 use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 use std::sync::{Arc, mpsc};

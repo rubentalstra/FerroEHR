@@ -1,6 +1,8 @@
-//! Parsed-artefact identity summary — the small public accessor the REST/service
-//! layer reads after [`crate::assemble::parse_artefact`], so it never re-derives
-//! the HRID / concept / kind / specialisation parent from source text by hand.
+//! Parsed-artefact identity summary.
+//!
+//! This is the small public accessor the REST/service layer reads after
+//! [`crate::assemble::parse_artefact`], so it never re-derives the HRID /
+//! concept / kind / specialisation parent from source text by hand.
 //!
 //! The fields are exactly what the ITS-REST `DEFINITION` group needs:
 //! `TemplateMetadata.archetype_id` + `.concept` (the OPT list rows;
@@ -67,9 +69,10 @@ pub fn summarize(archetype: &Archetype) -> ArtefactSummary {
 }
 
 /// The `regression` tag of an assembled [`Archetype`], read from the resource
-/// description's `other_details["regression"]`. The corpus uses this tag as the
-/// authoritative expected-outcome oracle (INVENTORY.md); validation-phase
-/// harnesses read it through this helper.
+/// description's `other_details["regression"]`.
+///
+/// The corpus uses this tag as the authoritative expected-outcome oracle
+/// (INVENTORY.md); validation-phase harnesses read it through this helper.
 #[must_use]
 pub fn regression_tag(archetype: &Archetype) -> Option<String> {
     description_of(archetype)?

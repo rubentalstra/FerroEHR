@@ -102,10 +102,12 @@ fn default_basic_roles() -> Vec<String> {
     vec!["USER".to_owned()]
 }
 
-/// OAuth2/OIDC bearer configuration. Validation happens as a resource server:
-/// the token's signature is checked against a key source and the `iss`/`aud`
-/// claims validated. The authorization-code client flow (the `oauth2` crate) is
-/// a client concern, not a CDR's, so it is out of scope here.
+/// OAuth2/OIDC bearer configuration.
+///
+/// Validation happens as a resource server: the token's signature is checked
+/// against a key source and the `iss`/`aud` claims validated. The
+/// authorization-code client flow (the `oauth2` crate) is a client concern,
+/// not a CDR's, so it is out of scope here.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct OidcConfig {

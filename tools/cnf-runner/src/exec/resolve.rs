@@ -1,4 +1,6 @@
-//! Reference resolution — turning the closed `${…}` grammar into concrete
+//! Reference resolution.
+//!
+//! Turns the closed `${…}` grammar into concrete
 //! values at execution time: corpus data sets (via the manifest), named
 //! views, registered recipes, matrix/fixture row bindings, captures, and
 //! the fixed temporal expressions.

@@ -258,7 +258,7 @@ ADJ
   fi
 } > docs/conformance/COMPARISON.md
 
-# ── stress side (the CNF step-load instrument; the retired lab's overlays are gone) ──
+# ── stress side (the CNF step-load instrument) ──
 RS_STRESS="$RS/stress.json"
 JV_STRESS="$JV/stress.json"
 

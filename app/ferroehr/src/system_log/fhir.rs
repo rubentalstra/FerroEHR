@@ -56,6 +56,7 @@ pub const SYS_SECURITY_SOURCE_TYPE: &str =
 pub const SYS_BALP_USER_AGENT_TYPES: &str =
     "https://profiles.ihe.net/ITI/BALP/CodeSystem/UserAgentTypes";
 /// The system for ITS-REST operation-id subtype codings.
+///
 /// NOTE: no external code system governs openEHR REST operations — our own
 /// design/extension (the same ids the DICOM rendering emits under the
 /// `openEHR-ITS-REST` `codeSystemName`).

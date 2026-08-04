@@ -16,8 +16,8 @@ deleted in the PR that implements it.
   when the LAST of them closes.) The durable record of what shipped is
   the closed issues + PR descriptions, `CHANGELOG.md`, git history, and the
   living reference docs (`docs/architecture.md`, `docs/VERSIONS.md`).
-- **There is no ADR layer** — it was deleted (it caused more confusion than
-  value). No file may instruct anyone to read, write, or cite an ADR.
+- **There is no ADR layer** (owner ruling 2026-07-17). No file may instruct
+  anyone to read, write, or cite an ADR.
 - **The only citable references are the vendored openEHR specs
   (`docs/specs/openehr/`) and official external documentation** (the
   PostgreSQL docs, the Rust book/reference, the docs.rs/crates.io docs of a
@@ -27,8 +27,8 @@ deleted in the PR that implements it.
 
 ## What lives here now
 
-- `WORKLIST.md` — the retired tracker's pointer stub (the tracker is GitHub
-  Issues; this stub and this README are delete-protected).
+- `WORKLIST.md` — a pointer stub to the tracker (GitHub Issues; this stub
+  and this README are delete-protected).
 - One `*.md` working plan per open issue that needs one; nothing else.
   Completed plan files are pruned in the PR that lands them, with the close
   recorded in the PR description + the issue's handoff comment.

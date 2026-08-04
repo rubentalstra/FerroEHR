@@ -11,8 +11,7 @@ platform, language, database, and openEHR specification pins.
 
 The **product** version (the workspace `version` in the root `Cargo.toml`,
 inherited by the `ferroehr-*` application crates, the tools, and the codegen
-tooling) follows its own SemVer line, starting at **3.0.0**
-(2026-07-11 — the fork's inherited upstream tags/releases were removed; this
+tooling) follows its own SemVer line, starting at **3.0.0** (this
 project releases as the successor of the EHRbase 2.x line). Releases are
 changelog-driven (`CHANGELOG.md`, Keep a Changelog 1.1.0) and published as
 official releases (owner sign-off 2026-07-31); only an explicitly suffixed
@@ -88,7 +87,7 @@ pin accepts every valid older-minor instance.
 | QUERY (AQL) | 1.1.0 (= the release) | 1.1.0 (14-May-2021) | 1.2.0 | `openehr-query`; grammar-driven (AqlLexer/Parser `.g4`), not BMM |
 | LANG (BMM / ODIN / EL) | master snapshot beyond 1.0.0 (development toward 1.1.0); **both extant BMM generations vendored** — the stable v2.x BMM (`openehr_lang_1.1.0.bmm.json`) and the v3 development line (`openehr_lang_1.1.0-bmm3.bmm.json`) | 1.0.0 (11-May-2020) | dev | `openehr-lang` — the ODIN + BMM reader that feeds codegen; the crate carries 1.0.0 as its spec version. **The two BMM generations are emitted side by side** (the second live dual-generation case beside AM's `am14`/`am24`): 18 class names occur in both files with materially different shapes, so the v2.x model emits under `bmm/` + `bmm_persistence/` + `beom/` and the v3 model under `bmm3/`. Upstream formalised the split in SPECLANG-14 (`LANG/docs/bmm3/master00-amendment_record.adoc`) and keeps v2.x as "the normative, tool-implemented version" (`LANG/docs/bmm/master01-preface.adoc` §History). The crate prelude exports one type per Rust name — the v3 twin for a colliding name; the v2.x twin is reachable by its full module path |
 | TERM (Terminology) | **3.1.0** (WIP generation) | 3.0.0 (26-Jun-2023) | 3.1.0 | `openehr-term` — **hand-written** (BMM has only interface classes; bundle/assets/logic are not derivable) |
-| ITS-XML (XSDs) | **both published lineages vendored**: tag `Release-1.0.2v2` @ `f7a93777` (namespace `…/v1`, the STABLE bundle) + tag `Release-2.0.0v2` @ `de8b37ba` (namespace `…/v2`, TRIAL upstream) | 2.0.0 TRIAL (26-Apr-2021) | 2.1.0 | canonical XML in `openehr-its`, one generated codec for both (the lineages differ only in the root `xmlns`); bundles at `crates/openehr-its/schemas/xml/`. **Served wire = v2 by default, v1 on request** (owner ruling 2026-08-03, issue #1666, superseding the 2026-07-28 v1 default — the v1 bundle cannot describe 50 RM 1.2.0 classes the server emits, register AMB-185): a client selects the lineage with the `version` media-type parameter on `application/xml` — our own extension, no openEHR spec governs namespace selection on the REST wire. OPT 1.4 template XML is always v1. |
+| ITS-XML (XSDs) | **both published lineages vendored**: tag `Release-1.0.2v2` @ `f7a93777` (namespace `…/v1`, the STABLE bundle) + tag `Release-2.0.0v2` @ `de8b37ba` (namespace `…/v2`, TRIAL upstream) | 2.0.0 TRIAL (26-Apr-2021) | 2.1.0 | canonical XML in `openehr-its`, one generated codec for both (the lineages differ only in the root `xmlns`); bundles at `crates/openehr-its/schemas/xml/`. **Served wire = v2 by default, v1 on request** (owner ruling 2026-08-03, issue #1666 — the v1 bundle cannot describe 50 RM 1.2.0 classes the server emits, register AMB-185): a client selects the lineage with the `version` media-type parameter on `application/xml` — our own extension, no openEHR spec governs namespace selection on the REST wire. OPT 1.4 template XML is always v1. |
 | ITS-REST (REST API) | **Release-1.1.0** @ `24058992d` | 1.1.0 (19-Jul-2026) | 1.2.0 | policy: single version, always the latest released; spec text at `docs/specs/openehr/ITS-REST/` and the OAS at `crates/openehr-its/vendor/rest-oas/` are the **same commit** (tag Release-1.1.0). Per-API lifecycle within the release: Overview/System/EHR/Query/Definition/Formats **STABLE**; Demographic/Admin/SMART **DEVELOPMENT** (the OAS bundle artifacts are marked TRIAL) — all 7 API groups vendored |
 | ITS-JSON (JSON Schemas) | development @ `5acae056` | (1.0.0 itself still WIP) | dev | validation oracle for the fidelity gate; `openehr_rm_1.1.0_all.json` vendored at `crates/openehr-its/schemas/json/` |
 | ITS-BMM (BMM meta-model, JSON) | per-component (see above) | per-schema | — | **the codegen input**; vendored `*.bmm.json` at `tools/openehr-codegen/vendor/bmm/` with provenance. Exception: the BASE 1.3.0 json is taken from `specifications-BASE` @ `e4879576` (2026-07-25) pending ITS-BMM republication — see that PROVENANCE.md |
@@ -181,19 +180,19 @@ This is a fork; its import point is recorded so provenance is unambiguous:
 |---|---|
 | Original reasoning authored against | EHRbase v2.31.0 |
 | Tree actually imported at (Phase 0) | EHRbase v2.33.0 |
-| `reference/v1` git ref | v0.32.0 (last pre-v2 tag) |
+| Enterprise-capability prior art | upstream EHRbase tag v0.32.0 (last pre-v2) |
 
 The original design reasoning was authored against v2.31.0. By the time this
 fork's Phase 0 reorganization ran, upstream had advanced to v2.33.0, and that
-is the tree actually imported into the Cargo workspace. (With the greenfield storage pivot the
-in-tree EHRbase Java was later removed and behaviour-parity was retired for
-openEHR CNF conformance; EHRbase v2.33.0 remains the *prior-art* reference, not
-a parity oracle.)
+is the tree actually imported into the Cargo workspace. EHRbase v2.33.0 is the
+*prior-art* reference, consulted via its upstream repo — never an in-tree copy
+and never a parity oracle (acceptance is the openEHR CNF suite).
 
-`reference/v1` is a read-only git reference pinned at v0.32.0, the last tag
-before the v1→v2 architectural break. It is consulted only during the Stage 2
-enterprise-feature archaeology and restoration work and is never merged into the
-working tree during Stage 1.
+Work on enterprise capabilities not yet built (the plugin system and peers)
+may consult the upstream EHRbase v0.32.0 tag — the last release before the
+v1→v2 architectural break — read-only, in the public upstream repository.
+Everything built ships as our own design, with the openEHR specifications as
+the only authority.
 
 ## Rust dependency pins
 

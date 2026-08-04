@@ -554,7 +554,9 @@ fn register_adjudication() -> Value {
     })
 }
 
-/// `vocab/capability_matrix.yaml` — capability → family/tier/required, with
+/// The `vocab/capability_matrix.yaml` schema.
+///
+/// It maps capability → family/tier/required, with
 /// family-scoped tiers enforced in-schema, the per-capability depth floor
 /// (`min_cases`), the realization marker, and the two register-linked
 /// adjudication blocks.
@@ -1456,8 +1458,10 @@ pub fn journey_catalogue_schema() -> Value {
 
 /// `vocab/wire_surface.yaml` — the wire-surface coverage register (the
 /// `surface-coverage` gate's authored, spec-cited exceptions + cross-cutting
-/// elements). Every `source` is a released-spec / ITS-REST-docs citation,
-/// never the vendored OAS (owner ruling 2026-07-24).
+/// elements).
+///
+/// Every `source` is a released-spec / ITS-REST-docs citation, never the
+/// vendored OAS (owner ruling 2026-07-24).
 #[must_use]
 pub fn wire_surface_schema() -> Value {
     let reason = json!({ "enum": tokens(SurfaceReason::ALL) });

@@ -14,7 +14,9 @@ use crate::am24::beom::core::statement_set::StatementSet;
 #[derive(Debug, Clone, PartialEq)]
 pub struct TemplateOverlay {
     // inherited: ARCHETYPE
-    /// Archetype reference of the specialisation parent of this archetype, if applicable. May take the form of an archetype interface identifier, i.e. the identifier up to the major version only, or may be a full archetype identifier.
+    /// Archetype reference of the specialisation parent of this archetype, if applicable.
+    ///
+    /// May take the form of an archetype interface identifier, i.e. the identifier up to the major version only, or may be a full archetype identifier.
     pub parent_archetype_id: Option<String>,
     /// Identifier of this archetype.
     pub archetype_id: ArchetypeHrid,

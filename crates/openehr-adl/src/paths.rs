@@ -35,10 +35,11 @@ pub struct PathSegment {
     pub node_id: Option<String>,
 }
 
-/// Parse an archetype path string into its ordered [`PathSegment`]s
-/// (master05 grammar `('/'? segment ('/' segment)+)`, `segment = attr ('['
-/// id ']')?`). A leading `/` is ignored; the empty / root path yields an empty
-/// segment list.
+/// Parse an archetype path string into its ordered [`PathSegment`]s (master05
+/// grammar `('/'?
+///
+/// segment ('/' segment)+)`, `segment = attr ('[' id ']')?`). A leading `/`
+/// is ignored; the empty / root path yields an empty segment list.
 #[must_use]
 pub fn parse_path(path: &str) -> Vec<PathSegment> {
     let trimmed = path.trim();
@@ -195,10 +196,12 @@ pub fn path_exists(root: &CComplexObject, path: &str) -> bool {
     resolve(root, path) == Resolution::Found
 }
 
-/// Locate the object node `path` addresses inside `root`, returning it when the
-/// path resolves to a node within the archetype ([`Resolution::Found`]), else
-/// `None`. Mirrors [`resolve`] but yields the target [`CObject`] (used to resolve
-/// an `EXPR_ARCHETYPE_REF` proxy to its target node — `AOM2` master05).
+/// Locate the object node `path` addresses inside `root`, returning it when
+/// the path resolves to a node within the archetype ([`Resolution::Found`]),
+/// else `None`.
+///
+/// Mirrors [`resolve`] but yields the target [`CObject`] (used to resolve an
+/// `EXPR_ARCHETYPE_REF` proxy to its target node — `AOM2` master05).
 #[must_use]
 pub fn locate<'a>(root: &'a CComplexObject, path: &str) -> Option<&'a CObject> {
     let segments = parse_path(path);

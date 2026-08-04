@@ -259,10 +259,12 @@ const BOOTSTRAP: &[&str] = &[
 
 /// A stable fingerprint of the complete embedded migration state: the
 /// bootstrap statements plus every migrator's (version, checksum) sequence,
-/// in application order. Two builds with identical migrations produce the
-/// same value; any migration change produces a new one. Test infrastructure
-/// keys its migrated template databases on this (no openEHR spec governs
-/// test infrastructure — our own design).
+/// in application order.
+///
+/// Two builds with identical migrations produce the same value; any migration
+/// change produces a new one. Test infrastructure keys its migrated template
+/// databases on this (no openEHR spec governs test infrastructure — our own
+/// design).
 #[must_use]
 pub fn migration_fingerprint() -> String {
     // FNV-1a over the bootstrap text + each migration's version/checksum —

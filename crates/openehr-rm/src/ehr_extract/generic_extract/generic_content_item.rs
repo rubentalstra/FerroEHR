@@ -17,9 +17,13 @@ use openehr_base::prelude::UidBasedId;
 #[derive(Debug, Clone, PartialEq)]
 pub struct GenericContentItem {
     // inherited: LOCATABLE
-    /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.
+    /// Runtime name of this fragment, used to build runtime paths.
+    ///
+    /// This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.
     pub name: DvText,
-    /// Design-time archetype identifier of this node taken from its generating archetype; used to build archetype paths. Always in the form of an at-code, e.g.  `at0005`. This value enables a 'standardised' name for this node to be generated, by referring to the generating archetype local terminology.
+    /// Design-time archetype identifier of this node taken from its generating archetype; used to build archetype paths.
+    ///
+    /// Always in the form of an at-code, e.g.  `at0005`. This value enables a 'standardised' name for this node to be generated, by referring to the generating archetype local terminology.
     ///
     /// At an archetype root point, the value of this attribute is always the stringified form of the `_archetype_id_` found in the `_archetype_details_` object.
     pub archetype_node_id: String,
@@ -45,11 +49,15 @@ pub struct GenericContentItem {
     pub item_type: Option<DvCodedText>,
     /// Version of model or schema used to create the content item.
     pub item_type_version: Option<String>,
-    /// Reference to a demographic entity elsewhere in this Extract representing the author of the item version. The reference should be a UID corresponding to the UID of a `GENERIC_CONTENT_ITEM` containing the demographic information.
+    /// Reference to a demographic entity elsewhere in this Extract representing the author of the item version.
+    ///
+    /// The reference should be a UID corresponding to the UID of a `GENERIC_CONTENT_ITEM` containing the demographic information.
     pub author: Option<String>,
     /// Time of creation of this item version on the original system. This may be an earlier commit time, or it may be the time at which the item was created during the Extract generation process.
     pub creation_time: Option<Iso8601DateTime>,
-    /// Reference to a demographic entity elsewhere in this Extract representing an authoriser of the item version, if relevant. The reference should be a UID corresponding to the UID of a `GENERIC_CONTENT_ITEM` containing the demographic information.
+    /// Reference to a demographic entity elsewhere in this Extract representing an authoriser of the item version, if relevant.
+    ///
+    /// The reference should be a UID corresponding to the UID of a `GENERIC_CONTENT_ITEM` containing the demographic information.
     pub authoriser: Option<String>,
     /// Time of authorisation of this item version on the original system where relevant.
     pub authorisation_time: Option<Iso8601DateTime>,

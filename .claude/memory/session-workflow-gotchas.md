@@ -73,6 +73,13 @@ commit-message wording; close/reopen for late labels.
    `cargo fmt --check` leaves the tree rustfmt-dirty. Always finish with
    `cargo fmt --all && cargo fmt --all --check`.
 - **Changelog inserts:** a section (`### Fixed` etc.) may already exist in the target release block — ALWAYS merge the entry into the existing subsection header; blindly inserting a new header creates a duplicate (happened twice, owner-corrected 2026-08-01). Check `grep -n '^###' CHANGELOG.md` for the block first.
+- **`gh` comment bodies need heredocs:** backticks inside a double-quoted
+  `--body` get shell-executed and silently mangle the posted comment. Use
+  `--body-file -` with a quoted heredoc (`<<'EOF'`).
+- **Renaming a container-test module breaks nextest serialization:** the
+  `containers` group in `.config/nextest.toml` matches those suites by module
+  prefix (`binary(it) & test(/^(…)::/)`), so a module rename silently
+  un-serializes them — update the filter in the same change.
 - **PR close keywords:** GitHub closes ONE issue per keyword — `Closes #1, #2, #3`
   closes only #1. Every issue needs its own `Closes #N` (one per line is
   clearest). Happened on PR #1821 (14 of 15 left open, owner-corrected

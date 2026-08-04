@@ -1,8 +1,9 @@
-//! Native utoipa-axum routing for the EHR API group. No openEHR spec governs an
-//! OAS layout; the operation semantics are the ITS-REST EHR API
-//! (docs/specs/openehr/ITS-REST). Each handler forwards to the group dispatcher
-//! through `guarded_dispatch`, so wire behaviour is identical to the former
-//! `mount()` adapter.
+//! Native utoipa-axum routing for the EHR API group.
+//!
+//! No openEHR spec governs an OAS layout; the operation semantics are the
+//! ITS-REST EHR API (docs/specs/openehr/ITS-REST). Each handler forwards to
+//! the group dispatcher through `guarded_dispatch`, so wire behaviour is
+//! identical to the former `mount()` adapter.
 
 use axum::extract::State;
 use axum::response::Response;

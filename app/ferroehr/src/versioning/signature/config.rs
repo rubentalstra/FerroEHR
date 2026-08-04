@@ -52,9 +52,11 @@ pub enum VerifyOnRead {
     Strict,
 }
 
-/// Version-signing configuration. Every field has a default, so an all-defaults
-/// value is valid: signing **on**, `digest` mode, and — with signing enabled —
-/// read-time verification **strict** (see [`Self::effective_verify_on_read`]).
+/// Version-signing configuration.
+///
+/// Every field has a default, so an all-defaults value is valid: signing
+/// **on**, `digest` mode, and — with signing enabled — read-time verification
+/// **strict** (see [`Self::effective_verify_on_read`]).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct SigningConfig {

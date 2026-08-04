@@ -1,4 +1,6 @@
-//! Canonical AQL text rendering of the [`crate::ast`] — the inverse of the
+//! Canonical AQL text rendering of the [`crate::ast`].
+//!
+//! This is the inverse of the
 //! parser, for programmatic query construction (a visual builder assembles
 //! the AST and renders it here; the grammar authority is
 //! `docs/specs/openehr/QUERY/docs/AQL/`). Keywords render in canonical
@@ -49,8 +51,10 @@ pub fn to_aql(query: &SelectQuery) -> String {
     out
 }
 
-/// Escape a raw string for embedding in an AQL single-quoted literal
-/// (backslash escapes per the AQL lexer): use this when CONSTRUCTING
+/// Escapes a raw string for embedding in an AQL single-quoted literal.
+///
+/// The escapes are backslash escapes per the AQL lexer: use this when
+/// CONSTRUCTING
 /// [`Primitive::String`](crate::ast::Primitive::String) from user input — the printer emits stored string
 /// content verbatim (parser round-trip keeps source escapes intact).
 #[must_use]

@@ -1,8 +1,9 @@
-//! The **typed dispatch tier** of the RM class-invariant check (hand-written):
-//! the `_type` → concrete-RM-type table that deserializes a canonical-JSON node
-//! into its class through the emitted canonical-JSON `serde` impls
-//! (`crate::json_serde`, `openehr-codegen -- emit-json`) and runs that class's
-//! [`Validate`] impl.
+//! The **typed dispatch tier** of the RM class-invariant check (hand-written).
+//!
+//! This is the `_type` → concrete-RM-type table that deserializes a
+//! canonical-JSON node into its class through the emitted canonical-JSON `serde`
+//! impls (`crate::json_serde`, `openehr-codegen -- emit-json`) and runs that
+//! class's [`Validate`] impl.
 //!
 //! It lives here, beside the fast path ([`super::try_fast_validate`]) and the
 //! invariant cores, because every decision it makes is RM model semantics: the
@@ -218,12 +219,13 @@ fn lower_bound_one(ty: &str, attribute: &str) -> bool {
         .any(|a| a.name == attribute && a.cardinality.is_some_and(|c| c.lower >= 1))
 }
 
-/// The `_type` → concrete-RM-type table: deserialize the node into the class its
-/// `_type` names and run that class's `Validate` impl. Returns `true` when the
-/// class was handled here, `false` for the fallthrough — the caller then runs the
-/// GENERATED five-crate structural dispatch
-/// (`openehr_its::json_codec::generated::structural`), which cannot live in this
-/// crate because it spans every spec crate at once.
+/// The `_type` → concrete-RM-type table: deserialize the node into the class
+/// its `_type` names and run that class's `Validate` impl.
+///
+/// Returns `true` when the class was handled here, `false` for the
+/// fallthrough — the caller then runs the GENERATED five-crate structural
+/// dispatch (`openehr_its::json_codec::generated::structural`), which cannot
+/// live in this crate because it spans every spec crate at once.
 ///
 /// Authoritative for every node it handles (the fast path
 /// [`super::try_fast_validate`] may only *skip* it when its result is provably

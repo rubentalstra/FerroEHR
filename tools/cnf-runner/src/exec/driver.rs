@@ -1,4 +1,6 @@
-//! The live HTTP driver — a [`crate::exec::StepDriver`] realized PURELY
+//! The live HTTP driver.
+//!
+//! A [`crate::exec::StepDriver`] realized PURELY
 //! from the operation bindings: request construction (method, path/query
 //! templates, format headers, `Prefer`/`If-Match` discipline), wire
 //! observation classification, capture extraction per the closed

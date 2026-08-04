@@ -7,7 +7,9 @@
 #[doc(alias = "ARCHETYPE_ONTOLOGY")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct ArchetypeOntology {
-    /// List of all term codes in the ontology. Most of these correspond to “at” codes in an ADL archetype, which are the node_ids on C_OBJECT descendants. There may be an extra one, if a different term is used as the overall archetype concept from that used as the node_id of the outermost C_OBJECT in the definition part.
+    /// List of all term codes in the ontology.
+    ///
+    /// Most of these correspond to “at” codes in an ADL archetype, which are the node_ids on C_OBJECT descendants. There may be an extra one, if a different term is used as the overall archetype concept from that used as the node_id of the outermost C_OBJECT in the definition part.
     pub term_codes: openehr_base::containers::NonEmptyVec<String>,
     /// List of all term codes in the ontology. These correspond to the “ac” codes in an ADL archetype, or equivalently, the CONSTRAINT_REF.reference values in the archetype definition.
     pub constraint_codes: openehr_base::containers::NonEmptyVec<String>,

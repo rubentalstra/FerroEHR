@@ -124,10 +124,12 @@ pub fn authorize(class: OperationClass, roles: &[String], rbac: &RbacConfig) -> 
     }
 }
 
-/// The read-only restriction: refuse a principal carrying the read-only role on
-/// every write operation, even when it also holds granting roles (a restriction
-/// overrides a grant). Reads, non-read-only principals, and the rbac-disabled
-/// case all pass through with [`RbacDecision::Allow`]. Role matching is
+/// The read-only restriction: refuse a principal carrying the read-only role
+/// on every write operation, even when it also holds granting roles (a
+/// restriction overrides a grant).
+///
+/// Reads, non-read-only principals, and the rbac-disabled case all pass
+/// through with [`RbacDecision::Allow`]. Role matching is
 /// ASCII-case-insensitive, the same idiom as [`authorize`].
 ///
 // NOTE: no openEHR spec governs this — our own design/extension. The SM places

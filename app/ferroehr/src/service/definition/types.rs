@@ -1,9 +1,11 @@
 //! The DEFINITION data shapes shared with the REST adapter: the wire
 //! template-list filter and the SM stored-query descriptor.
 
-/// The template-list filter carried by the ITS-REST `definition_template_*_list`
-/// operations. All three are optional query parameters the wire decodes but the
-/// SM `I_DEFINITION_*` list interfaces (which return plain `List<UUID>`) do not
+/// The template-list filter carried by the ITS-REST
+/// `definition_template_*_list` operations.
+///
+/// All three are optional query parameters the wire decodes but the SM
+/// `I_DEFINITION_*` list interfaces (which return plain `List<UUID>`) do not
 /// express — so they ride on the wire-shaped list methods alongside the SM
 /// cursor [`Page`](crate::service::list::Page).
 ///

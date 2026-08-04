@@ -1,5 +1,6 @@
-//! Hand-written RM spec functions for the `DV_ORDERED` /
-//! `DV_QUANTIFIED` family: `magnitude()`, `is_strictly_comparable_to()`,
+//! Hand-written RM spec functions for the `DV_ORDERED` / `DV_QUANTIFIED` family.
+//!
+//! The surface is `magnitude()`, `is_strictly_comparable_to()`,
 //! `less_than()`, `is_simple()`, `is_normal()`, plus the [`OrderedLimit`]
 //! comparison surface `DV_INTERVAL` / `REFERENCE_RANGE` need.
 //!
@@ -274,7 +275,9 @@ pub(crate) fn iso_duration_to_seconds(s: &str) -> Option<f64> {
 // ── the OrderedLimit comparison surface ──────────────────────────────────────
 
 /// The comparison surface `DV_INTERVAL<T>` / `REFERENCE_RANGE` need from a
-/// limit type: openEHR strict comparability (RM
+/// limit.
+///
+/// A limit type provides openEHR strict comparability (RM
 /// `DV_ORDERED.is_strictly_comparable_to`) and ordered-magnitude comparison
 /// (RM `DV_ORDERED.less_than` and the derived `<=`).
 ///

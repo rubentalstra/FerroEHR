@@ -1,4 +1,6 @@
-//! Measurement-service helpers — `MEASUREMENT_SERVICE.is_valid_units_string`
+//! Measurement-service helpers.
+//!
+//! `MEASUREMENT_SERVICE.is_valid_units_string`
 //! (RM support `measurement_service.adoc`: "True if the units string is a
 //! valid string according to the HL7 UCUM specification"; RM data_types
 //! master06: `DV_QUANTITY.units` is a UCUM case-sensitive code by default).

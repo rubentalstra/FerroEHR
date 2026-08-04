@@ -1,7 +1,8 @@
-//! Cross-artifact validation — the schedule's machine gates, generalized
-//! from ECC's coverage-guard discipline: id uniqueness, SM-operation
-//! resolution, spec-ref link checks, binding completeness, `verified_by`
-//! resolution, corpus integrity, ambiguity/option resolution,
+//! Cross-artifact validation — the schedule's machine gates.
+//!
+//! Generalized from ECC's coverage-guard discipline: id uniqueness,
+//! SM-operation resolution, spec-ref link checks, binding completeness,
+//! `verified_by` resolution, corpus integrity, ambiguity/option resolution,
 //! capability-vs-tier consistency, reference/sentinel grammar,
 //! decision-table literals, and vocabulary drift.
 //!
@@ -288,9 +289,10 @@ fn suspended_report_only(set: &ArtifactSet, case: &CaseCore) -> bool {
 }
 
 /// The verdict-bearing cases of one capability: active cases naming it whose
-/// gating is not suspended by a `report_only` register entry. This is the
-/// count the depth floor measures and the set the claim gate requires to be
-/// non-empty.
+/// gating is not suspended by a `report_only` register entry.
+///
+/// This is the count the depth floor measures and the set the claim gate
+/// requires to be non-empty.
 #[must_use]
 pub fn verdict_bearing<'a>(set: &'a ArtifactSet, cap: &CapabilityName) -> Vec<&'a CaseCore> {
     set.cases
@@ -4060,10 +4062,13 @@ fn check_axis3_section_derivation(
     }
 }
 
-/// Render the deterministic coverage report (`docs/conformance/coverage-report.md`):
-/// per-interface SM-operation status, per-binding outcome/format coverage, and
-/// the cross-cutting wire-surface table. Stable ordering, no timestamps — the
-/// same inputs always render byte-identical output.
+/// Render the deterministic coverage report
+/// (`docs/conformance/coverage-report.md`): per-interface SM-operation
+/// status, per-binding outcome/format coverage, and the cross-cutting
+/// wire-surface table.
+///
+/// Stable ordering, no timestamps — the same inputs always render
+/// byte-identical output.
 ///
 /// Axis 1 (the per-interface section) and the Axis-3 section derivation render
 /// only when `spec_root` is supplied (they read the vendored spec tree).

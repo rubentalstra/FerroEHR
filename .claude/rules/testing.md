@@ -13,7 +13,8 @@ applies to every crate — generated and hand-written alike.
   build pass.
 - **Never** edit a test to route around a runtime bug it exposes. If a test
   fails and the fix is unclear, leave it failing and record a
-  `// TODO:` — do not touch the test to make it green.
+  `// TODO(#NNNN):` naming its issue — do not touch the test to make it
+  green.
 - Conformance/corpus tests assert the **openEHR specifications**:
   cite the spec clause a test encodes; never adjust an expectation to match
   an implementation bug. Corpus/fixture defects are ADJUDICATED with a
@@ -37,8 +38,8 @@ applies to every crate — generated and hand-written alike.
   (`FERROEHR_TEST_PG_URL` in CI, a reusable `ferroehr-testkit-pg18`
   testcontainer locally), one migrated template database per migration
   fingerprint, one `CREATE DATABASE … TEMPLATE` clone per call. **Never
-  start a per-test PostgreSQL container or run migrations in a test** —
-  that pattern is retired (it cost ~5–10 s + Docker contention per test).
+  start a per-test PostgreSQL container or run migrations in a test** — it
+  costs ~5–10 s + Docker contention per test.
   Broker/blob tests (RabbitMQ, SeaweedFS) still run real testcontainers,
   serialized via the nextest `containers` group.
 - **HTTP mocking:** `wiremock` for the terminology/FHIR client and any
@@ -49,11 +50,10 @@ applies to every crate — generated and hand-written alike.
 
 - **The acceptance instrument is the CNF 2.0 runner** (`tools/cnf-runner`,
   `scripts/conformance.sh`) — the data-driven interpreter over the committed
-  machine-readable catalogue, with pure-function verdicts. Phase-close runs
+  machine-readable catalogue, with pure-function verdicts. Issue-close runs
   must show **zero drift** vs the committed baseline
   (`docs/conformance/ferroehr/results.json` + `verdicts.json`); the
-  baseline only ratchets upward. (The ECC harness retired 2026-07-22; the
-  reviewed cutover comparison lives in git history.)
+  baseline only ratchets upward.
 - **The vendored CNF text is the STALLED structural GUIDE the instrument's
   COVERAGE derives from — NOT the correctness oracle** (owner ruling
   2026-07-24; openEHR CNF never released a stable version):
@@ -75,7 +75,7 @@ applies to every crate — generated and hand-written alike.
 
 Unit tests live beside the code they test (`#[cfg(test)] mod tests` in the
 same file) — and ONLY there: **dedicated test FILES under `src/` are banned**
-(owner ruling 2026-07-17; the four historical ones were relocated). A test
+(owner ruling 2026-07-17). A test
 that drives the public API belongs in the owning crate's `tests/` directory
 (`crates/*/tests/`, `app/*/tests/`, `tools/*/tests/`); a test of private
 internals stays a small inline module next to the code it tests. If an
@@ -88,8 +88,8 @@ location.
 one top-level `.rs` per topic. Cargo compiles and links every top-level
 `tests/*.rs` as its own crate ("each integration test results in a separate
 executable binary … this can be inefficient, as it can take longer to
-compile" — https://doc.rust-lang.org/cargo/reference/cargo-targets.html;
-the pre-consolidation tree had 163 binaries). nextest still runs each test
+compile" — https://doc.rust-lang.org/cargo/reference/cargo-targets.html).
+nextest still runs each test
 as its own process, so isolation is unchanged; only the compile/link waste
 goes. Shared helpers live in a plain module under `tests/it/` (the
 `tests/common/mod.rs` rule generalizes: helper modules are never top-level
@@ -183,7 +183,7 @@ A green CNF pipeline is the standing bar (CORE + STANDARD PASS) —
 every change preserves it; the baseline only ratchets upward, and green comes
 ONLY from fixing the guilty component after spec-adjudicated attribution
 (`.claude/rules/cnf-triage.md`), NEVER from bending the catalogue or runner to
-match this server. Every phase ships compiling, clippy-clean, tested
+match this server. Every change ships compiling, clippy-clean, tested
 increments — this whole rule is fully active at all times.
 
 ## Test-fixture construction: typed by default, raw JSON only where raw is the point
@@ -193,7 +193,7 @@ deliberately scopes to production code, so this is the test-side rule):
 
 1. **Refusal/negative fixtures: raw JSON, MANDATORY.** An invalid shape
    (missing mandatory, empty `1..*` list, undeclared key) is unrepresentable
-   in the typed model since the foundation phase — raw bytes are the only
+   in the typed model — raw bytes are the only
    way to author what the reader must reject.
 2. **Client-simulation inputs** (bodies posted through a REST/service seam):
    raw JSON permitted — independently-authored bytes catch codec bugs that

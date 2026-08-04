@@ -6,7 +6,9 @@
 
 use crate::data_types::text::code_phrase::CodePhrase;
 
-/// Language-specific detail of resource description. When a resource is translated for use in another language environment, each `RESOURCE_DESCRIPTION_ITEM` needs to be copied and translated into the new language.
+/// Language-specific detail of resource description.
+///
+/// When a resource is translated for use in another language environment, each `RESOURCE_DESCRIPTION_ITEM` needs to be copied and translated into the new language.
 #[doc(alias = "RESOURCE_DESCRIPTION_ITEM")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct ResourceDescriptionItem {

@@ -1,7 +1,9 @@
 //! A curated public surface over the pipeline for the emitter-invariant tests
-//! (`tests/emitter_invariants.rs`). It runs the **real** pipeline on the **real**
-//! vendored inputs and returns plain data — the stage-2/3/4 facts the invariants
-//! assert over — so the tests never reach into crate internals.
+//! (`tests/emitter_invariants.rs`).
+//!
+//! It runs the **real** pipeline on the **real** vendored inputs and returns
+//! plain data — the stage-2/3/4 facts the invariants assert over — so the
+//! tests never reach into crate internals.
 //!
 //! This module is test scaffolding, not part of the generator's output path; it
 //! only reads the same tables and functions `cli.rs` drives.
@@ -239,10 +241,12 @@ pub struct GenerationConflict {
 }
 
 /// Emitted-path and prelude-identifier conflicts between the BMM generations
-/// composing each crate. Both must be empty: two generations sharing an emitted
-/// path means one overwrites the other (a silently picked shape), and two
-/// generations exporting one prelude name means the crate's one-type-per-name
-/// contract is broken.
+/// composing each crate.
+///
+/// Both must be empty: two generations sharing an emitted path means one
+/// overwrites the other (a silently picked shape), and two generations
+/// exporting one prelude name means the crate's one-type-per-name contract is
+/// broken.
 ///
 /// # Errors
 /// Returns an error if any composition's BMM files cannot be loaded.
@@ -365,9 +369,11 @@ pub fn constructibility_offenders(key: &str) -> Result<Vec<String>, Error> {
 
 // ── determinism ─────────────────────────────────────────────────────────────
 
+/// The stage-3 plan for a crate, as comparable data.
+///
 /// The decided Rust shape (`Struct` / `Enum` / `PolyEnum` / `EnumLiterals` /
-/// `Newtype` / `Skip`) of every class of every BMM generation composing a
-/// crate, keyed `"<bmm file>::<CLASS>"` — the stage-3 plan, as comparable data.
+/// `Newtype` / `Skip`) of every class of every BMM generation composing the
+/// crate, keyed `"<bmm file>::<CLASS>"`.
 /// The key carries the generation because a class name may be declared by more
 /// than one, with a different decided shape in each.
 ///
@@ -400,11 +406,12 @@ fn shape_name(e: &Emission) -> &'static str {
 }
 
 /// Render every emit-crate's spec files to an in-memory map keyed
-/// `"<crate>/<path>"` (pre-rustfmt bodies). Reproduces `cli::cmd_emit`'s
-/// emission half without WRITING to the filesystem (it reads the same inputs
-/// `cmd_emit` does, the vendored BMM plus each crate's hand-written
-/// `*_impl.rs` siblings), so a double call proves the emitter is
-/// byte-deterministic.
+/// `"<crate>/<path>"` (pre-rustfmt bodies).
+///
+/// Reproduces `cli::cmd_emit`'s emission half without WRITING to the
+/// filesystem (it reads the same inputs `cmd_emit` does, the vendored BMM
+/// plus each crate's hand-written `*_impl.rs` siblings), so a double call
+/// proves the emitter is byte-deterministic.
 ///
 /// # Errors
 /// Returns an error if any crate's BMM files cannot be loaded.
@@ -583,8 +590,11 @@ pub fn reemit_closure(key: &str) -> Result<BTreeSet<String>, Error> {
 }
 
 /// The set of type files (`"<crate>/<path>"`) emitted for one composition
-/// variant — the crate `key`'s rendered output alone (not shared crate mates).
-/// Used to prove upstream (LANG) output is untouched by downstream (AM) analysis.
+/// variant — the crate `key`'s rendered output alone (not shared crate
+/// mates).
+///
+/// Used to prove upstream (LANG) output is untouched by downstream (AM)
+/// analysis.
 ///
 /// # Errors
 /// Returns an error if the crate's BMM files cannot be loaded.
@@ -808,9 +818,11 @@ pub fn dialect_predicates() -> Vec<(String, String)> {
         .collect()
 }
 
-/// One accounted assertion-dialect-**emittable** class invariant: which venue
-/// the realization register (`plan::overrides::INVARIANT_REALIZATIONS`) says
-/// realizes it, flattened for the accounting invariant.
+/// One accounted assertion-dialect-**emittable** class invariant.
+///
+/// Records which venue the realization register
+/// (`plan::overrides::INVARIANT_REALIZATIONS`) says realizes it, flattened for
+/// the accounting invariant.
 #[derive(Debug, Clone)]
 pub struct AccountedInvariant {
     /// The owning BMM class name.
@@ -855,10 +867,12 @@ pub fn accounted_emitted_invariants(key: &str) -> Result<Vec<AccountedInvariant>
     ))
 }
 
-/// Account an explicit `(class, invariant, assertion-expression)` set against
-/// the realization register — the seam the accounting invariant's negative case
-/// uses to prove an unrealized emit is caught (a synthetic emittable invariant
-/// has no register row, so it accounts as `"UNACCOUNTED"`).
+/// Accounts an explicit `(class, invariant, assertion-expression)` set.
+///
+/// The set is checked against the realization register — the seam the accounting
+/// invariant's negative case uses to prove an unrealized emit is caught (a
+/// synthetic emittable invariant has no register row, so it accounts as
+/// `"UNACCOUNTED"`).
 #[must_use]
 pub fn account_invariants(triples: &[(&str, &str, &str)]) -> Vec<AccountedInvariant> {
     account(triples.iter().copied())
@@ -1082,8 +1096,9 @@ pub struct OasMonomorphizationCheck {
     pub vendored_titles: BTreeSet<String>,
 }
 
-/// Every `OAS_MONOMORPHIZATIONS` entry checked against the vendored ITS-REST
-/// bundles: the mapping is only legitimate because each schema declares its real
+/// Every `OAS_MONOMORPHIZATIONS` entry checked against the vendored bundles.
+///
+/// The mapping is only legitimate because each ITS-REST schema declares its real
 /// spec name in `title`, so the entry must still match the vendored text.
 ///
 /// # Errors
@@ -1184,9 +1199,11 @@ pub fn merged_fallback_schema_names() -> Result<(BTreeSet<String>, BTreeSet<Stri
 
 // ── model-query report ──────────────────────────────────────────────────────
 
-/// Render the `model-query` report over the real vendored BMM inputs — the same
-/// projection the CLI subcommand prints (BMM-declared facts beside the current
-/// field-shape decision), so a golden test pins the CLI's actual output.
+/// Renders the `model-query` report over the real vendored BMM inputs.
+///
+/// It is the same projection the CLI subcommand prints (BMM-declared facts
+/// beside the current field-shape decision), so a golden test pins the CLI's
+/// actual output.
 ///
 /// `component`/`class`/`attribute` are the optional filters; `format` is one of
 /// `table`, `tsv`, `json`.
@@ -1204,9 +1221,11 @@ pub fn model_query(
     model_query_view(component, class, attribute, format, false)
 }
 
-/// [`model_query()`] with the view selectable: `flattened` reports one row per
-/// class × CARRIED attribute (inherited ones included, each with its declaring
-/// class) instead of one row per class × declared attribute.
+/// [`model_query()`] with the view selectable.
+///
+/// `flattened` reports one row per class × CARRIED attribute (inherited ones
+/// included, each with its declaring class) instead of one row per class ×
+/// declared attribute.
 ///
 /// # Errors
 /// Same as [`model_query()`].

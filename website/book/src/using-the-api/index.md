@@ -41,7 +41,7 @@ list always reflects reality.
 ## Authentication
 
 Requests are authenticated unless auth is explicitly disabled. Two mechanisms
-ship in Stage 1:
+ship:
 
 - **HTTP Basic** — a configured user store; send `Authorization: Basic ...`.
   The examples in this book use `-u user:password` with curl.

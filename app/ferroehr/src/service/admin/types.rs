@@ -2,9 +2,10 @@
 //! `I_ADMIN_DUMP_LOAD` parameter/report types).
 
 /// A statistics time filter: an optional `(lower, upper)` pair of ISO 8601
-/// date-time bounds, each independently optional (open bounds allowed). Realizes
-/// the SM `time_interval: Interval<Iso8601_date_time> [0..1]` parameter of the
-/// four `i_admin_service.adoc` statistics calls.
+/// date-time bounds, each independently optional (open bounds allowed).
+///
+/// Realizes the SM `time_interval: Interval<Iso8601_date_time> [0..1]`
+/// parameter of the four `i_admin_service.adoc` statistics calls.
 ///
 /// NOTE: the SM `Interval` is treated as **closed** `[lower, upper]` — the
 /// default openEHR `Interval` bound inclusivity — matched against each

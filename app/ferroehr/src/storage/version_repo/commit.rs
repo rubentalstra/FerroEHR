@@ -43,10 +43,12 @@ pub struct AuditRow<'a> {
     pub attestation: Option<Value>,
 }
 
-/// Take the per-vo transaction advisory lock that serializes concurrent writers
-/// of one versioned object (so branch writers no longer all contend on one
-/// current row). The versioning tree-placement decision calls this before it
-/// reads the preceding version.
+/// Take the per-vo transaction advisory lock that serializes concurrent
+/// writers of one versioned object (so branch writers no longer all contend
+/// on one current row).
+///
+/// The versioning tree-placement decision calls this before it reads the
+/// preceding version.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
@@ -118,13 +120,16 @@ pub async fn insert_contribution(
     inserted.ok_or(StorageError::ContributionUidInUse(None))
 }
 
-/// Insert an `audit` row and its enclosing `contribution` in ONE round trip via
-/// a data-modifying CTE, returning `(contribution_id, audit_id, time_committed)`.
-/// The `contribution` references the just-inserted `audit`; `time_committed` is
-/// the server-computed commit instant (master06 §Committal m3) the version's
-/// `commit_audit` is signed against. A client-supplied CONTRIBUTION uid is
-/// honoured (`supplied`); a duplicate id is a [`StorageError::ContributionUidInUse`]
-/// conflict, never an overwrite (ITS-REST `contribution_create`).
+/// Insert an `audit` row and its enclosing `contribution` in ONE round trip
+/// via a data-modifying CTE, returning `(contribution_id, audit_id,
+/// time_committed)`.
+///
+/// The `contribution` references the just-inserted `audit`; `time_committed`
+/// is the server-computed commit instant (master06 §Committal m3) the
+/// version's `commit_audit` is signed against. A client-supplied CONTRIBUTION
+/// uid is honoured (`supplied`); a duplicate id is a
+/// [`StorageError::ContributionUidInUse`] conflict, never an overwrite
+/// (ITS-REST `contribution_create`).
 ///
 /// The audit → contribution insert is a dependent chain (the CONTRIBUTION and
 /// its `AUDIT_DETAILS` commit together — master06 §Committal and Audits); merging
@@ -180,9 +185,11 @@ pub async fn write_contribution(
 }
 
 /// Close (supersede) one specific version row — the lineage tip a new version
-/// replaces — at `now()`. Lineage-precise: a branch commit closes its branch
-/// tip, a trunk commit the trunk tip; a FORK closes nothing (master06 §Version
-/// tree, realized by the temporal `sys_period`).
+/// replaces — at `now()`.
+///
+/// Lineage-precise: a branch commit closes its branch tip, a trunk commit the
+/// trunk tip; a FORK closes nothing (master06 §Version tree, realized by the
+/// temporal `sys_period`).
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver/update failure.
@@ -202,13 +209,15 @@ pub async fn close_ordinal_at_now(
     Ok(())
 }
 
-/// The `vo_version` columns for a **folded** commit — every content column of a
-/// stored version EXCEPT `contribution_id`/`audit_id`, which come from the same
-/// statement's `contribution`/`audit` CTEs. The versioning layer builds this
-/// only when the `VERSION.signature` is already known without the
-/// server-returned `time_committed` (signing disabled, or a client-supplied
-/// signature — RM common master06 §Digital Signature), so no value has to
-/// round-trip back before the version row is written.
+/// The `vo_version` columns for a **folded** commit — every content column of
+/// a stored version EXCEPT `contribution_id`/`audit_id`, which come from the
+/// same statement's `contribution`/`audit` CTEs.
+///
+/// The versioning layer builds this only when the `VERSION.signature` is
+/// already known without the server-returned `time_committed` (signing
+/// disabled, or a client-supplied signature — RM common master06 §Digital
+/// Signature), so no value has to round-trip back before the version row is
+/// written.
 ///
 /// A superseded lineage tip is closed by the caller in a **separate, prior**
 /// statement ([`close_ordinal_at_now`]) — never folded into this insert: the
@@ -251,8 +260,10 @@ pub struct FoldedVersion<'a> {
 
 /// A **standalone** folded commit: `audit` + `contribution` + `vo_version` in
 /// ONE data-modifying CTE, returning `(contribution_id, audit_id,
-/// time_committed)`. The single audit row serves both the CONTRIBUTION and the
-/// version's `commit_audit` (a direct write is one CONTRIBUTION of one change —
+/// time_committed)`.
+///
+/// The single audit row serves both the CONTRIBUTION and the version's
+/// `commit_audit` (a direct write is one CONTRIBUTION of one change —
 /// master06 §Committal and Audits). `time_committed` is the server-computed
 /// commit instant (master06 §Committal m3).
 ///
@@ -332,14 +343,15 @@ pub async fn commit_new_version(
 
 /// A folded commit WITHIN an already-opened CONTRIBUTION: the version's own
 /// `commit_audit` + `vo_version` in ONE data-modifying CTE, referencing the
-/// pre-existing `contribution_id`. Returns `(audit_id, time_committed)`. The
-/// CONTRIBUTION and its own audit were written earlier in the same transaction
-/// ([`write_contribution`]); each change carries its own `commit_audit`
-/// (master06 §Committal and Audits). Byte-identical to [`insert_audit`]
-/// followed by a plain `vo_version` insert; used only when the
-/// `VERSION.signature` is pre-known ([`FoldedVersion`]). Any lineage-tip close
-/// is a separate prior statement. No openEHR spec governs statement batching —
-/// our own design.
+/// pre-existing `contribution_id`.
+///
+/// Returns `(audit_id, time_committed)`. The CONTRIBUTION and its own audit
+/// were written earlier in the same transaction ([`write_contribution`]);
+/// each change carries its own `commit_audit` (master06 §Committal and
+/// Audits). Byte-identical to [`insert_audit`] followed by a plain
+/// `vo_version` insert; used only when the `VERSION.signature` is pre-known
+/// ([`FoldedVersion`]). Any lineage-tip close is a separate prior statement.
+/// No openEHR spec governs statement batching — our own design.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver/insert failure.
@@ -397,10 +409,11 @@ pub async fn commit_version_into(
 // ── folder membership ─────────────────────────────────────────────────────────
 
 /// Append a new folder-hierarchy membership row for an EHR (RM ehr master04
-/// §Folders; RM ehr EHR class `Directory_in_folders`). `rank` is 1-based,
-/// append-only and never reused: the next rank is `max(rank)+1` for this EHR.
-/// Called once per FOLDER *creation*. No openEHR spec governs the `ehr_folder`
-/// storage mechanism (our own design).
+/// §Folders; RM ehr EHR class `Directory_in_folders`).
+///
+/// `rank` is 1-based, append-only and never reused: the next rank is
+/// `max(rank)+1` for this EHR. Called once per FOLDER *creation*. No openEHR
+/// spec governs the `ehr_folder` storage mechanism (our own design).
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver/insert failure.
@@ -422,12 +435,14 @@ pub async fn insert_ehr_folder_rank(
 
 // ── event outbox ──────────────────────────────────────────────────────────────
 
-/// Write the contribution-outbox event row **inside the commit transaction** it
-/// announces — no commit without its event, no event without its commit. No
-/// openEHR spec governs eventing (our own extension). The PHI-free per-version
-/// entries are built by the versioning layer (`Committed::envelope_entry`);
-/// this function wraps them in the fixed envelope shape the events-extension
-/// drainer consumes (`{contribution_id, ehr_id, committed_at, versions[]}`).
+/// Write the contribution-outbox event row **inside the commit transaction**
+/// it announces — no commit without its event, no event without its commit.
+///
+/// No openEHR spec governs eventing (our own extension). The PHI-free
+/// per-version entries are built by the versioning layer
+/// (`Committed::envelope_entry`); this function wraps them in the fixed
+/// envelope shape the events-extension drainer consumes (`{contribution_id,
+/// ehr_id, committed_at, versions[]}`).
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver/insert failure.

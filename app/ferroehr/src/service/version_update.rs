@@ -90,8 +90,10 @@ fn openehr_coded(rubric: String, code: &str) -> DvCodedText {
 
 /// The `UPDATE_VERSION.lifecycle_state` value for a `version_lifecycle_state`
 /// group code, with the bundle's rubric (RM common master06 §Version
-/// Lifecycle). The one place this server builds the member, so no write path
-/// spells a rubric as a literal.
+/// Lifecycle).
+///
+/// The one place this server builds the member, so no write path spells a
+/// rubric as a literal.
 #[must_use]
 pub fn lifecycle_state_coded(code: &str) -> DvCodedText {
     openehr_coded(lifecycle::lifecycle_rubric(code), code)

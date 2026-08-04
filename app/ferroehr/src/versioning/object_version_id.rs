@@ -182,10 +182,12 @@ pub(crate) fn version_id(
     ObjectVersionId::new(raw.clone()).map_err(|source| VersionIdError::Malformed { raw, source })
 }
 
-/// Why a version-id string was rejected. Converts into [`ApiError`] (`400`,
-/// path/header parameters), [`ServiceError`] (`422`, payload fields) and
-/// [`crate::service::status::SmError`] (`400`, SM catalog arguments) at each call site's
-/// natural severity.
+/// Why a version-id string was rejected.
+///
+/// Converts into [`ApiError`] (`400`, path/header parameters),
+/// [`ServiceError`] (`422`, payload fields) and
+/// [`crate::service::status::SmError`] (`400`, SM catalog arguments) at each
+/// call site's natural severity.
 #[derive(Debug, thiserror::Error)]
 pub enum VersionIdError {
     /// Not a well-formed BASE `OBJECT_VERSION_ID` (wrong part count, empty

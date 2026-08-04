@@ -415,9 +415,10 @@ pub enum BindingFilter {
     RemoveAll,
 }
 
-/// The profiling choices applied to a raw OPT (master04). Node-level
-/// terminology substitution (`substitute_nodes`) is not implemented — the spec
-/// leaves it TBD — and a `true` value returns
+/// The profiling choices applied to a raw OPT (master04).
+///
+/// Node-level terminology substitution (`substitute_nodes`) is not
+/// implemented — the spec leaves it TBD — and a `true` value returns
 /// [`OptError::NodeSubstitutionUnsupported`].
 #[derive(Debug, Clone, Default)]
 pub struct ProfileSpec {

@@ -103,8 +103,11 @@ infinite_loop = "warn"              # an intentional infinite loop returns `!`
 mixed_read_write_in_expression = "warn"
 same_name_method = "warn"
 
-# ── nursery cherry-pick (ONE lint; the group stays off — "buggy or need more work")
+# ── nursery cherry-picks (the group stays off — "buggy or need more work")
 debug_assert_with_mut_call = "warn" # a side-effecting debug_assert! vanishes in release
+too_long_first_doc_paragraph = "warn" # RFC 1574 summary line: one short first sentence, blank
+                                      # line, then detail (.claude/rules/comments.md); generated
+                                      # crates comply via the emitter, never by hand-edit
 
 # ── cargo group (not part of `all`) ──────────────────────────────────────────
 wildcard_dependencies = "deny"

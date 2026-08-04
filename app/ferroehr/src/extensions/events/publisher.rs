@@ -70,9 +70,11 @@ impl EventsHandle {
     }
 }
 
-/// Start the publisher over the real AMQP broker. Constructs the
-/// lazily-connecting [`AmqpPublisher`] and spawns the drainer — a broker that is
-/// down at start is tolerated (rows stay pending until it returns).
+/// Start the publisher over the real AMQP broker.
+///
+/// Constructs the lazily-connecting [`AmqpPublisher`] and spawns the drainer
+/// — a broker that is down at start is tolerated (rows stay pending until it
+/// returns).
 #[must_use]
 pub fn start(config: EventsConfig, pool: PgPool) -> EventsHandle {
     let publisher = Arc::new(AmqpPublisher::new(
@@ -107,9 +109,10 @@ pub fn start_with_publisher(
 }
 
 /// The broker queue name for a subscription: `<exchange>.<name>`
-/// (`ferroehr.events.<name>` for the default exchange) — the configured exchange
-/// prefix + the subscription name. Exposed so a consumer knows the queue to
-/// consume from.
+/// (`ferroehr.events.<name>` for the default exchange) — the configured
+/// exchange prefix + the subscription name.
+///
+/// Exposed so a consumer knows the queue to consume from.
 #[must_use]
 pub fn subscription_queue_name(exchange: &str, name: &str) -> String {
     format!("{exchange}.{name}")

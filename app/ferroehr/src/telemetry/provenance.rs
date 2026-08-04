@@ -32,11 +32,13 @@ pub const TERM: &str = openehr_term::SPEC_VERSION;
 pub const PG_TARGET: &str = "18.4+";
 /// The last machine-computed ECC conformance verdict — the highest profile
 /// obtained — advertised by the System Options manifest (`OPTIONS /`
-/// `conformance_profile`). No openEHR spec governs the value; the
-/// conformance instrument computes it (CNF master03 profiles). Updated at
-/// each conformance re-baseline from the runner's machine verdict recorded
-/// in `docs/conformance/ferroehr/CONFORMANCE_REPORT.md` §"Profile verdict"
-/// (Core PASS · Standard PASS). The manifest MUST NOT out-claim it.
+/// `conformance_profile`).
+///
+/// No openEHR spec governs the value; the conformance instrument computes it
+/// (CNF master03 profiles). Updated at each conformance re-baseline from the
+/// runner's machine verdict recorded in
+/// `docs/conformance/ferroehr/CONFORMANCE_REPORT.md` §"Profile verdict" (Core
+/// PASS · Standard PASS). The manifest MUST NOT out-claim it.
 pub const CONFORMANCE_PROFILE: &str = "STANDARD";
 
 #[cfg(test)]

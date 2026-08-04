@@ -1,4 +1,6 @@
-//! The **terminology-backed RM class invariants** — the RM invariants whose
+//! The **terminology-backed RM class invariants**.
+//!
+//! These are the RM invariants whose
 //! evaluation needs a terminology-group or code-set membership lookup, which
 //! the generated invariant cores cannot express mechanically (the BMM
 //! assertion dialect calls out to `terminology (…)` / `code_set (…)`).
@@ -39,9 +41,11 @@ use openehr_base::validate::InvariantViolation;
 use openehr_term::bundle::{OpenehrTerminology, openehr};
 use serde_json::Value;
 
-/// An openEHR terminology *group* a coded slot must draw from. The membership
-/// check is guarded by `terminology_id == "openehr"` (the `has_code_for_group_id`
-/// invariants bind against the openEHR terminology only).
+/// An openEHR terminology *group* a coded slot must draw from.
+///
+/// The membership check is guarded by `terminology_id == "openehr"` (the
+/// `has_code_for_group_id` invariants bind against the openEHR terminology
+/// only).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Group {
     /// `composition_category` — `COMPOSITION.category`.
@@ -205,8 +209,10 @@ pub struct Slot {
     pub binding: Binding,
 }
 
-/// The coded slots fixed by an owning RM `_type`, with the invariant + vocabulary
-/// each realizes. The single source of the terminology binding table; both
+/// The coded slots fixed by an owning RM `_type`, with the invariant +
+/// vocabulary each realizes.
+///
+/// The single source of the terminology binding table; both
 /// [`validate_rm_terminology`] and the `openehr-its` RM-instance terminology
 /// pass resolve against it.
 ///
@@ -407,11 +413,13 @@ pub fn slots_for(rm_type: &str) -> &'static [Slot] {
     }
 }
 
-/// The `(code, terminology_id)` of a coded value node — a `DV_CODED_TEXT`/state
-/// (via `defining_code`) or a bare `CODE_PHRASE`. `None` when the node is not
-/// coded (e.g. a plain `DV_TEXT` participation function, or an absent optional
-/// slot), which is skipped: the `has_code…` invariants are guarded by a
-/// `generating_type = DV_CODED_TEXT` / `/= Void` antecedent.
+/// The `(code, terminology_id)` of a coded value node — a
+/// `DV_CODED_TEXT`/state (via `defining_code`) or a bare `CODE_PHRASE`.
+///
+/// `None` when the node is not coded (e.g. a plain `DV_TEXT` participation
+/// function, or an absent optional slot), which is skipped: the `has_code…`
+/// invariants are guarded by a `generating_type = DV_CODED_TEXT` / `/= Void`
+/// antecedent.
 #[must_use]
 pub fn openehr_code(node: &Value) -> Option<(&str, &str)> {
     let code_phrase = node.get("defining_code").unwrap_or(node);
@@ -424,10 +432,12 @@ pub fn openehr_code(node: &Value) -> Option<(&str, &str)> {
     Some((code, terminology))
 }
 
-/// Whether `slot` is satisfied by `node`'s coded value. Returns `Some(false)`
-/// only for a present, in-scope code that is NOT a member of the bound
-/// vocabulary; `None` when the slot is absent, uncoded, or (for a group binding)
-/// carries a non-`openehr` terminology (out of scope for the openEHR-group check).
+/// Whether `slot` is satisfied by `node`'s coded value.
+///
+/// Returns `Some(false)` only for a present, in-scope code that is NOT a
+/// member of the bound vocabulary; `None` when the slot is absent, uncoded,
+/// or (for a group binding) carries a non-`openehr` terminology (out of scope
+/// for the openEHR-group check).
 #[must_use]
 pub fn slot_is_violated(slot: &Slot, node: &Value) -> bool {
     let Some((code, terminology)) = openehr_code(node) else {
@@ -448,9 +458,11 @@ pub fn slot_is_violated(slot: &Slot, node: &Value) -> bool {
 }
 
 /// Run the terminology-backed RM class invariants for a single canonical-JSON
-/// node, dispatching on its `_type`. Appends one archie-style
-/// [`InvariantViolation`] per violated coded slot, keyed to the offending
-/// attribute path. A node whose `_type` binds no coded slot appends nothing.
+/// node, dispatching on its `_type`.
+///
+/// Appends one archie-style [`InvariantViolation`] per violated coded slot,
+/// keyed to the offending attribute path. A node whose `_type` binds no coded
+/// slot appends nothing.
 ///
 /// This is the core form of the RM terminology/code-set invariants; the
 /// `openehr-its` wire-boundary dispatcher runs it as a post-core check, and the

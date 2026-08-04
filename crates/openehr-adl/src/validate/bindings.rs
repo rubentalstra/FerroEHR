@@ -126,9 +126,11 @@ impl TerminologyResolver for NoTerminologyResolver {
     }
 }
 
-/// One external term binding extracted from an archetype's `term_bindings`: the
-/// external `terminology_id` (the outer binding key), the local `key` bound (an
-/// at/ac-code or a path), and the `target` external term reference (a URI).
+/// One external term binding extracted from an archetype's `term_bindings`.
+///
+/// Carries the external `terminology_id` (the outer binding key), the local
+/// `key` bound (an at/ac-code or a path), and the `target` external term
+/// reference (a URI).
 ///
 /// Yielded by [`external_term_bindings`] so the application can pre-resolve the
 /// same set the validator will consult (the resolver seam is synchronous; a

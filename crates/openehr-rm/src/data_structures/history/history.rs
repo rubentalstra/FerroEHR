@@ -14,16 +14,22 @@ use crate::data_types::quantity::date_time::dv_duration::DvDuration;
 use crate::data_types::text::dv_text::DvText;
 use openehr_base::prelude::UidBasedId;
 
-/// Root object of a linear history, i.e. time series structure. This is a generic class whose type parameter must be a descendant of `ITEM_STRUCTURE`, ensuring that each Event in the `_events_` of a given instance is of the same structural type, i.e. `ITEM_TREE`, `ITEM_LIST` etc.
+/// Root object of a linear history, i.e. time series structure.
+///
+/// This is a generic class whose type parameter must be a descendant of `ITEM_STRUCTURE`, ensuring that each Event in the `_events_` of a given instance is of the same structural type, i.e. `ITEM_TREE`, `ITEM_LIST` etc.
 ///
 /// For a periodic series of events, period will be set, and the time of each Event in the History must correspond; i.e. the `EVENT._offset_` must be a multiple of period for each Event. Missing events in a period History are however allowed.
 #[doc(alias = "HISTORY")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct History<T> {
     // inherited: LOCATABLE
-    /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.
+    /// Runtime name of this fragment, used to build runtime paths.
+    ///
+    /// This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.
     pub name: DvText,
-    /// Design-time archetype identifier of this node taken from its generating archetype; used to build archetype paths. Always in the form of an at-code, e.g.  `at0005`. This value enables a 'standardised' name for this node to be generated, by referring to the generating archetype local terminology.
+    /// Design-time archetype identifier of this node taken from its generating archetype; used to build archetype paths.
+    ///
+    /// Always in the form of an at-code, e.g.  `at0005`. This value enables a 'standardised' name for this node to be generated, by referring to the generating archetype local terminology.
     ///
     /// At an archetype root point, the value of this attribute is always the stringified form of the `_archetype_id_` found in the `_archetype_details_` object.
     pub archetype_node_id: String,
@@ -41,7 +47,9 @@ pub struct History<T> {
     pub period: Option<DvDuration>,
     /// Duration of the entire History; either corresponds to the duration of all the events, and/or the duration represented by the summary, if it exists.
     pub duration: Option<DvDuration>,
-    /// Optional summary data that aggregates, organizes, reduces and transforms the event series. This may be a text or image that presents a graphical presentation, or some data that assists with the interpretation of the data.
+    /// Optional summary data that aggregates, organizes, reduces and transforms the event series.
+    ///
+    /// This may be a text or image that presents a graphical presentation, or some data that assists with the interpretation of the data.
     pub summary: Option<ItemStructure>,
     /// The events in the series. This attribute is of a generic type whose parameter must be a descendant of `ITEM_SUTRUCTURE`.
     pub events: Option<Vec<Event<T>>>,

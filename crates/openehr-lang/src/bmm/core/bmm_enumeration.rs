@@ -10,7 +10,9 @@ use crate::bmm::core::bmm_package::BmmPackage;
 use crate::bmm::core::bmm_property::BmmProperty;
 use crate::bmm::core::bmm_type::BmmType;
 
-/// Definition of an enumeration type. In the BMM system, an 'enumeration' type is understood as an underlying basic type and a set of named constants of that type. It is designed so that the default type is Integer, and the default constants are numbered 0, 1, ... Optional model elements can be specified to override the values and / or the type.
+/// Definition of an enumeration type.
+///
+/// In the BMM system, an 'enumeration' type is understood as an underlying basic type and a set of named constants of that type. It is designed so that the default type is Integer, and the default constants are numbered 0, 1, ... Optional model elements can be specified to override the values and / or the type.
 #[doc(alias = "BMM_ENUMERATION")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct BmmEnumerationData {
@@ -47,7 +49,9 @@ pub struct BmmEnumerationData {
 
 /// Polymorphic slot of `BMM_ENUMERATION`, dispatched on each payload's `_type`.
 ///
-/// Definition of an enumeration type. In the BMM system, an 'enumeration' type is understood as an underlying basic type and a set of named constants of that type. It is designed so that the default type is Integer, and the default constants are numbered 0, 1, ... Optional model elements can be specified to override the values and / or the type.
+/// Definition of an enumeration type.
+///
+/// In the BMM system, an 'enumeration' type is understood as an underlying basic type and a set of named constants of that type. It is designed so that the default type is Integer, and the default constants are numbered 0, 1, ... Optional model elements can be specified to override the values and / or the type.
 #[doc(alias = "BMM_ENUMERATION")]
 #[derive(Debug, Clone, PartialEq)]
 pub enum BmmEnumeration {

@@ -50,7 +50,9 @@ pub struct BmmIndexedContainerProperty {
     pub is_im_runtime: Option<bool>,
     /// True if this property was marked with info model `_im_infrastructure_` flag.
     pub is_im_infrastructure: Option<bool>,
-    /// True if this property instance is a compositional sub-part of the owning class instance. Equivalent to 'composition' in UML associations (but missing from UML properties without associations) and also 'cascade-delete' semantics in ER schemas.
+    /// True if this property instance is a compositional sub-part of the owning class instance.
+    ///
+    /// Equivalent to 'composition' in UML associations (but missing from UML properties without associations) and also 'cascade-delete' semantics in ER schemas.
     pub is_composition: Option<bool>,
 
     // inherited: BMM_CONTAINER_PROPERTY

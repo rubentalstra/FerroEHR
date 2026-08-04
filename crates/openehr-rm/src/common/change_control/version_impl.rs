@@ -1,7 +1,8 @@
-//! Hand-written RM spec functions of `VERSION` (hand-written spec behaviour):
-//! `canonical_form()` over an already-serialised Version value, plus the
-//! subtype-dispatching `uid()` / `owner_id()` / `is_branch()` on the closed
-//! `VERSION` subtype set.
+//! Hand-written RM spec functions of `VERSION`.
+//!
+//! The surface is `canonical_form()` over an already-serialised Version value,
+//! plus the subtype-dispatching `uid()` / `owner_id()` / `is_branch()` on the
+//! closed `VERSION` subtype set.
 //!
 //! Spec authority:
 //! - RM common §"Digital Signature"
@@ -88,9 +89,11 @@ pub enum CanonicalFormError {
     Canonicalize(#[source] serde_json::Error),
 }
 
-/// Produce the spec `canonical_form` of an already-serialised Version JSON value:
-/// drop the top-level `signature` attribute (Void during serialisation per RM
-/// common §"Digital Signature") and emit the RFC 8785 (JCS) canonical string.
+/// Produces the spec `canonical_form` of a serialised Version JSON value.
+///
+/// The top-level `signature` attribute is dropped (Void during serialisation
+/// per RM common §"Digital Signature") and the RFC 8785 (JCS) canonical string
+/// is emitted.
 ///
 /// The application service assembles the Version as a `serde_json::Value` before
 /// persistence and calls this, so signing and verification share one source of

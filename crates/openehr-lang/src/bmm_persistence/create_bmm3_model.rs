@@ -126,8 +126,9 @@ use crate::bmm3::core::model::bmm_model::BmmModel;
 use crate::bmm3::core::model::bmm_package::BmmPackage;
 use openehr_base::containers::present;
 
-/// The default feature-group name every feature is placed in: "Name of this
-/// feature group; defaults to 'feature'"
+/// The default feature-group name every feature is placed in.
+///
+/// "Name of this feature group; defaults to 'feature'"
 /// (`org.openehr.lang.bmm3.bmm_feature_group.adoc` §Attributes;
 /// `LANG/docs/bmm3/master08-core-features.adoc` §Feature Groups and Visibility).
 pub const DEFAULT_FEATURE_GROUP_NAME: &str = "feature";
@@ -138,9 +139,11 @@ pub const DEFAULT_FEATURE_GROUP_NAME: &str = "feature";
 /// type" (`LANG/docs/bmm3/master07-core-classes.adoc` §Value-set Types).
 const VALUE_SET_SEPARATOR: &str = "::";
 
-/// Materialise the in-memory **v3** `BMM_MODEL` of an inclusion-resolved
-/// `P_BMM_SCHEMA` (see the module docs for what this generation carries that the
-/// v2.x one cannot, and for the two recorded boundaries).
+/// Materialises the in-memory **v3** `BMM_MODEL` of an inclusion-resolved
+/// `P_BMM_SCHEMA`.
+///
+/// See the module docs for what this generation carries that the v2.x one
+/// cannot, and for the two recorded boundaries.
 ///
 /// # Errors
 /// The same failures as [`crate::bmm_persistence::create_model::create_bmm_model`]:
@@ -1265,10 +1268,11 @@ fn build_function(
     })
 }
 
-/// The name of a function's automatically declared result variable
-/// (`org.openehr.lang.bmm3.bmm_result.adoc` §Description; the `Result` keyword of
-/// `LANG/docs/bmm3/master08-core-features.adoc` §Variables — "the pre-defined
-/// `Result`").
+/// The name of a function's automatically declared result variable.
+///
+/// Spec: `org.openehr.lang.bmm3.bmm_result.adoc` §Description; the `Result`
+/// keyword of `LANG/docs/bmm3/master08-core-features.adoc` §Variables — "the
+/// pre-defined `Result`".
 pub const RESULT_VARIABLE_NAME: &str = "Result";
 
 /// Builds one `BMM_PROCEDURE` — a routine whose result meta-type is the built-in

@@ -25,7 +25,7 @@ first session's mid-edit files into its own commit.
   of what else sits staged; or run `git diff --cached --name-only` first and
   unstage strangers.
 - Scope cargo gates to the crates you touched (`-p`), not `--workspace` — the
-  other session may have a broken crate in flight (e.g. `ferroehr-conformance`).
+  other session may have a broken crate in flight.
 - For multi-file subagent work, use worktree isolation and merge branches back.
 - **Parallel implementation agents MUST get `isolation: "worktree"` on the
   Agent call — never two agents in the main tree** (bitten 2026-07-20: two
@@ -40,15 +40,13 @@ first session's mid-edit files into its own commit.
 - Don't "fix" broken files you didn't touch (e.g. a half-edited test file) —
   they're the other session's work in progress.
 
-**Target-dir history (final state 2026-07-16 — ONE `./target`, no overrides
-anywhere):** every isolation scheme tried has been retired after ballooning
-the disk: `target-cli` (2026-07-12, 35 GB copy), the fixed agent lanes
-`target/agent-t1..t4` + the RustRover `target/ide` override (2026-07-16,
-part of a 394 GB fill: 211 GB debug + 140 GB lanes + 40 GB ide). Owner
-ruling: the CLI, all subagents, AND the IDE share the single default
-`./target`; lock waiting is expected and never answered with a second
-target dir; subagents never run cargo in parallel (the orchestrator builds
-once at convergence); check `du -sh target` at session start and after any
-rewrite-scale change, `cargo clean` above ~30 GB. Never pkill -9 rustc to
-"fix" slowness — it corrupts incremental caches. Full discipline in
-CLAUDE.md §"Target-dir & warm-build discipline".
+**ONE `./target` for everything (owner ruling 2026-07-16 — no
+`CARGO_TARGET_DIR` override anywhere):** the CLI, all subagents, AND the IDE
+share the single default `./target`. Every extra target dir is a full
+duplicate build tree — per-agent lanes and an IDE-specific dir are banned
+(they once filled 394 GB between them). Lock waiting is expected and never
+answered with a second target dir; subagents never run cargo in parallel
+(the orchestrator builds once at convergence); check `du -sh target` at
+session start and after any rewrite-scale change, `cargo clean` above
+~30 GB. Never pkill -9 rustc to "fix" slowness — it corrupts incremental
+caches. Full discipline in CLAUDE.md §"Target-dir & warm-build discipline".

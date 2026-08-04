@@ -8,7 +8,9 @@ use crate::data_types::quantity::dv_interval::DvInterval;
 use crate::data_types::quantity::dv_ordered::DvOrdered;
 use crate::data_types::text::dv_text::DvText;
 
-/// Defines a named range to be associated with any `DV_ORDERED` datum. Each such range is particular to the patient and context, e.g. sex, age, and any other factor which affects ranges. May be used to represent normal, therapeutic, dangerous, critical etc ranges.
+/// Defines a named range to be associated with any `DV_ORDERED` datum.
+///
+/// Each such range is particular to the patient and context, e.g. sex, age, and any other factor which affects ranges. May be used to represent normal, therapeutic, dangerous, critical etc ranges.
 #[doc(alias = "REFERENCE_RANGE")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct ReferenceRange {

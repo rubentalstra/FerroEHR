@@ -8,7 +8,9 @@ use crate::am24::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup;
 use crate::am24::bmm3::core::literal_value::bmm_literal_value::BmmLiteralValue;
 use openehr_lang::prelude::BmmFeatureExtension;
 
-/// An immutable, static value-returning element scoped to a class. The `_value_` is the result of the evaluation of the `_generator_`, which may be as simple as a literal value, or may be any expression, including a function call.
+/// An immutable, static value-returning element scoped to a class.
+///
+/// The `_value_` is the result of the evaluation of the `_generator_`, which may be as simple as a literal value, or may be any expression, including a function call.
 #[doc(alias = "BMM_CONSTANT")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct BmmConstant {

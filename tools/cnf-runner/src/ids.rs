@@ -84,8 +84,10 @@ macro_rules! string_id {
 }
 
 string_id!(
-    /// A global CNF case id (`<SERVICE_COMPONENT>.<operation>-<variant>`,
-    /// `CONT-<TYPE>-<variant>`, `SF-<FORM>-<variant>`, …). Family membership
+    /// A global CNF case id.
+    ///
+    /// The families are `<SERVICE_COMPONENT>.<operation>-<variant>`,
+    /// `CONT-<TYPE>-<variant>`, `SF-<FORM>-<variant>`, … . Family membership
     /// is checked by the validator; lexically an id is non-empty ASCII
     /// without whitespace.
     CaseId,

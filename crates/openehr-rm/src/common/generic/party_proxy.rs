@@ -8,7 +8,9 @@ use crate::common::generic::party_self::PartySelf;
 
 /// Closed subtype set of `PARTY_PROXY`, dispatched on each payload's `_type`.
 ///
-/// Abstract concept of a proxy description of a party, including an optional link to data for this party in a demographic or other identity management system. Sub- typed into `PARTY_IDENTIFIED` and `PARTY_SELF`.
+/// Abstract concept of a proxy description of a party, including an optional link to data for this party in a demographic or other identity management system.
+///
+/// Sub- typed into `PARTY_IDENTIFIED` and `PARTY_SELF`.
 #[doc(alias = "PARTY_PROXY")]
 #[derive(Debug, Clone, PartialEq)]
 pub enum PartyProxy {

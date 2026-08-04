@@ -1,6 +1,8 @@
 //! AQL lexer — a `logos` tokenizer transcribed from the authoritative
-//! `AqlLexer.g4` (vendored at `vendor/grammar/`). No ANTLR runtime: the grammar
-//! is the spec, this is a hand-written DFA lexer against it.
+//! `AqlLexer.g4` (vendored at `vendor/grammar/`).
+//!
+//! No ANTLR runtime: the grammar is the spec, this is a hand-written DFA
+//! lexer against it.
 //!
 //! Faithfulness notes:
 //! - AQL keywords are **case-insensitive** (the grammar builds them from

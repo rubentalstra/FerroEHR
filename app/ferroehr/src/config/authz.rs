@@ -161,6 +161,7 @@ impl Default for RemoteConfig {
 }
 
 /// The fine-grained attribute-based access-control settings (§5.3–5.7, §8).
+///
 /// Master switch `enabled` defaults to `false`, so an all-defaults config
 /// preserves today's authentication-plus-RBAC behaviour until an operator
 /// opts in.

@@ -63,8 +63,7 @@ does not decide the work is done on your behalf.
 4. **Write the close narrative into the PR description**: what shipped,
    the key decisions with their spec citations, the gate results, and what
    was deliberately left out (with follow-up issue numbers). The PR
-   description + the issue thread ARE the build record (there is no
-   PROGRESS.md — retired 2026-07-20).
+   description + the issue thread ARE the build record.
 5. **Post the handoff comment on the issue** (`gh issue comment <n>`):
    where things stand at close, what was deliberately left out (with the
    follow-up issue numbers), and what a follow-up session should do first.

@@ -423,9 +423,11 @@ async fn start_audit(
 
 /// Build the full authorization handle the binary serves with: the RBAC gate
 /// (when `rbac.enabled`) plus the ABAC gate over the boot-built policy engine
-/// (when `abac.enabled`). `None` when neither layer is active (auth-only
-/// behaviour). Fine-grained authorization is our own extension — no openEHR
-/// spec governs it (ITS-REST places authorization out of band).
+/// (when `abac.enabled`).
+///
+/// `None` when neither layer is active (auth-only behaviour). Fine-grained
+/// authorization is our own extension — no openEHR spec governs it (ITS-REST
+/// places authorization out of band).
 ///
 /// # Errors
 /// An ABAC block that is enabled but unbuildable (missing/invalid Cedar

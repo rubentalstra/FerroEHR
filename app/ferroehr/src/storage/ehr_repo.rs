@@ -88,8 +88,9 @@ pub async fn insert_ehr(
 
 /// The CURRENT `EHR_STATUS` root node fragment (`num = 0` of the latest trunk
 /// version) of an EHR, read on the CALLER'S connection so a transaction sees
-/// the `EHR_STATUS` it has just written. `None` when the EHR has no current
-/// `EHR_STATUS`.
+/// the `EHR_STATUS` it has just written.
+///
+/// `None` when the EHR has no current `EHR_STATUS`.
 ///
 /// This is the read half of the promoted-column refresh the paths that land
 /// `EHR_STATUS` versions WITHOUT the service write hook use — the EHR Extract
@@ -147,9 +148,11 @@ pub async fn ehr_id_by_subject<'e>(
     )
 }
 
-/// The `ehr` row header `(system_id, time_created)`, or `None` when the EHR does
-/// not exist. `system_id` is the stored per-EHR value (immutable, arch-overview
-/// master06 §System Identity), never the live config.
+/// The `ehr` row header `(system_id, time_created)`, or `None` when the EHR
+/// does not exist.
+///
+/// `system_id` is the stored per-EHR value (immutable, arch-overview master06
+/// §System Identity), never the live config.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
@@ -272,10 +275,12 @@ pub struct EhrStatusIdentity {
 }
 
 /// The versioned-object id of the EHR's directory — `EHR.directory`
-/// (`folders.item(1)`, RM ehr, EHR class `Directory_in_folders`). Resolved as
-/// the lowest-`rank` LIVE hierarchy, falling back to the lowest-`rank`
-/// still-existing one so a read after a logical delete resolves to the deleted
-/// version (→ 204) rather than 404. `None` when the EHR indexes no hierarchy.
+/// (`folders.item(1)`, RM ehr, EHR class `Directory_in_folders`).
+///
+/// Resolved as the lowest-`rank` LIVE hierarchy, falling back to the
+/// lowest-`rank` still-existing one so a read after a logical delete resolves
+/// to the deleted version (→ 204) rather than 404. `None` when the EHR
+/// indexes no hierarchy.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
@@ -364,14 +369,16 @@ pub async fn ehr_is_modifiable(pool: &PgPool, ehr_id: EhrId) -> Result<Option<bo
     )
 }
 
-/// The two content-write pre-checks in ONE round trip: whether the EHR exists,
-/// and whether it is modifiable. Reads the `ehr` row directly — a present row is
-/// the existence signal and carries the promoted `is_modifiable` column (synced
-/// with the current `EHR_STATUS` by `sync_ehr_subject` and its
-/// import/archive-load re-promotion over [`current_status_root`]).
-/// Returns `(exists, is_modifiable)` where `is_modifiable` is `None` exactly when
-/// the EHR does not exist. The concepts guarded are RM ehr master04 §EHR
-/// Creation (existence) and §EHR Active Status (`EHR_STATUS.is_modifiable`); no
+/// The two content-write pre-checks in ONE round trip: whether the EHR
+/// exists, and whether it is modifiable.
+///
+/// Reads the `ehr` row directly — a present row is the existence signal and
+/// carries the promoted `is_modifiable` column (synced with the current
+/// `EHR_STATUS` by `sync_ehr_subject` and its import/archive-load
+/// re-promotion over [`current_status_root`]). Returns `(exists,
+/// is_modifiable)` where `is_modifiable` is `None` exactly when the EHR does
+/// not exist. The concepts guarded are RM ehr master04 §EHR Creation
+/// (existence) and §EHR Active Status (`EHR_STATUS.is_modifiable`); no
 /// openEHR spec governs the promoted column — our own storage design.
 ///
 /// # Errors
@@ -389,13 +396,14 @@ pub async fn ehr_writability(
 }
 
 /// Whether ANY live (non-deleted) folder hierarchy is indexed for the EHR —
-/// the `POST /directory` conflict probe. Deliberately ignores logically
-/// deleted hierarchies: after a `523|deleted|` version the container remains
-/// (RM common master06 §Logical Deletion) but the directory slot is vacant,
-/// so a new hierarchy may be created (RM ehr master04 §Folders — "an
-/// entirely new Folder hierarchy may be added"); only a LIVE occupant
-/// conflicts (CNF master09 E.2 requires the error only for an EHR *with* a
-/// directory).
+/// the `POST /directory` conflict probe.
+///
+/// Deliberately ignores logically deleted hierarchies: after a `523|deleted|`
+/// version the container remains (RM common master06 §Logical Deletion) but
+/// the directory slot is vacant, so a new hierarchy may be created (RM ehr
+/// master04 §Folders — "an entirely new Folder hierarchy may be added"); only
+/// a LIVE occupant conflicts (CNF master09 E.2 requires the error only for an
+/// EHR *with* a directory).
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.

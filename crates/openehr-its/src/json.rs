@@ -309,9 +309,11 @@ pub fn reject_undeclared_keys(value: &serde_json::Value) -> Result<(), JsonParse
 }
 
 /// Validate a canonical-JSON value against the vendored ITS-JSON RM schema
-/// (`openehr_rm_1.1.0_all.json`). The schema's root dispatches on the top-level
-/// `_type` (draft-07 `if`/`then`) to the matching class definition, so any RM
-/// object with a `_type` is validated against its own definition.
+/// (`openehr_rm_1.1.0_all.json`).
+///
+/// The schema's root dispatches on the top-level `_type` (draft-07
+/// `if`/`then`) to the matching class definition, so any RM object with a
+/// `_type` is validated against its own definition.
 ///
 /// # Errors
 /// Returns every schema violation (path + message), or a single-element error if

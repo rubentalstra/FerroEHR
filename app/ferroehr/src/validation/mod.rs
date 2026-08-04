@@ -95,7 +95,9 @@ pub(crate) fn validate_opt_structure(xml: &str) -> Result<(), ServiceError> {
 /// Validate an uploaded OPT 1.4 artefact against the AOM2/08
 /// standalone-artefact validity rules
 /// (`AM/docs/AOM2/master08-validation.adoc`; rule map in the `opt` module
-/// doc). A fully valid artefact returns `Ok`.
+/// doc).
+///
+/// A fully valid artefact returns `Ok`.
 ///
 /// # Errors
 ///

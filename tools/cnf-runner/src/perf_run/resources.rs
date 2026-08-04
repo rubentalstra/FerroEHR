@@ -1,4 +1,6 @@
-//! The resource-telemetry sampler for measured runs: per-container
+//! The resource-telemetry sampler for measured runs.
+//!
+//! It records per-container
 //! CPU/RSS/block-IO/network series on a fixed cadence via the Docker
 //! Engine API stats endpoint (one-shot stats per container per tick), plus
 //! the database volume's disk-anchor probe. Measured CONTEXT only — never
@@ -324,8 +326,9 @@ fn parse_stats(v: &serde_json::Value) -> Option<RawCounters> {
     })
 }
 
-/// Pay the database's maintenance debt outside the measured windows:
-/// seeding outruns autovacuum/autoanalyze (a stale-statistics plan cost a
+/// Pays the database's maintenance debt outside the measured windows.
+///
+/// Seeding outruns autovacuum/autoanalyze (a stale-statistics plan cost a
 /// measured ~9x on the ward-worklist query, 2026-07-23), and an
 /// autovacuum firing INSIDE a window saturates the engine
 /// mid-measurement. `vacuumdb --all --analyze` through the DB container

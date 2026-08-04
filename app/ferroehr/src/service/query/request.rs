@@ -8,11 +8,12 @@ use std::collections::BTreeMap;
 use serde_json::Value;
 
 /// A normalized AQL query request: the paging window, the EHR scope, and the
-/// `$parameter` bindings. Realizes the SM execute-spec classes plus the
-/// execute-call parameters: `query_parameters` (the spec types them
-/// `Hash<String, String>`; carried as JSON [`Value`]s — the ITS-REST wire
-/// binds typed parameters, a documented widening), `row_offset` /
-/// `rows_to_fetch`, and `ehr_ids`.
+/// `$parameter` bindings.
+///
+/// Realizes the SM execute-spec classes plus the execute-call parameters:
+/// `query_parameters` (the spec types them `Hash<String, String>`; carried as
+/// JSON [`Value`]s — the ITS-REST wire binds typed parameters, a documented
+/// widening), `row_offset` / `rows_to_fetch`, and `ehr_ids`.
 ///
 /// `formalism` (`ADHOC_QUERY_EXECUTE_SPEC.formalism`, default `"aql"`) is
 /// fixed to AQL — another formalism is rejected typed, which the SM sanctions

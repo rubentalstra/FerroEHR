@@ -68,8 +68,10 @@ pub async fn contribution_audit(
 }
 
 /// The versions a CONTRIBUTION affected: the rows it committed, unioned with
-/// the rows its `666|attestation|` items attested (which add no new version) —
-/// deduplicated. Returned as `(vo_id, (trunk, branch_number, branch_version),
+/// the rows its `666|attestation|` items attested (which add no new version)
+/// — deduplicated.
+///
+/// Returned as `(vo_id, (trunk, branch_number, branch_version),
 /// creating_system_id, kind_text)`.
 ///
 /// # Errors
@@ -124,8 +126,9 @@ pub struct ContributionSummary {
 }
 
 /// An EHR's CONTRIBUTIONs, newest-first (audit `time_committed`, then id),
-/// flattened to the list-surface fields, paged by `offset`/`limit`. This is the
-/// storage half of the EHR contribution-list extension.
+/// flattened to the list-surface fields, paged by `offset`/`limit`.
+///
+/// This is the storage half of the EHR contribution-list extension.
 ///
 /// No openEHR spec governs the SQL — our own design; the ITS-REST contract
 /// defines only the by-uid CONTRIBUTION GET, so the paged list is an extension.
@@ -168,8 +171,9 @@ pub async fn list_contribution_summaries(
 }
 
 /// The ids of an EHR's CONTRIBUTIONs, oldest-first (audit `time_committed`,
-/// then id), within the optional inclusive commit-time window, paged. A NULL
-/// bound disables that side; a NULL LIMIT returns all rows.
+/// then id), within the optional inclusive commit-time window, paged.
+///
+/// A NULL bound disables that side; a NULL LIMIT returns all rows.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.

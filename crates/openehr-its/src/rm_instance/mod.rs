@@ -120,10 +120,12 @@ pub(crate) fn norm_path(p: &str) -> String {
     }
 }
 
-/// Validate a canonical-JSON COMPOSITION against its `WebTemplate`, RM invariants,
-/// and the RM-mandated openEHR terminology. Returns every violation found (the
-/// validator does not stop at the first error); an empty result means the
-/// composition is valid to the extent this validator checks.
+/// Validate a canonical-JSON COMPOSITION against its `WebTemplate`, RM
+/// invariants, and the RM-mandated openEHR terminology.
+///
+/// Returns every violation found (the validator does not stop at the first
+/// error); an empty result means the composition is valid to the extent this
+/// validator checks.
 ///
 /// The composed entry point: the two instance passes of this module followed by
 /// the template-driven archetype-conformance pass
@@ -143,12 +145,14 @@ pub fn validate_composition(composition: &Value, wt: &WebTemplate) -> Vec<Valida
     out
 }
 
-/// Validate only the **template-independent** passes: RM class invariants + the
-/// RM-mandated openEHR terminology. These hold for *every* RM instance whether
-/// or not an operational template is referenced (RM invariants and terminology
-/// bindings are properties of the instance, not of the archetype). A COMPOSITION
-/// committed without a declared `template_id` cannot be archetype-conformance-
-/// checked, but must still pass these.
+/// Validate only the **template-independent** passes: RM class invariants +
+/// the RM-mandated openEHR terminology.
+///
+/// These hold for *every* RM instance whether or not an operational template
+/// is referenced (RM invariants and terminology bindings are properties of
+/// the instance, not of the archetype). A COMPOSITION committed without a
+/// declared `template_id` cannot be archetype-conformance- checked, but must
+/// still pass these.
 ///
 /// The COMPOSITION-rooted wrapper over
 /// [`validate_rm_and_terminology_as`]; a caller committing another resource
@@ -158,10 +162,11 @@ pub fn validate_rm_and_terminology(composition: &Value) -> Vec<ValidationMessage
     validate_rm_and_terminology_as(composition, "COMPOSITION")
 }
 
-/// [`validate_rm_and_terminology`] with the **declared RM type of the root
-/// node** supplied by the caller — the entry point for every non-COMPOSITION
-/// commit kind (`EHR_STATUS`, `EHR_ACCESS`, `FOLDER`, the demographic PARTY
-/// types, …).
+/// [`validate_rm_and_terminology`] with the root node's declared RM type given.
+///
+/// The caller supplies the **declared RM type of the root node**; this is the
+/// entry point for every non-COMPOSITION commit kind (`EHR_STATUS`,
+/// `EHR_ACCESS`, `FOLDER`, the demographic PARTY types, …).
 ///
 /// The two passes are properties of the *instance*, not of the resource kind:
 /// `ARCHETYPED.Rm_version_valid`

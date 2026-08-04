@@ -1,7 +1,8 @@
-//! AOM artefact assembly: fold the parsed ODIN sections, the cADL
-//! `definition`, and the `rules` of a [`crate::source::SourceArtefact`] into the
-//! **generated** `openehr_am::am24::aom2` object model, producing a complete
-//! [`Archetype`].
+//! Assembles a parsed ADL artefact into the generated AOM2 object model.
+//!
+//! The ODIN sections, the cADL `definition`, and the `rules` of a
+//! [`crate::source::SourceArtefact`] fold into the **generated**
+//! `openehr_am::am24::aom2` object model, producing a complete [`Archetype`].
 //!
 //! The lower-level entry points ([`crate::source::parse_source`],
 //! [`crate::parse::parse_definition_body`], [`crate::rules::parse_rules_body`])

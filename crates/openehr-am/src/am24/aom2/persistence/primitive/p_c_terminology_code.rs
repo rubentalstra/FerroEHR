@@ -5,7 +5,9 @@
 
 use openehr_base::prelude::TerminologyCode;
 
-/// Constrainer type for instances of TERMINOLOGY_CODE. The primary expression of the constraint is in the property \`tuple_constraint', and comes in 3 variations:
+/// Constrainer type for instances of TERMINOLOGY_CODE.
+///
+/// The primary expression of the constraint is in the property \`tuple_constraint', and comes in 3 variations:
 /// * a single at-code
 /// * a single ac-code, representing a value-set that is defined in the archetype terminology
 /// * a list of at- and/or ac-codes, representing the possibilities of a tuple constraint

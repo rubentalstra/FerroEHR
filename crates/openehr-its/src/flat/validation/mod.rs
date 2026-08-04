@@ -57,11 +57,12 @@ use crate::flat::sim::{SimDocument, SimNode, is_present};
 use crate::flat::webtemplate::{WebTemplate, WebTemplateArchetypeSlot, WebTemplateNode};
 
 /// Validate only the archetype-conformance pass against a resolved
-/// [`WebTemplate`] (type conformance, occurrences, cardinality, and leaf domain
-/// constraints). Callers run
-/// [`crate::rm_instance::validate_rm_and_terminology`] separately for the
-/// template-independent checks, so this is the additional pass a *declared*
-/// template contributes.
+/// [`WebTemplate`] (type conformance, occurrences, cardinality, and leaf
+/// domain constraints).
+///
+/// Callers run [`crate::rm_instance::validate_rm_and_terminology`] separately
+/// for the template-independent checks, so this is the additional pass a
+/// *declared* template contributes.
 #[must_use]
 pub fn validate_archetype_conformance(
     composition: &Value,
@@ -72,7 +73,9 @@ pub fn validate_archetype_conformance(
     v.out
 }
 
-/// Archetype-conformance pass for a `553|incomplete|` commit: identical to
+/// Archetype-conformance pass for a `553|incomplete|` commit.
+///
+/// Identical to
 /// [`validate_archetype_conformance`] but with existence/occurrences/cardinality
 /// **lower** limits treated as zero (RM common master06 §"Incomplete Content":
 /// "in an `incomplete` commit, data may be missing, but it may not be wrong …
@@ -124,8 +127,10 @@ pub struct ConstraintBindingCheck {
     pub instance_code: String,
 }
 
-/// Collect every [`ConstraintBindingCheck`] the template's constraint bindings
-/// raise for this instance, by the same archetype-conformance walk
+/// Collects the [`ConstraintBindingCheck`]s a template's bindings raise for an
+/// instance.
+///
+/// The checks are gathered by the same archetype-conformance walk
 /// [`validate_archetype_conformance`] performs (so a check is raised only for a
 /// node the template actually matched). Pure: no violation is decided here —
 /// the caller resolves each query against its terminology service.
@@ -228,8 +233,10 @@ struct LeafGroup {
     suffixes: Vec<String>,
 }
 
-/// Validate that the **mandatory context fields** are present on a parsed
-/// simplified document (ITS-REST `simplified_formats/master04-basic_concepts.adoc`
+/// Validates that the **mandatory context fields** are present.
+///
+/// The fields are checked on a parsed simplified document (ITS-REST
+/// `simplified_formats/master04-basic_concepts.adoc`
 /// §Validation: "Mandatory context fields (language, territory) are present";
 /// §Context: "Mandatory: language, territory").
 ///

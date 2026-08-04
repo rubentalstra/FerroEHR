@@ -4,7 +4,9 @@
 //! The openEHR `ISO_OID` spec class, generated from the vendored BMM
 //! meta-model.
 
-/// Model of ISO's Object Identifier (oid) as defined by the standard ISO/IEC 8824. Oids are formed from integers separated by dots. Each non-leaf node in an Oid starting from the left corresponds to an assigning authority, and identifies that authority's namespace, inside which the remaining part of the identifier is locally unique.
+/// Model of ISO's Object Identifier (oid) as defined by the standard ISO/IEC 8824.
+///
+/// Oids are formed from integers separated by dots. Each non-leaf node in an Oid starting from the left corresponds to an assigning authority, and identifies that authority's namespace, inside which the remaining part of the identifier is locally unique.
 #[doc(alias = "ISO_OID")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct IsoOid {

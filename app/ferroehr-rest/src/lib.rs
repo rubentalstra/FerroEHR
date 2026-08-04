@@ -112,10 +112,11 @@ pub async fn serve_with(
 }
 
 /// Build the application router with a concrete backend and a full
-/// [`Observability`] bundle (management surface + telemetry handles). The
-/// management surface is merged into the returned router when it is enabled and
-/// not bound to a separate port. ATNA auditing lives in the backend's SM
-/// `SystemLog` component.
+/// [`Observability`] bundle (management surface + telemetry handles).
+///
+/// The management surface is merged into the returned router when it is
+/// enabled and not bound to a separate port. ATNA auditing lives in the
+/// backend's SM `SystemLog` component.
 ///
 /// # Errors
 /// [`ServeError::Auth`] if the OIDC key material/algorithms are invalid.

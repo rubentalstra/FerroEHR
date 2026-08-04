@@ -38,8 +38,10 @@ use crate::json::JsonParseError;
 use crate::json_codec::generated::structural::{declared_fields, structural_check};
 
 /// Run the **core** (non-terminology) RM class invariants for a single
-/// canonical-JSON node, dispatching on its `_type`. A node with no (or an
-/// unrecognised) `_type` runs no invariants (returns without appending).
+/// canonical-JSON node, dispatching on its `_type`.
+///
+/// A node with no (or an unrecognised) `_type` runs no invariants (returns
+/// without appending).
 ///
 /// Two tiers (performance: the RM-invariant pass visits every `_type` node of a
 /// commit, ~1.5k for a populated composition, so the per-node cost is
@@ -66,11 +68,12 @@ pub fn validate_rm_invariants(value: &Value, out: &mut Vec<InvariantViolation>) 
     validate_rm_invariants_as(ty, value, out);
 }
 
-/// [`validate_rm_invariants`] with the node's RM type supplied by the caller —
-/// the entry a tree walker uses for a node whose wire `_type` is legitimately
-/// absent (canonical JSON requires `_type` only where the declared attribute
-/// type is abstract; see [`openehr_rm::model::declared_concrete_type`]). The
-/// `_type`-reading
+/// [`validate_rm_invariants`] with the node's RM type supplied by the caller.
+///
+/// This is the entry a tree walker uses for a node whose wire `_type` is
+/// legitimately absent (canonical JSON requires `_type` only where the declared
+/// attribute type is abstract; see
+/// [`openehr_rm::model::declared_concrete_type`]). The `_type`-reading
 /// wrapper stays for callers with no declaration context.
 pub fn validate_rm_invariants_as(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
     // The strict reader refuses an undeclared wire key, so a node carrying one
@@ -164,7 +167,9 @@ fn undeclared_key(ty: &str, value: &Value) -> Option<InvariantViolation> {
     out.pop()
 }
 
-/// Run **all** RM class invariants for a single canonical-JSON node — the core
+/// Runs **all** RM class invariants for a single canonical-JSON node.
+///
+/// The set is the core
 /// (fast/typed) invariants ([`validate_rm_invariants`]) plus the
 /// terminology-backed invariants
 /// ([`openehr_rm::validate::terminology::validate_rm_terminology`], the
@@ -187,10 +192,12 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
     openehr_rm::validate::terminology::validate_rm_terminology(ty, value, out);
 }
 
-/// The typed dispatch tier of [`validate_rm_value`]: deserialize the node into
-/// its concrete RM type and run that type's `Validate` impl. Authoritative for
-/// every node (the fast path may only *skip* it when its result is provably
-/// identical); also the oracle the fast-path equivalence tests compare against.
+/// The typed dispatch tier of [`validate_rm_value`]: deserialize the node
+/// into its concrete RM type and run that type's `Validate` impl.
+///
+/// Authoritative for every node (the fast path may only *skip* it when its
+/// result is provably identical); also the oracle the fast-path equivalence
+/// tests compare against.
 ///
 /// The tier is composed here from three parts, in this exact order:
 ///

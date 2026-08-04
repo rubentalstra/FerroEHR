@@ -52,10 +52,11 @@ use std::path::{Path, PathBuf};
 
 use super::config::FhirProviderConfig;
 
-/// A failure loading a provider's TLS material. Every variant is a boot
-/// failure: a route to a terminology server whose identity cannot be
-/// assembled must fail loudly at startup, never silently at the first
-/// validated code.
+/// A failure loading a provider's TLS material.
+///
+/// Every variant is a boot failure: a route to a terminology server whose
+/// identity cannot be assembled must fail loudly at startup, never silently
+/// at the first validated code.
 #[derive(Debug, thiserror::Error)]
 pub enum TlsMaterialError {
     /// `client_cert_path` was set without `client_key_path`, or the reverse.

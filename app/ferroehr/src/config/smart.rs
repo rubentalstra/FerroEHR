@@ -101,8 +101,10 @@ pub struct EpisodeConfig {
 
 /// The Authorization-Server endpoints + `OAuth2` metadata advertised in the
 /// `/.well-known/smart-configuration` document (master04 §Authentication
-/// Endpoints). Every field is operator-supplied; an unset optional endpoint is
-/// simply omitted from the document.
+/// Endpoints).
+///
+/// Every field is operator-supplied; an unset optional endpoint is simply
+/// omitted from the document.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct SmartEndpoints {

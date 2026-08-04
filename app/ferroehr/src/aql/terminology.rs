@@ -51,8 +51,10 @@ const EXPAND: &str = "expand";
 
 /// The resolver seam for `TERMINOLOGY('expand', …)`: turns a `(service_api,
 /// params_uri)` pair into the explicit list of codes of the referenced value
-/// set. Implemented by the application service over the SM
-/// `I_TERMINOLOGY_SERVICE` providers.
+/// set.
+///
+/// Implemented by the application service over the SM `I_TERMINOLOGY_SERVICE`
+/// providers.
 #[async_trait]
 pub trait TerminologyExpander: Send + Sync {
     /// Expand the value set identified by `params_uri` via the terminology
@@ -91,9 +93,10 @@ pub trait TerminologyExpander: Send + Sync {
 }
 
 /// Resolve and merge every `TERMINOLOGY('expand', …)` used as (or inside) a
-/// `matches` operand in `query`'s `WHERE` clause, rewriting the value lists in
-/// place to explicit string codes. A no-op when the query has no `WHERE` clause
-/// or no `expand` operand.
+/// `matches` operand in `query`'s `WHERE` clause, rewriting the value lists
+/// in place to explicit string codes.
+///
+/// A no-op when the query has no `WHERE` clause or no `expand` operand.
 ///
 /// Each distinct `(service_api, params_uri)` is resolved exactly once. Non-
 /// `expand` `TERMINOLOGY()` operands are left untouched (the planner rejects

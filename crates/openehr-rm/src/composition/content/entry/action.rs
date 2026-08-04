@@ -18,14 +18,20 @@ use crate::data_types::text::dv_text::DvText;
 use openehr_base::prelude::ObjectRef;
 use openehr_base::prelude::UidBasedId;
 
-/// Used to record a clinical action that has been performed, which may have been ad hoc, or due to the execution of an Activity in an Instruction workflow. Every Action corresponds to a careflow step of some kind or another.
+/// Used to record a clinical action that has been performed, which may have been ad hoc, or due to the execution of an Activity in an Instruction workflow.
+///
+/// Every Action corresponds to a careflow step of some kind or another.
 #[doc(alias = "ACTION")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct Action {
     // inherited: LOCATABLE
-    /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.
+    /// Runtime name of this fragment, used to build runtime paths.
+    ///
+    /// This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.
     pub name: DvText,
-    /// Design-time archetype identifier of this node taken from its generating archetype; used to build archetype paths. Always in the form of an at-code, e.g.  `at0005`. This value enables a 'standardised' name for this node to be generated, by referring to the generating archetype local terminology.
+    /// Design-time archetype identifier of this node taken from its generating archetype; used to build archetype paths.
+    ///
+    /// Always in the form of an at-code, e.g.  `at0005`. This value enables a 'standardised' name for this node to be generated, by referring to the generating archetype local terminology.
     ///
     /// At an archetype root point, the value of this attribute is always the stringified form of the `_archetype_id_` found in the `_archetype_details_` object.
     pub archetype_node_id: String,
@@ -65,11 +71,15 @@ pub struct Action {
     pub provider: Option<PartyProxy>,
 
     // inherited: CARE_ENTRY
-    /// Description of the method (i.e. how) the information in this entry was arrived at. For `OBSERVATIONs`, this is a description of the method or instrument used. For `EVALUATIONs`, how the evaluation was arrived at. For `INSTRUCTIONs`, how to execute the Instruction. This may take the form of references to guidelines, including manually followed and executable; knowledge references such as a paper in Medline; clinical reasons within a larger care process.
+    /// Description of the method (i.e. how) the information in this entry was arrived at.
+    ///
+    /// For `OBSERVATIONs`, this is a description of the method or instrument used. For `EVALUATIONs`, how the evaluation was arrived at. For `INSTRUCTIONs`, how to execute the Instruction. This may take the form of references to guidelines, including manually followed and executable; knowledge references such as a paper in Medline; clinical reasons within a larger care process.
     pub protocol: Option<ItemStructure>,
     /// Optional external identifier of guideline creating this Entry if relevant.
     pub guideline_id: Option<ObjectRef>,
-    /// Point in time at which this action completed. To indicate an unknown time, use a `DV_DATE_TIME` instance with `_value_` set to the time of creation (or some other known time before which the Action is known to have occurred, e.g. data accession timestamp from integration engine), and `_magnitude_status_` set to `<`.
+    /// Point in time at which this action completed.
+    ///
+    /// To indicate an unknown time, use a `DV_DATE_TIME` instance with `_value_` set to the time of creation (or some other known time before which the Action is known to have occurred, e.g. data accession timestamp from integration engine), and `_magnitude_status_` set to `<`.
     pub time: DvDateTime,
     /// Details of transition in the Instruction state machine caused by this Action.
     pub ism_transition: IsmTransition,

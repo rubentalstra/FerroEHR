@@ -164,9 +164,9 @@ secret.) Visibility: public.
   workflow do it; the skill only checks).
 - **`/phase-status`** may cite `scripts/gh-project.sh board` for the public
   view, but the issue list stays the working ground truth.
-- The **board readme** (`gh project edit --readme`) carries the durable
-  direction themes — the former root `ROADMAP.md` was retired into it
-  (2026-08-04, issue #1867); never resurrect a roadmap markdown file, and
+- The **board readme** (`gh project edit --readme`) is the ONE home of the
+  durable direction themes (owner ruling 2026-08-04, issue #1867): never
+  create a roadmap markdown file, and
   keep the readme themes-only (no item-level state, no quotable numbers —
   those live in issues and the committed artifacts). `README.md` links the
   board for visitors.

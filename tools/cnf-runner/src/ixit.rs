@@ -14,9 +14,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::ids::InstanceName;
 
-/// Authentication mode of an instance. Credentials are REFERENCES (env-var
-/// names or, for the SMART lane, the party's declared test-issuer key file),
-/// never inline secrets — the ixit file is committed/shared.
+/// Authentication mode of an instance.
+///
+/// Credentials are REFERENCES (env-var names or, for the SMART lane, the
+/// party's declared test-issuer key file), never inline secrets — the ixit
+/// file is committed/shared.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "mode", rename_all = "snake_case", deny_unknown_fields)]
 pub enum AuthMode {
@@ -263,9 +265,10 @@ pub struct Instance {
 }
 
 /// The environment block — mandatory for performance runs, informative
-/// otherwise. `Serialize` because every measurement record embeds the
-/// environment it was taken in (an earned class is reported WITH its
-/// environment, never bare).
+/// otherwise.
+///
+/// `Serialize` because every measurement record embeds the environment it was
+/// taken in (an earned class is reported WITH its environment, never bare).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Environment {
@@ -288,9 +291,11 @@ pub struct Environment {
 }
 
 /// The container-runtime identities of the composed SUT — topology facts,
-/// exactly what the ixit is for. Presence enables resource sampling on
-/// measured runs; absence records no `resources` block and never fails a
-/// run (a BYO SUT has no reachable containers).
+/// exactly what the ixit is for.
+///
+/// Presence enables resource sampling on measured runs; absence records no
+/// `resources` block and never fails a run (a BYO SUT has no reachable
+/// containers).
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Containers {
