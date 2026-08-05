@@ -1,8 +1,9 @@
 //! The ADL 1.4-only cADL productions — the 1.4→2 converter front end.
 //!
-//! NOTE: no openEHR spec governs 1.4 → 2 conversion — these productions, like
-//! the rest of [`crate::adl14`], are our own design/extension (archie's
-//! converter is prior art only). They run for `Dialect::Adl14` only, reached
+//! NOTE: no openEHR spec governs the 1.4 → 2 conversion algorithm — these
+//! productions, like the rest of [`crate::adl14`], are our own design/extension.
+//!
+//! They run for `Dialect::Adl14` only, reached
 //! from the three dialect-gated dispatch points of [`crate::parse::parser`],
 //! and are the WRITE side of a converter-internal encoding: the qualified /
 //! listed 1.4 terminology constraint is kept verbatim in

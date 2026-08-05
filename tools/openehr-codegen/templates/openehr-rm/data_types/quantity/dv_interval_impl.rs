@@ -4,9 +4,12 @@
 //! Spec: RM 1.2.0
 //! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_interval.adoc`.
 //!
-//! - The base `Interval` boundary-flag invariants (`Lower_included_valid`,
-//!   `Upper_included_valid`).
-//! - `Limits_consistent`: `(not upper_unbounded and not lower_unbounded)
+//! - The inherited `Interval` boundary-flag invariants (`Lower_included_valid`,
+//!   `Upper_included_valid`) of
+//!   `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.interval.adoc`
+//!   §Invariants.
+//! - `Limits_consistent` as DV_INTERVAL's own §Invariants row REDEFINES it:
+//!   `(not upper_unbounded and not lower_unbounded)
 //!   implies (lower.is_strictly_comparable_to(upper) and lower <= upper)` —
 //!   enforced through the [`OrderedLimit`] ordered-magnitude surface
 //!   (`dv_ordered_impl`); undecidable comparisons (e.g. a `serde_json::Value`
@@ -17,11 +20,16 @@
 //!   `*_included` boundary flags (used by `REFERENCE_RANGE.is_in_range` and
 //!   `DV_ORDERED.is_normal`).
 //!
-//! NOTE: archie reports the boundary-flag invariants under the base type
-//! `INTERVAL` (its `DvInterval` composes an inner `Interval`); our `DvInterval`
-//! is flat, so we report the concrete type `DV_INTERVAL`. The indexed SQL
-//! realisation of the same ordering is the AQL engine's `openehr_magnitude`
-//! function; this impl is the in-process authority.
+//! All violations are reported under the concrete type `DV_INTERVAL`: the class
+//! page declares `Limits_consistent` itself, and the representation is flat (the
+//! six `Interval` components are DV_INTERVAL's own fields), so there is no inner
+//! `INTERVAL` value to attribute a violation to. The inherited
+//! `Limits_comparable` needs no separate check — the redefined
+//! `Limits_consistent` above subsumes it.
+//!
+//! NOTE: no openEHR spec governs the indexed SQL realisation of this ordering
+//! (the AQL engine's `openehr_magnitude`); this impl is the in-process
+//! authority.
 
 #![allow(
     clippy::disallowed_types,

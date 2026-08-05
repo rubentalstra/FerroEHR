@@ -1,8 +1,9 @@
 // @generated-from-template templates/openehr-rm/data_types/text/code_phrase_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariant for `CODE_PHRASE`.
 //!
-//! `Code_string_valid` (archie `CodePhrase`, `nullOrNotEmpty`): the code string
-//! must be non-empty.
+//! `Code_string_valid` (`not code_string.is_empty`) —
+//! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.code_phrase.adoc`
+//! §Invariants.
 
 use crate::v1_1::data_types::text::code_phrase::CodePhrase;
 use openehr_base::validate::{InvariantViolation, Validate};

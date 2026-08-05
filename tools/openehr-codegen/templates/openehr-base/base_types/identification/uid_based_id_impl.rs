@@ -9,10 +9,12 @@
 //! - `has_extension()` — `not extension.is_empty()`.
 //!
 //! Invariant `Has_extension_valid` (`extension.is_empty xor has_extension`) is
-//! definitionally satisfied because `has_extension()` is computed from
-//! `extension()`; it is therefore not surfaced as a runnable `Validate` check
-//! (mirrors archie, which computes rather than stores it). `OBJECT_VERSION_ID`
-//! well-formedness is checked by its own sibling (`object_version_id_impl`).
+//! unfalsifiable in this representation: the same page defines
+//! `has_extension(): True if not extension.is_empty()`, so computing it from
+//! `extension()` makes the invariant a tautology with nothing to check at
+//! runtime. It is therefore not surfaced as a runnable `Validate` check.
+//! `OBJECT_VERSION_ID` well-formedness is checked by its own sibling
+//! (`object_version_id_impl`).
 
 use super::hier_object_id::HierObjectId;
 use super::lexical::{composite_ids_equal, make_uid};

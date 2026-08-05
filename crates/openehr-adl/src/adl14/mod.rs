@@ -1,14 +1,22 @@
 //! ADL 1.4 → ADL 2 conversion (the `adl14` 1.4→2 upgrade pipeline).
 //!
-//! NOTE: **no openEHR spec governs 1.4 → 2 conversion — the entire `adl14`
-//! module is our own design/extension.** The strategy was researched from
-//! openEHR `archie`'s converter (`ADL14NodeIDConverter` +
-//! `ADL14TermConstraintConverter` + `Differentiator`) as PRIOR ART only —
-//! archie is never a parity target, and there is no vendored-spec authority to
-//! cite for any rule here. The behaviour is pinned by the paired
+//! NOTE: **no openEHR spec governs the 1.4 → 2 conversion ALGORITHM — the
+//! entire `adl14` module is our own design/extension.**
+//!
+//! The released text establishes only that the conversion must exist and names
+//! two of its outcomes: `ADL2/master01-preface.adoc` §ADL 2.0 → §Backward
+//! Compatibility ("require conversion of ADL 1.4 archetypes to ADL 2 form …
+//! the changes have been carefully designed to allow this conversion to be
+//! implementable"), `ADL2/master07.04-adl_basics.adoc` §Node Identifier Codes
+//! ("In ADL 1.4 at-codes were used as node identifiers. For id-coded ADL2
+//! archetypes, these are converted to id-codes by ADL 1.4 to ADL 2
+//! converters"), and `ADL2/master07.05-adl_identification.adoc` §Human Readable
+//! Archetype Identifier (convert a single-number 1.4 version part to `v1.0.0`
+//! or another Knowledge-Identification-conformant identifier). Every other rule
+//! below is ours, pinned by the paired
 //! `tests/corpus/adl2-reference/upgrade/upgrade_from_14/**` fixtures (each 1.4
-//! `.adl` source paired with its expected ADL2 `.adls`), which are the
-//! converter oracle.
+//! `.adl` source paired with its expected ADL2 `.adls`) — which are therefore
+//! the converter's only oracle.
 //!
 //! Pipeline:
 //! 0. **cADL front end** ([`lower`] + [`domain`]) — the ADL 1.4-only cADL

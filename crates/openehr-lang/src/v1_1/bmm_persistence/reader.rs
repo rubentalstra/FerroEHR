@@ -2381,9 +2381,9 @@ mod tests {
     fn an_ancestor_def_that_is_not_a_generic_type_is_refused() {
         // `P_BMM_CLASS.ancestor_defs` is List<P_BMM_GENERIC_TYPE> (class doc
         // §Attributes) and §Inheritance uses it only for generic ancestors, so a
-        // (P_BMM_SIMPLE_TYPE) entry — as written by the vendored archie fixture
-        // `ancestor_def_doesnt_exist.bmm` — states no `root_type` and cannot be
-        // materialised.
+        // (P_BMM_SIMPLE_TYPE) entry — the shape of the vendored fixture
+        // `tests/vendor/bmm/…/persistence/validation/ancestor_def_doesnt_exist.bmm`
+        // — states no `root_type` and cannot be materialised.
         let error = read(
             r#"
             class_definitions = <

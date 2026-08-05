@@ -8,8 +8,8 @@
 //! §Validity Rules (VTSD, VTLC, VTVSID, VTVSMD, VTVSUQ),
 //! `master03-archetype_package.adoc` §Validity Rules (VATDF, VACDF, VATDA,
 //! VATCD, VOTM) and `master08-validation.adoc` §Phase 1 - Basic Integrity
-//! (VATID, VATCV). WOUC has no openEHR spec text — our own design/extension
-//! (archie parity), flagged at its check site.
+//! (VATID, VATCV). WOUC appears nowhere in the vendored spec text — our own
+//! design/extension, flagged at its check site.
 //!
 //! The pass is gated by `super::run`: it runs only when the basic
 //! identification checks are clean and the terminology structure is sound
@@ -212,12 +212,13 @@ pub(super) fn check_terminology(
     // Rules).
     check_bindings(v, &defined, issues);
 
-    // WOUC: a defined at/ac code that is never used in the definition (archie
-    // parity; no openEHR spec governs this — our own design/extension).
-    // Suppressed in the 1.4 dialect: 1.4 value codes are carried inside the
-    // verbatim terminology-constraint strings (not recognised as ADL2 code
+    // WOUC is suppressed in the 1.4 dialect: 1.4 value codes are carried inside
+    // the verbatim terminology-constraint strings (not recognised as ADL2 code
     // usage), so the "unused" heuristic is unreliable on a 1.4-shaped model and
     // would flag legitimately-used codes.
+    //
+    // NOTE: no openEHR spec governs WOUC (a defined at/ac code never used in the
+    // definition) — our own design/extension.
     if dialect == Dialect::Adl2 {
         let mut used_all: BTreeSet<&str> = usage.value_codes.iter().map(String::as_str).collect();
         used_all.extend(usage.node_codes.iter().map(String::as_str));

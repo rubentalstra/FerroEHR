@@ -466,9 +466,9 @@ pub fn slot_is_violated(slot: &Slot, node: &Value) -> bool {
 /// Run the terminology-backed RM class invariants for a single canonical-JSON
 /// node, dispatching on its `_type`.
 ///
-/// Appends one archie-style [`InvariantViolation`] per violated coded slot,
-/// keyed to the offending attribute path. A node whose `_type` binds no coded
-/// slot appends nothing.
+/// Appends one [`InvariantViolation`] per violated coded slot, in the uniform
+/// `Invariant <Name> failed on type <RM_TYPE>` form and keyed to the offending
+/// attribute path. A node whose `_type` binds no coded slot appends nothing.
 ///
 /// This is the core form of the RM terminology/code-set invariants; the
 /// `openehr-its` wire-boundary dispatcher runs it as a post-core check, and the

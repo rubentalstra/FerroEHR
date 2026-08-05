@@ -1,9 +1,11 @@
 // @generated-from-template templates/openehr-rm/composition/content/entry/activity_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariants for `ACTIVITY`.
 //!
-//! - `Action_archetype_id_valid` (archie `Activity`, `nullOrNotEmpty`):
-//!   `action_archetype_id` non-empty.
-//! - `Archetype_node_id_valid`: inherited LOCATABLE.
+//! - `Action_archetype_id_valid` (`not action_archetype_id.is_empty`) —
+//!   `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.activity.adoc`
+//!   §Invariants.
+//! - `Archetype_node_id_valid` — the inherited LOCATABLE invariant
+//!   (`…org.openehr.rm.common.locatable.adoc` §Invariants).
 
 use crate::v1_1::composition::content::entry::activity::Activity;
 use openehr_base::validate::{InvariantViolation, Validate};

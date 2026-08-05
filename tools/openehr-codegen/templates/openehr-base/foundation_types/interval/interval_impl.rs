@@ -33,8 +33,12 @@ use super::proper_interval::{ProperInterval, ProperIntervalData};
 /// concrete interval type and the `Interval<T>` enum.
 ///
 /// A boundary is treated as ±infinity when its `*_unbounded` flag is set **or**
-/// its value is absent, mirroring the reference implementation's "a null limit
-/// imposes no constraint" behaviour.
+/// its value is absent: `Interval.lower`/`upper` are `0..1`
+/// (`BASE docs/UML/classes/org.openehr.base.foundation_types.interval.adoc`
+/// §Attributes) and no invariant ties absence to the flag, so an absent limit
+/// has no value to compare against and can only constrain nothing.
+///
+/// NOTE: no openEHR spec states the absent-limit reading — our own design.
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct BoundaryView<'a, T> {
     pub lower: Option<&'a T>,

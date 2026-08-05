@@ -8,9 +8,19 @@
 //! leaves are `rm:`-namespaced canonical RM value fragments. It carries **no**
 //! `archetype_node_id`s, no RM `_type`/`xsi:type` on most nodes, and omits the
 //! RM wrapper structure (`HISTORY`/`EVENT`/`ITEM_TREE`/`ELEMENT`) — all of which
-//! come from the operational template. Prior art: archie's `TemplateDataDocument`
-//! reader; the openEHR SM Platform Service Model sequences this under the
-//! message-integration service (`I_TDD_SERVICE`).
+//! come from the operational template.
+//!
+//! The format's own account is
+//! `docs/specs/openehr/ITS-REST/docs/simplified_formats/master03-design_rationale.adoc`
+//! §Historical Formats, which describes the Template Data Schema (TDS) as an
+//! XSD generated per template — flattening RM structures and turning at-coded
+//! object nodes into element names — and a TDD as an instance document of that
+//! schema. The service seam is
+//! `docs/specs/openehr/SM/docs/UML/classes/i_tdd_service.adoc` (`I_TDD_SERVICE`,
+//! `import_tdd`/`import_tdds`).
+//!
+//! NOTE: that account fixes neither a TDD grammar nor a mapping back to
+//! canonical form, so the matching rule below is our own design/extension.
 //!
 //! # The matching rule (derived from the vendored corpus + `WebTemplate`)
 //!

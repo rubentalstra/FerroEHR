@@ -1,8 +1,9 @@
 // @generated-from-template templates/openehr-rm/common/archetyped/archetyped_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariant for `ARCHETYPED`.
 //!
-//! `Rm_version_valid` (archie `Archetyped`, `nullOrNotEmpty`): `rm_version` must
-//! be non-empty.
+//! `Rm_version_valid` (`not rm_version.is_empty`) —
+//! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.archetyped.adoc`
+//! §Invariants.
 
 use crate::v1_1::common::archetyped::archetyped::Archetyped;
 use openehr_base::validate::{InvariantViolation, Validate};

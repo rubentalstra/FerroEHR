@@ -1,7 +1,9 @@
 // @generated-from-template templates/openehr-rm/data_types/basic/dv_identifier_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariant for `DV_IDENTIFIER`.
 //!
-//! `Id_valid` (archie `DvIdentifier`, `nullOrNotEmpty`): `id` must be non-empty.
+//! `Id_valid` (`not id.is_empty`) —
+//! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_identifier.adoc`
+//! §Invariants.
 
 use crate::v1_1::data_types::basic::dv_identifier::DvIdentifier;
 use openehr_base::validate::{InvariantViolation, Validate};

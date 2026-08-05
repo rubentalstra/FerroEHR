@@ -1,18 +1,30 @@
 // @generated-from-template templates/openehr-rm/composition/composition_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariants for `COMPOSITION`.
 //!
-//! Mirrors archie `Composition` (non-terminology) + inherited LOCATABLE:
-//! - `Is_archetype_root`: a COMPOSITION is an archetype root, so
-//!   `archetype_details` must be present.
-//! - `Archetype_node_id_valid`: `archetype_node_id` non-empty.
+//! The class page
+//! (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.composition.adoc`
+//! §Invariants) declares five invariants; every one is enforced, each at the
+//! layer its inputs live at:
 //!
-//! NOTE: archie's `Category_validity`, `Territory_valid`, `Language_valid`
-//! are terminology-bound (deferred to the composition validator + `openehr-term`),
-//! and its `Content valid` invariant is `ignored`. The openEHR spec constraints
-//! that archie does **not** enforce (composer present, persistent-category ⇒
-//! context rules, content are ENTRY/SECTION) are likewise not implemented, to
-//! match the reference behaviour (content typing is already guaranteed
-//! structurally by the `ContentItem` enum).
+//! - `Is_archetype_root` + inherited `Archetype_node_id_valid` — here, via
+//!   the generated `composition_core` (the machine-classified mechanical
+//!   invariants).
+//! - `Content_valid` (`content /= Void implies not content.is_empty`) — by
+//!   construction: the field emits `Option<NonEmptyVec<CONTENT_ITEM>>`, so a
+//!   present-but-empty list is unrepresentable and the strict readers refuse
+//!   `[]` at parse.
+//! - `Category_validity`, `Territory_valid`, `Language_valid` — terminology-
+//!   bound, enforced in `validate::terminology` against the `openehr-term`
+//!   bundle (they need the code sets, which this layer does not hold).
+//!
+//! Beyond the invariant table: `composer` presence is structural (a `1..1`
+//! attribute emits a mandatory field), and content typing is structural (the
+//! `ContentItem` enum admits only the CONTENT_ITEM family).
+//!
+//! NOTE: the released text declares NO persistent-category context rule —
+//! SPECRM-52 removed the old "no context on persistent Compositions"
+//! invariant (`RM/docs/ehr/master05-composition_package.adoc` §The
+//! Composition Package NOTE: relaxed after release 1.0.3).
 
 use crate::v1_2::composition::composition::Composition;
 use openehr_base::validate::{InvariantViolation, Validate};

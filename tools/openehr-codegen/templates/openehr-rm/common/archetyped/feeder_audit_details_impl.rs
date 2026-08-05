@@ -1,7 +1,8 @@
 //! Hand-written RM class invariant for `FEEDER_AUDIT_DETAILS`.
 //!
-//! `System_id_valid` (archie `FeederAuditDetails`, `nullOrNotEmpty`):
-//! `system_id` must be non-empty.
+//! `System_id_valid` (`not system_id.is_empty`) —
+//! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.feeder_audit_details.adoc`
+//! §Invariants.
 
 use crate::v1_2::common::archetyped::feeder_audit_details::FeederAuditDetails;
 use openehr_base::validate::{InvariantViolation, Validate};

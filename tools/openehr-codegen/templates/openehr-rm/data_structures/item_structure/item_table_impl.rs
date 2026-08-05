@@ -1,10 +1,22 @@
 //! Hand-written RM class invariants for `ITEM_TABLE`.
 //!
-//! Mirrors archie `ItemTable` + inherited LOCATABLE:
-//! - `Valid_structure`: every item in every row `CLUSTER` is an `ELEMENT`
-//!   (no nested clusters).
-//! - `Valid_number_of_rows`: all rows have the same number of items.
-//! - `Archetype_node_id_valid`: `archetype_node_id` non-empty.
+//! Spec:
+//! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.item_table.adoc`.
+//! - `Valid_structure` (`rows.for_all (items.for_all (instance_of
+//!   ("ELEMENT")))`, §Invariants): every item in every row `CLUSTER` is an
+//!   `ELEMENT` — no nested clusters.
+//! - `Archetype_node_id_valid` — the inherited LOCATABLE invariant
+//!   (`…org.openehr.rm.common.locatable.adoc` §Invariants).
+//!
+//! Two further checks come from that page's §Description ("Each row Cluster must
+//! have an identical number of Elements, each of which in turn must have
+//! identical names and value types in the corresponding positions in each row"),
+//! which §Invariants does not restate. The rules are the page's; the two names
+//! are not.
+//!
+//! NOTE: no openEHR spec names these two checks — `Valid_number_of_rows`
+//! (equal item counts) and `Row_regularity` (matching names + value types per
+//! column) are our own labels for §Description rules.
 
 use crate::v1_2::data_structures::item_structure::item_table::ItemTable;
 use crate::v1_2::data_structures::representation::item::Item;
@@ -22,7 +34,8 @@ impl Validate for ItemTable {
                 "Invariant Valid_structure failed on type ITEM_TABLE",
             ));
         }
-        // Valid_number_of_rows: every row has the same number of items.
+        // Valid_number_of_rows (item_table.adoc §Description): every row has the
+        // same number of items.
         if let Some(first) = self.rows.iter().flatten().next()
             && self
                 .rows
@@ -34,10 +47,10 @@ impl Validate for ItemTable {
                 "Invariant Valid_number_of_rows failed on type ITEM_TABLE",
             ));
         }
-        // Row regularity (item_table.adoc §description): corresponding
-        // ELEMENTs across rows must have identical names and value types —
-        // "each of which in turn must have identical names and value types in
-        // the corresponding positions in each row".
+        // Row_regularity (item_table.adoc §Description): corresponding ELEMENTs
+        // across rows must have identical names and value types — "each of which
+        // in turn must have identical names and value types in the corresponding
+        // positions in each row".
         if let Some(first) = self.rows.iter().flatten().next() {
             use crate::v1_2::data_types::text::dv_text::DvText;
             let name_of = |name: &DvText| match name {

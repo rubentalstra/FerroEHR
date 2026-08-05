@@ -277,9 +277,13 @@ pub fn is_uid(s: &str) -> bool {
 /// The subtype is chosen by lexical form (BASE 1.3.0 `UID` hierarchy): a valid
 /// RFC-4122 UUID becomes [`Uuid`]; an OID (dot-separated groups of digits, at
 /// least two groups) becomes [`IsoOid`]; anything else becomes [`InternetId`].
-/// This mirrors the reference implementation's `UID.create`/`build` dispatch —
-/// the wire form of a UID carries no `_type`, so the subtype is inferred from
-/// the string.
+/// Inference is forced by the wire form: a UID is carried as a bare string
+/// with no `_type`, while `UID` is abstract with three concrete descendants
+/// (`…base_types.identification.uid.adoc` §Inherit), so the lexical form is
+/// the only available discriminator.
+///
+/// NOTE: no openEHR spec states the dispatch ORDER — our own design (the
+/// forms are mutually exclusive, so any order agrees).
 #[must_use]
 pub(crate) fn make_uid(value: &str) -> Uid {
     // The `uuid` arm goes through [`is_uuid`] rather than a bare

@@ -1,10 +1,16 @@
 //! Hand-written RM class invariants for `DV_EHR_URI`.
 //!
-//! Mirrors archie `DvEHRURI` (which extends `DvURI`):
-//! - `Scheme_valid`: the URI scheme must be `ehr` (case-insensitive).
-//! - `Value_valid`: inherited from `DV_URI` — value non-empty.
+//! - `Scheme_valid` (`scheme.is_equal (Ehr_scheme)`) —
+//!   `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_ehr_uri.adoc`
+//!   §Invariants. `Ehr_scheme` is `"ehr"`
+//!   (`docs/specs/openehr/RM/docs/data_types/master10-uri_package.adoc`
+//!   §Definitions), compared case-insensitively per RFC 3986 §3.1
+//!   (<https://www.rfc-editor.org/rfc/rfc3986#section-3.1>): "schemes are
+//!   case-insensitive".
+//! - `Value_valid` (`not value.is_empty`) — inherited from `DV_URI`
+//!   (`…org.openehr.rm.data_types.dv_uri.adoc` §Invariants).
 //!
-//! An empty value fails both (as in archie `DvEhrUriInvariantTest.invalid2`).
+//! An empty value fails both: it has no scheme either.
 
 use crate::v1_2::data_types::uri::dv_ehr_uri::DvEhrUri;
 use openehr_base::validate::{InvariantViolation, Validate};
