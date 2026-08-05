@@ -11,14 +11,14 @@
 //! [`OperationClass::Admin`]; everything else is [`OperationClass::Clinical`]
 //! (any authenticated principal with a role), matching v1's rule that only
 //! `/rest/admin/**` and the management endpoints require `ADMIN` while
-//! "everything else → any authenticated user" (§2.4). [`OperationClass::Public`]
+//! "everything else → any authenticated user". [`OperationClass::Public`]
 //! and [`OperationClass::Management`] are used by the REST layer to classify the
 //! *non-generated* surface (status/health/swagger/management), which never
 //! reaches [`class_of`].
 
 use crate::extensions::access::authz::request::{AccessMode, ResourceKind};
 
-/// The coarse authorization class of an operation (§5.2).
+/// The coarse authorization class of an operation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OperationClass {
     /// No authorization check (root/status/health per the router).
@@ -161,7 +161,7 @@ pub fn class_of(op: &str) -> Option<OperationClass> {
 }
 
 /// The ABAC [`ResourceKind`] of a generated operation, derived from its op-id
-/// prefix (§5.3).
+/// prefix.
 ///
 /// `None` for operations ABAC does not model as resources (`definition_*`,
 /// `demographic_*`, `admin_*`) — those are RBAC-only.
@@ -240,8 +240,7 @@ fn write_verb(op: &str) -> Option<bool> {
     None
 }
 
-/// The ABAC [`AccessMode`] of a generated operation (the Cedar action axis,
-/// §5.6).
+/// The ABAC [`AccessMode`] of a generated operation (the Cedar action axis).
 ///
 /// Returns `None` for operations without a [`ResourceKind`]; for a clinical
 /// op it is always `Some`. Derived from the op-id verb.
@@ -284,7 +283,7 @@ mod tests {
         ops
     }
 
-    /// §9.1(a): every generated operation id has an [`OperationClass`]. A new,
+    /// Every generated operation id has an [`OperationClass`]. A new,
     /// unclassified generated operation fails this test.
     #[test]
     fn every_operation_is_classified() {
@@ -301,7 +300,7 @@ mod tests {
     }
 
     /// The only Admin-class generated routes are the two admin-API deletes;
-    /// everything else generated is Clinical (§2.4 / §5.2).
+    /// everything else generated is Clinical.
     #[test]
     fn admin_routes_are_the_only_admin_class() {
         let mut admin: Vec<&str> = all_route_ops()
@@ -372,7 +371,7 @@ mod tests {
         assert_eq!(access_of("definition_query_list"), None);
     }
 
-    /// §5.3: every generated operation with an ABAC [`ResourceKind`] also has an
+    /// Every generated operation with an ABAC [`ResourceKind`] also has an
     /// [`AccessMode`], and every RBAC-only family (`definition_*`,
     /// `demographic_*`, `admin_*`) maps to no kind. Guards the derivation the
     /// same way the class guard does.

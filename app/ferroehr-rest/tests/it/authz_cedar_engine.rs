@@ -147,7 +147,7 @@ async fn remote_permit_when_patient_ok() -> (MockServer, RemotePdp) {
     (server, pdp)
 }
 
-/// §9.4 differential test: the same `AuthzRequest` corpus must yield identical
+/// Differential test: the same `AuthzRequest` corpus must yield identical
 /// decisions from the embedded Cedar engine and the v1-compatible remote PDP,
 /// proving the fan-out semantics (cartesian product, all-must-permit,
 /// short-circuit, empty→permit) are engine-independent.

@@ -8,7 +8,7 @@
 //! policy set on validity ([`arc_swap`]). Multi-valued attributes fan out per
 //! [`AuthzRequest::combinations`] with the same all-must-permit / short-circuit
 //! semantics as the remote PDP, so the two engines are behaviourally identical
-//! (the §9.4 differential test).
+//! (a differential test pins the two against the same request corpus).
 //!
 //! Cedar is deny-by-default with `forbid` overriding `permit`; the shipped
 //! example policies document that.

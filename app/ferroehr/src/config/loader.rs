@@ -1,4 +1,4 @@
-//! The one configuration loader (§5.1–5.4).
+//! The one configuration loader.
 //!
 //! Performs file discovery plus the pure `config`-crate assembly
 //! (defaults < file < env < `--set`) with the strict passes, the two
@@ -60,7 +60,7 @@ impl ConfigError {
 }
 
 /// A non-empty batch of configuration errors, rendered as one block so an
-/// operator fixes everything in one iteration (§P-5).
+/// operator fixes everything in one iteration.
 #[derive(Debug)]
 pub struct ConfigErrors(pub Vec<ConfigError>);
 
@@ -76,7 +76,7 @@ impl std::fmt::Display for ConfigErrors {
 
 impl std::error::Error for ConfigErrors {}
 
-/// File discovery (§5.4): `--config` → `FERROEHR_CONFIG` → `./ferroehr.toml` →
+/// File discovery: `--config` → `FERROEHR_CONFIG` → `./ferroehr.toml` →
 /// `/etc/ferroehr/ferroehr.toml`. An explicitly-pointed-at file must exist; the
 /// search-order files are optional.
 ///
@@ -140,7 +140,7 @@ pub fn assemble<S: std::hash::BuildHasher>(
         None => None,
     };
 
-    // The two permanent conventional aliases (§P-3: DATABASE_URL, RUST_LOG) —
+    // The two permanent conventional aliases (DATABASE_URL, RUST_LOG) —
     // layered BELOW the canonical source so an `FERROEHR__` form always wins.
     // There is no legacy remapping (greenfield, owner ruling 2026-07-15):
     // pre-redesign spellings fail the strict sweep above with the exact
@@ -207,7 +207,7 @@ pub fn assemble<S: std::hash::BuildHasher>(
 }
 
 /// An `FERROEHR_`-prefixed environment source over an injected map (the hermetic
-/// seam, §5.1) with the `__` grammar, typed scalars, and comma-separated lists.
+/// seam) with the `__` grammar, typed scalars, and comma-separated lists.
 fn env_source(map: HashMap<String, String>) -> Environment {
     let mut env = Environment::with_prefix("FERROEHR")
         .separator("__")
@@ -267,7 +267,7 @@ fn find_key_line(content: &str, key: &str) -> Option<usize> {
 }
 
 /// Resolve every `*_file` sibling into its `Secret`/string field immediately
-/// after extraction (§5.6): read the file, trim a trailing newline, and reject
+/// after extraction: read the file, trim a trailing newline, and reject
 /// when both the inline value and its `*_file` are set.
 fn resolve_secret_files(config: &mut FerroEhrConfig, errors: &mut Vec<ConfigError>) {
     resolve_secret(
@@ -315,7 +315,7 @@ fn resolve_secret_files(config: &mut FerroEhrConfig, errors: &mut Vec<ConfigErro
 }
 
 /// Read `path`'s contents (trailing newline trimmed) into `target` as a
-/// [`Secret`], unless `target` is already set (both-set is an error, §5.6).
+/// [`Secret`], unless `target` is already set (both-set is an error).
 fn resolve_secret(
     key: &str,
     target: &mut Option<Secret>,

@@ -476,7 +476,7 @@ async fn abac_disabled_restores_behaviour() {
 #[tokio::test]
 async fn abac_deny_is_audited() {
     // A 403 from the ABAC gate carries the Principal, so the ATNA layer records a
-    // failure audit for the denied caller (§7). The emitter ships a DICOM record
+    // failure audit for the denied caller. The emitter ships a DICOM record
     // over syslog/UDP; we assert on the datagrams: a minor-failure outcome
     // (`EventOutcomeIndicator="4"`) attributed to `svc`.
     let (socket, sender) = audit_capture().await;

@@ -1,7 +1,7 @@
 //! The policy-decision-point (PDP) seam: one async trait behind which the embedded [`CedarEngine`] and the
 //! v1-compatible [`RemotePdp`] are interchangeable.
 //!
-//! The engine **owns** the multi-valued fan-out semantics (§5.4): given an
+//! The engine **owns** the multi-valued fan-out semantics: given an
 //! [`AuthzRequest`] whose `patient`/`template` may be sets, it evaluates every
 //! [`Combination`] (the cartesian product), requires **all** to permit, and
 //! short-circuits on the first deny. Errors are **fail-closed**: the PEP maps
