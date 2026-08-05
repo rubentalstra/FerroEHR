@@ -28,6 +28,7 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- The vendored openEHR specification tree no longer carries upstream's own dependency manifests (the CNF Robot harness's `requirements.txt`, the ITS-REST and TERM PHP tooling's `composer.json`). They are upstream build tooling, not specification text, and their presence made this repository's dependency graph claim Python and PHP ecosystems it does not use — raising advisories against pinned third-party versions nothing here installs. The vendoring script now excludes dependency manifests across the common ecosystems, so a future re-vendor cannot reintroduce them; the vendored spec text itself is unchanged.
 - Hand-written spec-behaviour files that were byte-identical across the `openehr-rm`/`openehr-base` generation modules (89 twin families, ~29k lines of duplicated source) are now generation-twin TEMPLATES: one hand-written source under the code generator's `templates/` tree, with the per-generation copies stamped by `emit` under an `@generated-from-template` header — generation divergence becomes impossible instead of policed, and an emitter invariant refuses any new unconverted twin. The one genuinely generation-specific file (`ITEM_TAG`'s construction under RM 1.1.0's field order) is an explicit per-generation override carrying its adjudication. Crate behaviour is unchanged; the packaged sources now say which file is stamped from which template.
 
 ### Fixed
