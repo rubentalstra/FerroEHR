@@ -645,28 +645,24 @@ pub(crate) fn emit_from_xml(
                     // declare the fields in different orders.
                     let mut names = Vec::new();
                     for (i, (param, ty)) in params.iter().enumerate() {
-                        let expr = values
-                            .iter()
-                            .find(|(fname, _)| fname == param)
-                            .map(|(_, expr)| expr)
-                            .unwrap_or_else(|| {
-                                panic!(
-                                    "construction map parameter {param:?} of {spec} names no \
-                                     XML field (fields: {:?})",
-                                    values.iter().map(|(f, _)| f).collect::<Vec<_>>()
-                                )
-                            });
-                        let ty = match door_env {
-                            Some(env) => door_param(env, ty),
-                            None => {
-                                assert!(
-                                    !ty.starts_with('@'),
-                                    "door class {spec} with a @-typed parameter emitted \
-                                     without a door environment (an emit-opt closure \
-                                     generating a door class is a table/closure bug)"
-                                );
-                                (*ty).to_owned()
-                            }
+                        let Some((_, expr)) = values.iter().find(|(fname, _)| fname == param)
+                        else {
+                            panic!(
+                                "construction map parameter {param:?} of {spec} names no \
+                                 XML field (fields: {:?})",
+                                values.iter().map(|(f, _)| f).collect::<Vec<_>>()
+                            )
+                        };
+                        let ty = if let Some(env) = door_env {
+                            door_param(env, ty)
+                        } else {
+                            assert!(
+                                !ty.starts_with('@'),
+                                "door class {spec} with a @-typed parameter emitted without \
+                                 a door environment (an emit-opt closure generating a door \
+                                 class is a table/closure bug)"
+                            );
+                            (*ty).to_owned()
                         };
                         let _ = writeln!(b, "let __a{i}: {ty} = {expr};");
                         names.push(format!("__a{i}"));
