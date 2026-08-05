@@ -117,6 +117,26 @@ pub struct OidcConfig {
     /// File-based indirection for [`Self::jwks_json`] — a JWKS is a file-shaped
     /// blob that never belonged in an env var. The loader reads the file.
     pub jwks_json_file: Option<PathBuf>,
+    /// TCP connect timeout in milliseconds for the OIDC discovery + JWKS
+    /// fetches (default 3000).
+    ///
+    /// Applies to the discovery key source only (no [`Self::hmac_secret`], no
+    /// [`Self::jwks_json`]): without it an issuer that blackholes packets parks
+    /// the bearer request until the OS TCP timeout, holding a request slot.
+    pub connect_timeout_ms: u64,
+    /// Whole-request timeout in milliseconds for the OIDC discovery + JWKS
+    /// fetches (default 5000), covering connect, TLS, and body read.
+    pub request_timeout_ms: u64,
+    /// How long a FAILED discovery/JWKS fetch is remembered, in seconds
+    /// (default 10; `0` disables negative caching).
+    ///
+    /// Without it every bearer request during an issuer outage re-attempts
+    /// discovery, so an unreachable issuer produces one outbound connection
+    /// attempt per incoming request. Remembering the failure degrades the outage to
+    /// fast `401`s instead. Keep it short — it is also the recovery lag once
+    /// the issuer returns. Successfully fetched key material keeps its own,
+    /// longer lifetime and is unaffected.
+    pub negative_cache_ttl_seconds: u64,
 }
 
 impl Default for OidcConfig {
@@ -129,10 +149,31 @@ impl Default for OidcConfig {
             hmac_secret_file: None,
             jwks_json: None,
             jwks_json_file: None,
+            connect_timeout_ms: default_connect_timeout_ms(),
+            request_timeout_ms: default_request_timeout_ms(),
+            negative_cache_ttl_seconds: default_negative_cache_ttl_seconds(),
         }
     }
 }
 
 fn default_algorithms() -> Vec<String> {
     vec!["RS256".to_owned()]
+}
+
+/// 3 s: ample for a TCP+TLS handshake to a healthy issuer on any realistic
+/// network, short enough that a blackholed one fails fast.
+const fn default_connect_timeout_ms() -> u64 {
+    3_000
+}
+
+/// 5 s: the whole-request budget the remote-PDP and terminology clients already
+/// use, so one outbound-HTTP posture spans the server.
+const fn default_request_timeout_ms() -> u64 {
+    5_000
+}
+
+/// 10 s: long enough that an outage costs one discovery attempt per issuer
+/// rather than one per request, short enough that recovery is barely noticed.
+const fn default_negative_cache_ttl_seconds() -> u64 {
+    10
 }
