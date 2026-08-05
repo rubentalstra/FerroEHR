@@ -14,12 +14,10 @@
 #     masterAppA-syntax.adoc is an `include::` of ElParser.g4 + ElLexer.g4),
 #     plus the transitive grammar imports so the set resolves standalone.
 #
-# v1_0 — the released LANG 1.0.0 has NO machine-readable grammar upstream:
-#   openEHR-antlr4 was created 2021-07-15, AFTER the 1.0.0 release
-#   (11-May-2020; verified first-hand 2026-08-05), and adl-antlr carries no
-#   release tag for it. Until the 1.0.0 set is extracted from that release's
-#   own docs text (tracker #1946), v1_0/ is a STOPGAP COPY of the v1_1 set,
-#   marked by STOPGAP.md — honest scaffolding, never a claim of 1.0.0 text.
+# v1_0 — the LANG 1.0.0 release's normative ODIN grammar: the release's own
+#   syntax appendix includes odin.g4/odin_values.g4/base_patterns.g4 from the
+#   adl-antlr adl2/ layout of its era (pin below). 1.0.0 EL is DEVELOPMENT
+#   prose with no grammar; BEL does not exist in 1.0.0 — neither has files.
 #
 # Both repos are Apache-2.0 (LICENSE vendored alongside).
 set -euo pipefail
@@ -52,18 +50,21 @@ for f in ElLexer.g4 ElParser.g4 Cadl2Lexer.g4 Cadl2Parser.g4 SymbolsLexer.g4 Gen
 done
 fetch "${ANTLR4_REPO}" "${ANTLR4_COMMIT}" "LICENSE" "${ROOT}/LICENSE-openEHR-antlr4"
 
-# ── v1_0: the stopgap set (see the header; re-derived under #1946) ──────────
+# ── v1_0: the LANG 1.0.0 release's own normative set (#1946) ────────────────
+# The Release-1.0.0 ODIN syntax appendix (docs/odin/masterAppB-syntax_spec.adoc,
+# verified first-hand 2026-08-05) is an `include::` of odin.g4 + odin_values.g4
+# + base_patterns.g4 from the adl-antlr `adl2/` directory of its era; the pin
+# is the last adl-antlr commit before the Release-1.0.0 tag was placed
+# (2021-03-01). The 1.0.0 Expression Language (DEVELOPMENT) publishes NO
+# grammar — no syntax appendix, zero grammar includes across its five
+# chapters — so no EL files exist here and openehr_lang::v1_0 carries no EL
+# parser (the adjudicated boundary; BEL likewise first appears in 1.1.0).
+ADL_ANTLR_100_COMMIT="7e0131ade4bcb94ee8c312e3905fa0c4343e785d" # 2021-01-21
 DEST10="${ROOT}/v1_0"
 mkdir -p "${DEST10}"
-cp "${DEST}"/*.g4 "${DEST10}/"
-cat > "${DEST10}/STOPGAP.md" <<'EOF'
-# STOPGAP grammar set — not LANG 1.0.0 text
-
-The released LANG 1.0.0 publishes no machine-readable grammar (the
-openEHR-antlr4 repository postdates the release; adl-antlr has no 1.0.0
-tag). These files are a verbatim copy of the pinned `../v1_1/` set so the
-`openehr_lang::v1_0` readers have an in-tree reference input; the honest
-1.0.0 set is extracted from that release's own docs text under tracker
-issue #1946, which replaces this file.
-EOF
-echo "stopgap-copied v1_0 set (see ${DEST10}/STOPGAP.md; tracker #1946)"
+# base_lexer.g4 is base_patterns.g4's transitive import (it defines
+# INCLUDED_LANGUAGE_FRAGMENT among others) — vendored so the set resolves
+# standalone, same treatment the v1_1 set gives its imports.
+for f in odin.g4 odin_values.g4 base_patterns.g4 base_lexer.g4; do
+  fetch "${ADL_ANTLR_REPO}" "${ADL_ANTLR_100_COMMIT}" "src/main/antlr/adl2/${f}" "${DEST10}/${f}"
+done

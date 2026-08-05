@@ -5,17 +5,22 @@
 //! module is a self-contained reader — [`parse`] takes ODIN source text and
 //! returns an [`OdinValue`] tree (insertion order preserved).
 //!
-//! Spec oracle: `docs/specs/openehr/LANG/docs/odin/` and the vendored grammars
-//! `crates/openehr-lang/vendor/grammar/v1_1/{odin.g4,odin_values.g4}` (which import
-//! `base_lexer.g4`). This module is **deliberately off the codegen path** — it
-//! parses ODIN *instances*, it does not load the BMM meta-model (the codegen
-//! input is the JSON BMM serialization under `openehr-codegen/vendor/bmm/`).
+//! Spec oracle: the LANG Release-1.0.0 ODIN chapters (whose docs text is
+//! generation-identical to `docs/specs/openehr/LANG/docs/odin/` — every
+//! 1.0.0→current change is a typo fix, verified first-hand 2026-08-05) and
+//! the vendored grammars
+//! `crates/openehr-lang/vendor/grammar/v1_0/{odin.g4,odin_values.g4,base_patterns.g4,base_lexer.g4}`
+//! (the Release-1.0.0 syntax appendix's own include set). Where this reader
+//! diverges from [`crate::v1_1::odin`], the divergence carries a `NOTE`
+//! citing the 1.0.0 appendix production. This module is **deliberately off
+//! the codegen path** — it parses ODIN *instances*, it does not load the BMM
+//! meta-model (the codegen input is the JSON BMM serialization under
+//! `openehr-codegen/vendor/bmm/`).
 //!
 //! The lexical layer is NOT here: ODIN shares the one workspace token stream,
 //! [`crate::v1_0::lexer`], and this module reads it through
 //! [`crate::v1_0::lexer::lex_odin`].
 
-// TODO(#1946): stopgap copy of the v1_1 reader — re-derive against the LANG 1.0.0 release docs.
 mod parser;
 
 use indexmap::IndexMap;
@@ -42,7 +47,7 @@ pub enum OdinValue {
     List(Vec<OdinValue>),
     /// A typed cast `(TYPE) <…>` around an inner value block.
     Typed {
-        /// The `rm_type_id` (with any generic parameters, e.g.
+        /// The `type_id` (with any generic parameters, e.g.
         /// `Interval<Quantity>`).
         rm_type: String,
         /// The cast value.
@@ -141,32 +146,98 @@ fn collect_paths(value: &OdinValue, prefix: &str, out: &mut Vec<String>) {
     }
 }
 
-/// A keyed-list key (`key_id` in `odin.g4`).
+/// A keyed-list key.
+///
+/// NOTE: the ten key types are the Release-1.0.0 `odin.g4` `keyed_object :
+/// '[' primitive_value ']' '=' object_block`, agreeing with
+/// `master05-content` §Container Objects ("any primitive comparable value is
+/// allowed as the key") — the 1.1.0 grammar's five-type `key_id` narrowing
+/// postdates this generation.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum OdinKey {
     /// A string key (`["en"]`).
     String(String),
     /// An integer key (`[1]`).
     Integer(i64),
+    /// A real key (`[1.5]`), compared by numeric value.
+    Real(OdinRealKey),
+    /// A boolean key (`[True]`).
+    Boolean(bool),
+    /// A character key (`['x']`).
+    Character(char),
+    /// A `TERM_CODE_REF` key, verbatim incl. brackets (`[[ISO_639-1::en]]`).
+    TermCode(String),
     /// An ISO8601 date key.
     Date(String),
     /// An ISO8601 time key.
     Time(String),
     /// An ISO8601 date/time key.
     DateTime(String),
+    /// An ISO8601 duration key (`[P1Y]`).
+    Duration(String),
 }
 
 impl OdinKey {
-    /// The key as written inside a path predicate — integers, dates and
-    /// times bare, strings double-quoted (`LANG/docs/odin/master05-content`
-    /// §Container Objects: `locations[1]`, `subjects["philosophy:kant"]`).
+    /// The key as written inside a path predicate — strings double-quoted,
+    /// characters single-quoted, everything else bare
+    /// (`LANG/docs/odin/master05-content` §Container Objects:
+    /// `locations[1]`, `subjects["philosophy:kant"]`).
     #[must_use]
     pub fn path_text(&self) -> String {
         match self {
             Self::String(text) => format!("\"{text}\""),
             Self::Integer(value) => value.to_string(),
-            Self::Date(text) | Self::Time(text) | Self::DateTime(text) => text.clone(),
+            Self::Real(value) => format!("{:?}", value.value()),
+            Self::Boolean(value) => if *value { "True" } else { "False" }.to_owned(),
+            Self::Character(c) => format!("'{c}'"),
+            Self::TermCode(text)
+            | Self::Date(text)
+            | Self::Time(text)
+            | Self::DateTime(text)
+            | Self::Duration(text) => text.clone(),
         }
+    }
+}
+
+/// A real number used as a container key, compared by numeric value.
+///
+/// Key uniqueness (rule *VDOBU*) compares typed values, so `[1.50]`
+/// duplicates `[1.5]`. Equality and hashing use the IEEE-754 bit pattern
+/// with `-0.0` normalized to `0.0`; the lexeme is digits with an optional
+/// sign, so `NaN` is unrepresentable and total equality is sound.
+#[derive(Debug, Clone, Copy)]
+pub struct OdinRealKey(f64);
+
+impl OdinRealKey {
+    /// Wraps a parsed real key value.
+    #[must_use]
+    pub fn new(value: f64) -> Self {
+        Self(value)
+    }
+
+    /// Returns the key's numeric value.
+    #[must_use]
+    pub fn value(self) -> f64 {
+        self.0
+    }
+
+    /// The normalized bit pattern equality and hashing compare.
+    fn bits(self) -> u64 {
+        if self.0 == 0.0 { 0.0f64 } else { self.0 }.to_bits()
+    }
+}
+
+impl PartialEq for OdinRealKey {
+    fn eq(&self, other: &Self) -> bool {
+        self.bits() == other.bits()
+    }
+}
+
+impl Eq for OdinRealKey {}
+
+impl std::hash::Hash for OdinRealKey {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.bits().hash(state);
     }
 }
 
@@ -248,8 +319,10 @@ pub struct OdinDocument {
     /// based" — `master04-odin_artefacts`).
     pub schema: Option<OdinSchemaId>,
     /// The main text: an attribute object (embedded fragment / implicit
-    /// object document), a keyed list (Identified Object Document), or a
-    /// bare object block (Anonymous Object Document).
+    /// object document), a keyed list (Identified Object Document), a bare
+    /// object block (Anonymous Object Document), or a whole-document
+    /// plug-in fragment (the Release-1.0.0 `odin.g4`
+    /// `included_other_language` alternative).
     pub root: OdinValue,
 }
 
@@ -659,6 +732,83 @@ mod tests {
         assert!(parse("p = <[1] = <1>>\nq = <[1] = <2>>").is_ok());
     }
 
+    /// The Release-1.0.0 `odin.g4` `keyed_object : '[' primitive_value ']'`:
+    /// any primitive comparable value is a container key (`master05-content`
+    /// §Container Objects agrees) — the five-type narrowing postdates this
+    /// generation.
+    #[test]
+    fn any_primitive_value_is_a_container_key() {
+        let cases = [
+            ("k = <[1.5] = <1>>", OdinKey::Real(OdinRealKey::new(1.5))),
+            ("k = <[True] = <1>>", OdinKey::Boolean(true)),
+            ("k = <['x'] = <1>>", OdinKey::Character('x')),
+            (
+                "k = <[[ISO_639-1::en]] = <1>>",
+                OdinKey::TermCode("[ISO_639-1::en]".to_owned()),
+            ),
+            ("k = <[P1Y] = <1>>", OdinKey::Duration("P1Y".to_owned())),
+            ("k = <[-1] = <1>>", OdinKey::Integer(-1)),
+            ("k = <[+2] = <1>>", OdinKey::Integer(2)),
+            ("k = <[-1.5] = <1>>", OdinKey::Real(OdinRealKey::new(-1.5))),
+        ];
+        for (src, expected) in cases {
+            let m = obj(src);
+            let Some(OdinValue::KeyedList(entries)) = m.get("k") else {
+                panic!("{src}: expected keyed list");
+            };
+            assert_eq!(entries[0].0, expected, "{src}");
+        }
+        // A sign prefixes only the numeric forms (`odin_values.g4`
+        // `integer_value` / `real_value`).
+        assert!(parse(r#"k = <[-"a"] = <1>>"#).is_err());
+    }
+
+    /// Key uniqueness compares typed values (rule *VDOBU*), so a real key
+    /// duplicates another spelling of the same number.
+    #[test]
+    fn real_keys_compare_by_numeric_value() {
+        let err = parse("k = <[1.5] = <1> [1.50] = <2>>").expect_err("duplicate real key");
+        assert!(matches!(err.kind, OdinErrorKind::DuplicateKey(_)));
+        assert!(parse("k = <[1.5] = <1> [-1.5] = <2>>").is_ok());
+    }
+
+    /// The Release-1.0.0 `odin.g4` start rule's `included_other_language`
+    /// alternative: a whole document may be one `(syntax) <# … #>` fragment.
+    #[test]
+    fn whole_document_plug_in_fragment_parses() {
+        let doc = parse_document("(cadl) <# ELEMENT[at0001] occurrences matches {0..1} #>")
+            .expect("top-level plug-in");
+        let OdinValue::PlugIn { syntax, text } = doc.root else {
+            panic!("expected a plug-in root, got {:?}", doc.root);
+        };
+        assert_eq!(syntax, "cadl");
+        assert_eq!(text.trim(), "ELEMENT[at0001] occurrences matches {0..1}");
+    }
+
+    /// `master07-leaf_data` §Intervals defines `|N +/-M|` / `|N±M|`
+    /// (generation-identical text) — the docs text wins over the
+    /// Release-1.0.0 `odin_values.g4`'s missing ± production.
+    #[test]
+    fn plus_minus_intervals_stay_accepted() {
+        let m = obj("r = <|5.0 +/-0.5|>");
+        let Some(OdinValue::Interval(OdinInterval::PlusMinus { centre, delta })) = m.get("r")
+        else {
+            panic!("expected a ± interval");
+        };
+        assert_eq!(centre.as_ref(), &OdinValue::Real(5.0));
+        assert_eq!(delta.as_ref(), &OdinValue::Real(0.5));
+    }
+
+    /// NOTE: fractional seconds on time values take `,` alone in
+    /// Release-1.0.0 (`base_lexer.g4` `ISO8601_TIME`; the `master07`
+    /// example `16:35:04,5`) — the `.` spelling is refused.
+    #[test]
+    fn time_values_take_comma_fractional_seconds_only() {
+        let m = obj("t = <16:35:04,5>");
+        assert_eq!(m.get("t"), Some(&OdinValue::Time("16:35:04,5".to_owned())));
+        assert!(parse("t = <16:35:04.5>").is_err());
+    }
+
     /// Rule *VDATU* (`LANG/docs/odin/master05-content` §General Structure) /
     /// the "Sibling attribute names must be unique" principle of
     /// `AM/docs/ADL1.4/master04-dadl` §General Form.
@@ -683,11 +833,13 @@ mod tests {
     /// while value positions keep the value reading.
     #[test]
     fn value_words_parse_as_attribute_names() {
-        let m = obj("true = <1>\nfalse = <2>\ninfinity = <3>\nTrue = <4>");
+        let m = obj("true = <1>\nfalse = <2>\ninfinity = <3>");
         assert_eq!(m.get("true"), Some(&OdinValue::Integer(1)));
         assert_eq!(m.get("false"), Some(&OdinValue::Integer(2)));
         assert_eq!(m.get("infinity"), Some(&OdinValue::Integer(3)));
-        assert_eq!(m.get("True"), Some(&OdinValue::Integer(4)));
+        // An upper-case attribute key is a Release-1.0.0 refusal
+        // (`base_patterns.g4` `attribute_id : ALPHA_LC_ID`).
+        assert!(parse("True = <4>").is_err());
 
         // value positions are untouched by the key-position re-tag.
         let m = obj("a = <true>\nr = <|0..infinity|>");

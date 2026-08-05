@@ -1,18 +1,19 @@
-//! The shared token superset: one `logos` DFA covering the ADL-outer, cADL,
-//! ODIN and BEL lexical layers.
+//! The shared token superset: one `logos` DFA, read in this generation under
+//! the single Release-1.0.0 ODIN lexical layer.
 //!
-//! The patterns are transcribed from the authoritative vendored grammars
-//! (`vendor/grammar/v1_1/base_lexer.g4`, `adl_keywords.g4`, `odin.g4`,
-//! `odin_values.g4`, `base_expressions.g4`) and the normative chapters they
-//! implement. Which of these tokens a given language actually produces is
-//! decided by [`super::reclassify()`], not here — see the module docs of
-//! [`super`] for the two-stage contract.
+//! The DFA is the WORKSPACE token superset, kept structurally identical to
+//! the v1_1 generation's union (which reads it under four languages) so the
+//! union/narrow machinery behaves the same everywhere; foreign families —
+//! cADL/BEL/EL keywords, ADL codes, constraint patterns — cite the
+//! 1.1.0-line grammars that contribute them. Which tokens the ODIN reading
+//! actually produces is decided by [`super::reclassify()`], not here — every
+//! foreign family is demoted or refused there, each arm with its citation.
 //!
-//! `// NOTE:` The Expression Language (`LANG/docs/EL/`) is deliberately NOT
-//! part of the union: it uses `#`-prefixed codes, a different bracket algebra
-//! and `|`-delimited comments, all of which would change the reading of text
-//! in the four languages above. EL is DEVELOPMENT status with no vendored
-//! grammar, so there is nothing normative to fold in.
+//! The ODIN-relevant patterns follow the Release-1.0.0 set
+//! (`vendor/grammar/v1_0/{odin.g4, odin_values.g4, base_patterns.g4,
+//! base_lexer.g4}`); where 1.0.0 differs lexically from the 1.1.0 line —
+//! `,`-only fractional seconds on times, `.`-only on durations — the token
+//! carries a `NOTE` with the 1.0.0 citation.
 
 use logos::Logos;
 
@@ -34,20 +35,19 @@ use logos::Logos;
 pub enum Token {
     /// A UTF-8 byte-order mark.
     ///
-    /// `ADL2/master03-file_encoding.adoc` §File Encoding forbids it, but 18
-    /// vendored ADL2 corpus sources carry one, so the ADL and ODIN readings
-    /// tolerate it (a rejection would be a lexer-level FAIL the corpus does
-    /// not intend) while the BEL reading refuses it, exactly as each
-    /// language's lexer did before the union. It is a token rather than a
-    /// `logos` skip purely so the per-language passes can make that choice;
-    /// no returned token stream ever contains it.
+    /// `ADL2/master03-file_encoding.adoc` §File Encoding forbids it, but
+    /// real-world sources carry one, so the ODIN reading tolerates (and
+    /// drops) it. It is a token rather than a `logos` skip purely so the
+    /// reclassification pass can make that choice; no returned token stream
+    /// ever contains it.
     #[token("\u{feff}")]
     Bom,
 
-    // ── ADL / cADL / BEL keywords (adl_keywords.g4, base_expressions.g4);
-    //    text + unicode symbol forms fold to one variant. Exact-literal
-    //    `#[token]`s outrank the ALPHA_*_ID regexes by logos priority, so
-    //    keywords beat identifiers. ──
+    // ── foreign keywords of the shared superset (the 1.1.0-line
+    //    adl_keywords.g4 / base_expressions.g4 / ElLexer.g4 families); text +
+    //    unicode symbol forms fold to one variant. Exact-literal `#[token]`s
+    //    outrank the ALPHA_*_ID regexes by logos priority, so keywords beat
+    //    identifiers — and the ODIN pass demotes every one of them. ──
     /// `matches` / `is_in` / `∈` (`SYM_MATCHES`).
     #[token("matches", ignore(case))]
     #[token("is_in", ignore(case))]
@@ -120,8 +120,9 @@ pub enum Token {
     #[token("there_exists")]
     #[token("\u{2203}")]
     SymThereExists,
-    /// `in` — the BEL quantifier binding keyword (`for_all v in coll`,
-    /// `base_expressions.g4` `for_all_expr`).
+    /// `in` — the 1.1.0-line quantifier binding keyword
+    /// (`base_expressions.g4` `for_all_expr`); no 1.0.0 production, so the
+    /// ODIN pass demotes it.
     #[token("in")]
     SymIn,
     /// `occurrences` (`SYM_OCCURRENCES`).
@@ -177,9 +178,9 @@ pub enum Token {
     #[token("then", ignore(case))]
     SymThen,
 
-    // ── EL-only word keywords (`ElLexer.g4`). No `#[token]`: the shared DFA
-    //    reads each as the identifier every other layer sees, and only the EL
-    //    reclassification re-tags it, so no other reading changes. ──
+    // ── EL-only word keywords (`ElLexer.g4`). No `#[token]`: the shared
+    //    DFA reads each as a plain identifier, and no 1.0.0 reading ever
+    //    produces these re-tag-only variants. ──
     /// `Self` (`SYM_SELF`) — the current-object reference.
     SymSelf,
     /// `Result` (`SYM_RESULT`) — a function's automatic result variable.
@@ -245,14 +246,15 @@ pub enum Token {
     // Where a text is BOTH a legal value and a legal all-literal pattern
     // (`1995-??-??`), the value reading wins; the pattern tokens keep the shapes
     // only they match (`1995-??-XX`, `1995-mm-dd`).
-    /// `ISO8601_DATE_TIME` (with optional partial `??` fields / timezone).
+    /// `ISO8601_DATE_TIME` (with optional partial `??` fields / timezone),
+    /// fractional seconds `,`-separated (see [`Token::Iso8601Time`]).
     ///
     /// The `??`-partial family covers the whole set of
     /// `AM/docs/ADL1.4/master04-dadl` §Partial Date/Times, including the
     /// `yyyy-MM-ddT??:??:??`, `yyyy-MM-??T??:??:??` and `yyyy-??-??T??:??:??`
     /// forms.
     #[regex(
-        r"[0-9]{4}-[0-9]{2}-[0-9]{2}T([0-9]{2}(:[0-9]{2}(:([0-9]{2}([.,][0-9]+)?|\?\?))?|:\?\?:\?\?)?|\?\?:\?\?:\?\?)(Z|[+\-][0-9]{4})?",
+        r"[0-9]{4}-[0-9]{2}-[0-9]{2}T([0-9]{2}(:[0-9]{2}(:([0-9]{2}(,[0-9]+)?|\?\?))?|:\?\?:\?\?)?|\?\?:\?\?:\?\?)(Z|[+\-][0-9]{4})?",
         |lex| lex.slice().to_owned(),
         priority = 30
     )]
@@ -268,9 +270,9 @@ pub enum Token {
     // with the `T` designator, and neither the dADL lex rules nor
     // `base_lexer.g4` `ISO8601_DATE_TIME` admit a space — so the form is a
     // deliberate ODIN-only widening: the ODIN pass normalises it to the `T`
-    // form on read, and the ADL/BEL passes re-tag or split it back.
+    // form on read.
     #[regex(
-        r"[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}(:[0-9]{2}([.,][0-9]+)?)?(Z|[+\-][0-9]{4})?",
+        r"[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}(:[0-9]{2}(,[0-9]+)?)?(Z|[+\-][0-9]{4})?",
         |lex| lex.slice().to_owned(),
         priority = 30
     )]
@@ -283,15 +285,24 @@ pub enum Token {
     )]
     Iso8601Date(String),
     /// `ISO8601_TIME` (with optional partial `??` fields / timezone).
+    ///
+    /// NOTE: fractional seconds take `,` alone — the Release-1.0.0
+    /// `base_lexer.g4` `ISO8601_TIME` spells `SYM_COMMA INTEGER`, and the
+    /// `master07-leaf_data` example `16:35:04,5` agrees; the `.` alternative
+    /// postdates this generation.
     #[regex(
-        r"[0-9]{2}:([0-9]{2}(:([0-9]{2}([.,][0-9]+)?|\?\?))?|\?\?:\?\?)(Z|[+\-][0-9]{4})?",
+        r"[0-9]{2}:([0-9]{2}(:([0-9]{2}(,[0-9]+)?|\?\?))?|\?\?:\?\?)(Z|[+\-][0-9]{4})?",
         |lex| lex.slice().to_owned(),
         priority = 30
     )]
     Iso8601Time(String),
     /// `ISO8601_DURATION`, requiring at least one component (never bare `P`).
+    ///
+    /// NOTE: fractional seconds take `.` alone — the Release-1.0.0
+    /// `base_lexer.g4` `ISO8601_DURATION` spells `('.' DIGIT+)?`; the `,`
+    /// alternative postdates this generation.
     #[regex(
-        r"-?P([0-9]+[YyMmWwDd])+(T([0-9]+[HhMm])*[0-9]+([.,][0-9]+)?[Ss]|T([0-9]+[Hh])?([0-9]+[Mm])?([0-9]+([.,][0-9]+)?[Ss])?)?|-?PT([0-9]+[HhMm])*[0-9]+([.,][0-9]+)?[Ss]|-?PT([0-9]+[Hh])([0-9]+[Mm])?|-?PT[0-9]+[Mm]",
+        r"-?P([0-9]+[YyMmWwDd])+(T([0-9]+[HhMm])*[0-9]+(\.[0-9]+)?[Ss]|T([0-9]+[Hh])?([0-9]+[Mm])?([0-9]+(\.[0-9]+)?[Ss])?)?|-?PT([0-9]+[HhMm])*[0-9]+(\.[0-9]+)?[Ss]|-?PT([0-9]+[Hh])([0-9]+[Mm])?|-?PT[0-9]+[Mm]",
         |lex| lex.slice().to_owned()
     )]
     Iso8601Duration(String),
@@ -368,17 +379,15 @@ pub enum Token {
     /// The pattern deliberately requires an ALPHA first character (narrower
     /// than the 1.4 `ALPHANUM`) so that the container keys `[1]`, `[01234]`
     /// and `[2004-06-11]` keep lexing as `'[' key ']'`, which the 1.4 lex rule
-    /// would otherwise swallow whole. cADL and BEL have no such production, so
-    /// their passes split the token back into `'['`, the inner code and `']'`.
+    /// would otherwise swallow whole.
     #[regex(r"\[[a-zA-Z][a-zA-Z0-9._\-]*\]", |lex| lex.slice().to_owned())]
     LocalTermCodeRef(String),
     /// A plug-in-syntax object block `<# … #>`, captured verbatim including
     /// the delimiters (`LANG/docs/odin/master09-plug_in_syntaxes`: "the `<>`
     /// delimiters are modified to `<# #>`, to allow for easier parser design";
     /// the delimiters are reserved by `master03-basics` §Reserved
-    /// Characters). ODIN-only — the vendored ADL/BEL grammars have no `#`
-    /// production at all, so the other readings refuse the token. The body is
-    /// raw foreign text ("expressed in some other syntax"), never lexed.
+    /// Characters). The body is raw foreign text ("expressed in some other
+    /// syntax"), never lexed.
     #[regex(r"<#([^#]|#[^>])*#*#>", |lex| lex.slice().to_owned())]
     PlugInBlock(String),
     /// An embedded URI `<scheme:…>` (`EMBEDDED_URI`).
@@ -393,15 +402,12 @@ pub enum Token {
     #[regex(r"<[ \t\r\n]*[a-zA-Z][a-zA-Z0-9+.\-]*:[^>]*>", |lex| lex.slice().to_owned())]
     EmbeddedUri(String),
     /// An ADL path (`base_lexer.g4 ADL_PATH`), each segment
-    /// `ALPHA_*_ID ('[' predicate ']')?`.
+    /// `ALPHA_LC_ID ('[' predicate ']')?`.
     ///
-    /// The union of the three languages' path productions: cADL's absolute
-    /// `(/seg)+` and relative `seg(/seg)+` with **lower-case-initial** segment
-    /// heads; ODIN's object-reference path, whose `odin.g4` segment head takes
-    /// either case; and BEL's additional movable-path leader `//seg…` (ADL1.4
-    /// `master07-paths.adoc` §Grammar `movable_path: SYM_MOVABLE_LEADER
-    /// relative_path`) and single-segment-with-predicate form `seg[pred]`.
-    /// Each pass keeps only the shapes its own production admits.
+    /// The union pattern admits either-case segment heads and the 1.1.0-line
+    /// movable/single-segment forms; the ODIN pass keeps only the
+    /// Release-1.0.0 shapes — lower-case heads, absolute `(/seg)+` or
+    /// relative `seg(/seg)+` (`base_lexer.g4` `PATH_SEGMENT`).
     #[regex(
         r"(/[a-zA-Z][a-zA-Z0-9_]*(\[[^\]\r\n]*\])?)+|[a-zA-Z][a-zA-Z0-9_]*(\[[^\]\r\n]*\])?(/[a-zA-Z][a-zA-Z0-9_]*(\[[^\]\r\n]*\])?)+",
         |lex| lex.slice().to_owned()
@@ -418,8 +424,7 @@ pub enum Token {
     Real(String),
     /// `INTEGER` — `DIGIT+` with optional `E` suffix
     /// (`AM/docs/ADL1.4/master04-dadl` §Integer Data lists `29e6` as integer
-    /// data). BEL's `base_expressions.g4` has no exponent form, so its pass
-    /// splits the suffix off.
+    /// data).
     #[regex(r"[0-9]+([eE][+\-]?[0-9]+)?", |lex| lex.slice().to_owned())]
     Integer(String),
     /// A double-quoted `STRING` (may span lines); escapes validated per
@@ -484,8 +489,8 @@ pub enum Token {
     #[token(":")]
     SymColon,
     /// `/=` / `!=` / `≠` (`SYM_NE`), plus the ADL 1.4 spelling `<>` (ADL1.4
-    /// `master06-assertions.adoc` §Equality Operators and its yacc `SYM_NE`),
-    /// which only the BEL reading admits.
+    /// `master06-assertions.adoc` §Equality Operators and its yacc `SYM_NE`).
+    /// No 1.0.0 production admits any spelling — the ODIN pass refuses it.
     #[token("/=")]
     #[token("!=")]
     #[token("<>")]
