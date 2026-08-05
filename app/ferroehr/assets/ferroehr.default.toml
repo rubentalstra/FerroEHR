@@ -11,6 +11,16 @@
 # FERROEHR__DB__MAX_CONNECTIONS. `--set key=value` wins over env. `DATABASE_URL`
 # and `RUST_LOG` are recognized (lower-priority) aliases.
 
+# The openEHR specification generation set this server runs:
+#   "development" — RM 1.2.0 + BASE 1.3.0 + LANG 1.1.0 (the default)
+#   "stable"      — RM 1.1.0 + BASE 1.2.0 + LANG 1.0.0 (the released generations)
+# One coupled choice — the components' generations are modelled against each
+# other, so they never vary independently. stable → development is always a
+# safe change (openEHR minor releases are additive); development → stable is
+# supported only for data that never used development-only constructs — such
+# stored objects are refused loudly at read, never silently down-converted.
+spec_profile = "development"
+
 # ── [server] — HTTP listener + REST surface ──────────────────────────────────
 [server]
 bind = "0.0.0.0:8080"

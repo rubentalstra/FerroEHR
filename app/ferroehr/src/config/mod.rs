@@ -29,6 +29,7 @@ use crate::config::secret::Secret;
 mod strict;
 
 pub mod auth;
+pub mod profile;
 pub mod authz;
 pub mod management;
 pub mod secret;
@@ -48,6 +49,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct FerroEhrConfig {
+    /// `spec_profile` — the openEHR specification generation set the server
+    /// runs (`development` | `stable`; default `development`).
+    pub spec_profile: profile::SpecProfile,
     /// `[server]` — HTTP listener + REST surface + System-Options identity.
     pub server: server::ServerConfig,
     /// `[db]` — `PostgreSQL` connection.
