@@ -21,7 +21,7 @@ use openehr_its::opt14::{
     CArchetypeRoot, CAttribute, CObject, Codedefinitionset, FlatArchetypeOntology,
     OperationalTemplate,
 };
-use openehr_rm::paths::archetype_node_id_is_term_code;
+use openehr_rm::v1_2::paths::archetype_node_id_is_term_code;
 
 use super::{NodeView, RuleViolation, attribute_children};
 
@@ -54,7 +54,7 @@ pub(super) fn check_node_id(
         // than falling between the code family and the free-text family.
         let claims_code_leader = (node_id.starts_with("at") || node_id.starts_with("id"))
             && node_id.len() > 2
-            && !openehr_rm::paths::is_archetype_root_node_id(node_id);
+            && !openehr_rm::v1_2::paths::is_archetype_root_node_id(node_id);
         if claims_code_leader {
             return Err(RuleViolation::new(
                 "VATID",

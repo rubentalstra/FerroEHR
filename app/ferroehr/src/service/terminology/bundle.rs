@@ -58,7 +58,7 @@
 //!   `external_id`.
 
 use openehr_term::bundle::openehr;
-use openehr_term::terminology::code_set::CodeSet;
+use openehr_term::v3_1::terminology::code_set::CodeSet;
 
 use crate::service::status::{CallStatusType, SmError};
 use crate::service::terminology::types::{

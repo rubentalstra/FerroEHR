@@ -15,9 +15,9 @@
 //! summary accessor over the assembled artefact's resource description, not a
 //! part of assembly itself.
 
-use openehr_am::am24::aom2::archetype::archetype::Archetype;
-use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
-use openehr_am::am24::resource::resource_description::ResourceDescription;
+use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
+use openehr_am::v2_4::aom2::archetype::authored_archetype::AuthoredArchetype;
+use openehr_am::v2_4::resource::resource_description::ResourceDescription;
 
 use crate::artefact::view;
 use crate::hrid::hrid_to_string;

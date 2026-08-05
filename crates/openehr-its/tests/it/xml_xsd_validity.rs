@@ -32,7 +32,7 @@
 //! validation on, which is exactly what ITS-XML withholds for most REST
 //! resources.
 //! The divergence sweeps below are computed from the generated RM model
-//! (`openehr_rm::model`) against the XSD text, so they re-derive themselves on
+//! (`openehr_rm::v1_2::model`) against the XSD text, so they re-derive themselves on
 //! every run instead of trusting a hand-maintained attribute list.
 //!
 //! ## What the sweep establishes
@@ -52,8 +52,8 @@
 
 use openehr_its::json::from_canonical_value;
 use openehr_its::xml::{Namespace, to_canonical_xml_ns};
-use openehr_rm::model;
 use openehr_rm::prelude::{Composition, Folder};
+use openehr_rm::v1_2::model;
 use serde_json::{Value, json};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
@@ -627,7 +627,7 @@ const V1_MEMBER_DIVERGENCES: &[(&str, &str, &str)] = &[
          resource/master00-amendment_record.adoc records SPECPUB-6 \"Correct spelling error in \
          TRANSLATION_DETAILS._accreditation_\". openehr-base carries the corrected spelling; the \
          RM BMM's own stale copy of the resource package still carries the typo, and that copy is \
-         what openehr_rm::common::resource emits",
+         what openehr_rm::v1_2::common::resource emits",
     ),
 ];
 
@@ -664,7 +664,7 @@ const V2_MEMBER_DIVERGENCES: &[(&str, &str, &str)] = &[
         "PLACEMENT, ours: BASE UML/classes/org.openehr.base.resource.resource_description.adoc puts \
          copyright on RESOURCE_DESCRIPTION, and BASE/latest/Resource.xsd agrees; the RM BMM's stale \
          copy of the resource package puts it on RESOURCE_DESCRIPTION_ITEM, and that copy is what \
-         openehr_rm::common::resource emits",
+         openehr_rm::v1_2::common::resource emits",
     ),
     (
         "TRANSLATION_DETAILS",

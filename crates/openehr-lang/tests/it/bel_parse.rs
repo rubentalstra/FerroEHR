@@ -9,7 +9,8 @@
 )]
 
 use openehr_lang::bel::{BelError, parse_statements};
-use openehr_lang::prelude::{Expression, Statement};
+use openehr_lang::v2::beom::core::expression::Expression;
+use openehr_lang::v2::beom::core::statement::Statement;
 
 fn one_assertion(src: &str) -> Expression {
     let stmts = parse_statements(src).unwrap_or_else(|e| panic!("parse {src:?}: {e}"));

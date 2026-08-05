@@ -1,5 +1,5 @@
 //! The shared AOM2 substrate: one home for reading, building, and doing
-//! interval arithmetic over the generated `openehr_am::am24::aom2` constraint
+//! interval arithmetic over the generated `openehr_am::v2_4::aom2` constraint
 //! model.
 //!
 //! The AOM2 `C_OBJECT` hierarchy is a closed 13-variant subtype set

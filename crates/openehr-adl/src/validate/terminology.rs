@@ -18,9 +18,9 @@
 
 use std::collections::BTreeSet;
 
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
-use openehr_base::base_types::definitions::definitions_impl::LOCAL_TERMINOLOGY_ID;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
+use openehr_base::v1_3::base_types::definitions::definitions_impl::LOCAL_TERMINOLOGY_ID;
 
 use super::ValidationIssue;
 use super::bindings::check_bindings;
@@ -247,7 +247,7 @@ pub(super) fn check_terminology(
 }
 
 fn check_language_coverage(
-    term: &openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology,
+    term: &openehr_am::v2_4::aom2::terminology::archetype_terminology::ArchetypeTerminology,
     issues: &mut Vec<ValidationIssue>,
 ) {
     let langs: Vec<&String> = term.term_definitions.keys().collect();
@@ -272,7 +272,7 @@ fn check_language_coverage(
 }
 
 fn check_value_sets(
-    term: &openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology,
+    term: &openehr_am::v2_4::aom2::terminology::archetype_terminology::ArchetypeTerminology,
     defined: &BTreeSet<&str>,
     flat_self: bool,
     issues: &mut Vec<ValidationIssue>,

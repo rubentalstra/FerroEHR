@@ -5,7 +5,7 @@
 //! ADL 1.4 archetype validity is the real `openehr-adl` engine, judged **as
 //! 1.4**: an upload parses via [`openehr_adl::assemble::parse_artefact`] in
 //! [`openehr_adl::parse::Dialect::Adl14`]
-//! (the 1.4-shaped `openehr_am::am24` model) and validates against the subset
+//! (the 1.4-shaped `openehr_am::v2_4` model) and validates against the subset
 //! of the phase-1 catalogue that corresponds to the ADL 1.4 / AOM 1.4 standalone
 //! validity rules, plus the one 1.4 rule stated "according to the reference
 //! model" — VUNT ([`openehr_adl::validate::validate_adl14_source`]; ADL1.4

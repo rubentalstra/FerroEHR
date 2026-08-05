@@ -40,18 +40,18 @@
 
 use std::collections::BTreeMap;
 
-use openehr_am::am24::aom2::archetype::archetype::Archetype;
-use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
-use openehr_am::am24::aom2::archetype::operational_template::OperationalTemplate;
-use openehr_am::am24::aom2::constraint_model::c_archetype_root::CArchetypeRoot;
-use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
-use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
-use openehr_am::am24::aom2::constraint_model::c_complex_object_proxy::CComplexObjectProxy;
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-use openehr_am::am24::aom2::rm_overlay::rm_overlay::RmOverlay;
-use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
-use openehr_am::am24::beom::core::statement_set::StatementSet;
-use openehr_am::am24::resource::resource_description::ResourceDescription;
+use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
+use openehr_am::v2_4::aom2::archetype::authored_archetype::AuthoredArchetype;
+use openehr_am::v2_4::aom2::archetype::operational_template::OperationalTemplate;
+use openehr_am::v2_4::aom2::constraint_model::c_archetype_root::CArchetypeRoot;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute::CAttribute;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object_proxy::CComplexObjectProxy;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::rm_overlay::rm_overlay::RmOverlay;
+use openehr_am::v2_4::aom2::terminology::archetype_terminology::ArchetypeTerminology;
+use openehr_am::v2_4::beom::core::statement_set::StatementSet;
+use openehr_am::v2_4::resource::resource_description::ResourceDescription;
 use openehr_base::prelude::{
     MultiplicityInterval, ResourceAnnotations, TerminologyCode, TranslationDetails,
 };
@@ -538,7 +538,7 @@ fn filter_bindings(term: &mut ArchetypeTerminology, filter: &BindingFilter) {
 /// The overlays a root template carries (empty for any other artefact kind).
 fn root_overlays(
     root: &Archetype,
-) -> Vec<openehr_am::am24::aom2::archetype::template_overlay::TemplateOverlay> {
+) -> Vec<openehr_am::v2_4::aom2::archetype::template_overlay::TemplateOverlay> {
     match root {
         Archetype::AuthoredArchetype(a) => match a.as_ref() {
             AuthoredArchetype::Template(t) => t.overlays.clone().unwrap_or_default(),
@@ -552,7 +552,7 @@ fn root_overlays(
 
 /// The root fields the OPT header carries, cloned from the flat root artefact.
 struct RootParts {
-    archetype_id: openehr_am::am24::aom2::archetype::archetype_hrid::ArchetypeHrid,
+    archetype_id: openehr_am::v2_4::aom2::archetype::archetype_hrid::ArchetypeHrid,
     definition: CComplexObject,
     terminology: ArchetypeTerminology,
     rules: Vec<StatementSet>,

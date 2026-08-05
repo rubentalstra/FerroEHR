@@ -42,10 +42,10 @@ use openehr_adl::adl14::differ::differentiate;
 use openehr_adl::adl14::log::ConversionLog;
 use openehr_adl::assemble::parse_artefact;
 use openehr_adl::parse::Dialect;
-use openehr_am::am24::aom2::archetype::archetype::Archetype;
-use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
-use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
-use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
+use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
+use openehr_am::v2_4::aom2::archetype::authored_archetype::AuthoredArchetype;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::v2_4::aom2::terminology::archetype_terminology::ArchetypeTerminology;
 
 fn dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -540,9 +540,9 @@ ontology
 
 /// The `occurrences` of a converted child object, if it carries one.
 fn occurrences_of(
-    obj: &openehr_am::am24::aom2::constraint_model::c_object::CObject,
+    obj: &openehr_am::v2_4::aom2::constraint_model::c_object::CObject,
 ) -> Option<&openehr_base::prelude::MultiplicityInterval> {
-    use openehr_am::am24::aom2::constraint_model::c_object::CObject;
+    use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
     match obj {
         CObject::CComplexObject(CComplexObject::CComplexObject(d)) => d.occurrences.as_ref(),
         CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => r.occurrences.as_ref(),
@@ -557,7 +557,7 @@ fn occurrences_of(
 /// The archetype data of a converted plain authored archetype.
 fn authored(
     a: &Archetype,
-) -> &openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetypeData {
+) -> &openehr_am::v2_4::aom2::archetype::authored_archetype::AuthoredArchetypeData {
     match a {
         Archetype::AuthoredArchetype(b) => match b.as_ref() {
             AuthoredArchetype::AuthoredArchetype(d) => d,

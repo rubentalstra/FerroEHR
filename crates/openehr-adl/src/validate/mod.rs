@@ -1,6 +1,6 @@
 //! The AOM2 validation engine: orchestration over a catalogue of topic modules.
 //!
-//! A validator walks an assembled `openehr_am::am24::aom2` [`Archetype`]
+//! A validator walks an assembled `openehr_am::v2_4::aom2` [`Archetype`]
 //! and produces typed [`ValidationIssue`]s, each carrying a
 //! [`ValidationCode`] (one variant per AOM2 validity
 //! code), a [`Severity`], a message, and — where derivable
@@ -71,7 +71,7 @@ mod specialisation;
 mod structure;
 mod terminology;
 
-use openehr_am::am24::aom2::archetype::archetype::Archetype;
+use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
 
 use crate::artefact::{ArchetypeRepository, ArchetypeView, FlatParent, resolve_flat_parent, view};
 use crate::error::SyntaxError;
@@ -248,7 +248,7 @@ pub fn validate_integrity(
 /// AOM 1.4 standalone validity rules, plus the 1.4-only definition-path walk
 /// (VDFPT).
 ///
-/// A 1.4 upload is judged **as 1.4** (its 1.4-shaped `openehr_am::am24` model),
+/// A 1.4 upload is judged **as 1.4** (its 1.4-shaped `openehr_am::v2_4` model),
 /// never post-conversion: converting to ADL 2 changes the artefact, so a 1.4
 /// source is validated against the 1.4 formalism's own (smaller) catalogue. The
 /// checks that correspond to an ADL 1.4 / AOM 1.4 rule run unchanged; the

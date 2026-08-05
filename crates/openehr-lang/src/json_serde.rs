@@ -18,7 +18,7 @@
     reason = "mechanically generated codec text: every item is named by its full path and every branch shape is emitted uniformly, so style and unused-binding lints do not apply — the hand-written runtime carries the lint bar"
 )]
 
-impl ::serde::Serialize for crate::prelude::Assertion {
+impl ::serde::Serialize for crate::v2::beom::core::assertion::Assertion {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -43,7 +43,7 @@ impl ::serde::Serialize for crate::prelude::Assertion {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::Assertion {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::beom::core::assertion::Assertion {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -91,7 +91,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Assertion {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::Assertion;
+            type Value = crate::v2::beom::core::assertion::Assertion;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `ASSERTION` object")
             }
@@ -143,7 +143,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Assertion {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::Assertion {
+                ::core::result::Result::Ok(crate::v2::beom::core::assertion::Assertion {
                     tag: __s0.flatten(),
                     string_expression: __s1.flatten(),
                     expression: __s2
@@ -156,7 +156,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Assertion {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::Assignment {
+impl ::serde::Serialize for crate::v2::beom::core::assignment::Assignment {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -170,7 +170,7 @@ impl ::serde::Serialize for crate::prelude::Assignment {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::Assignment {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::beom::core::assignment::Assignment {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -216,7 +216,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Assignment {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::Assignment;
+            type Value = crate::v2::beom::core::assignment::Assignment;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `ASSIGNMENT` object")
             }
@@ -259,7 +259,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Assignment {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::Assignment {
+                ::core::result::Result::Ok(crate::v2::beom::core::assignment::Assignment {
                     target: __s0
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("target"))?,
@@ -273,7 +273,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Assignment {
     }
 }
 
-impl ::serde::Serialize for crate::bmm::core::bmm_class::BmmClassData {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_class::BmmClassData {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -341,7 +341,7 @@ impl ::serde::Serialize for crate::bmm::core::bmm_class::BmmClassData {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_class::BmmClassData {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm::core::bmm_class::BmmClassData {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -414,7 +414,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_class::BmmClassDat
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::bmm::core::bmm_class::BmmClassData;
+            type Value = crate::v2::bmm::core::bmm_class::BmmClassData;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_CLASS` object")
             }
@@ -529,7 +529,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_class::BmmClassDat
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::bmm::core::bmm_class::BmmClassData {
+                ::core::result::Result::Ok(crate::v2::bmm::core::bmm_class::BmmClassData {
                     documentation: __s0.flatten(),
                     name: __s1
                         .flatten()
@@ -559,26 +559,26 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_class::BmmClassDat
     }
 }
 
-impl ::serde::Serialize for crate::bmm::core::bmm_class::BmmClass {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_class::BmmClass {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::bmm::core::bmm_class::BmmClass::BmmEnumeration(__x) => {
+            crate::v2::bmm::core::bmm_class::BmmClass::BmmEnumeration(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::bmm::core::bmm_class::BmmClass::BmmGenericClass(__x) => {
+            crate::v2::bmm::core::bmm_class::BmmClass::BmmGenericClass(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::bmm::core::bmm_class::BmmClass::BmmClass(__x) => {
+            crate::v2::bmm::core::bmm_class::BmmClass::BmmClass(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_class::BmmClass {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm::core::bmm_class::BmmClass {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -591,7 +591,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_class::BmmClass {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::bmm::core::bmm_class::BmmClass;
+            type Value = crate::v2::bmm::core::bmm_class::BmmClass;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_CLASS` object")
             }
@@ -610,27 +610,27 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_class::BmmClass {
                         );
                         match __t {
                             "BMM_CLASS" => ::core::result::Result::Ok(
-                                crate::bmm::core::bmm_class::BmmClass::BmmClass(
+                                crate::v2::bmm::core::bmm_class::BmmClass::BmmClass(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
                             "BMM_ENUMERATION" => ::core::result::Result::Ok(
-                                crate::bmm::core::bmm_class::BmmClass::BmmEnumeration(
+                                crate::v2::bmm::core::bmm_class::BmmClass::BmmEnumeration(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
                             "BMM_ENUMERATION_INTEGER" => ::core::result::Result::Ok(
-                                crate::bmm::core::bmm_class::BmmClass::BmmEnumeration(
+                                crate::v2::bmm::core::bmm_class::BmmClass::BmmEnumeration(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
                             "BMM_ENUMERATION_STRING" => ::core::result::Result::Ok(
-                                crate::bmm::core::bmm_class::BmmClass::BmmEnumeration(
+                                crate::v2::bmm::core::bmm_class::BmmClass::BmmEnumeration(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
                             "BMM_GENERIC_CLASS" => ::core::result::Result::Ok(
-                                crate::bmm::core::bmm_class::BmmClass::BmmGenericClass(
+                                crate::v2::bmm::core::bmm_class::BmmClass::BmmGenericClass(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
@@ -653,9 +653,11 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_class::BmmClass {
                     None => {
                         let __rest =
                             ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);
-                        ::core::result::Result::Ok(crate::bmm::core::bmm_class::BmmClass::BmmClass(
-                            ::serde::Deserialize::deserialize(__rest)?,
-                        ))
+                        ::core::result::Result::Ok(
+                            crate::v2::bmm::core::bmm_class::BmmClass::BmmClass(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            ),
+                        )
                     }
                 }
             }
@@ -664,35 +666,35 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_class::BmmClass {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmClassifier {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_classifier::BmmClassifier {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmClassifier::BmmClass(__x) => {
+            crate::v2::bmm::core::bmm_classifier::BmmClassifier::BmmClass(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmClassifier::BmmContainerType(__x) => {
+            crate::v2::bmm::core::bmm_classifier::BmmClassifier::BmmContainerType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmClassifier::BmmGenericParameter(__x) => {
+            crate::v2::bmm::core::bmm_classifier::BmmClassifier::BmmGenericParameter(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmClassifier::BmmGenericType(__x) => {
+            crate::v2::bmm::core::bmm_classifier::BmmClassifier::BmmGenericType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmClassifier::BmmOpenType(__x) => {
+            crate::v2::bmm::core::bmm_classifier::BmmClassifier::BmmOpenType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmClassifier::BmmSimpleType(__x) => {
+            crate::v2::bmm::core::bmm_classifier::BmmClassifier::BmmSimpleType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmClassifier {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm::core::bmm_classifier::BmmClassifier {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -711,7 +713,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmClassifier {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmClassifier;
+            type Value = crate::v2::bmm::core::bmm_classifier::BmmClassifier;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_CLASSIFIER` object")
             }
@@ -729,69 +731,19 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmClassifier {
                             __map,
                         );
                         match __t {
-                            "BMM_CLASS" => {
-                                ::core::result::Result::Ok(crate::prelude::BmmClassifier::BmmClass(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "BMM_CONTAINER_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmClassifier::BmmContainerType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_ENUMERATION" => {
-                                ::core::result::Result::Ok(crate::prelude::BmmClassifier::BmmClass(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "BMM_ENUMERATION_INTEGER" => {
-                                ::core::result::Result::Ok(crate::prelude::BmmClassifier::BmmClass(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "BMM_ENUMERATION_STRING" => {
-                                ::core::result::Result::Ok(crate::prelude::BmmClassifier::BmmClass(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "BMM_GENERIC_CLASS" => {
-                                ::core::result::Result::Ok(crate::prelude::BmmClassifier::BmmClass(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "BMM_GENERIC_PARAMETER" => ::core::result::Result::Ok(
-                                crate::prelude::BmmClassifier::BmmGenericParameter(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_GENERIC_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmClassifier::BmmGenericType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_INDEXED_CONTAINER_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmClassifier::BmmContainerType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_OPEN_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmClassifier::BmmOpenType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_SIMPLE_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmClassifier::BmmSimpleType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_CLASSIFIER",
-                                    __other,
-                                    "BMM_CLASS, BMM_CONTAINER_TYPE, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_GENERIC_CLASS, BMM_GENERIC_PARAMETER, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_OPEN_TYPE, BMM_SIMPLE_TYPE",
-                                ),
-                            ),
-                        }
+"BMM_CLASS" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_classifier::BmmClassifier::BmmClass(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_CONTAINER_TYPE" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_classifier::BmmClassifier::BmmContainerType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ENUMERATION" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_classifier::BmmClassifier::BmmClass(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ENUMERATION_INTEGER" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_classifier::BmmClassifier::BmmClass(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ENUMERATION_STRING" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_classifier::BmmClassifier::BmmClass(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_GENERIC_CLASS" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_classifier::BmmClassifier::BmmClass(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_GENERIC_PARAMETER" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_classifier::BmmClassifier::BmmGenericParameter(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_GENERIC_TYPE" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_classifier::BmmClassifier::BmmGenericType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_INDEXED_CONTAINER_TYPE" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_classifier::BmmClassifier::BmmContainerType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_OPEN_TYPE" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_classifier::BmmClassifier::BmmOpenType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_SIMPLE_TYPE" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_classifier::BmmClassifier::BmmSimpleType(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_CLASSIFIER", __other, "BMM_CLASS, BMM_CONTAINER_TYPE, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_GENERIC_CLASS, BMM_GENERIC_PARAMETER, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_OPEN_TYPE, BMM_SIMPLE_TYPE")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -813,7 +765,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmClassifier {
     }
 }
 
-impl ::serde::Serialize for crate::bmm::core::bmm_container_property::BmmContainerProperty {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_container_property::BmmContainerProperty {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -869,7 +821,7 @@ impl ::serde::Serialize for crate::bmm::core::bmm_container_property::BmmContain
 }
 
 impl<'de> ::serde::Deserialize<'de>
-    for crate::bmm::core::bmm_container_property::BmmContainerProperty
+    for crate::v2::bmm::core::bmm_container_property::BmmContainerProperty
 {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
@@ -937,7 +889,7 @@ impl<'de> ::serde::Deserialize<'de>
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::bmm::core::bmm_container_property::BmmContainerProperty;
+            type Value = crate::v2::bmm::core::bmm_container_property::BmmContainerProperty;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_CONTAINER_PROPERTY` object")
             }
@@ -1037,7 +989,7 @@ impl<'de> ::serde::Deserialize<'de>
                     }
                 }
                 ::core::result::Result::Ok(
-                    crate::bmm::core::bmm_container_property::BmmContainerProperty {
+                    crate::v2::bmm::core::bmm_container_property::BmmContainerProperty {
                         documentation: __s0.flatten(),
                         name: __s1
                             .flatten()
@@ -1063,7 +1015,7 @@ impl<'de> ::serde::Deserialize<'de>
     }
 }
 
-impl ::serde::Serialize for crate::bmm::core::bmm_container_type::BmmContainerTypeData {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_container_type::BmmContainerTypeData {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -1088,7 +1040,9 @@ impl ::serde::Serialize for crate::bmm::core::bmm_container_type::BmmContainerTy
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_container_type::BmmContainerTypeData {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm::core::bmm_container_type::BmmContainerTypeData
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -1136,7 +1090,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_container_type::Bm
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::bmm::core::bmm_container_type::BmmContainerTypeData;
+            type Value = crate::v2::bmm::core::bmm_container_type::BmmContainerTypeData;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_CONTAINER_TYPE` object")
             }
@@ -1189,7 +1143,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_container_type::Bm
                     }
                 }
                 ::core::result::Result::Ok(
-                    crate::bmm::core::bmm_container_type::BmmContainerTypeData {
+                    crate::v2::bmm::core::bmm_container_type::BmmContainerTypeData {
                         documentation: __s0.flatten(),
                         container_type: __s1
                             .flatten()
@@ -1210,30 +1164,30 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_container_type::Bm
     }
 }
 
-impl ::serde::Serialize for crate::bmm::core::bmm_container_type::BmmContainerType {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_container_type::BmmContainerType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::bmm::core::bmm_container_type::BmmContainerType::BmmIndexedContainerType(
+            crate::v2::bmm::core::bmm_container_type::BmmContainerType::BmmIndexedContainerType(
                 __x,
             ) => ::serde::Serialize::serialize(__x, __serializer),
-            crate::bmm::core::bmm_container_type::BmmContainerType::BmmContainerType(__x) => {
+            crate::v2::bmm::core::bmm_container_type::BmmContainerType::BmmContainerType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_container_type::BmmContainerType {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm::core::bmm_container_type::BmmContainerType {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["BMM_CONTAINER_TYPE", "BMM_INDEXED_CONTAINER_TYPE"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::bmm::core::bmm_container_type::BmmContainerType;
+            type Value = crate::v2::bmm::core::bmm_container_type::BmmContainerType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_CONTAINER_TYPE` object")
             }
@@ -1251,8 +1205,8 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_container_type::Bm
                             __map,
                         );
                         match __t {
-"BMM_CONTAINER_TYPE" => ::core::result::Result::Ok(crate::bmm::core::bmm_container_type::BmmContainerType::BmmContainerType(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_INDEXED_CONTAINER_TYPE" => ::core::result::Result::Ok(crate::bmm::core::bmm_container_type::BmmContainerType::BmmIndexedContainerType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_CONTAINER_TYPE" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_container_type::BmmContainerType::BmmContainerType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_INDEXED_CONTAINER_TYPE" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_container_type::BmmContainerType::BmmIndexedContainerType(::serde::Deserialize::deserialize(__rest)?)),
 __other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_CONTAINER_TYPE", __other, "BMM_CONTAINER_TYPE, BMM_INDEXED_CONTAINER_TYPE")),
 }
                     }
@@ -1266,7 +1220,7 @@ __other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected
                     None => {
                         let __rest =
                             ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);
-                        ::core::result::Result::Ok(crate::bmm::core::bmm_container_type::BmmContainerType::BmmContainerType(::serde::Deserialize::deserialize(__rest)?))
+                        ::core::result::Result::Ok(crate::v2::bmm::core::bmm_container_type::BmmContainerType::BmmContainerType(::serde::Deserialize::deserialize(__rest)?))
                     }
                 }
             }
@@ -1275,7 +1229,7 @@ __other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected
     }
 }
 
-impl ::serde::Serialize for crate::bmm::core::bmm_definitions::BmmDefinitionsData {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_definitions::BmmDefinitionsData {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -1287,7 +1241,7 @@ impl ::serde::Serialize for crate::bmm::core::bmm_definitions::BmmDefinitionsDat
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_definitions::BmmDefinitionsData {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm::core::bmm_definitions::BmmDefinitionsData {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -1329,7 +1283,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_definitions::BmmDe
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::bmm::core::bmm_definitions::BmmDefinitionsData;
+            type Value = crate::v2::bmm::core::bmm_definitions::BmmDefinitionsData;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_DEFINITIONS` object")
             }
@@ -1354,7 +1308,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_definitions::BmmDe
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::bmm::core::bmm_definitions::BmmDefinitionsData {})
+                ::core::result::Result::Ok(
+                    crate::v2::bmm::core::bmm_definitions::BmmDefinitionsData {},
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -1366,50 +1322,50 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_definitions::BmmDe
     }
 }
 
-impl ::serde::Serialize for crate::bmm::core::bmm_definitions::BmmDefinitions {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_definitions::BmmDefinitions {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::bmm::core::bmm_definitions::BmmDefinitions::BmmClass(__x) => {
+            crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmClass(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::bmm::core::bmm_definitions::BmmDefinitions::BmmContainerType(__x) => {
+            crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmContainerType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::bmm::core::bmm_definitions::BmmDefinitions::BmmGenericParameter(__x) => {
+            crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmGenericParameter(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::bmm::core::bmm_definitions::BmmDefinitions::BmmGenericType(__x) => {
+            crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmGenericType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::bmm::core::bmm_definitions::BmmDefinitions::BmmOpenType(__x) => {
+            crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmOpenType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::bmm::core::bmm_definitions::BmmDefinitions::BmmPackageContainer(__x) => {
+            crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmPackageContainer(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::bmm::core::bmm_definitions::BmmDefinitions::BmmProperty(__x) => {
+            crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmProperty(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::bmm::core::bmm_definitions::BmmDefinitions::BmmSimpleType(__x) => {
+            crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmSimpleType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::bmm::core::bmm_definitions::BmmDefinitions::ReferenceModelAccess(__x) => {
+            crate::v2::bmm::core::bmm_definitions::BmmDefinitions::ReferenceModelAccess(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::bmm::core::bmm_definitions::BmmDefinitions::SchemaDescriptor(__x) => {
+            crate::v2::bmm::core::bmm_definitions::BmmDefinitions::SchemaDescriptor(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::bmm::core::bmm_definitions::BmmDefinitions::BmmDefinitions(__x) => {
+            crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmDefinitions(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_definitions::BmmDefinitions {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm::core::bmm_definitions::BmmDefinitions {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -1437,7 +1393,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_definitions::BmmDe
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::bmm::core::bmm_definitions::BmmDefinitions;
+            type Value = crate::v2::bmm::core::bmm_definitions::BmmDefinitions;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_DEFINITIONS` object")
             }
@@ -1455,26 +1411,26 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_definitions::BmmDe
                             __map,
                         );
                         match __t {
-"BMM_CLASS" => ::core::result::Result::Ok(crate::bmm::core::bmm_definitions::BmmDefinitions::BmmClass(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_CONTAINER_PROPERTY" => ::core::result::Result::Ok(crate::bmm::core::bmm_definitions::BmmDefinitions::BmmProperty(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_CONTAINER_TYPE" => ::core::result::Result::Ok(crate::bmm::core::bmm_definitions::BmmDefinitions::BmmContainerType(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_DEFINITIONS" => ::core::result::Result::Ok(crate::bmm::core::bmm_definitions::BmmDefinitions::BmmDefinitions(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_ENUMERATION" => ::core::result::Result::Ok(crate::bmm::core::bmm_definitions::BmmDefinitions::BmmClass(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_ENUMERATION_INTEGER" => ::core::result::Result::Ok(crate::bmm::core::bmm_definitions::BmmDefinitions::BmmClass(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_ENUMERATION_STRING" => ::core::result::Result::Ok(crate::bmm::core::bmm_definitions::BmmDefinitions::BmmClass(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_GENERIC_CLASS" => ::core::result::Result::Ok(crate::bmm::core::bmm_definitions::BmmDefinitions::BmmClass(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_GENERIC_PARAMETER" => ::core::result::Result::Ok(crate::bmm::core::bmm_definitions::BmmDefinitions::BmmGenericParameter(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_GENERIC_TYPE" => ::core::result::Result::Ok(crate::bmm::core::bmm_definitions::BmmDefinitions::BmmGenericType(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_INDEXED_CONTAINER_TYPE" => ::core::result::Result::Ok(crate::bmm::core::bmm_definitions::BmmDefinitions::BmmContainerType(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_MODEL" => ::core::result::Result::Ok(crate::bmm::core::bmm_definitions::BmmDefinitions::BmmPackageContainer(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_OPEN_TYPE" => ::core::result::Result::Ok(crate::bmm::core::bmm_definitions::BmmDefinitions::BmmOpenType(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_PACKAGE" => ::core::result::Result::Ok(crate::bmm::core::bmm_definitions::BmmDefinitions::BmmPackageContainer(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_PACKAGE_CONTAINER" => ::core::result::Result::Ok(crate::bmm::core::bmm_definitions::BmmDefinitions::BmmPackageContainer(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_PROPERTY" => ::core::result::Result::Ok(crate::bmm::core::bmm_definitions::BmmDefinitions::BmmProperty(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_SIMPLE_TYPE" => ::core::result::Result::Ok(crate::bmm::core::bmm_definitions::BmmDefinitions::BmmSimpleType(::serde::Deserialize::deserialize(__rest)?)),
-"P_BMM_SCHEMA_DESCRIPTOR" => ::core::result::Result::Ok(crate::bmm::core::bmm_definitions::BmmDefinitions::SchemaDescriptor(::serde::Deserialize::deserialize(__rest)?)),
-"REFERENCE_MODEL_ACCESS" => ::core::result::Result::Ok(crate::bmm::core::bmm_definitions::BmmDefinitions::ReferenceModelAccess(::serde::Deserialize::deserialize(__rest)?)),
-"SCHEMA_DESCRIPTOR" => ::core::result::Result::Ok(crate::bmm::core::bmm_definitions::BmmDefinitions::SchemaDescriptor(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_CLASS" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmClass(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_CONTAINER_PROPERTY" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmProperty(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_CONTAINER_TYPE" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmContainerType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_DEFINITIONS" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmDefinitions(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ENUMERATION" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmClass(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ENUMERATION_INTEGER" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmClass(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ENUMERATION_STRING" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmClass(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_GENERIC_CLASS" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmClass(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_GENERIC_PARAMETER" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmGenericParameter(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_GENERIC_TYPE" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmGenericType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_INDEXED_CONTAINER_TYPE" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmContainerType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_MODEL" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmPackageContainer(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_OPEN_TYPE" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmOpenType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PACKAGE" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmPackageContainer(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PACKAGE_CONTAINER" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmPackageContainer(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PROPERTY" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmProperty(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_SIMPLE_TYPE" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmSimpleType(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_SCHEMA_DESCRIPTOR" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_definitions::BmmDefinitions::SchemaDescriptor(::serde::Deserialize::deserialize(__rest)?)),
+"REFERENCE_MODEL_ACCESS" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_definitions::BmmDefinitions::ReferenceModelAccess(::serde::Deserialize::deserialize(__rest)?)),
+"SCHEMA_DESCRIPTOR" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_definitions::BmmDefinitions::SchemaDescriptor(::serde::Deserialize::deserialize(__rest)?)),
 __other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_DEFINITIONS", __other, "BMM_CLASS, BMM_CONTAINER_PROPERTY, BMM_CONTAINER_TYPE, BMM_DEFINITIONS, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_GENERIC_CLASS, BMM_GENERIC_PARAMETER, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_MODEL, BMM_OPEN_TYPE, BMM_PACKAGE, BMM_PACKAGE_CONTAINER, BMM_PROPERTY, BMM_SIMPLE_TYPE, P_BMM_SCHEMA_DESCRIPTOR, REFERENCE_MODEL_ACCESS, SCHEMA_DESCRIPTOR")),
 }
                     }
@@ -1489,7 +1445,7 @@ __other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected
                         let __rest =
                             ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);
                         ::core::result::Result::Ok(
-                            crate::bmm::core::bmm_definitions::BmmDefinitions::BmmDefinitions(
+                            crate::v2::bmm::core::bmm_definitions::BmmDefinitions::BmmDefinitions(
                                 ::serde::Deserialize::deserialize(__rest)?,
                             ),
                         )
@@ -1501,7 +1457,7 @@ __other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected
     }
 }
 
-impl ::serde::Serialize for crate::bmm::core::bmm_enumeration::BmmEnumerationData {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_enumeration::BmmEnumerationData {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -1590,7 +1546,7 @@ impl ::serde::Serialize for crate::bmm::core::bmm_enumeration::BmmEnumerationDat
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_enumeration::BmmEnumerationData {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm::core::bmm_enumeration::BmmEnumerationData {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -1672,7 +1628,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_enumeration::BmmEn
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::bmm::core::bmm_enumeration::BmmEnumerationData;
+            type Value = crate::v2::bmm::core::bmm_enumeration::BmmEnumerationData;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_ENUMERATION` object")
             }
@@ -1814,35 +1770,37 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_enumeration::BmmEn
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::bmm::core::bmm_enumeration::BmmEnumerationData {
-                    documentation: __s0.flatten(),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    ancestors: __s2.flatten(),
-                    package: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("package"))?,
-                    properties: __s4.flatten(),
-                    source_schema_id: __s5
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("source_schema_id"))?,
-                    immediate_descendants: __s6,
-                    is_abstract: __s7
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_abstract"))?,
-                    is_primitive_type: __s8
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_primitive_type"))?,
-                    is_override: __s9
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_override"))?,
-                    item_names: __s10,
-                    item_values: __s11,
-                    underlying_type_name: __s12
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("underlying_type_name"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::bmm::core::bmm_enumeration::BmmEnumerationData {
+                        documentation: __s0.flatten(),
+                        name: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        ancestors: __s2.flatten(),
+                        package: __s3
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("package"))?,
+                        properties: __s4.flatten(),
+                        source_schema_id: __s5
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("source_schema_id"))?,
+                        immediate_descendants: __s6,
+                        is_abstract: __s7
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("is_abstract"))?,
+                        is_primitive_type: __s8.flatten().ok_or_else(|| {
+                            ::serde::de::Error::missing_field("is_primitive_type")
+                        })?,
+                        is_override: __s9
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("is_override"))?,
+                        item_names: __s10,
+                        item_values: __s11,
+                        underlying_type_name: __s12.flatten().ok_or_else(|| {
+                            ::serde::de::Error::missing_field("underlying_type_name")
+                        })?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -1854,26 +1812,26 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_enumeration::BmmEn
     }
 }
 
-impl ::serde::Serialize for crate::bmm::core::bmm_enumeration::BmmEnumeration {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_enumeration::BmmEnumeration {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::bmm::core::bmm_enumeration::BmmEnumeration::BmmEnumerationInteger(__x) => {
+            crate::v2::bmm::core::bmm_enumeration::BmmEnumeration::BmmEnumerationInteger(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::bmm::core::bmm_enumeration::BmmEnumeration::BmmEnumerationString(__x) => {
+            crate::v2::bmm::core::bmm_enumeration::BmmEnumeration::BmmEnumerationString(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::bmm::core::bmm_enumeration::BmmEnumeration::BmmEnumeration(__x) => {
+            crate::v2::bmm::core::bmm_enumeration::BmmEnumeration::BmmEnumeration(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_enumeration::BmmEnumeration {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm::core::bmm_enumeration::BmmEnumeration {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -1884,7 +1842,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_enumeration::BmmEn
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::bmm::core::bmm_enumeration::BmmEnumeration;
+            type Value = crate::v2::bmm::core::bmm_enumeration::BmmEnumeration;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_ENUMERATION` object")
             }
@@ -1902,9 +1860,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_enumeration::BmmEn
                             __map,
                         );
                         match __t {
-"BMM_ENUMERATION" => ::core::result::Result::Ok(crate::bmm::core::bmm_enumeration::BmmEnumeration::BmmEnumeration(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_ENUMERATION_INTEGER" => ::core::result::Result::Ok(crate::bmm::core::bmm_enumeration::BmmEnumeration::BmmEnumerationInteger(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_ENUMERATION_STRING" => ::core::result::Result::Ok(crate::bmm::core::bmm_enumeration::BmmEnumeration::BmmEnumerationString(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ENUMERATION" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_enumeration::BmmEnumeration::BmmEnumeration(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ENUMERATION_INTEGER" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_enumeration::BmmEnumeration::BmmEnumerationInteger(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ENUMERATION_STRING" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_enumeration::BmmEnumeration::BmmEnumerationString(::serde::Deserialize::deserialize(__rest)?)),
 __other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_ENUMERATION", __other, "BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING")),
 }
                     }
@@ -1919,7 +1877,7 @@ __other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected
                         let __rest =
                             ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);
                         ::core::result::Result::Ok(
-                            crate::bmm::core::bmm_enumeration::BmmEnumeration::BmmEnumeration(
+                            crate::v2::bmm::core::bmm_enumeration::BmmEnumeration::BmmEnumeration(
                                 ::serde::Deserialize::deserialize(__rest)?,
                             ),
                         )
@@ -1931,7 +1889,7 @@ __other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected
     }
 }
 
-impl ::serde::Serialize for crate::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -2026,7 +1984,7 @@ impl ::serde::Serialize for crate::bmm::core::bmm_enumeration_integer::BmmEnumer
 }
 
 impl<'de> ::serde::Deserialize<'de>
-    for crate::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger
+    for crate::v2::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger
 {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
@@ -2109,7 +2067,7 @@ impl<'de> ::serde::Deserialize<'de>
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger;
+            type Value = crate::v2::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_ENUMERATION_INTEGER` object")
             }
@@ -2254,7 +2212,7 @@ impl<'de> ::serde::Deserialize<'de>
                     }
                 }
                 ::core::result::Result::Ok(
-                    crate::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger {
+                    crate::v2::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger {
                         documentation: __s0.flatten(),
                         name: __s1
                             .flatten()
@@ -2295,7 +2253,7 @@ impl<'de> ::serde::Deserialize<'de>
     }
 }
 
-impl ::serde::Serialize for crate::bmm::core::bmm_enumeration_string::BmmEnumerationString {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_enumeration_string::BmmEnumerationString {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -2390,7 +2348,7 @@ impl ::serde::Serialize for crate::bmm::core::bmm_enumeration_string::BmmEnumera
 }
 
 impl<'de> ::serde::Deserialize<'de>
-    for crate::bmm::core::bmm_enumeration_string::BmmEnumerationString
+    for crate::v2::bmm::core::bmm_enumeration_string::BmmEnumerationString
 {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
@@ -2473,7 +2431,7 @@ impl<'de> ::serde::Deserialize<'de>
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::bmm::core::bmm_enumeration_string::BmmEnumerationString;
+            type Value = crate::v2::bmm::core::bmm_enumeration_string::BmmEnumerationString;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_ENUMERATION_STRING` object")
             }
@@ -2618,7 +2576,7 @@ impl<'de> ::serde::Deserialize<'de>
                     }
                 }
                 ::core::result::Result::Ok(
-                    crate::bmm::core::bmm_enumeration_string::BmmEnumerationString {
+                    crate::v2::bmm::core::bmm_enumeration_string::BmmEnumerationString {
                         documentation: __s0.flatten(),
                         name: __s1
                             .flatten()
@@ -2659,7 +2617,7 @@ impl<'de> ::serde::Deserialize<'de>
     }
 }
 
-impl ::serde::Serialize for crate::bmm::core::bmm_generic_class::BmmGenericClass {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_generic_class::BmmGenericClass {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -2733,7 +2691,7 @@ impl ::serde::Serialize for crate::bmm::core::bmm_generic_class::BmmGenericClass
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_generic_class::BmmGenericClass {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm::core::bmm_generic_class::BmmGenericClass {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -2809,7 +2767,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_generic_class::Bmm
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::bmm::core::bmm_generic_class::BmmGenericClass;
+            type Value = crate::v2::bmm::core::bmm_generic_class::BmmGenericClass;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_GENERIC_CLASS` object")
             }
@@ -2933,33 +2891,35 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_generic_class::Bmm
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::bmm::core::bmm_generic_class::BmmGenericClass {
-                    documentation: __s0.flatten(),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    ancestors: __s2.flatten(),
-                    package: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("package"))?,
-                    properties: __s4.flatten(),
-                    source_schema_id: __s5
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("source_schema_id"))?,
-                    immediate_descendants: __s6,
-                    is_abstract: __s7
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_abstract"))?,
-                    is_primitive_type: __s8
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_primitive_type"))?,
-                    is_override: __s9
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_override"))?,
-                    generic_parameters: __s10
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("generic_parameters"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::bmm::core::bmm_generic_class::BmmGenericClass {
+                        documentation: __s0.flatten(),
+                        name: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        ancestors: __s2.flatten(),
+                        package: __s3
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("package"))?,
+                        properties: __s4.flatten(),
+                        source_schema_id: __s5
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("source_schema_id"))?,
+                        immediate_descendants: __s6,
+                        is_abstract: __s7
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("is_abstract"))?,
+                        is_primitive_type: __s8.flatten().ok_or_else(|| {
+                            ::serde::de::Error::missing_field("is_primitive_type")
+                        })?,
+                        is_override: __s9
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("is_override"))?,
+                        generic_parameters: __s10.flatten().ok_or_else(|| {
+                            ::serde::de::Error::missing_field("generic_parameters")
+                        })?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -2971,7 +2931,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_generic_class::Bmm
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmGenericParameter {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_generic_parameter::BmmGenericParameter {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -3011,7 +2971,9 @@ impl ::serde::Serialize for crate::prelude::BmmGenericParameter {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmGenericParameter {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm::core::bmm_generic_parameter::BmmGenericParameter
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -3066,7 +3028,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmGenericParameter {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmGenericParameter;
+            type Value = crate::v2::bmm::core::bmm_generic_parameter::BmmGenericParameter;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_GENERIC_PARAMETER` object")
             }
@@ -3129,14 +3091,16 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmGenericParameter {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmGenericParameter {
-                    documentation: __s0.flatten(),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    conforms_to_type: __s2.flatten(),
-                    inheritance_precursor: __s3.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::bmm::core::bmm_generic_parameter::BmmGenericParameter {
+                        documentation: __s0.flatten(),
+                        name: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        conforms_to_type: __s2.flatten(),
+                        inheritance_precursor: __s3.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -3148,7 +3112,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmGenericParameter {
     }
 }
 
-impl ::serde::Serialize for crate::bmm::core::bmm_generic_type::BmmGenericType {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_generic_type::BmmGenericType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -3178,7 +3142,7 @@ impl ::serde::Serialize for crate::bmm::core::bmm_generic_type::BmmGenericType {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_generic_type::BmmGenericType {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm::core::bmm_generic_type::BmmGenericType {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -3226,7 +3190,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_generic_type::BmmG
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::bmm::core::bmm_generic_type::BmmGenericType;
+            type Value = crate::v2::bmm::core::bmm_generic_type::BmmGenericType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_GENERIC_TYPE` object")
             }
@@ -3278,7 +3242,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_generic_type::BmmG
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::bmm::core::bmm_generic_type::BmmGenericType {
+                ::core::result::Result::Ok(crate::v2::bmm::core::bmm_generic_type::BmmGenericType {
                     documentation: __s0.flatten(),
                     generic_parameters: __s1.unwrap_or_default(),
                     base_class: __s2
@@ -3296,7 +3260,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_generic_type::BmmG
     }
 }
 
-impl ::serde::Serialize for crate::bmm::core::bmm_include_spec::BmmIncludeSpec {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_include_spec::BmmIncludeSpec {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -3310,7 +3274,7 @@ impl ::serde::Serialize for crate::bmm::core::bmm_include_spec::BmmIncludeSpec {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_include_spec::BmmIncludeSpec {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm::core::bmm_include_spec::BmmIncludeSpec {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -3354,7 +3318,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_include_spec::BmmI
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::bmm::core::bmm_include_spec::BmmIncludeSpec;
+            type Value = crate::v2::bmm::core::bmm_include_spec::BmmIncludeSpec;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_INCLUDE_SPEC` object")
             }
@@ -3388,7 +3352,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_include_spec::BmmI
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::bmm::core::bmm_include_spec::BmmIncludeSpec {
+                ::core::result::Result::Ok(crate::v2::bmm::core::bmm_include_spec::BmmIncludeSpec {
                     id: __s0
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("id"))?,
@@ -3404,7 +3368,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_include_spec::BmmI
     }
 }
 
-impl ::serde::Serialize for crate::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType {
+impl ::serde::Serialize
+    for crate::v2::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -3435,7 +3401,7 @@ impl ::serde::Serialize for crate::bmm::core::bmm_indexed_container_type::BmmInd
 }
 
 impl<'de> ::serde::Deserialize<'de>
-    for crate::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType
+    for crate::v2::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType
 {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
@@ -3486,7 +3452,7 @@ impl<'de> ::serde::Deserialize<'de>
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType;
+            type Value = crate::v2::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_INDEXED_CONTAINER_TYPE` object")
             }
@@ -3550,7 +3516,7 @@ impl<'de> ::serde::Deserialize<'de>
                     }
                 }
                 ::core::result::Result::Ok(
-                    crate::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType {
+                    crate::v2::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType {
                         documentation: __s0.flatten(),
                         container_type: __s1
                             .flatten()
@@ -3574,7 +3540,7 @@ impl<'de> ::serde::Deserialize<'de>
     }
 }
 
-impl ::serde::Serialize for crate::bmm::core::bmm_model::BmmModel {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_model::BmmModel {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -3693,7 +3659,7 @@ impl ::serde::Serialize for crate::bmm::core::bmm_model::BmmModel {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_model::BmmModel {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm::core::bmm_model::BmmModel {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -3787,7 +3753,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_model::BmmModel {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::bmm::core::bmm_model::BmmModel;
+            type Value = crate::v2::bmm::core::bmm_model::BmmModel;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_MODEL` object")
             }
@@ -3953,7 +3919,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_model::BmmModel {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::bmm::core::bmm_model::BmmModel {
+                ::core::result::Result::Ok(crate::v2::bmm::core::bmm_model::BmmModel {
                     rm_publisher: __s0
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("rm_publisher"))?,
@@ -3990,41 +3956,41 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_model::BmmModel {
     }
 }
 
-impl ::serde::Serialize for crate::bmm::core::bmm_model_element::BmmModelElement {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_model_element::BmmModelElement {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::bmm::core::bmm_model_element::BmmModelElement::BmmClass(__x) => {
+            crate::v2::bmm::core::bmm_model_element::BmmModelElement::BmmClass(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::bmm::core::bmm_model_element::BmmModelElement::BmmContainerType(__x) => {
+            crate::v2::bmm::core::bmm_model_element::BmmModelElement::BmmContainerType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::bmm::core::bmm_model_element::BmmModelElement::BmmGenericParameter(__x) => {
+            crate::v2::bmm::core::bmm_model_element::BmmModelElement::BmmGenericParameter(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::bmm::core::bmm_model_element::BmmModelElement::BmmGenericType(__x) => {
+            crate::v2::bmm::core::bmm_model_element::BmmModelElement::BmmGenericType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::bmm::core::bmm_model_element::BmmModelElement::BmmOpenType(__x) => {
+            crate::v2::bmm::core::bmm_model_element::BmmModelElement::BmmOpenType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::bmm::core::bmm_model_element::BmmModelElement::BmmPackageContainer(__x) => {
+            crate::v2::bmm::core::bmm_model_element::BmmModelElement::BmmPackageContainer(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::bmm::core::bmm_model_element::BmmModelElement::BmmProperty(__x) => {
+            crate::v2::bmm::core::bmm_model_element::BmmModelElement::BmmProperty(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::bmm::core::bmm_model_element::BmmModelElement::BmmSimpleType(__x) => {
+            crate::v2::bmm::core::bmm_model_element::BmmModelElement::BmmSimpleType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_model_element::BmmModelElement {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm::core::bmm_model_element::BmmModelElement {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -4048,7 +4014,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_model_element::Bmm
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::bmm::core::bmm_model_element::BmmModelElement;
+            type Value = crate::v2::bmm::core::bmm_model_element::BmmModelElement;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_MODEL_ELEMENT` object")
             }
@@ -4066,22 +4032,22 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_model_element::Bmm
                             __map,
                         );
                         match __t {
-"BMM_CLASS" => ::core::result::Result::Ok(crate::bmm::core::bmm_model_element::BmmModelElement::BmmClass(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_CONTAINER_PROPERTY" => ::core::result::Result::Ok(crate::bmm::core::bmm_model_element::BmmModelElement::BmmProperty(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_CONTAINER_TYPE" => ::core::result::Result::Ok(crate::bmm::core::bmm_model_element::BmmModelElement::BmmContainerType(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_ENUMERATION" => ::core::result::Result::Ok(crate::bmm::core::bmm_model_element::BmmModelElement::BmmClass(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_ENUMERATION_INTEGER" => ::core::result::Result::Ok(crate::bmm::core::bmm_model_element::BmmModelElement::BmmClass(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_ENUMERATION_STRING" => ::core::result::Result::Ok(crate::bmm::core::bmm_model_element::BmmModelElement::BmmClass(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_GENERIC_CLASS" => ::core::result::Result::Ok(crate::bmm::core::bmm_model_element::BmmModelElement::BmmClass(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_GENERIC_PARAMETER" => ::core::result::Result::Ok(crate::bmm::core::bmm_model_element::BmmModelElement::BmmGenericParameter(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_GENERIC_TYPE" => ::core::result::Result::Ok(crate::bmm::core::bmm_model_element::BmmModelElement::BmmGenericType(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_INDEXED_CONTAINER_TYPE" => ::core::result::Result::Ok(crate::bmm::core::bmm_model_element::BmmModelElement::BmmContainerType(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_MODEL" => ::core::result::Result::Ok(crate::bmm::core::bmm_model_element::BmmModelElement::BmmPackageContainer(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_OPEN_TYPE" => ::core::result::Result::Ok(crate::bmm::core::bmm_model_element::BmmModelElement::BmmOpenType(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_PACKAGE" => ::core::result::Result::Ok(crate::bmm::core::bmm_model_element::BmmModelElement::BmmPackageContainer(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_PACKAGE_CONTAINER" => ::core::result::Result::Ok(crate::bmm::core::bmm_model_element::BmmModelElement::BmmPackageContainer(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_PROPERTY" => ::core::result::Result::Ok(crate::bmm::core::bmm_model_element::BmmModelElement::BmmProperty(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_SIMPLE_TYPE" => ::core::result::Result::Ok(crate::bmm::core::bmm_model_element::BmmModelElement::BmmSimpleType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_CLASS" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_model_element::BmmModelElement::BmmClass(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_CONTAINER_PROPERTY" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_model_element::BmmModelElement::BmmProperty(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_CONTAINER_TYPE" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_model_element::BmmModelElement::BmmContainerType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ENUMERATION" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_model_element::BmmModelElement::BmmClass(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ENUMERATION_INTEGER" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_model_element::BmmModelElement::BmmClass(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ENUMERATION_STRING" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_model_element::BmmModelElement::BmmClass(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_GENERIC_CLASS" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_model_element::BmmModelElement::BmmClass(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_GENERIC_PARAMETER" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_model_element::BmmModelElement::BmmGenericParameter(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_GENERIC_TYPE" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_model_element::BmmModelElement::BmmGenericType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_INDEXED_CONTAINER_TYPE" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_model_element::BmmModelElement::BmmContainerType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_MODEL" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_model_element::BmmModelElement::BmmPackageContainer(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_OPEN_TYPE" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_model_element::BmmModelElement::BmmOpenType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PACKAGE" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_model_element::BmmModelElement::BmmPackageContainer(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PACKAGE_CONTAINER" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_model_element::BmmModelElement::BmmPackageContainer(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PROPERTY" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_model_element::BmmModelElement::BmmProperty(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_SIMPLE_TYPE" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_model_element::BmmModelElement::BmmSimpleType(::serde::Deserialize::deserialize(__rest)?)),
 __other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_MODEL_ELEMENT", __other, "BMM_CLASS, BMM_CONTAINER_PROPERTY, BMM_CONTAINER_TYPE, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_GENERIC_CLASS, BMM_GENERIC_PARAMETER, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_MODEL, BMM_OPEN_TYPE, BMM_PACKAGE, BMM_PACKAGE_CONTAINER, BMM_PROPERTY, BMM_SIMPLE_TYPE")),
 }
                     }
@@ -4105,7 +4071,7 @@ __other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmOpenType {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_open_type::BmmOpenType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -4128,7 +4094,7 @@ impl ::serde::Serialize for crate::prelude::BmmOpenType {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmOpenType {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm::core::bmm_open_type::BmmOpenType {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -4174,7 +4140,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmOpenType {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmOpenType;
+            type Value = crate::v2::bmm::core::bmm_open_type::BmmOpenType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_OPEN_TYPE` object")
             }
@@ -4217,7 +4183,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmOpenType {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmOpenType {
+                ::core::result::Result::Ok(crate::v2::bmm::core::bmm_open_type::BmmOpenType {
                     documentation: __s0.flatten(),
                     generic_constraint: __s1
                         .flatten()
@@ -4234,7 +4200,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmOpenType {
     }
 }
 
-impl ::serde::Serialize for crate::bmm::core::bmm_package::BmmPackage {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_package::BmmPackage {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -4267,7 +4233,7 @@ impl ::serde::Serialize for crate::bmm::core::bmm_package::BmmPackage {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_package::BmmPackage {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm::core::bmm_package::BmmPackage {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -4317,7 +4283,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_package::BmmPackag
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::bmm::core::bmm_package::BmmPackage;
+            type Value = crate::v2::bmm::core::bmm_package::BmmPackage;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_PACKAGE` object")
             }
@@ -4378,7 +4344,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_package::BmmPackag
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::bmm::core::bmm_package::BmmPackage {
+                ::core::result::Result::Ok(crate::v2::bmm::core::bmm_package::BmmPackage {
                     documentation: __s0.flatten(),
                     packages: __s1.flatten(),
                     name: __s2
@@ -4397,7 +4363,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_package::BmmPackag
     }
 }
 
-impl ::serde::Serialize for crate::bmm::core::bmm_package_container::BmmPackageContainerData {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_package_container::BmmPackageContainerData {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -4427,7 +4393,7 @@ impl ::serde::Serialize for crate::bmm::core::bmm_package_container::BmmPackageC
 }
 
 impl<'de> ::serde::Deserialize<'de>
-    for crate::bmm::core::bmm_package_container::BmmPackageContainerData
+    for crate::v2::bmm::core::bmm_package_container::BmmPackageContainerData
 {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
@@ -4474,7 +4440,7 @@ impl<'de> ::serde::Deserialize<'de>
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::bmm::core::bmm_package_container::BmmPackageContainerData;
+            type Value = crate::v2::bmm::core::bmm_package_container::BmmPackageContainerData;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_PACKAGE_CONTAINER` object")
             }
@@ -4520,7 +4486,7 @@ impl<'de> ::serde::Deserialize<'de>
                     }
                 }
                 ::core::result::Result::Ok(
-                    crate::bmm::core::bmm_package_container::BmmPackageContainerData {
+                    crate::v2::bmm::core::bmm_package_container::BmmPackageContainerData {
                         documentation: __s0.flatten(),
                         packages: __s1.flatten(),
                     },
@@ -4536,27 +4502,21 @@ impl<'de> ::serde::Deserialize<'de>
     }
 }
 
-impl ::serde::Serialize for crate::bmm::core::bmm_package_container::BmmPackageContainer {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_package_container::BmmPackageContainer {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::bmm::core::bmm_package_container::BmmPackageContainer::BmmModel(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::bmm::core::bmm_package_container::BmmPackageContainer::BmmPackage(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::bmm::core::bmm_package_container::BmmPackageContainer::BmmPackageContainer(
-                __x,
-            ) => ::serde::Serialize::serialize(__x, __serializer),
-        }
+crate::v2::bmm::core::bmm_package_container::BmmPackageContainer::BmmModel(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v2::bmm::core::bmm_package_container::BmmPackageContainer::BmmPackage(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v2::bmm::core::bmm_package_container::BmmPackageContainer::BmmPackageContainer(__x) => ::serde::Serialize::serialize(__x, __serializer),
+}
     }
 }
 
 impl<'de> ::serde::Deserialize<'de>
-    for crate::bmm::core::bmm_package_container::BmmPackageContainer
+    for crate::v2::bmm::core::bmm_package_container::BmmPackageContainer
 {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
@@ -4564,7 +4524,7 @@ impl<'de> ::serde::Deserialize<'de>
         const __TAGS: &[&str] = &["BMM_MODEL", "BMM_PACKAGE", "BMM_PACKAGE_CONTAINER"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::bmm::core::bmm_package_container::BmmPackageContainer;
+            type Value = crate::v2::bmm::core::bmm_package_container::BmmPackageContainer;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_PACKAGE_CONTAINER` object")
             }
@@ -4582,9 +4542,9 @@ impl<'de> ::serde::Deserialize<'de>
                             __map,
                         );
                         match __t {
-"BMM_MODEL" => ::core::result::Result::Ok(crate::bmm::core::bmm_package_container::BmmPackageContainer::BmmModel(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_PACKAGE" => ::core::result::Result::Ok(crate::bmm::core::bmm_package_container::BmmPackageContainer::BmmPackage(::serde::Deserialize::deserialize(__rest)?)),
-"BMM_PACKAGE_CONTAINER" => ::core::result::Result::Ok(crate::bmm::core::bmm_package_container::BmmPackageContainer::BmmPackageContainer(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_MODEL" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_package_container::BmmPackageContainer::BmmModel(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PACKAGE" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_package_container::BmmPackageContainer::BmmPackage(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PACKAGE_CONTAINER" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_package_container::BmmPackageContainer::BmmPackageContainer(::serde::Deserialize::deserialize(__rest)?)),
 __other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_PACKAGE_CONTAINER", __other, "BMM_MODEL, BMM_PACKAGE, BMM_PACKAGE_CONTAINER")),
 }
                     }
@@ -4598,7 +4558,7 @@ __other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected
                     None => {
                         let __rest =
                             ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);
-                        ::core::result::Result::Ok(crate::bmm::core::bmm_package_container::BmmPackageContainer::BmmPackageContainer(::serde::Deserialize::deserialize(__rest)?))
+                        ::core::result::Result::Ok(crate::v2::bmm::core::bmm_package_container::BmmPackageContainer::BmmPackageContainer(::serde::Deserialize::deserialize(__rest)?))
                     }
                 }
             }
@@ -4608,7 +4568,7 @@ __other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected
 }
 
 impl<T: ::serde::Serialize> ::serde::Serialize
-    for crate::bmm::core::bmm_property::BmmPropertyData<T>
+    for crate::v2::bmm::core::bmm_property::BmmPropertyData<T>
 {
     fn serialize<__S: ::serde::Serializer>(
         &self,
@@ -4654,7 +4614,7 @@ impl<T: ::serde::Serialize> ::serde::Serialize
 }
 
 impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
-    for crate::bmm::core::bmm_property::BmmPropertyData<T>
+    for crate::v2::bmm::core::bmm_property::BmmPropertyData<T>
 {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
@@ -4719,7 +4679,7 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
         }
         struct __Visitor<T>(::core::marker::PhantomData<(T,)>);
         impl<'de, T: ::serde::de::DeserializeOwned> ::serde::de::Visitor<'de> for __Visitor<T> {
-            type Value = crate::bmm::core::bmm_property::BmmPropertyData<T>;
+            type Value = crate::v2::bmm::core::bmm_property::BmmPropertyData<T>;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_PROPERTY` object")
             }
@@ -4807,7 +4767,7 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::bmm::core::bmm_property::BmmPropertyData {
+                ::core::result::Result::Ok(crate::v2::bmm::core::bmm_property::BmmPropertyData {
                     documentation: __s0.flatten(),
                     name: __s1
                         .flatten()
@@ -4831,16 +4791,18 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
     }
 }
 
-impl<T: ::serde::Serialize> ::serde::Serialize for crate::bmm::core::bmm_property::BmmProperty<T> {
+impl<T: ::serde::Serialize> ::serde::Serialize
+    for crate::v2::bmm::core::bmm_property::BmmProperty<T>
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::bmm::core::bmm_property::BmmProperty::BmmContainerProperty(__x) => {
+            crate::v2::bmm::core::bmm_property::BmmProperty::BmmContainerProperty(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::bmm::core::bmm_property::BmmProperty::BmmProperty(__x) => {
+            crate::v2::bmm::core::bmm_property::BmmProperty::BmmProperty(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
@@ -4848,7 +4810,7 @@ impl<T: ::serde::Serialize> ::serde::Serialize for crate::bmm::core::bmm_propert
 }
 
 impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
-    for crate::bmm::core::bmm_property::BmmProperty<T>
+    for crate::v2::bmm::core::bmm_property::BmmProperty<T>
 {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
@@ -4856,7 +4818,7 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
         const __TAGS: &[&str] = &["BMM_CONTAINER_PROPERTY", "BMM_PROPERTY"];
         struct __Visitor<T>(::core::marker::PhantomData<(T,)>);
         impl<'de, T: ::serde::de::DeserializeOwned> ::serde::de::Visitor<'de> for __Visitor<T> {
-            type Value = crate::bmm::core::bmm_property::BmmProperty<T>;
+            type Value = crate::v2::bmm::core::bmm_property::BmmProperty<T>;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_PROPERTY` object")
             }
@@ -4874,24 +4836,10 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
                             __map,
                         );
                         match __t {
-                            "BMM_CONTAINER_PROPERTY" => ::core::result::Result::Ok(
-                                crate::bmm::core::bmm_property::BmmProperty::BmmContainerProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_PROPERTY" => ::core::result::Result::Ok(
-                                crate::bmm::core::bmm_property::BmmProperty::BmmProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_PROPERTY",
-                                    __other,
-                                    "BMM_CONTAINER_PROPERTY, BMM_PROPERTY",
-                                ),
-                            ),
-                        }
+"BMM_CONTAINER_PROPERTY" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_property::BmmProperty::BmmContainerProperty(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PROPERTY" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_property::BmmProperty::BmmProperty(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_PROPERTY", __other, "BMM_CONTAINER_PROPERTY, BMM_PROPERTY")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -4904,7 +4852,7 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
                         let __rest =
                             ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);
                         ::core::result::Result::Ok(
-                            crate::bmm::core::bmm_property::BmmProperty::BmmProperty(
+                            crate::v2::bmm::core::bmm_property::BmmProperty::BmmProperty(
                                 ::serde::Deserialize::deserialize(__rest)?,
                             ),
                         )
@@ -4919,7 +4867,7 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmSchemaCoreData {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_schema_core::BmmSchemaCoreData {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -5020,7 +4968,7 @@ impl ::serde::Serialize for crate::prelude::BmmSchemaCoreData {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSchemaCoreData {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm::core::bmm_schema_core::BmmSchemaCoreData {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -5105,7 +5053,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSchemaCoreData {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmSchemaCoreData;
+            type Value = crate::v2::bmm::core::bmm_schema_core::BmmSchemaCoreData;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_SCHEMA_CORE` object")
             }
@@ -5244,34 +5192,36 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSchemaCoreData {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmSchemaCoreData {
-                    rm_publisher: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("rm_publisher"))?,
-                    rm_release: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("rm_release"))?,
-                    schema_name: __s2
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("schema_name"))?,
-                    schema_revision: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("schema_revision"))?,
-                    schema_lifecycle_state: __s4.flatten().ok_or_else(|| {
-                        ::serde::de::Error::missing_field("schema_lifecycle_state")
-                    })?,
-                    schema_author: __s5
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("schema_author"))?,
-                    schema_description: __s6
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("schema_description"))?,
-                    schema_contributors: __s7,
-                    archetype_parent_class: __s8.flatten(),
-                    archetype_data_value_parent_class: __s9.flatten(),
-                    archetype_rm_closure_packages: __s10,
-                    archetype_visualise_descendants_of: __s11.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::bmm::core::bmm_schema_core::BmmSchemaCoreData {
+                        rm_publisher: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("rm_publisher"))?,
+                        rm_release: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("rm_release"))?,
+                        schema_name: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("schema_name"))?,
+                        schema_revision: __s3
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("schema_revision"))?,
+                        schema_lifecycle_state: __s4.flatten().ok_or_else(|| {
+                            ::serde::de::Error::missing_field("schema_lifecycle_state")
+                        })?,
+                        schema_author: __s5
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("schema_author"))?,
+                        schema_description: __s6.flatten().ok_or_else(|| {
+                            ::serde::de::Error::missing_field("schema_description")
+                        })?,
+                        schema_contributors: __s7,
+                        archetype_parent_class: __s8.flatten(),
+                        archetype_data_value_parent_class: __s9.flatten(),
+                        archetype_rm_closure_packages: __s10,
+                        archetype_visualise_descendants_of: __s11.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -5283,33 +5233,33 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSchemaCoreData {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmSchemaCore {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_schema_core::BmmSchemaCore {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmSchemaCore::BmmModel(__x) => {
+            crate::v2::bmm::core::bmm_schema_core::BmmSchemaCore::BmmModel(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmSchemaCore::PBmmSchema(__x) => {
+            crate::v2::bmm::core::bmm_schema_core::BmmSchemaCore::PBmmSchema(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmSchemaCore::BmmSchemaCore(__x) => {
+            crate::v2::bmm::core::bmm_schema_core::BmmSchemaCore::BmmSchemaCore(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSchemaCore {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm::core::bmm_schema_core::BmmSchemaCore {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["BMM_MODEL", "BMM_SCHEMA_CORE", "P_BMM_SCHEMA"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmSchemaCore;
+            type Value = crate::v2::bmm::core::bmm_schema_core::BmmSchemaCore;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_SCHEMA_CORE` object")
             }
@@ -5327,18 +5277,18 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSchemaCore {
                             __map,
                         );
                         match __t {
-                            "BMM_MODEL" => {
-                                ::core::result::Result::Ok(crate::prelude::BmmSchemaCore::BmmModel(
+                            "BMM_MODEL" => ::core::result::Result::Ok(
+                                crate::v2::bmm::core::bmm_schema_core::BmmSchemaCore::BmmModel(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
+                                ),
+                            ),
                             "BMM_SCHEMA_CORE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmSchemaCore::BmmSchemaCore(
+                                crate::v2::bmm::core::bmm_schema_core::BmmSchemaCore::BmmSchemaCore(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
                             "P_BMM_SCHEMA" => ::core::result::Result::Ok(
-                                crate::prelude::BmmSchemaCore::PBmmSchema(
+                                crate::v2::bmm::core::bmm_schema_core::BmmSchemaCore::PBmmSchema(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
@@ -5361,9 +5311,11 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSchemaCore {
                     None => {
                         let __rest =
                             ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);
-                        ::core::result::Result::Ok(crate::prelude::BmmSchemaCore::BmmSchemaCore(
-                            ::serde::Deserialize::deserialize(__rest)?,
-                        ))
+                        ::core::result::Result::Ok(
+                            crate::v2::bmm::core::bmm_schema_core::BmmSchemaCore::BmmSchemaCore(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            ),
+                        )
                     }
                 }
             }
@@ -5372,7 +5324,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSchemaCore {
     }
 }
 
-impl ::serde::Serialize for crate::bmm::core::bmm_simple_type::BmmSimpleType {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_simple_type::BmmSimpleType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -5391,7 +5343,7 @@ impl ::serde::Serialize for crate::bmm::core::bmm_simple_type::BmmSimpleType {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_simple_type::BmmSimpleType {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm::core::bmm_simple_type::BmmSimpleType {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -5437,7 +5389,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_simple_type::BmmSi
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::bmm::core::bmm_simple_type::BmmSimpleType;
+            type Value = crate::v2::bmm::core::bmm_simple_type::BmmSimpleType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_SIMPLE_TYPE` object")
             }
@@ -5480,7 +5432,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_simple_type::BmmSi
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::bmm::core::bmm_simple_type::BmmSimpleType {
+                ::core::result::Result::Ok(crate::v2::bmm::core::bmm_simple_type::BmmSimpleType {
                     documentation: __s0.flatten(),
                     base_class: __s1
                         .flatten()
@@ -5497,29 +5449,29 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_simple_type::BmmSi
     }
 }
 
-impl ::serde::Serialize for crate::bmm::core::bmm_type::BmmType {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_type::BmmType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::bmm::core::bmm_type::BmmType::BmmContainerType(__x) => {
+            crate::v2::bmm::core::bmm_type::BmmType::BmmContainerType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::bmm::core::bmm_type::BmmType::BmmGenericType(__x) => {
+            crate::v2::bmm::core::bmm_type::BmmType::BmmGenericType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::bmm::core::bmm_type::BmmType::BmmOpenType(__x) => {
+            crate::v2::bmm::core::bmm_type::BmmType::BmmOpenType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::bmm::core::bmm_type::BmmType::BmmSimpleType(__x) => {
+            crate::v2::bmm::core::bmm_type::BmmType::BmmSimpleType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_type::BmmType {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm::core::bmm_type::BmmType {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -5532,7 +5484,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_type::BmmType {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::bmm::core::bmm_type::BmmType;
+            type Value = crate::v2::bmm::core::bmm_type::BmmType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_TYPE` object")
             }
@@ -5551,27 +5503,27 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_type::BmmType {
                         );
                         match __t {
                             "BMM_CONTAINER_TYPE" => ::core::result::Result::Ok(
-                                crate::bmm::core::bmm_type::BmmType::BmmContainerType(
+                                crate::v2::bmm::core::bmm_type::BmmType::BmmContainerType(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
                             "BMM_GENERIC_TYPE" => ::core::result::Result::Ok(
-                                crate::bmm::core::bmm_type::BmmType::BmmGenericType(
+                                crate::v2::bmm::core::bmm_type::BmmType::BmmGenericType(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
                             "BMM_INDEXED_CONTAINER_TYPE" => ::core::result::Result::Ok(
-                                crate::bmm::core::bmm_type::BmmType::BmmContainerType(
+                                crate::v2::bmm::core::bmm_type::BmmType::BmmContainerType(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
                             "BMM_OPEN_TYPE" => ::core::result::Result::Ok(
-                                crate::bmm::core::bmm_type::BmmType::BmmOpenType(
+                                crate::v2::bmm::core::bmm_type::BmmType::BmmOpenType(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
                             "BMM_SIMPLE_TYPE" => ::core::result::Result::Ok(
-                                crate::bmm::core::bmm_type::BmmType::BmmSimpleType(
+                                crate::v2::bmm::core::bmm_type::BmmType::BmmSimpleType(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
@@ -5604,32 +5556,32 @@ impl<'de> ::serde::Deserialize<'de> for crate::bmm::core::bmm_type::BmmType {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmTypeElement {
+impl ::serde::Serialize for crate::v2::bmm::core::bmm_type_element::BmmTypeElement {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmTypeElement::BmmContainerType(__x) => {
+            crate::v2::bmm::core::bmm_type_element::BmmTypeElement::BmmContainerType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmTypeElement::BmmGenericParameter(__x) => {
+            crate::v2::bmm::core::bmm_type_element::BmmTypeElement::BmmGenericParameter(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmTypeElement::BmmGenericType(__x) => {
+            crate::v2::bmm::core::bmm_type_element::BmmTypeElement::BmmGenericType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmTypeElement::BmmOpenType(__x) => {
+            crate::v2::bmm::core::bmm_type_element::BmmTypeElement::BmmOpenType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmTypeElement::BmmSimpleType(__x) => {
+            crate::v2::bmm::core::bmm_type_element::BmmTypeElement::BmmSimpleType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmTypeElement {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm::core::bmm_type_element::BmmTypeElement {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -5643,7 +5595,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmTypeElement {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmTypeElement;
+            type Value = crate::v2::bmm::core::bmm_type_element::BmmTypeElement;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_TYPE_ELEMENT` object")
             }
@@ -5661,44 +5613,14 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmTypeElement {
                             __map,
                         );
                         match __t {
-                            "BMM_CONTAINER_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmTypeElement::BmmContainerType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_GENERIC_PARAMETER" => ::core::result::Result::Ok(
-                                crate::prelude::BmmTypeElement::BmmGenericParameter(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_GENERIC_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmTypeElement::BmmGenericType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_INDEXED_CONTAINER_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmTypeElement::BmmContainerType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_OPEN_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmTypeElement::BmmOpenType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_SIMPLE_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmTypeElement::BmmSimpleType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_TYPE_ELEMENT",
-                                    __other,
-                                    "BMM_CONTAINER_TYPE, BMM_GENERIC_PARAMETER, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_OPEN_TYPE, BMM_SIMPLE_TYPE",
-                                ),
-                            ),
-                        }
+"BMM_CONTAINER_TYPE" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_type_element::BmmTypeElement::BmmContainerType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_GENERIC_PARAMETER" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_type_element::BmmTypeElement::BmmGenericParameter(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_GENERIC_TYPE" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_type_element::BmmTypeElement::BmmGenericType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_INDEXED_CONTAINER_TYPE" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_type_element::BmmTypeElement::BmmContainerType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_OPEN_TYPE" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_type_element::BmmTypeElement::BmmOpenType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_SIMPLE_TYPE" => ::core::result::Result::Ok(crate::v2::bmm::core::bmm_type_element::BmmTypeElement::BmmSimpleType(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_TYPE_ELEMENT", __other, "BMM_CONTAINER_TYPE, BMM_GENERIC_PARAMETER, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_OPEN_TYPE, BMM_SIMPLE_TYPE")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -5720,38 +5642,38 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmTypeElement {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::Expression {
+impl ::serde::Serialize for crate::v2::beom::core::expression::Expression {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::Expression::ExprBinaryOperator(__x) => {
+            crate::v2::beom::core::expression::Expression::ExprBinaryOperator(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::Expression::ExprForAll(__x) => {
+            crate::v2::beom::core::expression::Expression::ExprForAll(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::Expression::ExprFunctionCall(__x) => {
+            crate::v2::beom::core::expression::Expression::ExprFunctionCall(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::Expression::ExprLiteral(__x) => {
+            crate::v2::beom::core::expression::Expression::ExprLiteral(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::Expression::ExprUnaryOperator(__x) => {
+            crate::v2::beom::core::expression::Expression::ExprUnaryOperator(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::Expression::ExprValueRef(__x) => {
+            crate::v2::beom::core::expression::Expression::ExprValueRef(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::Expression::ExprVariableRef(__x) => {
+            crate::v2::beom::core::expression::Expression::ExprVariableRef(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::Expression {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::beom::core::expression::Expression {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -5766,7 +5688,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Expression {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::Expression;
+            type Value = crate::v2::beom::core::expression::Expression;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EXPRESSION` object")
             }
@@ -5785,37 +5707,37 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Expression {
                         );
                         match __t {
                             "EXPR_BINARY_OPERATOR" => ::core::result::Result::Ok(
-                                crate::prelude::Expression::ExprBinaryOperator(
+                                crate::v2::beom::core::expression::Expression::ExprBinaryOperator(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
-                            "EXPR_FOR_ALL" => {
-                                ::core::result::Result::Ok(crate::prelude::Expression::ExprForAll(
+                            "EXPR_FOR_ALL" => ::core::result::Result::Ok(
+                                crate::v2::beom::core::expression::Expression::ExprForAll(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
+                                ),
+                            ),
                             "EXPR_FUNCTION_CALL" => ::core::result::Result::Ok(
-                                crate::prelude::Expression::ExprFunctionCall(
+                                crate::v2::beom::core::expression::Expression::ExprFunctionCall(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
-                            "EXPR_LITERAL" => {
-                                ::core::result::Result::Ok(crate::prelude::Expression::ExprLiteral(
+                            "EXPR_LITERAL" => ::core::result::Result::Ok(
+                                crate::v2::beom::core::expression::Expression::ExprLiteral(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
+                                ),
+                            ),
                             "EXPR_UNARY_OPERATOR" => ::core::result::Result::Ok(
-                                crate::prelude::Expression::ExprUnaryOperator(
+                                crate::v2::beom::core::expression::Expression::ExprUnaryOperator(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
                             "EXPR_VALUE_REF" => ::core::result::Result::Ok(
-                                crate::prelude::Expression::ExprValueRef(
+                                crate::v2::beom::core::expression::Expression::ExprValueRef(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
                             "EXPR_VARIABLE_REF" => ::core::result::Result::Ok(
-                                crate::prelude::Expression::ExprVariableRef(
+                                crate::v2::beom::core::expression::Expression::ExprVariableRef(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
@@ -5848,7 +5770,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Expression {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ExprBinaryOperator {
+impl ::serde::Serialize for crate::v2::beom::core::expr_binary_operator::ExprBinaryOperator {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -5888,7 +5810,9 @@ impl ::serde::Serialize for crate::prelude::ExprBinaryOperator {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprBinaryOperator {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::beom::core::expr_binary_operator::ExprBinaryOperator
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -5946,7 +5870,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprBinaryOperator {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ExprBinaryOperator;
+            type Value = crate::v2::beom::core::expr_binary_operator::ExprBinaryOperator;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EXPR_BINARY_OPERATOR` object")
             }
@@ -6016,19 +5940,21 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprBinaryOperator {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ExprBinaryOperator {
-                    precedence_overridden: __s0.flatten(),
-                    operator: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("operator"))?,
-                    symbol: __s2.flatten(),
-                    left_operand: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("left_operand"))?,
-                    right_operand: __s4
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("right_operand"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::beom::core::expr_binary_operator::ExprBinaryOperator {
+                        precedence_overridden: __s0.flatten(),
+                        operator: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("operator"))?,
+                        symbol: __s2.flatten(),
+                        left_operand: __s3
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("left_operand"))?,
+                        right_operand: __s4
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("right_operand"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -6040,7 +5966,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprBinaryOperator {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ExprForAll {
+impl ::serde::Serialize for crate::v2::beom::core::expr_for_all::ExprForAll {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -6071,7 +5997,7 @@ impl ::serde::Serialize for crate::prelude::ExprForAll {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprForAll {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::beom::core::expr_for_all::ExprForAll {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -6129,7 +6055,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprForAll {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ExprForAll;
+            type Value = crate::v2::beom::core::expr_for_all::ExprForAll;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EXPR_FOR_ALL` object")
             }
@@ -6199,7 +6125,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprForAll {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ExprForAll {
+                ::core::result::Result::Ok(crate::v2::beom::core::expr_for_all::ExprForAll {
                     precedence_overridden: __s0.flatten(),
                     operator: __s1
                         .flatten()
@@ -6223,7 +6149,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprForAll {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ExprFunctionCall {
+impl ::serde::Serialize for crate::v2::beom::core::expr_function_call::ExprFunctionCall {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -6250,7 +6176,9 @@ impl ::serde::Serialize for crate::prelude::ExprFunctionCall {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprFunctionCall {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::beom::core::expr_function_call::ExprFunctionCall
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -6296,7 +6224,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprFunctionCall {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ExprFunctionCall;
+            type Value = crate::v2::beom::core::expr_function_call::ExprFunctionCall;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EXPR_FUNCTION_CALL` object")
             }
@@ -6339,10 +6267,12 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprFunctionCall {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ExprFunctionCall {
-                    item: __s0.flatten(),
-                    arguments: __s1,
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::beom::core::expr_function_call::ExprFunctionCall {
+                        item: __s0.flatten(),
+                        arguments: __s1,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -6354,29 +6284,29 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprFunctionCall {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ExprLeaf {
+impl ::serde::Serialize for crate::v2::beom::core::expr_leaf::ExprLeaf {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::ExprLeaf::ExprFunctionCall(__x) => {
+            crate::v2::beom::core::expr_leaf::ExprLeaf::ExprFunctionCall(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ExprLeaf::ExprLiteral(__x) => {
+            crate::v2::beom::core::expr_leaf::ExprLeaf::ExprLiteral(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ExprLeaf::ExprValueRef(__x) => {
+            crate::v2::beom::core::expr_leaf::ExprLeaf::ExprValueRef(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ExprLeaf::ExprVariableRef(__x) => {
+            crate::v2::beom::core::expr_leaf::ExprLeaf::ExprVariableRef(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprLeaf {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::beom::core::expr_leaf::ExprLeaf {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -6388,7 +6318,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprLeaf {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ExprLeaf;
+            type Value = crate::v2::beom::core::expr_leaf::ExprLeaf;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EXPR_LEAF` object")
             }
@@ -6407,22 +6337,22 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprLeaf {
                         );
                         match __t {
                             "EXPR_FUNCTION_CALL" => ::core::result::Result::Ok(
-                                crate::prelude::ExprLeaf::ExprFunctionCall(
+                                crate::v2::beom::core::expr_leaf::ExprLeaf::ExprFunctionCall(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
-                            "EXPR_LITERAL" => {
-                                ::core::result::Result::Ok(crate::prelude::ExprLeaf::ExprLiteral(
+                            "EXPR_LITERAL" => ::core::result::Result::Ok(
+                                crate::v2::beom::core::expr_leaf::ExprLeaf::ExprLiteral(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "EXPR_VALUE_REF" => {
-                                ::core::result::Result::Ok(crate::prelude::ExprLeaf::ExprValueRef(
+                                ),
+                            ),
+                            "EXPR_VALUE_REF" => ::core::result::Result::Ok(
+                                crate::v2::beom::core::expr_leaf::ExprLeaf::ExprValueRef(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
+                                ),
+                            ),
                             "EXPR_VARIABLE_REF" => ::core::result::Result::Ok(
-                                crate::prelude::ExprLeaf::ExprVariableRef(
+                                crate::v2::beom::core::expr_leaf::ExprLeaf::ExprVariableRef(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
@@ -6455,7 +6385,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprLeaf {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ExprLiteral {
+impl ::serde::Serialize for crate::v2::beom::core::expr_literal::ExprLiteral {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -6468,7 +6398,7 @@ impl ::serde::Serialize for crate::prelude::ExprLiteral {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprLiteral {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::beom::core::expr_literal::ExprLiteral {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -6512,7 +6442,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprLiteral {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ExprLiteral;
+            type Value = crate::v2::beom::core::expr_literal::ExprLiteral;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EXPR_LITERAL` object")
             }
@@ -6546,7 +6476,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprLiteral {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ExprLiteral {
+                ::core::result::Result::Ok(crate::v2::beom::core::expr_literal::ExprLiteral {
                     item: __s0
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("item"))?,
@@ -6562,26 +6492,26 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprLiteral {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ExprOperator {
+impl ::serde::Serialize for crate::v2::beom::core::expr_operator::ExprOperator {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::ExprOperator::ExprBinaryOperator(__x) => {
+            crate::v2::beom::core::expr_operator::ExprOperator::ExprBinaryOperator(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ExprOperator::ExprForAll(__x) => {
+            crate::v2::beom::core::expr_operator::ExprOperator::ExprForAll(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ExprOperator::ExprUnaryOperator(__x) => {
+            crate::v2::beom::core::expr_operator::ExprOperator::ExprUnaryOperator(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprOperator {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::beom::core::expr_operator::ExprOperator {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -6592,7 +6522,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprOperator {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ExprOperator;
+            type Value = crate::v2::beom::core::expr_operator::ExprOperator;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EXPR_OPERATOR` object")
             }
@@ -6610,29 +6540,11 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprOperator {
                             __map,
                         );
                         match __t {
-                            "EXPR_BINARY_OPERATOR" => ::core::result::Result::Ok(
-                                crate::prelude::ExprOperator::ExprBinaryOperator(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EXPR_FOR_ALL" => ::core::result::Result::Ok(
-                                crate::prelude::ExprOperator::ExprForAll(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EXPR_UNARY_OPERATOR" => ::core::result::Result::Ok(
-                                crate::prelude::ExprOperator::ExprUnaryOperator(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "EXPR_OPERATOR",
-                                    __other,
-                                    "EXPR_BINARY_OPERATOR, EXPR_FOR_ALL, EXPR_UNARY_OPERATOR",
-                                ),
-                            ),
-                        }
+"EXPR_BINARY_OPERATOR" => ::core::result::Result::Ok(crate::v2::beom::core::expr_operator::ExprOperator::ExprBinaryOperator(::serde::Deserialize::deserialize(__rest)?)),
+"EXPR_FOR_ALL" => ::core::result::Result::Ok(crate::v2::beom::core::expr_operator::ExprOperator::ExprForAll(::serde::Deserialize::deserialize(__rest)?)),
+"EXPR_UNARY_OPERATOR" => ::core::result::Result::Ok(crate::v2::beom::core::expr_operator::ExprOperator::ExprUnaryOperator(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("EXPR_OPERATOR", __other, "EXPR_BINARY_OPERATOR, EXPR_FOR_ALL, EXPR_UNARY_OPERATOR")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -6654,50 +6566,50 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprOperator {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ExprTypeDef {
+impl ::serde::Serialize for crate::v2::beom::types::expr_type_def::ExprTypeDef {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::ExprTypeDef::TypeDefBoolean(__x) => {
+            crate::v2::beom::types::expr_type_def::ExprTypeDef::TypeDefBoolean(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ExprTypeDef::TypeDefDate(__x) => {
+            crate::v2::beom::types::expr_type_def::ExprTypeDef::TypeDefDate(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ExprTypeDef::TypeDefDateTime(__x) => {
+            crate::v2::beom::types::expr_type_def::ExprTypeDef::TypeDefDateTime(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ExprTypeDef::TypeDefDuration(__x) => {
+            crate::v2::beom::types::expr_type_def::ExprTypeDef::TypeDefDuration(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ExprTypeDef::TypeDefInteger(__x) => {
+            crate::v2::beom::types::expr_type_def::ExprTypeDef::TypeDefInteger(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ExprTypeDef::TypeDefObjectRef(__x) => {
+            crate::v2::beom::types::expr_type_def::ExprTypeDef::TypeDefObjectRef(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ExprTypeDef::TypeDefReal(__x) => {
+            crate::v2::beom::types::expr_type_def::ExprTypeDef::TypeDefReal(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ExprTypeDef::TypeDefString(__x) => {
+            crate::v2::beom::types::expr_type_def::ExprTypeDef::TypeDefString(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ExprTypeDef::TypeDefTerminologyCode(__x) => {
+            crate::v2::beom::types::expr_type_def::ExprTypeDef::TypeDefTerminologyCode(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ExprTypeDef::TypeDefTime(__x) => {
+            crate::v2::beom::types::expr_type_def::ExprTypeDef::TypeDefTime(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ExprTypeDef::TypeDefUri(__x) => {
+            crate::v2::beom::types::expr_type_def::ExprTypeDef::TypeDefUri(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprTypeDef {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::beom::types::expr_type_def::ExprTypeDef {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -6716,7 +6628,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprTypeDef {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ExprTypeDef;
+            type Value = crate::v2::beom::types::expr_type_def::ExprTypeDef;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EXPR_TYPE_DEF` object")
             }
@@ -6734,69 +6646,19 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprTypeDef {
                             __map,
                         );
                         match __t {
-                            "TYPE_DEF_BOOLEAN" => ::core::result::Result::Ok(
-                                crate::prelude::ExprTypeDef::TypeDefBoolean(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "TYPE_DEF_DATE" => ::core::result::Result::Ok(
-                                crate::prelude::ExprTypeDef::TypeDefDate(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "TYPE_DEF_DATE_TIME" => ::core::result::Result::Ok(
-                                crate::prelude::ExprTypeDef::TypeDefDateTime(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "TYPE_DEF_DURATION" => ::core::result::Result::Ok(
-                                crate::prelude::ExprTypeDef::TypeDefDuration(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "TYPE_DEF_INTEGER" => ::core::result::Result::Ok(
-                                crate::prelude::ExprTypeDef::TypeDefInteger(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "TYPE_DEF_OBJECT_REF" => ::core::result::Result::Ok(
-                                crate::prelude::ExprTypeDef::TypeDefObjectRef(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "TYPE_DEF_REAL" => ::core::result::Result::Ok(
-                                crate::prelude::ExprTypeDef::TypeDefReal(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "TYPE_DEF_STRING" => ::core::result::Result::Ok(
-                                crate::prelude::ExprTypeDef::TypeDefString(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "TYPE_DEF_TERMINOLOGY_CODE" => ::core::result::Result::Ok(
-                                crate::prelude::ExprTypeDef::TypeDefTerminologyCode(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "TYPE_DEF_TIME" => ::core::result::Result::Ok(
-                                crate::prelude::ExprTypeDef::TypeDefTime(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "TYPE_DEF_URI" => {
-                                ::core::result::Result::Ok(crate::prelude::ExprTypeDef::TypeDefUri(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "EXPR_TYPE_DEF",
-                                    __other,
-                                    "TYPE_DEF_BOOLEAN, TYPE_DEF_DATE, TYPE_DEF_DATE_TIME, TYPE_DEF_DURATION, TYPE_DEF_INTEGER, TYPE_DEF_OBJECT_REF, TYPE_DEF_REAL, TYPE_DEF_STRING, TYPE_DEF_TERMINOLOGY_CODE, TYPE_DEF_TIME, TYPE_DEF_URI",
-                                ),
-                            ),
-                        }
+"TYPE_DEF_BOOLEAN" => ::core::result::Result::Ok(crate::v2::beom::types::expr_type_def::ExprTypeDef::TypeDefBoolean(::serde::Deserialize::deserialize(__rest)?)),
+"TYPE_DEF_DATE" => ::core::result::Result::Ok(crate::v2::beom::types::expr_type_def::ExprTypeDef::TypeDefDate(::serde::Deserialize::deserialize(__rest)?)),
+"TYPE_DEF_DATE_TIME" => ::core::result::Result::Ok(crate::v2::beom::types::expr_type_def::ExprTypeDef::TypeDefDateTime(::serde::Deserialize::deserialize(__rest)?)),
+"TYPE_DEF_DURATION" => ::core::result::Result::Ok(crate::v2::beom::types::expr_type_def::ExprTypeDef::TypeDefDuration(::serde::Deserialize::deserialize(__rest)?)),
+"TYPE_DEF_INTEGER" => ::core::result::Result::Ok(crate::v2::beom::types::expr_type_def::ExprTypeDef::TypeDefInteger(::serde::Deserialize::deserialize(__rest)?)),
+"TYPE_DEF_OBJECT_REF" => ::core::result::Result::Ok(crate::v2::beom::types::expr_type_def::ExprTypeDef::TypeDefObjectRef(::serde::Deserialize::deserialize(__rest)?)),
+"TYPE_DEF_REAL" => ::core::result::Result::Ok(crate::v2::beom::types::expr_type_def::ExprTypeDef::TypeDefReal(::serde::Deserialize::deserialize(__rest)?)),
+"TYPE_DEF_STRING" => ::core::result::Result::Ok(crate::v2::beom::types::expr_type_def::ExprTypeDef::TypeDefString(::serde::Deserialize::deserialize(__rest)?)),
+"TYPE_DEF_TERMINOLOGY_CODE" => ::core::result::Result::Ok(crate::v2::beom::types::expr_type_def::ExprTypeDef::TypeDefTerminologyCode(::serde::Deserialize::deserialize(__rest)?)),
+"TYPE_DEF_TIME" => ::core::result::Result::Ok(crate::v2::beom::types::expr_type_def::ExprTypeDef::TypeDefTime(::serde::Deserialize::deserialize(__rest)?)),
+"TYPE_DEF_URI" => ::core::result::Result::Ok(crate::v2::beom::types::expr_type_def::ExprTypeDef::TypeDefUri(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("EXPR_TYPE_DEF", __other, "TYPE_DEF_BOOLEAN, TYPE_DEF_DATE, TYPE_DEF_DATE_TIME, TYPE_DEF_DURATION, TYPE_DEF_INTEGER, TYPE_DEF_OBJECT_REF, TYPE_DEF_REAL, TYPE_DEF_STRING, TYPE_DEF_TERMINOLOGY_CODE, TYPE_DEF_TIME, TYPE_DEF_URI")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -6818,7 +6680,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprTypeDef {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ExprUnaryOperator {
+impl ::serde::Serialize for crate::v2::beom::core::expr_unary_operator::ExprUnaryOperator {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -6849,7 +6711,9 @@ impl ::serde::Serialize for crate::prelude::ExprUnaryOperator {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprUnaryOperator {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::beom::core::expr_unary_operator::ExprUnaryOperator
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -6899,7 +6763,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprUnaryOperator {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ExprUnaryOperator;
+            type Value = crate::v2::beom::core::expr_unary_operator::ExprUnaryOperator;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EXPR_UNARY_OPERATOR` object")
             }
@@ -6960,16 +6824,18 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprUnaryOperator {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ExprUnaryOperator {
-                    precedence_overridden: __s0.flatten(),
-                    operator: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("operator"))?,
-                    symbol: __s2.flatten(),
-                    operand: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("operand"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::beom::core::expr_unary_operator::ExprUnaryOperator {
+                        precedence_overridden: __s0.flatten(),
+                        operator: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("operator"))?,
+                        symbol: __s2.flatten(),
+                        operand: __s3
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("operand"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -6981,41 +6847,41 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprUnaryOperator {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ExprValue {
+impl ::serde::Serialize for crate::v2::beom::core::expr_value::ExprValue {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::ExprValue::ExprBinaryOperator(__x) => {
+            crate::v2::beom::core::expr_value::ExprValue::ExprBinaryOperator(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ExprValue::ExprForAll(__x) => {
+            crate::v2::beom::core::expr_value::ExprValue::ExprForAll(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ExprValue::ExprFunctionCall(__x) => {
+            crate::v2::beom::core::expr_value::ExprValue::ExprFunctionCall(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ExprValue::ExprLiteral(__x) => {
+            crate::v2::beom::core::expr_value::ExprValue::ExprLiteral(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ExprValue::ExprUnaryOperator(__x) => {
+            crate::v2::beom::core::expr_value::ExprValue::ExprUnaryOperator(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ExprValue::ExprValueRef(__x) => {
+            crate::v2::beom::core::expr_value::ExprValue::ExprValueRef(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ExprValue::ExprVariableRef(__x) => {
+            crate::v2::beom::core::expr_value::ExprValue::ExprVariableRef(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ExprValue::ExternalQuery(__x) => {
+            crate::v2::beom::core::expr_value::ExprValue::ExternalQuery(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprValue {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::beom::core::expr_value::ExprValue {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -7031,7 +6897,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprValue {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ExprValue;
+            type Value = crate::v2::beom::core::expr_value::ExprValue;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EXPR_VALUE` object")
             }
@@ -7050,42 +6916,42 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprValue {
                         );
                         match __t {
                             "EXPR_BINARY_OPERATOR" => ::core::result::Result::Ok(
-                                crate::prelude::ExprValue::ExprBinaryOperator(
+                                crate::v2::beom::core::expr_value::ExprValue::ExprBinaryOperator(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
-                            "EXPR_FOR_ALL" => {
-                                ::core::result::Result::Ok(crate::prelude::ExprValue::ExprForAll(
+                            "EXPR_FOR_ALL" => ::core::result::Result::Ok(
+                                crate::v2::beom::core::expr_value::ExprValue::ExprForAll(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
+                                ),
+                            ),
                             "EXPR_FUNCTION_CALL" => ::core::result::Result::Ok(
-                                crate::prelude::ExprValue::ExprFunctionCall(
+                                crate::v2::beom::core::expr_value::ExprValue::ExprFunctionCall(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
-                            "EXPR_LITERAL" => {
-                                ::core::result::Result::Ok(crate::prelude::ExprValue::ExprLiteral(
+                            "EXPR_LITERAL" => ::core::result::Result::Ok(
+                                crate::v2::beom::core::expr_value::ExprValue::ExprLiteral(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
+                                ),
+                            ),
                             "EXPR_UNARY_OPERATOR" => ::core::result::Result::Ok(
-                                crate::prelude::ExprValue::ExprUnaryOperator(
+                                crate::v2::beom::core::expr_value::ExprValue::ExprUnaryOperator(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
-                            "EXPR_VALUE_REF" => {
-                                ::core::result::Result::Ok(crate::prelude::ExprValue::ExprValueRef(
+                            "EXPR_VALUE_REF" => ::core::result::Result::Ok(
+                                crate::v2::beom::core::expr_value::ExprValue::ExprValueRef(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
+                                ),
+                            ),
                             "EXPR_VARIABLE_REF" => ::core::result::Result::Ok(
-                                crate::prelude::ExprValue::ExprVariableRef(
+                                crate::v2::beom::core::expr_value::ExprValue::ExprVariableRef(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
                             "EXTERNAL_QUERY" => ::core::result::Result::Ok(
-                                crate::prelude::ExprValue::ExternalQuery(
+                                crate::v2::beom::core::expr_value::ExprValue::ExternalQuery(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
@@ -7118,7 +6984,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprValue {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ExprValueRef {
+impl ::serde::Serialize for crate::v2::beom::core::expr_value_ref::ExprValueRef {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -7136,7 +7002,7 @@ impl ::serde::Serialize for crate::prelude::ExprValueRef {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprValueRef {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::beom::core::expr_value_ref::ExprValueRef {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -7180,7 +7046,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprValueRef {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ExprValueRef;
+            type Value = crate::v2::beom::core::expr_value_ref::ExprValueRef;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EXPR_VALUE_REF` object")
             }
@@ -7214,7 +7080,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprValueRef {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ExprValueRef {
+                ::core::result::Result::Ok(crate::v2::beom::core::expr_value_ref::ExprValueRef {
                     item: __s0.flatten(),
                 })
             }
@@ -7228,7 +7094,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprValueRef {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ExprVariableRef {
+impl ::serde::Serialize for crate::v2::beom::core::expr_variable_ref::ExprVariableRef {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -7242,7 +7108,7 @@ impl ::serde::Serialize for crate::prelude::ExprVariableRef {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprVariableRef {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::beom::core::expr_variable_ref::ExprVariableRef {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -7286,7 +7152,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprVariableRef {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ExprVariableRef;
+            type Value = crate::v2::beom::core::expr_variable_ref::ExprVariableRef;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EXPR_VARIABLE_REF` object")
             }
@@ -7320,11 +7186,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprVariableRef {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ExprVariableRef {
-                    item: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("item"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::beom::core::expr_variable_ref::ExprVariableRef {
+                        item: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("item"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -7336,7 +7204,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExprVariableRef {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ExternalQuery {
+impl ::serde::Serialize for crate::v2::beom::core::external_query::ExternalQuery {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -7358,7 +7226,7 @@ impl ::serde::Serialize for crate::prelude::ExternalQuery {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExternalQuery {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::beom::core::external_query::ExternalQuery {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -7406,7 +7274,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExternalQuery {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ExternalQuery;
+            type Value = crate::v2::beom::core::external_query::ExternalQuery;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EXTERNAL_QUERY` object")
             }
@@ -7458,7 +7326,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExternalQuery {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ExternalQuery {
+                ::core::result::Result::Ok(crate::v2::beom::core::external_query::ExternalQuery {
                     context: __s0
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("context"))?,
@@ -7478,7 +7346,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ExternalQuery {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::OperatorKind {
+impl ::serde::Serialize for crate::v2::beom::core::operator_kind::OperatorKind {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -7487,13 +7355,13 @@ impl ::serde::Serialize for crate::prelude::OperatorKind {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::OperatorKind {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::beom::core::operator_kind::OperatorKind {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         struct __V;
         impl<'de> ::serde::de::Visitor<'de> for __V {
-            type Value = crate::prelude::OperatorKind;
+            type Value = crate::v2::beom::core::operator_kind::OperatorKind;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("a `OperatorKind` token")
             }
@@ -7501,40 +7369,42 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::OperatorKind {
                 self,
                 __v: &str,
             ) -> ::core::result::Result<Self::Value, __E> {
-                ::core::result::Result::Ok(crate::prelude::OperatorKind::from_wire(__v))
+                ::core::result::Result::Ok(
+                    crate::v2::beom::core::operator_kind::OperatorKind::from_wire(__v),
+                )
             }
         }
         ::serde::Deserializer::deserialize_str(__deserializer, __V)
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmBaseType {
+impl ::serde::Serialize for crate::v2::bmm_persistence::p_bmm_base_type::PBmmBaseType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::PBmmBaseType::PBmmGenericType(__x) => {
+            crate::v2::bmm_persistence::p_bmm_base_type::PBmmBaseType::PBmmGenericType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::PBmmBaseType::PBmmOpenType(__x) => {
+            crate::v2::bmm_persistence::p_bmm_base_type::PBmmBaseType::PBmmOpenType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::PBmmBaseType::PBmmSimpleType(__x) => {
+            crate::v2::bmm_persistence::p_bmm_base_type::PBmmBaseType::PBmmSimpleType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmBaseType {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm_persistence::p_bmm_base_type::PBmmBaseType {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["P_BMM_GENERIC_TYPE", "P_BMM_OPEN_TYPE", "P_BMM_SIMPLE_TYPE"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmBaseType;
+            type Value = crate::v2::bmm_persistence::p_bmm_base_type::PBmmBaseType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_BASE_TYPE` object")
             }
@@ -7552,29 +7422,11 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmBaseType {
                             __map,
                         );
                         match __t {
-                            "P_BMM_GENERIC_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmBaseType::PBmmGenericType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_OPEN_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmBaseType::PBmmOpenType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_SIMPLE_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmBaseType::PBmmSimpleType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "P_BMM_BASE_TYPE",
-                                    __other,
-                                    "P_BMM_GENERIC_TYPE, P_BMM_OPEN_TYPE, P_BMM_SIMPLE_TYPE",
-                                ),
-                            ),
-                        }
+"P_BMM_GENERIC_TYPE" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_base_type::PBmmBaseType::PBmmGenericType(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_OPEN_TYPE" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_base_type::PBmmBaseType::PBmmOpenType(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_SIMPLE_TYPE" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_base_type::PBmmBaseType::PBmmSimpleType(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("P_BMM_BASE_TYPE", __other, "P_BMM_GENERIC_TYPE, P_BMM_OPEN_TYPE, P_BMM_SIMPLE_TYPE")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -7596,7 +7448,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmBaseType {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmClassData {
+impl ::serde::Serialize for crate::v2::bmm_persistence::p_bmm_class::PBmmClassData {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -7693,7 +7545,7 @@ impl ::serde::Serialize for crate::prelude::PBmmClassData {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmClassData {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm_persistence::p_bmm_class::PBmmClassData {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -7778,7 +7630,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmClassData {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmClassData;
+            type Value = crate::v2::bmm_persistence::p_bmm_class::PBmmClassData;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_CLASS` object")
             }
@@ -7929,7 +7781,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmClassData {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PBmmClassData {
+                ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_class::PBmmClassData {
                     documentation: __s0.flatten(),
                     name: __s1
                         .flatten()
@@ -7962,26 +7814,26 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmClassData {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmClass {
+impl ::serde::Serialize for crate::v2::bmm_persistence::p_bmm_class::PBmmClass {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::PBmmClass::PBmmEnumeration(__x) => {
+            crate::v2::bmm_persistence::p_bmm_class::PBmmClass::PBmmEnumeration(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::PBmmClass::PBmmInterface(__x) => {
+            crate::v2::bmm_persistence::p_bmm_class::PBmmClass::PBmmInterface(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::PBmmClass::PBmmClass(__x) => {
+            crate::v2::bmm_persistence::p_bmm_class::PBmmClass::PBmmClass(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmClass {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm_persistence::p_bmm_class::PBmmClass {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -7994,7 +7846,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmClass {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmClass;
+            type Value = crate::v2::bmm_persistence::p_bmm_class::PBmmClass;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_CLASS` object")
             }
@@ -8012,28 +7864,28 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmClass {
                             __map,
                         );
                         match __t {
-                            "P_BMM_CLASS" => {
-                                ::core::result::Result::Ok(crate::prelude::PBmmClass::PBmmClass(
+                            "P_BMM_CLASS" => ::core::result::Result::Ok(
+                                crate::v2::bmm_persistence::p_bmm_class::PBmmClass::PBmmClass(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
+                                ),
+                            ),
                             "P_BMM_ENUMERATION" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmClass::PBmmEnumeration(
+                                crate::v2::bmm_persistence::p_bmm_class::PBmmClass::PBmmEnumeration(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
                             "P_BMM_ENUMERATION_INTEGER" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmClass::PBmmEnumeration(
+                                crate::v2::bmm_persistence::p_bmm_class::PBmmClass::PBmmEnumeration(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
                             "P_BMM_ENUMERATION_STRING" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmClass::PBmmEnumeration(
+                                crate::v2::bmm_persistence::p_bmm_class::PBmmClass::PBmmEnumeration(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
                             "P_BMM_INTERFACE" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmClass::PBmmInterface(
+                                crate::v2::bmm_persistence::p_bmm_class::PBmmClass::PBmmInterface(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
@@ -8056,9 +7908,11 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmClass {
                     None => {
                         let __rest =
                             ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);
-                        ::core::result::Result::Ok(crate::prelude::PBmmClass::PBmmClass(
-                            ::serde::Deserialize::deserialize(__rest)?,
-                        ))
+                        ::core::result::Result::Ok(
+                            crate::v2::bmm_persistence::p_bmm_class::PBmmClass::PBmmClass(
+                                ::serde::Deserialize::deserialize(__rest)?,
+                            ),
+                        )
                     }
                 }
             }
@@ -8067,7 +7921,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmClass {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmConstant {
+impl ::serde::Serialize for crate::v2::bmm_persistence::p_bmm_constant::PBmmConstant {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -8093,7 +7947,7 @@ impl ::serde::Serialize for crate::prelude::PBmmConstant {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmConstant {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm_persistence::p_bmm_constant::PBmmConstant {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -8143,7 +7997,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmConstant {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmConstant;
+            type Value = crate::v2::bmm_persistence::p_bmm_constant::PBmmConstant;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_CONSTANT` object")
             }
@@ -8204,16 +8058,18 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmConstant {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PBmmConstant {
-                    documentation: __s0.flatten(),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    r#type: __s2
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                    value: __s3.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::bmm_persistence::p_bmm_constant::PBmmConstant {
+                        documentation: __s0.flatten(),
+                        name: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        r#type: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+                        value: __s3.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -8225,199 +8081,108 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmConstant {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmContainerFunctionParameter {
-    fn serialize<__S: ::serde::Serializer>(
-        &self,
-        __serializer: __S,
-    ) -> ::core::result::Result<__S::Ok, __S::Error> {
-        let mut __n = 3usize;
-        if self.documentation.is_some() {
-            __n += 1;
-        }
-        if self.is_nullable.is_some() {
-            __n += 1;
-        }
-        if self.cardinality.is_some() {
-            __n += 1;
-        }
-        let mut __st = ::serde::Serializer::serialize_struct(
-            __serializer,
-            "P_BMM_CONTAINER_FUNCTION_PARAMETER",
-            __n,
-        )?;
-        ::serde::ser::SerializeStruct::serialize_field(
-            &mut __st,
-            "_type",
-            "P_BMM_CONTAINER_FUNCTION_PARAMETER",
-        )?;
-        if let Some(__v) = &self.documentation {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "documentation", __v)?;
-        }
-        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "name", &self.name)?;
-        if let Some(__v) = &self.is_nullable {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "is_nullable", __v)?;
-        }
-        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "type_def", &self.type_def)?;
-        if let Some(__v) = &self.cardinality {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "cardinality", __v)?;
-        }
-        ::serde::ser::SerializeStruct::end(__st)
-    }
+impl ::serde::Serialize for crate::v2::bmm_persistence::p_bmm_container_function_parameter::PBmmContainerFunctionParameter {
+fn serialize<__S: ::serde::Serializer>(&self, __serializer: __S) -> ::core::result::Result<__S::Ok, __S::Error> {
+let mut __n = 3usize;
+if self.documentation.is_some() { __n += 1; }
+if self.is_nullable.is_some() { __n += 1; }
+if self.cardinality.is_some() { __n += 1; }
+let mut __st = ::serde::Serializer::serialize_struct(__serializer, "P_BMM_CONTAINER_FUNCTION_PARAMETER", __n)?;
+::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "P_BMM_CONTAINER_FUNCTION_PARAMETER")?;
+if let Some(__v) = &self.documentation { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "documentation", __v)?; }
+::serde::ser::SerializeStruct::serialize_field(&mut __st, "name", &self.name)?;
+if let Some(__v) = &self.is_nullable { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "is_nullable", __v)?; }
+::serde::ser::SerializeStruct::serialize_field(&mut __st, "type_def", &self.type_def)?;
+if let Some(__v) = &self.cardinality { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "cardinality", __v)?; }
+::serde::ser::SerializeStruct::end(__st)
+}
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmContainerFunctionParameter {
-    fn deserialize<__D: ::serde::Deserializer<'de>>(
-        __deserializer: __D,
-    ) -> ::core::result::Result<Self, __D::Error> {
-        const __FIELDS: &[&str] = &[
-            "cardinality",
-            "documentation",
-            "is_nullable",
-            "name",
-            "type_def",
-        ];
-        enum __Field {
-            __Type,
-            __F0,
-            __F1,
-            __F2,
-            __F3,
-            __F4,
-        }
-        impl<'de> ::serde::Deserialize<'de> for __Field {
-            fn deserialize<__D: ::serde::Deserializer<'de>>(
-                __deserializer: __D,
-            ) -> ::core::result::Result<Self, __D::Error> {
-                struct __KeyVisitor;
-                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
-                    type Value = __Field;
-                    fn expecting(
-                        &self,
-                        __f: &mut ::core::fmt::Formatter<'_>,
-                    ) -> ::core::fmt::Result {
-                        __f.write_str("an object member name")
-                    }
-                    fn visit_str<__E: ::serde::de::Error>(
-                        self,
-                        __v: &str,
-                    ) -> ::core::result::Result<__Field, __E> {
-                        match __v {
-                            "_type" => ::core::result::Result::Ok(__Field::__Type),
-                            "documentation" => ::core::result::Result::Ok(__Field::__F0),
-                            "name" => ::core::result::Result::Ok(__Field::__F1),
-                            "is_nullable" => ::core::result::Result::Ok(__Field::__F2),
-                            "type_def" => ::core::result::Result::Ok(__Field::__F3),
-                            "cardinality" => ::core::result::Result::Ok(__Field::__F4),
-                            _ => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unknown_field(
-                                    __v,
-                                    "P_BMM_CONTAINER_FUNCTION_PARAMETER",
-                                    __FIELDS,
-                                ),
-                            ),
-                        }
-                    }
-                }
-                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
-            }
-        }
-        struct __Visitor;
-        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmContainerFunctionParameter;
-            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-                __f.write_str("an openEHR `P_BMM_CONTAINER_FUNCTION_PARAMETER` object")
-            }
-            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
-                self,
-                mut __map: __A,
-            ) -> ::core::result::Result<Self::Value, __A::Error> {
-                let mut __seen_type = false;
-                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s1: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s2: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s3: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s4: ::core::option::Option<::core::option::Option<_>> = None;
-                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
-                    match __key {
-                        __Field::__Type => {
-                            if __seen_type {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("_type"),
-                                );
-                            }
-                            __seen_type = true;
-                            ::serde::de::MapAccess::next_value_seed(
-                                &mut __map,
-                                ::openehr_base::serde_support::ExpectedType(
-                                    "P_BMM_CONTAINER_FUNCTION_PARAMETER",
-                                ),
-                            )?;
-                        }
-                        __Field::__F0 => {
-                            if __s0.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("documentation"),
-                                );
-                            }
-                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F1 => {
-                            if __s1.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("name"),
-                                );
-                            }
-                            __s1 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F2 => {
-                            if __s2.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("is_nullable"),
-                                );
-                            }
-                            __s2 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F3 => {
-                            if __s3.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("type_def"),
-                                );
-                            }
-                            __s3 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F4 => {
-                            if __s4.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("cardinality"),
-                                );
-                            }
-                            __s4 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                    }
-                }
-                ::core::result::Result::Ok(crate::prelude::PBmmContainerFunctionParameter {
-                    documentation: __s0.flatten(),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    is_nullable: __s2.flatten(),
-                    type_def: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type_def"))?,
-                    cardinality: __s4.flatten(),
-                })
-            }
-        }
-        ::serde::Deserializer::deserialize_struct(
-            __deserializer,
-            "P_BMM_CONTAINER_FUNCTION_PARAMETER",
-            __FIELDS,
-            __Visitor,
-        )
-    }
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm_persistence::p_bmm_container_function_parameter::PBmmContainerFunctionParameter {
+fn deserialize<__D: ::serde::Deserializer<'de>>(__deserializer: __D) -> ::core::result::Result<Self, __D::Error> {
+const __FIELDS: &[&str] = &["cardinality", "documentation", "is_nullable", "name", "type_def"];
+enum __Field { __Type, __F0, __F1, __F2, __F3, __F4, }
+impl<'de> ::serde::Deserialize<'de> for __Field {
+fn deserialize<__D: ::serde::Deserializer<'de>>(__deserializer: __D) -> ::core::result::Result<Self, __D::Error> {
+struct __KeyVisitor;
+impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+type Value = __Field;
+fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+__f.write_str("an object member name")
+}
+fn visit_str<__E: ::serde::de::Error>(self, __v: &str) -> ::core::result::Result<__Field, __E> {
+match __v {
+"_type" => ::core::result::Result::Ok(__Field::__Type),
+"documentation" => ::core::result::Result::Ok(__Field::__F0),
+"name" => ::core::result::Result::Ok(__Field::__F1),
+"is_nullable" => ::core::result::Result::Ok(__Field::__F2),
+"type_def" => ::core::result::Result::Ok(__Field::__F3),
+"cardinality" => ::core::result::Result::Ok(__Field::__F4),
+_ => ::core::result::Result::Err(::openehr_base::serde_support::unknown_field(__v, "P_BMM_CONTAINER_FUNCTION_PARAMETER", __FIELDS)),
+}
+}
+}
+::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+}
+}
+struct __Visitor;
+impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+type Value = crate::v2::bmm_persistence::p_bmm_container_function_parameter::PBmmContainerFunctionParameter;
+fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+__f.write_str("an openEHR `P_BMM_CONTAINER_FUNCTION_PARAMETER` object")
+}
+fn visit_map<__A: ::serde::de::MapAccess<'de>>(self, mut __map: __A) -> ::core::result::Result<Self::Value, __A::Error> {
+let mut __seen_type = false;
+let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s1: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s2: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s3: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s4: ::core::option::Option<::core::option::Option<_>> = None;
+while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+ match __key {
+__Field::__Type => {
+if __seen_type { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("_type")); }
+__seen_type = true;
+::serde::de::MapAccess::next_value_seed(&mut __map, ::openehr_base::serde_support::ExpectedType("P_BMM_CONTAINER_FUNCTION_PARAMETER"))?;
+}
+__Field::__F0 => {
+if __s0.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("documentation")); }
+__s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F1 => {
+if __s1.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("name")); }
+__s1 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F2 => {
+if __s2.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("is_nullable")); }
+__s2 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F3 => {
+if __s3.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("type_def")); }
+__s3 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F4 => {
+if __s4.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("cardinality")); }
+__s4 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+}
+}
+::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_container_function_parameter::PBmmContainerFunctionParameter {
+documentation: __s0.flatten(),
+name: __s1.flatten().ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+is_nullable: __s2.flatten(),
+type_def: __s3.flatten().ok_or_else(|| ::serde::de::Error::missing_field("type_def"))?,
+cardinality: __s4.flatten(),
+})
+}
+}
+::serde::Deserializer::deserialize_struct(__deserializer, "P_BMM_CONTAINER_FUNCTION_PARAMETER", __FIELDS, __Visitor)
+}
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmContainerPropertyData {
+impl ::serde::Serialize
+    for crate::v2::bmm_persistence::p_bmm_container_property::PBmmContainerPropertyData
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -8483,7 +8248,9 @@ impl ::serde::Serialize for crate::prelude::PBmmContainerPropertyData {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmContainerPropertyData {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm_persistence::p_bmm_container_property::PBmmContainerPropertyData
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -8553,7 +8320,8 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmContainerPropertyDat
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmContainerPropertyData;
+            type Value =
+                crate::v2::bmm_persistence::p_bmm_container_property::PBmmContainerPropertyData;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_CONTAINER_PROPERTY` object")
             }
@@ -8661,19 +8429,17 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmContainerPropertyDat
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PBmmContainerPropertyData {
-                    documentation: __s0.flatten(),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    is_mandatory: __s2.flatten(),
-                    is_computed: __s3.flatten(),
-                    is_im_infrastructure: __s4.flatten(),
-                    is_im_runtime: __s5.flatten(),
-                    type_def: __s6.flatten(),
-                    bmm_property: __s7.flatten(),
-                    cardinality: __s8.flatten(),
-                })
+                ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_container_property::PBmmContainerPropertyData {
+documentation: __s0.flatten(),
+name: __s1.flatten().ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+is_mandatory: __s2.flatten(),
+is_computed: __s3.flatten(),
+is_im_infrastructure: __s4.flatten(),
+is_im_runtime: __s5.flatten(),
+type_def: __s6.flatten(),
+bmm_property: __s7.flatten(),
+cardinality: __s8.flatten(),
+})
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -8685,23 +8451,23 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmContainerPropertyDat
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmContainerProperty {
+impl ::serde::Serialize
+    for crate::v2::bmm_persistence::p_bmm_container_property::PBmmContainerProperty
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::PBmmContainerProperty::PBmmIndexedContainerProperty(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::PBmmContainerProperty::PBmmContainerProperty(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-        }
+crate::v2::bmm_persistence::p_bmm_container_property::PBmmContainerProperty::PBmmIndexedContainerProperty(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v2::bmm_persistence::p_bmm_container_property::PBmmContainerProperty::PBmmContainerProperty(__x) => ::serde::Serialize::serialize(__x, __serializer),
+}
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmContainerProperty {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm_persistence::p_bmm_container_property::PBmmContainerProperty
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -8711,7 +8477,8 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmContainerProperty {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmContainerProperty;
+            type Value =
+                crate::v2::bmm_persistence::p_bmm_container_property::PBmmContainerProperty;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_CONTAINER_PROPERTY` object")
             }
@@ -8729,24 +8496,10 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmContainerProperty {
                             __map,
                         );
                         match __t {
-                            "P_BMM_CONTAINER_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmContainerProperty::PBmmContainerProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_INDEXED_CONTAINER_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmContainerProperty::PBmmIndexedContainerProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "P_BMM_CONTAINER_PROPERTY",
-                                    __other,
-                                    "P_BMM_CONTAINER_PROPERTY, P_BMM_INDEXED_CONTAINER_PROPERTY",
-                                ),
-                            ),
-                        }
+"P_BMM_CONTAINER_PROPERTY" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_container_property::PBmmContainerProperty::PBmmContainerProperty(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_INDEXED_CONTAINER_PROPERTY" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_container_property::PBmmContainerProperty::PBmmIndexedContainerProperty(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("P_BMM_CONTAINER_PROPERTY", __other, "P_BMM_CONTAINER_PROPERTY, P_BMM_INDEXED_CONTAINER_PROPERTY")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -8758,11 +8511,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmContainerProperty {
                     None => {
                         let __rest =
                             ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);
-                        ::core::result::Result::Ok(
-                            crate::prelude::PBmmContainerProperty::PBmmContainerProperty(
-                                ::serde::Deserialize::deserialize(__rest)?,
-                            ),
-                        )
+                        ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_container_property::PBmmContainerProperty::PBmmContainerProperty(::serde::Deserialize::deserialize(__rest)?))
                     }
                 }
             }
@@ -8771,7 +8520,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmContainerProperty {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmContainerTypeData {
+impl ::serde::Serialize
+    for crate::v2::bmm_persistence::p_bmm_container_type::PBmmContainerTypeData
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -8807,7 +8558,9 @@ impl ::serde::Serialize for crate::prelude::PBmmContainerTypeData {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmContainerTypeData {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm_persistence::p_bmm_container_type::PBmmContainerTypeData
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -8857,7 +8610,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmContainerTypeData {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmContainerTypeData;
+            type Value = crate::v2::bmm_persistence::p_bmm_container_type::PBmmContainerTypeData;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_CONTAINER_TYPE` object")
             }
@@ -8918,14 +8671,16 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmContainerTypeData {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PBmmContainerTypeData {
-                    bmm_type: __s0.flatten(),
-                    container_type: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("container_type"))?,
-                    type_def: __s2.flatten(),
-                    r#type: __s3.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::bmm_persistence::p_bmm_container_type::PBmmContainerTypeData {
+                        bmm_type: __s0.flatten(),
+                        container_type: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("container_type"))?,
+                        type_def: __s2.flatten(),
+                        r#type: __s3.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -8937,30 +8692,28 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmContainerTypeData {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmContainerType {
+impl ::serde::Serialize for crate::v2::bmm_persistence::p_bmm_container_type::PBmmContainerType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::PBmmContainerType::PBmmIndexedContainerType(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::PBmmContainerType::PBmmContainerType(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-        }
+crate::v2::bmm_persistence::p_bmm_container_type::PBmmContainerType::PBmmIndexedContainerType(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v2::bmm_persistence::p_bmm_container_type::PBmmContainerType::PBmmContainerType(__x) => ::serde::Serialize::serialize(__x, __serializer),
+}
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmContainerType {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm_persistence::p_bmm_container_type::PBmmContainerType
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["P_BMM_CONTAINER_TYPE", "P_BMM_INDEXED_CONTAINER_TYPE"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmContainerType;
+            type Value = crate::v2::bmm_persistence::p_bmm_container_type::PBmmContainerType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_CONTAINER_TYPE` object")
             }
@@ -8978,24 +8731,10 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmContainerType {
                             __map,
                         );
                         match __t {
-                            "P_BMM_CONTAINER_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmContainerType::PBmmContainerType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_INDEXED_CONTAINER_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmContainerType::PBmmIndexedContainerType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "P_BMM_CONTAINER_TYPE",
-                                    __other,
-                                    "P_BMM_CONTAINER_TYPE, P_BMM_INDEXED_CONTAINER_TYPE",
-                                ),
-                            ),
-                        }
+"P_BMM_CONTAINER_TYPE" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_container_type::PBmmContainerType::PBmmContainerType(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_INDEXED_CONTAINER_TYPE" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_container_type::PBmmContainerType::PBmmIndexedContainerType(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("P_BMM_CONTAINER_TYPE", __other, "P_BMM_CONTAINER_TYPE, P_BMM_INDEXED_CONTAINER_TYPE")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -9007,11 +8746,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmContainerType {
                     None => {
                         let __rest =
                             ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);
-                        ::core::result::Result::Ok(
-                            crate::prelude::PBmmContainerType::PBmmContainerType(
-                                ::serde::Deserialize::deserialize(__rest)?,
-                            ),
-                        )
+                        ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_container_type::PBmmContainerType::PBmmContainerType(::serde::Deserialize::deserialize(__rest)?))
                     }
                 }
             }
@@ -9020,7 +8755,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmContainerType {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmEnumerationData {
+impl ::serde::Serialize for crate::v2::bmm_persistence::p_bmm_enumeration::PBmmEnumerationData {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -9146,7 +8881,9 @@ impl ::serde::Serialize for crate::prelude::PBmmEnumerationData {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmEnumerationData {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm_persistence::p_bmm_enumeration::PBmmEnumerationData
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -9240,7 +8977,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmEnumerationData {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmEnumerationData;
+            type Value = crate::v2::bmm_persistence::p_bmm_enumeration::PBmmEnumerationData;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_ENUMERATION` object")
             }
@@ -9418,31 +9155,33 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmEnumerationData {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PBmmEnumerationData {
-                    documentation: __s0.flatten(),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    ancestors: __s2,
-                    constants: __s3.flatten(),
-                    properties: __s4.flatten(),
-                    functions: __s5.flatten(),
-                    invariants: __s6.flatten(),
-                    is_abstract: __s7.flatten(),
-                    is_override: __s8.flatten(),
-                    generic_parameter_defs: __s9.flatten(),
-                    source_schema_id: __s10
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("source_schema_id"))?,
-                    bmm_class: __s11.flatten(),
-                    uid: __s12
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("uid"))?,
-                    ancestor_defs: __s13,
-                    item_names: __s14,
-                    item_values: __s15,
-                    item_documentations: __s16,
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::bmm_persistence::p_bmm_enumeration::PBmmEnumerationData {
+                        documentation: __s0.flatten(),
+                        name: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        ancestors: __s2,
+                        constants: __s3.flatten(),
+                        properties: __s4.flatten(),
+                        functions: __s5.flatten(),
+                        invariants: __s6.flatten(),
+                        is_abstract: __s7.flatten(),
+                        is_override: __s8.flatten(),
+                        generic_parameter_defs: __s9.flatten(),
+                        source_schema_id: __s10
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("source_schema_id"))?,
+                        bmm_class: __s11.flatten(),
+                        uid: __s12
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("uid"))?,
+                        ancestor_defs: __s13,
+                        item_names: __s14,
+                        item_values: __s15,
+                        item_documentations: __s16,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -9454,26 +9193,22 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmEnumerationData {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmEnumeration {
+impl ::serde::Serialize for crate::v2::bmm_persistence::p_bmm_enumeration::PBmmEnumeration {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::PBmmEnumeration::PBmmEnumerationInteger(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::PBmmEnumeration::PBmmEnumerationString(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::PBmmEnumeration::PBmmEnumeration(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-        }
+crate::v2::bmm_persistence::p_bmm_enumeration::PBmmEnumeration::PBmmEnumerationInteger(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v2::bmm_persistence::p_bmm_enumeration::PBmmEnumeration::PBmmEnumerationString(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v2::bmm_persistence::p_bmm_enumeration::PBmmEnumeration::PBmmEnumeration(__x) => ::serde::Serialize::serialize(__x, __serializer),
+}
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmEnumeration {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm_persistence::p_bmm_enumeration::PBmmEnumeration
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -9484,7 +9219,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmEnumeration {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmEnumeration;
+            type Value = crate::v2::bmm_persistence::p_bmm_enumeration::PBmmEnumeration;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_ENUMERATION` object")
             }
@@ -9502,29 +9237,11 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmEnumeration {
                             __map,
                         );
                         match __t {
-                            "P_BMM_ENUMERATION" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmEnumeration::PBmmEnumeration(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_ENUMERATION_INTEGER" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmEnumeration::PBmmEnumerationInteger(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_ENUMERATION_STRING" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmEnumeration::PBmmEnumerationString(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "P_BMM_ENUMERATION",
-                                    __other,
-                                    "P_BMM_ENUMERATION, P_BMM_ENUMERATION_INTEGER, P_BMM_ENUMERATION_STRING",
-                                ),
-                            ),
-                        }
+"P_BMM_ENUMERATION" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_enumeration::PBmmEnumeration::PBmmEnumeration(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_ENUMERATION_INTEGER" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_enumeration::PBmmEnumeration::PBmmEnumerationInteger(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_ENUMERATION_STRING" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_enumeration::PBmmEnumeration::PBmmEnumerationString(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("P_BMM_ENUMERATION", __other, "P_BMM_ENUMERATION, P_BMM_ENUMERATION_INTEGER, P_BMM_ENUMERATION_STRING")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -9536,11 +9253,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmEnumeration {
                     None => {
                         let __rest =
                             ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);
-                        ::core::result::Result::Ok(
-                            crate::prelude::PBmmEnumeration::PBmmEnumeration(
-                                ::serde::Deserialize::deserialize(__rest)?,
-                            ),
-                        )
+                        ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_enumeration::PBmmEnumeration::PBmmEnumeration(::serde::Deserialize::deserialize(__rest)?))
                     }
                 }
             }
@@ -9549,7 +9262,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmEnumeration {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmEnumerationInteger {
+impl ::serde::Serialize
+    for crate::v2::bmm_persistence::p_bmm_enumeration_integer::PBmmEnumerationInteger
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -9679,7 +9394,9 @@ impl ::serde::Serialize for crate::prelude::PBmmEnumerationInteger {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmEnumerationInteger {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm_persistence::p_bmm_enumeration_integer::PBmmEnumerationInteger
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -9773,7 +9490,8 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmEnumerationInteger {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmEnumerationInteger;
+            type Value =
+                crate::v2::bmm_persistence::p_bmm_enumeration_integer::PBmmEnumerationInteger;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_ENUMERATION_INTEGER` object")
             }
@@ -9953,31 +9671,33 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmEnumerationInteger {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PBmmEnumerationInteger {
-                    documentation: __s0.flatten(),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    ancestors: __s2,
-                    constants: __s3.flatten(),
-                    properties: __s4.flatten(),
-                    functions: __s5.flatten(),
-                    invariants: __s6.flatten(),
-                    is_abstract: __s7.flatten(),
-                    is_override: __s8.flatten(),
-                    generic_parameter_defs: __s9.flatten(),
-                    source_schema_id: __s10
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("source_schema_id"))?,
-                    bmm_class: __s11.flatten(),
-                    uid: __s12
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("uid"))?,
-                    ancestor_defs: __s13,
-                    item_names: __s14,
-                    item_values: __s15,
-                    item_documentations: __s16,
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::bmm_persistence::p_bmm_enumeration_integer::PBmmEnumerationInteger {
+                        documentation: __s0.flatten(),
+                        name: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        ancestors: __s2,
+                        constants: __s3.flatten(),
+                        properties: __s4.flatten(),
+                        functions: __s5.flatten(),
+                        invariants: __s6.flatten(),
+                        is_abstract: __s7.flatten(),
+                        is_override: __s8.flatten(),
+                        generic_parameter_defs: __s9.flatten(),
+                        source_schema_id: __s10
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("source_schema_id"))?,
+                        bmm_class: __s11.flatten(),
+                        uid: __s12
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("uid"))?,
+                        ancestor_defs: __s13,
+                        item_names: __s14,
+                        item_values: __s15,
+                        item_documentations: __s16,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -9989,7 +9709,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmEnumerationInteger {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmEnumerationString {
+impl ::serde::Serialize
+    for crate::v2::bmm_persistence::p_bmm_enumeration_string::PBmmEnumerationString
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -10119,7 +9841,9 @@ impl ::serde::Serialize for crate::prelude::PBmmEnumerationString {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmEnumerationString {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm_persistence::p_bmm_enumeration_string::PBmmEnumerationString
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -10213,7 +9937,8 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmEnumerationString {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmEnumerationString;
+            type Value =
+                crate::v2::bmm_persistence::p_bmm_enumeration_string::PBmmEnumerationString;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_ENUMERATION_STRING` object")
             }
@@ -10393,31 +10118,33 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmEnumerationString {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PBmmEnumerationString {
-                    documentation: __s0.flatten(),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    ancestors: __s2,
-                    constants: __s3.flatten(),
-                    properties: __s4.flatten(),
-                    functions: __s5.flatten(),
-                    invariants: __s6.flatten(),
-                    is_abstract: __s7.flatten(),
-                    is_override: __s8.flatten(),
-                    generic_parameter_defs: __s9.flatten(),
-                    source_schema_id: __s10
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("source_schema_id"))?,
-                    bmm_class: __s11.flatten(),
-                    uid: __s12
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("uid"))?,
-                    ancestor_defs: __s13,
-                    item_names: __s14,
-                    item_values: __s15,
-                    item_documentations: __s16,
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::bmm_persistence::p_bmm_enumeration_string::PBmmEnumerationString {
+                        documentation: __s0.flatten(),
+                        name: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        ancestors: __s2,
+                        constants: __s3.flatten(),
+                        properties: __s4.flatten(),
+                        functions: __s5.flatten(),
+                        invariants: __s6.flatten(),
+                        is_abstract: __s7.flatten(),
+                        is_override: __s8.flatten(),
+                        generic_parameter_defs: __s9.flatten(),
+                        source_schema_id: __s10
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("source_schema_id"))?,
+                        bmm_class: __s11.flatten(),
+                        uid: __s12
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("uid"))?,
+                        ancestor_defs: __s13,
+                        item_names: __s14,
+                        item_values: __s15,
+                        item_documentations: __s16,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -10429,7 +10156,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmEnumerationString {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmFunction {
+impl ::serde::Serialize for crate::v2::bmm_persistence::p_bmm_function::PBmmFunction {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -10490,7 +10217,7 @@ impl ::serde::Serialize for crate::prelude::PBmmFunction {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmFunction {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm_persistence::p_bmm_function::PBmmFunction {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -10560,7 +10287,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmFunction {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmFunction;
+            type Value = crate::v2::bmm_persistence::p_bmm_function::PBmmFunction;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_FUNCTION` object")
             }
@@ -10666,19 +10393,21 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmFunction {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PBmmFunction {
-                    documentation: __s0.flatten(),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    aliases: __s2.flatten(),
-                    is_abstract: __s3.flatten(),
-                    parameters: __s4.flatten(),
-                    pre_conditions: __s5.flatten(),
-                    post_conditions: __s6.flatten(),
-                    result: __s7.flatten(),
-                    is_nullable: __s8.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::bmm_persistence::p_bmm_function::PBmmFunction {
+                        documentation: __s0.flatten(),
+                        name: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        aliases: __s2.flatten(),
+                        is_abstract: __s3.flatten(),
+                        parameters: __s4.flatten(),
+                        pre_conditions: __s5.flatten(),
+                        post_conditions: __s6.flatten(),
+                        result: __s7.flatten(),
+                        is_nullable: __s8.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -10690,29 +10419,25 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmFunction {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmFunctionParameter {
+impl ::serde::Serialize
+    for crate::v2::bmm_persistence::p_bmm_function_parameter::PBmmFunctionParameter
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::PBmmFunctionParameter::PBmmContainerFunctionParameter(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::PBmmFunctionParameter::PBmmGenericFunctionParameter(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::PBmmFunctionParameter::PBmmSingleFunctionParameter(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::PBmmFunctionParameter::PBmmSingleFunctionParameterOpen(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-        }
+crate::v2::bmm_persistence::p_bmm_function_parameter::PBmmFunctionParameter::PBmmContainerFunctionParameter(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v2::bmm_persistence::p_bmm_function_parameter::PBmmFunctionParameter::PBmmGenericFunctionParameter(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v2::bmm_persistence::p_bmm_function_parameter::PBmmFunctionParameter::PBmmSingleFunctionParameter(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v2::bmm_persistence::p_bmm_function_parameter::PBmmFunctionParameter::PBmmSingleFunctionParameterOpen(__x) => ::serde::Serialize::serialize(__x, __serializer),
+}
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmFunctionParameter {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm_persistence::p_bmm_function_parameter::PBmmFunctionParameter
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -10724,7 +10449,8 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmFunctionParameter {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmFunctionParameter;
+            type Value =
+                crate::v2::bmm_persistence::p_bmm_function_parameter::PBmmFunctionParameter;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_FUNCTION_PARAMETER` object")
             }
@@ -10742,10 +10468,10 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmFunctionParameter {
                             __map,
                         );
                         match __t {
-"P_BMM_CONTAINER_FUNCTION_PARAMETER" => ::core::result::Result::Ok(crate::prelude::PBmmFunctionParameter::PBmmContainerFunctionParameter(::serde::Deserialize::deserialize(__rest)?)),
-"P_BMM_GENERIC_FUNCTION_PARAMETER" => ::core::result::Result::Ok(crate::prelude::PBmmFunctionParameter::PBmmGenericFunctionParameter(::serde::Deserialize::deserialize(__rest)?)),
-"P_BMM_SINGLE_FUNCTION_PARAMETER" => ::core::result::Result::Ok(crate::prelude::PBmmFunctionParameter::PBmmSingleFunctionParameter(::serde::Deserialize::deserialize(__rest)?)),
-"P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN" => ::core::result::Result::Ok(crate::prelude::PBmmFunctionParameter::PBmmSingleFunctionParameterOpen(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_CONTAINER_FUNCTION_PARAMETER" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_function_parameter::PBmmFunctionParameter::PBmmContainerFunctionParameter(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_GENERIC_FUNCTION_PARAMETER" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_function_parameter::PBmmFunctionParameter::PBmmGenericFunctionParameter(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_SINGLE_FUNCTION_PARAMETER" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_function_parameter::PBmmFunctionParameter::PBmmSingleFunctionParameter(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_function_parameter::PBmmFunctionParameter::PBmmSingleFunctionParameterOpen(::serde::Deserialize::deserialize(__rest)?)),
 __other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("P_BMM_FUNCTION_PARAMETER", __other, "P_BMM_CONTAINER_FUNCTION_PARAMETER, P_BMM_GENERIC_FUNCTION_PARAMETER, P_BMM_SINGLE_FUNCTION_PARAMETER, P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN")),
 }
                     }
@@ -10769,7 +10495,9 @@ __other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmGenericFunctionParameter {
+impl ::serde::Serialize
+    for crate::v2::bmm_persistence::p_bmm_generic_function_parameter::PBmmGenericFunctionParameter
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -10803,7 +10531,9 @@ impl ::serde::Serialize for crate::prelude::PBmmGenericFunctionParameter {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmGenericFunctionParameter {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm_persistence::p_bmm_generic_function_parameter::PBmmGenericFunctionParameter
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -10853,7 +10583,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmGenericFunctionParam
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmGenericFunctionParameter;
+            type Value = crate::v2::bmm_persistence::p_bmm_generic_function_parameter::PBmmGenericFunctionParameter;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_GENERIC_FUNCTION_PARAMETER` object")
             }
@@ -10916,16 +10646,12 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmGenericFunctionParam
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PBmmGenericFunctionParameter {
-                    documentation: __s0.flatten(),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    is_nullable: __s2.flatten(),
-                    type_def: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type_def"))?,
-                })
+                ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_generic_function_parameter::PBmmGenericFunctionParameter {
+documentation: __s0.flatten(),
+name: __s1.flatten().ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+is_nullable: __s2.flatten(),
+type_def: __s3.flatten().ok_or_else(|| ::serde::de::Error::missing_field("type_def"))?,
+})
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -10937,7 +10663,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmGenericFunctionParam
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmGenericParameter {
+impl ::serde::Serialize
+    for crate::v2::bmm_persistence::p_bmm_generic_parameter::PBmmGenericParameter
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -10977,7 +10705,9 @@ impl ::serde::Serialize for crate::prelude::PBmmGenericParameter {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmGenericParameter {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm_persistence::p_bmm_generic_parameter::PBmmGenericParameter
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -11032,7 +10762,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmGenericParameter {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmGenericParameter;
+            type Value = crate::v2::bmm_persistence::p_bmm_generic_parameter::PBmmGenericParameter;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_GENERIC_PARAMETER` object")
             }
@@ -11095,14 +10825,16 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmGenericParameter {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PBmmGenericParameter {
-                    documentation: __s0.flatten(),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    conforms_to_type: __s2.flatten(),
-                    bmm_generic_parameter: __s3.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::bmm_persistence::p_bmm_generic_parameter::PBmmGenericParameter {
+                        documentation: __s0.flatten(),
+                        name: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        conforms_to_type: __s2.flatten(),
+                        bmm_generic_parameter: __s3.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -11114,7 +10846,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmGenericParameter {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmGenericProperty {
+impl ::serde::Serialize
+    for crate::v2::bmm_persistence::p_bmm_generic_property::PBmmGenericProperty
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -11174,7 +10908,9 @@ impl ::serde::Serialize for crate::prelude::PBmmGenericProperty {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmGenericProperty {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm_persistence::p_bmm_generic_property::PBmmGenericProperty
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -11241,7 +10977,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmGenericProperty {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmGenericProperty;
+            type Value = crate::v2::bmm_persistence::p_bmm_generic_property::PBmmGenericProperty;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_GENERIC_PROPERTY` object")
             }
@@ -11340,18 +11076,20 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmGenericProperty {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PBmmGenericProperty {
-                    documentation: __s0.flatten(),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    is_mandatory: __s2.flatten(),
-                    is_computed: __s3.flatten(),
-                    is_im_infrastructure: __s4.flatten(),
-                    is_im_runtime: __s5.flatten(),
-                    type_def: __s6.flatten(),
-                    bmm_property: __s7.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::bmm_persistence::p_bmm_generic_property::PBmmGenericProperty {
+                        documentation: __s0.flatten(),
+                        name: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        is_mandatory: __s2.flatten(),
+                        is_computed: __s3.flatten(),
+                        is_im_infrastructure: __s4.flatten(),
+                        is_im_runtime: __s5.flatten(),
+                        type_def: __s6.flatten(),
+                        bmm_property: __s7.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -11363,7 +11101,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmGenericProperty {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmGenericType {
+impl ::serde::Serialize for crate::v2::bmm_persistence::p_bmm_generic_type::PBmmGenericType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -11411,7 +11149,9 @@ impl ::serde::Serialize for crate::prelude::PBmmGenericType {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmGenericType {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm_persistence::p_bmm_generic_type::PBmmGenericType
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -11469,7 +11209,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmGenericType {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmGenericType;
+            type Value = crate::v2::bmm_persistence::p_bmm_generic_type::PBmmGenericType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_GENERIC_TYPE` object")
             }
@@ -11539,15 +11279,17 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmGenericType {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PBmmGenericType {
-                    bmm_type: __s0.flatten(),
-                    value_constraint: __s1.flatten(),
-                    root_type: __s2
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("root_type"))?,
-                    generic_parameter_defs: __s3.unwrap_or_default(),
-                    generic_parameters: __s4,
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::bmm_persistence::p_bmm_generic_type::PBmmGenericType {
+                        bmm_type: __s0.flatten(),
+                        value_constraint: __s1.flatten(),
+                        root_type: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("root_type"))?,
+                        generic_parameter_defs: __s3.unwrap_or_default(),
+                        generic_parameters: __s4,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -11559,7 +11301,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmGenericType {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmIndexedContainerProperty {
+impl ::serde::Serialize
+    for crate::v2::bmm_persistence::p_bmm_indexed_container_property::PBmmIndexedContainerProperty
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -11628,7 +11372,9 @@ impl ::serde::Serialize for crate::prelude::PBmmIndexedContainerProperty {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmIndexedContainerProperty {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm_persistence::p_bmm_indexed_container_property::PBmmIndexedContainerProperty
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -11698,7 +11444,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmIndexedContainerProp
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmIndexedContainerProperty;
+            type Value = crate::v2::bmm_persistence::p_bmm_indexed_container_property::PBmmIndexedContainerProperty;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_INDEXED_CONTAINER_PROPERTY` object")
             }
@@ -11806,19 +11552,17 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmIndexedContainerProp
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PBmmIndexedContainerProperty {
-                    documentation: __s0.flatten(),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    is_mandatory: __s2.flatten(),
-                    is_computed: __s3.flatten(),
-                    is_im_infrastructure: __s4.flatten(),
-                    is_im_runtime: __s5.flatten(),
-                    type_def: __s6.flatten(),
-                    bmm_property: __s7.flatten(),
-                    cardinality: __s8.flatten(),
-                })
+                ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_indexed_container_property::PBmmIndexedContainerProperty {
+documentation: __s0.flatten(),
+name: __s1.flatten().ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+is_mandatory: __s2.flatten(),
+is_computed: __s3.flatten(),
+is_im_infrastructure: __s4.flatten(),
+is_im_runtime: __s5.flatten(),
+type_def: __s6.flatten(),
+bmm_property: __s7.flatten(),
+cardinality: __s8.flatten(),
+})
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -11830,7 +11574,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmIndexedContainerProp
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmIndexedContainerType {
+impl ::serde::Serialize
+    for crate::v2::bmm_persistence::p_bmm_indexed_container_type::PBmmIndexedContainerType
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -11874,7 +11620,9 @@ impl ::serde::Serialize for crate::prelude::PBmmIndexedContainerType {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmIndexedContainerType {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm_persistence::p_bmm_indexed_container_type::PBmmIndexedContainerType
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -11932,7 +11680,8 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmIndexedContainerType
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmIndexedContainerType;
+            type Value =
+                crate::v2::bmm_persistence::p_bmm_indexed_container_type::PBmmIndexedContainerType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_INDEXED_CONTAINER_TYPE` object")
             }
@@ -12004,17 +11753,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmIndexedContainerType
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PBmmIndexedContainerType {
-                    bmm_type: __s0.flatten(),
-                    container_type: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("container_type"))?,
-                    type_def: __s2.flatten(),
-                    r#type: __s3.flatten(),
-                    index_type: __s4
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("index_type"))?,
-                })
+                ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_indexed_container_type::PBmmIndexedContainerType {
+bmm_type: __s0.flatten(),
+container_type: __s1.flatten().ok_or_else(|| ::serde::de::Error::missing_field("container_type"))?,
+type_def: __s2.flatten(),
+r#type: __s3.flatten(),
+index_type: __s4.flatten().ok_or_else(|| ::serde::de::Error::missing_field("index_type"))?,
+})
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -12026,7 +11771,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmIndexedContainerType
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmInterface {
+impl ::serde::Serialize for crate::v2::bmm_persistence::p_bmm_interface::PBmmInterface {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -12051,7 +11796,7 @@ impl ::serde::Serialize for crate::prelude::PBmmInterface {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmInterface {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm_persistence::p_bmm_interface::PBmmInterface {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -12099,7 +11844,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmInterface {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmInterface;
+            type Value = crate::v2::bmm_persistence::p_bmm_interface::PBmmInterface;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_INTERFACE` object")
             }
@@ -12151,13 +11896,15 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmInterface {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PBmmInterface {
-                    documentation: __s0.flatten(),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    functions: __s2.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::bmm_persistence::p_bmm_interface::PBmmInterface {
+                        documentation: __s0.flatten(),
+                        name: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        functions: __s2.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -12169,56 +11916,32 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmInterface {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmModelElement {
+impl ::serde::Serialize for crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::PBmmModelElement::PBmmClass(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::PBmmModelElement::PBmmConstant(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::PBmmModelElement::PBmmContainerFunctionParameter(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::PBmmModelElement::PBmmContainerProperty(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::PBmmModelElement::PBmmFunction(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::PBmmModelElement::PBmmGenericFunctionParameter(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::PBmmModelElement::PBmmGenericParameter(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::PBmmModelElement::PBmmGenericProperty(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::PBmmModelElement::PBmmPackage(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::PBmmModelElement::PBmmSingleFunctionParameter(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::PBmmModelElement::PBmmSingleFunctionParameterOpen(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::PBmmModelElement::PBmmSingleProperty(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::PBmmModelElement::PBmmSinglePropertyOpen(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-        }
+crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmClass(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmConstant(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmContainerFunctionParameter(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmContainerProperty(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmFunction(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmGenericFunctionParameter(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmGenericParameter(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmGenericProperty(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmPackage(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmSingleFunctionParameter(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmSingleFunctionParameterOpen(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmSingleProperty(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmSinglePropertyOpen(__x) => ::serde::Serialize::serialize(__x, __serializer),
+}
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmModelElement {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -12244,7 +11967,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmModelElement {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmModelElement;
+            type Value = crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_MODEL_ELEMENT` object")
             }
@@ -12262,104 +11985,26 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmModelElement {
                             __map,
                         );
                         match __t {
-                            "P_BMM_CLASS" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmModelElement::PBmmClass(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_CONSTANT" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmModelElement::PBmmConstant(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_CONTAINER_FUNCTION_PARAMETER" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmModelElement::PBmmContainerFunctionParameter(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_CONTAINER_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmModelElement::PBmmContainerProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_ENUMERATION" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmModelElement::PBmmClass(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_ENUMERATION_INTEGER" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmModelElement::PBmmClass(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_ENUMERATION_STRING" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmModelElement::PBmmClass(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_FUNCTION" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmModelElement::PBmmFunction(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_GENERIC_FUNCTION_PARAMETER" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmModelElement::PBmmGenericFunctionParameter(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_GENERIC_PARAMETER" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmModelElement::PBmmGenericParameter(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_GENERIC_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmModelElement::PBmmGenericProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_INDEXED_CONTAINER_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmModelElement::PBmmContainerProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_INTERFACE" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmModelElement::PBmmClass(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_PACKAGE" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmModelElement::PBmmPackage(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_SINGLE_FUNCTION_PARAMETER" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmModelElement::PBmmSingleFunctionParameter(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmModelElement::PBmmSingleFunctionParameterOpen(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_SINGLE_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmModelElement::PBmmSingleProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_SINGLE_PROPERTY_OPEN" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmModelElement::PBmmSinglePropertyOpen(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "P_BMM_MODEL_ELEMENT",
-                                    __other,
-                                    "P_BMM_CLASS, P_BMM_CONSTANT, P_BMM_CONTAINER_FUNCTION_PARAMETER, P_BMM_CONTAINER_PROPERTY, P_BMM_ENUMERATION, P_BMM_ENUMERATION_INTEGER, P_BMM_ENUMERATION_STRING, P_BMM_FUNCTION, P_BMM_GENERIC_FUNCTION_PARAMETER, P_BMM_GENERIC_PARAMETER, P_BMM_GENERIC_PROPERTY, P_BMM_INDEXED_CONTAINER_PROPERTY, P_BMM_INTERFACE, P_BMM_PACKAGE, P_BMM_SINGLE_FUNCTION_PARAMETER, P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN, P_BMM_SINGLE_PROPERTY, P_BMM_SINGLE_PROPERTY_OPEN",
-                                ),
-                            ),
-                        }
+"P_BMM_CLASS" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmClass(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_CONSTANT" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmConstant(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_CONTAINER_FUNCTION_PARAMETER" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmContainerFunctionParameter(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_CONTAINER_PROPERTY" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmContainerProperty(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_ENUMERATION" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmClass(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_ENUMERATION_INTEGER" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmClass(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_ENUMERATION_STRING" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmClass(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_FUNCTION" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmFunction(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_GENERIC_FUNCTION_PARAMETER" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmGenericFunctionParameter(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_GENERIC_PARAMETER" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmGenericParameter(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_GENERIC_PROPERTY" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmGenericProperty(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_INDEXED_CONTAINER_PROPERTY" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmContainerProperty(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_INTERFACE" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmClass(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_PACKAGE" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmPackage(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_SINGLE_FUNCTION_PARAMETER" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmSingleFunctionParameter(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmSingleFunctionParameterOpen(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_SINGLE_PROPERTY" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmSingleProperty(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_SINGLE_PROPERTY_OPEN" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_model_element::PBmmModelElement::PBmmSinglePropertyOpen(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("P_BMM_MODEL_ELEMENT", __other, "P_BMM_CLASS, P_BMM_CONSTANT, P_BMM_CONTAINER_FUNCTION_PARAMETER, P_BMM_CONTAINER_PROPERTY, P_BMM_ENUMERATION, P_BMM_ENUMERATION_INTEGER, P_BMM_ENUMERATION_STRING, P_BMM_FUNCTION, P_BMM_GENERIC_FUNCTION_PARAMETER, P_BMM_GENERIC_PARAMETER, P_BMM_GENERIC_PROPERTY, P_BMM_INDEXED_CONTAINER_PROPERTY, P_BMM_INTERFACE, P_BMM_PACKAGE, P_BMM_SINGLE_FUNCTION_PARAMETER, P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN, P_BMM_SINGLE_PROPERTY, P_BMM_SINGLE_PROPERTY_OPEN")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -12381,7 +12026,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmModelElement {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmOpenType {
+impl ::serde::Serialize for crate::v2::bmm_persistence::p_bmm_open_type::PBmmOpenType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -12406,7 +12051,7 @@ impl ::serde::Serialize for crate::prelude::PBmmOpenType {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmOpenType {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm_persistence::p_bmm_open_type::PBmmOpenType {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -12454,7 +12099,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmOpenType {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmOpenType;
+            type Value = crate::v2::bmm_persistence::p_bmm_open_type::PBmmOpenType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_OPEN_TYPE` object")
             }
@@ -12506,13 +12151,15 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmOpenType {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PBmmOpenType {
-                    bmm_type: __s0.flatten(),
-                    value_constraint: __s1.flatten(),
-                    r#type: __s2
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::bmm_persistence::p_bmm_open_type::PBmmOpenType {
+                        bmm_type: __s0.flatten(),
+                        value_constraint: __s1.flatten(),
+                        r#type: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -12524,7 +12171,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmOpenType {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmPackage {
+impl ::serde::Serialize for crate::v2::bmm_persistence::p_bmm_package::PBmmPackage {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -12562,7 +12209,7 @@ impl ::serde::Serialize for crate::prelude::PBmmPackage {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmPackage {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm_persistence::p_bmm_package::PBmmPackage {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -12620,7 +12267,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmPackage {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmPackage;
+            type Value = crate::v2::bmm_persistence::p_bmm_package::PBmmPackage;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_PACKAGE` object")
             }
@@ -12690,7 +12337,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmPackage {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PBmmPackage {
+                ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_package::PBmmPackage {
                     packages: __s0
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("packages"))?,
@@ -12712,7 +12359,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmPackage {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmPackageContainerData {
+impl ::serde::Serialize
+    for crate::v2::bmm_persistence::p_bmm_package_container::PBmmPackageContainerData
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -12730,7 +12379,9 @@ impl ::serde::Serialize for crate::prelude::PBmmPackageContainerData {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmPackageContainerData {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm_persistence::p_bmm_package_container::PBmmPackageContainerData
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -12774,7 +12425,8 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmPackageContainerData
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmPackageContainerData;
+            type Value =
+                crate::v2::bmm_persistence::p_bmm_package_container::PBmmPackageContainerData;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_PACKAGE_CONTAINER` object")
             }
@@ -12810,11 +12462,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmPackageContainerData
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PBmmPackageContainerData {
-                    packages: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("packages"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::bmm_persistence::p_bmm_package_container::PBmmPackageContainerData {
+                        packages: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("packages"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -12826,33 +12480,31 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmPackageContainerData
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmPackageContainer {
+impl ::serde::Serialize
+    for crate::v2::bmm_persistence::p_bmm_package_container::PBmmPackageContainer
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::PBmmPackageContainer::PBmmPackage(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::PBmmPackageContainer::PBmmSchema(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::PBmmPackageContainer::PBmmPackageContainer(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-        }
+crate::v2::bmm_persistence::p_bmm_package_container::PBmmPackageContainer::PBmmPackage(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v2::bmm_persistence::p_bmm_package_container::PBmmPackageContainer::PBmmSchema(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v2::bmm_persistence::p_bmm_package_container::PBmmPackageContainer::PBmmPackageContainer(__x) => ::serde::Serialize::serialize(__x, __serializer),
+}
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmPackageContainer {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm_persistence::p_bmm_package_container::PBmmPackageContainer
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["P_BMM_PACKAGE", "P_BMM_PACKAGE_CONTAINER", "P_BMM_SCHEMA"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmPackageContainer;
+            type Value = crate::v2::bmm_persistence::p_bmm_package_container::PBmmPackageContainer;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_PACKAGE_CONTAINER` object")
             }
@@ -12870,29 +12522,11 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmPackageContainer {
                             __map,
                         );
                         match __t {
-                            "P_BMM_PACKAGE" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmPackageContainer::PBmmPackage(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_PACKAGE_CONTAINER" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmPackageContainer::PBmmPackageContainer(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_SCHEMA" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmPackageContainer::PBmmSchema(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "P_BMM_PACKAGE_CONTAINER",
-                                    __other,
-                                    "P_BMM_PACKAGE, P_BMM_PACKAGE_CONTAINER, P_BMM_SCHEMA",
-                                ),
-                            ),
-                        }
+"P_BMM_PACKAGE" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_package_container::PBmmPackageContainer::PBmmPackage(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_PACKAGE_CONTAINER" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_package_container::PBmmPackageContainer::PBmmPackageContainer(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_SCHEMA" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_package_container::PBmmPackageContainer::PBmmSchema(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("P_BMM_PACKAGE_CONTAINER", __other, "P_BMM_PACKAGE, P_BMM_PACKAGE_CONTAINER, P_BMM_SCHEMA")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -12904,11 +12538,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmPackageContainer {
                     None => {
                         let __rest =
                             ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);
-                        ::core::result::Result::Ok(
-                            crate::prelude::PBmmPackageContainer::PBmmPackageContainer(
-                                ::serde::Deserialize::deserialize(__rest)?,
-                            ),
-                        )
+                        ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_package_container::PBmmPackageContainer::PBmmPackageContainer(::serde::Deserialize::deserialize(__rest)?))
                     }
                 }
             }
@@ -12917,29 +12547,29 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmPackageContainer {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmProperty {
+impl ::serde::Serialize for crate::v2::bmm_persistence::p_bmm_property::PBmmProperty {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::PBmmProperty::PBmmContainerProperty(__x) => {
+            crate::v2::bmm_persistence::p_bmm_property::PBmmProperty::PBmmContainerProperty(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
+            crate::v2::bmm_persistence::p_bmm_property::PBmmProperty::PBmmGenericProperty(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::PBmmProperty::PBmmGenericProperty(__x) => {
+            crate::v2::bmm_persistence::p_bmm_property::PBmmProperty::PBmmSingleProperty(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::PBmmProperty::PBmmSingleProperty(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::PBmmProperty::PBmmSinglePropertyOpen(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
+            crate::v2::bmm_persistence::p_bmm_property::PBmmProperty::PBmmSinglePropertyOpen(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmProperty {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm_persistence::p_bmm_property::PBmmProperty {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -12952,7 +12582,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmProperty {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmProperty;
+            type Value = crate::v2::bmm_persistence::p_bmm_property::PBmmProperty;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_PROPERTY` object")
             }
@@ -12970,39 +12600,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmProperty {
                             __map,
                         );
                         match __t {
-                            "P_BMM_CONTAINER_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmProperty::PBmmContainerProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_GENERIC_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmProperty::PBmmGenericProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_INDEXED_CONTAINER_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmProperty::PBmmContainerProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_SINGLE_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmProperty::PBmmSingleProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "P_BMM_SINGLE_PROPERTY_OPEN" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmProperty::PBmmSinglePropertyOpen(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "P_BMM_PROPERTY",
-                                    __other,
-                                    "P_BMM_CONTAINER_PROPERTY, P_BMM_GENERIC_PROPERTY, P_BMM_INDEXED_CONTAINER_PROPERTY, P_BMM_SINGLE_PROPERTY, P_BMM_SINGLE_PROPERTY_OPEN",
-                                ),
-                            ),
-                        }
+"P_BMM_CONTAINER_PROPERTY" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_property::PBmmProperty::PBmmContainerProperty(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_GENERIC_PROPERTY" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_property::PBmmProperty::PBmmGenericProperty(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_INDEXED_CONTAINER_PROPERTY" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_property::PBmmProperty::PBmmContainerProperty(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_SINGLE_PROPERTY" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_property::PBmmProperty::PBmmSingleProperty(::serde::Deserialize::deserialize(__rest)?)),
+"P_BMM_SINGLE_PROPERTY_OPEN" => ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_property::PBmmProperty::PBmmSinglePropertyOpen(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("P_BMM_PROPERTY", __other, "P_BMM_CONTAINER_PROPERTY, P_BMM_GENERIC_PROPERTY, P_BMM_INDEXED_CONTAINER_PROPERTY, P_BMM_SINGLE_PROPERTY, P_BMM_SINGLE_PROPERTY_OPEN")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -13024,7 +12628,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmProperty {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmSchema {
+impl ::serde::Serialize for crate::v2::bmm_persistence::p_bmm_schema::PBmmSchema {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -13161,7 +12765,7 @@ impl ::serde::Serialize for crate::prelude::PBmmSchema {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmSchema {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm_persistence::p_bmm_schema::PBmmSchema {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -13261,7 +12865,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmSchema {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmSchema;
+            type Value = crate::v2::bmm_persistence::p_bmm_schema::PBmmSchema;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_SCHEMA` object")
             }
@@ -13445,7 +13049,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmSchema {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PBmmSchema {
+                ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_schema::PBmmSchema {
                     packages: __s0
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("packages"))?,
@@ -13493,7 +13097,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmSchema {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmSchemaDescriptor {
+impl ::serde::Serialize
+    for crate::v2::bmm_persistence::p_bmm_schema_descriptor::PBmmSchemaDescriptor
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -13538,7 +13144,9 @@ impl ::serde::Serialize for crate::prelude::PBmmSchemaDescriptor {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmSchemaDescriptor {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm_persistence::p_bmm_schema_descriptor::PBmmSchemaDescriptor
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -13599,7 +13207,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmSchemaDescriptor {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmSchemaDescriptor;
+            type Value = crate::v2::bmm_persistence::p_bmm_schema_descriptor::PBmmSchemaDescriptor;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_SCHEMA_DESCRIPTOR` object")
             }
@@ -13680,18 +13288,20 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmSchemaDescriptor {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PBmmSchemaDescriptor {
-                    p_schema: __s0.flatten(),
-                    schema: __s1.flatten(),
-                    schema_id: __s2
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("schema_id"))?,
-                    meta_data: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("meta_data"))?,
-                    includes: __s4,
-                    bmm_schema: __s5.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::bmm_persistence::p_bmm_schema_descriptor::PBmmSchemaDescriptor {
+                        p_schema: __s0.flatten(),
+                        schema: __s1.flatten(),
+                        schema_id: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("schema_id"))?,
+                        meta_data: __s3
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("meta_data"))?,
+                        includes: __s4,
+                        bmm_schema: __s5.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -13703,7 +13313,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmSchemaDescriptor {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmSimpleType {
+impl ::serde::Serialize for crate::v2::bmm_persistence::p_bmm_simple_type::PBmmSimpleType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -13729,7 +13339,9 @@ impl ::serde::Serialize for crate::prelude::PBmmSimpleType {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmSimpleType {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm_persistence::p_bmm_simple_type::PBmmSimpleType
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -13777,7 +13389,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmSimpleType {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmSimpleType;
+            type Value = crate::v2::bmm_persistence::p_bmm_simple_type::PBmmSimpleType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_SIMPLE_TYPE` object")
             }
@@ -13829,13 +13441,15 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmSimpleType {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PBmmSimpleType {
-                    bmm_type: __s0.flatten(),
-                    value_constraint: __s1.flatten(),
-                    r#type: __s2
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::bmm_persistence::p_bmm_simple_type::PBmmSimpleType {
+                        bmm_type: __s0.flatten(),
+                        value_constraint: __s1.flatten(),
+                        r#type: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -13847,7 +13461,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmSimpleType {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmSingleFunctionParameter {
+impl ::serde::Serialize
+    for crate::v2::bmm_persistence::p_bmm_single_function_parameter::PBmmSingleFunctionParameter
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -13881,7 +13497,9 @@ impl ::serde::Serialize for crate::prelude::PBmmSingleFunctionParameter {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmSingleFunctionParameter {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm_persistence::p_bmm_single_function_parameter::PBmmSingleFunctionParameter
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -13931,7 +13549,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmSingleFunctionParame
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmSingleFunctionParameter;
+            type Value = crate::v2::bmm_persistence::p_bmm_single_function_parameter::PBmmSingleFunctionParameter;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_SINGLE_FUNCTION_PARAMETER` object")
             }
@@ -13994,16 +13612,12 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmSingleFunctionParame
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PBmmSingleFunctionParameter {
-                    documentation: __s0.flatten(),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    is_nullable: __s2.flatten(),
-                    r#type: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                })
+                ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_single_function_parameter::PBmmSingleFunctionParameter {
+documentation: __s0.flatten(),
+name: __s1.flatten().ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+is_nullable: __s2.flatten(),
+r#type: __s3.flatten().ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+})
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -14015,175 +13629,97 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmSingleFunctionParame
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmSingleFunctionParameterOpen {
-    fn serialize<__S: ::serde::Serializer>(
-        &self,
-        __serializer: __S,
-    ) -> ::core::result::Result<__S::Ok, __S::Error> {
-        let mut __n = 3usize;
-        if self.documentation.is_some() {
-            __n += 1;
-        }
-        if self.is_nullable.is_some() {
-            __n += 1;
-        }
-        let mut __st = ::serde::Serializer::serialize_struct(
-            __serializer,
-            "P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN",
-            __n,
-        )?;
-        ::serde::ser::SerializeStruct::serialize_field(
-            &mut __st,
-            "_type",
-            "P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN",
-        )?;
-        if let Some(__v) = &self.documentation {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "documentation", __v)?;
-        }
-        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "name", &self.name)?;
-        if let Some(__v) = &self.is_nullable {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "is_nullable", __v)?;
-        }
-        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "type", &self.r#type)?;
-        ::serde::ser::SerializeStruct::end(__st)
-    }
+impl ::serde::Serialize for crate::v2::bmm_persistence::p_bmm_single_function_parameter_open::PBmmSingleFunctionParameterOpen {
+fn serialize<__S: ::serde::Serializer>(&self, __serializer: __S) -> ::core::result::Result<__S::Ok, __S::Error> {
+let mut __n = 3usize;
+if self.documentation.is_some() { __n += 1; }
+if self.is_nullable.is_some() { __n += 1; }
+let mut __st = ::serde::Serializer::serialize_struct(__serializer, "P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN", __n)?;
+::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN")?;
+if let Some(__v) = &self.documentation { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "documentation", __v)?; }
+::serde::ser::SerializeStruct::serialize_field(&mut __st, "name", &self.name)?;
+if let Some(__v) = &self.is_nullable { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "is_nullable", __v)?; }
+::serde::ser::SerializeStruct::serialize_field(&mut __st, "type", &self.r#type)?;
+::serde::ser::SerializeStruct::end(__st)
+}
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmSingleFunctionParameterOpen {
-    fn deserialize<__D: ::serde::Deserializer<'de>>(
-        __deserializer: __D,
-    ) -> ::core::result::Result<Self, __D::Error> {
-        const __FIELDS: &[&str] = &["documentation", "is_nullable", "name", "type"];
-        enum __Field {
-            __Type,
-            __F0,
-            __F1,
-            __F2,
-            __F3,
-        }
-        impl<'de> ::serde::Deserialize<'de> for __Field {
-            fn deserialize<__D: ::serde::Deserializer<'de>>(
-                __deserializer: __D,
-            ) -> ::core::result::Result<Self, __D::Error> {
-                struct __KeyVisitor;
-                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
-                    type Value = __Field;
-                    fn expecting(
-                        &self,
-                        __f: &mut ::core::fmt::Formatter<'_>,
-                    ) -> ::core::fmt::Result {
-                        __f.write_str("an object member name")
-                    }
-                    fn visit_str<__E: ::serde::de::Error>(
-                        self,
-                        __v: &str,
-                    ) -> ::core::result::Result<__Field, __E> {
-                        match __v {
-                            "_type" => ::core::result::Result::Ok(__Field::__Type),
-                            "documentation" => ::core::result::Result::Ok(__Field::__F0),
-                            "name" => ::core::result::Result::Ok(__Field::__F1),
-                            "is_nullable" => ::core::result::Result::Ok(__Field::__F2),
-                            "type" => ::core::result::Result::Ok(__Field::__F3),
-                            _ => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unknown_field(
-                                    __v,
-                                    "P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN",
-                                    __FIELDS,
-                                ),
-                            ),
-                        }
-                    }
-                }
-                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
-            }
-        }
-        struct __Visitor;
-        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmSingleFunctionParameterOpen;
-            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-                __f.write_str("an openEHR `P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN` object")
-            }
-            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
-                self,
-                mut __map: __A,
-            ) -> ::core::result::Result<Self::Value, __A::Error> {
-                let mut __seen_type = false;
-                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s1: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s2: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s3: ::core::option::Option<::core::option::Option<_>> = None;
-                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
-                    match __key {
-                        __Field::__Type => {
-                            if __seen_type {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("_type"),
-                                );
-                            }
-                            __seen_type = true;
-                            ::serde::de::MapAccess::next_value_seed(
-                                &mut __map,
-                                ::openehr_base::serde_support::ExpectedType(
-                                    "P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN",
-                                ),
-                            )?;
-                        }
-                        __Field::__F0 => {
-                            if __s0.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("documentation"),
-                                );
-                            }
-                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F1 => {
-                            if __s1.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("name"),
-                                );
-                            }
-                            __s1 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F2 => {
-                            if __s2.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("is_nullable"),
-                                );
-                            }
-                            __s2 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F3 => {
-                            if __s3.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("type"),
-                                );
-                            }
-                            __s3 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                    }
-                }
-                ::core::result::Result::Ok(crate::prelude::PBmmSingleFunctionParameterOpen {
-                    documentation: __s0.flatten(),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    is_nullable: __s2.flatten(),
-                    r#type: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                })
-            }
-        }
-        ::serde::Deserializer::deserialize_struct(
-            __deserializer,
-            "P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN",
-            __FIELDS,
-            __Visitor,
-        )
-    }
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm_persistence::p_bmm_single_function_parameter_open::PBmmSingleFunctionParameterOpen {
+fn deserialize<__D: ::serde::Deserializer<'de>>(__deserializer: __D) -> ::core::result::Result<Self, __D::Error> {
+const __FIELDS: &[&str] = &["documentation", "is_nullable", "name", "type"];
+enum __Field { __Type, __F0, __F1, __F2, __F3, }
+impl<'de> ::serde::Deserialize<'de> for __Field {
+fn deserialize<__D: ::serde::Deserializer<'de>>(__deserializer: __D) -> ::core::result::Result<Self, __D::Error> {
+struct __KeyVisitor;
+impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+type Value = __Field;
+fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+__f.write_str("an object member name")
+}
+fn visit_str<__E: ::serde::de::Error>(self, __v: &str) -> ::core::result::Result<__Field, __E> {
+match __v {
+"_type" => ::core::result::Result::Ok(__Field::__Type),
+"documentation" => ::core::result::Result::Ok(__Field::__F0),
+"name" => ::core::result::Result::Ok(__Field::__F1),
+"is_nullable" => ::core::result::Result::Ok(__Field::__F2),
+"type" => ::core::result::Result::Ok(__Field::__F3),
+_ => ::core::result::Result::Err(::openehr_base::serde_support::unknown_field(__v, "P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN", __FIELDS)),
+}
+}
+}
+::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+}
+}
+struct __Visitor;
+impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+type Value = crate::v2::bmm_persistence::p_bmm_single_function_parameter_open::PBmmSingleFunctionParameterOpen;
+fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+__f.write_str("an openEHR `P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN` object")
+}
+fn visit_map<__A: ::serde::de::MapAccess<'de>>(self, mut __map: __A) -> ::core::result::Result<Self::Value, __A::Error> {
+let mut __seen_type = false;
+let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s1: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s2: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s3: ::core::option::Option<::core::option::Option<_>> = None;
+while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+ match __key {
+__Field::__Type => {
+if __seen_type { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("_type")); }
+__seen_type = true;
+::serde::de::MapAccess::next_value_seed(&mut __map, ::openehr_base::serde_support::ExpectedType("P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN"))?;
+}
+__Field::__F0 => {
+if __s0.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("documentation")); }
+__s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F1 => {
+if __s1.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("name")); }
+__s1 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F2 => {
+if __s2.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("is_nullable")); }
+__s2 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F3 => {
+if __s3.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("type")); }
+__s3 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+}
+}
+::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_single_function_parameter_open::PBmmSingleFunctionParameterOpen {
+documentation: __s0.flatten(),
+name: __s1.flatten().ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+is_nullable: __s2.flatten(),
+r#type: __s3.flatten().ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+})
+}
+}
+::serde::Deserializer::deserialize_struct(__deserializer, "P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN", __FIELDS, __Visitor)
+}
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmSingleProperty {
+impl ::serde::Serialize for crate::v2::bmm_persistence::p_bmm_single_property::PBmmSingleProperty {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -14255,7 +13791,9 @@ impl ::serde::Serialize for crate::prelude::PBmmSingleProperty {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmSingleProperty {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm_persistence::p_bmm_single_property::PBmmSingleProperty
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -14328,7 +13866,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmSingleProperty {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmSingleProperty;
+            type Value = crate::v2::bmm_persistence::p_bmm_single_property::PBmmSingleProperty;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_SINGLE_PROPERTY` object")
             }
@@ -14445,20 +13983,22 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmSingleProperty {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PBmmSingleProperty {
-                    documentation: __s0.flatten(),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    is_mandatory: __s2.flatten(),
-                    is_computed: __s3.flatten(),
-                    is_im_infrastructure: __s4.flatten(),
-                    is_im_runtime: __s5.flatten(),
-                    type_def: __s6.flatten(),
-                    bmm_property: __s7.flatten(),
-                    r#type: __s8.flatten(),
-                    type_ref: __s9.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::bmm_persistence::p_bmm_single_property::PBmmSingleProperty {
+                        documentation: __s0.flatten(),
+                        name: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        is_mandatory: __s2.flatten(),
+                        is_computed: __s3.flatten(),
+                        is_im_infrastructure: __s4.flatten(),
+                        is_im_runtime: __s5.flatten(),
+                        type_def: __s6.flatten(),
+                        bmm_property: __s7.flatten(),
+                        r#type: __s8.flatten(),
+                        type_ref: __s9.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -14470,7 +14010,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmSingleProperty {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmSinglePropertyOpen {
+impl ::serde::Serialize
+    for crate::v2::bmm_persistence::p_bmm_single_property_open::PBmmSinglePropertyOpen
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -14542,7 +14084,9 @@ impl ::serde::Serialize for crate::prelude::PBmmSinglePropertyOpen {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmSinglePropertyOpen {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm_persistence::p_bmm_single_property_open::PBmmSinglePropertyOpen
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -14615,7 +14159,8 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmSinglePropertyOpen {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmSinglePropertyOpen;
+            type Value =
+                crate::v2::bmm_persistence::p_bmm_single_property_open::PBmmSinglePropertyOpen;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_SINGLE_PROPERTY_OPEN` object")
             }
@@ -14732,20 +14277,18 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmSinglePropertyOpen {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PBmmSinglePropertyOpen {
-                    documentation: __s0.flatten(),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    is_mandatory: __s2.flatten(),
-                    is_computed: __s3.flatten(),
-                    is_im_infrastructure: __s4.flatten(),
-                    is_im_runtime: __s5.flatten(),
-                    type_def: __s6.flatten(),
-                    bmm_property: __s7.flatten(),
-                    type_ref: __s8.flatten(),
-                    r#type: __s9.flatten(),
-                })
+                ::core::result::Result::Ok(crate::v2::bmm_persistence::p_bmm_single_property_open::PBmmSinglePropertyOpen {
+documentation: __s0.flatten(),
+name: __s1.flatten().ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+is_mandatory: __s2.flatten(),
+is_computed: __s3.flatten(),
+is_im_infrastructure: __s4.flatten(),
+is_im_runtime: __s5.flatten(),
+type_def: __s6.flatten(),
+bmm_property: __s7.flatten(),
+type_ref: __s8.flatten(),
+r#type: __s9.flatten(),
+})
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -14757,29 +14300,29 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmSinglePropertyOpen {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PBmmType {
+impl ::serde::Serialize for crate::v2::bmm_persistence::p_bmm_type::PBmmType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::PBmmType::PBmmContainerType(__x) => {
+            crate::v2::bmm_persistence::p_bmm_type::PBmmType::PBmmContainerType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::PBmmType::PBmmGenericType(__x) => {
+            crate::v2::bmm_persistence::p_bmm_type::PBmmType::PBmmGenericType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::PBmmType::PBmmOpenType(__x) => {
+            crate::v2::bmm_persistence::p_bmm_type::PBmmType::PBmmOpenType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::PBmmType::PBmmSimpleType(__x) => {
+            crate::v2::bmm_persistence::p_bmm_type::PBmmType::PBmmSimpleType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmType {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::bmm_persistence::p_bmm_type::PBmmType {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -14792,7 +14335,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmType {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PBmmType;
+            type Value = crate::v2::bmm_persistence::p_bmm_type::PBmmType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `P_BMM_TYPE` object")
             }
@@ -14811,27 +14354,27 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmType {
                         );
                         match __t {
                             "P_BMM_CONTAINER_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmType::PBmmContainerType(
+                                crate::v2::bmm_persistence::p_bmm_type::PBmmType::PBmmContainerType(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
                             "P_BMM_GENERIC_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmType::PBmmGenericType(
+                                crate::v2::bmm_persistence::p_bmm_type::PBmmType::PBmmGenericType(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
                             "P_BMM_INDEXED_CONTAINER_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmType::PBmmContainerType(
+                                crate::v2::bmm_persistence::p_bmm_type::PBmmType::PBmmContainerType(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
-                            "P_BMM_OPEN_TYPE" => {
-                                ::core::result::Result::Ok(crate::prelude::PBmmType::PBmmOpenType(
+                            "P_BMM_OPEN_TYPE" => ::core::result::Result::Ok(
+                                crate::v2::bmm_persistence::p_bmm_type::PBmmType::PBmmOpenType(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
+                                ),
+                            ),
                             "P_BMM_SIMPLE_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::PBmmType::PBmmSimpleType(
+                                crate::v2::bmm_persistence::p_bmm_type::PBmmType::PBmmSimpleType(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
@@ -14864,7 +14407,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PBmmType {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ReferenceModelAccess {
+impl ::serde::Serialize
+    for crate::v2::bmm::rm_access::reference_model_access::ReferenceModelAccess
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -14905,7 +14450,9 @@ impl ::serde::Serialize for crate::prelude::ReferenceModelAccess {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ReferenceModelAccess {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm::rm_access::reference_model_access::ReferenceModelAccess
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -14953,7 +14500,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ReferenceModelAccess {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ReferenceModelAccess;
+            type Value = crate::v2::bmm::rm_access::reference_model_access::ReferenceModelAccess;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `REFERENCE_MODEL_ACCESS` object")
             }
@@ -15007,11 +14554,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ReferenceModelAccess {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ReferenceModelAccess {
-                    schema_directories: __s0,
-                    all_schemas: __s1.flatten(),
-                    valid_models: __s2.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::bmm::rm_access::reference_model_access::ReferenceModelAccess {
+                        schema_directories: __s0,
+                        all_schemas: __s1.flatten(),
+                        valid_models: __s2.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -15023,7 +14572,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ReferenceModelAccess {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::SchemaDescriptorData {
+impl ::serde::Serialize for crate::v2::bmm::rm_access::schema_descriptor::SchemaDescriptorData {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -15058,7 +14607,9 @@ impl ::serde::Serialize for crate::prelude::SchemaDescriptorData {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::SchemaDescriptorData {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm::rm_access::schema_descriptor::SchemaDescriptorData
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -15110,7 +14661,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::SchemaDescriptorData {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::SchemaDescriptorData;
+            type Value = crate::v2::bmm::rm_access::schema_descriptor::SchemaDescriptorData;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `SCHEMA_DESCRIPTOR` object")
             }
@@ -15180,17 +14731,19 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::SchemaDescriptorData {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::SchemaDescriptorData {
-                    p_schema: __s0.flatten(),
-                    schema: __s1.flatten(),
-                    schema_id: __s2
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("schema_id"))?,
-                    meta_data: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("meta_data"))?,
-                    includes: __s4,
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::bmm::rm_access::schema_descriptor::SchemaDescriptorData {
+                        p_schema: __s0.flatten(),
+                        schema: __s1.flatten(),
+                        schema_id: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("schema_id"))?,
+                        meta_data: __s3
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("meta_data"))?,
+                        includes: __s4,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -15202,30 +14755,28 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::SchemaDescriptorData {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::SchemaDescriptor {
+impl ::serde::Serialize for crate::v2::bmm::rm_access::schema_descriptor::SchemaDescriptor {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::SchemaDescriptor::PBmmSchemaDescriptor(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::SchemaDescriptor::SchemaDescriptor(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-        }
+crate::v2::bmm::rm_access::schema_descriptor::SchemaDescriptor::PBmmSchemaDescriptor(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v2::bmm::rm_access::schema_descriptor::SchemaDescriptor::SchemaDescriptor(__x) => ::serde::Serialize::serialize(__x, __serializer),
+}
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::SchemaDescriptor {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::bmm::rm_access::schema_descriptor::SchemaDescriptor
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["P_BMM_SCHEMA_DESCRIPTOR", "SCHEMA_DESCRIPTOR"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::SchemaDescriptor;
+            type Value = crate::v2::bmm::rm_access::schema_descriptor::SchemaDescriptor;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `SCHEMA_DESCRIPTOR` object")
             }
@@ -15243,24 +14794,10 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::SchemaDescriptor {
                             __map,
                         );
                         match __t {
-                            "P_BMM_SCHEMA_DESCRIPTOR" => ::core::result::Result::Ok(
-                                crate::prelude::SchemaDescriptor::PBmmSchemaDescriptor(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "SCHEMA_DESCRIPTOR" => ::core::result::Result::Ok(
-                                crate::prelude::SchemaDescriptor::SchemaDescriptor(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "SCHEMA_DESCRIPTOR",
-                                    __other,
-                                    "P_BMM_SCHEMA_DESCRIPTOR, SCHEMA_DESCRIPTOR",
-                                ),
-                            ),
-                        }
+"P_BMM_SCHEMA_DESCRIPTOR" => ::core::result::Result::Ok(crate::v2::bmm::rm_access::schema_descriptor::SchemaDescriptor::PBmmSchemaDescriptor(::serde::Deserialize::deserialize(__rest)?)),
+"SCHEMA_DESCRIPTOR" => ::core::result::Result::Ok(crate::v2::bmm::rm_access::schema_descriptor::SchemaDescriptor::SchemaDescriptor(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("SCHEMA_DESCRIPTOR", __other, "P_BMM_SCHEMA_DESCRIPTOR, SCHEMA_DESCRIPTOR")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -15272,11 +14809,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::SchemaDescriptor {
                     None => {
                         let __rest =
                             ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);
-                        ::core::result::Result::Ok(
-                            crate::prelude::SchemaDescriptor::SchemaDescriptor(
-                                ::serde::Deserialize::deserialize(__rest)?,
-                            ),
-                        )
+                        ::core::result::Result::Ok(crate::v2::bmm::rm_access::schema_descriptor::SchemaDescriptor::SchemaDescriptor(::serde::Deserialize::deserialize(__rest)?))
                     }
                 }
             }
@@ -15285,33 +14818,33 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::SchemaDescriptor {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::Statement {
+impl ::serde::Serialize for crate::v2::beom::core::statement::Statement {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::Statement::Assertion(__x) => {
+            crate::v2::beom::core::statement::Statement::Assertion(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::Statement::Assignment(__x) => {
+            crate::v2::beom::core::statement::Statement::Assignment(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::Statement::VariableDeclaration(__x) => {
+            crate::v2::beom::core::statement::Statement::VariableDeclaration(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::Statement {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::beom::core::statement::Statement {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["ASSERTION", "ASSIGNMENT", "VARIABLE_DECLARATION"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::Statement;
+            type Value = crate::v2::beom::core::statement::Statement;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `STATEMENT` object")
             }
@@ -15329,18 +14862,18 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Statement {
                             __map,
                         );
                         match __t {
-                            "ASSERTION" => {
-                                ::core::result::Result::Ok(crate::prelude::Statement::Assertion(
+                            "ASSERTION" => ::core::result::Result::Ok(
+                                crate::v2::beom::core::statement::Statement::Assertion(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "ASSIGNMENT" => {
-                                ::core::result::Result::Ok(crate::prelude::Statement::Assignment(
+                                ),
+                            ),
+                            "ASSIGNMENT" => ::core::result::Result::Ok(
+                                crate::v2::beom::core::statement::Statement::Assignment(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
+                                ),
+                            ),
                             "VARIABLE_DECLARATION" => ::core::result::Result::Ok(
-                                crate::prelude::Statement::VariableDeclaration(
+                                crate::v2::beom::core::statement::Statement::VariableDeclaration(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
@@ -15373,7 +14906,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Statement {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::StatementSet {
+impl ::serde::Serialize for crate::v2::beom::core::statement_set::StatementSet {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -15399,7 +14932,7 @@ impl ::serde::Serialize for crate::prelude::StatementSet {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::StatementSet {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::beom::core::statement_set::StatementSet {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -15445,7 +14978,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::StatementSet {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::StatementSet;
+            type Value = crate::v2::beom::core::statement_set::StatementSet;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `STATEMENT_SET` object")
             }
@@ -15488,7 +15021,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::StatementSet {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::StatementSet {
+                ::core::result::Result::Ok(crate::v2::beom::core::statement_set::StatementSet {
                     statement: __s0,
                     name: __s1.flatten(),
                 })
@@ -15503,7 +15036,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::StatementSet {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::TypeDefBoolean {
+impl ::serde::Serialize for crate::v2::beom::types::type_def_boolean::TypeDefBoolean {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -15522,7 +15055,7 @@ impl ::serde::Serialize for crate::prelude::TypeDefBoolean {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefBoolean {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::beom::types::type_def_boolean::TypeDefBoolean {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -15568,7 +15101,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefBoolean {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::TypeDefBoolean;
+            type Value = crate::v2::beom::types::type_def_boolean::TypeDefBoolean;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `TYPE_DEF_BOOLEAN` object")
             }
@@ -15611,14 +15144,16 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefBoolean {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::TypeDefBoolean {
-                    type_name: __s0
-                        .flatten()
-                        .unwrap_or(::std::string::String::from("Boolean")),
-                    type_anchor: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type_anchor"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::beom::types::type_def_boolean::TypeDefBoolean {
+                        type_name: __s0
+                            .flatten()
+                            .unwrap_or(::std::string::String::from("Boolean")),
+                        type_anchor: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type_anchor"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -15630,7 +15165,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefBoolean {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::TypeDefDate {
+impl ::serde::Serialize for crate::v2::beom::types::type_def_date::TypeDefDate {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -15648,7 +15183,7 @@ impl ::serde::Serialize for crate::prelude::TypeDefDate {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefDate {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::beom::types::type_def_date::TypeDefDate {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -15694,7 +15229,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefDate {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::TypeDefDate;
+            type Value = crate::v2::beom::types::type_def_date::TypeDefDate;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `TYPE_DEF_DATE` object")
             }
@@ -15737,7 +15272,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefDate {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::TypeDefDate {
+                ::core::result::Result::Ok(crate::v2::beom::types::type_def_date::TypeDefDate {
                     type_name: __s0
                         .flatten()
                         .unwrap_or(::std::string::String::from("Date")),
@@ -15756,7 +15291,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefDate {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::TypeDefDateTime {
+impl ::serde::Serialize for crate::v2::beom::types::type_def_date_time::TypeDefDateTime {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -15775,7 +15310,9 @@ impl ::serde::Serialize for crate::prelude::TypeDefDateTime {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefDateTime {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::beom::types::type_def_date_time::TypeDefDateTime
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -15821,7 +15358,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefDateTime {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::TypeDefDateTime;
+            type Value = crate::v2::beom::types::type_def_date_time::TypeDefDateTime;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `TYPE_DEF_DATE_TIME` object")
             }
@@ -15864,14 +15401,16 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefDateTime {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::TypeDefDateTime {
-                    type_name: __s0
-                        .flatten()
-                        .unwrap_or(::std::string::String::from("Date_time")),
-                    type_anchor: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type_anchor"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::beom::types::type_def_date_time::TypeDefDateTime {
+                        type_name: __s0
+                            .flatten()
+                            .unwrap_or(::std::string::String::from("Date_time")),
+                        type_anchor: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type_anchor"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -15883,7 +15422,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefDateTime {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::TypeDefDuration {
+impl ::serde::Serialize for crate::v2::beom::types::type_def_duration::TypeDefDuration {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -15902,7 +15441,7 @@ impl ::serde::Serialize for crate::prelude::TypeDefDuration {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefDuration {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::beom::types::type_def_duration::TypeDefDuration {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -15948,7 +15487,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefDuration {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::TypeDefDuration;
+            type Value = crate::v2::beom::types::type_def_duration::TypeDefDuration;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `TYPE_DEF_DURATION` object")
             }
@@ -15991,14 +15530,16 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefDuration {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::TypeDefDuration {
-                    type_name: __s0
-                        .flatten()
-                        .unwrap_or(::std::string::String::from("Duration")),
-                    type_anchor: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type_anchor"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::beom::types::type_def_duration::TypeDefDuration {
+                        type_name: __s0
+                            .flatten()
+                            .unwrap_or(::std::string::String::from("Duration")),
+                        type_anchor: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type_anchor"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -16010,7 +15551,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefDuration {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::TypeDefInteger {
+impl ::serde::Serialize for crate::v2::beom::types::type_def_integer::TypeDefInteger {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -16029,7 +15570,7 @@ impl ::serde::Serialize for crate::prelude::TypeDefInteger {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefInteger {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::beom::types::type_def_integer::TypeDefInteger {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -16075,7 +15616,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefInteger {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::TypeDefInteger;
+            type Value = crate::v2::beom::types::type_def_integer::TypeDefInteger;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `TYPE_DEF_INTEGER` object")
             }
@@ -16118,14 +15659,16 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefInteger {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::TypeDefInteger {
-                    type_name: __s0
-                        .flatten()
-                        .unwrap_or(::std::string::String::from("Integer")),
-                    type_anchor: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type_anchor"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::beom::types::type_def_integer::TypeDefInteger {
+                        type_name: __s0
+                            .flatten()
+                            .unwrap_or(::std::string::String::from("Integer")),
+                        type_anchor: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type_anchor"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -16137,7 +15680,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefInteger {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::TypeDefObjectRef {
+impl ::serde::Serialize for crate::v2::beom::types::type_def_object_ref::TypeDefObjectRef {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -16156,7 +15699,9 @@ impl ::serde::Serialize for crate::prelude::TypeDefObjectRef {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefObjectRef {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::beom::types::type_def_object_ref::TypeDefObjectRef
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -16202,7 +15747,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefObjectRef {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::TypeDefObjectRef;
+            type Value = crate::v2::beom::types::type_def_object_ref::TypeDefObjectRef;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `TYPE_DEF_OBJECT_REF` object")
             }
@@ -16245,14 +15790,16 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefObjectRef {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::TypeDefObjectRef {
-                    type_name: __s0
-                        .flatten()
-                        .unwrap_or(::std::string::String::from("Object_ref")),
-                    type_anchor: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type_anchor"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::beom::types::type_def_object_ref::TypeDefObjectRef {
+                        type_name: __s0
+                            .flatten()
+                            .unwrap_or(::std::string::String::from("Object_ref")),
+                        type_anchor: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type_anchor"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -16264,7 +15811,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefObjectRef {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::TypeDefReal {
+impl ::serde::Serialize for crate::v2::beom::types::type_def_real::TypeDefReal {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -16282,7 +15829,7 @@ impl ::serde::Serialize for crate::prelude::TypeDefReal {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefReal {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::beom::types::type_def_real::TypeDefReal {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -16328,7 +15875,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefReal {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::TypeDefReal;
+            type Value = crate::v2::beom::types::type_def_real::TypeDefReal;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `TYPE_DEF_REAL` object")
             }
@@ -16371,7 +15918,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefReal {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::TypeDefReal {
+                ::core::result::Result::Ok(crate::v2::beom::types::type_def_real::TypeDefReal {
                     type_name: __s0
                         .flatten()
                         .unwrap_or(::std::string::String::from("Real")),
@@ -16390,7 +15937,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefReal {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::TypeDefString {
+impl ::serde::Serialize for crate::v2::beom::types::type_def_string::TypeDefString {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -16408,7 +15955,7 @@ impl ::serde::Serialize for crate::prelude::TypeDefString {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefString {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::beom::types::type_def_string::TypeDefString {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -16454,7 +16001,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefString {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::TypeDefString;
+            type Value = crate::v2::beom::types::type_def_string::TypeDefString;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `TYPE_DEF_STRING` object")
             }
@@ -16497,7 +16044,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefString {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::TypeDefString {
+                ::core::result::Result::Ok(crate::v2::beom::types::type_def_string::TypeDefString {
                     type_name: __s0
                         .flatten()
                         .unwrap_or(::std::string::String::from("String")),
@@ -16516,7 +16063,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefString {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::TypeDefTerminologyCode {
+impl ::serde::Serialize
+    for crate::v2::beom::types::type_def_terminology_code::TypeDefTerminologyCode
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -16539,7 +16088,9 @@ impl ::serde::Serialize for crate::prelude::TypeDefTerminologyCode {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefTerminologyCode {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::beom::types::type_def_terminology_code::TypeDefTerminologyCode
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -16585,7 +16136,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefTerminologyCode {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::TypeDefTerminologyCode;
+            type Value = crate::v2::beom::types::type_def_terminology_code::TypeDefTerminologyCode;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `TYPE_DEF_TERMINOLOGY_CODE` object")
             }
@@ -16630,14 +16181,16 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefTerminologyCode {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::TypeDefTerminologyCode {
-                    type_name: __s0
-                        .flatten()
-                        .unwrap_or(::std::string::String::from("Terminology_code")),
-                    type_anchor: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type_anchor"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::beom::types::type_def_terminology_code::TypeDefTerminologyCode {
+                        type_name: __s0
+                            .flatten()
+                            .unwrap_or(::std::string::String::from("Terminology_code")),
+                        type_anchor: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type_anchor"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -16649,7 +16202,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefTerminologyCode {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::TypeDefTime {
+impl ::serde::Serialize for crate::v2::beom::types::type_def_time::TypeDefTime {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -16667,7 +16220,7 @@ impl ::serde::Serialize for crate::prelude::TypeDefTime {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefTime {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::beom::types::type_def_time::TypeDefTime {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -16713,7 +16266,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefTime {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::TypeDefTime;
+            type Value = crate::v2::beom::types::type_def_time::TypeDefTime;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `TYPE_DEF_TIME` object")
             }
@@ -16756,7 +16309,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefTime {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::TypeDefTime {
+                ::core::result::Result::Ok(crate::v2::beom::types::type_def_time::TypeDefTime {
                     type_name: __s0
                         .flatten()
                         .unwrap_or(::std::string::String::from("Time")),
@@ -16775,7 +16328,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefTime {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::TypeDefUri {
+impl ::serde::Serialize for crate::v2::beom::types::type_def_uri::TypeDefUri {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -16793,7 +16346,7 @@ impl ::serde::Serialize for crate::prelude::TypeDefUri {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefUri {
+impl<'de> ::serde::Deserialize<'de> for crate::v2::beom::types::type_def_uri::TypeDefUri {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -16839,7 +16392,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefUri {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::TypeDefUri;
+            type Value = crate::v2::beom::types::type_def_uri::TypeDefUri;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `TYPE_DEF_URI` object")
             }
@@ -16882,7 +16435,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefUri {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::TypeDefUri {
+                ::core::result::Result::Ok(crate::v2::beom::types::type_def_uri::TypeDefUri {
                     type_name: __s0.flatten().unwrap_or(::std::string::String::from("Uri")),
                     type_anchor: __s1
                         .flatten()
@@ -16899,7 +16452,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TypeDefUri {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::VariableDeclaration {
+impl ::serde::Serialize for crate::v2::beom::core::variable_declaration::VariableDeclaration {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -16914,7 +16467,9 @@ impl ::serde::Serialize for crate::prelude::VariableDeclaration {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::VariableDeclaration {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v2::beom::core::variable_declaration::VariableDeclaration
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -16960,7 +16515,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::VariableDeclaration {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::VariableDeclaration;
+            type Value = crate::v2::beom::core::variable_declaration::VariableDeclaration;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `VARIABLE_DECLARATION` object")
             }
@@ -17003,14 +16558,16 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::VariableDeclaration {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::VariableDeclaration {
-                    name: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    r#type: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v2::beom::core::variable_declaration::VariableDeclaration {
+                        name: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        r#type: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -17022,7 +16579,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::VariableDeclaration {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmActionDecisionTable {
+impl ::serde::Serialize
+    for crate::v3::bmm3::statement::bmm_action_decision_table::BmmActionDecisionTable
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -17039,7 +16598,9 @@ impl ::serde::Serialize for crate::prelude::BmmActionDecisionTable {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmActionDecisionTable {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::statement::bmm_action_decision_table::BmmActionDecisionTable
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -17081,7 +16642,8 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmActionDecisionTable {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmActionDecisionTable;
+            type Value =
+                crate::v3::bmm3::statement::bmm_action_decision_table::BmmActionDecisionTable;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_ACTION_DECISION_TABLE` object")
             }
@@ -17108,7 +16670,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmActionDecisionTable {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmActionDecisionTable {})
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::statement::bmm_action_decision_table::BmmActionDecisionTable {},
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -17120,7 +16684,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmActionDecisionTable {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmActionTable {
+impl ::serde::Serialize for crate::v3::bmm3::statement::bmm_action_table::BmmActionTable {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -17138,7 +16702,9 @@ impl ::serde::Serialize for crate::prelude::BmmActionTable {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmActionTable {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::statement::bmm_action_table::BmmActionTable
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -17182,7 +16748,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmActionTable {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmActionTable;
+            type Value = crate::v3::bmm3::statement::bmm_action_table::BmmActionTable;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_ACTION_TABLE` object")
             }
@@ -17216,11 +16782,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmActionTable {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmActionTable {
-                    decision_table: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("decision_table"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::statement::bmm_action_table::BmmActionTable {
+                        decision_table: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("decision_table"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -17232,7 +16800,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmActionTable {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmAssertion {
+impl ::serde::Serialize for crate::v3::bmm3::statement::bmm_assertion::BmmAssertion {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -17251,7 +16819,7 @@ impl ::serde::Serialize for crate::prelude::BmmAssertion {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmAssertion {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::statement::bmm_assertion::BmmAssertion {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -17297,7 +16865,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmAssertion {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmAssertion;
+            type Value = crate::v3::bmm3::statement::bmm_assertion::BmmAssertion;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_ASSERTION` object")
             }
@@ -17340,12 +16908,14 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmAssertion {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmAssertion {
-                    expression: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("expression"))?,
-                    tag: __s1.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::statement::bmm_assertion::BmmAssertion {
+                        expression: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("expression"))?,
+                        tag: __s1.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -17357,7 +16927,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmAssertion {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmAssignment {
+impl ::serde::Serialize for crate::v3::bmm3::statement::bmm_assignment::BmmAssignment {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -17371,7 +16941,7 @@ impl ::serde::Serialize for crate::prelude::BmmAssignment {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmAssignment {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::statement::bmm_assignment::BmmAssignment {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -17417,7 +16987,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmAssignment {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmAssignment;
+            type Value = crate::v3::bmm3::statement::bmm_assignment::BmmAssignment;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_ASSIGNMENT` object")
             }
@@ -17460,14 +17030,16 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmAssignment {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmAssignment {
-                    target: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("target"))?,
-                    source: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("source"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::statement::bmm_assignment::BmmAssignment {
+                        target: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("target"))?,
+                        source: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("source"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -17479,7 +17051,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmAssignment {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmBooleanValue {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::literal_value::bmm_boolean_value::BmmBooleanValue
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -17505,7 +17079,9 @@ impl ::serde::Serialize for crate::prelude::BmmBooleanValue {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmBooleanValue {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::literal_value::bmm_boolean_value::BmmBooleanValue
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -17555,7 +17131,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmBooleanValue {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmBooleanValue;
+            type Value = crate::v3::bmm3::core::literal_value::bmm_boolean_value::BmmBooleanValue;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_BOOLEAN_VALUE` object")
             }
@@ -17616,18 +17192,20 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmBooleanValue {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmBooleanValue {
-                    value_literal: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("value_literal"))?,
-                    value: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
-                    syntax: __s2.flatten(),
-                    r#type: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::literal_value::bmm_boolean_value::BmmBooleanValue {
+                        value_literal: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value_literal"))?,
+                        value: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
+                        syntax: __s2.flatten(),
+                        r#type: __s3
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -17639,26 +17217,28 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmBooleanValue {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmBuiltinType {
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::bmm_builtin_type::BmmBuiltinType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmBuiltinType::BmmSignature(__x) => {
+            crate::v3::bmm3::core::entity::bmm_builtin_type::BmmBuiltinType::BmmSignature(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmBuiltinType::BmmStatusType(__x) => {
+            crate::v3::bmm3::core::entity::bmm_builtin_type::BmmBuiltinType::BmmStatusType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmBuiltinType::BmmTupleType(__x) => {
+            crate::v3::bmm3::core::entity::bmm_builtin_type::BmmBuiltinType::BmmTupleType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmBuiltinType {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::entity::bmm_builtin_type::BmmBuiltinType
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -17673,7 +17253,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmBuiltinType {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmBuiltinType;
+            type Value = crate::v3::bmm3::core::entity::bmm_builtin_type::BmmBuiltinType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_BUILTIN_TYPE` object")
             }
@@ -17691,49 +17271,15 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmBuiltinType {
                             __map,
                         );
                         match __t {
-                            "BMM_FUNCTION_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmBuiltinType::BmmSignature(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_PROCEDURE_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmBuiltinType::BmmSignature(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_PROPERTY_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmBuiltinType::BmmSignature(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_ROUTINE_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmBuiltinType::BmmSignature(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_SIGNATURE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmBuiltinType::BmmSignature(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_STATUS_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmBuiltinType::BmmStatusType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_TUPLE_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmBuiltinType::BmmTupleType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_BUILTIN_TYPE",
-                                    __other,
-                                    "BMM_FUNCTION_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE",
-                                ),
-                            ),
-                        }
+"BMM_FUNCTION_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_builtin_type::BmmBuiltinType::BmmSignature(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PROCEDURE_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_builtin_type::BmmBuiltinType::BmmSignature(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PROPERTY_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_builtin_type::BmmBuiltinType::BmmSignature(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ROUTINE_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_builtin_type::BmmBuiltinType::BmmSignature(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_SIGNATURE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_builtin_type::BmmBuiltinType::BmmSignature(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_STATUS_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_builtin_type::BmmBuiltinType::BmmStatusType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_TUPLE_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_builtin_type::BmmBuiltinType::BmmTupleType(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_BUILTIN_TYPE", __other, "BMM_FUNCTION_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -17755,23 +17301,23 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmBuiltinType {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmClass {
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::bmm_class::BmmClass {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmClass::BmmGenericClass(__x) => {
+            crate::v3::bmm3::core::entity::bmm_class::BmmClass::BmmGenericClass(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmClass::BmmSimpleClass(__x) => {
+            crate::v3::bmm3::core::entity::bmm_class::BmmClass::BmmSimpleClass(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmClass {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::core::entity::bmm_class::BmmClass {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -17784,7 +17330,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmClass {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmClass;
+            type Value = crate::v3::bmm3::core::entity::bmm_class::BmmClass;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_CLASS` object")
             }
@@ -17803,27 +17349,27 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmClass {
                         );
                         match __t {
                             "BMM_ENUMERATION" => ::core::result::Result::Ok(
-                                crate::prelude::BmmClass::BmmSimpleClass(
+                                crate::v3::bmm3::core::entity::bmm_class::BmmClass::BmmSimpleClass(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
                             "BMM_ENUMERATION_INTEGER" => ::core::result::Result::Ok(
-                                crate::prelude::BmmClass::BmmSimpleClass(
+                                crate::v3::bmm3::core::entity::bmm_class::BmmClass::BmmSimpleClass(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
                             "BMM_ENUMERATION_STRING" => ::core::result::Result::Ok(
-                                crate::prelude::BmmClass::BmmSimpleClass(
+                                crate::v3::bmm3::core::entity::bmm_class::BmmClass::BmmSimpleClass(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
                             "BMM_GENERIC_CLASS" => ::core::result::Result::Ok(
-                                crate::prelude::BmmClass::BmmGenericClass(
+                                crate::v3::bmm3::core::entity::bmm_class::BmmClass::BmmGenericClass(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
                             "BMM_SIMPLE_CLASS" => ::core::result::Result::Ok(
-                                crate::prelude::BmmClass::BmmSimpleClass(
+                                crate::v3::bmm3::core::entity::bmm_class::BmmClass::BmmSimpleClass(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
@@ -17856,7 +17402,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmClass {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmConstant {
+impl ::serde::Serialize for crate::v3::bmm3::core::feature::bmm_constant::BmmConstant {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -17912,7 +17458,7 @@ impl ::serde::Serialize for crate::prelude::BmmConstant {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmConstant {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::core::feature::bmm_constant::BmmConstant {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -17982,7 +17528,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmConstant {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmConstant;
+            type Value = crate::v3::bmm3::core::feature::bmm_constant::BmmConstant;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_CONSTANT` object")
             }
@@ -18088,25 +17634,27 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmConstant {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmConstant {
-                    name: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    documentation: __s1.flatten(),
-                    extensions: __s2.flatten(),
-                    r#type: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                    is_nullable: __s4.flatten(),
-                    is_synthesised_generic: __s5.flatten(),
-                    feature_extensions: __s6,
-                    group: __s7
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("group"))?,
-                    generator: __s8
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("generator"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::feature::bmm_constant::BmmConstant {
+                        name: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        documentation: __s1.flatten(),
+                        extensions: __s2.flatten(),
+                        r#type: __s3
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+                        is_nullable: __s4.flatten(),
+                        is_synthesised_generic: __s5.flatten(),
+                        feature_extensions: __s6,
+                        group: __s7
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("group"))?,
+                        generator: __s8
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("generator"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -18118,7 +17666,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmConstant {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmContainerPropertyData {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::feature::bmm_container_property::BmmContainerPropertyData
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -18202,7 +17752,9 @@ impl ::serde::Serialize for crate::prelude::BmmContainerPropertyData {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmContainerPropertyData {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::feature::bmm_container_property::BmmContainerPropertyData
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -18281,7 +17833,8 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmContainerPropertyData
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmContainerPropertyData;
+            type Value =
+                crate::v3::bmm3::core::feature::bmm_container_property::BmmContainerPropertyData;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_CONTAINER_PROPERTY` object")
             }
@@ -18416,26 +17969,20 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmContainerPropertyData
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmContainerPropertyData {
-                    name: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    documentation: __s1.flatten(),
-                    extensions: __s2.flatten(),
-                    r#type: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                    is_nullable: __s4.flatten(),
-                    is_synthesised_generic: __s5.flatten(),
-                    feature_extensions: __s6,
-                    group: __s7
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("group"))?,
-                    is_im_runtime: __s8.flatten(),
-                    is_im_infrastructure: __s9.flatten(),
-                    is_composition: __s10.flatten(),
-                    cardinality: __s11.flatten(),
-                })
+                ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_container_property::BmmContainerPropertyData {
+name: __s0.flatten().ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+documentation: __s1.flatten(),
+extensions: __s2.flatten(),
+r#type: __s3.flatten().ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+is_nullable: __s4.flatten(),
+is_synthesised_generic: __s5.flatten(),
+feature_extensions: __s6,
+group: __s7.flatten().ok_or_else(|| ::serde::de::Error::missing_field("group"))?,
+is_im_runtime: __s8.flatten(),
+is_im_infrastructure: __s9.flatten(),
+is_composition: __s10.flatten(),
+cardinality: __s11.flatten(),
+})
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -18447,30 +17994,31 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmContainerPropertyData
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmContainerProperty {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::feature::bmm_container_property::BmmContainerProperty
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmContainerProperty::BmmIndexedContainerProperty(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmContainerProperty::BmmContainerProperty(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-        }
+crate::v3::bmm3::core::feature::bmm_container_property::BmmContainerProperty::BmmIndexedContainerProperty(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::core::feature::bmm_container_property::BmmContainerProperty::BmmContainerProperty(__x) => ::serde::Serialize::serialize(__x, __serializer),
+}
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmContainerProperty {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::feature::bmm_container_property::BmmContainerProperty
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["BMM_CONTAINER_PROPERTY", "BMM_INDEXED_CONTAINER_PROPERTY"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmContainerProperty;
+            type Value =
+                crate::v3::bmm3::core::feature::bmm_container_property::BmmContainerProperty;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_CONTAINER_PROPERTY` object")
             }
@@ -18488,24 +18036,10 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmContainerProperty {
                             __map,
                         );
                         match __t {
-                            "BMM_CONTAINER_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::BmmContainerProperty::BmmContainerProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_INDEXED_CONTAINER_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::BmmContainerProperty::BmmIndexedContainerProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_CONTAINER_PROPERTY",
-                                    __other,
-                                    "BMM_CONTAINER_PROPERTY, BMM_INDEXED_CONTAINER_PROPERTY",
-                                ),
-                            ),
-                        }
+"BMM_CONTAINER_PROPERTY" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_container_property::BmmContainerProperty::BmmContainerProperty(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_INDEXED_CONTAINER_PROPERTY" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_container_property::BmmContainerProperty::BmmIndexedContainerProperty(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_CONTAINER_PROPERTY", __other, "BMM_CONTAINER_PROPERTY, BMM_INDEXED_CONTAINER_PROPERTY")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -18517,11 +18051,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmContainerProperty {
                     None => {
                         let __rest =
                             ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);
-                        ::core::result::Result::Ok(
-                            crate::prelude::BmmContainerProperty::BmmContainerProperty(
-                                ::serde::Deserialize::deserialize(__rest)?,
-                            ),
-                        )
+                        ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_container_property::BmmContainerProperty::BmmContainerProperty(::serde::Deserialize::deserialize(__rest)?))
                     }
                 }
             }
@@ -18530,7 +18060,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmContainerProperty {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmContainerTypeData {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::entity::bmm_container_type::BmmContainerTypeData
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -18561,7 +18093,9 @@ impl ::serde::Serialize for crate::prelude::BmmContainerTypeData {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmContainerTypeData {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::entity::bmm_container_type::BmmContainerTypeData
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -18611,7 +18145,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmContainerTypeData {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmContainerTypeData;
+            type Value = crate::v3::bmm3::core::entity::bmm_container_type::BmmContainerTypeData;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_CONTAINER_TYPE` object")
             }
@@ -18672,16 +18206,18 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmContainerTypeData {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmContainerTypeData {
-                    container_class: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("container_class"))?,
-                    item_type: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("item_type"))?,
-                    is_ordered: __s2.flatten(),
-                    is_unique: __s3.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::entity::bmm_container_type::BmmContainerTypeData {
+                        container_class: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("container_class"))?,
+                        item_type: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("item_type"))?,
+                        is_ordered: __s2.flatten(),
+                        is_unique: __s3.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -18693,30 +18229,28 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmContainerTypeData {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmContainerType {
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::bmm_container_type::BmmContainerType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmContainerType::BmmIndexedContainerType(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmContainerType::BmmContainerType(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-        }
+crate::v3::bmm3::core::entity::bmm_container_type::BmmContainerType::BmmIndexedContainerType(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::core::entity::bmm_container_type::BmmContainerType::BmmContainerType(__x) => ::serde::Serialize::serialize(__x, __serializer),
+}
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmContainerType {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::entity::bmm_container_type::BmmContainerType
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["BMM_CONTAINER_TYPE", "BMM_INDEXED_CONTAINER_TYPE"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmContainerType;
+            type Value = crate::v3::bmm3::core::entity::bmm_container_type::BmmContainerType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_CONTAINER_TYPE` object")
             }
@@ -18734,24 +18268,10 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmContainerType {
                             __map,
                         );
                         match __t {
-                            "BMM_CONTAINER_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmContainerType::BmmContainerType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_INDEXED_CONTAINER_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmContainerType::BmmIndexedContainerType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_CONTAINER_TYPE",
-                                    __other,
-                                    "BMM_CONTAINER_TYPE, BMM_INDEXED_CONTAINER_TYPE",
-                                ),
-                            ),
-                        }
+"BMM_CONTAINER_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_container_type::BmmContainerType::BmmContainerType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_INDEXED_CONTAINER_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_container_type::BmmContainerType::BmmIndexedContainerType(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_CONTAINER_TYPE", __other, "BMM_CONTAINER_TYPE, BMM_INDEXED_CONTAINER_TYPE")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -18763,11 +18283,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmContainerType {
                     None => {
                         let __rest =
                             ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);
-                        ::core::result::Result::Ok(
-                            crate::prelude::BmmContainerType::BmmContainerType(
-                                ::serde::Deserialize::deserialize(__rest)?,
-                            ),
-                        )
+                        ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_container_type::BmmContainerType::BmmContainerType(::serde::Deserialize::deserialize(__rest)?))
                     }
                 }
             }
@@ -18776,7 +18292,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmContainerType {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmContainerValue {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::literal_value::bmm_container_value::BmmContainerValue
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -18807,7 +18325,9 @@ impl ::serde::Serialize for crate::prelude::BmmContainerValue {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmContainerValue {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::literal_value::bmm_container_value::BmmContainerValue
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -18857,7 +18377,8 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmContainerValue {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmContainerValue;
+            type Value =
+                crate::v3::bmm3::core::literal_value::bmm_container_value::BmmContainerValue;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_CONTAINER_VALUE` object")
             }
@@ -18918,16 +18439,18 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmContainerValue {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmContainerValue {
-                    value_literal: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("value_literal"))?,
-                    value: __s1.flatten(),
-                    syntax: __s2.flatten(),
-                    r#type: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::literal_value::bmm_container_value::BmmContainerValue {
+                        value_literal: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value_literal"))?,
+                        value: __s1.flatten(),
+                        syntax: __s2.flatten(),
+                        r#type: __s3
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -18939,7 +18462,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmContainerValue {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmDeclaration {
+impl ::serde::Serialize for crate::v3::bmm3::statement::bmm_declaration::BmmDeclaration {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -18954,7 +18477,9 @@ impl ::serde::Serialize for crate::prelude::BmmDeclaration {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmDeclaration {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::statement::bmm_declaration::BmmDeclaration
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -19002,7 +18527,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmDeclaration {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmDeclaration;
+            type Value = crate::v3::bmm3::statement::bmm_declaration::BmmDeclaration;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_DECLARATION` object")
             }
@@ -19054,17 +18579,19 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmDeclaration {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmDeclaration {
-                    name: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    result: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("result"))?,
-                    r#type: __s2
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::statement::bmm_declaration::BmmDeclaration {
+                        name: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        result: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("result"))?,
+                        r#type: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -19076,7 +18603,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmDeclaration {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmDefinitions {
+impl ::serde::Serialize for crate::v3::bmm3::bmm_definitions::BmmDefinitions {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -19088,7 +18615,7 @@ impl ::serde::Serialize for crate::prelude::BmmDefinitions {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmDefinitions {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::bmm_definitions::BmmDefinitions {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -19130,7 +18657,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmDefinitions {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmDefinitions;
+            type Value = crate::v3::bmm3::bmm_definitions::BmmDefinitions;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_DEFINITIONS` object")
             }
@@ -19155,7 +18682,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmDefinitions {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmDefinitions {})
+                ::core::result::Result::Ok(crate::v3::bmm3::bmm_definitions::BmmDefinitions {})
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -19167,32 +18694,34 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmDefinitions {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmEffectiveType {
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::bmm_effective_type::BmmEffectiveType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmEffectiveType::BmmGenericType(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmEffectiveType::BmmSignature(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmEffectiveType::BmmSimpleType(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmEffectiveType::BmmStatusType(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmEffectiveType::BmmTupleType(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
+            crate::v3::bmm3::core::entity::bmm_effective_type::BmmEffectiveType::BmmGenericType(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
+            crate::v3::bmm3::core::entity::bmm_effective_type::BmmEffectiveType::BmmSignature(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
+            crate::v3::bmm3::core::entity::bmm_effective_type::BmmEffectiveType::BmmSimpleType(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
+            crate::v3::bmm3::core::entity::bmm_effective_type::BmmEffectiveType::BmmStatusType(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
+            crate::v3::bmm3::core::entity::bmm_effective_type::BmmEffectiveType::BmmTupleType(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmEffectiveType {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::entity::bmm_effective_type::BmmEffectiveType
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -19209,7 +18738,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmEffectiveType {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmEffectiveType;
+            type Value = crate::v3::bmm3::core::entity::bmm_effective_type::BmmEffectiveType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_EFFECTIVE_TYPE` object")
             }
@@ -19227,59 +18756,17 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmEffectiveType {
                             __map,
                         );
                         match __t {
-                            "BMM_FUNCTION_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmEffectiveType::BmmSignature(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_GENERIC_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmEffectiveType::BmmGenericType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_PROCEDURE_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmEffectiveType::BmmSignature(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_PROPERTY_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmEffectiveType::BmmSignature(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_ROUTINE_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmEffectiveType::BmmSignature(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_SIGNATURE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmEffectiveType::BmmSignature(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_SIMPLE_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmEffectiveType::BmmSimpleType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_STATUS_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmEffectiveType::BmmStatusType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_TUPLE_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmEffectiveType::BmmTupleType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_EFFECTIVE_TYPE",
-                                    __other,
-                                    "BMM_FUNCTION_TYPE, BMM_GENERIC_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_SIMPLE_TYPE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE",
-                                ),
-                            ),
-                        }
+"BMM_FUNCTION_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_effective_type::BmmEffectiveType::BmmSignature(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_GENERIC_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_effective_type::BmmEffectiveType::BmmGenericType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PROCEDURE_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_effective_type::BmmEffectiveType::BmmSignature(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PROPERTY_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_effective_type::BmmEffectiveType::BmmSignature(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ROUTINE_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_effective_type::BmmEffectiveType::BmmSignature(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_SIGNATURE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_effective_type::BmmEffectiveType::BmmSignature(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_SIMPLE_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_effective_type::BmmEffectiveType::BmmSimpleType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_STATUS_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_effective_type::BmmEffectiveType::BmmStatusType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_TUPLE_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_effective_type::BmmEffectiveType::BmmTupleType(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_EFFECTIVE_TYPE", __other, "BMM_FUNCTION_TYPE, BMM_GENERIC_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_SIMPLE_TYPE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -19301,7 +18788,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmEffectiveType {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmEntityMetatype {
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::bmm_entity_metatype::BmmEntityMetatype {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -19310,13 +18797,15 @@ impl ::serde::Serialize for crate::prelude::BmmEntityMetatype {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmEntityMetatype {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::entity::bmm_entity_metatype::BmmEntityMetatype
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         struct __V;
         impl<'de> ::serde::de::Visitor<'de> for __V {
-            type Value = crate::prelude::BmmEntityMetatype;
+            type Value = crate::v3::bmm3::core::entity::bmm_entity_metatype::BmmEntityMetatype;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("a `BmmEntityMetatype` token")
             }
@@ -19324,14 +18813,16 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmEntityMetatype {
                 self,
                 __v: &str,
             ) -> ::core::result::Result<Self::Value, __E> {
-                ::core::result::Result::Ok(crate::prelude::BmmEntityMetatype::from_wire(__v))
+                ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_entity_metatype::BmmEntityMetatype::from_wire(__v))
             }
         }
         ::serde::Deserializer::deserialize_str(__deserializer, __V)
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmEnumerationData {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumerationData
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -19481,7 +18972,9 @@ impl ::serde::Serialize for crate::prelude::BmmEnumerationData {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmEnumerationData {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumerationData
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -19587,7 +19080,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmEnumerationData {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmEnumerationData;
+            type Value = crate::v3::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumerationData;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_ENUMERATION` object")
             }
@@ -19801,37 +19294,29 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmEnumerationData {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmEnumerationData {
-                    name: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    documentation: __s1.flatten(),
-                    extensions: __s2.flatten(),
-                    feature_groups: __s3,
-                    features: __s4,
-                    ancestors: __s5.flatten(),
-                    package: __s6
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("package"))?,
-                    properties: __s7.flatten(),
-                    source_schema_id: __s8
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("source_schema_id"))?,
-                    immediate_descendants: __s9,
-                    is_override: __s10
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_override"))?,
-                    static_properties: __s11.flatten(),
-                    functions: __s12.flatten(),
-                    procedures: __s13.flatten(),
-                    is_primitive: __s14.flatten(),
-                    is_abstract: __s15.flatten(),
-                    invariants: __s16,
-                    creators: __s17.flatten(),
-                    converters: __s18.flatten(),
-                    item_names: __s19,
-                    item_values: __s20,
-                })
+                ::core::result::Result::Ok(crate::v3::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumerationData {
+name: __s0.flatten().ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+documentation: __s1.flatten(),
+extensions: __s2.flatten(),
+feature_groups: __s3,
+features: __s4,
+ancestors: __s5.flatten(),
+package: __s6.flatten().ok_or_else(|| ::serde::de::Error::missing_field("package"))?,
+properties: __s7.flatten(),
+source_schema_id: __s8.flatten().ok_or_else(|| ::serde::de::Error::missing_field("source_schema_id"))?,
+immediate_descendants: __s9,
+is_override: __s10.flatten().ok_or_else(|| ::serde::de::Error::missing_field("is_override"))?,
+static_properties: __s11.flatten(),
+functions: __s12.flatten(),
+procedures: __s13.flatten(),
+is_primitive: __s14.flatten(),
+is_abstract: __s15.flatten(),
+invariants: __s16,
+creators: __s17.flatten(),
+converters: __s18.flatten(),
+item_names: __s19,
+item_values: __s20,
+})
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -19843,26 +19328,24 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmEnumerationData {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmEnumeration {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumeration
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmEnumeration::BmmEnumerationInteger(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmEnumeration::BmmEnumerationString(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmEnumeration::BmmEnumeration(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-        }
+crate::v3::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumeration::BmmEnumerationInteger(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumeration::BmmEnumerationString(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumeration::BmmEnumeration(__x) => ::serde::Serialize::serialize(__x, __serializer),
+}
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmEnumeration {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumeration
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -19873,7 +19356,8 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmEnumeration {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmEnumeration;
+            type Value =
+                crate::v3::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumeration;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_ENUMERATION` object")
             }
@@ -19891,29 +19375,11 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmEnumeration {
                             __map,
                         );
                         match __t {
-                            "BMM_ENUMERATION" => ::core::result::Result::Ok(
-                                crate::prelude::BmmEnumeration::BmmEnumeration(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_ENUMERATION_INTEGER" => ::core::result::Result::Ok(
-                                crate::prelude::BmmEnumeration::BmmEnumerationInteger(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_ENUMERATION_STRING" => ::core::result::Result::Ok(
-                                crate::prelude::BmmEnumeration::BmmEnumerationString(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_ENUMERATION",
-                                    __other,
-                                    "BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING",
-                                ),
-                            ),
-                        }
+"BMM_ENUMERATION" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumeration::BmmEnumeration(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ENUMERATION_INTEGER" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumeration::BmmEnumerationInteger(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ENUMERATION_STRING" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumeration::BmmEnumerationString(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_ENUMERATION", __other, "BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -19925,9 +19391,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmEnumeration {
                     None => {
                         let __rest =
                             ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);
-                        ::core::result::Result::Ok(crate::prelude::BmmEnumeration::BmmEnumeration(
-                            ::serde::Deserialize::deserialize(__rest)?,
-                        ))
+                        ::core::result::Result::Ok(crate::v3::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumeration::BmmEnumeration(::serde::Deserialize::deserialize(__rest)?))
                     }
                 }
             }
@@ -19936,1045 +19400,491 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmEnumeration {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmEnumerationInteger {
-    fn serialize<__S: ::serde::Serializer>(
-        &self,
-        __serializer: __S,
-    ) -> ::core::result::Result<__S::Ok, __S::Error> {
-        let mut __n = 5usize;
-        if self.documentation.is_some() {
-            __n += 1;
-        }
-        if self.extensions.is_some() {
-            __n += 1;
-        }
-        if self
-            .feature_groups
-            .as_ref()
-            .is_some_and(|__v| !__v.is_empty())
-        {
-            __n += 1;
-        }
-        if self.features.as_ref().is_some_and(|__v| !__v.is_empty()) {
-            __n += 1;
-        }
-        if self.ancestors.is_some() {
-            __n += 1;
-        }
-        if self.properties.is_some() {
-            __n += 1;
-        }
-        if self
-            .immediate_descendants
-            .as_ref()
-            .is_some_and(|__v| !__v.is_empty())
-        {
-            __n += 1;
-        }
-        if self.static_properties.is_some() {
-            __n += 1;
-        }
-        if self.functions.is_some() {
-            __n += 1;
-        }
-        if self.procedures.is_some() {
-            __n += 1;
-        }
-        if self.is_primitive.is_some() {
-            __n += 1;
-        }
-        if self.is_abstract.is_some() {
-            __n += 1;
-        }
-        if self.invariants.as_ref().is_some_and(|__v| !__v.is_empty()) {
-            __n += 1;
-        }
-        if self.creators.is_some() {
-            __n += 1;
-        }
-        if self.converters.is_some() {
-            __n += 1;
-        }
-        if self.item_names.as_ref().is_some_and(|__v| !__v.is_empty()) {
-            __n += 1;
-        }
-        if self.item_values.as_ref().is_some_and(|__v| !__v.is_empty()) {
-            __n += 1;
-        }
-        let mut __st =
-            ::serde::Serializer::serialize_struct(__serializer, "BMM_ENUMERATION_INTEGER", __n)?;
-        ::serde::ser::SerializeStruct::serialize_field(
-            &mut __st,
-            "_type",
-            "BMM_ENUMERATION_INTEGER",
-        )?;
-        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "name", &self.name)?;
-        if let Some(__v) = &self.documentation {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "documentation", __v)?;
-        }
-        if let Some(__v) = &self.extensions {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "extensions", __v)?;
-        }
-        if let Some(__v) = &self.feature_groups
-            && !__v.is_empty()
-        {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "feature_groups", __v)?;
-        }
-        if let Some(__v) = &self.features
-            && !__v.is_empty()
-        {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "features", __v)?;
-        }
-        if let Some(__v) = &self.ancestors {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "ancestors", __v)?;
-        }
-        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "package", &self.package)?;
-        if let Some(__v) = &self.properties {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "properties", __v)?;
-        }
-        ::serde::ser::SerializeStruct::serialize_field(
-            &mut __st,
-            "source_schema_id",
-            &self.source_schema_id,
-        )?;
-        if let Some(__v) = &self.immediate_descendants
-            && !__v.is_empty()
-        {
-            ::serde::ser::SerializeStruct::serialize_field(
-                &mut __st,
-                "immediate_descendants",
-                __v,
-            )?;
-        }
-        ::serde::ser::SerializeStruct::serialize_field(
-            &mut __st,
-            "is_override",
-            &self.is_override,
-        )?;
-        if let Some(__v) = &self.static_properties {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "static_properties", __v)?;
-        }
-        if let Some(__v) = &self.functions {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "functions", __v)?;
-        }
-        if let Some(__v) = &self.procedures {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "procedures", __v)?;
-        }
-        if let Some(__v) = &self.is_primitive {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "is_primitive", __v)?;
-        }
-        if let Some(__v) = &self.is_abstract {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "is_abstract", __v)?;
-        }
-        if let Some(__v) = &self.invariants
-            && !__v.is_empty()
-        {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "invariants", __v)?;
-        }
-        if let Some(__v) = &self.creators {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "creators", __v)?;
-        }
-        if let Some(__v) = &self.converters {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "converters", __v)?;
-        }
-        if let Some(__v) = &self.item_names
-            && !__v.is_empty()
-        {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "item_names", __v)?;
-        }
-        if let Some(__v) = &self.item_values
-            && !__v.is_empty()
-        {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "item_values", __v)?;
-        }
-        ::serde::ser::SerializeStruct::end(__st)
-    }
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::range_constrained::bmm_enumeration_integer::BmmEnumerationInteger {
+fn serialize<__S: ::serde::Serializer>(&self, __serializer: __S) -> ::core::result::Result<__S::Ok, __S::Error> {
+let mut __n = 5usize;
+if self.documentation.is_some() { __n += 1; }
+if self.extensions.is_some() { __n += 1; }
+if self.feature_groups.as_ref().is_some_and(|__v| !__v.is_empty()) { __n += 1; }
+if self.features.as_ref().is_some_and(|__v| !__v.is_empty()) { __n += 1; }
+if self.ancestors.is_some() { __n += 1; }
+if self.properties.is_some() { __n += 1; }
+if self.immediate_descendants.as_ref().is_some_and(|__v| !__v.is_empty()) { __n += 1; }
+if self.static_properties.is_some() { __n += 1; }
+if self.functions.is_some() { __n += 1; }
+if self.procedures.is_some() { __n += 1; }
+if self.is_primitive.is_some() { __n += 1; }
+if self.is_abstract.is_some() { __n += 1; }
+if self.invariants.as_ref().is_some_and(|__v| !__v.is_empty()) { __n += 1; }
+if self.creators.is_some() { __n += 1; }
+if self.converters.is_some() { __n += 1; }
+if self.item_names.as_ref().is_some_and(|__v| !__v.is_empty()) { __n += 1; }
+if self.item_values.as_ref().is_some_and(|__v| !__v.is_empty()) { __n += 1; }
+let mut __st = ::serde::Serializer::serialize_struct(__serializer, "BMM_ENUMERATION_INTEGER", __n)?;
+::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "BMM_ENUMERATION_INTEGER")?;
+::serde::ser::SerializeStruct::serialize_field(&mut __st, "name", &self.name)?;
+if let Some(__v) = &self.documentation { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "documentation", __v)?; }
+if let Some(__v) = &self.extensions { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "extensions", __v)?; }
+if let Some(__v) = &self.feature_groups && !__v.is_empty() { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "feature_groups", __v)?; }
+if let Some(__v) = &self.features && !__v.is_empty() { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "features", __v)?; }
+if let Some(__v) = &self.ancestors { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "ancestors", __v)?; }
+::serde::ser::SerializeStruct::serialize_field(&mut __st, "package", &self.package)?;
+if let Some(__v) = &self.properties { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "properties", __v)?; }
+::serde::ser::SerializeStruct::serialize_field(&mut __st, "source_schema_id", &self.source_schema_id)?;
+if let Some(__v) = &self.immediate_descendants && !__v.is_empty() { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "immediate_descendants", __v)?; }
+::serde::ser::SerializeStruct::serialize_field(&mut __st, "is_override", &self.is_override)?;
+if let Some(__v) = &self.static_properties { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "static_properties", __v)?; }
+if let Some(__v) = &self.functions { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "functions", __v)?; }
+if let Some(__v) = &self.procedures { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "procedures", __v)?; }
+if let Some(__v) = &self.is_primitive { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "is_primitive", __v)?; }
+if let Some(__v) = &self.is_abstract { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "is_abstract", __v)?; }
+if let Some(__v) = &self.invariants && !__v.is_empty() { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "invariants", __v)?; }
+if let Some(__v) = &self.creators { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "creators", __v)?; }
+if let Some(__v) = &self.converters { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "converters", __v)?; }
+if let Some(__v) = &self.item_names && !__v.is_empty() { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "item_names", __v)?; }
+if let Some(__v) = &self.item_values && !__v.is_empty() { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "item_values", __v)?; }
+::serde::ser::SerializeStruct::end(__st)
+}
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmEnumerationInteger {
-    fn deserialize<__D: ::serde::Deserializer<'de>>(
-        __deserializer: __D,
-    ) -> ::core::result::Result<Self, __D::Error> {
-        const __FIELDS: &[&str] = &[
-            "ancestors",
-            "converters",
-            "creators",
-            "documentation",
-            "extensions",
-            "feature_groups",
-            "features",
-            "functions",
-            "immediate_descendants",
-            "invariants",
-            "is_abstract",
-            "is_override",
-            "is_primitive",
-            "item_names",
-            "item_values",
-            "name",
-            "package",
-            "procedures",
-            "properties",
-            "source_schema_id",
-            "static_properties",
-        ];
-        enum __Field {
-            __Type,
-            __F0,
-            __F1,
-            __F2,
-            __F3,
-            __F4,
-            __F5,
-            __F6,
-            __F7,
-            __F8,
-            __F9,
-            __F10,
-            __F11,
-            __F12,
-            __F13,
-            __F14,
-            __F15,
-            __F16,
-            __F17,
-            __F18,
-            __F19,
-            __F20,
-        }
-        impl<'de> ::serde::Deserialize<'de> for __Field {
-            fn deserialize<__D: ::serde::Deserializer<'de>>(
-                __deserializer: __D,
-            ) -> ::core::result::Result<Self, __D::Error> {
-                struct __KeyVisitor;
-                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
-                    type Value = __Field;
-                    fn expecting(
-                        &self,
-                        __f: &mut ::core::fmt::Formatter<'_>,
-                    ) -> ::core::fmt::Result {
-                        __f.write_str("an object member name")
-                    }
-                    fn visit_str<__E: ::serde::de::Error>(
-                        self,
-                        __v: &str,
-                    ) -> ::core::result::Result<__Field, __E> {
-                        match __v {
-                            "_type" => ::core::result::Result::Ok(__Field::__Type),
-                            "name" => ::core::result::Result::Ok(__Field::__F0),
-                            "documentation" => ::core::result::Result::Ok(__Field::__F1),
-                            "extensions" => ::core::result::Result::Ok(__Field::__F2),
-                            "feature_groups" => ::core::result::Result::Ok(__Field::__F3),
-                            "features" => ::core::result::Result::Ok(__Field::__F4),
-                            "ancestors" => ::core::result::Result::Ok(__Field::__F5),
-                            "package" => ::core::result::Result::Ok(__Field::__F6),
-                            "properties" => ::core::result::Result::Ok(__Field::__F7),
-                            "source_schema_id" => ::core::result::Result::Ok(__Field::__F8),
-                            "immediate_descendants" => ::core::result::Result::Ok(__Field::__F9),
-                            "is_override" => ::core::result::Result::Ok(__Field::__F10),
-                            "static_properties" => ::core::result::Result::Ok(__Field::__F11),
-                            "functions" => ::core::result::Result::Ok(__Field::__F12),
-                            "procedures" => ::core::result::Result::Ok(__Field::__F13),
-                            "is_primitive" => ::core::result::Result::Ok(__Field::__F14),
-                            "is_abstract" => ::core::result::Result::Ok(__Field::__F15),
-                            "invariants" => ::core::result::Result::Ok(__Field::__F16),
-                            "creators" => ::core::result::Result::Ok(__Field::__F17),
-                            "converters" => ::core::result::Result::Ok(__Field::__F18),
-                            "item_names" => ::core::result::Result::Ok(__Field::__F19),
-                            "item_values" => ::core::result::Result::Ok(__Field::__F20),
-                            _ => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unknown_field(
-                                    __v,
-                                    "BMM_ENUMERATION_INTEGER",
-                                    __FIELDS,
-                                ),
-                            ),
-                        }
-                    }
-                }
-                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
-            }
-        }
-        struct __Visitor;
-        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmEnumerationInteger;
-            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-                __f.write_str("an openEHR `BMM_ENUMERATION_INTEGER` object")
-            }
-            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
-                self,
-                mut __map: __A,
-            ) -> ::core::result::Result<Self::Value, __A::Error> {
-                let mut __seen_type = false;
-                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s1: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s2: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s3: ::core::option::Option<_> = None;
-                let mut __s4: ::core::option::Option<_> = None;
-                let mut __s5: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s6: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s7: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s8: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s9: ::core::option::Option<_> = None;
-                let mut __s10: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s11: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s12: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s13: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s14: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s15: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s16: ::core::option::Option<_> = None;
-                let mut __s17: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s18: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s19: ::core::option::Option<_> = None;
-                let mut __s20: ::core::option::Option<_> = None;
-                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
-                    match __key {
-                        __Field::__Type => {
-                            if __seen_type {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("_type"),
-                                );
-                            }
-                            __seen_type = true;
-                            ::serde::de::MapAccess::next_value_seed(
-                                &mut __map,
-                                ::openehr_base::serde_support::ExpectedType(
-                                    "BMM_ENUMERATION_INTEGER",
-                                ),
-                            )?;
-                        }
-                        __Field::__F0 => {
-                            if __s0.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("name"),
-                                );
-                            }
-                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F1 => {
-                            if __s1.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("documentation"),
-                                );
-                            }
-                            __s1 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F2 => {
-                            if __s2.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("extensions"),
-                                );
-                            }
-                            __s2 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F3 => {
-                            if __s3.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("feature_groups"),
-                                );
-                            }
-                            __s3 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F4 => {
-                            if __s4.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("features"),
-                                );
-                            }
-                            __s4 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F5 => {
-                            if __s5.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("ancestors"),
-                                );
-                            }
-                            __s5 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F6 => {
-                            if __s6.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("package"),
-                                );
-                            }
-                            __s6 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F7 => {
-                            if __s7.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("properties"),
-                                );
-                            }
-                            __s7 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F8 => {
-                            if __s8.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("source_schema_id"),
-                                );
-                            }
-                            __s8 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F9 => {
-                            if __s9.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("immediate_descendants"),
-                                );
-                            }
-                            __s9 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F10 => {
-                            if __s10.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("is_override"),
-                                );
-                            }
-                            __s10 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F11 => {
-                            if __s11.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("static_properties"),
-                                );
-                            }
-                            __s11 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F12 => {
-                            if __s12.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("functions"),
-                                );
-                            }
-                            __s12 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F13 => {
-                            if __s13.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("procedures"),
-                                );
-                            }
-                            __s13 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F14 => {
-                            if __s14.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("is_primitive"),
-                                );
-                            }
-                            __s14 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F15 => {
-                            if __s15.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("is_abstract"),
-                                );
-                            }
-                            __s15 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F16 => {
-                            if __s16.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("invariants"),
-                                );
-                            }
-                            __s16 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F17 => {
-                            if __s17.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("creators"),
-                                );
-                            }
-                            __s17 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F18 => {
-                            if __s18.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("converters"),
-                                );
-                            }
-                            __s18 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F19 => {
-                            if __s19.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("item_names"),
-                                );
-                            }
-                            __s19 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F20 => {
-                            if __s20.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("item_values"),
-                                );
-                            }
-                            __s20 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                    }
-                }
-                ::core::result::Result::Ok(crate::prelude::BmmEnumerationInteger {
-                    name: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    documentation: __s1.flatten(),
-                    extensions: __s2.flatten(),
-                    feature_groups: __s3,
-                    features: __s4,
-                    ancestors: __s5.flatten(),
-                    package: __s6
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("package"))?,
-                    properties: __s7.flatten(),
-                    source_schema_id: __s8
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("source_schema_id"))?,
-                    immediate_descendants: __s9,
-                    is_override: __s10
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_override"))?,
-                    static_properties: __s11.flatten(),
-                    functions: __s12.flatten(),
-                    procedures: __s13.flatten(),
-                    is_primitive: __s14.flatten(),
-                    is_abstract: __s15.flatten(),
-                    invariants: __s16,
-                    creators: __s17.flatten(),
-                    converters: __s18.flatten(),
-                    item_names: __s19,
-                    item_values: __s20,
-                })
-            }
-        }
-        ::serde::Deserializer::deserialize_struct(
-            __deserializer,
-            "BMM_ENUMERATION_INTEGER",
-            __FIELDS,
-            __Visitor,
-        )
-    }
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::core::entity::range_constrained::bmm_enumeration_integer::BmmEnumerationInteger {
+fn deserialize<__D: ::serde::Deserializer<'de>>(__deserializer: __D) -> ::core::result::Result<Self, __D::Error> {
+const __FIELDS: &[&str] = &["ancestors", "converters", "creators", "documentation", "extensions", "feature_groups", "features", "functions", "immediate_descendants", "invariants", "is_abstract", "is_override", "is_primitive", "item_names", "item_values", "name", "package", "procedures", "properties", "source_schema_id", "static_properties"];
+enum __Field { __Type, __F0, __F1, __F2, __F3, __F4, __F5, __F6, __F7, __F8, __F9, __F10, __F11, __F12, __F13, __F14, __F15, __F16, __F17, __F18, __F19, __F20, }
+impl<'de> ::serde::Deserialize<'de> for __Field {
+fn deserialize<__D: ::serde::Deserializer<'de>>(__deserializer: __D) -> ::core::result::Result<Self, __D::Error> {
+struct __KeyVisitor;
+impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+type Value = __Field;
+fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+__f.write_str("an object member name")
+}
+fn visit_str<__E: ::serde::de::Error>(self, __v: &str) -> ::core::result::Result<__Field, __E> {
+match __v {
+"_type" => ::core::result::Result::Ok(__Field::__Type),
+"name" => ::core::result::Result::Ok(__Field::__F0),
+"documentation" => ::core::result::Result::Ok(__Field::__F1),
+"extensions" => ::core::result::Result::Ok(__Field::__F2),
+"feature_groups" => ::core::result::Result::Ok(__Field::__F3),
+"features" => ::core::result::Result::Ok(__Field::__F4),
+"ancestors" => ::core::result::Result::Ok(__Field::__F5),
+"package" => ::core::result::Result::Ok(__Field::__F6),
+"properties" => ::core::result::Result::Ok(__Field::__F7),
+"source_schema_id" => ::core::result::Result::Ok(__Field::__F8),
+"immediate_descendants" => ::core::result::Result::Ok(__Field::__F9),
+"is_override" => ::core::result::Result::Ok(__Field::__F10),
+"static_properties" => ::core::result::Result::Ok(__Field::__F11),
+"functions" => ::core::result::Result::Ok(__Field::__F12),
+"procedures" => ::core::result::Result::Ok(__Field::__F13),
+"is_primitive" => ::core::result::Result::Ok(__Field::__F14),
+"is_abstract" => ::core::result::Result::Ok(__Field::__F15),
+"invariants" => ::core::result::Result::Ok(__Field::__F16),
+"creators" => ::core::result::Result::Ok(__Field::__F17),
+"converters" => ::core::result::Result::Ok(__Field::__F18),
+"item_names" => ::core::result::Result::Ok(__Field::__F19),
+"item_values" => ::core::result::Result::Ok(__Field::__F20),
+_ => ::core::result::Result::Err(::openehr_base::serde_support::unknown_field(__v, "BMM_ENUMERATION_INTEGER", __FIELDS)),
+}
+}
+}
+::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+}
+}
+struct __Visitor;
+impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+type Value = crate::v3::bmm3::core::entity::range_constrained::bmm_enumeration_integer::BmmEnumerationInteger;
+fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+__f.write_str("an openEHR `BMM_ENUMERATION_INTEGER` object")
+}
+fn visit_map<__A: ::serde::de::MapAccess<'de>>(self, mut __map: __A) -> ::core::result::Result<Self::Value, __A::Error> {
+let mut __seen_type = false;
+let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s1: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s2: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s3: ::core::option::Option<_> = None;
+let mut __s4: ::core::option::Option<_> = None;
+let mut __s5: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s6: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s7: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s8: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s9: ::core::option::Option<_> = None;
+let mut __s10: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s11: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s12: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s13: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s14: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s15: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s16: ::core::option::Option<_> = None;
+let mut __s17: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s18: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s19: ::core::option::Option<_> = None;
+let mut __s20: ::core::option::Option<_> = None;
+while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+ match __key {
+__Field::__Type => {
+if __seen_type { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("_type")); }
+__seen_type = true;
+::serde::de::MapAccess::next_value_seed(&mut __map, ::openehr_base::serde_support::ExpectedType("BMM_ENUMERATION_INTEGER"))?;
+}
+__Field::__F0 => {
+if __s0.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("name")); }
+__s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F1 => {
+if __s1.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("documentation")); }
+__s1 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F2 => {
+if __s2.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("extensions")); }
+__s2 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F3 => {
+if __s3.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("feature_groups")); }
+__s3 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F4 => {
+if __s4.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("features")); }
+__s4 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F5 => {
+if __s5.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("ancestors")); }
+__s5 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F6 => {
+if __s6.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("package")); }
+__s6 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F7 => {
+if __s7.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("properties")); }
+__s7 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F8 => {
+if __s8.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("source_schema_id")); }
+__s8 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F9 => {
+if __s9.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("immediate_descendants")); }
+__s9 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F10 => {
+if __s10.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("is_override")); }
+__s10 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F11 => {
+if __s11.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("static_properties")); }
+__s11 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F12 => {
+if __s12.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("functions")); }
+__s12 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F13 => {
+if __s13.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("procedures")); }
+__s13 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F14 => {
+if __s14.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("is_primitive")); }
+__s14 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F15 => {
+if __s15.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("is_abstract")); }
+__s15 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F16 => {
+if __s16.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("invariants")); }
+__s16 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F17 => {
+if __s17.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("creators")); }
+__s17 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F18 => {
+if __s18.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("converters")); }
+__s18 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F19 => {
+if __s19.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("item_names")); }
+__s19 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F20 => {
+if __s20.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("item_values")); }
+__s20 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+}
+}
+::core::result::Result::Ok(crate::v3::bmm3::core::entity::range_constrained::bmm_enumeration_integer::BmmEnumerationInteger {
+name: __s0.flatten().ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+documentation: __s1.flatten(),
+extensions: __s2.flatten(),
+feature_groups: __s3,
+features: __s4,
+ancestors: __s5.flatten(),
+package: __s6.flatten().ok_or_else(|| ::serde::de::Error::missing_field("package"))?,
+properties: __s7.flatten(),
+source_schema_id: __s8.flatten().ok_or_else(|| ::serde::de::Error::missing_field("source_schema_id"))?,
+immediate_descendants: __s9,
+is_override: __s10.flatten().ok_or_else(|| ::serde::de::Error::missing_field("is_override"))?,
+static_properties: __s11.flatten(),
+functions: __s12.flatten(),
+procedures: __s13.flatten(),
+is_primitive: __s14.flatten(),
+is_abstract: __s15.flatten(),
+invariants: __s16,
+creators: __s17.flatten(),
+converters: __s18.flatten(),
+item_names: __s19,
+item_values: __s20,
+})
+}
+}
+::serde::Deserializer::deserialize_struct(__deserializer, "BMM_ENUMERATION_INTEGER", __FIELDS, __Visitor)
+}
 }
 
-impl ::serde::Serialize for crate::prelude::BmmEnumerationString {
-    fn serialize<__S: ::serde::Serializer>(
-        &self,
-        __serializer: __S,
-    ) -> ::core::result::Result<__S::Ok, __S::Error> {
-        let mut __n = 5usize;
-        if self.documentation.is_some() {
-            __n += 1;
-        }
-        if self.extensions.is_some() {
-            __n += 1;
-        }
-        if self
-            .feature_groups
-            .as_ref()
-            .is_some_and(|__v| !__v.is_empty())
-        {
-            __n += 1;
-        }
-        if self.features.as_ref().is_some_and(|__v| !__v.is_empty()) {
-            __n += 1;
-        }
-        if self.ancestors.is_some() {
-            __n += 1;
-        }
-        if self.properties.is_some() {
-            __n += 1;
-        }
-        if self
-            .immediate_descendants
-            .as_ref()
-            .is_some_and(|__v| !__v.is_empty())
-        {
-            __n += 1;
-        }
-        if self.static_properties.is_some() {
-            __n += 1;
-        }
-        if self.functions.is_some() {
-            __n += 1;
-        }
-        if self.procedures.is_some() {
-            __n += 1;
-        }
-        if self.is_primitive.is_some() {
-            __n += 1;
-        }
-        if self.is_abstract.is_some() {
-            __n += 1;
-        }
-        if self.invariants.as_ref().is_some_and(|__v| !__v.is_empty()) {
-            __n += 1;
-        }
-        if self.creators.is_some() {
-            __n += 1;
-        }
-        if self.converters.is_some() {
-            __n += 1;
-        }
-        if self.item_names.as_ref().is_some_and(|__v| !__v.is_empty()) {
-            __n += 1;
-        }
-        if self.item_values.as_ref().is_some_and(|__v| !__v.is_empty()) {
-            __n += 1;
-        }
-        let mut __st =
-            ::serde::Serializer::serialize_struct(__serializer, "BMM_ENUMERATION_STRING", __n)?;
-        ::serde::ser::SerializeStruct::serialize_field(
-            &mut __st,
-            "_type",
-            "BMM_ENUMERATION_STRING",
-        )?;
-        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "name", &self.name)?;
-        if let Some(__v) = &self.documentation {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "documentation", __v)?;
-        }
-        if let Some(__v) = &self.extensions {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "extensions", __v)?;
-        }
-        if let Some(__v) = &self.feature_groups
-            && !__v.is_empty()
-        {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "feature_groups", __v)?;
-        }
-        if let Some(__v) = &self.features
-            && !__v.is_empty()
-        {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "features", __v)?;
-        }
-        if let Some(__v) = &self.ancestors {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "ancestors", __v)?;
-        }
-        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "package", &self.package)?;
-        if let Some(__v) = &self.properties {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "properties", __v)?;
-        }
-        ::serde::ser::SerializeStruct::serialize_field(
-            &mut __st,
-            "source_schema_id",
-            &self.source_schema_id,
-        )?;
-        if let Some(__v) = &self.immediate_descendants
-            && !__v.is_empty()
-        {
-            ::serde::ser::SerializeStruct::serialize_field(
-                &mut __st,
-                "immediate_descendants",
-                __v,
-            )?;
-        }
-        ::serde::ser::SerializeStruct::serialize_field(
-            &mut __st,
-            "is_override",
-            &self.is_override,
-        )?;
-        if let Some(__v) = &self.static_properties {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "static_properties", __v)?;
-        }
-        if let Some(__v) = &self.functions {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "functions", __v)?;
-        }
-        if let Some(__v) = &self.procedures {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "procedures", __v)?;
-        }
-        if let Some(__v) = &self.is_primitive {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "is_primitive", __v)?;
-        }
-        if let Some(__v) = &self.is_abstract {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "is_abstract", __v)?;
-        }
-        if let Some(__v) = &self.invariants
-            && !__v.is_empty()
-        {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "invariants", __v)?;
-        }
-        if let Some(__v) = &self.creators {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "creators", __v)?;
-        }
-        if let Some(__v) = &self.converters {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "converters", __v)?;
-        }
-        if let Some(__v) = &self.item_names
-            && !__v.is_empty()
-        {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "item_names", __v)?;
-        }
-        if let Some(__v) = &self.item_values
-            && !__v.is_empty()
-        {
-            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "item_values", __v)?;
-        }
-        ::serde::ser::SerializeStruct::end(__st)
-    }
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::range_constrained::bmm_enumeration_string::BmmEnumerationString {
+fn serialize<__S: ::serde::Serializer>(&self, __serializer: __S) -> ::core::result::Result<__S::Ok, __S::Error> {
+let mut __n = 5usize;
+if self.documentation.is_some() { __n += 1; }
+if self.extensions.is_some() { __n += 1; }
+if self.feature_groups.as_ref().is_some_and(|__v| !__v.is_empty()) { __n += 1; }
+if self.features.as_ref().is_some_and(|__v| !__v.is_empty()) { __n += 1; }
+if self.ancestors.is_some() { __n += 1; }
+if self.properties.is_some() { __n += 1; }
+if self.immediate_descendants.as_ref().is_some_and(|__v| !__v.is_empty()) { __n += 1; }
+if self.static_properties.is_some() { __n += 1; }
+if self.functions.is_some() { __n += 1; }
+if self.procedures.is_some() { __n += 1; }
+if self.is_primitive.is_some() { __n += 1; }
+if self.is_abstract.is_some() { __n += 1; }
+if self.invariants.as_ref().is_some_and(|__v| !__v.is_empty()) { __n += 1; }
+if self.creators.is_some() { __n += 1; }
+if self.converters.is_some() { __n += 1; }
+if self.item_names.as_ref().is_some_and(|__v| !__v.is_empty()) { __n += 1; }
+if self.item_values.as_ref().is_some_and(|__v| !__v.is_empty()) { __n += 1; }
+let mut __st = ::serde::Serializer::serialize_struct(__serializer, "BMM_ENUMERATION_STRING", __n)?;
+::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "BMM_ENUMERATION_STRING")?;
+::serde::ser::SerializeStruct::serialize_field(&mut __st, "name", &self.name)?;
+if let Some(__v) = &self.documentation { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "documentation", __v)?; }
+if let Some(__v) = &self.extensions { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "extensions", __v)?; }
+if let Some(__v) = &self.feature_groups && !__v.is_empty() { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "feature_groups", __v)?; }
+if let Some(__v) = &self.features && !__v.is_empty() { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "features", __v)?; }
+if let Some(__v) = &self.ancestors { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "ancestors", __v)?; }
+::serde::ser::SerializeStruct::serialize_field(&mut __st, "package", &self.package)?;
+if let Some(__v) = &self.properties { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "properties", __v)?; }
+::serde::ser::SerializeStruct::serialize_field(&mut __st, "source_schema_id", &self.source_schema_id)?;
+if let Some(__v) = &self.immediate_descendants && !__v.is_empty() { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "immediate_descendants", __v)?; }
+::serde::ser::SerializeStruct::serialize_field(&mut __st, "is_override", &self.is_override)?;
+if let Some(__v) = &self.static_properties { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "static_properties", __v)?; }
+if let Some(__v) = &self.functions { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "functions", __v)?; }
+if let Some(__v) = &self.procedures { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "procedures", __v)?; }
+if let Some(__v) = &self.is_primitive { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "is_primitive", __v)?; }
+if let Some(__v) = &self.is_abstract { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "is_abstract", __v)?; }
+if let Some(__v) = &self.invariants && !__v.is_empty() { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "invariants", __v)?; }
+if let Some(__v) = &self.creators { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "creators", __v)?; }
+if let Some(__v) = &self.converters { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "converters", __v)?; }
+if let Some(__v) = &self.item_names && !__v.is_empty() { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "item_names", __v)?; }
+if let Some(__v) = &self.item_values && !__v.is_empty() { ::serde::ser::SerializeStruct::serialize_field(&mut __st, "item_values", __v)?; }
+::serde::ser::SerializeStruct::end(__st)
+}
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmEnumerationString {
-    fn deserialize<__D: ::serde::Deserializer<'de>>(
-        __deserializer: __D,
-    ) -> ::core::result::Result<Self, __D::Error> {
-        const __FIELDS: &[&str] = &[
-            "ancestors",
-            "converters",
-            "creators",
-            "documentation",
-            "extensions",
-            "feature_groups",
-            "features",
-            "functions",
-            "immediate_descendants",
-            "invariants",
-            "is_abstract",
-            "is_override",
-            "is_primitive",
-            "item_names",
-            "item_values",
-            "name",
-            "package",
-            "procedures",
-            "properties",
-            "source_schema_id",
-            "static_properties",
-        ];
-        enum __Field {
-            __Type,
-            __F0,
-            __F1,
-            __F2,
-            __F3,
-            __F4,
-            __F5,
-            __F6,
-            __F7,
-            __F8,
-            __F9,
-            __F10,
-            __F11,
-            __F12,
-            __F13,
-            __F14,
-            __F15,
-            __F16,
-            __F17,
-            __F18,
-            __F19,
-            __F20,
-        }
-        impl<'de> ::serde::Deserialize<'de> for __Field {
-            fn deserialize<__D: ::serde::Deserializer<'de>>(
-                __deserializer: __D,
-            ) -> ::core::result::Result<Self, __D::Error> {
-                struct __KeyVisitor;
-                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
-                    type Value = __Field;
-                    fn expecting(
-                        &self,
-                        __f: &mut ::core::fmt::Formatter<'_>,
-                    ) -> ::core::fmt::Result {
-                        __f.write_str("an object member name")
-                    }
-                    fn visit_str<__E: ::serde::de::Error>(
-                        self,
-                        __v: &str,
-                    ) -> ::core::result::Result<__Field, __E> {
-                        match __v {
-                            "_type" => ::core::result::Result::Ok(__Field::__Type),
-                            "name" => ::core::result::Result::Ok(__Field::__F0),
-                            "documentation" => ::core::result::Result::Ok(__Field::__F1),
-                            "extensions" => ::core::result::Result::Ok(__Field::__F2),
-                            "feature_groups" => ::core::result::Result::Ok(__Field::__F3),
-                            "features" => ::core::result::Result::Ok(__Field::__F4),
-                            "ancestors" => ::core::result::Result::Ok(__Field::__F5),
-                            "package" => ::core::result::Result::Ok(__Field::__F6),
-                            "properties" => ::core::result::Result::Ok(__Field::__F7),
-                            "source_schema_id" => ::core::result::Result::Ok(__Field::__F8),
-                            "immediate_descendants" => ::core::result::Result::Ok(__Field::__F9),
-                            "is_override" => ::core::result::Result::Ok(__Field::__F10),
-                            "static_properties" => ::core::result::Result::Ok(__Field::__F11),
-                            "functions" => ::core::result::Result::Ok(__Field::__F12),
-                            "procedures" => ::core::result::Result::Ok(__Field::__F13),
-                            "is_primitive" => ::core::result::Result::Ok(__Field::__F14),
-                            "is_abstract" => ::core::result::Result::Ok(__Field::__F15),
-                            "invariants" => ::core::result::Result::Ok(__Field::__F16),
-                            "creators" => ::core::result::Result::Ok(__Field::__F17),
-                            "converters" => ::core::result::Result::Ok(__Field::__F18),
-                            "item_names" => ::core::result::Result::Ok(__Field::__F19),
-                            "item_values" => ::core::result::Result::Ok(__Field::__F20),
-                            _ => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unknown_field(
-                                    __v,
-                                    "BMM_ENUMERATION_STRING",
-                                    __FIELDS,
-                                ),
-                            ),
-                        }
-                    }
-                }
-                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
-            }
-        }
-        struct __Visitor;
-        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmEnumerationString;
-            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
-                __f.write_str("an openEHR `BMM_ENUMERATION_STRING` object")
-            }
-            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
-                self,
-                mut __map: __A,
-            ) -> ::core::result::Result<Self::Value, __A::Error> {
-                let mut __seen_type = false;
-                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s1: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s2: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s3: ::core::option::Option<_> = None;
-                let mut __s4: ::core::option::Option<_> = None;
-                let mut __s5: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s6: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s7: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s8: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s9: ::core::option::Option<_> = None;
-                let mut __s10: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s11: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s12: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s13: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s14: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s15: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s16: ::core::option::Option<_> = None;
-                let mut __s17: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s18: ::core::option::Option<::core::option::Option<_>> = None;
-                let mut __s19: ::core::option::Option<_> = None;
-                let mut __s20: ::core::option::Option<_> = None;
-                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
-                    match __key {
-                        __Field::__Type => {
-                            if __seen_type {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("_type"),
-                                );
-                            }
-                            __seen_type = true;
-                            ::serde::de::MapAccess::next_value_seed(
-                                &mut __map,
-                                ::openehr_base::serde_support::ExpectedType(
-                                    "BMM_ENUMERATION_STRING",
-                                ),
-                            )?;
-                        }
-                        __Field::__F0 => {
-                            if __s0.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("name"),
-                                );
-                            }
-                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F1 => {
-                            if __s1.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("documentation"),
-                                );
-                            }
-                            __s1 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F2 => {
-                            if __s2.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("extensions"),
-                                );
-                            }
-                            __s2 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F3 => {
-                            if __s3.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("feature_groups"),
-                                );
-                            }
-                            __s3 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F4 => {
-                            if __s4.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("features"),
-                                );
-                            }
-                            __s4 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F5 => {
-                            if __s5.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("ancestors"),
-                                );
-                            }
-                            __s5 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F6 => {
-                            if __s6.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("package"),
-                                );
-                            }
-                            __s6 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F7 => {
-                            if __s7.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("properties"),
-                                );
-                            }
-                            __s7 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F8 => {
-                            if __s8.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("source_schema_id"),
-                                );
-                            }
-                            __s8 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F9 => {
-                            if __s9.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("immediate_descendants"),
-                                );
-                            }
-                            __s9 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F10 => {
-                            if __s10.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("is_override"),
-                                );
-                            }
-                            __s10 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F11 => {
-                            if __s11.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("static_properties"),
-                                );
-                            }
-                            __s11 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F12 => {
-                            if __s12.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("functions"),
-                                );
-                            }
-                            __s12 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F13 => {
-                            if __s13.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("procedures"),
-                                );
-                            }
-                            __s13 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F14 => {
-                            if __s14.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("is_primitive"),
-                                );
-                            }
-                            __s14 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F15 => {
-                            if __s15.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("is_abstract"),
-                                );
-                            }
-                            __s15 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F16 => {
-                            if __s16.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("invariants"),
-                                );
-                            }
-                            __s16 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F17 => {
-                            if __s17.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("creators"),
-                                );
-                            }
-                            __s17 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F18 => {
-                            if __s18.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("converters"),
-                                );
-                            }
-                            __s18 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F19 => {
-                            if __s19.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("item_names"),
-                                );
-                            }
-                            __s19 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                        __Field::__F20 => {
-                            if __s20.is_some() {
-                                return ::core::result::Result::Err(
-                                    ::serde::de::Error::duplicate_field("item_values"),
-                                );
-                            }
-                            __s20 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
-                        }
-                    }
-                }
-                ::core::result::Result::Ok(crate::prelude::BmmEnumerationString {
-                    name: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    documentation: __s1.flatten(),
-                    extensions: __s2.flatten(),
-                    feature_groups: __s3,
-                    features: __s4,
-                    ancestors: __s5.flatten(),
-                    package: __s6
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("package"))?,
-                    properties: __s7.flatten(),
-                    source_schema_id: __s8
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("source_schema_id"))?,
-                    immediate_descendants: __s9,
-                    is_override: __s10
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_override"))?,
-                    static_properties: __s11.flatten(),
-                    functions: __s12.flatten(),
-                    procedures: __s13.flatten(),
-                    is_primitive: __s14.flatten(),
-                    is_abstract: __s15.flatten(),
-                    invariants: __s16,
-                    creators: __s17.flatten(),
-                    converters: __s18.flatten(),
-                    item_names: __s19,
-                    item_values: __s20,
-                })
-            }
-        }
-        ::serde::Deserializer::deserialize_struct(
-            __deserializer,
-            "BMM_ENUMERATION_STRING",
-            __FIELDS,
-            __Visitor,
-        )
-    }
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::core::entity::range_constrained::bmm_enumeration_string::BmmEnumerationString {
+fn deserialize<__D: ::serde::Deserializer<'de>>(__deserializer: __D) -> ::core::result::Result<Self, __D::Error> {
+const __FIELDS: &[&str] = &["ancestors", "converters", "creators", "documentation", "extensions", "feature_groups", "features", "functions", "immediate_descendants", "invariants", "is_abstract", "is_override", "is_primitive", "item_names", "item_values", "name", "package", "procedures", "properties", "source_schema_id", "static_properties"];
+enum __Field { __Type, __F0, __F1, __F2, __F3, __F4, __F5, __F6, __F7, __F8, __F9, __F10, __F11, __F12, __F13, __F14, __F15, __F16, __F17, __F18, __F19, __F20, }
+impl<'de> ::serde::Deserialize<'de> for __Field {
+fn deserialize<__D: ::serde::Deserializer<'de>>(__deserializer: __D) -> ::core::result::Result<Self, __D::Error> {
+struct __KeyVisitor;
+impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+type Value = __Field;
+fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+__f.write_str("an object member name")
+}
+fn visit_str<__E: ::serde::de::Error>(self, __v: &str) -> ::core::result::Result<__Field, __E> {
+match __v {
+"_type" => ::core::result::Result::Ok(__Field::__Type),
+"name" => ::core::result::Result::Ok(__Field::__F0),
+"documentation" => ::core::result::Result::Ok(__Field::__F1),
+"extensions" => ::core::result::Result::Ok(__Field::__F2),
+"feature_groups" => ::core::result::Result::Ok(__Field::__F3),
+"features" => ::core::result::Result::Ok(__Field::__F4),
+"ancestors" => ::core::result::Result::Ok(__Field::__F5),
+"package" => ::core::result::Result::Ok(__Field::__F6),
+"properties" => ::core::result::Result::Ok(__Field::__F7),
+"source_schema_id" => ::core::result::Result::Ok(__Field::__F8),
+"immediate_descendants" => ::core::result::Result::Ok(__Field::__F9),
+"is_override" => ::core::result::Result::Ok(__Field::__F10),
+"static_properties" => ::core::result::Result::Ok(__Field::__F11),
+"functions" => ::core::result::Result::Ok(__Field::__F12),
+"procedures" => ::core::result::Result::Ok(__Field::__F13),
+"is_primitive" => ::core::result::Result::Ok(__Field::__F14),
+"is_abstract" => ::core::result::Result::Ok(__Field::__F15),
+"invariants" => ::core::result::Result::Ok(__Field::__F16),
+"creators" => ::core::result::Result::Ok(__Field::__F17),
+"converters" => ::core::result::Result::Ok(__Field::__F18),
+"item_names" => ::core::result::Result::Ok(__Field::__F19),
+"item_values" => ::core::result::Result::Ok(__Field::__F20),
+_ => ::core::result::Result::Err(::openehr_base::serde_support::unknown_field(__v, "BMM_ENUMERATION_STRING", __FIELDS)),
+}
+}
+}
+::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+}
+}
+struct __Visitor;
+impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+type Value = crate::v3::bmm3::core::entity::range_constrained::bmm_enumeration_string::BmmEnumerationString;
+fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+__f.write_str("an openEHR `BMM_ENUMERATION_STRING` object")
+}
+fn visit_map<__A: ::serde::de::MapAccess<'de>>(self, mut __map: __A) -> ::core::result::Result<Self::Value, __A::Error> {
+let mut __seen_type = false;
+let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s1: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s2: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s3: ::core::option::Option<_> = None;
+let mut __s4: ::core::option::Option<_> = None;
+let mut __s5: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s6: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s7: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s8: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s9: ::core::option::Option<_> = None;
+let mut __s10: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s11: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s12: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s13: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s14: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s15: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s16: ::core::option::Option<_> = None;
+let mut __s17: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s18: ::core::option::Option<::core::option::Option<_>> = None;
+let mut __s19: ::core::option::Option<_> = None;
+let mut __s20: ::core::option::Option<_> = None;
+while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+ match __key {
+__Field::__Type => {
+if __seen_type { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("_type")); }
+__seen_type = true;
+::serde::de::MapAccess::next_value_seed(&mut __map, ::openehr_base::serde_support::ExpectedType("BMM_ENUMERATION_STRING"))?;
+}
+__Field::__F0 => {
+if __s0.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("name")); }
+__s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F1 => {
+if __s1.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("documentation")); }
+__s1 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F2 => {
+if __s2.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("extensions")); }
+__s2 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F3 => {
+if __s3.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("feature_groups")); }
+__s3 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F4 => {
+if __s4.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("features")); }
+__s4 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F5 => {
+if __s5.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("ancestors")); }
+__s5 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F6 => {
+if __s6.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("package")); }
+__s6 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F7 => {
+if __s7.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("properties")); }
+__s7 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F8 => {
+if __s8.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("source_schema_id")); }
+__s8 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F9 => {
+if __s9.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("immediate_descendants")); }
+__s9 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F10 => {
+if __s10.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("is_override")); }
+__s10 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F11 => {
+if __s11.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("static_properties")); }
+__s11 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F12 => {
+if __s12.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("functions")); }
+__s12 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F13 => {
+if __s13.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("procedures")); }
+__s13 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F14 => {
+if __s14.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("is_primitive")); }
+__s14 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F15 => {
+if __s15.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("is_abstract")); }
+__s15 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F16 => {
+if __s16.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("invariants")); }
+__s16 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F17 => {
+if __s17.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("creators")); }
+__s17 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F18 => {
+if __s18.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("converters")); }
+__s18 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F19 => {
+if __s19.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("item_names")); }
+__s19 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+__Field::__F20 => {
+if __s20.is_some() { return ::core::result::Result::Err(::serde::de::Error::duplicate_field("item_values")); }
+__s20 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+}
+}
+}
+::core::result::Result::Ok(crate::v3::bmm3::core::entity::range_constrained::bmm_enumeration_string::BmmEnumerationString {
+name: __s0.flatten().ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+documentation: __s1.flatten(),
+extensions: __s2.flatten(),
+feature_groups: __s3,
+features: __s4,
+ancestors: __s5.flatten(),
+package: __s6.flatten().ok_or_else(|| ::serde::de::Error::missing_field("package"))?,
+properties: __s7.flatten(),
+source_schema_id: __s8.flatten().ok_or_else(|| ::serde::de::Error::missing_field("source_schema_id"))?,
+immediate_descendants: __s9,
+is_override: __s10.flatten().ok_or_else(|| ::serde::de::Error::missing_field("is_override"))?,
+static_properties: __s11.flatten(),
+functions: __s12.flatten(),
+procedures: __s13.flatten(),
+is_primitive: __s14.flatten(),
+is_abstract: __s15.flatten(),
+invariants: __s16,
+creators: __s17.flatten(),
+converters: __s18.flatten(),
+item_names: __s19,
+item_values: __s20,
+})
+}
+}
+::serde::Deserializer::deserialize_struct(__deserializer, "BMM_ENUMERATION_STRING", __FIELDS, __Visitor)
+}
 }
 
-impl ::serde::Serialize for crate::prelude::BmmExternalRoutine {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::feature::bmm_external_routine::BmmExternalRoutine
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -20994,7 +19904,9 @@ impl ::serde::Serialize for crate::prelude::BmmExternalRoutine {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmExternalRoutine {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::feature::bmm_external_routine::BmmExternalRoutine
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -21040,7 +19952,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmExternalRoutine {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmExternalRoutine;
+            type Value = crate::v3::bmm3::core::feature::bmm_external_routine::BmmExternalRoutine;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_EXTERNAL_ROUTINE` object")
             }
@@ -21083,12 +19995,14 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmExternalRoutine {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmExternalRoutine {
-                    meta_data: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("meta_data"))?,
-                    argument_mapping: __s1.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::feature::bmm_external_routine::BmmExternalRoutine {
+                        meta_data: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("meta_data"))?,
+                        argument_mapping: __s1.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -21100,35 +20014,35 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmExternalRoutine {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmFeature {
+impl ::serde::Serialize for crate::v3::bmm3::core::feature::bmm_feature::BmmFeature {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmFeature::BmmConstant(__x) => {
+            crate::v3::bmm3::core::feature::bmm_feature::BmmFeature::BmmConstant(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmFeature::BmmContainerProperty(__x) => {
+            crate::v3::bmm3::core::feature::bmm_feature::BmmFeature::BmmContainerProperty(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmFeature::BmmFunction(__x) => {
+            crate::v3::bmm3::core::feature::bmm_feature::BmmFeature::BmmFunction(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmFeature::BmmProcedure(__x) => {
+            crate::v3::bmm3::core::feature::bmm_feature::BmmFeature::BmmProcedure(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmFeature::BmmSingleton(__x) => {
+            crate::v3::bmm3::core::feature::bmm_feature::BmmFeature::BmmSingleton(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmFeature::BmmUnitaryProperty(__x) => {
+            crate::v3::bmm3::core::feature::bmm_feature::BmmFeature::BmmUnitaryProperty(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmFeature {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::core::feature::bmm_feature::BmmFeature {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -21143,7 +20057,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmFeature {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmFeature;
+            type Value = crate::v3::bmm3::core::feature::bmm_feature::BmmFeature;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_FEATURE` object")
             }
@@ -21161,49 +20075,15 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmFeature {
                             __map,
                         );
                         match __t {
-                            "BMM_CONSTANT" => {
-                                ::core::result::Result::Ok(crate::prelude::BmmFeature::BmmConstant(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "BMM_CONTAINER_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::BmmFeature::BmmContainerProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_FUNCTION" => {
-                                ::core::result::Result::Ok(crate::prelude::BmmFeature::BmmFunction(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "BMM_INDEXED_CONTAINER_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::BmmFeature::BmmContainerProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_PROCEDURE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmFeature::BmmProcedure(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_SINGLETON" => ::core::result::Result::Ok(
-                                crate::prelude::BmmFeature::BmmSingleton(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_UNITARY_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::BmmFeature::BmmUnitaryProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_FEATURE",
-                                    __other,
-                                    "BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_FUNCTION, BMM_INDEXED_CONTAINER_PROPERTY, BMM_PROCEDURE, BMM_SINGLETON, BMM_UNITARY_PROPERTY",
-                                ),
-                            ),
-                        }
+"BMM_CONSTANT" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_feature::BmmFeature::BmmConstant(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_CONTAINER_PROPERTY" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_feature::BmmFeature::BmmContainerProperty(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_FUNCTION" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_feature::BmmFeature::BmmFunction(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_INDEXED_CONTAINER_PROPERTY" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_feature::BmmFeature::BmmContainerProperty(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PROCEDURE" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_feature::BmmFeature::BmmProcedure(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_SINGLETON" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_feature::BmmFeature::BmmSingleton(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_UNITARY_PROPERTY" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_feature::BmmFeature::BmmUnitaryProperty(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_FEATURE", __other, "BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_FUNCTION, BMM_INDEXED_CONTAINER_PROPERTY, BMM_PROCEDURE, BMM_SINGLETON, BMM_UNITARY_PROPERTY")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -21225,7 +20105,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmFeature {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmFeatureExtension {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::feature::bmm_feature_extension::BmmFeatureExtension
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -21242,7 +20124,9 @@ impl ::serde::Serialize for crate::prelude::BmmFeatureExtension {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmFeatureExtension {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::feature::bmm_feature_extension::BmmFeatureExtension
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -21284,7 +20168,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmFeatureExtension {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmFeatureExtension;
+            type Value = crate::v3::bmm3::core::feature::bmm_feature_extension::BmmFeatureExtension;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_FEATURE_EXTENSION` object")
             }
@@ -21311,7 +20195,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmFeatureExtension {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmFeatureExtension {})
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::feature::bmm_feature_extension::BmmFeatureExtension {},
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -21323,7 +20209,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmFeatureExtension {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmFeatureGroup {
+impl ::serde::Serialize for crate::v3::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -21352,7 +20238,9 @@ impl ::serde::Serialize for crate::prelude::BmmFeatureGroup {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmFeatureGroup {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -21402,7 +20290,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmFeatureGroup {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmFeatureGroup;
+            type Value = crate::v3::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_FEATURE_GROUP` object")
             }
@@ -21463,16 +20351,18 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmFeatureGroup {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmFeatureGroup {
-                    name: __s0
-                        .flatten()
-                        .unwrap_or(::std::string::String::from("feature")),
-                    properties: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("properties"))?,
-                    features: __s2,
-                    visibility: __s3.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup {
+                        name: __s0
+                            .flatten()
+                            .unwrap_or(::std::string::String::from("feature")),
+                        properties: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("properties"))?,
+                        features: __s2,
+                        visibility: __s3.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -21484,47 +20374,49 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmFeatureGroup {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmFormalElement {
+impl ::serde::Serialize for crate::v3::bmm3::core::bmm_formal_element::BmmFormalElement {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmFormalElement::BmmConstant(__x) => {
+            crate::v3::bmm3::core::bmm_formal_element::BmmFormalElement::BmmConstant(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmFormalElement::BmmContainerProperty(__x) => {
+            crate::v3::bmm3::core::bmm_formal_element::BmmFormalElement::BmmContainerProperty(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
+            crate::v3::bmm3::core::bmm_formal_element::BmmFormalElement::BmmFunction(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmFormalElement::BmmFunction(__x) => {
+            crate::v3::bmm3::core::bmm_formal_element::BmmFormalElement::BmmLocal(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmFormalElement::BmmLocal(__x) => {
+            crate::v3::bmm3::core::bmm_formal_element::BmmFormalElement::BmmParameter(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmFormalElement::BmmParameter(__x) => {
+            crate::v3::bmm3::core::bmm_formal_element::BmmFormalElement::BmmProcedure(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmFormalElement::BmmProcedure(__x) => {
+            crate::v3::bmm3::core::bmm_formal_element::BmmFormalElement::BmmResult(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmFormalElement::BmmResult(__x) => {
+            crate::v3::bmm3::core::bmm_formal_element::BmmFormalElement::BmmSelf(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmFormalElement::BmmSelf(__x) => {
+            crate::v3::bmm3::core::bmm_formal_element::BmmFormalElement::BmmSingleton(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmFormalElement::BmmSingleton(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmFormalElement::BmmUnitaryProperty(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
+            crate::v3::bmm3::core::bmm_formal_element::BmmFormalElement::BmmUnitaryProperty(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmFormalElement {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::bmm_formal_element::BmmFormalElement
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -21543,7 +20435,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmFormalElement {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmFormalElement;
+            type Value = crate::v3::bmm3::core::bmm_formal_element::BmmFormalElement;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_FORMAL_ELEMENT` object")
             }
@@ -21561,69 +20453,19 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmFormalElement {
                             __map,
                         );
                         match __t {
-                            "BMM_CONSTANT" => ::core::result::Result::Ok(
-                                crate::prelude::BmmFormalElement::BmmConstant(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_CONTAINER_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::BmmFormalElement::BmmContainerProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_FUNCTION" => ::core::result::Result::Ok(
-                                crate::prelude::BmmFormalElement::BmmFunction(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_INDEXED_CONTAINER_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::BmmFormalElement::BmmContainerProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_LOCAL" => ::core::result::Result::Ok(
-                                crate::prelude::BmmFormalElement::BmmLocal(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_PARAMETER" => ::core::result::Result::Ok(
-                                crate::prelude::BmmFormalElement::BmmParameter(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_PROCEDURE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmFormalElement::BmmProcedure(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_RESULT" => ::core::result::Result::Ok(
-                                crate::prelude::BmmFormalElement::BmmResult(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_SELF" => ::core::result::Result::Ok(
-                                crate::prelude::BmmFormalElement::BmmSelf(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_SINGLETON" => ::core::result::Result::Ok(
-                                crate::prelude::BmmFormalElement::BmmSingleton(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_UNITARY_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::BmmFormalElement::BmmUnitaryProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_FORMAL_ELEMENT",
-                                    __other,
-                                    "BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_FUNCTION, BMM_INDEXED_CONTAINER_PROPERTY, BMM_LOCAL, BMM_PARAMETER, BMM_PROCEDURE, BMM_RESULT, BMM_SELF, BMM_SINGLETON, BMM_UNITARY_PROPERTY",
-                                ),
-                            ),
-                        }
+"BMM_CONSTANT" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_formal_element::BmmFormalElement::BmmConstant(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_CONTAINER_PROPERTY" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_formal_element::BmmFormalElement::BmmContainerProperty(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_FUNCTION" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_formal_element::BmmFormalElement::BmmFunction(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_INDEXED_CONTAINER_PROPERTY" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_formal_element::BmmFormalElement::BmmContainerProperty(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_LOCAL" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_formal_element::BmmFormalElement::BmmLocal(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PARAMETER" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_formal_element::BmmFormalElement::BmmParameter(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PROCEDURE" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_formal_element::BmmFormalElement::BmmProcedure(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_RESULT" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_formal_element::BmmFormalElement::BmmResult(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_SELF" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_formal_element::BmmFormalElement::BmmSelf(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_SINGLETON" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_formal_element::BmmFormalElement::BmmSingleton(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_UNITARY_PROPERTY" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_formal_element::BmmFormalElement::BmmUnitaryProperty(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_FORMAL_ELEMENT", __other, "BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_FUNCTION, BMM_INDEXED_CONTAINER_PROPERTY, BMM_LOCAL, BMM_PARAMETER, BMM_PROCEDURE, BMM_RESULT, BMM_SELF, BMM_SINGLETON, BMM_UNITARY_PROPERTY")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -21645,7 +20487,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmFormalElement {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmFunction {
+impl ::serde::Serialize for crate::v3::bmm3::core::feature::bmm_function::BmmFunction {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -21745,7 +20587,7 @@ impl ::serde::Serialize for crate::prelude::BmmFunction {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmFunction {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::core::feature::bmm_function::BmmFunction {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -21830,7 +20672,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmFunction {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmFunction;
+            type Value = crate::v3::bmm3::core::feature::bmm_function::BmmFunction;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_FUNCTION` object")
             }
@@ -21981,30 +20823,32 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmFunction {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmFunction {
-                    name: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    documentation: __s1.flatten(),
-                    extensions: __s2.flatten(),
-                    r#type: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                    is_nullable: __s4.flatten(),
-                    is_synthesised_generic: __s5.flatten(),
-                    feature_extensions: __s6,
-                    group: __s7
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("group"))?,
-                    parameters: __s8,
-                    pre_conditions: __s9,
-                    post_conditions: __s10,
-                    definition: __s11.flatten(),
-                    operator_definition: __s12.flatten(),
-                    result: __s13
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("result"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::feature::bmm_function::BmmFunction {
+                        name: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        documentation: __s1.flatten(),
+                        extensions: __s2.flatten(),
+                        r#type: __s3
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+                        is_nullable: __s4.flatten(),
+                        is_synthesised_generic: __s5.flatten(),
+                        feature_extensions: __s6,
+                        group: __s7
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("group"))?,
+                        parameters: __s8,
+                        pre_conditions: __s9,
+                        post_conditions: __s10,
+                        definition: __s11.flatten(),
+                        operator_definition: __s12.flatten(),
+                        result: __s13
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("result"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -22016,7 +20860,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmFunction {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmFunctionType {
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::bmm_function_type::BmmFunctionType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -22040,7 +20884,9 @@ impl ::serde::Serialize for crate::prelude::BmmFunctionType {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmFunctionType {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::entity::bmm_function_type::BmmFunctionType
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -22086,7 +20932,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmFunctionType {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmFunctionType;
+            type Value = crate::v3::bmm3::core::entity::bmm_function_type::BmmFunctionType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_FUNCTION_TYPE` object")
             }
@@ -22129,12 +20975,14 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmFunctionType {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmFunctionType {
-                    result_type: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("result_type"))?,
-                    argument_types: __s1.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::entity::bmm_function_type::BmmFunctionType {
+                        result_type: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("result_type"))?,
+                        argument_types: __s1.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -22146,7 +20994,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmFunctionType {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmGenericClass {
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::bmm_generic_class::BmmGenericClass {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -22286,7 +21134,9 @@ impl ::serde::Serialize for crate::prelude::BmmGenericClass {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmGenericClass {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::entity::bmm_generic_class::BmmGenericClass
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -22389,7 +21239,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmGenericClass {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmGenericClass;
+            type Value = crate::v3::bmm3::core::entity::bmm_generic_class::BmmGenericClass;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_GENERIC_CLASS` object")
             }
@@ -22594,38 +21444,40 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmGenericClass {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmGenericClass {
-                    name: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    documentation: __s1.flatten(),
-                    extensions: __s2.flatten(),
-                    feature_groups: __s3,
-                    features: __s4,
-                    ancestors: __s5.flatten(),
-                    package: __s6
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("package"))?,
-                    properties: __s7.flatten(),
-                    source_schema_id: __s8
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("source_schema_id"))?,
-                    immediate_descendants: __s9,
-                    is_override: __s10
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_override"))?,
-                    static_properties: __s11.flatten(),
-                    functions: __s12.flatten(),
-                    procedures: __s13.flatten(),
-                    is_primitive: __s14.flatten(),
-                    is_abstract: __s15.flatten(),
-                    invariants: __s16,
-                    creators: __s17.flatten(),
-                    converters: __s18.flatten(),
-                    generic_parameters: __s19
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("generic_parameters"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::entity::bmm_generic_class::BmmGenericClass {
+                        name: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        documentation: __s1.flatten(),
+                        extensions: __s2.flatten(),
+                        feature_groups: __s3,
+                        features: __s4,
+                        ancestors: __s5.flatten(),
+                        package: __s6
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("package"))?,
+                        properties: __s7.flatten(),
+                        source_schema_id: __s8
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("source_schema_id"))?,
+                        immediate_descendants: __s9,
+                        is_override: __s10
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("is_override"))?,
+                        static_properties: __s11.flatten(),
+                        functions: __s12.flatten(),
+                        procedures: __s13.flatten(),
+                        is_primitive: __s14.flatten(),
+                        is_abstract: __s15.flatten(),
+                        invariants: __s16,
+                        creators: __s17.flatten(),
+                        converters: __s18.flatten(),
+                        generic_parameters: __s19.flatten().ok_or_else(|| {
+                            ::serde::de::Error::missing_field("generic_parameters")
+                        })?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -22637,7 +21489,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmGenericClass {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmGenericType {
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::bmm_generic_type::BmmGenericType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -22662,7 +21514,9 @@ impl ::serde::Serialize for crate::prelude::BmmGenericType {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmGenericType {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::entity::bmm_generic_type::BmmGenericType
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -22710,7 +21564,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmGenericType {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmGenericType;
+            type Value = crate::v3::bmm3::core::entity::bmm_generic_type::BmmGenericType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_GENERIC_TYPE` object")
             }
@@ -22762,15 +21616,17 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmGenericType {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmGenericType {
-                    value_constraint: __s0.flatten(),
-                    base_class: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("base_class"))?,
-                    generic_parameters: __s2
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("generic_parameters"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::entity::bmm_generic_type::BmmGenericType {
+                        value_constraint: __s0.flatten(),
+                        base_class: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("base_class"))?,
+                        generic_parameters: __s2.flatten().ok_or_else(|| {
+                            ::serde::de::Error::missing_field("generic_parameters")
+                        })?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -22782,7 +21638,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmGenericType {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmIncludeSpec {
+impl ::serde::Serialize for crate::v3::bmm3::model_access::bmm_include_spec::BmmIncludeSpec {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -22796,7 +21652,9 @@ impl ::serde::Serialize for crate::prelude::BmmIncludeSpec {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmIncludeSpec {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::model_access::bmm_include_spec::BmmIncludeSpec
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -22840,7 +21698,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmIncludeSpec {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmIncludeSpec;
+            type Value = crate::v3::bmm3::model_access::bmm_include_spec::BmmIncludeSpec;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_INCLUDE_SPEC` object")
             }
@@ -22874,11 +21732,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmIncludeSpec {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmIncludeSpec {
-                    id: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("id"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::model_access::bmm_include_spec::BmmIncludeSpec {
+                        id: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("id"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -22890,7 +21750,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmIncludeSpec {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmIndexedContainerProperty {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::feature::bmm_indexed_container_property::BmmIndexedContainerProperty
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -22977,7 +21839,9 @@ impl ::serde::Serialize for crate::prelude::BmmIndexedContainerProperty {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmIndexedContainerProperty {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::feature::bmm_indexed_container_property::BmmIndexedContainerProperty
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -23056,7 +21920,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmIndexedContainerPrope
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmIndexedContainerProperty;
+            type Value = crate::v3::bmm3::core::feature::bmm_indexed_container_property::BmmIndexedContainerProperty;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_INDEXED_CONTAINER_PROPERTY` object")
             }
@@ -23191,26 +22055,20 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmIndexedContainerPrope
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmIndexedContainerProperty {
-                    name: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    documentation: __s1.flatten(),
-                    extensions: __s2.flatten(),
-                    r#type: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                    is_nullable: __s4.flatten(),
-                    is_synthesised_generic: __s5.flatten(),
-                    feature_extensions: __s6,
-                    group: __s7
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("group"))?,
-                    is_im_runtime: __s8.flatten(),
-                    is_im_infrastructure: __s9.flatten(),
-                    is_composition: __s10.flatten(),
-                    cardinality: __s11.flatten(),
-                })
+                ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_indexed_container_property::BmmIndexedContainerProperty {
+name: __s0.flatten().ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+documentation: __s1.flatten(),
+extensions: __s2.flatten(),
+r#type: __s3.flatten().ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+is_nullable: __s4.flatten(),
+is_synthesised_generic: __s5.flatten(),
+feature_extensions: __s6,
+group: __s7.flatten().ok_or_else(|| ::serde::de::Error::missing_field("group"))?,
+is_im_runtime: __s8.flatten(),
+is_im_infrastructure: __s9.flatten(),
+is_composition: __s10.flatten(),
+cardinality: __s11.flatten(),
+})
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -23222,7 +22080,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmIndexedContainerPrope
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmIndexedContainerType {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::entity::bmm_indexed_container_type::BmmIndexedContainerType
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -23258,7 +22118,9 @@ impl ::serde::Serialize for crate::prelude::BmmIndexedContainerType {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmIndexedContainerType {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::entity::bmm_indexed_container_type::BmmIndexedContainerType
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -23316,7 +22178,8 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmIndexedContainerType 
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmIndexedContainerType;
+            type Value =
+                crate::v3::bmm3::core::entity::bmm_indexed_container_type::BmmIndexedContainerType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_INDEXED_CONTAINER_TYPE` object")
             }
@@ -23388,19 +22251,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmIndexedContainerType 
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmIndexedContainerType {
-                    container_class: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("container_class"))?,
-                    item_type: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("item_type"))?,
-                    is_ordered: __s2.flatten(),
-                    is_unique: __s3.flatten(),
-                    index_type: __s4
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("index_type"))?,
-                })
+                ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_indexed_container_type::BmmIndexedContainerType {
+container_class: __s0.flatten().ok_or_else(|| ::serde::de::Error::missing_field("container_class"))?,
+item_type: __s1.flatten().ok_or_else(|| ::serde::de::Error::missing_field("item_type"))?,
+is_ordered: __s2.flatten(),
+is_unique: __s3.flatten(),
+index_type: __s4.flatten().ok_or_else(|| ::serde::de::Error::missing_field("index_type"))?,
+})
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -23412,7 +22269,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmIndexedContainerType 
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmIndexedContainerValue {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::literal_value::bmm_indexed_container_value::BmmIndexedContainerValue
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -23450,7 +22309,9 @@ impl ::serde::Serialize for crate::prelude::BmmIndexedContainerValue {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmIndexedContainerValue {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::literal_value::bmm_indexed_container_value::BmmIndexedContainerValue
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -23500,7 +22361,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmIndexedContainerValue
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmIndexedContainerValue;
+            type Value = crate::v3::bmm3::core::literal_value::bmm_indexed_container_value::BmmIndexedContainerValue;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_INDEXED_CONTAINER_VALUE` object")
             }
@@ -23563,16 +22424,12 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmIndexedContainerValue
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmIndexedContainerValue {
-                    value_literal: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("value_literal"))?,
-                    value: __s1.flatten(),
-                    syntax: __s2.flatten(),
-                    r#type: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                })
+                ::core::result::Result::Ok(crate::v3::bmm3::core::literal_value::bmm_indexed_container_value::BmmIndexedContainerValue {
+value_literal: __s0.flatten().ok_or_else(|| ::serde::de::Error::missing_field("value_literal"))?,
+value: __s1.flatten(),
+syntax: __s2.flatten(),
+r#type: __s3.flatten().ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+})
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -23584,29 +22441,25 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmIndexedContainerValue
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmInstantiableFeature {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::feature::bmm_instantiable_feature::BmmInstantiableFeature
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmInstantiableFeature::BmmConstant(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmInstantiableFeature::BmmContainerProperty(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmInstantiableFeature::BmmSingleton(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmInstantiableFeature::BmmUnitaryProperty(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-        }
+crate::v3::bmm3::core::feature::bmm_instantiable_feature::BmmInstantiableFeature::BmmConstant(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::core::feature::bmm_instantiable_feature::BmmInstantiableFeature::BmmContainerProperty(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::core::feature::bmm_instantiable_feature::BmmInstantiableFeature::BmmSingleton(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::core::feature::bmm_instantiable_feature::BmmInstantiableFeature::BmmUnitaryProperty(__x) => ::serde::Serialize::serialize(__x, __serializer),
+}
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmInstantiableFeature {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::feature::bmm_instantiable_feature::BmmInstantiableFeature
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -23619,7 +22472,8 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmInstantiableFeature {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmInstantiableFeature;
+            type Value =
+                crate::v3::bmm3::core::feature::bmm_instantiable_feature::BmmInstantiableFeature;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_INSTANTIABLE_FEATURE` object")
             }
@@ -23637,39 +22491,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmInstantiableFeature {
                             __map,
                         );
                         match __t {
-                            "BMM_CONSTANT" => ::core::result::Result::Ok(
-                                crate::prelude::BmmInstantiableFeature::BmmConstant(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_CONTAINER_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::BmmInstantiableFeature::BmmContainerProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_INDEXED_CONTAINER_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::BmmInstantiableFeature::BmmContainerProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_SINGLETON" => ::core::result::Result::Ok(
-                                crate::prelude::BmmInstantiableFeature::BmmSingleton(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_UNITARY_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::BmmInstantiableFeature::BmmUnitaryProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_INSTANTIABLE_FEATURE",
-                                    __other,
-                                    "BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_INDEXED_CONTAINER_PROPERTY, BMM_SINGLETON, BMM_UNITARY_PROPERTY",
-                                ),
-                            ),
-                        }
+"BMM_CONSTANT" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_instantiable_feature::BmmInstantiableFeature::BmmConstant(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_CONTAINER_PROPERTY" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_instantiable_feature::BmmInstantiableFeature::BmmContainerProperty(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_INDEXED_CONTAINER_PROPERTY" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_instantiable_feature::BmmInstantiableFeature::BmmContainerProperty(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_SINGLETON" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_instantiable_feature::BmmInstantiableFeature::BmmSingleton(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_UNITARY_PROPERTY" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_instantiable_feature::BmmInstantiableFeature::BmmUnitaryProperty(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_INSTANTIABLE_FEATURE", __other, "BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_INDEXED_CONTAINER_PROPERTY, BMM_SINGLETON, BMM_UNITARY_PROPERTY")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -23691,7 +22519,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmInstantiableFeature {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmIntegerValue {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::literal_value::bmm_integer_value::BmmIntegerValue
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -23717,7 +22547,9 @@ impl ::serde::Serialize for crate::prelude::BmmIntegerValue {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmIntegerValue {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::literal_value::bmm_integer_value::BmmIntegerValue
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -23767,7 +22599,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmIntegerValue {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmIntegerValue;
+            type Value = crate::v3::bmm3::core::literal_value::bmm_integer_value::BmmIntegerValue;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_INTEGER_VALUE` object")
             }
@@ -23828,18 +22660,20 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmIntegerValue {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmIntegerValue {
-                    value_literal: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("value_literal"))?,
-                    value: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
-                    syntax: __s2.flatten(),
-                    r#type: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::literal_value::bmm_integer_value::BmmIntegerValue {
+                        value_literal: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value_literal"))?,
+                        value: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
+                        syntax: __s2.flatten(),
+                        r#type: __s3
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -23851,7 +22685,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmIntegerValue {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmIntervalValue {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::literal_value::bmm_interval_value::BmmIntervalValue
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -23882,7 +22718,9 @@ impl ::serde::Serialize for crate::prelude::BmmIntervalValue {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmIntervalValue {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::literal_value::bmm_interval_value::BmmIntervalValue
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -23932,7 +22770,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmIntervalValue {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmIntervalValue;
+            type Value = crate::v3::bmm3::core::literal_value::bmm_interval_value::BmmIntervalValue;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_INTERVAL_VALUE` object")
             }
@@ -23993,16 +22831,18 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmIntervalValue {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmIntervalValue {
-                    value_literal: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("value_literal"))?,
-                    value: __s1.flatten(),
-                    syntax: __s2.flatten(),
-                    r#type: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::literal_value::bmm_interval_value::BmmIntervalValue {
+                        value_literal: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value_literal"))?,
+                        value: __s1.flatten(),
+                        syntax: __s2.flatten(),
+                        r#type: __s3
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -24014,29 +22854,25 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmIntervalValue {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmLiteralValue {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::literal_value::bmm_literal_value::BmmLiteralValue
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmLiteralValue::BmmContainerValue(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmLiteralValue::BmmIndexedContainerValue(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmLiteralValue::BmmIntervalValue(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmLiteralValue::BmmPrimitiveValue(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-        }
+crate::v3::bmm3::core::literal_value::bmm_literal_value::BmmLiteralValue::BmmContainerValue(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::core::literal_value::bmm_literal_value::BmmLiteralValue::BmmIndexedContainerValue(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::core::literal_value::bmm_literal_value::BmmLiteralValue::BmmIntervalValue(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::core::literal_value::bmm_literal_value::BmmLiteralValue::BmmPrimitiveValue(__x) => ::serde::Serialize::serialize(__x, __serializer),
+}
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmLiteralValue {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::literal_value::bmm_literal_value::BmmLiteralValue
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -24051,7 +22887,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmLiteralValue {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmLiteralValue;
+            type Value = crate::v3::bmm3::core::literal_value::bmm_literal_value::BmmLiteralValue;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_LITERAL_VALUE` object")
             }
@@ -24069,49 +22905,15 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmLiteralValue {
                             __map,
                         );
                         match __t {
-                            "BMM_BOOLEAN_VALUE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmLiteralValue::BmmPrimitiveValue(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_CONTAINER_VALUE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmLiteralValue::BmmContainerValue(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_INDEXED_CONTAINER_VALUE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmLiteralValue::BmmIndexedContainerValue(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_INTEGER_VALUE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmLiteralValue::BmmPrimitiveValue(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_INTERVAL_VALUE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmLiteralValue::BmmIntervalValue(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_PRIMITIVE_VALUE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmLiteralValue::BmmPrimitiveValue(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_STRING_VALUE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmLiteralValue::BmmPrimitiveValue(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_LITERAL_VALUE",
-                                    __other,
-                                    "BMM_BOOLEAN_VALUE, BMM_CONTAINER_VALUE, BMM_INDEXED_CONTAINER_VALUE, BMM_INTEGER_VALUE, BMM_INTERVAL_VALUE, BMM_PRIMITIVE_VALUE, BMM_STRING_VALUE",
-                                ),
-                            ),
-                        }
+"BMM_BOOLEAN_VALUE" => ::core::result::Result::Ok(crate::v3::bmm3::core::literal_value::bmm_literal_value::BmmLiteralValue::BmmPrimitiveValue(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_CONTAINER_VALUE" => ::core::result::Result::Ok(crate::v3::bmm3::core::literal_value::bmm_literal_value::BmmLiteralValue::BmmContainerValue(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_INDEXED_CONTAINER_VALUE" => ::core::result::Result::Ok(crate::v3::bmm3::core::literal_value::bmm_literal_value::BmmLiteralValue::BmmIndexedContainerValue(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_INTEGER_VALUE" => ::core::result::Result::Ok(crate::v3::bmm3::core::literal_value::bmm_literal_value::BmmLiteralValue::BmmPrimitiveValue(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_INTERVAL_VALUE" => ::core::result::Result::Ok(crate::v3::bmm3::core::literal_value::bmm_literal_value::BmmLiteralValue::BmmIntervalValue(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PRIMITIVE_VALUE" => ::core::result::Result::Ok(crate::v3::bmm3::core::literal_value::bmm_literal_value::BmmLiteralValue::BmmPrimitiveValue(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_STRING_VALUE" => ::core::result::Result::Ok(crate::v3::bmm3::core::literal_value::bmm_literal_value::BmmLiteralValue::BmmPrimitiveValue(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_LITERAL_VALUE", __other, "BMM_BOOLEAN_VALUE, BMM_CONTAINER_VALUE, BMM_INDEXED_CONTAINER_VALUE, BMM_INTEGER_VALUE, BMM_INTERVAL_VALUE, BMM_PRIMITIVE_VALUE, BMM_STRING_VALUE")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -24133,7 +22935,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmLiteralValue {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmLocal {
+impl ::serde::Serialize for crate::v3::bmm3::core::feature::bmm_local::BmmLocal {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -24165,7 +22967,7 @@ impl ::serde::Serialize for crate::prelude::BmmLocal {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmLocal {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::core::feature::bmm_local::BmmLocal {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -24217,7 +23019,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmLocal {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmLocal;
+            type Value = crate::v3::bmm3::core::feature::bmm_local::BmmLocal;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_LOCAL` object")
             }
@@ -24287,7 +23089,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmLocal {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmLocal {
+                ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_local::BmmLocal {
                     name: __s0
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
@@ -24304,7 +23106,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmLocal {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmLocalRoutine {
+impl ::serde::Serialize for crate::v3::bmm3::core::feature::bmm_local_routine::BmmLocalRoutine {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -24326,7 +23128,9 @@ impl ::serde::Serialize for crate::prelude::BmmLocalRoutine {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmLocalRoutine {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::feature::bmm_local_routine::BmmLocalRoutine
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -24372,7 +23176,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmLocalRoutine {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmLocalRoutine;
+            type Value = crate::v3::bmm3::core::feature::bmm_local_routine::BmmLocalRoutine;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_LOCAL_ROUTINE` object")
             }
@@ -24415,12 +23219,14 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmLocalRoutine {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmLocalRoutine {
-                    locals: __s0,
-                    body: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("body"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::feature::bmm_local_routine::BmmLocalRoutine {
+                        locals: __s0,
+                        body: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("body"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -24432,7 +23238,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmLocalRoutine {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmModel {
+impl ::serde::Serialize for crate::v3::bmm3::core::model::bmm_model::BmmModel {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -24489,7 +23295,7 @@ impl ::serde::Serialize for crate::prelude::BmmModel {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModel {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::core::model::bmm_model::BmmModel {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -24559,7 +23365,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModel {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmModel;
+            type Value = crate::v3::bmm3::core::model::bmm_model::BmmModel;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_MODEL` object")
             }
@@ -24665,7 +23471,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModel {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmModel {
+                ::core::result::Result::Ok(crate::v3::bmm3::core::model::bmm_model::BmmModel {
                     name: __s0
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
@@ -24688,7 +23494,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModel {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmModelAccess {
+impl ::serde::Serialize for crate::v3::bmm3::model_access::bmm_model_access::BmmModelAccess {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -24731,7 +23537,9 @@ impl ::serde::Serialize for crate::prelude::BmmModelAccess {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModelAccess {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::model_access::bmm_model_access::BmmModelAccess
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -24786,7 +23594,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModelAccess {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmModelAccess;
+            type Value = crate::v3::bmm3::model_access::bmm_model_access::BmmModelAccess;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_MODEL_ACCESS` object")
             }
@@ -24847,12 +23655,14 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModelAccess {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmModelAccess {
-                    schema_directories: __s0,
-                    all_schemas: __s1.flatten(),
-                    bmm_models: __s2.flatten(),
-                    matching_bmm_models: __s3.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::model_access::bmm_model_access::BmmModelAccess {
+                        schema_directories: __s0,
+                        all_schemas: __s1.flatten(),
+                        bmm_models: __s2.flatten(),
+                        matching_bmm_models: __s3.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -24864,59 +23674,59 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModelAccess {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmModelElement {
+impl ::serde::Serialize for crate::v3::bmm3::core::bmm_model_element::BmmModelElement {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmModelElement::BmmConstant(__x) => {
+            crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmConstant(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmModelElement::BmmContainerProperty(__x) => {
+            crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmContainerProperty(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
+            crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmFunction(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmModelElement::BmmFunction(__x) => {
+            crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmGenericClass(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmModelElement::BmmGenericClass(__x) => {
+            crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmLocal(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmModelElement::BmmLocal(__x) => {
+            crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmModel(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmModelElement::BmmModel(__x) => {
+            crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmPackage(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmModelElement::BmmPackage(__x) => {
+            crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmParameter(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmModelElement::BmmParameter(__x) => {
+            crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmProcedure(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmModelElement::BmmProcedure(__x) => {
+            crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmResult(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmModelElement::BmmResult(__x) => {
+            crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmSelf(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmModelElement::BmmSelf(__x) => {
+            crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmSimpleClass(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmModelElement::BmmSimpleClass(__x) => {
+            crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmSingleton(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmModelElement::BmmSingleton(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmModelElement::BmmUnitaryProperty(__x) => {
+            crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmUnitaryProperty(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModelElement {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::core::bmm_model_element::BmmModelElement {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -24942,7 +23752,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModelElement {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmModelElement;
+            type Value = crate::v3::bmm3::core::bmm_model_element::BmmModelElement;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_MODEL_ELEMENT` object")
             }
@@ -24960,104 +23770,26 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModelElement {
                             __map,
                         );
                         match __t {
-                            "BMM_CONSTANT" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModelElement::BmmConstant(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_CONTAINER_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModelElement::BmmContainerProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_ENUMERATION" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModelElement::BmmSimpleClass(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_ENUMERATION_INTEGER" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModelElement::BmmSimpleClass(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_ENUMERATION_STRING" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModelElement::BmmSimpleClass(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_FUNCTION" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModelElement::BmmFunction(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_GENERIC_CLASS" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModelElement::BmmGenericClass(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_INDEXED_CONTAINER_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModelElement::BmmContainerProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_LOCAL" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModelElement::BmmLocal(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_MODEL" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModelElement::BmmModel(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_PACKAGE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModelElement::BmmPackage(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_PARAMETER" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModelElement::BmmParameter(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_PROCEDURE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModelElement::BmmProcedure(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_RESULT" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModelElement::BmmResult(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_SELF" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModelElement::BmmSelf(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_SIMPLE_CLASS" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModelElement::BmmSimpleClass(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_SINGLETON" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModelElement::BmmSingleton(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_UNITARY_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModelElement::BmmUnitaryProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_MODEL_ELEMENT",
-                                    __other,
-                                    "BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_FUNCTION, BMM_GENERIC_CLASS, BMM_INDEXED_CONTAINER_PROPERTY, BMM_LOCAL, BMM_MODEL, BMM_PACKAGE, BMM_PARAMETER, BMM_PROCEDURE, BMM_RESULT, BMM_SELF, BMM_SIMPLE_CLASS, BMM_SINGLETON, BMM_UNITARY_PROPERTY",
-                                ),
-                            ),
-                        }
+"BMM_CONSTANT" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmConstant(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_CONTAINER_PROPERTY" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmContainerProperty(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ENUMERATION" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmSimpleClass(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ENUMERATION_INTEGER" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmSimpleClass(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ENUMERATION_STRING" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmSimpleClass(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_FUNCTION" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmFunction(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_GENERIC_CLASS" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmGenericClass(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_INDEXED_CONTAINER_PROPERTY" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmContainerProperty(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_LOCAL" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmLocal(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_MODEL" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmModel(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PACKAGE" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmPackage(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PARAMETER" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmParameter(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PROCEDURE" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmProcedure(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_RESULT" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmResult(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_SELF" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmSelf(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_SIMPLE_CLASS" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmSimpleClass(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_SINGLETON" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmSingleton(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_UNITARY_PROPERTY" => ::core::result::Result::Ok(crate::v3::bmm3::core::bmm_model_element::BmmModelElement::BmmUnitaryProperty(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_MODEL_ELEMENT", __other, "BMM_CONSTANT, BMM_CONTAINER_PROPERTY, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_FUNCTION, BMM_GENERIC_CLASS, BMM_INDEXED_CONTAINER_PROPERTY, BMM_LOCAL, BMM_MODEL, BMM_PACKAGE, BMM_PARAMETER, BMM_PROCEDURE, BMM_RESULT, BMM_SELF, BMM_SIMPLE_CLASS, BMM_SINGLETON, BMM_UNITARY_PROPERTY")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -25079,7 +23811,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModelElement {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmModelMetadataData {
+impl ::serde::Serialize for crate::v3::bmm3::core::model::bmm_model_metadata::BmmModelMetadataData {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -25098,7 +23830,9 @@ impl ::serde::Serialize for crate::prelude::BmmModelMetadataData {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModelMetadataData {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::model::bmm_model_metadata::BmmModelMetadataData
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -25144,7 +23878,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModelMetadataData {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmModelMetadataData;
+            type Value = crate::v3::bmm3::core::model::bmm_model_metadata::BmmModelMetadataData;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_MODEL_METADATA` object")
             }
@@ -25187,14 +23921,16 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModelMetadataData {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmModelMetadataData {
-                    rm_publisher: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("rm_publisher"))?,
-                    rm_release: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("rm_release"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::model::bmm_model_metadata::BmmModelMetadataData {
+                        rm_publisher: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("rm_publisher"))?,
+                        rm_release: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("rm_release"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -25206,30 +23942,28 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModelMetadataData {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmModelMetadata {
+impl ::serde::Serialize for crate::v3::bmm3::core::model::bmm_model_metadata::BmmModelMetadata {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmModelMetadata::BmmModel(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmModelMetadata::BmmModelMetadata(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-        }
+crate::v3::bmm3::core::model::bmm_model_metadata::BmmModelMetadata::BmmModel(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::core::model::bmm_model_metadata::BmmModelMetadata::BmmModelMetadata(__x) => ::serde::Serialize::serialize(__x, __serializer),
+}
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModelMetadata {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::model::bmm_model_metadata::BmmModelMetadata
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["BMM_MODEL", "BMM_MODEL_METADATA"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmModelMetadata;
+            type Value = crate::v3::bmm3::core::model::bmm_model_metadata::BmmModelMetadata;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_MODEL_METADATA` object")
             }
@@ -25247,24 +23981,10 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModelMetadata {
                             __map,
                         );
                         match __t {
-                            "BMM_MODEL" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModelMetadata::BmmModel(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_MODEL_METADATA" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModelMetadata::BmmModelMetadata(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_MODEL_METADATA",
-                                    __other,
-                                    "BMM_MODEL, BMM_MODEL_METADATA",
-                                ),
-                            ),
-                        }
+"BMM_MODEL" => ::core::result::Result::Ok(crate::v3::bmm3::core::model::bmm_model_metadata::BmmModelMetadata::BmmModel(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_MODEL_METADATA" => ::core::result::Result::Ok(crate::v3::bmm3::core::model::bmm_model_metadata::BmmModelMetadata::BmmModelMetadata(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_MODEL_METADATA", __other, "BMM_MODEL, BMM_MODEL_METADATA")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -25276,11 +23996,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModelMetadata {
                     None => {
                         let __rest =
                             ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);
-                        ::core::result::Result::Ok(
-                            crate::prelude::BmmModelMetadata::BmmModelMetadata(
-                                ::serde::Deserialize::deserialize(__rest)?,
-                            ),
-                        )
+                        ::core::result::Result::Ok(crate::v3::bmm3::core::model::bmm_model_metadata::BmmModelMetadata::BmmModelMetadata(::serde::Deserialize::deserialize(__rest)?))
                     }
                 }
             }
@@ -25289,30 +24005,32 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModelMetadata {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmModelType {
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::bmm_model_type::BmmModelType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmModelType::BmmGenericType(__x) => {
+            crate::v3::bmm3::core::entity::bmm_model_type::BmmModelType::BmmGenericType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmModelType::BmmSimpleType(__x) => {
+            crate::v3::bmm3::core::entity::bmm_model_type::BmmModelType::BmmSimpleType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModelType {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::entity::bmm_model_type::BmmModelType
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["BMM_GENERIC_TYPE", "BMM_SIMPLE_TYPE"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmModelType;
+            type Value = crate::v3::bmm3::core::entity::bmm_model_type::BmmModelType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_MODEL_TYPE` object")
             }
@@ -25330,24 +24048,10 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModelType {
                             __map,
                         );
                         match __t {
-                            "BMM_GENERIC_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModelType::BmmGenericType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_SIMPLE_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModelType::BmmSimpleType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_MODEL_TYPE",
-                                    __other,
-                                    "BMM_GENERIC_TYPE, BMM_SIMPLE_TYPE",
-                                ),
-                            ),
-                        }
+"BMM_GENERIC_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_model_type::BmmModelType::BmmGenericType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_SIMPLE_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_model_type::BmmModelType::BmmSimpleType(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_MODEL_TYPE", __other, "BMM_GENERIC_TYPE, BMM_SIMPLE_TYPE")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -25369,23 +24073,23 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModelType {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmModule {
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::bmm_module::BmmModule {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmModule::BmmGenericClass(__x) => {
+            crate::v3::bmm3::core::entity::bmm_module::BmmModule::BmmGenericClass(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmModule::BmmSimpleClass(__x) => {
+            crate::v3::bmm3::core::entity::bmm_module::BmmModule::BmmSimpleClass(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModule {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::core::entity::bmm_module::BmmModule {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -25398,7 +24102,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModule {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmModule;
+            type Value = crate::v3::bmm3::core::entity::bmm_module::BmmModule;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_MODULE` object")
             }
@@ -25416,39 +24120,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModule {
                             __map,
                         );
                         match __t {
-                            "BMM_ENUMERATION" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModule::BmmSimpleClass(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_ENUMERATION_INTEGER" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModule::BmmSimpleClass(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_ENUMERATION_STRING" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModule::BmmSimpleClass(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_GENERIC_CLASS" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModule::BmmGenericClass(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_SIMPLE_CLASS" => ::core::result::Result::Ok(
-                                crate::prelude::BmmModule::BmmSimpleClass(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_MODULE",
-                                    __other,
-                                    "BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_GENERIC_CLASS, BMM_SIMPLE_CLASS",
-                                ),
-                            ),
-                        }
+"BMM_ENUMERATION" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_module::BmmModule::BmmSimpleClass(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ENUMERATION_INTEGER" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_module::BmmModule::BmmSimpleClass(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ENUMERATION_STRING" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_module::BmmModule::BmmSimpleClass(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_GENERIC_CLASS" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_module::BmmModule::BmmGenericClass(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_SIMPLE_CLASS" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_module::BmmModule::BmmSimpleClass(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_MODULE", __other, "BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_GENERIC_CLASS, BMM_SIMPLE_CLASS")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -25470,7 +24148,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmModule {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmOperator {
+impl ::serde::Serialize for crate::v3::bmm3::core::feature::bmm_operator::BmmOperator {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -25485,7 +24163,7 @@ impl ::serde::Serialize for crate::prelude::BmmOperator {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmOperator {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::core::feature::bmm_operator::BmmOperator {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -25533,7 +24211,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmOperator {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmOperator;
+            type Value = crate::v3::bmm3::core::feature::bmm_operator::BmmOperator;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_OPERATOR` object")
             }
@@ -25585,17 +24263,19 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmOperator {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmOperator {
-                    position: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("position"))?,
-                    symbols: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("symbols"))?,
-                    name: __s2
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::feature::bmm_operator::BmmOperator {
+                        position: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("position"))?,
+                        symbols: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("symbols"))?,
+                        name: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -25607,7 +24287,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmOperator {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmOperatorPosition {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::feature::bmm_operator_position::BmmOperatorPosition
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -25616,13 +24298,15 @@ impl ::serde::Serialize for crate::prelude::BmmOperatorPosition {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmOperatorPosition {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::feature::bmm_operator_position::BmmOperatorPosition
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         struct __V;
         impl<'de> ::serde::de::Visitor<'de> for __V {
-            type Value = crate::prelude::BmmOperatorPosition;
+            type Value = crate::v3::bmm3::core::feature::bmm_operator_position::BmmOperatorPosition;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("a `BmmOperatorPosition` token")
             }
@@ -25630,14 +24314,14 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmOperatorPosition {
                 self,
                 __v: &str,
             ) -> ::core::result::Result<Self::Value, __E> {
-                ::core::result::Result::Ok(crate::prelude::BmmOperatorPosition::from_wire(__v))
+                ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_operator_position::BmmOperatorPosition::from_wire(__v))
             }
         }
         ::serde::Deserializer::deserialize_str(__deserializer, __V)
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmPackage {
+impl ::serde::Serialize for crate::v3::bmm3::core::model::bmm_package::BmmPackage {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -25676,7 +24360,7 @@ impl ::serde::Serialize for crate::prelude::BmmPackage {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmPackage {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::core::model::bmm_package::BmmPackage {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -25728,7 +24412,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmPackage {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmPackage;
+            type Value = crate::v3::bmm3::core::model::bmm_package::BmmPackage;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_PACKAGE` object")
             }
@@ -25798,7 +24482,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmPackage {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmPackage {
+                ::core::result::Result::Ok(crate::v3::bmm3::core::model::bmm_package::BmmPackage {
                     name: __s0
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
@@ -25818,30 +24502,30 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmPackage {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmPackageContainer {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::model::bmm_package_container::BmmPackageContainer
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmPackageContainer::BmmModel(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmPackageContainer::BmmPackage(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-        }
+crate::v3::bmm3::core::model::bmm_package_container::BmmPackageContainer::BmmModel(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::core::model::bmm_package_container::BmmPackageContainer::BmmPackage(__x) => ::serde::Serialize::serialize(__x, __serializer),
+}
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmPackageContainer {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::model::bmm_package_container::BmmPackageContainer
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["BMM_MODEL", "BMM_PACKAGE"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmPackageContainer;
+            type Value = crate::v3::bmm3::core::model::bmm_package_container::BmmPackageContainer;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_PACKAGE_CONTAINER` object")
             }
@@ -25859,24 +24543,10 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmPackageContainer {
                             __map,
                         );
                         match __t {
-                            "BMM_MODEL" => ::core::result::Result::Ok(
-                                crate::prelude::BmmPackageContainer::BmmModel(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_PACKAGE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmPackageContainer::BmmPackage(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_PACKAGE_CONTAINER",
-                                    __other,
-                                    "BMM_MODEL, BMM_PACKAGE",
-                                ),
-                            ),
-                        }
+"BMM_MODEL" => ::core::result::Result::Ok(crate::v3::bmm3::core::model::bmm_package_container::BmmPackageContainer::BmmModel(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PACKAGE" => ::core::result::Result::Ok(crate::v3::bmm3::core::model::bmm_package_container::BmmPackageContainer::BmmPackage(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_PACKAGE_CONTAINER", __other, "BMM_MODEL, BMM_PACKAGE")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -25898,7 +24568,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmPackageContainer {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmParameter {
+impl ::serde::Serialize for crate::v3::bmm3::core::feature::bmm_parameter::BmmParameter {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -25936,7 +24606,9 @@ impl ::serde::Serialize for crate::prelude::BmmParameter {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmParameter {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::feature::bmm_parameter::BmmParameter
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -25997,7 +24669,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmParameter {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmParameter;
+            type Value = crate::v3::bmm3::core::feature::bmm_parameter::BmmParameter;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_PARAMETER` object")
             }
@@ -26076,18 +24748,20 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmParameter {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmParameter {
-                    name: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    documentation: __s1.flatten(),
-                    extensions: __s2.flatten(),
-                    r#type: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                    is_nullable: __s4.flatten(),
-                    direction: __s5.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::feature::bmm_parameter::BmmParameter {
+                        name: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        documentation: __s1.flatten(),
+                        extensions: __s2.flatten(),
+                        r#type: __s3
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+                        is_nullable: __s4.flatten(),
+                        direction: __s5.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -26099,7 +24773,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmParameter {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmParameterDirection {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::feature::bmm_parameter_direction::BmmParameterDirection
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -26108,13 +24784,16 @@ impl ::serde::Serialize for crate::prelude::BmmParameterDirection {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmParameterDirection {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::feature::bmm_parameter_direction::BmmParameterDirection
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         struct __V;
         impl<'de> ::serde::de::Visitor<'de> for __V {
-            type Value = crate::prelude::BmmParameterDirection;
+            type Value =
+                crate::v3::bmm3::core::feature::bmm_parameter_direction::BmmParameterDirection;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("a `BmmParameterDirection` token")
             }
@@ -26122,14 +24801,14 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmParameterDirection {
                 self,
                 __v: &str,
             ) -> ::core::result::Result<Self::Value, __E> {
-                ::core::result::Result::Ok(crate::prelude::BmmParameterDirection::from_wire(__v))
+                ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_parameter_direction::BmmParameterDirection::from_wire(__v))
             }
         }
         ::serde::Deserializer::deserialize_str(__deserializer, __V)
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmParameterType {
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::bmm_parameter_type::BmmParameterType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -26159,7 +24838,9 @@ impl ::serde::Serialize for crate::prelude::BmmParameterType {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmParameterType {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::entity::bmm_parameter_type::BmmParameterType
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -26207,7 +24888,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmParameterType {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmParameterType;
+            type Value = crate::v3::bmm3::core::entity::bmm_parameter_type::BmmParameterType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_PARAMETER_TYPE` object")
             }
@@ -26259,13 +24940,15 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmParameterType {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmParameterType {
-                    name: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    type_constraint: __s1.flatten(),
-                    inheritance_precursor: __s2.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::entity::bmm_parameter_type::BmmParameterType {
+                        name: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        type_constraint: __s1.flatten(),
+                        inheritance_precursor: __s2.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -26277,7 +24960,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmParameterType {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmPrimitiveValueData {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValueData
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -26308,7 +24993,9 @@ impl ::serde::Serialize for crate::prelude::BmmPrimitiveValueData {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmPrimitiveValueData {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValueData
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -26358,7 +25045,8 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmPrimitiveValueData {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmPrimitiveValueData;
+            type Value =
+                crate::v3::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValueData;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_PRIMITIVE_VALUE` object")
             }
@@ -26419,16 +25107,12 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmPrimitiveValueData {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmPrimitiveValueData {
-                    value_literal: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("value_literal"))?,
-                    value: __s1.flatten(),
-                    syntax: __s2.flatten(),
-                    r#type: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                })
+                ::core::result::Result::Ok(crate::v3::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValueData {
+value_literal: __s0.flatten().ok_or_else(|| ::serde::de::Error::missing_field("value_literal"))?,
+value: __s1.flatten(),
+syntax: __s2.flatten(),
+r#type: __s3.flatten().ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+})
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -26440,29 +25124,25 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmPrimitiveValueData {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmPrimitiveValue {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValue
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmPrimitiveValue::BmmBooleanValue(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmPrimitiveValue::BmmIntegerValue(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmPrimitiveValue::BmmStringValue(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmPrimitiveValue::BmmPrimitiveValue(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-        }
+crate::v3::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValue::BmmBooleanValue(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValue::BmmIntegerValue(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValue::BmmStringValue(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValue::BmmPrimitiveValue(__x) => ::serde::Serialize::serialize(__x, __serializer),
+}
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmPrimitiveValue {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValue
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -26474,7 +25154,8 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmPrimitiveValue {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmPrimitiveValue;
+            type Value =
+                crate::v3::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValue;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_PRIMITIVE_VALUE` object")
             }
@@ -26492,34 +25173,12 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmPrimitiveValue {
                             __map,
                         );
                         match __t {
-                            "BMM_BOOLEAN_VALUE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmPrimitiveValue::BmmBooleanValue(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_INTEGER_VALUE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmPrimitiveValue::BmmIntegerValue(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_PRIMITIVE_VALUE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmPrimitiveValue::BmmPrimitiveValue(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_STRING_VALUE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmPrimitiveValue::BmmStringValue(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_PRIMITIVE_VALUE",
-                                    __other,
-                                    "BMM_BOOLEAN_VALUE, BMM_INTEGER_VALUE, BMM_PRIMITIVE_VALUE, BMM_STRING_VALUE",
-                                ),
-                            ),
-                        }
+"BMM_BOOLEAN_VALUE" => ::core::result::Result::Ok(crate::v3::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValue::BmmBooleanValue(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_INTEGER_VALUE" => ::core::result::Result::Ok(crate::v3::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValue::BmmIntegerValue(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PRIMITIVE_VALUE" => ::core::result::Result::Ok(crate::v3::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValue::BmmPrimitiveValue(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_STRING_VALUE" => ::core::result::Result::Ok(crate::v3::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValue::BmmStringValue(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_PRIMITIVE_VALUE", __other, "BMM_BOOLEAN_VALUE, BMM_INTEGER_VALUE, BMM_PRIMITIVE_VALUE, BMM_STRING_VALUE")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -26531,11 +25190,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmPrimitiveValue {
                     None => {
                         let __rest =
                             ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);
-                        ::core::result::Result::Ok(
-                            crate::prelude::BmmPrimitiveValue::BmmPrimitiveValue(
-                                ::serde::Deserialize::deserialize(__rest)?,
-                            ),
-                        )
+                        ::core::result::Result::Ok(crate::v3::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValue::BmmPrimitiveValue(::serde::Deserialize::deserialize(__rest)?))
                     }
                 }
             }
@@ -26544,7 +25199,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmPrimitiveValue {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmProcedure {
+impl ::serde::Serialize for crate::v3::bmm3::core::feature::bmm_procedure::BmmProcedure {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -26637,7 +25292,9 @@ impl ::serde::Serialize for crate::prelude::BmmProcedure {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmProcedure {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::feature::bmm_procedure::BmmProcedure
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -26716,7 +25373,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmProcedure {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmProcedure;
+            type Value = crate::v3::bmm3::core::feature::bmm_procedure::BmmProcedure;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_PROCEDURE` object")
             }
@@ -26849,26 +25506,28 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmProcedure {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmProcedure {
-                    name: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    documentation: __s1.flatten(),
-                    extensions: __s2.flatten(),
-                    r#type: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                    is_nullable: __s4.flatten(),
-                    is_synthesised_generic: __s5.flatten(),
-                    feature_extensions: __s6,
-                    group: __s7
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("group"))?,
-                    parameters: __s8,
-                    pre_conditions: __s9,
-                    post_conditions: __s10,
-                    definition: __s11.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::feature::bmm_procedure::BmmProcedure {
+                        name: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        documentation: __s1.flatten(),
+                        extensions: __s2.flatten(),
+                        r#type: __s3
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+                        is_nullable: __s4.flatten(),
+                        is_synthesised_generic: __s5.flatten(),
+                        feature_extensions: __s6,
+                        group: __s7
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("group"))?,
+                        parameters: __s8,
+                        pre_conditions: __s9,
+                        post_conditions: __s10,
+                        definition: __s11.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -26880,7 +25539,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmProcedure {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmProcedureCall {
+impl ::serde::Serialize for crate::v3::bmm3::statement::bmm_procedure_call::BmmProcedureCall {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -26894,7 +25553,9 @@ impl ::serde::Serialize for crate::prelude::BmmProcedureCall {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmProcedureCall {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::statement::bmm_procedure_call::BmmProcedureCall
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -26938,7 +25599,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmProcedureCall {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmProcedureCall;
+            type Value = crate::v3::bmm3::statement::bmm_procedure_call::BmmProcedureCall;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_PROCEDURE_CALL` object")
             }
@@ -26972,11 +25633,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmProcedureCall {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmProcedureCall {
-                    agent: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("agent"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::statement::bmm_procedure_call::BmmProcedureCall {
+                        agent: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("agent"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -26988,7 +25651,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmProcedureCall {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmProcedureType {
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::bmm_procedure_type::BmmProcedureType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -27013,7 +25676,9 @@ impl ::serde::Serialize for crate::prelude::BmmProcedureType {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmProcedureType {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::entity::bmm_procedure_type::BmmProcedureType
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -27059,7 +25724,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmProcedureType {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmProcedureType;
+            type Value = crate::v3::bmm3::core::entity::bmm_procedure_type::BmmProcedureType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_PROCEDURE_TYPE` object")
             }
@@ -27102,10 +25767,12 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmProcedureType {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmProcedureType {
-                    result_type: __s0.flatten(),
-                    argument_types: __s1.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::entity::bmm_procedure_type::BmmProcedureType {
+                        result_type: __s0.flatten(),
+                        argument_types: __s1.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -27117,23 +25784,23 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmProcedureType {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmProperty {
+impl ::serde::Serialize for crate::v3::bmm3::core::feature::bmm_property::BmmProperty {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmProperty::BmmContainerProperty(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmProperty::BmmUnitaryProperty(__x) => {
+            crate::v3::bmm3::core::feature::bmm_property::BmmProperty::BmmContainerProperty(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
+            crate::v3::bmm3::core::feature::bmm_property::BmmProperty::BmmUnitaryProperty(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmProperty {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::core::feature::bmm_property::BmmProperty {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -27144,7 +25811,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmProperty {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmProperty;
+            type Value = crate::v3::bmm3::core::feature::bmm_property::BmmProperty;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_PROPERTY` object")
             }
@@ -27162,29 +25829,11 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmProperty {
                             __map,
                         );
                         match __t {
-                            "BMM_CONTAINER_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::BmmProperty::BmmContainerProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_INDEXED_CONTAINER_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::BmmProperty::BmmContainerProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_UNITARY_PROPERTY" => ::core::result::Result::Ok(
-                                crate::prelude::BmmProperty::BmmUnitaryProperty(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_PROPERTY",
-                                    __other,
-                                    "BMM_CONTAINER_PROPERTY, BMM_INDEXED_CONTAINER_PROPERTY, BMM_UNITARY_PROPERTY",
-                                ),
-                            ),
-                        }
+"BMM_CONTAINER_PROPERTY" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_property::BmmProperty::BmmContainerProperty(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_INDEXED_CONTAINER_PROPERTY" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_property::BmmProperty::BmmContainerProperty(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_UNITARY_PROPERTY" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_property::BmmProperty::BmmUnitaryProperty(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_PROPERTY", __other, "BMM_CONTAINER_PROPERTY, BMM_INDEXED_CONTAINER_PROPERTY, BMM_UNITARY_PROPERTY")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -27206,7 +25855,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmProperty {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmPropertyType {
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::bmm_property_type::BmmPropertyType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -27224,7 +25873,9 @@ impl ::serde::Serialize for crate::prelude::BmmPropertyType {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmPropertyType {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::entity::bmm_property_type::BmmPropertyType
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -27268,7 +25919,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmPropertyType {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmPropertyType;
+            type Value = crate::v3::bmm3::core::entity::bmm_property_type::BmmPropertyType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_PROPERTY_TYPE` object")
             }
@@ -27302,11 +25953,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmPropertyType {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmPropertyType {
-                    result_type: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("result_type"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::entity::bmm_property_type::BmmPropertyType {
+                        result_type: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("result_type"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -27318,30 +25971,30 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmPropertyType {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmReadonlyVariable {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::feature::bmm_readonly_variable::BmmReadonlyVariable
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmReadonlyVariable::BmmParameter(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmReadonlyVariable::BmmSelf(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-        }
+crate::v3::bmm3::core::feature::bmm_readonly_variable::BmmReadonlyVariable::BmmParameter(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::core::feature::bmm_readonly_variable::BmmReadonlyVariable::BmmSelf(__x) => ::serde::Serialize::serialize(__x, __serializer),
+}
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmReadonlyVariable {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::feature::bmm_readonly_variable::BmmReadonlyVariable
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["BMM_PARAMETER", "BMM_SELF"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmReadonlyVariable;
+            type Value = crate::v3::bmm3::core::feature::bmm_readonly_variable::BmmReadonlyVariable;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_READONLY_VARIABLE` object")
             }
@@ -27359,24 +26012,10 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmReadonlyVariable {
                             __map,
                         );
                         match __t {
-                            "BMM_PARAMETER" => ::core::result::Result::Ok(
-                                crate::prelude::BmmReadonlyVariable::BmmParameter(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_SELF" => ::core::result::Result::Ok(
-                                crate::prelude::BmmReadonlyVariable::BmmSelf(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_READONLY_VARIABLE",
-                                    __other,
-                                    "BMM_PARAMETER, BMM_SELF",
-                                ),
-                            ),
-                        }
+"BMM_PARAMETER" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_readonly_variable::BmmReadonlyVariable::BmmParameter(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_SELF" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_readonly_variable::BmmReadonlyVariable::BmmSelf(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_READONLY_VARIABLE", __other, "BMM_PARAMETER, BMM_SELF")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -27398,7 +26037,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmReadonlyVariable {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmResult {
+impl ::serde::Serialize for crate::v3::bmm3::core::feature::bmm_result::BmmResult {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -27430,7 +26069,7 @@ impl ::serde::Serialize for crate::prelude::BmmResult {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmResult {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::core::feature::bmm_result::BmmResult {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -27482,7 +26121,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmResult {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmResult;
+            type Value = crate::v3::bmm3::core::feature::bmm_result::BmmResult;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_RESULT` object")
             }
@@ -27552,7 +26191,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmResult {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmResult {
+                ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_result::BmmResult {
                     name: __s0
                         .flatten()
                         .unwrap_or(::std::string::String::from("Result")),
@@ -27569,30 +26208,30 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmResult {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmRoutine {
+impl ::serde::Serialize for crate::v3::bmm3::core::feature::bmm_routine::BmmRoutine {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmRoutine::BmmFunction(__x) => {
+            crate::v3::bmm3::core::feature::bmm_routine::BmmRoutine::BmmFunction(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmRoutine::BmmProcedure(__x) => {
+            crate::v3::bmm3::core::feature::bmm_routine::BmmRoutine::BmmProcedure(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmRoutine {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::core::feature::bmm_routine::BmmRoutine {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["BMM_FUNCTION", "BMM_PROCEDURE"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmRoutine;
+            type Value = crate::v3::bmm3::core::feature::bmm_routine::BmmRoutine;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_ROUTINE` object")
             }
@@ -27610,24 +26249,10 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmRoutine {
                             __map,
                         );
                         match __t {
-                            "BMM_FUNCTION" => {
-                                ::core::result::Result::Ok(crate::prelude::BmmRoutine::BmmFunction(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "BMM_PROCEDURE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmRoutine::BmmProcedure(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_ROUTINE",
-                                    __other,
-                                    "BMM_FUNCTION, BMM_PROCEDURE",
-                                ),
-                            ),
-                        }
+"BMM_FUNCTION" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_routine::BmmRoutine::BmmFunction(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PROCEDURE" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_routine::BmmRoutine::BmmProcedure(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_ROUTINE", __other, "BMM_FUNCTION, BMM_PROCEDURE")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -27649,30 +26274,31 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmRoutine {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmRoutineDefinition {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::feature::bmm_routine_definition::BmmRoutineDefinition
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmRoutineDefinition::BmmExternalRoutine(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmRoutineDefinition::BmmLocalRoutine(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-        }
+crate::v3::bmm3::core::feature::bmm_routine_definition::BmmRoutineDefinition::BmmExternalRoutine(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::core::feature::bmm_routine_definition::BmmRoutineDefinition::BmmLocalRoutine(__x) => ::serde::Serialize::serialize(__x, __serializer),
+}
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmRoutineDefinition {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::feature::bmm_routine_definition::BmmRoutineDefinition
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["BMM_EXTERNAL_ROUTINE", "BMM_LOCAL_ROUTINE"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmRoutineDefinition;
+            type Value =
+                crate::v3::bmm3::core::feature::bmm_routine_definition::BmmRoutineDefinition;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_ROUTINE_DEFINITION` object")
             }
@@ -27690,24 +26316,10 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmRoutineDefinition {
                             __map,
                         );
                         match __t {
-                            "BMM_EXTERNAL_ROUTINE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmRoutineDefinition::BmmExternalRoutine(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_LOCAL_ROUTINE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmRoutineDefinition::BmmLocalRoutine(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_ROUTINE_DEFINITION",
-                                    __other,
-                                    "BMM_EXTERNAL_ROUTINE, BMM_LOCAL_ROUTINE",
-                                ),
-                            ),
-                        }
+"BMM_EXTERNAL_ROUTINE" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_routine_definition::BmmRoutineDefinition::BmmExternalRoutine(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_LOCAL_ROUTINE" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_routine_definition::BmmRoutineDefinition::BmmLocalRoutine(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_ROUTINE_DEFINITION", __other, "BMM_EXTERNAL_ROUTINE, BMM_LOCAL_ROUTINE")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -27729,7 +26341,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmRoutineDefinition {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmRoutineTypeData {
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::bmm_routine_type::BmmRoutineTypeData {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -27753,7 +26365,9 @@ impl ::serde::Serialize for crate::prelude::BmmRoutineTypeData {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmRoutineTypeData {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::entity::bmm_routine_type::BmmRoutineTypeData
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -27799,7 +26413,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmRoutineTypeData {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmRoutineTypeData;
+            type Value = crate::v3::bmm3::core::entity::bmm_routine_type::BmmRoutineTypeData;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_ROUTINE_TYPE` object")
             }
@@ -27842,12 +26456,14 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmRoutineTypeData {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmRoutineTypeData {
-                    result_type: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("result_type"))?,
-                    argument_types: __s1.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::entity::bmm_routine_type::BmmRoutineTypeData {
+                        result_type: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("result_type"))?,
+                        argument_types: __s1.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -27859,26 +26475,28 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmRoutineTypeData {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmRoutineType {
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::bmm_routine_type::BmmRoutineType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmRoutineType::BmmFunctionType(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmRoutineType::BmmProcedureType(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmRoutineType::BmmRoutineType(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
+            crate::v3::bmm3::core::entity::bmm_routine_type::BmmRoutineType::BmmFunctionType(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
+            crate::v3::bmm3::core::entity::bmm_routine_type::BmmRoutineType::BmmProcedureType(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
+            crate::v3::bmm3::core::entity::bmm_routine_type::BmmRoutineType::BmmRoutineType(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmRoutineType {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::entity::bmm_routine_type::BmmRoutineType
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -27889,7 +26507,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmRoutineType {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmRoutineType;
+            type Value = crate::v3::bmm3::core::entity::bmm_routine_type::BmmRoutineType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_ROUTINE_TYPE` object")
             }
@@ -27907,29 +26525,11 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmRoutineType {
                             __map,
                         );
                         match __t {
-                            "BMM_FUNCTION_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmRoutineType::BmmFunctionType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_PROCEDURE_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmRoutineType::BmmProcedureType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_ROUTINE_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmRoutineType::BmmRoutineType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_ROUTINE_TYPE",
-                                    __other,
-                                    "BMM_FUNCTION_TYPE, BMM_PROCEDURE_TYPE, BMM_ROUTINE_TYPE",
-                                ),
-                            ),
-                        }
+"BMM_FUNCTION_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_routine_type::BmmRoutineType::BmmFunctionType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PROCEDURE_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_routine_type::BmmRoutineType::BmmProcedureType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ROUTINE_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_routine_type::BmmRoutineType::BmmRoutineType(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_ROUTINE_TYPE", __other, "BMM_FUNCTION_TYPE, BMM_PROCEDURE_TYPE, BMM_ROUTINE_TYPE")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -27941,9 +26541,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmRoutineType {
                     None => {
                         let __rest =
                             ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);
-                        ::core::result::Result::Ok(crate::prelude::BmmRoutineType::BmmRoutineType(
-                            ::serde::Deserialize::deserialize(__rest)?,
-                        ))
+                        ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_routine_type::BmmRoutineType::BmmRoutineType(::serde::Deserialize::deserialize(__rest)?))
                     }
                 }
             }
@@ -27952,7 +26550,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmRoutineType {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmSchema {
+impl ::serde::Serialize for crate::v3::bmm3::model_access::bmm_schema::BmmSchema {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -28031,7 +26629,7 @@ impl ::serde::Serialize for crate::prelude::BmmSchema {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSchema {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::model_access::bmm_schema::BmmSchema {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -28113,7 +26711,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSchema {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmSchema;
+            type Value = crate::v3::bmm3::model_access::bmm_schema::BmmSchema;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_SCHEMA` object")
             }
@@ -28255,7 +26853,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSchema {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmSchema {
+                ::core::result::Result::Ok(crate::v3::bmm3::model_access::bmm_schema::BmmSchema {
                     rm_publisher: __s0
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("rm_publisher"))?,
@@ -28294,7 +26892,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSchema {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmSchemaDescriptor {
+impl ::serde::Serialize
+    for crate::v3::bmm3::model_access::bmm_schema_descriptor::BmmSchemaDescriptor
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -28333,7 +26933,9 @@ impl ::serde::Serialize for crate::prelude::BmmSchemaDescriptor {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSchemaDescriptor {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::model_access::bmm_schema_descriptor::BmmSchemaDescriptor
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -28391,7 +26993,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSchemaDescriptor {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmSchemaDescriptor;
+            type Value = crate::v3::bmm3::model_access::bmm_schema_descriptor::BmmSchemaDescriptor;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_SCHEMA_DESCRIPTOR` object")
             }
@@ -28463,17 +27065,19 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSchemaDescriptor {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmSchemaDescriptor {
-                    bmm_schema: __s0.flatten(),
-                    bmm_model: __s1.flatten(),
-                    schema_id: __s2
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("schema_id"))?,
-                    meta_data: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("meta_data"))?,
-                    includes: __s4,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::model_access::bmm_schema_descriptor::BmmSchemaDescriptor {
+                        bmm_schema: __s0.flatten(),
+                        bmm_model: __s1.flatten(),
+                        schema_id: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("schema_id"))?,
+                        meta_data: __s3
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("meta_data"))?,
+                        includes: __s4,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -28485,7 +27089,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSchemaDescriptor {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmSchemaMetadataKey {
+impl ::serde::Serialize
+    for crate::v3::bmm3::model_access::bmm_schema_metadata_key::BmmSchemaMetadataKey
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -28494,13 +27100,16 @@ impl ::serde::Serialize for crate::prelude::BmmSchemaMetadataKey {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSchemaMetadataKey {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::model_access::bmm_schema_metadata_key::BmmSchemaMetadataKey
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         struct __V;
         impl<'de> ::serde::de::Visitor<'de> for __V {
-            type Value = crate::prelude::BmmSchemaMetadataKey;
+            type Value =
+                crate::v3::bmm3::model_access::bmm_schema_metadata_key::BmmSchemaMetadataKey;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("a `BmmSchemaMetadataKey` token")
             }
@@ -28508,14 +27117,14 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSchemaMetadataKey {
                 self,
                 __v: &str,
             ) -> ::core::result::Result<Self::Value, __E> {
-                ::core::result::Result::Ok(crate::prelude::BmmSchemaMetadataKey::from_wire(__v))
+                ::core::result::Result::Ok(crate::v3::bmm3::model_access::bmm_schema_metadata_key::BmmSchemaMetadataKey::from_wire(__v))
             }
         }
         ::serde::Deserializer::deserialize_str(__deserializer, __V)
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmSchemaState {
+impl ::serde::Serialize for crate::v3::bmm3::model_access::bmm_schema_state::BmmSchemaState {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -28524,13 +27133,15 @@ impl ::serde::Serialize for crate::prelude::BmmSchemaState {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSchemaState {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::model_access::bmm_schema_state::BmmSchemaState
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         struct __V;
         impl<'de> ::serde::de::Visitor<'de> for __V {
-            type Value = crate::prelude::BmmSchemaState;
+            type Value = crate::v3::bmm3::model_access::bmm_schema_state::BmmSchemaState;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("a `BmmSchemaState` token")
             }
@@ -28538,14 +27149,16 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSchemaState {
                 self,
                 __v: &str,
             ) -> ::core::result::Result<Self::Value, __E> {
-                ::core::result::Result::Ok(crate::prelude::BmmSchemaState::from_wire(__v))
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::model_access::bmm_schema_state::BmmSchemaState::from_wire(__v),
+                )
             }
         }
         ::serde::Deserializer::deserialize_str(__deserializer, __V)
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmSelf {
+impl ::serde::Serialize for crate::v3::bmm3::core::feature::bmm_self::BmmSelf {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -28577,7 +27190,7 @@ impl ::serde::Serialize for crate::prelude::BmmSelf {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSelf {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::core::feature::bmm_self::BmmSelf {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -28627,7 +27240,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSelf {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmSelf;
+            type Value = crate::v3::bmm3::core::feature::bmm_self::BmmSelf;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_SELF` object")
             }
@@ -28697,7 +27310,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSelf {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmSelf {
+                ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_self::BmmSelf {
                     name: __s0
                         .flatten()
                         .unwrap_or(::std::string::String::from("Self")),
@@ -28714,7 +27327,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSelf {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmSignatureData {
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::bmm_signature::BmmSignatureData {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -28731,7 +27344,9 @@ impl ::serde::Serialize for crate::prelude::BmmSignatureData {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSignatureData {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::entity::bmm_signature::BmmSignatureData
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -28775,7 +27390,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSignatureData {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmSignatureData;
+            type Value = crate::v3::bmm3::core::entity::bmm_signature::BmmSignatureData;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_SIGNATURE` object")
             }
@@ -28809,11 +27424,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSignatureData {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmSignatureData {
-                    result_type: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("result_type"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::entity::bmm_signature::BmmSignatureData {
+                        result_type: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("result_type"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -28825,26 +27442,26 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSignatureData {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmSignature {
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::bmm_signature::BmmSignature {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmSignature::BmmPropertyType(__x) => {
+            crate::v3::bmm3::core::entity::bmm_signature::BmmSignature::BmmPropertyType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmSignature::BmmRoutineType(__x) => {
+            crate::v3::bmm3::core::entity::bmm_signature::BmmSignature::BmmRoutineType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmSignature::BmmSignature(__x) => {
+            crate::v3::bmm3::core::entity::bmm_signature::BmmSignature::BmmSignature(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSignature {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::core::entity::bmm_signature::BmmSignature {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -28857,7 +27474,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSignature {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmSignature;
+            type Value = crate::v3::bmm3::core::entity::bmm_signature::BmmSignature;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_SIGNATURE` object")
             }
@@ -28875,39 +27492,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSignature {
                             __map,
                         );
                         match __t {
-                            "BMM_FUNCTION_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmSignature::BmmRoutineType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_PROCEDURE_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmSignature::BmmRoutineType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_PROPERTY_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmSignature::BmmPropertyType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_ROUTINE_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmSignature::BmmRoutineType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_SIGNATURE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmSignature::BmmSignature(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_SIGNATURE",
-                                    __other,
-                                    "BMM_FUNCTION_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE",
-                                ),
-                            ),
-                        }
+"BMM_FUNCTION_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_signature::BmmSignature::BmmRoutineType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PROCEDURE_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_signature::BmmSignature::BmmRoutineType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PROPERTY_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_signature::BmmSignature::BmmPropertyType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ROUTINE_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_signature::BmmSignature::BmmRoutineType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_SIGNATURE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_signature::BmmSignature::BmmSignature(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_SIGNATURE", __other, "BMM_FUNCTION_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -28919,9 +27510,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSignature {
                     None => {
                         let __rest =
                             ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);
-                        ::core::result::Result::Ok(crate::prelude::BmmSignature::BmmSignature(
-                            ::serde::Deserialize::deserialize(__rest)?,
-                        ))
+                        ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_signature::BmmSignature::BmmSignature(::serde::Deserialize::deserialize(__rest)?))
                     }
                 }
             }
@@ -28930,7 +27519,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSignature {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmSimpleClassData {
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::bmm_simple_class::BmmSimpleClassData {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -29065,7 +27654,9 @@ impl ::serde::Serialize for crate::prelude::BmmSimpleClassData {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSimpleClassData {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::entity::bmm_simple_class::BmmSimpleClassData
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -29165,7 +27756,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSimpleClassData {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmSimpleClassData;
+            type Value = crate::v3::bmm3::core::entity::bmm_simple_class::BmmSimpleClassData;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_SIMPLE_CLASS` object")
             }
@@ -29361,35 +27952,37 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSimpleClassData {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmSimpleClassData {
-                    name: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    documentation: __s1.flatten(),
-                    extensions: __s2.flatten(),
-                    feature_groups: __s3,
-                    features: __s4,
-                    ancestors: __s5.flatten(),
-                    package: __s6
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("package"))?,
-                    properties: __s7.flatten(),
-                    source_schema_id: __s8
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("source_schema_id"))?,
-                    immediate_descendants: __s9,
-                    is_override: __s10
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_override"))?,
-                    static_properties: __s11.flatten(),
-                    functions: __s12.flatten(),
-                    procedures: __s13.flatten(),
-                    is_primitive: __s14.flatten(),
-                    is_abstract: __s15.flatten(),
-                    invariants: __s16,
-                    creators: __s17.flatten(),
-                    converters: __s18.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::entity::bmm_simple_class::BmmSimpleClassData {
+                        name: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        documentation: __s1.flatten(),
+                        extensions: __s2.flatten(),
+                        feature_groups: __s3,
+                        features: __s4,
+                        ancestors: __s5.flatten(),
+                        package: __s6
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("package"))?,
+                        properties: __s7.flatten(),
+                        source_schema_id: __s8
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("source_schema_id"))?,
+                        immediate_descendants: __s9,
+                        is_override: __s10
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("is_override"))?,
+                        static_properties: __s11.flatten(),
+                        functions: __s12.flatten(),
+                        procedures: __s13.flatten(),
+                        is_primitive: __s14.flatten(),
+                        is_abstract: __s15.flatten(),
+                        invariants: __s16,
+                        creators: __s17.flatten(),
+                        converters: __s18.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -29401,23 +27994,25 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSimpleClassData {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmSimpleClass {
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::bmm_simple_class::BmmSimpleClass {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmSimpleClass::BmmEnumeration(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmSimpleClass::BmmSimpleClass(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
+            crate::v3::bmm3::core::entity::bmm_simple_class::BmmSimpleClass::BmmEnumeration(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
+            crate::v3::bmm3::core::entity::bmm_simple_class::BmmSimpleClass::BmmSimpleClass(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSimpleClass {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::entity::bmm_simple_class::BmmSimpleClass
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -29429,7 +28024,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSimpleClass {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmSimpleClass;
+            type Value = crate::v3::bmm3::core::entity::bmm_simple_class::BmmSimpleClass;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_SIMPLE_CLASS` object")
             }
@@ -29447,34 +28042,12 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSimpleClass {
                             __map,
                         );
                         match __t {
-                            "BMM_ENUMERATION" => ::core::result::Result::Ok(
-                                crate::prelude::BmmSimpleClass::BmmEnumeration(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_ENUMERATION_INTEGER" => ::core::result::Result::Ok(
-                                crate::prelude::BmmSimpleClass::BmmEnumeration(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_ENUMERATION_STRING" => ::core::result::Result::Ok(
-                                crate::prelude::BmmSimpleClass::BmmEnumeration(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_SIMPLE_CLASS" => ::core::result::Result::Ok(
-                                crate::prelude::BmmSimpleClass::BmmSimpleClass(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_SIMPLE_CLASS",
-                                    __other,
-                                    "BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_SIMPLE_CLASS",
-                                ),
-                            ),
-                        }
+"BMM_ENUMERATION" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_simple_class::BmmSimpleClass::BmmEnumeration(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ENUMERATION_INTEGER" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_simple_class::BmmSimpleClass::BmmEnumeration(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ENUMERATION_STRING" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_simple_class::BmmSimpleClass::BmmEnumeration(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_SIMPLE_CLASS" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_simple_class::BmmSimpleClass::BmmSimpleClass(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_SIMPLE_CLASS", __other, "BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_SIMPLE_CLASS")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -29486,9 +28059,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSimpleClass {
                     None => {
                         let __rest =
                             ::openehr_base::serde_support::TaggedRest::new(None, __buffered, __map);
-                        ::core::result::Result::Ok(crate::prelude::BmmSimpleClass::BmmSimpleClass(
-                            ::serde::Deserialize::deserialize(__rest)?,
-                        ))
+                        ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_simple_class::BmmSimpleClass::BmmSimpleClass(::serde::Deserialize::deserialize(__rest)?))
                     }
                 }
             }
@@ -29497,29 +28068,23 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSimpleClass {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmSimpleStatement {
+impl ::serde::Serialize for crate::v3::bmm3::statement::bmm_simple_statement::BmmSimpleStatement {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmSimpleStatement::BmmAssertion(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmSimpleStatement::BmmAssignment(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmSimpleStatement::BmmDeclaration(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmSimpleStatement::BmmProcedureCall(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-        }
+crate::v3::bmm3::statement::bmm_simple_statement::BmmSimpleStatement::BmmAssertion(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::statement::bmm_simple_statement::BmmSimpleStatement::BmmAssignment(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::statement::bmm_simple_statement::BmmSimpleStatement::BmmDeclaration(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::statement::bmm_simple_statement::BmmSimpleStatement::BmmProcedureCall(__x) => ::serde::Serialize::serialize(__x, __serializer),
+}
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSimpleStatement {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::statement::bmm_simple_statement::BmmSimpleStatement
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -29531,7 +28096,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSimpleStatement {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmSimpleStatement;
+            type Value = crate::v3::bmm3::statement::bmm_simple_statement::BmmSimpleStatement;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_SIMPLE_STATEMENT` object")
             }
@@ -29549,34 +28114,12 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSimpleStatement {
                             __map,
                         );
                         match __t {
-                            "BMM_ASSERTION" => ::core::result::Result::Ok(
-                                crate::prelude::BmmSimpleStatement::BmmAssertion(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_ASSIGNMENT" => ::core::result::Result::Ok(
-                                crate::prelude::BmmSimpleStatement::BmmAssignment(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_DECLARATION" => ::core::result::Result::Ok(
-                                crate::prelude::BmmSimpleStatement::BmmDeclaration(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_PROCEDURE_CALL" => ::core::result::Result::Ok(
-                                crate::prelude::BmmSimpleStatement::BmmProcedureCall(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_SIMPLE_STATEMENT",
-                                    __other,
-                                    "BMM_ASSERTION, BMM_ASSIGNMENT, BMM_DECLARATION, BMM_PROCEDURE_CALL",
-                                ),
-                            ),
-                        }
+"BMM_ASSERTION" => ::core::result::Result::Ok(crate::v3::bmm3::statement::bmm_simple_statement::BmmSimpleStatement::BmmAssertion(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ASSIGNMENT" => ::core::result::Result::Ok(crate::v3::bmm3::statement::bmm_simple_statement::BmmSimpleStatement::BmmAssignment(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_DECLARATION" => ::core::result::Result::Ok(crate::v3::bmm3::statement::bmm_simple_statement::BmmSimpleStatement::BmmDeclaration(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PROCEDURE_CALL" => ::core::result::Result::Ok(crate::v3::bmm3::statement::bmm_simple_statement::BmmSimpleStatement::BmmProcedureCall(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_SIMPLE_STATEMENT", __other, "BMM_ASSERTION, BMM_ASSIGNMENT, BMM_DECLARATION, BMM_PROCEDURE_CALL")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -29598,7 +28141,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSimpleStatement {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmSimpleType {
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::bmm_simple_type::BmmSimpleType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -29617,7 +28160,9 @@ impl ::serde::Serialize for crate::prelude::BmmSimpleType {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSimpleType {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::entity::bmm_simple_type::BmmSimpleType
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -29663,7 +28208,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSimpleType {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmSimpleType;
+            type Value = crate::v3::bmm3::core::entity::bmm_simple_type::BmmSimpleType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_SIMPLE_TYPE` object")
             }
@@ -29706,12 +28251,14 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSimpleType {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmSimpleType {
-                    value_constraint: __s0.flatten(),
-                    base_class: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("base_class"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::entity::bmm_simple_type::BmmSimpleType {
+                        value_constraint: __s0.flatten(),
+                        base_class: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("base_class"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -29723,7 +28270,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSimpleType {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmSingleton {
+impl ::serde::Serialize for crate::v3::bmm3::core::feature::bmm_singleton::BmmSingleton {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -29779,7 +28326,9 @@ impl ::serde::Serialize for crate::prelude::BmmSingleton {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSingleton {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::feature::bmm_singleton::BmmSingleton
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -29849,7 +28398,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSingleton {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmSingleton;
+            type Value = crate::v3::bmm3::core::feature::bmm_singleton::BmmSingleton;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_SINGLETON` object")
             }
@@ -29955,25 +28504,27 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSingleton {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmSingleton {
-                    name: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    documentation: __s1.flatten(),
-                    extensions: __s2.flatten(),
-                    r#type: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                    is_nullable: __s4.flatten(),
-                    is_synthesised_generic: __s5.flatten(),
-                    feature_extensions: __s6,
-                    group: __s7
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("group"))?,
-                    generator: __s8
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("generator"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::feature::bmm_singleton::BmmSingleton {
+                        name: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        documentation: __s1.flatten(),
+                        extensions: __s2.flatten(),
+                        r#type: __s3
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+                        is_nullable: __s4.flatten(),
+                        is_synthesised_generic: __s5.flatten(),
+                        feature_extensions: __s6,
+                        group: __s7
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("group"))?,
+                        generator: __s8
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("generator"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -29985,32 +28536,32 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmSingleton {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmStatement {
+impl ::serde::Serialize for crate::v3::bmm3::statement::bmm_statement::BmmStatement {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmStatement::BmmActionTable(__x) => {
+            crate::v3::bmm3::statement::bmm_statement::BmmStatement::BmmActionTable(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmStatement::BmmAssertion(__x) => {
+            crate::v3::bmm3::statement::bmm_statement::BmmStatement::BmmAssertion(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmStatement::BmmAssignment(__x) => {
+            crate::v3::bmm3::statement::bmm_statement::BmmStatement::BmmAssignment(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmStatement::BmmDeclaration(__x) => {
+            crate::v3::bmm3::statement::bmm_statement::BmmStatement::BmmDeclaration(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmStatement::BmmProcedureCall(__x) => {
+            crate::v3::bmm3::statement::bmm_statement::BmmStatement::BmmProcedureCall(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmStatement {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::statement::bmm_statement::BmmStatement {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -30023,7 +28574,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmStatement {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmStatement;
+            type Value = crate::v3::bmm3::statement::bmm_statement::BmmStatement;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_STATEMENT` object")
             }
@@ -30041,39 +28592,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmStatement {
                             __map,
                         );
                         match __t {
-                            "BMM_ACTION_TABLE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmStatement::BmmActionTable(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_ASSERTION" => ::core::result::Result::Ok(
-                                crate::prelude::BmmStatement::BmmAssertion(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_ASSIGNMENT" => ::core::result::Result::Ok(
-                                crate::prelude::BmmStatement::BmmAssignment(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_DECLARATION" => ::core::result::Result::Ok(
-                                crate::prelude::BmmStatement::BmmDeclaration(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_PROCEDURE_CALL" => ::core::result::Result::Ok(
-                                crate::prelude::BmmStatement::BmmProcedureCall(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_STATEMENT",
-                                    __other,
-                                    "BMM_ACTION_TABLE, BMM_ASSERTION, BMM_ASSIGNMENT, BMM_DECLARATION, BMM_PROCEDURE_CALL",
-                                ),
-                            ),
-                        }
+"BMM_ACTION_TABLE" => ::core::result::Result::Ok(crate::v3::bmm3::statement::bmm_statement::BmmStatement::BmmActionTable(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ASSERTION" => ::core::result::Result::Ok(crate::v3::bmm3::statement::bmm_statement::BmmStatement::BmmAssertion(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ASSIGNMENT" => ::core::result::Result::Ok(crate::v3::bmm3::statement::bmm_statement::BmmStatement::BmmAssignment(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_DECLARATION" => ::core::result::Result::Ok(crate::v3::bmm3::statement::bmm_statement::BmmStatement::BmmDeclaration(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PROCEDURE_CALL" => ::core::result::Result::Ok(crate::v3::bmm3::statement::bmm_statement::BmmStatement::BmmProcedureCall(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_STATEMENT", __other, "BMM_ACTION_TABLE, BMM_ASSERTION, BMM_ASSIGNMENT, BMM_DECLARATION, BMM_PROCEDURE_CALL")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -30095,7 +28620,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmStatement {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmStatementBlock {
+impl ::serde::Serialize for crate::v3::bmm3::statement::bmm_statement_block::BmmStatementBlock {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -30116,7 +28641,9 @@ impl ::serde::Serialize for crate::prelude::BmmStatementBlock {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmStatementBlock {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::statement::bmm_statement_block::BmmStatementBlock
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -30160,7 +28687,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmStatementBlock {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmStatementBlock;
+            type Value = crate::v3::bmm3::statement::bmm_statement_block::BmmStatementBlock;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_STATEMENT_BLOCK` object")
             }
@@ -30194,7 +28721,11 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmStatementBlock {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmStatementBlock { items: __s0 })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::statement::bmm_statement_block::BmmStatementBlock {
+                        items: __s0,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -30206,35 +28737,37 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmStatementBlock {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmStatementItem {
+impl ::serde::Serialize for crate::v3::bmm3::statement::bmm_statement_item::BmmStatementItem {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmStatementItem::BmmActionTable(__x) => {
+            crate::v3::bmm3::statement::bmm_statement_item::BmmStatementItem::BmmActionTable(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
+            crate::v3::bmm3::statement::bmm_statement_item::BmmStatementItem::BmmAssertion(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmStatementItem::BmmAssertion(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmStatementItem::BmmAssignment(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmStatementItem::BmmDeclaration(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmStatementItem::BmmProcedureCall(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmStatementItem::BmmStatementBlock(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
+            crate::v3::bmm3::statement::bmm_statement_item::BmmStatementItem::BmmAssignment(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
+            crate::v3::bmm3::statement::bmm_statement_item::BmmStatementItem::BmmDeclaration(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
+            crate::v3::bmm3::statement::bmm_statement_item::BmmStatementItem::BmmProcedureCall(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
+            crate::v3::bmm3::statement::bmm_statement_item::BmmStatementItem::BmmStatementBlock(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmStatementItem {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::statement::bmm_statement_item::BmmStatementItem
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -30248,7 +28781,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmStatementItem {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmStatementItem;
+            type Value = crate::v3::bmm3::statement::bmm_statement_item::BmmStatementItem;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_STATEMENT_ITEM` object")
             }
@@ -30266,44 +28799,14 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmStatementItem {
                             __map,
                         );
                         match __t {
-                            "BMM_ACTION_TABLE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmStatementItem::BmmActionTable(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_ASSERTION" => ::core::result::Result::Ok(
-                                crate::prelude::BmmStatementItem::BmmAssertion(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_ASSIGNMENT" => ::core::result::Result::Ok(
-                                crate::prelude::BmmStatementItem::BmmAssignment(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_DECLARATION" => ::core::result::Result::Ok(
-                                crate::prelude::BmmStatementItem::BmmDeclaration(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_PROCEDURE_CALL" => ::core::result::Result::Ok(
-                                crate::prelude::BmmStatementItem::BmmProcedureCall(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_STATEMENT_BLOCK" => ::core::result::Result::Ok(
-                                crate::prelude::BmmStatementItem::BmmStatementBlock(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_STATEMENT_ITEM",
-                                    __other,
-                                    "BMM_ACTION_TABLE, BMM_ASSERTION, BMM_ASSIGNMENT, BMM_DECLARATION, BMM_PROCEDURE_CALL, BMM_STATEMENT_BLOCK",
-                                ),
-                            ),
-                        }
+"BMM_ACTION_TABLE" => ::core::result::Result::Ok(crate::v3::bmm3::statement::bmm_statement_item::BmmStatementItem::BmmActionTable(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ASSERTION" => ::core::result::Result::Ok(crate::v3::bmm3::statement::bmm_statement_item::BmmStatementItem::BmmAssertion(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ASSIGNMENT" => ::core::result::Result::Ok(crate::v3::bmm3::statement::bmm_statement_item::BmmStatementItem::BmmAssignment(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_DECLARATION" => ::core::result::Result::Ok(crate::v3::bmm3::statement::bmm_statement_item::BmmStatementItem::BmmDeclaration(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PROCEDURE_CALL" => ::core::result::Result::Ok(crate::v3::bmm3::statement::bmm_statement_item::BmmStatementItem::BmmProcedureCall(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_STATEMENT_BLOCK" => ::core::result::Result::Ok(crate::v3::bmm3::statement::bmm_statement_item::BmmStatementItem::BmmStatementBlock(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_STATEMENT_ITEM", __other, "BMM_ACTION_TABLE, BMM_ASSERTION, BMM_ASSIGNMENT, BMM_DECLARATION, BMM_PROCEDURE_CALL, BMM_STATEMENT_BLOCK")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -30325,30 +28828,30 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmStatementItem {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmStatic {
+impl ::serde::Serialize for crate::v3::bmm3::core::feature::bmm_static::BmmStatic {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmStatic::BmmConstant(__x) => {
+            crate::v3::bmm3::core::feature::bmm_static::BmmStatic::BmmConstant(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmStatic::BmmSingleton(__x) => {
+            crate::v3::bmm3::core::feature::bmm_static::BmmStatic::BmmSingleton(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmStatic {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::core::feature::bmm_static::BmmStatic {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["BMM_CONSTANT", "BMM_SINGLETON"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmStatic;
+            type Value = crate::v3::bmm3::core::feature::bmm_static::BmmStatic;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_STATIC` object")
             }
@@ -30366,16 +28869,16 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmStatic {
                             __map,
                         );
                         match __t {
-                            "BMM_CONSTANT" => {
-                                ::core::result::Result::Ok(crate::prelude::BmmStatic::BmmConstant(
+                            "BMM_CONSTANT" => ::core::result::Result::Ok(
+                                crate::v3::bmm3::core::feature::bmm_static::BmmStatic::BmmConstant(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "BMM_SINGLETON" => {
-                                ::core::result::Result::Ok(crate::prelude::BmmStatic::BmmSingleton(
+                                ),
+                            ),
+                            "BMM_SINGLETON" => ::core::result::Result::Ok(
+                                crate::v3::bmm3::core::feature::bmm_static::BmmStatic::BmmSingleton(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
+                                ),
+                            ),
                             __other => ::core::result::Result::Err(
                                 ::openehr_base::serde_support::unexpected_type(
                                     "BMM_STATIC",
@@ -30405,7 +28908,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmStatic {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmStatusType {
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::bmm_status_type::BmmStatusType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -30417,7 +28920,9 @@ impl ::serde::Serialize for crate::prelude::BmmStatusType {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmStatusType {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::entity::bmm_status_type::BmmStatusType
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -30459,7 +28964,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmStatusType {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmStatusType;
+            type Value = crate::v3::bmm3::core::entity::bmm_status_type::BmmStatusType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_STATUS_TYPE` object")
             }
@@ -30484,7 +28989,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmStatusType {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmStatusType {})
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::entity::bmm_status_type::BmmStatusType {},
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -30496,7 +29003,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmStatusType {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmStringValue {
+impl ::serde::Serialize for crate::v3::bmm3::core::literal_value::bmm_string_value::BmmStringValue {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -30522,7 +29029,9 @@ impl ::serde::Serialize for crate::prelude::BmmStringValue {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmStringValue {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::literal_value::bmm_string_value::BmmStringValue
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -30572,7 +29081,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmStringValue {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmStringValue;
+            type Value = crate::v3::bmm3::core::literal_value::bmm_string_value::BmmStringValue;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_STRING_VALUE` object")
             }
@@ -30633,18 +29142,20 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmStringValue {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmStringValue {
-                    value_literal: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("value_literal"))?,
-                    value: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
-                    syntax: __s2.flatten(),
-                    r#type: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::literal_value::bmm_string_value::BmmStringValue {
+                        value_literal: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value_literal"))?,
+                        value: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
+                        syntax: __s2.flatten(),
+                        r#type: __s3
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -30656,7 +29167,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmStringValue {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmTupleType {
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::bmm_tuple_type::BmmTupleType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -30669,7 +29180,9 @@ impl ::serde::Serialize for crate::prelude::BmmTupleType {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmTupleType {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::entity::bmm_tuple_type::BmmTupleType
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -30713,7 +29226,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmTupleType {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmTupleType;
+            type Value = crate::v3::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_TUPLE_TYPE` object")
             }
@@ -30747,11 +29260,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmTupleType {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmTupleType {
-                    item_types: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("item_types"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::entity::bmm_tuple_type::BmmTupleType {
+                        item_types: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("item_types"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -30763,38 +29278,38 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmTupleType {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmType {
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::bmm_type::BmmType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmType::BmmContainerType(__x) => {
+            crate::v3::bmm3::core::entity::bmm_type::BmmType::BmmContainerType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmType::BmmGenericType(__x) => {
+            crate::v3::bmm3::core::entity::bmm_type::BmmType::BmmGenericType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmType::BmmParameterType(__x) => {
+            crate::v3::bmm3::core::entity::bmm_type::BmmType::BmmParameterType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmType::BmmSignature(__x) => {
+            crate::v3::bmm3::core::entity::bmm_type::BmmType::BmmSignature(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmType::BmmSimpleType(__x) => {
+            crate::v3::bmm3::core::entity::bmm_type::BmmType::BmmSimpleType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmType::BmmStatusType(__x) => {
+            crate::v3::bmm3::core::entity::bmm_type::BmmType::BmmStatusType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmType::BmmTupleType(__x) => {
+            crate::v3::bmm3::core::entity::bmm_type::BmmType::BmmTupleType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmType {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::core::entity::bmm_type::BmmType {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -30814,7 +29329,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmType {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmType;
+            type Value = crate::v3::bmm3::core::entity::bmm_type::BmmType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_TYPE` object")
             }
@@ -30833,65 +29348,65 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmType {
                         );
                         match __t {
                             "BMM_CONTAINER_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmType::BmmContainerType(
+                                crate::v3::bmm3::core::entity::bmm_type::BmmType::BmmContainerType(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
-                            "BMM_FUNCTION_TYPE" => {
-                                ::core::result::Result::Ok(crate::prelude::BmmType::BmmSignature(
+                            "BMM_FUNCTION_TYPE" => ::core::result::Result::Ok(
+                                crate::v3::bmm3::core::entity::bmm_type::BmmType::BmmSignature(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "BMM_GENERIC_TYPE" => {
-                                ::core::result::Result::Ok(crate::prelude::BmmType::BmmGenericType(
+                                ),
+                            ),
+                            "BMM_GENERIC_TYPE" => ::core::result::Result::Ok(
+                                crate::v3::bmm3::core::entity::bmm_type::BmmType::BmmGenericType(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
+                                ),
+                            ),
                             "BMM_INDEXED_CONTAINER_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmType::BmmContainerType(
+                                crate::v3::bmm3::core::entity::bmm_type::BmmType::BmmContainerType(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
                             "BMM_PARAMETER_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmType::BmmParameterType(
+                                crate::v3::bmm3::core::entity::bmm_type::BmmType::BmmParameterType(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
-                            "BMM_PROCEDURE_TYPE" => {
-                                ::core::result::Result::Ok(crate::prelude::BmmType::BmmSignature(
+                            "BMM_PROCEDURE_TYPE" => ::core::result::Result::Ok(
+                                crate::v3::bmm3::core::entity::bmm_type::BmmType::BmmSignature(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "BMM_PROPERTY_TYPE" => {
-                                ::core::result::Result::Ok(crate::prelude::BmmType::BmmSignature(
+                                ),
+                            ),
+                            "BMM_PROPERTY_TYPE" => ::core::result::Result::Ok(
+                                crate::v3::bmm3::core::entity::bmm_type::BmmType::BmmSignature(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "BMM_ROUTINE_TYPE" => {
-                                ::core::result::Result::Ok(crate::prelude::BmmType::BmmSignature(
+                                ),
+                            ),
+                            "BMM_ROUTINE_TYPE" => ::core::result::Result::Ok(
+                                crate::v3::bmm3::core::entity::bmm_type::BmmType::BmmSignature(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "BMM_SIGNATURE" => {
-                                ::core::result::Result::Ok(crate::prelude::BmmType::BmmSignature(
+                                ),
+                            ),
+                            "BMM_SIGNATURE" => ::core::result::Result::Ok(
+                                crate::v3::bmm3::core::entity::bmm_type::BmmType::BmmSignature(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "BMM_SIMPLE_TYPE" => {
-                                ::core::result::Result::Ok(crate::prelude::BmmType::BmmSimpleType(
+                                ),
+                            ),
+                            "BMM_SIMPLE_TYPE" => ::core::result::Result::Ok(
+                                crate::v3::bmm3::core::entity::bmm_type::BmmType::BmmSimpleType(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "BMM_STATUS_TYPE" => {
-                                ::core::result::Result::Ok(crate::prelude::BmmType::BmmStatusType(
+                                ),
+                            ),
+                            "BMM_STATUS_TYPE" => ::core::result::Result::Ok(
+                                crate::v3::bmm3::core::entity::bmm_type::BmmType::BmmStatusType(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "BMM_TUPLE_TYPE" => {
-                                ::core::result::Result::Ok(crate::prelude::BmmType::BmmTupleType(
+                                ),
+                            ),
+                            "BMM_TUPLE_TYPE" => ::core::result::Result::Ok(
+                                crate::v3::bmm3::core::entity::bmm_type::BmmType::BmmTupleType(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
+                                ),
+                            ),
                             __other => ::core::result::Result::Err(
                                 ::openehr_base::serde_support::unexpected_type(
                                     "BMM_TYPE",
@@ -30921,7 +29436,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmType {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmUnitaryProperty {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::feature::bmm_unitary_property::BmmUnitaryProperty
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -30995,7 +29512,9 @@ impl ::serde::Serialize for crate::prelude::BmmUnitaryProperty {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmUnitaryProperty {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::feature::bmm_unitary_property::BmmUnitaryProperty
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -31071,7 +29590,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmUnitaryProperty {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmUnitaryProperty;
+            type Value = crate::v3::bmm3::core::feature::bmm_unitary_property::BmmUnitaryProperty;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_UNITARY_PROPERTY` object")
             }
@@ -31195,25 +29714,27 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmUnitaryProperty {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmUnitaryProperty {
-                    name: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    documentation: __s1.flatten(),
-                    extensions: __s2.flatten(),
-                    r#type: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                    is_nullable: __s4.flatten(),
-                    is_synthesised_generic: __s5.flatten(),
-                    feature_extensions: __s6,
-                    group: __s7
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("group"))?,
-                    is_im_runtime: __s8.flatten(),
-                    is_im_infrastructure: __s9.flatten(),
-                    is_composition: __s10.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::feature::bmm_unitary_property::BmmUnitaryProperty {
+                        name: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        documentation: __s1.flatten(),
+                        extensions: __s2.flatten(),
+                        r#type: __s3
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+                        is_nullable: __s4.flatten(),
+                        is_synthesised_generic: __s5.flatten(),
+                        feature_extensions: __s6,
+                        group: __s7
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("group"))?,
+                        is_im_runtime: __s8.flatten(),
+                        is_im_infrastructure: __s9.flatten(),
+                        is_composition: __s10.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -31225,35 +29746,37 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmUnitaryProperty {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmUnitaryType {
+impl ::serde::Serialize for crate::v3::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmUnitaryType::BmmGenericType(__x) => {
+            crate::v3::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType::BmmGenericType(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
+            crate::v3::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType::BmmParameterType(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
+            crate::v3::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType::BmmSignature(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmUnitaryType::BmmParameterType(__x) => {
+            crate::v3::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType::BmmSimpleType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmUnitaryType::BmmSignature(__x) => {
+            crate::v3::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType::BmmStatusType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmUnitaryType::BmmSimpleType(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmUnitaryType::BmmStatusType(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmUnitaryType::BmmTupleType(__x) => {
+            crate::v3::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType::BmmTupleType(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmUnitaryType {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -31271,7 +29794,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmUnitaryType {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmUnitaryType;
+            type Value = crate::v3::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_UNITARY_TYPE` object")
             }
@@ -31289,64 +29812,18 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmUnitaryType {
                             __map,
                         );
                         match __t {
-                            "BMM_FUNCTION_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmUnitaryType::BmmSignature(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_GENERIC_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmUnitaryType::BmmGenericType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_PARAMETER_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmUnitaryType::BmmParameterType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_PROCEDURE_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmUnitaryType::BmmSignature(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_PROPERTY_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmUnitaryType::BmmSignature(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_ROUTINE_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmUnitaryType::BmmSignature(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_SIGNATURE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmUnitaryType::BmmSignature(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_SIMPLE_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmUnitaryType::BmmSimpleType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_STATUS_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmUnitaryType::BmmStatusType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_TUPLE_TYPE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmUnitaryType::BmmTupleType(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_UNITARY_TYPE",
-                                    __other,
-                                    "BMM_FUNCTION_TYPE, BMM_GENERIC_TYPE, BMM_PARAMETER_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_SIMPLE_TYPE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE",
-                                ),
-                            ),
-                        }
+"BMM_FUNCTION_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType::BmmSignature(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_GENERIC_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType::BmmGenericType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PARAMETER_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType::BmmParameterType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PROCEDURE_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType::BmmSignature(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PROPERTY_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType::BmmSignature(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_ROUTINE_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType::BmmSignature(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_SIGNATURE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType::BmmSignature(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_SIMPLE_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType::BmmSimpleType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_STATUS_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType::BmmStatusType(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_TUPLE_TYPE" => ::core::result::Result::Ok(crate::v3::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType::BmmTupleType(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_UNITARY_TYPE", __other, "BMM_FUNCTION_TYPE, BMM_GENERIC_TYPE, BMM_PARAMETER_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_SIMPLE_TYPE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -31368,20 +29845,22 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmUnitaryType {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmUnitaryValue {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::literal_value::bmm_unitary_value::BmmUnitaryValue
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmUnitaryValue::BmmPrimitiveValue(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-        }
+crate::v3::bmm3::core::literal_value::bmm_unitary_value::BmmUnitaryValue::BmmPrimitiveValue(__x) => ::serde::Serialize::serialize(__x, __serializer),
+}
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmUnitaryValue {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::literal_value::bmm_unitary_value::BmmUnitaryValue
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -31393,7 +29872,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmUnitaryValue {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmUnitaryValue;
+            type Value = crate::v3::bmm3::core::literal_value::bmm_unitary_value::BmmUnitaryValue;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_UNITARY_VALUE` object")
             }
@@ -31411,34 +29890,12 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmUnitaryValue {
                             __map,
                         );
                         match __t {
-                            "BMM_BOOLEAN_VALUE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmUnitaryValue::BmmPrimitiveValue(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_INTEGER_VALUE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmUnitaryValue::BmmPrimitiveValue(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_PRIMITIVE_VALUE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmUnitaryValue::BmmPrimitiveValue(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_STRING_VALUE" => ::core::result::Result::Ok(
-                                crate::prelude::BmmUnitaryValue::BmmPrimitiveValue(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_UNITARY_VALUE",
-                                    __other,
-                                    "BMM_BOOLEAN_VALUE, BMM_INTEGER_VALUE, BMM_PRIMITIVE_VALUE, BMM_STRING_VALUE",
-                                ),
-                            ),
-                        }
+"BMM_BOOLEAN_VALUE" => ::core::result::Result::Ok(crate::v3::bmm3::core::literal_value::bmm_unitary_value::BmmUnitaryValue::BmmPrimitiveValue(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_INTEGER_VALUE" => ::core::result::Result::Ok(crate::v3::bmm3::core::literal_value::bmm_unitary_value::BmmUnitaryValue::BmmPrimitiveValue(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PRIMITIVE_VALUE" => ::core::result::Result::Ok(crate::v3::bmm3::core::literal_value::bmm_unitary_value::BmmUnitaryValue::BmmPrimitiveValue(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_STRING_VALUE" => ::core::result::Result::Ok(crate::v3::bmm3::core::literal_value::bmm_unitary_value::BmmUnitaryValue::BmmPrimitiveValue(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_UNITARY_VALUE", __other, "BMM_BOOLEAN_VALUE, BMM_INTEGER_VALUE, BMM_PRIMITIVE_VALUE, BMM_STRING_VALUE")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -31460,7 +29917,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmUnitaryValue {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmValueSetSpec {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::entity::range_constrained::bmm_value_set_spec::BmmValueSetSpec
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -31483,7 +29942,9 @@ impl ::serde::Serialize for crate::prelude::BmmValueSetSpec {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmValueSetSpec {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::entity::range_constrained::bmm_value_set_spec::BmmValueSetSpec
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -31529,7 +29990,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmValueSetSpec {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmValueSetSpec;
+            type Value = crate::v3::bmm3::core::entity::range_constrained::bmm_value_set_spec::BmmValueSetSpec;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_VALUE_SET_SPEC` object")
             }
@@ -31572,14 +30033,10 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmValueSetSpec {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmValueSetSpec {
-                    resource_id: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("resource_id"))?,
-                    value_set_id: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("value_set_id"))?,
-                })
+                ::core::result::Result::Ok(crate::v3::bmm3::core::entity::range_constrained::bmm_value_set_spec::BmmValueSetSpec {
+resource_id: __s0.flatten().ok_or_else(|| ::serde::de::Error::missing_field("resource_id"))?,
+value_set_id: __s1.flatten().ok_or_else(|| ::serde::de::Error::missing_field("value_set_id"))?,
+})
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -31591,36 +30048,36 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmValueSetSpec {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmVariable {
+impl ::serde::Serialize for crate::v3::bmm3::core::feature::bmm_variable::BmmVariable {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmVariable::BmmLocal(__x) => {
+            crate::v3::bmm3::core::feature::bmm_variable::BmmVariable::BmmLocal(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmVariable::BmmParameter(__x) => {
+            crate::v3::bmm3::core::feature::bmm_variable::BmmVariable::BmmParameter(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmVariable::BmmResult(__x) => {
+            crate::v3::bmm3::core::feature::bmm_variable::BmmVariable::BmmResult(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::BmmVariable::BmmSelf(__x) => {
+            crate::v3::bmm3::core::feature::bmm_variable::BmmVariable::BmmSelf(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmVariable {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::core::feature::bmm_variable::BmmVariable {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["BMM_LOCAL", "BMM_PARAMETER", "BMM_RESULT", "BMM_SELF"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmVariable;
+            type Value = crate::v3::bmm3::core::feature::bmm_variable::BmmVariable;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_VARIABLE` object")
             }
@@ -31638,34 +30095,12 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmVariable {
                             __map,
                         );
                         match __t {
-                            "BMM_LOCAL" => {
-                                ::core::result::Result::Ok(crate::prelude::BmmVariable::BmmLocal(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "BMM_PARAMETER" => ::core::result::Result::Ok(
-                                crate::prelude::BmmVariable::BmmParameter(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_RESULT" => {
-                                ::core::result::Result::Ok(crate::prelude::BmmVariable::BmmResult(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "BMM_SELF" => {
-                                ::core::result::Result::Ok(crate::prelude::BmmVariable::BmmSelf(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_VARIABLE",
-                                    __other,
-                                    "BMM_LOCAL, BMM_PARAMETER, BMM_RESULT, BMM_SELF",
-                                ),
-                            ),
-                        }
+"BMM_LOCAL" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_variable::BmmVariable::BmmLocal(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_PARAMETER" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_variable::BmmVariable::BmmParameter(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_RESULT" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_variable::BmmVariable::BmmResult(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_SELF" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_variable::BmmVariable::BmmSelf(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_VARIABLE", __other, "BMM_LOCAL, BMM_PARAMETER, BMM_RESULT, BMM_SELF")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -31687,7 +30122,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmVariable {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmVisibility {
+impl ::serde::Serialize for crate::v3::bmm3::core::feature::bmm_visibility::BmmVisibility {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -31699,7 +30134,9 @@ impl ::serde::Serialize for crate::prelude::BmmVisibility {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmVisibility {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::feature::bmm_visibility::BmmVisibility
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -31741,7 +30178,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmVisibility {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmVisibility;
+            type Value = crate::v3::bmm3::core::feature::bmm_visibility::BmmVisibility;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_VISIBILITY` object")
             }
@@ -31766,7 +30203,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmVisibility {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::BmmVisibility {})
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::core::feature::bmm_visibility::BmmVisibility {},
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -31778,30 +30217,30 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmVisibility {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::BmmWritableVariable {
+impl ::serde::Serialize
+    for crate::v3::bmm3::core::feature::bmm_writable_variable::BmmWritableVariable
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::BmmWritableVariable::BmmLocal(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::BmmWritableVariable::BmmResult(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-        }
+crate::v3::bmm3::core::feature::bmm_writable_variable::BmmWritableVariable::BmmLocal(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::core::feature::bmm_writable_variable::BmmWritableVariable::BmmResult(__x) => ::serde::Serialize::serialize(__x, __serializer),
+}
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmWritableVariable {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::core::feature::bmm_writable_variable::BmmWritableVariable
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["BMM_LOCAL", "BMM_RESULT"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::BmmWritableVariable;
+            type Value = crate::v3::bmm3::core::feature::bmm_writable_variable::BmmWritableVariable;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `BMM_WRITABLE_VARIABLE` object")
             }
@@ -31819,24 +30258,10 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmWritableVariable {
                             __map,
                         );
                         match __t {
-                            "BMM_LOCAL" => ::core::result::Result::Ok(
-                                crate::prelude::BmmWritableVariable::BmmLocal(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "BMM_RESULT" => ::core::result::Result::Ok(
-                                crate::prelude::BmmWritableVariable::BmmResult(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "BMM_WRITABLE_VARIABLE",
-                                    __other,
-                                    "BMM_LOCAL, BMM_RESULT",
-                                ),
-                            ),
-                        }
+"BMM_LOCAL" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_writable_variable::BmmWritableVariable::BmmLocal(::serde::Deserialize::deserialize(__rest)?)),
+"BMM_RESULT" => ::core::result::Result::Ok(crate::v3::bmm3::core::feature::bmm_writable_variable::BmmWritableVariable::BmmResult(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("BMM_WRITABLE_VARIABLE", __other, "BMM_LOCAL, BMM_RESULT")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -31858,30 +30283,30 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::BmmWritableVariable {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElAgent {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_agent::ElAgent {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::ElAgent::ElFunctionAgent(__x) => {
+            crate::v3::bmm3::expression::el_agent::ElAgent::ElFunctionAgent(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElAgent::ElProcedureAgent(__x) => {
+            crate::v3::bmm3::expression::el_agent::ElAgent::ElProcedureAgent(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElAgent {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::expression::el_agent::ElAgent {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["EL_FUNCTION_AGENT", "EL_PROCEDURE_AGENT"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElAgent;
+            type Value = crate::v3::bmm3::expression::el_agent::ElAgent;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_AGENT` object")
             }
@@ -31900,12 +30325,12 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElAgent {
                         );
                         match __t {
                             "EL_FUNCTION_AGENT" => ::core::result::Result::Ok(
-                                crate::prelude::ElAgent::ElFunctionAgent(
+                                crate::v3::bmm3::expression::el_agent::ElAgent::ElFunctionAgent(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
                             "EL_PROCEDURE_AGENT" => ::core::result::Result::Ok(
-                                crate::prelude::ElAgent::ElProcedureAgent(
+                                crate::v3::bmm3::expression::el_agent::ElAgent::ElProcedureAgent(
                                     ::serde::Deserialize::deserialize(__rest)?,
                                 ),
                             ),
@@ -31938,30 +30363,30 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElAgent {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElAgentCall {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_agent_call::ElAgentCall {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::ElAgentCall::BmmProcedureCall(__x) => {
+            crate::v3::bmm3::expression::el_agent_call::ElAgentCall::BmmProcedureCall(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElAgentCall::ElFunctionCall(__x) => {
+            crate::v3::bmm3::expression::el_agent_call::ElAgentCall::ElFunctionCall(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElAgentCall {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::expression::el_agent_call::ElAgentCall {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["BMM_PROCEDURE_CALL", "EL_FUNCTION_CALL"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElAgentCall;
+            type Value = crate::v3::bmm3::expression::el_agent_call::ElAgentCall;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_AGENT_CALL` object")
             }
@@ -31979,24 +30404,10 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElAgentCall {
                             __map,
                         );
                         match __t {
-                            "BMM_PROCEDURE_CALL" => ::core::result::Result::Ok(
-                                crate::prelude::ElAgentCall::BmmProcedureCall(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_FUNCTION_CALL" => ::core::result::Result::Ok(
-                                crate::prelude::ElAgentCall::ElFunctionCall(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "EL_AGENT_CALL",
-                                    __other,
-                                    "BMM_PROCEDURE_CALL, EL_FUNCTION_CALL",
-                                ),
-                            ),
-                        }
+"BMM_PROCEDURE_CALL" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_agent_call::ElAgentCall::BmmProcedureCall(::serde::Deserialize::deserialize(__rest)?)),
+"EL_FUNCTION_CALL" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_agent_call::ElAgentCall::ElFunctionCall(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("EL_AGENT_CALL", __other, "BMM_PROCEDURE_CALL, EL_FUNCTION_CALL")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -32018,7 +30429,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElAgentCall {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElAttached {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_attached::ElAttached {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -32031,7 +30442,7 @@ impl ::serde::Serialize for crate::prelude::ElAttached {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElAttached {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::expression::el_attached::ElAttached {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -32075,7 +30486,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElAttached {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElAttached;
+            type Value = crate::v3::bmm3::expression::el_attached::ElAttached;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_ATTACHED` object")
             }
@@ -32109,7 +30520,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElAttached {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ElAttached {
+                ::core::result::Result::Ok(crate::v3::bmm3::expression::el_attached::ElAttached {
                     operand: __s0
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("operand"))?,
@@ -32125,7 +30536,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElAttached {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElBinaryOperator {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_binary_operator::ElBinaryOperator {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -32165,7 +30576,9 @@ impl ::serde::Serialize for crate::prelude::ElBinaryOperator {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElBinaryOperator {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::expression::el_binary_operator::ElBinaryOperator
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -32223,7 +30636,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElBinaryOperator {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElBinaryOperator;
+            type Value = crate::v3::bmm3::expression::el_binary_operator::ElBinaryOperator;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_BINARY_OPERATOR` object")
             }
@@ -32293,19 +30706,21 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElBinaryOperator {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ElBinaryOperator {
-                    precedence_overridden: __s0.flatten(),
-                    symbol: __s1.flatten(),
-                    call: __s2
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("call"))?,
-                    left_operand: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("left_operand"))?,
-                    right_operand: __s4
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("right_operand"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::expression::el_binary_operator::ElBinaryOperator {
+                        precedence_overridden: __s0.flatten(),
+                        symbol: __s1.flatten(),
+                        call: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("call"))?,
+                        left_operand: __s3
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("left_operand"))?,
+                        right_operand: __s4
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("right_operand"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -32317,7 +30732,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElBinaryOperator {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElBooleanExpression {
+impl ::serde::Serialize
+    for crate::v3::bmm3::expression::el_boolean_expression::ElBooleanExpression
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -32339,7 +30756,9 @@ impl ::serde::Serialize for crate::prelude::ElBooleanExpression {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElBooleanExpression {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::expression::el_boolean_expression::ElBooleanExpression
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -32383,7 +30802,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElBooleanExpression {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElBooleanExpression;
+            type Value = crate::v3::bmm3::expression::el_boolean_expression::ElBooleanExpression;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_BOOLEAN_EXPRESSION` object")
             }
@@ -32419,11 +30838,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElBooleanExpression {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ElBooleanExpression {
-                    base_expression: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("base_expression"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::expression::el_boolean_expression::ElBooleanExpression {
+                        base_expression: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("base_expression"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -32435,7 +30856,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElBooleanExpression {
     }
 }
 
-impl<T: ::serde::Serialize> ::serde::Serialize for crate::prelude::ElCase<T> {
+impl<T: ::serde::Serialize> ::serde::Serialize for crate::v3::bmm3::expression::el_case::ElCase<T> {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -32454,7 +30875,7 @@ impl<T: ::serde::Serialize> ::serde::Serialize for crate::prelude::ElCase<T> {
 }
 
 impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
-    for crate::prelude::ElCase<T>
+    for crate::v3::bmm3::expression::el_case::ElCase<T>
 {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
@@ -32499,7 +30920,7 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
         }
         struct __Visitor<T>(::core::marker::PhantomData<(T,)>);
         impl<'de, T: ::serde::de::DeserializeOwned> ::serde::de::Visitor<'de> for __Visitor<T> {
-            type Value = crate::prelude::ElCase<T>;
+            type Value = crate::v3::bmm3::expression::el_case::ElCase<T>;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_CASE` object")
             }
@@ -32542,7 +30963,7 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ElCase {
+                ::core::result::Result::Ok(crate::v3::bmm3::expression::el_case::ElCase {
                     result: __s0
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("result"))?,
@@ -32561,7 +30982,9 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
     }
 }
 
-impl<T: ::serde::Serialize> ::serde::Serialize for crate::prelude::ElCaseTable<T> {
+impl<T: ::serde::Serialize> ::serde::Serialize
+    for crate::v3::bmm3::expression::el_case_table::ElCaseTable<T>
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -32577,7 +31000,7 @@ impl<T: ::serde::Serialize> ::serde::Serialize for crate::prelude::ElCaseTable<T
 }
 
 impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
-    for crate::prelude::ElCaseTable<T>
+    for crate::v3::bmm3::expression::el_case_table::ElCaseTable<T>
 {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
@@ -32626,7 +31049,7 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
         }
         struct __Visitor<T>(::core::marker::PhantomData<(T,)>);
         impl<'de, T: ::serde::de::DeserializeOwned> ::serde::de::Visitor<'de> for __Visitor<T> {
-            type Value = crate::prelude::ElCaseTable<T>;
+            type Value = crate::v3::bmm3::expression::el_case_table::ElCaseTable<T>;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_CASE_TABLE` object")
             }
@@ -32678,17 +31101,19 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ElCaseTable {
-                    items: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("items"))?,
-                    r#else: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("else"))?,
-                    test_value: __s2
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("test_value"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::expression::el_case_table::ElCaseTable {
+                        items: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("items"))?,
+                        r#else: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("else"))?,
+                        test_value: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("test_value"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -32700,7 +31125,9 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
     }
 }
 
-impl<T: ::serde::Serialize> ::serde::Serialize for crate::prelude::ElConditionalExpression<T> {
+impl<T: ::serde::Serialize> ::serde::Serialize
+    for crate::v3::bmm3::expression::el_conditional_expression::ElConditionalExpression<T>
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -32720,7 +31147,7 @@ impl<T: ::serde::Serialize> ::serde::Serialize for crate::prelude::ElConditional
 }
 
 impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
-    for crate::prelude::ElConditionalExpression<T>
+    for crate::v3::bmm3::expression::el_conditional_expression::ElConditionalExpression<T>
 {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
@@ -32767,7 +31194,8 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
         }
         struct __Visitor<T>(::core::marker::PhantomData<(T,)>);
         impl<'de, T: ::serde::de::DeserializeOwned> ::serde::de::Visitor<'de> for __Visitor<T> {
-            type Value = crate::prelude::ElConditionalExpression<T>;
+            type Value =
+                crate::v3::bmm3::expression::el_conditional_expression::ElConditionalExpression<T>;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_CONDITIONAL_EXPRESSION` object")
             }
@@ -32812,14 +31240,10 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ElConditionalExpression {
-                    result: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("result"))?,
-                    condition: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("condition"))?,
-                })
+                ::core::result::Result::Ok(crate::v3::bmm3::expression::el_conditional_expression::ElConditionalExpression {
+result: __s0.flatten().ok_or_else(|| ::serde::de::Error::missing_field("result"))?,
+condition: __s1.flatten().ok_or_else(|| ::serde::de::Error::missing_field("condition"))?,
+})
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -32831,7 +31255,9 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
     }
 }
 
-impl<T: ::serde::Serialize> ::serde::Serialize for crate::prelude::ElConditionChain<T> {
+impl<T: ::serde::Serialize> ::serde::Serialize
+    for crate::v3::bmm3::expression::el_condition_chain::ElConditionChain<T>
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -32847,7 +31273,7 @@ impl<T: ::serde::Serialize> ::serde::Serialize for crate::prelude::ElConditionCh
 }
 
 impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
-    for crate::prelude::ElConditionChain<T>
+    for crate::v3::bmm3::expression::el_condition_chain::ElConditionChain<T>
 {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
@@ -32894,7 +31320,7 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
         }
         struct __Visitor<T>(::core::marker::PhantomData<(T,)>);
         impl<'de, T: ::serde::de::DeserializeOwned> ::serde::de::Visitor<'de> for __Visitor<T> {
-            type Value = crate::prelude::ElConditionChain<T>;
+            type Value = crate::v3::bmm3::expression::el_condition_chain::ElConditionChain<T>;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_CONDITION_CHAIN` object")
             }
@@ -32937,14 +31363,16 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ElConditionChain {
-                    items: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("items"))?,
-                    r#else: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("else"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::expression::el_condition_chain::ElConditionChain {
+                        items: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("items"))?,
+                        r#else: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("else"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -32956,27 +31384,27 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElConstrained {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_constrained::ElConstrained {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::ElConstrained::ElBooleanExpression(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
+            crate::v3::bmm3::expression::el_constrained::ElConstrained::ElBooleanExpression(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElConstrained {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::expression::el_constrained::ElConstrained {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["EL_BOOLEAN_EXPRESSION"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElConstrained;
+            type Value = crate::v3::bmm3::expression::el_constrained::ElConstrained;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_CONSTRAINED` object")
             }
@@ -32994,19 +31422,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElConstrained {
                             __map,
                         );
                         match __t {
-                            "EL_BOOLEAN_EXPRESSION" => ::core::result::Result::Ok(
-                                crate::prelude::ElConstrained::ElBooleanExpression(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "EL_CONSTRAINED",
-                                    __other,
-                                    "EL_BOOLEAN_EXPRESSION",
-                                ),
-                            ),
-                        }
+"EL_BOOLEAN_EXPRESSION" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_constrained::ElConstrained::ElBooleanExpression(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("EL_CONSTRAINED", __other, "EL_BOOLEAN_EXPRESSION")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -33028,24 +31446,22 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElConstrained {
     }
 }
 
-impl<T: ::serde::Serialize> ::serde::Serialize for crate::prelude::ElDecisionBranch<T> {
+impl<T: ::serde::Serialize> ::serde::Serialize
+    for crate::v3::bmm3::expression::el_decision_branch::ElDecisionBranch<T>
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::ElDecisionBranch::ElCase(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::ElDecisionBranch::ElConditionalExpression(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-        }
+crate::v3::bmm3::expression::el_decision_branch::ElDecisionBranch::ElCase(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::expression::el_decision_branch::ElDecisionBranch::ElConditionalExpression(__x) => ::serde::Serialize::serialize(__x, __serializer),
+}
     }
 }
 
 impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
-    for crate::prelude::ElDecisionBranch<T>
+    for crate::v3::bmm3::expression::el_decision_branch::ElDecisionBranch<T>
 {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
@@ -33053,7 +31469,7 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
         const __TAGS: &[&str] = &["EL_CASE", "EL_CONDITIONAL_EXPRESSION"];
         struct __Visitor<T>(::core::marker::PhantomData<(T,)>);
         impl<'de, T: ::serde::de::DeserializeOwned> ::serde::de::Visitor<'de> for __Visitor<T> {
-            type Value = crate::prelude::ElDecisionBranch<T>;
+            type Value = crate::v3::bmm3::expression::el_decision_branch::ElDecisionBranch<T>;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_DECISION_BRANCH` object")
             }
@@ -33071,24 +31487,10 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
                             __map,
                         );
                         match __t {
-                            "EL_CASE" => ::core::result::Result::Ok(
-                                crate::prelude::ElDecisionBranch::ElCase(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_CONDITIONAL_EXPRESSION" => ::core::result::Result::Ok(
-                                crate::prelude::ElDecisionBranch::ElConditionalExpression(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "EL_DECISION_BRANCH",
-                                    __other,
-                                    "EL_CASE, EL_CONDITIONAL_EXPRESSION",
-                                ),
-                            ),
-                        }
+"EL_CASE" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_decision_branch::ElDecisionBranch::ElCase(::serde::Deserialize::deserialize(__rest)?)),
+"EL_CONDITIONAL_EXPRESSION" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_decision_branch::ElDecisionBranch::ElConditionalExpression(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("EL_DECISION_BRANCH", __other, "EL_CASE, EL_CONDITIONAL_EXPRESSION")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -33113,24 +31515,26 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
     }
 }
 
-impl<T: ::serde::Serialize> ::serde::Serialize for crate::prelude::ElDecisionTable<T> {
+impl<T: ::serde::Serialize> ::serde::Serialize
+    for crate::v3::bmm3::expression::el_decision_table::ElDecisionTable<T>
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::ElDecisionTable::ElCaseTable(__x) => {
+            crate::v3::bmm3::expression::el_decision_table::ElDecisionTable::ElCaseTable(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElDecisionTable::ElConditionChain(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
+            crate::v3::bmm3::expression::el_decision_table::ElDecisionTable::ElConditionChain(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
         }
     }
 }
 
 impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
-    for crate::prelude::ElDecisionTable<T>
+    for crate::v3::bmm3::expression::el_decision_table::ElDecisionTable<T>
 {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
@@ -33138,7 +31542,7 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
         const __TAGS: &[&str] = &["EL_CASE_TABLE", "EL_CONDITION_CHAIN"];
         struct __Visitor<T>(::core::marker::PhantomData<(T,)>);
         impl<'de, T: ::serde::de::DeserializeOwned> ::serde::de::Visitor<'de> for __Visitor<T> {
-            type Value = crate::prelude::ElDecisionTable<T>;
+            type Value = crate::v3::bmm3::expression::el_decision_table::ElDecisionTable<T>;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_DECISION_TABLE` object")
             }
@@ -33156,24 +31560,10 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
                             __map,
                         );
                         match __t {
-                            "EL_CASE_TABLE" => ::core::result::Result::Ok(
-                                crate::prelude::ElDecisionTable::ElCaseTable(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_CONDITION_CHAIN" => ::core::result::Result::Ok(
-                                crate::prelude::ElDecisionTable::ElConditionChain(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "EL_DECISION_TABLE",
-                                    __other,
-                                    "EL_CASE_TABLE, EL_CONDITION_CHAIN",
-                                ),
-                            ),
-                        }
+"EL_CASE_TABLE" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_decision_table::ElDecisionTable::ElCaseTable(::serde::Deserialize::deserialize(__rest)?)),
+"EL_CONDITION_CHAIN" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_decision_table::ElDecisionTable::ElConditionChain(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("EL_DECISION_TABLE", __other, "EL_CASE_TABLE, EL_CONDITION_CHAIN")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -33198,7 +31588,7 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElDefined {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_defined::ElDefined {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -33211,7 +31601,7 @@ impl ::serde::Serialize for crate::prelude::ElDefined {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElDefined {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::expression::el_defined::ElDefined {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -33255,7 +31645,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElDefined {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElDefined;
+            type Value = crate::v3::bmm3::expression::el_defined::ElDefined;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_DEFINED` object")
             }
@@ -33289,7 +31679,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElDefined {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ElDefined {
+                ::core::result::Result::Ok(crate::v3::bmm3::expression::el_defined::ElDefined {
                     operand: __s0
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("operand"))?,
@@ -33300,68 +31690,68 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElDefined {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElExpression {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_expression::ElExpression {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::ElExpression::ElAttached(__x) => {
+            crate::v3::bmm3::expression::el_expression::ElExpression::ElAttached(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElExpression::ElBinaryOperator(__x) => {
+            crate::v3::bmm3::expression::el_expression::ElExpression::ElBinaryOperator(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElExpression::ElBooleanExpression(__x) => {
+            crate::v3::bmm3::expression::el_expression::ElExpression::ElBooleanExpression(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElExpression::ElCaseTable(__x) => {
+            crate::v3::bmm3::expression::el_expression::ElExpression::ElCaseTable(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElExpression::ElConditionChain(__x) => {
+            crate::v3::bmm3::expression::el_expression::ElExpression::ElConditionChain(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElExpression::ElDefined(__x) => {
+            crate::v3::bmm3::expression::el_expression::ElExpression::ElDefined(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElExpression::ElFunctionAgent(__x) => {
+            crate::v3::bmm3::expression::el_expression::ElExpression::ElFunctionAgent(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElExpression::ElFunctionCall(__x) => {
+            crate::v3::bmm3::expression::el_expression::ElExpression::ElFunctionCall(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElExpression::ElLiteral(__x) => {
+            crate::v3::bmm3::expression::el_expression::ElExpression::ElLiteral(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElExpression::ElProcedureAgent(__x) => {
+            crate::v3::bmm3::expression::el_expression::ElExpression::ElProcedureAgent(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElExpression::ElPropertyRef(__x) => {
+            crate::v3::bmm3::expression::el_expression::ElExpression::ElPropertyRef(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElExpression::ElReadonlyVariable(__x) => {
+            crate::v3::bmm3::expression::el_expression::ElExpression::ElReadonlyVariable(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElExpression::ElStaticRef(__x) => {
+            crate::v3::bmm3::expression::el_expression::ElExpression::ElStaticRef(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElExpression::ElTuple(__x) => {
+            crate::v3::bmm3::expression::el_expression::ElExpression::ElTuple(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElExpression::ElTypeRef(__x) => {
+            crate::v3::bmm3::expression::el_expression::ElExpression::ElTypeRef(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElExpression::ElUnaryOperator(__x) => {
+            crate::v3::bmm3::expression::el_expression::ElExpression::ElUnaryOperator(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElExpression::ElWritableVariable(__x) => {
+            crate::v3::bmm3::expression::el_expression::ElExpression::ElWritableVariable(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElExpression {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::expression::el_expression::ElExpression {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -33386,7 +31776,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElExpression {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElExpression;
+            type Value = crate::v3::bmm3::expression::el_expression::ElExpression;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_EXPRESSION` object")
             }
@@ -33404,99 +31794,25 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElExpression {
                             __map,
                         );
                         match __t {
-                            "EL_ATTACHED" => ::core::result::Result::Ok(
-                                crate::prelude::ElExpression::ElAttached(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_BINARY_OPERATOR" => ::core::result::Result::Ok(
-                                crate::prelude::ElExpression::ElBinaryOperator(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_BOOLEAN_EXPRESSION" => ::core::result::Result::Ok(
-                                crate::prelude::ElExpression::ElBooleanExpression(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_CASE_TABLE" => ::core::result::Result::Ok(
-                                crate::prelude::ElExpression::ElCaseTable(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_CONDITION_CHAIN" => ::core::result::Result::Ok(
-                                crate::prelude::ElExpression::ElConditionChain(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_DEFINED" => {
-                                ::core::result::Result::Ok(crate::prelude::ElExpression::ElDefined(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "EL_FUNCTION_AGENT" => ::core::result::Result::Ok(
-                                crate::prelude::ElExpression::ElFunctionAgent(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_FUNCTION_CALL" => ::core::result::Result::Ok(
-                                crate::prelude::ElExpression::ElFunctionCall(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_LITERAL" => {
-                                ::core::result::Result::Ok(crate::prelude::ElExpression::ElLiteral(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "EL_PROCEDURE_AGENT" => ::core::result::Result::Ok(
-                                crate::prelude::ElExpression::ElProcedureAgent(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_PROPERTY_REF" => ::core::result::Result::Ok(
-                                crate::prelude::ElExpression::ElPropertyRef(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_READONLY_VARIABLE" => ::core::result::Result::Ok(
-                                crate::prelude::ElExpression::ElReadonlyVariable(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_STATIC_REF" => ::core::result::Result::Ok(
-                                crate::prelude::ElExpression::ElStaticRef(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_TUPLE" => {
-                                ::core::result::Result::Ok(crate::prelude::ElExpression::ElTuple(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "EL_TYPE_REF" => {
-                                ::core::result::Result::Ok(crate::prelude::ElExpression::ElTypeRef(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "EL_UNARY_OPERATOR" => ::core::result::Result::Ok(
-                                crate::prelude::ElExpression::ElUnaryOperator(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_WRITABLE_VARIABLE" => ::core::result::Result::Ok(
-                                crate::prelude::ElExpression::ElWritableVariable(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "EL_EXPRESSION",
-                                    __other,
-                                    "EL_ATTACHED, EL_BINARY_OPERATOR, EL_BOOLEAN_EXPRESSION, EL_CASE_TABLE, EL_CONDITION_CHAIN, EL_DEFINED, EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_LITERAL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TUPLE, EL_TYPE_REF, EL_UNARY_OPERATOR, EL_WRITABLE_VARIABLE",
-                                ),
-                            ),
-                        }
+"EL_ATTACHED" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_expression::ElExpression::ElAttached(::serde::Deserialize::deserialize(__rest)?)),
+"EL_BINARY_OPERATOR" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_expression::ElExpression::ElBinaryOperator(::serde::Deserialize::deserialize(__rest)?)),
+"EL_BOOLEAN_EXPRESSION" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_expression::ElExpression::ElBooleanExpression(::serde::Deserialize::deserialize(__rest)?)),
+"EL_CASE_TABLE" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_expression::ElExpression::ElCaseTable(::serde::Deserialize::deserialize(__rest)?)),
+"EL_CONDITION_CHAIN" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_expression::ElExpression::ElConditionChain(::serde::Deserialize::deserialize(__rest)?)),
+"EL_DEFINED" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_expression::ElExpression::ElDefined(::serde::Deserialize::deserialize(__rest)?)),
+"EL_FUNCTION_AGENT" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_expression::ElExpression::ElFunctionAgent(::serde::Deserialize::deserialize(__rest)?)),
+"EL_FUNCTION_CALL" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_expression::ElExpression::ElFunctionCall(::serde::Deserialize::deserialize(__rest)?)),
+"EL_LITERAL" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_expression::ElExpression::ElLiteral(::serde::Deserialize::deserialize(__rest)?)),
+"EL_PROCEDURE_AGENT" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_expression::ElExpression::ElProcedureAgent(::serde::Deserialize::deserialize(__rest)?)),
+"EL_PROPERTY_REF" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_expression::ElExpression::ElPropertyRef(::serde::Deserialize::deserialize(__rest)?)),
+"EL_READONLY_VARIABLE" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_expression::ElExpression::ElReadonlyVariable(::serde::Deserialize::deserialize(__rest)?)),
+"EL_STATIC_REF" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_expression::ElExpression::ElStaticRef(::serde::Deserialize::deserialize(__rest)?)),
+"EL_TUPLE" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_expression::ElExpression::ElTuple(::serde::Deserialize::deserialize(__rest)?)),
+"EL_TYPE_REF" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_expression::ElExpression::ElTypeRef(::serde::Deserialize::deserialize(__rest)?)),
+"EL_UNARY_OPERATOR" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_expression::ElExpression::ElUnaryOperator(::serde::Deserialize::deserialize(__rest)?)),
+"EL_WRITABLE_VARIABLE" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_expression::ElExpression::ElWritableVariable(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("EL_EXPRESSION", __other, "EL_ATTACHED, EL_BINARY_OPERATOR, EL_BOOLEAN_EXPRESSION, EL_CASE_TABLE, EL_CONDITION_CHAIN, EL_DEFINED, EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_LITERAL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TUPLE, EL_TYPE_REF, EL_UNARY_OPERATOR, EL_WRITABLE_VARIABLE")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -33518,32 +31834,32 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElExpression {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElFeatureRef {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_feature_ref::ElFeatureRef {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::ElFeatureRef::ElFunctionAgent(__x) => {
+            crate::v3::bmm3::expression::el_feature_ref::ElFeatureRef::ElFunctionAgent(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElFeatureRef::ElFunctionCall(__x) => {
+            crate::v3::bmm3::expression::el_feature_ref::ElFeatureRef::ElFunctionCall(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElFeatureRef::ElProcedureAgent(__x) => {
+            crate::v3::bmm3::expression::el_feature_ref::ElFeatureRef::ElProcedureAgent(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElFeatureRef::ElPropertyRef(__x) => {
+            crate::v3::bmm3::expression::el_feature_ref::ElFeatureRef::ElPropertyRef(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElFeatureRef::ElStaticRef(__x) => {
+            crate::v3::bmm3::expression::el_feature_ref::ElFeatureRef::ElStaticRef(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElFeatureRef {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::expression::el_feature_ref::ElFeatureRef {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -33556,7 +31872,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElFeatureRef {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElFeatureRef;
+            type Value = crate::v3::bmm3::expression::el_feature_ref::ElFeatureRef;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_FEATURE_REF` object")
             }
@@ -33574,39 +31890,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElFeatureRef {
                             __map,
                         );
                         match __t {
-                            "EL_FUNCTION_AGENT" => ::core::result::Result::Ok(
-                                crate::prelude::ElFeatureRef::ElFunctionAgent(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_FUNCTION_CALL" => ::core::result::Result::Ok(
-                                crate::prelude::ElFeatureRef::ElFunctionCall(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_PROCEDURE_AGENT" => ::core::result::Result::Ok(
-                                crate::prelude::ElFeatureRef::ElProcedureAgent(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_PROPERTY_REF" => ::core::result::Result::Ok(
-                                crate::prelude::ElFeatureRef::ElPropertyRef(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_STATIC_REF" => ::core::result::Result::Ok(
-                                crate::prelude::ElFeatureRef::ElStaticRef(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "EL_FEATURE_REF",
-                                    __other,
-                                    "EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_STATIC_REF",
-                                ),
-                            ),
-                        }
+"EL_FUNCTION_AGENT" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_feature_ref::ElFeatureRef::ElFunctionAgent(::serde::Deserialize::deserialize(__rest)?)),
+"EL_FUNCTION_CALL" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_feature_ref::ElFeatureRef::ElFunctionCall(::serde::Deserialize::deserialize(__rest)?)),
+"EL_PROCEDURE_AGENT" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_feature_ref::ElFeatureRef::ElProcedureAgent(::serde::Deserialize::deserialize(__rest)?)),
+"EL_PROPERTY_REF" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_feature_ref::ElFeatureRef::ElPropertyRef(::serde::Deserialize::deserialize(__rest)?)),
+"EL_STATIC_REF" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_feature_ref::ElFeatureRef::ElStaticRef(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("EL_FEATURE_REF", __other, "EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_STATIC_REF")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -33628,7 +31918,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElFeatureRef {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElFunctionAgent {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_function_agent::ElFunctionAgent {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -33673,7 +31963,9 @@ impl ::serde::Serialize for crate::prelude::ElFunctionAgent {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElFunctionAgent {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::expression::el_function_agent::ElFunctionAgent
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -33734,7 +32026,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElFunctionAgent {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElFunctionAgent;
+            type Value = crate::v3::bmm3::expression::el_function_agent::ElFunctionAgent;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_FUNCTION_AGENT` object")
             }
@@ -33813,16 +32105,18 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElFunctionAgent {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ElFunctionAgent {
-                    is_writable: __s0.flatten().unwrap_or(false),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    scoper: __s2.flatten(),
-                    closed_args: __s3.flatten(),
-                    open_args: __s4,
-                    definition: __s5.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::expression::el_function_agent::ElFunctionAgent {
+                        is_writable: __s0.flatten().unwrap_or(false),
+                        name: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        scoper: __s2.flatten(),
+                        closed_args: __s3.flatten(),
+                        open_args: __s4,
+                        definition: __s5.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -33834,7 +32128,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElFunctionAgent {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElFunctionCall {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_function_call::ElFunctionCall {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -33860,7 +32154,9 @@ impl ::serde::Serialize for crate::prelude::ElFunctionCall {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElFunctionCall {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::expression::el_function_call::ElFunctionCall
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -33910,7 +32206,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElFunctionCall {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElFunctionCall;
+            type Value = crate::v3::bmm3::expression::el_function_call::ElFunctionCall;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_FUNCTION_CALL` object")
             }
@@ -33971,16 +32267,18 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElFunctionCall {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ElFunctionCall {
-                    is_writable: __s0.flatten().unwrap_or(false),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    scoper: __s2.flatten(),
-                    agent: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("agent"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::expression::el_function_call::ElFunctionCall {
+                        is_writable: __s0.flatten().unwrap_or(false),
+                        name: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        scoper: __s2.flatten(),
+                        agent: __s3
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("agent"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -33992,7 +32290,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElFunctionCall {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElLiteral {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_literal::ElLiteral {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -34005,7 +32303,7 @@ impl ::serde::Serialize for crate::prelude::ElLiteral {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElLiteral {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::expression::el_literal::ElLiteral {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -34049,7 +32347,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElLiteral {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElLiteral;
+            type Value = crate::v3::bmm3::expression::el_literal::ElLiteral;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_LITERAL` object")
             }
@@ -34083,7 +32381,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElLiteral {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ElLiteral {
+                ::core::result::Result::Ok(crate::v3::bmm3::expression::el_literal::ElLiteral {
                     value: __s0
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
@@ -34094,30 +32392,30 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElLiteral {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElOperator {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_operator::ElOperator {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::ElOperator::ElBinaryOperator(__x) => {
+            crate::v3::bmm3::expression::el_operator::ElOperator::ElBinaryOperator(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElOperator::ElUnaryOperator(__x) => {
+            crate::v3::bmm3::expression::el_operator::ElOperator::ElUnaryOperator(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElOperator {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::expression::el_operator::ElOperator {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["EL_BINARY_OPERATOR", "EL_UNARY_OPERATOR"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElOperator;
+            type Value = crate::v3::bmm3::expression::el_operator::ElOperator;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_OPERATOR` object")
             }
@@ -34135,24 +32433,10 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElOperator {
                             __map,
                         );
                         match __t {
-                            "EL_BINARY_OPERATOR" => ::core::result::Result::Ok(
-                                crate::prelude::ElOperator::ElBinaryOperator(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_UNARY_OPERATOR" => ::core::result::Result::Ok(
-                                crate::prelude::ElOperator::ElUnaryOperator(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "EL_OPERATOR",
-                                    __other,
-                                    "EL_BINARY_OPERATOR, EL_UNARY_OPERATOR",
-                                ),
-                            ),
-                        }
+"EL_BINARY_OPERATOR" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_operator::ElOperator::ElBinaryOperator(::serde::Deserialize::deserialize(__rest)?)),
+"EL_UNARY_OPERATOR" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_operator::ElOperator::ElUnaryOperator(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("EL_OPERATOR", __other, "EL_BINARY_OPERATOR, EL_UNARY_OPERATOR")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -34174,30 +32458,30 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElOperator {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElPredicate {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_predicate::ElPredicate {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::ElPredicate::ElAttached(__x) => {
+            crate::v3::bmm3::expression::el_predicate::ElPredicate::ElAttached(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElPredicate::ElDefined(__x) => {
+            crate::v3::bmm3::expression::el_predicate::ElPredicate::ElDefined(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElPredicate {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::expression::el_predicate::ElPredicate {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["EL_ATTACHED", "EL_DEFINED"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElPredicate;
+            type Value = crate::v3::bmm3::expression::el_predicate::ElPredicate;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_PREDICATE` object")
             }
@@ -34215,16 +32499,16 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElPredicate {
                             __map,
                         );
                         match __t {
-                            "EL_ATTACHED" => {
-                                ::core::result::Result::Ok(crate::prelude::ElPredicate::ElAttached(
+                            "EL_ATTACHED" => ::core::result::Result::Ok(
+                                crate::v3::bmm3::expression::el_predicate::ElPredicate::ElAttached(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "EL_DEFINED" => {
-                                ::core::result::Result::Ok(crate::prelude::ElPredicate::ElDefined(
+                                ),
+                            ),
+                            "EL_DEFINED" => ::core::result::Result::Ok(
+                                crate::v3::bmm3::expression::el_predicate::ElPredicate::ElDefined(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
+                                ),
+                            ),
                             __other => ::core::result::Result::Err(
                                 ::openehr_base::serde_support::unexpected_type(
                                     "EL_PREDICATE",
@@ -34254,7 +32538,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElPredicate {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElProcedureAgent {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_procedure_agent::ElProcedureAgent {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -34299,7 +32583,9 @@ impl ::serde::Serialize for crate::prelude::ElProcedureAgent {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElProcedureAgent {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::expression::el_procedure_agent::ElProcedureAgent
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -34360,7 +32646,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElProcedureAgent {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElProcedureAgent;
+            type Value = crate::v3::bmm3::expression::el_procedure_agent::ElProcedureAgent;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_PROCEDURE_AGENT` object")
             }
@@ -34439,16 +32725,18 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElProcedureAgent {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ElProcedureAgent {
-                    is_writable: __s0.flatten().unwrap_or(false),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    scoper: __s2.flatten(),
-                    closed_args: __s3.flatten(),
-                    open_args: __s4,
-                    definition: __s5.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::expression::el_procedure_agent::ElProcedureAgent {
+                        is_writable: __s0.flatten().unwrap_or(false),
+                        name: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        scoper: __s2.flatten(),
+                        closed_args: __s3.flatten(),
+                        open_args: __s4,
+                        definition: __s5.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -34460,7 +32748,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElProcedureAgent {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElPropertyRef {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_property_ref::ElPropertyRef {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -34485,7 +32773,9 @@ impl ::serde::Serialize for crate::prelude::ElPropertyRef {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElPropertyRef {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::expression::el_property_ref::ElPropertyRef
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -34535,7 +32825,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElPropertyRef {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElPropertyRef;
+            type Value = crate::v3::bmm3::expression::el_property_ref::ElPropertyRef;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_PROPERTY_REF` object")
             }
@@ -34596,16 +32886,18 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElPropertyRef {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ElPropertyRef {
-                    is_writable: __s0.flatten().unwrap_or(true),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    scoper: __s2.flatten(),
-                    definition: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("definition"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::expression::el_property_ref::ElPropertyRef {
+                        is_writable: __s0.flatten().unwrap_or(true),
+                        name: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        scoper: __s2.flatten(),
+                        definition: __s3
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("definition"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -34617,7 +32909,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElPropertyRef {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElReadonlyVariable {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_readonly_variable::ElReadonlyVariable {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -34637,7 +32929,9 @@ impl ::serde::Serialize for crate::prelude::ElReadonlyVariable {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElReadonlyVariable {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::expression::el_readonly_variable::ElReadonlyVariable
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -34685,7 +32979,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElReadonlyVariable {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElReadonlyVariable;
+            type Value = crate::v3::bmm3::expression::el_readonly_variable::ElReadonlyVariable;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_READONLY_VARIABLE` object")
             }
@@ -34737,15 +33031,17 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElReadonlyVariable {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ElReadonlyVariable {
-                    is_writable: __s0.flatten().unwrap_or(false),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    definition: __s2
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("definition"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::expression::el_readonly_variable::ElReadonlyVariable {
+                        is_writable: __s0.flatten().unwrap_or(false),
+                        name: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        definition: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("definition"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -34757,50 +33053,50 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElReadonlyVariable {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElSimple {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_simple::ElSimple {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::ElSimple::ElAttached(__x) => {
+            crate::v3::bmm3::expression::el_simple::ElSimple::ElAttached(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElSimple::ElDefined(__x) => {
+            crate::v3::bmm3::expression::el_simple::ElSimple::ElDefined(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElSimple::ElFunctionAgent(__x) => {
+            crate::v3::bmm3::expression::el_simple::ElSimple::ElFunctionAgent(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElSimple::ElFunctionCall(__x) => {
+            crate::v3::bmm3::expression::el_simple::ElSimple::ElFunctionCall(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElSimple::ElLiteral(__x) => {
+            crate::v3::bmm3::expression::el_simple::ElSimple::ElLiteral(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElSimple::ElProcedureAgent(__x) => {
+            crate::v3::bmm3::expression::el_simple::ElSimple::ElProcedureAgent(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElSimple::ElPropertyRef(__x) => {
+            crate::v3::bmm3::expression::el_simple::ElSimple::ElPropertyRef(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElSimple::ElReadonlyVariable(__x) => {
+            crate::v3::bmm3::expression::el_simple::ElSimple::ElReadonlyVariable(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElSimple::ElStaticRef(__x) => {
+            crate::v3::bmm3::expression::el_simple::ElSimple::ElStaticRef(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElSimple::ElTypeRef(__x) => {
+            crate::v3::bmm3::expression::el_simple::ElSimple::ElTypeRef(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElSimple::ElWritableVariable(__x) => {
+            crate::v3::bmm3::expression::el_simple::ElSimple::ElWritableVariable(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElSimple {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::expression::el_simple::ElSimple {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -34819,7 +33115,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElSimple {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElSimple;
+            type Value = crate::v3::bmm3::expression::el_simple::ElSimple;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_SIMPLE` object")
             }
@@ -34837,69 +33133,19 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElSimple {
                             __map,
                         );
                         match __t {
-                            "EL_ATTACHED" => {
-                                ::core::result::Result::Ok(crate::prelude::ElSimple::ElAttached(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "EL_DEFINED" => {
-                                ::core::result::Result::Ok(crate::prelude::ElSimple::ElDefined(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "EL_FUNCTION_AGENT" => ::core::result::Result::Ok(
-                                crate::prelude::ElSimple::ElFunctionAgent(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_FUNCTION_CALL" => ::core::result::Result::Ok(
-                                crate::prelude::ElSimple::ElFunctionCall(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_LITERAL" => {
-                                ::core::result::Result::Ok(crate::prelude::ElSimple::ElLiteral(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "EL_PROCEDURE_AGENT" => ::core::result::Result::Ok(
-                                crate::prelude::ElSimple::ElProcedureAgent(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_PROPERTY_REF" => {
-                                ::core::result::Result::Ok(crate::prelude::ElSimple::ElPropertyRef(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "EL_READONLY_VARIABLE" => ::core::result::Result::Ok(
-                                crate::prelude::ElSimple::ElReadonlyVariable(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_STATIC_REF" => {
-                                ::core::result::Result::Ok(crate::prelude::ElSimple::ElStaticRef(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "EL_TYPE_REF" => {
-                                ::core::result::Result::Ok(crate::prelude::ElSimple::ElTypeRef(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "EL_WRITABLE_VARIABLE" => ::core::result::Result::Ok(
-                                crate::prelude::ElSimple::ElWritableVariable(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "EL_SIMPLE",
-                                    __other,
-                                    "EL_ATTACHED, EL_DEFINED, EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_LITERAL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TYPE_REF, EL_WRITABLE_VARIABLE",
-                                ),
-                            ),
-                        }
+"EL_ATTACHED" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_simple::ElSimple::ElAttached(::serde::Deserialize::deserialize(__rest)?)),
+"EL_DEFINED" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_simple::ElSimple::ElDefined(::serde::Deserialize::deserialize(__rest)?)),
+"EL_FUNCTION_AGENT" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_simple::ElSimple::ElFunctionAgent(::serde::Deserialize::deserialize(__rest)?)),
+"EL_FUNCTION_CALL" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_simple::ElSimple::ElFunctionCall(::serde::Deserialize::deserialize(__rest)?)),
+"EL_LITERAL" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_simple::ElSimple::ElLiteral(::serde::Deserialize::deserialize(__rest)?)),
+"EL_PROCEDURE_AGENT" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_simple::ElSimple::ElProcedureAgent(::serde::Deserialize::deserialize(__rest)?)),
+"EL_PROPERTY_REF" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_simple::ElSimple::ElPropertyRef(::serde::Deserialize::deserialize(__rest)?)),
+"EL_READONLY_VARIABLE" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_simple::ElSimple::ElReadonlyVariable(::serde::Deserialize::deserialize(__rest)?)),
+"EL_STATIC_REF" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_simple::ElSimple::ElStaticRef(::serde::Deserialize::deserialize(__rest)?)),
+"EL_TYPE_REF" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_simple::ElSimple::ElTypeRef(::serde::Deserialize::deserialize(__rest)?)),
+"EL_WRITABLE_VARIABLE" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_simple::ElSimple::ElWritableVariable(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("EL_SIMPLE", __other, "EL_ATTACHED, EL_DEFINED, EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_LITERAL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TYPE_REF, EL_WRITABLE_VARIABLE")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -34921,7 +33167,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElSimple {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElStaticRef {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_static_ref::ElStaticRef {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -34946,7 +33192,7 @@ impl ::serde::Serialize for crate::prelude::ElStaticRef {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElStaticRef {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::expression::el_static_ref::ElStaticRef {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -34996,7 +33242,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElStaticRef {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElStaticRef;
+            type Value = crate::v3::bmm3::expression::el_static_ref::ElStaticRef;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_STATIC_REF` object")
             }
@@ -35057,16 +33303,18 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElStaticRef {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ElStaticRef {
-                    is_writable: __s0.flatten().unwrap_or(false),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    scoper: __s2.flatten(),
-                    definition: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("definition"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::expression::el_static_ref::ElStaticRef {
+                        is_writable: __s0.flatten().unwrap_or(false),
+                        name: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        scoper: __s2.flatten(),
+                        definition: __s3
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("definition"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -35078,56 +33326,56 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElStaticRef {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElTerminal {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_terminal::ElTerminal {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::ElTerminal::ElAttached(__x) => {
+            crate::v3::bmm3::expression::el_terminal::ElTerminal::ElAttached(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElTerminal::ElCaseTable(__x) => {
+            crate::v3::bmm3::expression::el_terminal::ElTerminal::ElCaseTable(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElTerminal::ElConditionChain(__x) => {
+            crate::v3::bmm3::expression::el_terminal::ElTerminal::ElConditionChain(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElTerminal::ElDefined(__x) => {
+            crate::v3::bmm3::expression::el_terminal::ElTerminal::ElDefined(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElTerminal::ElFunctionAgent(__x) => {
+            crate::v3::bmm3::expression::el_terminal::ElTerminal::ElFunctionAgent(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElTerminal::ElFunctionCall(__x) => {
+            crate::v3::bmm3::expression::el_terminal::ElTerminal::ElFunctionCall(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElTerminal::ElLiteral(__x) => {
+            crate::v3::bmm3::expression::el_terminal::ElTerminal::ElLiteral(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElTerminal::ElProcedureAgent(__x) => {
+            crate::v3::bmm3::expression::el_terminal::ElTerminal::ElProcedureAgent(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElTerminal::ElPropertyRef(__x) => {
+            crate::v3::bmm3::expression::el_terminal::ElTerminal::ElPropertyRef(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElTerminal::ElReadonlyVariable(__x) => {
+            crate::v3::bmm3::expression::el_terminal::ElTerminal::ElReadonlyVariable(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElTerminal::ElStaticRef(__x) => {
+            crate::v3::bmm3::expression::el_terminal::ElTerminal::ElStaticRef(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElTerminal::ElTypeRef(__x) => {
+            crate::v3::bmm3::expression::el_terminal::ElTerminal::ElTypeRef(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElTerminal::ElWritableVariable(__x) => {
+            crate::v3::bmm3::expression::el_terminal::ElTerminal::ElWritableVariable(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElTerminal {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::expression::el_terminal::ElTerminal {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -35148,7 +33396,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElTerminal {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElTerminal;
+            type Value = crate::v3::bmm3::expression::el_terminal::ElTerminal;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_TERMINAL` object")
             }
@@ -35166,79 +33414,21 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElTerminal {
                             __map,
                         );
                         match __t {
-                            "EL_ATTACHED" => {
-                                ::core::result::Result::Ok(crate::prelude::ElTerminal::ElAttached(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "EL_CASE_TABLE" => {
-                                ::core::result::Result::Ok(crate::prelude::ElTerminal::ElCaseTable(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "EL_CONDITION_CHAIN" => ::core::result::Result::Ok(
-                                crate::prelude::ElTerminal::ElConditionChain(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_DEFINED" => {
-                                ::core::result::Result::Ok(crate::prelude::ElTerminal::ElDefined(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "EL_FUNCTION_AGENT" => ::core::result::Result::Ok(
-                                crate::prelude::ElTerminal::ElFunctionAgent(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_FUNCTION_CALL" => ::core::result::Result::Ok(
-                                crate::prelude::ElTerminal::ElFunctionCall(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_LITERAL" => {
-                                ::core::result::Result::Ok(crate::prelude::ElTerminal::ElLiteral(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "EL_PROCEDURE_AGENT" => ::core::result::Result::Ok(
-                                crate::prelude::ElTerminal::ElProcedureAgent(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_PROPERTY_REF" => ::core::result::Result::Ok(
-                                crate::prelude::ElTerminal::ElPropertyRef(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_READONLY_VARIABLE" => ::core::result::Result::Ok(
-                                crate::prelude::ElTerminal::ElReadonlyVariable(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_STATIC_REF" => {
-                                ::core::result::Result::Ok(crate::prelude::ElTerminal::ElStaticRef(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "EL_TYPE_REF" => {
-                                ::core::result::Result::Ok(crate::prelude::ElTerminal::ElTypeRef(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "EL_WRITABLE_VARIABLE" => ::core::result::Result::Ok(
-                                crate::prelude::ElTerminal::ElWritableVariable(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "EL_TERMINAL",
-                                    __other,
-                                    "EL_ATTACHED, EL_CASE_TABLE, EL_CONDITION_CHAIN, EL_DEFINED, EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_LITERAL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TYPE_REF, EL_WRITABLE_VARIABLE",
-                                ),
-                            ),
-                        }
+"EL_ATTACHED" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_terminal::ElTerminal::ElAttached(::serde::Deserialize::deserialize(__rest)?)),
+"EL_CASE_TABLE" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_terminal::ElTerminal::ElCaseTable(::serde::Deserialize::deserialize(__rest)?)),
+"EL_CONDITION_CHAIN" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_terminal::ElTerminal::ElConditionChain(::serde::Deserialize::deserialize(__rest)?)),
+"EL_DEFINED" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_terminal::ElTerminal::ElDefined(::serde::Deserialize::deserialize(__rest)?)),
+"EL_FUNCTION_AGENT" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_terminal::ElTerminal::ElFunctionAgent(::serde::Deserialize::deserialize(__rest)?)),
+"EL_FUNCTION_CALL" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_terminal::ElTerminal::ElFunctionCall(::serde::Deserialize::deserialize(__rest)?)),
+"EL_LITERAL" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_terminal::ElTerminal::ElLiteral(::serde::Deserialize::deserialize(__rest)?)),
+"EL_PROCEDURE_AGENT" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_terminal::ElTerminal::ElProcedureAgent(::serde::Deserialize::deserialize(__rest)?)),
+"EL_PROPERTY_REF" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_terminal::ElTerminal::ElPropertyRef(::serde::Deserialize::deserialize(__rest)?)),
+"EL_READONLY_VARIABLE" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_terminal::ElTerminal::ElReadonlyVariable(::serde::Deserialize::deserialize(__rest)?)),
+"EL_STATIC_REF" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_terminal::ElTerminal::ElStaticRef(::serde::Deserialize::deserialize(__rest)?)),
+"EL_TYPE_REF" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_terminal::ElTerminal::ElTypeRef(::serde::Deserialize::deserialize(__rest)?)),
+"EL_WRITABLE_VARIABLE" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_terminal::ElTerminal::ElWritableVariable(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("EL_TERMINAL", __other, "EL_ATTACHED, EL_CASE_TABLE, EL_CONDITION_CHAIN, EL_DEFINED, EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_LITERAL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TYPE_REF, EL_WRITABLE_VARIABLE")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -35260,7 +33450,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElTerminal {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElTuple {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_tuple::ElTuple {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -35281,7 +33471,7 @@ impl ::serde::Serialize for crate::prelude::ElTuple {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElTuple {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::expression::el_tuple::ElTuple {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -35325,7 +33515,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElTuple {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElTuple;
+            type Value = crate::v3::bmm3::expression::el_tuple::ElTuple;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_TUPLE` object")
             }
@@ -35368,7 +33558,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElTuple {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ElTuple {
+                ::core::result::Result::Ok(crate::v3::bmm3::expression::el_tuple::ElTuple {
                     items: __s0,
                     r#type: __s1
                         .flatten()
@@ -35380,7 +33570,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElTuple {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElTupleItem {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_tuple_item::ElTupleItem {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -35404,7 +33594,7 @@ impl ::serde::Serialize for crate::prelude::ElTupleItem {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElTupleItem {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::expression::el_tuple_item::ElTupleItem {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -35450,7 +33640,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElTupleItem {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElTupleItem;
+            type Value = crate::v3::bmm3::expression::el_tuple_item::ElTupleItem;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_TUPLE_ITEM` object")
             }
@@ -35493,10 +33683,12 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElTupleItem {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ElTupleItem {
-                    item: __s0.flatten(),
-                    name: __s1.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::expression::el_tuple_item::ElTupleItem {
+                        item: __s0.flatten(),
+                        name: __s1.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -35508,7 +33700,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElTupleItem {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElTypeRef {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_type_ref::ElTypeRef {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -35528,7 +33720,7 @@ impl ::serde::Serialize for crate::prelude::ElTypeRef {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElTypeRef {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::expression::el_type_ref::ElTypeRef {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -35578,7 +33770,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElTypeRef {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElTypeRef;
+            type Value = crate::v3::bmm3::expression::el_type_ref::ElTypeRef;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_TYPE_REF` object")
             }
@@ -35639,7 +33831,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElTypeRef {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ElTypeRef {
+                ::core::result::Result::Ok(crate::v3::bmm3::expression::el_type_ref::ElTypeRef {
                     is_writable: __s0
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("is_writable"))?,
@@ -35662,7 +33854,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElTypeRef {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElUnaryOperator {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_unary_operator::ElUnaryOperator {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -35693,7 +33885,9 @@ impl ::serde::Serialize for crate::prelude::ElUnaryOperator {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElUnaryOperator {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::expression::el_unary_operator::ElUnaryOperator
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -35743,7 +33937,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElUnaryOperator {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElUnaryOperator;
+            type Value = crate::v3::bmm3::expression::el_unary_operator::ElUnaryOperator;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_UNARY_OPERATOR` object")
             }
@@ -35804,16 +33998,18 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElUnaryOperator {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ElUnaryOperator {
-                    precedence_overridden: __s0.flatten(),
-                    symbol: __s1.flatten(),
-                    call: __s2
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("call"))?,
-                    operand: __s3
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("operand"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::expression::el_unary_operator::ElUnaryOperator {
+                        precedence_overridden: __s0.flatten(),
+                        symbol: __s1.flatten(),
+                        call: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("call"))?,
+                        operand: __s3
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("operand"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -35825,41 +34021,27 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElUnaryOperator {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElValueGenerator {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_value_generator::ElValueGenerator {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::ElValueGenerator::ElFunctionAgent(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::ElValueGenerator::ElFunctionCall(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::ElValueGenerator::ElProcedureAgent(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::ElValueGenerator::ElPropertyRef(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::ElValueGenerator::ElReadonlyVariable(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::ElValueGenerator::ElStaticRef(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::ElValueGenerator::ElTypeRef(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::ElValueGenerator::ElWritableVariable(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-        }
+crate::v3::bmm3::expression::el_value_generator::ElValueGenerator::ElFunctionAgent(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::expression::el_value_generator::ElValueGenerator::ElFunctionCall(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::expression::el_value_generator::ElValueGenerator::ElProcedureAgent(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::expression::el_value_generator::ElValueGenerator::ElPropertyRef(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::expression::el_value_generator::ElValueGenerator::ElReadonlyVariable(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::expression::el_value_generator::ElValueGenerator::ElStaticRef(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::expression::el_value_generator::ElValueGenerator::ElTypeRef(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v3::bmm3::expression::el_value_generator::ElValueGenerator::ElWritableVariable(__x) => ::serde::Serialize::serialize(__x, __serializer),
+}
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElValueGenerator {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::expression::el_value_generator::ElValueGenerator
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -35875,7 +34057,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElValueGenerator {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElValueGenerator;
+            type Value = crate::v3::bmm3::expression::el_value_generator::ElValueGenerator;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_VALUE_GENERATOR` object")
             }
@@ -35893,54 +34075,16 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElValueGenerator {
                             __map,
                         );
                         match __t {
-                            "EL_FUNCTION_AGENT" => ::core::result::Result::Ok(
-                                crate::prelude::ElValueGenerator::ElFunctionAgent(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_FUNCTION_CALL" => ::core::result::Result::Ok(
-                                crate::prelude::ElValueGenerator::ElFunctionCall(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_PROCEDURE_AGENT" => ::core::result::Result::Ok(
-                                crate::prelude::ElValueGenerator::ElProcedureAgent(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_PROPERTY_REF" => ::core::result::Result::Ok(
-                                crate::prelude::ElValueGenerator::ElPropertyRef(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_READONLY_VARIABLE" => ::core::result::Result::Ok(
-                                crate::prelude::ElValueGenerator::ElReadonlyVariable(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_STATIC_REF" => ::core::result::Result::Ok(
-                                crate::prelude::ElValueGenerator::ElStaticRef(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_TYPE_REF" => ::core::result::Result::Ok(
-                                crate::prelude::ElValueGenerator::ElTypeRef(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_WRITABLE_VARIABLE" => ::core::result::Result::Ok(
-                                crate::prelude::ElValueGenerator::ElWritableVariable(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "EL_VALUE_GENERATOR",
-                                    __other,
-                                    "EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TYPE_REF, EL_WRITABLE_VARIABLE",
-                                ),
-                            ),
-                        }
+"EL_FUNCTION_AGENT" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_value_generator::ElValueGenerator::ElFunctionAgent(::serde::Deserialize::deserialize(__rest)?)),
+"EL_FUNCTION_CALL" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_value_generator::ElValueGenerator::ElFunctionCall(::serde::Deserialize::deserialize(__rest)?)),
+"EL_PROCEDURE_AGENT" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_value_generator::ElValueGenerator::ElProcedureAgent(::serde::Deserialize::deserialize(__rest)?)),
+"EL_PROPERTY_REF" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_value_generator::ElValueGenerator::ElPropertyRef(::serde::Deserialize::deserialize(__rest)?)),
+"EL_READONLY_VARIABLE" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_value_generator::ElValueGenerator::ElReadonlyVariable(::serde::Deserialize::deserialize(__rest)?)),
+"EL_STATIC_REF" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_value_generator::ElValueGenerator::ElStaticRef(::serde::Deserialize::deserialize(__rest)?)),
+"EL_TYPE_REF" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_value_generator::ElValueGenerator::ElTypeRef(::serde::Deserialize::deserialize(__rest)?)),
+"EL_WRITABLE_VARIABLE" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_value_generator::ElValueGenerator::ElWritableVariable(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("EL_VALUE_GENERATOR", __other, "EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TYPE_REF, EL_WRITABLE_VARIABLE")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -35962,30 +34106,30 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElValueGenerator {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElVariable {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_variable::ElVariable {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::ElVariable::ElReadonlyVariable(__x) => {
+            crate::v3::bmm3::expression::el_variable::ElVariable::ElReadonlyVariable(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ElVariable::ElWritableVariable(__x) => {
+            crate::v3::bmm3::expression::el_variable::ElVariable::ElWritableVariable(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElVariable {
+impl<'de> ::serde::Deserialize<'de> for crate::v3::bmm3::expression::el_variable::ElVariable {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["EL_READONLY_VARIABLE", "EL_WRITABLE_VARIABLE"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElVariable;
+            type Value = crate::v3::bmm3::expression::el_variable::ElVariable;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_VARIABLE` object")
             }
@@ -36003,24 +34147,10 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElVariable {
                             __map,
                         );
                         match __t {
-                            "EL_READONLY_VARIABLE" => ::core::result::Result::Ok(
-                                crate::prelude::ElVariable::ElReadonlyVariable(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "EL_WRITABLE_VARIABLE" => ::core::result::Result::Ok(
-                                crate::prelude::ElVariable::ElWritableVariable(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => ::core::result::Result::Err(
-                                ::openehr_base::serde_support::unexpected_type(
-                                    "EL_VARIABLE",
-                                    __other,
-                                    "EL_READONLY_VARIABLE, EL_WRITABLE_VARIABLE",
-                                ),
-                            ),
-                        }
+"EL_READONLY_VARIABLE" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_variable::ElVariable::ElReadonlyVariable(::serde::Deserialize::deserialize(__rest)?)),
+"EL_WRITABLE_VARIABLE" => ::core::result::Result::Ok(crate::v3::bmm3::expression::el_variable::ElVariable::ElWritableVariable(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type("EL_VARIABLE", __other, "EL_READONLY_VARIABLE, EL_WRITABLE_VARIABLE")),
+}
                     }
                     Some(::openehr_base::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(::openehr_base::serde_support::unexpected_type(
@@ -36042,7 +34172,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElVariable {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ElWritableVariable {
+impl ::serde::Serialize for crate::v3::bmm3::expression::el_writable_variable::ElWritableVariable {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -36062,7 +34192,9 @@ impl ::serde::Serialize for crate::prelude::ElWritableVariable {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElWritableVariable {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3::bmm3::expression::el_writable_variable::ElWritableVariable
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -36110,7 +34242,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElWritableVariable {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ElWritableVariable;
+            type Value = crate::v3::bmm3::expression::el_writable_variable::ElWritableVariable;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `EL_WRITABLE_VARIABLE` object")
             }
@@ -36162,15 +34294,17 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ElWritableVariable {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ElWritableVariable {
-                    is_writable: __s0.flatten().unwrap_or(true),
-                    name: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    definition: __s2
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("definition"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v3::bmm3::expression::el_writable_variable::ElWritableVariable {
+                        is_writable: __s0.flatten().unwrap_or(true),
+                        name: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        definition: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("definition"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(

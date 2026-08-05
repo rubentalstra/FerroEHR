@@ -2136,7 +2136,7 @@ async fn ehr_uri_resolves_local_structures_and_item_paths() {
     let comp_vo = comp_ovid.split("::").next().unwrap();
 
     // Latest-trunk form: ehr:/{ehr_id}/compositions/{vo_id}.
-    let uri: openehr_rm::paths::EhrUri = format!("ehr:/{ehr_uuid}/compositions/{comp_vo}")
+    let uri: openehr_rm::v1_2::paths::EhrUri = format!("ehr:/{ehr_uuid}/compositions/{comp_vo}")
         .parse()
         .expect("latest-form uri");
     let comp = svc.resolve_ehr_uri(&uri).await.expect("resolve latest");
@@ -2144,14 +2144,14 @@ async fn ehr_uri_resolves_local_structures_and_item_paths() {
     assert_eq!(uid(&comp), comp_ovid);
 
     // Exact-version form: ehr:/{ehr_id}/compositions/{OBJECT_VERSION_ID}.
-    let uri: openehr_rm::paths::EhrUri = format!("ehr:/{ehr_uuid}/compositions/{comp_ovid}")
+    let uri: openehr_rm::v1_2::paths::EhrUri = format!("ehr:/{ehr_uuid}/compositions/{comp_ovid}")
         .parse()
         .expect("exact-version uri");
     let same = svc.resolve_ehr_uri(&uri).await.expect("resolve exact");
     assert_eq!(uid(&same), comp_ovid);
 
     // Item path into the structure: /name/value is a unique leaf.
-    let uri: openehr_rm::paths::EhrUri =
+    let uri: openehr_rm::v1_2::paths::EhrUri =
         format!("ehr:/{ehr_uuid}/compositions/{comp_vo}/name/value")
             .parse()
             .expect("item-path uri");
@@ -2164,7 +2164,7 @@ async fn ehr_uri_resolves_local_structures_and_item_paths() {
     svc.create_directory(ehr_uuid, uv(&folder("root"), "249", None))
         .await
         .expect("directory create");
-    let uri: openehr_rm::paths::EhrUri = format!("ehr:/{ehr_uuid}/directory")
+    let uri: openehr_rm::v1_2::paths::EhrUri = format!("ehr:/{ehr_uuid}/directory")
         .parse()
         .expect("directory uri");
     let dir = svc.resolve_ehr_uri(&uri).await.expect("resolve directory");
@@ -2172,7 +2172,7 @@ async fn ehr_uri_resolves_local_structures_and_item_paths() {
 
     // A foreign system id is not locally resolvable (master11 §"EHR URIs":
     // cross-system name resolution is unspecified) → NotFound.
-    let uri: openehr_rm::paths::EhrUri =
+    let uri: openehr_rm::v1_2::paths::EhrUri =
         format!("ehr://foreign.example.org/{ehr_uuid}/compositions/{comp_vo}")
             .parse()
             .expect("foreign uri");

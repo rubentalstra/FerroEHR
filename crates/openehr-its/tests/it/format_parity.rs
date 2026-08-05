@@ -18,7 +18,7 @@
 //! canonical value the XML wire arm validates).
 
 use openehr_its::rm_instance::validate_rm_and_terminology;
-use openehr_rm::composition::composition::Composition;
+use openehr_rm::v1_2::composition::composition::Composition;
 use serde_json::Value;
 
 use crate::common::corpus_files;

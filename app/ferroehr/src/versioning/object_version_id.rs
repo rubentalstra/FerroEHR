@@ -22,8 +22,8 @@
 use std::fmt;
 use std::str::FromStr;
 
-use openehr_base::base_types::identification::version_tree_id::VersionTreeId;
 use openehr_base::prelude::{HierObjectId, ObjectVersionId, Uid};
+use openehr_base::v1_3::base_types::identification::version_tree_id::VersionTreeId;
 use openehr_its::rest::runtime::ApiError;
 use uuid::Uuid;
 
@@ -199,7 +199,7 @@ pub enum VersionIdError {
         /// The rejected wire value, echoed so the client can see what was read.
         raw: String,
         /// The BASE lexical-form error that rejected it.
-        source: openehr_base::base_types::identification::lexical::IdError,
+        source: openehr_base::v1_3::base_types::identification::lexical::IdError,
     },
     /// The `object_id` part is not a UUID (this CDR keys versioned objects by
     /// UUID `vo_id`).

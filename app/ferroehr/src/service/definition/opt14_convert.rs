@@ -1,7 +1,7 @@
 //! OPT-1.4 → ADL2 conversion front end.
 //!
 //! The in-CDR 1.4 → 2 converter (`openehr_adl::adl14::convert::convert`) takes an
-//! assembled *source archetype* (`openehr_am::am24`), so only stored 1.4 source
+//! assembled *source archetype* (`openehr_am::v2_4`), so only stored 1.4 source
 //! archetypes convert directly. A stored 1.4 **operational template** is a
 //! *specialisation-flattened* artefact whose `definition` is a single
 //! `C_ARCHETYPE_ROOT` tree with the component archetypes embedded inline as
@@ -28,7 +28,7 @@
 //! allocation), is **our own design/extension** (the vendored ITS-REST OAS
 //! declares no conversion operation; `openehr_adl::adl14` carries the same
 //! flag). The `opt14` object model is `openehr_its::opt14` (the AOM 1.4 / OPT 1.4
-//! model); the target is `openehr_am::am24::aom2` in the 1.4-shaped form
+//! model); the target is `openehr_am::v2_4::aom2` in the 1.4-shaped form
 //! `openehr_adl::assemble::parse_artefact` produces from ADL 1.4 text, so
 //! the converter core is fed exactly the shape it was built for.
 //!
@@ -44,33 +44,33 @@ use std::collections::BTreeMap;
 use openehr_adl::adl14::convert::{ConvertConfig, ConvertError, convert};
 use openehr_adl::adl14::log::ConversionLog;
 use openehr_adl::hrid::parse_hrid;
-use openehr_am::am24::aom2::archetype::archetype::Archetype;
-use openehr_am::am24::aom2::archetype::authored_archetype::{
+use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
+use openehr_am::v2_4::aom2::archetype::authored_archetype::{
     AuthoredArchetype, AuthoredArchetypeData,
 };
-use openehr_am::am24::aom2::constraint_model::archetype_slot::ArchetypeSlot;
-use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
-use openehr_am::am24::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
-use openehr_am::am24::aom2::constraint_model::c_complex_object::{
+use openehr_am::v2_4::aom2::constraint_model::archetype_slot::ArchetypeSlot;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute::CAttribute;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::{
     CComplexObject, CComplexObjectData,
 };
-use openehr_am::am24::aom2::constraint_model::c_complex_object_proxy::CComplexObjectProxy;
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
-use openehr_am::am24::aom2::constraint_model::c_primitive_tuple::CPrimitiveTuple;
-use openehr_am::am24::aom2::constraint_model::primitive::c_boolean::CBoolean;
-use openehr_am::am24::aom2::constraint_model::primitive::c_date::CDate;
-use openehr_am::am24::aom2::constraint_model::primitive::c_date_time::CDateTime;
-use openehr_am::am24::aom2::constraint_model::primitive::c_duration::CDuration;
-use openehr_am::am24::aom2::constraint_model::primitive::c_integer::CInteger;
-use openehr_am::am24::aom2::constraint_model::primitive::c_real::CReal;
-use openehr_am::am24::aom2::constraint_model::primitive::c_string::CString;
-use openehr_am::am24::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
-use openehr_am::am24::aom2::constraint_model::primitive::c_time::CTime;
-use openehr_am::am24::aom2::terminology::archetype_term::ArchetypeTerm;
-use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
-use openehr_am::am24::beom::core::assertion::Assertion;
-use openehr_am::am24::resource::resource_description::ResourceDescription;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object_proxy::CComplexObjectProxy;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
+use openehr_am::v2_4::aom2::constraint_model::c_primitive_tuple::CPrimitiveTuple;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_boolean::CBoolean;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_date::CDate;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_date_time::CDateTime;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_duration::CDuration;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_integer::CInteger;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_real::CReal;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_string::CString;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_time::CTime;
+use openehr_am::v2_4::aom2::terminology::archetype_term::ArchetypeTerm;
+use openehr_am::v2_4::aom2::terminology::archetype_terminology::ArchetypeTerminology;
+use openehr_am::v2_4::beom::core::assertion::Assertion;
+use openehr_am::v2_4::resource::resource_description::ResourceDescription;
 use openehr_base::prelude::{
     Cardinality, Interval, Iso8601Date, Iso8601DateTime, Iso8601Duration, Iso8601Time,
     MultiplicityInterval, PointInterval, ProperInterval, ProperIntervalData, TerminologyCode, Uuid,

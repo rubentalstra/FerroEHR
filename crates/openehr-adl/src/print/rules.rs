@@ -9,13 +9,13 @@
               spec) (#1694)"
 )]
 
-use openehr_am::am24::aom2::rules::expr_constraint::ExprConstraint;
-use openehr_am::am24::beom::core::assertion::Assertion;
-use openehr_am::am24::beom::core::expr_value::ExprValue;
-use openehr_am::am24::beom::core::expr_value_ref::ExprValueRef;
-use openehr_am::am24::beom::core::expression::Expression;
-use openehr_am::am24::beom::core::statement::Statement;
-use openehr_am::am24::beom::core::statement_set::StatementSet;
+use openehr_am::v2_4::aom2::rules::expr_constraint::ExprConstraint;
+use openehr_am::v2_4::beom::core::assertion::Assertion;
+use openehr_am::v2_4::beom::core::expr_value::ExprValue;
+use openehr_am::v2_4::beom::core::expr_value_ref::ExprValueRef;
+use openehr_am::v2_4::beom::core::expression::Expression;
+use openehr_am::v2_4::beom::core::statement::Statement;
+use openehr_am::v2_4::beom::core::statement_set::StatementSet;
 
 use crate::print::definition::{bool_str, cstring_inline, primitive_inline};
 use crate::print::odin::quoted;
@@ -214,9 +214,11 @@ fn literal_str(v: &serde_json::Value) -> String {
 }
 
 /// The declared type name of a variable declaration (`Any` when untyped).
-fn type_def_name(t: &openehr_lang::prelude::ExprTypeDef) -> String {
+fn type_def_name(t: &openehr_lang::v2::beom::types::expr_type_def::ExprTypeDef) -> String {
     match t {
-        openehr_lang::prelude::ExprTypeDef::TypeDefObjectRef(r) => r.type_name.clone(),
+        openehr_lang::v2::beom::types::expr_type_def::ExprTypeDef::TypeDefObjectRef(r) => {
+            r.type_name.clone()
+        }
         _ => "Any".to_owned(),
     }
 }

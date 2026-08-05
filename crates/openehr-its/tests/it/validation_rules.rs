@@ -783,10 +783,10 @@ fn existence_empty_array_counts_as_absent() {
 
 #[test]
 fn segment_parsing_respects_brackets() {
-    // Parsing routes through the single `openehr_rm::paths` implementation;
+    // Parsing routes through the single `openehr_rm::v1_2::paths` implementation;
     // this asserts the validator sees the same segments.
     let segs = "/content[openEHR-EHR-SECTION.x.v1]/items[at0004,'Sys']/value"
-        .parse::<openehr_rm::paths::RmPath>()
+        .parse::<openehr_rm::v1_2::paths::RmPath>()
         .expect("well-formed RM path")
         .segments;
     assert_eq!(segs.len(), 3);

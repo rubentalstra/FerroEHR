@@ -15,6 +15,10 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- The published `openehr-*` spec crates now expose every BMM generation under a version-named top module — `openehr_base::v1_3`, `openehr_rm::v1_2`, `openehr_lang::v2`/`v3` (replacing `bmm`/`bmm_persistence`/`beom` and `bmm3` at the crate root), `openehr_am::v1_4`/`v2_4` (replacing `am14`/`am24`), `openehr_term::v3_1` — with a new per-crate `Generation` enum (`CURRENT`, `spec_version()`, `FromStr`/`Display`) and the crate prelude re-exporting the current generation only. Import paths into these crates change accordingly; the served wire formats are unchanged.
+
 ## [3.17.3] - 2026-08-05
 
 ### Added

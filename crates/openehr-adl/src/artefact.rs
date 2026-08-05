@@ -1,5 +1,5 @@
 //! Artefact-level views and the parent/supplier repository — the crate-wide
-//! access layer over an assembled `openehr_am::am24::aom2` [`Archetype`].
+//! access layer over an assembled `openehr_am::v2_4::aom2` [`Archetype`].
 //!
 //! `ArchetypeView` is the borrowed, artefact-kind-agnostic view of the common
 //! fields every `AUTHORED_ARCHETYPE` / `TEMPLATE` / `OPERATIONAL_TEMPLATE` /
@@ -15,13 +15,13 @@
 
 use std::collections::HashMap;
 
-use openehr_am::am24::aom2::archetype::archetype::Archetype;
-use openehr_am::am24::aom2::archetype::archetype_hrid::ArchetypeHrid;
-use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
-use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
-use openehr_am::am24::aom2::rm_overlay::rm_overlay::RmOverlay;
-use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
-use openehr_am::am24::resource::resource_description::ResourceDescription;
+use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
+use openehr_am::v2_4::aom2::archetype::archetype_hrid::ArchetypeHrid;
+use openehr_am::v2_4::aom2::archetype::authored_archetype::AuthoredArchetype;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::v2_4::aom2::rm_overlay::rm_overlay::RmOverlay;
+use openehr_am::v2_4::aom2::terminology::archetype_terminology::ArchetypeTerminology;
+use openehr_am::v2_4::resource::resource_description::ResourceDescription;
 use openehr_base::prelude::{ResourceAnnotations, TerminologyCode};
 
 use crate::hrid::{hrid_lookup_key, raw_id_lookup_key};

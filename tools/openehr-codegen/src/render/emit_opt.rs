@@ -66,7 +66,7 @@ use crate::load::xsd::XsdModel;
 use crate::plan::{XmlField, XmlType, XmlVariant};
 use crate::render::emit_xml::{emit_from_xml, emit_to_xml};
 use crate::render::naming;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
 /// The Rust module path the OPT model's generated types live at.
@@ -211,9 +211,9 @@ enum Resolved {
     /// A repeated `StringDictionaryItem` element group → order-preserving
     /// `IndexMap<String,String>` (target `OrderedDict`).
     Hash,
-    /// A type exported by `openehr-base` (resolved to its prelude).
+    /// A type emitted by `openehr-base` — the full generation-module type path.
     Base(String),
-    /// A type exported by `openehr-rm` (resolved to its prelude).
+    /// A type emitted by `openehr-rm` — the full generation-module type path.
     Rm(String),
     /// A generated `opt14` type; the flag is `true` when it is a generated enum
     /// (a polymorphic slot), which single-valued fields must `Box` to stay sized.
@@ -250,8 +250,11 @@ pub(crate) struct ModelTarget {
 /// The generate/resolve model for one XSD closure.
 pub(crate) struct OptModel<'a> {
     xsd: &'a XsdModel,
-    base_specs: &'a BTreeSet<String>,
-    rm_specs: &'a BTreeSet<String>,
+    /// Spec class name → full generation-module path, per dependency crate
+    /// (the openehr-base / openehr-rm generation the shared XSD types resolve
+    /// to — full defining-module paths, never a prelude).
+    base_paths: &'a BTreeMap<String, String>,
+    rm_paths: &'a BTreeMap<String, String>,
     /// Concrete + abstract complexTypes we generate (spec names).
     generate: BTreeSet<String>,
     /// The subset of `generate` that are abstract polymorphic slots → enums.
@@ -268,12 +271,13 @@ struct OptField {
 }
 
 impl<'a> OptModel<'a> {
-    /// Build the model from the parsed XSD closure and the base/rm export sets.
+    /// Build the model from the parsed XSD closure and the base/rm
+    /// spec-name → module-path maps.
     #[must_use]
     pub(crate) fn new(
         xsd: &'a XsdModel,
-        base_specs: &'a BTreeSet<String>,
-        rm_specs: &'a BTreeSet<String>,
+        base_paths: &'a BTreeMap<String, String>,
+        rm_paths: &'a BTreeMap<String, String>,
         target: &'static ModelTarget,
     ) -> Self {
         let generate: BTreeSet<String> = xsd
@@ -283,7 +287,7 @@ impl<'a> OptModel<'a> {
                 n.as_str() != STRING_DICT_ITEM
                     && !OPAQUE_TYPES.contains(&n.as_str())
                     && (FORCE_GENERATE.contains(&n.as_str())
-                        || (!base_specs.contains(*n) && !rm_specs.contains(*n)))
+                        || (!base_paths.contains_key(*n) && !rm_paths.contains_key(*n)))
             })
             .cloned()
             .collect();
@@ -296,8 +300,8 @@ impl<'a> OptModel<'a> {
             .collect();
         Self {
             xsd,
-            base_specs,
-            rm_specs,
+            base_paths,
+            rm_paths,
             generate,
             enum_specs,
             target,
@@ -329,11 +333,11 @@ impl<'a> OptModel<'a> {
             if self.generate.contains(type_name) {
                 return Resolved::Gen(rust, self.enum_specs.contains(type_name));
             }
-            if self.base_specs.contains(type_name) {
-                return Resolved::Base(rust);
+            if let Some(path) = self.base_paths.get(type_name) {
+                return Resolved::Base(format!("{path}::{rust}"));
             }
-            if self.rm_specs.contains(type_name) {
-                return Resolved::Rm(rust);
+            if let Some(path) = self.rm_paths.get(type_name) {
+                return Resolved::Rm(format!("{path}::{rust}"));
             }
         }
         // A named `xs:simpleType` (restriction over string/integer): text on the
@@ -375,9 +379,9 @@ impl<'a> OptModel<'a> {
                 "indexmap::IndexMap<String, String>".to_string(),
                 String::new(),
             ),
-            Resolved::Base(n) => (format!("openehr_base::prelude::{n}"), raw_spec.to_string()),
-            Resolved::Rm(n) => (format!("openehr_rm::prelude::{n}"), raw_spec.to_string()),
-            Resolved::Gen(n, _) => (n.clone(), raw_spec.to_string()),
+            Resolved::Base(n) | Resolved::Rm(n) | Resolved::Gen(n, _) => {
+                (n.clone(), raw_spec.to_string())
+            }
         }
     }
 

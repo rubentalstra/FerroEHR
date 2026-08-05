@@ -20,8 +20,8 @@
 //! its precedence from the EL tables and must NOT reuse this ordering.
 
 use crate::bel::{BelBuilder, BelError, BelLiteral};
-use crate::beom::core::operator_kind::OperatorKind;
 use crate::lexer::{Spanned, Token};
+use crate::v2::beom::core::operator_kind::OperatorKind;
 
 /// The parser cursor over a lexed token slice, driving a `&mut B` builder.
 pub(crate) struct Parser<'a, 'b, B: BelBuilder> {

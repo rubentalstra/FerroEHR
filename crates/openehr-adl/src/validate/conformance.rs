@@ -12,12 +12,12 @@
 //! RM type) rather than through the generated model's `parent` back-references,
 //! which the assembler leaves unset.
 
-use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
-use openehr_am::am24::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
-use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-use openehr_am::am24::aom2::constraint_model::c_primitive_tuple::CPrimitiveTuple;
-use openehr_am::am24::aom2::constraint_model::primitive::constraint_status::ConstraintStatus;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute::CAttribute;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::constraint_model::c_primitive_tuple::CPrimitiveTuple;
+use openehr_am::v2_4::aom2::constraint_model::primitive::constraint_status::ConstraintStatus;
 use openehr_base::prelude::{Cardinality, MultiplicityInterval};
 
 use super::rm::RmModel;
@@ -670,8 +670,8 @@ mod tests {
     use crate::aom::access::complex_attributes;
     use crate::assemble::parse_artefact;
     use crate::parse::Dialect;
-    use openehr_am::am24::aom2::archetype::archetype::Archetype;
-    use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
+    use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
+    use openehr_am::v2_4::aom2::archetype::authored_archetype::AuthoredArchetype;
 
     fn mi(lower: i32, upper: Option<i32>) -> MultiplicityInterval {
         MultiplicityInterval {

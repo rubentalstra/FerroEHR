@@ -890,7 +890,7 @@ impl Builder<'_> {
 /// The EHR-scoped subset only: the demographic kinds (the five party roots and
 /// `PARTY_RELATIONSHIP`) are versioned objects but are **unreachable** as an
 /// AQL source, because a FROM class must have a concrete descendant the node
-/// store addresses (`openehr_rm::model::is_structure_root`, whose set excludes
+/// store addresses (`openehr_rm::v1_2::model::is_structure_root`, whose set excludes
 /// the demographic LOCATABLE hierarchy) — `crate::aql::lower` refuses the rest
 /// as [`crate::aql::error::AqlFeatureError::UnsupportedSourceClass`] before any
 /// SQL is built. So the exclusion is that gate's consequence, stated here

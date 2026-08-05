@@ -24,10 +24,10 @@ use openehr_adl::artefact::ArchetypeRepository;
 use openehr_adl::assemble::parse_artefact;
 use openehr_adl::flatten::flat_form;
 use openehr_adl::parse::Dialect;
-use openehr_am::am24::aom2::archetype::archetype::Archetype;
-use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
-use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
+use openehr_am::v2_4::aom2::archetype::authored_archetype::AuthoredArchetype;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
 
 const FLATTENER: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/corpus/flattener");
 

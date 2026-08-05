@@ -15,8 +15,8 @@
               fragment the seam produced once; stored-content serving"
 )]
 
-use openehr_base::base_types::identification::lexical::composite_ids_equal;
 use openehr_base::prelude::ObjectVersionId;
+use openehr_base::v1_3::base_types::identification::lexical::composite_ids_equal;
 use serde_json::Value;
 
 use crate::ids::{EhrId, VoId};

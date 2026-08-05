@@ -1,6 +1,6 @@
 //! RM subtype relation for type-conformance checks.
 //!
-//! Backed by the BMM-generated static RM model ([`openehr_rm::model`]
+//! Backed by the BMM-generated static RM model ([`openehr_rm::v1_2::model`]
 //! §3 `emit-rm-model`) — the spec-pinned type hierarchy, generated from the same
 //! BMM meta-model as the RM crate itself, regenerating on any spec bump. This
 //! replaces the former hand-maintained descendant allow-map (which was partial
@@ -24,7 +24,7 @@ fn base(t: &str) -> &str {
 ///
 /// - Equal (modulo generics) always conforms.
 /// - When the constraint type is **known** to the RM model, the model decides:
-///   a known instance type conforms iff [`openehr_rm::model::is_a`] holds; an
+///   a known instance type conforms iff [`openehr_rm::v1_2::model::is_a`] holds; an
 ///   unknown/bogus instance type is rejected (a known slot needs a known filler).
 /// - When the constraint type is **unknown** to the RM model, stay permissive
 ///   (never over-reject on a type the spec model does not carry).
@@ -36,14 +36,14 @@ pub(crate) fn conforms(instance_type: &str, wt_type: &str) -> bool {
     }
     // Only judge when the constraint type is a recognised RM type; otherwise stay
     // permissive to avoid over-rejecting on a type the model does not model.
-    if openehr_rm::model::class(wt).is_none() {
+    if openehr_rm::v1_2::model::class(wt).is_none() {
         return true;
     }
     // The constraint type is known. If the instance type is also known, the RM
     // model's transitive is-a relation decides; a known concrete/abstract slot
     // filled by an unknown/bogus instance type is a violation.
-    if openehr_rm::model::class(inst).is_some() {
-        openehr_rm::model::is_a(inst, wt)
+    if openehr_rm::v1_2::model::class(inst).is_some() {
+        openehr_rm::v1_2::model::is_a(inst, wt)
     } else {
         false
     }

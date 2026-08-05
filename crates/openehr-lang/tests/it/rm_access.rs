@@ -1,5 +1,5 @@
 //! Public-API battery for the `rm_access` schema-loading facade
-//! (`openehr_lang::bmm::rm_access`): a schema DIRECTORY scanned, selected,
+//! (`openehr_lang::v2::bmm::rm_access`): a schema DIRECTORY scanned, selected,
 //! loaded, validated and materialised.
 //!
 //! Spec oracle: `docs/specs/openehr/LANG/docs/bmm/master04-rm_access.adoc`
@@ -24,9 +24,9 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
-use openehr_lang::bmm::rm_access::error::RmAccessError;
-use openehr_lang::bmm::rm_access::reference_model_access::ReferenceModelAccess;
-use openehr_lang::bmm::rm_access::schema_descriptor::SchemaDescriptor;
+use openehr_lang::v2::bmm::rm_access::error::RmAccessError;
+use openehr_lang::v2::bmm::rm_access::reference_model_access::ReferenceModelAccess;
+use openehr_lang::v2::bmm::rm_access::schema_descriptor::SchemaDescriptor;
 
 /// The four schemas of the vendored RM 1.0.2 inclusion chain, deepest first:
 /// `ehr` → `structures` → `basic_types` → `primitive_types`.

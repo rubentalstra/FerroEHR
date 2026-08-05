@@ -25,15 +25,15 @@
 
 use std::error::Error;
 
-use openehr_rm::common::change_control::original_version::OriginalVersion;
-use openehr_rm::common::directory::folder::Folder;
-use openehr_rm::composition::composition::Composition;
-use openehr_rm::demographic::agent::Agent;
-use openehr_rm::demographic::group::Group;
-use openehr_rm::demographic::organisation::Organisation;
-use openehr_rm::demographic::person::Person;
-use openehr_rm::demographic::role::Role;
-use openehr_rm::ehr::ehr_status::EhrStatus;
+use openehr_rm::v1_2::common::change_control::original_version::OriginalVersion;
+use openehr_rm::v1_2::common::directory::folder::Folder;
+use openehr_rm::v1_2::composition::composition::Composition;
+use openehr_rm::v1_2::demographic::agent::Agent;
+use openehr_rm::v1_2::demographic::group::Group;
+use openehr_rm::v1_2::demographic::organisation::Organisation;
+use openehr_rm::v1_2::demographic::person::Person;
+use openehr_rm::v1_2::demographic::role::Role;
+use openehr_rm::v1_2::ehr::ehr_status::EhrStatus;
 
 use openehr_its::xml::{Namespace, ToXml};
 

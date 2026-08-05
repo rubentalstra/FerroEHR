@@ -265,7 +265,7 @@ fn unknown_filter_values_are_rejected_with_the_valid_ones() {
         .to_string();
     assert!(component.contains("unknown component"), "{component}");
     assert!(
-        component.contains("base, rm, lang, am14, am24, term"),
+        component.contains("base, rm, lang, am, term"),
         "{component}"
     );
 

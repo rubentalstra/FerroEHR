@@ -58,7 +58,7 @@ pub struct AuthoredResource {
     /// The `uid` attribute/element of the AOM2 persistent-form `AUTHORED_RESOURCE` XSD type.
     pub uid: Option<String>,
     /// The `annotations` attribute/element of the AOM2 persistent-form `AUTHORED_RESOURCE` XSD type.
-    pub annotations: Vec<openehr_base::prelude::ResourceAnnotations>,
+    pub annotations: Vec<openehr_base::v1_3::resource::resource_annotations::ResourceAnnotations>,
 }
 
 /// openEHR AOM2 persistent-form `AnnotationLangSet`.
@@ -410,7 +410,7 @@ pub struct PAuthoredArchetype {
     /// The `translations` attribute/element of the AOM2 persistent-form `P_AUTHORED_ARCHETYPE` XSD type.
     pub translations: Vec<TranslationDetails>,
     /// The `annotations` attribute/element of the AOM2 persistent-form `P_AUTHORED_ARCHETYPE` XSD type.
-    pub annotations: Vec<openehr_base::prelude::ResourceAnnotations>,
+    pub annotations: Vec<openehr_base::v1_3::resource::resource_annotations::ResourceAnnotations>,
     /// The `artefact_type` attribute/element of the AOM2 persistent-form `P_AUTHORED_ARCHETYPE` XSD type.
     pub artefact_type: String,
     /// The `archetype_id` attribute/element of the AOM2 persistent-form `P_AUTHORED_ARCHETYPE` XSD type.

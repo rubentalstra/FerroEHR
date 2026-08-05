@@ -22,16 +22,16 @@
 
 use std::collections::BTreeMap;
 
-use openehr_am::am24::aom2::archetype::archetype::Archetype;
-use openehr_am::am24::aom2::archetype::authored_archetype::{
+use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
+use openehr_am::v2_4::aom2::archetype::authored_archetype::{
     AuthoredArchetype, AuthoredArchetypeData,
 };
-use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
-use openehr_am::am24::aom2::terminology::archetype_term::ArchetypeTerm;
-use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
-use openehr_am::am24::aom2::terminology::value_set::ValueSet;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
+use openehr_am::v2_4::aom2::terminology::archetype_term::ArchetypeTerm;
+use openehr_am::v2_4::aom2::terminology::archetype_terminology::ArchetypeTerminology;
+use openehr_am::v2_4::aom2::terminology::value_set::ValueSet;
 
 use crate::adl14::log::ConversionLog;
 use crate::adl14::metadata::{set_release_version, transform_description};

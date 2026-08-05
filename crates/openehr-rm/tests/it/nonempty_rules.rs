@@ -18,7 +18,7 @@ use serde_json::json;
 /// `Identifiers_valid`).
 #[test]
 fn present_but_empty_refuses_at_parse_absent_and_populated_pass() {
-    use openehr_rm::common::generic::party_identified::PartyIdentifiedData;
+    use openehr_rm::v1_2::common::generic::party_identified::PartyIdentifiedData;
 
     let empty = json!({ "name": "x", "identifiers": [] });
     let err = openehr_its_free_decode::<PartyIdentifiedData>(&empty)

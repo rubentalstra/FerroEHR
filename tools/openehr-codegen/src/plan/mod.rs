@@ -171,12 +171,13 @@ pub(crate) enum XmlType {
     /// A transparent newtype over a primitive — writes its inner value as
     /// element text. No enumeration class emits as a newtype anymore (they route
     /// to [`XmlType::EnumLiterals`]); kept for a future genuine primitive alias.
-    Newtype { rust: String },
+    Newtype { spec: String, rust: String },
     /// A BMM enumeration emitted as a typed enum (`VALIDITY_KIND`,
     /// `PROPORTION_KIND`) — writes its wire token (`as_str`) or integer (`value`)
     /// as element text; reads the bare primitive back through `from_wire`/
     /// `from_value`.
     EnumLiterals {
+        spec: String,
         rust: String,
         /// `true` for a STRING-underlying enum (`as_str`/`from_wire`), `false`
         /// for an INTEGER-underlying enum (`value`/`from_value`).
@@ -254,10 +255,14 @@ pub(crate) enum JsonType {
         dispatch: JsonEnumDispatch,
     },
     /// A transparent newtype over a primitive — forwards to its inner value.
-    Newtype { rust: String },
+    Newtype { spec: String, rust: String },
     /// A BMM enumeration emitted as a typed enum — writes its wire token
     /// (`as_str`) or integer (`value`), byte-identical to the bare primitive.
-    EnumLiterals { rust: String, string_backed: bool },
+    EnumLiterals {
+        spec: String,
+        rust: String,
+        string_backed: bool,
+    },
 }
 
 /// How a [`JsonType::Enum`] selects a variant on deserialize — the exact split
@@ -384,10 +389,14 @@ impl Model {
                     });
                 }
                 Emission::EnumLiterals(enumeration) => out.push(JsonType::EnumLiterals {
+                    spec: name.clone(),
                     rust,
                     string_backed: enumeration.underlying_type != "INTEGER",
                 }),
-                Emission::Newtype(_) => out.push(JsonType::Newtype { rust }),
+                Emission::Newtype(_) => out.push(JsonType::Newtype {
+                    spec: name.clone(),
+                    rust,
+                }),
                 Emission::Skip => {}
             }
         }
@@ -623,10 +632,14 @@ impl Model {
                     });
                 }
                 Emission::EnumLiterals(enumeration) => out.push(XmlType::EnumLiterals {
+                    spec: name.clone(),
                     rust,
                     string_backed: enumeration.underlying_type != "INTEGER",
                 }),
-                Emission::Newtype(_) => out.push(XmlType::Newtype { rust }),
+                Emission::Newtype(_) => out.push(XmlType::Newtype {
+                    spec: name.clone(),
+                    rust,
+                }),
                 Emission::Skip => {}
             }
         }

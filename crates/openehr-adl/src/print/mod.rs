@@ -1,4 +1,4 @@
-//! The ADL2 serializer: render an assembled `openehr_am::am24::aom2`
+//! The ADL2 serializer: render an assembled `openehr_am::v2_4::aom2`
 //! [`Archetype`] back to ADL2 source text.
 //!
 //! The printer is the inverse of [`crate::assemble::parse_artefact`] at the
@@ -35,15 +35,15 @@ mod terminology;
 
 use std::collections::BTreeMap;
 
-use openehr_am::am24::aom2::archetype::archetype::Archetype;
-use openehr_am::am24::aom2::archetype::archetype_hrid::ArchetypeHrid;
-use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
-use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
-use openehr_am::am24::aom2::rm_overlay::rm_overlay::RmOverlay;
-use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
-use openehr_am::am24::beom::core::assertion::Assertion;
-use openehr_am::am24::beom::core::statement_set::StatementSet;
-use openehr_am::am24::resource::resource_description::ResourceDescription;
+use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
+use openehr_am::v2_4::aom2::archetype::archetype_hrid::ArchetypeHrid;
+use openehr_am::v2_4::aom2::archetype::authored_archetype::AuthoredArchetype;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::v2_4::aom2::rm_overlay::rm_overlay::RmOverlay;
+use openehr_am::v2_4::aom2::terminology::archetype_terminology::ArchetypeTerminology;
+use openehr_am::v2_4::beom::core::assertion::Assertion;
+use openehr_am::v2_4::beom::core::statement_set::StatementSet;
+use openehr_am::v2_4::resource::resource_description::ResourceDescription;
 use openehr_base::prelude::{ResourceAnnotations, TerminologyCode, TranslationDetails, Uuid};
 
 /// A refusal from the ADL2 serializer.
@@ -203,7 +203,7 @@ struct Parts<'a> {
     annotations: Option<&'a ResourceAnnotations>,
     rm_overlay: Option<&'a RmOverlay>,
     component_terminologies: Option<&'a BTreeMap<String, ArchetypeTerminology>>,
-    overlays: &'a [openehr_am::am24::aom2::archetype::template_overlay::TemplateOverlay],
+    overlays: &'a [openehr_am::v2_4::aom2::archetype::template_overlay::TemplateOverlay],
 }
 
 /// The `translations` map of an authored artefact, keyed by language code.
@@ -219,7 +219,7 @@ static OVERLAY_LANG: std::sync::LazyLock<TerminologyCode> =
         uri: None,
     });
 
-const NO_OVERLAYS: &[openehr_am::am24::aom2::archetype::template_overlay::TemplateOverlay] = &[];
+const NO_OVERLAYS: &[openehr_am::v2_4::aom2::archetype::template_overlay::TemplateOverlay] = &[];
 
 impl<'a> Parts<'a> {
     fn of(a: &'a Archetype) -> Self {

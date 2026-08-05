@@ -48,46 +48,44 @@ use crate::plan::construction;
 use crate::plan::{JsonEnumDispatch, JsonField, JsonFieldKind, JsonType};
 use std::fmt::Write as _;
 
-/// One spec schema paired with the crate prelude its types are re-exported from.
+/// One spec GENERATION paired with the crate+generation root its types are
+/// named from.
 #[derive(Clone, Copy)]
 pub(crate) struct JsonSchema<'a> {
     pub model: &'a Model,
     pub schema: &'a BmmSchema,
-    /// e.g. `openehr_rm::prelude` / `openehr_base::prelude`.
-    pub prelude: &'a str,
-    /// Module path (`openehr_lang::bmm::core::bmm_class`) for each spec class the
-    /// crate prelude does NOT export, keyed by spec class name.
+    /// The generation root every type of this schema is named under — crate
+    /// ident plus generation module, e.g. `openehr_rm::v1_2`. Types are named
+    /// by full defining-module path (never a prelude), so every generation is
+    /// codec-complete, twins of a class name two generations declare included:
+    /// they are distinct Rust types, so their impls do not conflict.
     ///
-    /// A crate composed of several BMM generations exports one type per Rust NAME
-    /// from its prelude, so for a class name both generations declare only one
-    /// twin is reachable as `<crate>::prelude::<Ident>`; the other is named here
-    /// by its full module path. Both twins are covered: they are distinct Rust
-    /// types, so their `Serialize`/`Deserialize` impls do not conflict, and the
-    /// whole emitted model stays codec-complete.
-    ///
-    /// NOTE (adjudicated): the two twins share a canonical `_type` string (the
+    /// NOTE (adjudicated): such twins share a canonical `_type` string (the
     /// BMM class name is the same in both generations), and that is not an
     /// ambiguity: `Deserialize` is always invoked at a statically known Rust
     /// type, and `_type`-keyed dispatch only ever chooses among the variants of
     /// ONE enum — never across generations. No openEHR spec governs a BMM-model
     /// canonical-JSON wire at all (this codec is our own extension), so there is
     /// no cross-generation wire contract to break.
-    pub unexported: &'a std::collections::BTreeMap<String, String>,
+    pub root: &'a str,
 }
 
 impl JsonSchema<'_> {
-    /// The Rust path prefix a spec class's type is named by, as seen from
-    /// OUTSIDE the defining crate (the structural dispatch in `openehr-its`).
-    fn path_of(&self, spec: &str) -> &str {
-        self.unexported
-            .get(spec)
-            .map_or(self.prelude, String::as_str)
+    /// The full defining-module path a spec class's type is named by, as seen
+    /// from OUTSIDE the defining crate (the structural dispatch in
+    /// `openehr-its`).
+    fn path_of(&self, spec: &str) -> String {
+        format!(
+            "{}::{}",
+            self.root,
+            crate::render::emit::type_module_path(self.schema, spec)
+        )
     }
 
     /// The same path as seen from INSIDE the defining crate: the leading crate
-    /// segment becomes `crate` (`openehr_am::am14::prelude` →
-    /// `crate::am14::prelude`), which is how the emitted impls — which live in
-    /// the defining crate — name their own types.
+    /// segment becomes `crate` (`openehr_am::v1_4::…` → `crate::v1_4::…`),
+    /// which is how the emitted impls — which live in the defining crate —
+    /// name their own types.
     fn local_path_of(&self, spec: &str) -> String {
         let absolute = self.path_of(spec);
         absolute
@@ -217,7 +215,7 @@ pub(crate) fn emit_structural_file(schemas: &[JsonSchema<'_>]) -> String {
                     ));
                     continue;
                 }
-                JsonType::Newtype { rust } => {
+                JsonType::Newtype { rust, .. } => {
                     skipped.push((
                         rust.clone(),
                         "transparent newtype: serializes as its bare primitive payload, never `_type`-tagged",
@@ -357,12 +355,13 @@ pub(crate) fn emit_structural_file(schemas: &[JsonSchema<'_>]) -> String {
 }
 
 /// The spec class a [`JsonType`] realizes — the key its Rust path is resolved by
-/// ([`JsonSchema::path_of`]). A newtype/literal-enum carries only its Rust name,
-/// which for those shapes is the `type_name` of the spec class itself.
+/// ([`JsonSchema::path_of`]).
 fn json_type_spec(ty: &JsonType) -> &str {
     match ty {
-        JsonType::Struct { spec, .. } | JsonType::Enum { spec, .. } => spec,
-        JsonType::Newtype { rust } | JsonType::EnumLiterals { rust, .. } => rust,
+        JsonType::Struct { spec, .. }
+        | JsonType::Enum { spec, .. }
+        | JsonType::Newtype { spec, .. }
+        | JsonType::EnumLiterals { spec, .. } => spec,
     }
 }
 
@@ -481,7 +480,7 @@ fn emit_serialize(b: &mut String, ty: &JsonType, path: &str) {
             }
             b.push_str("} }\n}\n\n");
         }
-        JsonType::Newtype { rust } => {
+        JsonType::Newtype { rust, .. } => {
             let _ = write!(
                 b,
                 "impl ::serde::Serialize for {path}::{rust} {{\n\
@@ -493,6 +492,7 @@ fn emit_serialize(b: &mut String, ty: &JsonType, path: &str) {
         JsonType::EnumLiterals {
             rust,
             string_backed,
+            ..
         } => {
             // Byte-identical to the bare primitive it replaces: `as_str` = the
             // constant token (verbatim payload for `Other`), `value` = the
@@ -599,7 +599,7 @@ fn emit_deserialize(b: &mut String, ty: &JsonType, path: &str, support: &str) {
             variant_idents,
             dispatch,
         } => emit_enum_deserialize(b, rust, generics, variant_idents, dispatch, path, support),
-        JsonType::Newtype { rust } => {
+        JsonType::Newtype { rust, .. } => {
             let _ = write!(
                 b,
                 "impl<'de> ::serde::Deserialize<'de> for {path}::{rust} {{\n\
@@ -612,6 +612,7 @@ fn emit_deserialize(b: &mut String, ty: &JsonType, path: &str, support: &str) {
         JsonType::EnumLiterals {
             rust,
             string_backed,
+            ..
         } => {
             let body = if *string_backed {
                 format!(

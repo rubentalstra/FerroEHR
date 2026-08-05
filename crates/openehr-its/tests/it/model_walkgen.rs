@@ -8,7 +8,7 @@
 //! concrete RM class.
 //!
 //! The generators are derived from the BMM-generated static RM model
-//! (`openehr_rm::model`) — never hand-written shapes — and the enumeration is
+//! (`openehr_rm::v1_2::model`) — never hand-written shapes — and the enumeration is
 //! deterministic and EXHAUSTIVE over the finite class set (strictly more
 //! systematic than random sampling for the same domain; there is nothing for
 //! a fuzzer to discover that full enumeration does not visit):
@@ -102,7 +102,7 @@ fn constrained_attribute(class: &str, attr: &str) -> Option<Value> {
 /// model nor the primitive table covers.
 fn generate(
     class: &str,
-    args: &[&openehr_rm::model::RmTypeRef],
+    args: &[&openehr_rm::v1_2::model::RmTypeRef],
     rich: bool,
     depth: usize,
     unknown: &mut BTreeSet<String>,
@@ -112,8 +112,9 @@ fn generate(
     if depth > 12 {
         return Value::Object(obj);
     }
-    let generic_params = openehr_rm::model::class(class).map_or(&[][..], |c| c.generic_params);
-    for attr in openehr_rm::model::attributes(class) {
+    let generic_params =
+        openehr_rm::v1_2::model::class(class).map_or(&[][..], |c| c.generic_params);
+    for attr in openehr_rm::v1_2::model::attributes(class) {
         if !attr.is_mandatory && !rich {
             continue;
         }
@@ -126,7 +127,7 @@ fn generate(
         // an inline base64 STRING, not a JSON array (ITS-JSON) — the one
         // container shape the codec re-forms.
         if attr.declared_type == "Octet"
-            && matches!(attr.container, openehr_rm::model::Container::List)
+            && matches!(attr.container, openehr_rm::v1_2::model::Container::List)
         {
             obj.insert(attr.name.to_owned(), json!("AA=="));
             continue;
@@ -138,13 +139,14 @@ fn generate(
         }
         // Bare-generic-parameter substitution: an attribute whose declared
         // type equals a parameter's bound takes the caller's argument.
-        let substituted: Option<(&str, Vec<&openehr_rm::model::RmTypeRef>)> = generic_params
+        let substituted: Option<(&str, Vec<&openehr_rm::v1_2::model::RmTypeRef>)> = generic_params
             .iter()
             .zip(args.iter())
             .find(|(p, _)| p.conforms_to.unwrap_or("Any") == attr.declared_type)
             .map(|(_, a)| (a.name, a.params.iter().collect()));
         let (ty, ty_args) = substituted.unwrap_or_else(|| {
-            let mut ty_args: Vec<&openehr_rm::model::RmTypeRef> = attr.type_params.iter().collect();
+            let mut ty_args: Vec<&openehr_rm::v1_2::model::RmTypeRef> =
+                attr.type_params.iter().collect();
             // A BARE reference to a generic class (the BMM drops the argument:
             // `IMPORTED_VERSION.item: ORIGINAL_VERSION`) is monomorphized by the
             // emitter with the enclosing scope's type argument (`item:
@@ -153,7 +155,7 @@ fn generate(
             // element is not an instance of it.
             if ty_args.is_empty()
                 && !args.is_empty()
-                && openehr_rm::model::class(attr.declared_type)
+                && openehr_rm::v1_2::model::class(attr.declared_type)
                     .is_some_and(|c| !c.generic_params.is_empty())
             {
                 ty_args = args.to_vec();
@@ -163,11 +165,11 @@ fn generate(
         let element = value_for(ty, &ty_args, rich, depth, unknown);
         let Some(element) = element else { continue };
         let v = match attr.container {
-            openehr_rm::model::Container::None => element,
-            openehr_rm::model::Container::List | openehr_rm::model::Container::Set => {
+            openehr_rm::v1_2::model::Container::None => element,
+            openehr_rm::v1_2::model::Container::List | openehr_rm::v1_2::model::Container::Set => {
                 json!([element])
             }
-            openehr_rm::model::Container::Hash => json!({ "x": element }),
+            openehr_rm::v1_2::model::Container::Hash => json!({ "x": element }),
         };
         obj.insert(attr.name.to_owned(), v);
     }
@@ -179,21 +181,21 @@ fn generate(
 /// the table, anything else is recorded as unknown.
 fn value_for(
     ty: &str,
-    ty_args: &[&openehr_rm::model::RmTypeRef],
+    ty_args: &[&openehr_rm::v1_2::model::RmTypeRef],
     rich: bool,
     depth: usize,
     unknown: &mut BTreeSet<String>,
 ) -> Option<Value> {
-    if let Some(class) = openehr_rm::model::class(ty) {
+    if let Some(class) = openehr_rm::v1_2::model::class(ty) {
         let concrete = if class.is_abstract {
             // Deterministic non-recursive preference: the concrete descendant
             // with the FEWEST mandatory class-typed attributes (ELEMENT over
             // CLUSTER for an ITEM slot), so mandatory recursion terminates.
             let mut best: Option<(&str, usize)> = None;
             for d in class.descendants {
-                let cost = openehr_rm::model::attributes(d)
+                let cost = openehr_rm::v1_2::model::attributes(d)
                     .filter(|a| {
-                        a.is_mandatory && openehr_rm::model::class(a.declared_type).is_some()
+                        a.is_mandatory && openehr_rm::v1_2::model::class(a.declared_type).is_some()
                     })
                     .count();
                 if best.is_none_or(|(_, c)| cost < c) {
@@ -206,10 +208,10 @@ fn value_for(
         };
         return Some(generate(&concrete, ty_args, rich, depth + 1, unknown));
     }
-    if let Some(e) = openehr_rm::model::enumeration(ty) {
+    if let Some(e) = openehr_rm::v1_2::model::enumeration(ty) {
         return e.literals.first().map(|l| match l.value {
-            openehr_rm::model::EnumValue::Int(i) => json!(i),
-            openehr_rm::model::EnumValue::Str(s) => json!(s),
+            openehr_rm::v1_2::model::EnumValue::Int(i) => json!(i),
+            openehr_rm::v1_2::model::EnumValue::Str(s) => json!(s),
         });
     }
     let p = primitive(ty);
@@ -221,7 +223,7 @@ fn value_for(
 
 /// Every concrete class of the static model, in declaration order.
 fn concrete_classes() -> Vec<&'static str> {
-    openehr_rm::model::classes()
+    openehr_rm::v1_2::model::classes()
         .filter(|c| !c.is_abstract)
         .map(|c| c.name)
         .collect()
@@ -280,7 +282,7 @@ fn dropped_mandatory_attributes_are_refused() {
     let mut mutations = 0usize;
     for class in concrete_classes() {
         let base = generate(class, &[], false, 0, &mut unknown);
-        for attr in openehr_rm::model::attributes(class) {
+        for attr in openehr_rm::v1_2::model::attributes(class) {
             if !attr.is_mandatory {
                 continue;
             }

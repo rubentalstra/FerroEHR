@@ -36,13 +36,13 @@
 //! Both walk the *flattened* artefact (`crate::flatten::flat_form`) so fillers
 //! inherited from a specialisation parent are seen.
 
-use openehr_am::am24::aom2::archetype::archetype::Archetype;
-use openehr_am::am24::aom2::constraint_model::archetype_slot::ArchetypeSlot;
-use openehr_am::am24::aom2::constraint_model::c_archetype_root::CArchetypeRoot;
-use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
-use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-use openehr_am::am24::beom::core::assertion::Assertion;
+use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
+use openehr_am::v2_4::aom2::constraint_model::archetype_slot::ArchetypeSlot;
+use openehr_am::v2_4::aom2::constraint_model::c_archetype_root::CArchetypeRoot;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute::CAttribute;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::beom::core::assertion::Assertion;
 
 use super::catalogue::ValidationCode;
 use super::specialisation::ParentScan;

@@ -38,8 +38,8 @@ use openehr_adl::parse::Dialect;
 use openehr_adl::source::parse_source;
 use openehr_adl::validate::catalogue::{Severity, ValidationCode};
 use openehr_adl::validate::validate_source_integrity;
-use openehr_am::am24::aom2::archetype::archetype::Archetype;
-use openehr_am::am24::aom2::archetype::authored_archetype::{
+use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
+use openehr_am::v2_4::aom2::archetype::authored_archetype::{
     AuthoredArchetype, AuthoredArchetypeData,
 };
 

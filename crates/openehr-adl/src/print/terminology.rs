@@ -2,7 +2,7 @@
 //! bindings, and value sets. The body printer is shared with the OPT-only
 //! `component_terminologies` block, which nests one body per component id.
 
-use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
+use openehr_am::v2_4::aom2::terminology::archetype_terminology::ArchetypeTerminology;
 
 use crate::print::Printer;
 use crate::print::odin::quoted;

@@ -117,20 +117,26 @@ fn lang_emits_both_bmm_generations_at_their_own_paths() {
     // Both generations of a colliding name (18 of them; these are the shapes the
     // ch.6–ch.8 chapter audits pinned as materially different).
     for (v2, bmm3) in [
-        ("bmm/core/bmm_class.rs", "bmm3/core/entity/bmm_class.rs"),
-        ("bmm/core/bmm_type.rs", "bmm3/core/entity/bmm_type.rs"),
         (
-            "bmm/core/bmm_container_type.rs",
-            "bmm3/core/entity/bmm_container_type.rs",
+            "v2/bmm/core/bmm_class.rs",
+            "v3/bmm3/core/entity/bmm_class.rs",
+        ),
+        ("v2/bmm/core/bmm_type.rs", "v3/bmm3/core/entity/bmm_type.rs"),
+        (
+            "v2/bmm/core/bmm_container_type.rs",
+            "v3/bmm3/core/entity/bmm_container_type.rs",
         ),
         (
-            "bmm/core/bmm_property.rs",
-            "bmm3/core/feature/bmm_property.rs",
+            "v2/bmm/core/bmm_property.rs",
+            "v3/bmm3/core/feature/bmm_property.rs",
         ),
-        ("bmm/core/bmm_model.rs", "bmm3/core/model/bmm_model.rs"),
         (
-            "bmm/core/bmm_model_element.rs",
-            "bmm3/core/bmm_model_element.rs",
+            "v2/bmm/core/bmm_model.rs",
+            "v3/bmm3/core/model/bmm_model.rs",
+        ),
+        (
+            "v2/bmm/core/bmm_model_element.rs",
+            "v3/bmm3/core/bmm_model_element.rs",
         ),
     ] {
         assert!(has(v2), "LANG did not emit the v2 generation's {v2}");
@@ -138,8 +144,8 @@ fn lang_emits_both_bmm_generations_at_their_own_paths() {
     }
     // The two classes the merge left descendant-less and therefore unemitted.
     for bmm3_only in [
-        "bmm3/core/entity/bmm_model_type.rs",
-        "bmm3/core/entity/bmm_module.rs",
+        "v3/bmm3/core/entity/bmm_model_type.rs",
+        "v3/bmm3/core/entity/bmm_module.rs",
     ] {
         assert!(has(bmm3_only), "LANG did not emit {bmm3_only}");
     }
@@ -291,7 +297,7 @@ fn downstream_closure_leaves_upstream_output_untouched() {
     assert!(
         am_paths
             .iter()
-            .any(|p| p.contains("am24/") && p.ends_with("expr_leaf.rs")),
+            .any(|p| p.contains("v2_4/") && p.ends_with("expr_leaf.rs")),
         "AM did not re-emit the shared EXPR_LEAF downstream",
     );
 }
@@ -429,8 +435,8 @@ fn composition_table_integrity() {
             info.key,
         );
         assert!(
-            !info.own.is_empty(),
-            "composition {:?} lists no own BMM file",
+            !info.generations.is_empty(),
+            "composition {:?} lists no generation",
             info.key,
         );
         assert!(
@@ -438,27 +444,53 @@ fn composition_table_integrity() {
             "composition {:?} has no crate name",
             info.key,
         );
-        // `variant` is Some only for the multi-version crate (am14/am24).
-        if info.variant.is_some() {
-            assert_eq!(
-                info.crate_name, "openehr-am",
-                "only openehr-am is a multi-version crate; {:?} has a variant",
-                info.key,
-            );
-        }
-        for dep in info.model_deps.iter().chain(info.prelude_deps.iter()) {
+        // Exactly one CURRENT generation per crate, and generation-module
+        // names are unique within the crate.
+        assert_eq!(
+            info.generations.iter().filter(|g| g.current).count(),
+            1,
+            "composition {:?} must declare exactly one current generation",
+            info.key,
+        );
+        let mut modules: Vec<&str> = info.generations.iter().map(|g| g.module.as_str()).collect();
+        modules.sort_unstable();
+        modules.dedup();
+        assert_eq!(
+            modules.len(),
+            info.generations.len(),
+            "composition {:?} declares duplicate generation modules",
+            info.key,
+        );
+        for g in &info.generations {
             assert!(
-                keys.iter().any(|k| k == dep),
-                "composition {:?} references unknown dependency key {dep:?}",
+                !g.spec_version.trim().is_empty(),
+                "composition {:?} generation {:?} has no spec version",
                 info.key,
+                g.module,
             );
+            for (dep_key, dep_gen) in g.model_deps.iter().chain(g.prelude_deps.iter()) {
+                assert!(
+                    keys.iter().any(|k| k == dep_key),
+                    "composition {:?} references unknown dependency key {dep_key:?}",
+                    info.key,
+                );
+                assert!(
+                    testsupport::composition_infos()
+                        .iter()
+                        .find(|c| &c.key == dep_key)
+                        .is_some_and(|c| c.generations.iter().any(|g| &g.module == dep_gen)),
+                    "composition {:?} references unknown generation {dep_gen:?} of {dep_key:?}",
+                    info.key,
+                );
+            }
         }
         // Resolving the composition loads every member/dependency BMM file, one
         // completeness row per generation.
         let rows = testsupport::completeness(&info.key);
         assert!(
-            rows.as_ref().is_ok_and(|r| r.len() == info.own.len()),
-            "composition {:?} failed to resolve one generation per own BMM file",
+            rows.as_ref()
+                .is_ok_and(|r| r.len() == info.generations.len()),
+            "composition {:?} failed to resolve one generation per table row",
             info.key,
         );
     }
@@ -564,8 +596,8 @@ fn invariant_classification_spot_checks() {
 fn invariant_core_file_accounts_for_emitted_and_inert_invariants() {
     let files = testsupport::render_all_to_memory().unwrap();
     let gen_file = files
-        .get("openehr-rm/validate/generated.rs")
-        .expect("emit-validate did not produce validate/generated.rs");
+        .get("openehr-rm/v1_2/validate/generated.rs")
+        .expect("emit-validate did not produce v1_2/validate/generated.rs");
 
     // Every emittable invariant is accounted for, and named in the register the
     // emitter renders into the generated file.
@@ -624,8 +656,8 @@ fn invariant_core_file_accounts_for_emitted_and_inert_invariants() {
 fn realization_register_venues_are_real() {
     let files = testsupport::render_all_to_memory().unwrap();
     let gen_file = files
-        .get("openehr-rm/validate/generated.rs")
-        .expect("emit-validate did not produce validate/generated.rs");
+        .get("openehr-rm/v1_2/validate/generated.rs")
+        .expect("emit-validate did not produce v1_2/validate/generated.rs");
     let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
 
     for a in testsupport::accounted_emitted_invariants("rm").unwrap() {
@@ -753,10 +785,10 @@ fn dialect_predicates_match_the_classifier() {
 fn emitted_classes_render_their_bmm_constants() {
     let files = testsupport::render_all_to_memory().unwrap();
     let group = files
-        .get("openehr-rm/support/terminology/openehr_terminology_group_identifiers.rs")
+        .get("openehr-rm/v1_2/support/terminology/openehr_terminology_group_identifiers.rs")
         .unwrap();
     let code_set = files
-        .get("openehr-rm/support/terminology/openehr_code_set_identifiers.rs")
+        .get("openehr-rm/v1_2/support/terminology/openehr_code_set_identifiers.rs")
         .unwrap();
 
     // The 15 terminology-group identifier constants + the openEHR terminology id.
@@ -797,8 +829,8 @@ fn emitted_classes_render_their_bmm_constants() {
 fn register_records_terminology_invariants_as_enforced() {
     let files = testsupport::render_all_to_memory().unwrap();
     let gen_file = files
-        .get("openehr-rm/validate/generated.rs")
-        .expect("emit-validate did not produce validate/generated.rs");
+        .get("openehr-rm/v1_2/validate/generated.rs")
+        .expect("emit-validate did not produce v1_2/validate/generated.rs");
 
     assert!(
         gen_file.contains("# Terminology-backed invariants (enforced in `validate::terminology`"),
