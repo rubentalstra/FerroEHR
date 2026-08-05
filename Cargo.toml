@@ -268,7 +268,7 @@ roxmltree = "0.21"                   # read-only XML DOM — XSD reader for the 
 serde_norway = "0.9"                 # maintained serde_yaml fork — parse vendored OAS YAML for the REST codegen
 serde-saphyr = "1.0.0-rc.1"          # pure-Rust YAML 1.2 front-end (no RUSTSEC; alias-expansion Budget) — the CNF 2.0 schedule authoring surface (tools/cnf-runner)
 semver = "1.0.28"                    # Cargo/semver requirement syntax for the CNF case `applies` spec-version ranges
-base64 = "0.22"
+base64 = "0.23"
 # Typed FHIR R4B resource model (fhir-sdk's model half) — the typed surface of
 # the FHIR integration extension (`app/ferroehr-ext`, `fhir` feature): the ATNA
 # BALP `AuditEvent` we author and the `Parameters`/`ValueSet` a terminology
