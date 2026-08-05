@@ -46,6 +46,11 @@ services:
       target: runtime-from-source
       args:
         REVISION: ${REVISION:-}
+    environment:
+      # The openEHR generation set (development | stable) — a from-source dev
+      # knob (the pull-only quickstart carries no such env: its pinned released
+      # images may predate the key, whose strict sweep would refuse it at boot).
+      FERROEHR__SPEC_PROFILE: ${FERROEHR__SPEC_PROFILE:-development}
 
   ferroehr-admin-ui:
     image: ${FERROEHR_ADMIN_UI_IMAGE:-ghcr.io/rubentalstra/ferroehr-admin-ui:local}

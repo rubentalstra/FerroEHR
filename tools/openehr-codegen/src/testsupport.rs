@@ -580,6 +580,64 @@ pub struct Mirror {
     pub augmented_path: Option<String>,
 }
 
+/// The additive model delta between two generations of one crate.
+#[derive(Debug, Clone)]
+pub struct GenerationDelta {
+    /// Class names the newer generation declares and the older does not.
+    pub classes_added: Vec<String>,
+    /// `CLASS.attribute` pairs the newer generation declares on classes both
+    /// generations share, absent from the older.
+    pub attributes_added: Vec<String>,
+}
+
+/// Compute the additive delta from generation `older` to `newer` of crate
+/// `key` — the acceptance-boundary ledger's input (#1943).
+///
+/// Multi-unit generations fold their units' class maps last-wins before
+/// comparison (the crate-level naming view).
+///
+/// # Errors
+/// Returns an error if the composition or either generation fails to load.
+pub fn generation_attribute_delta(
+    key: &str,
+    older: &str,
+    newer: &str,
+) -> Result<GenerationDelta, Error> {
+    let c = compose(key)?;
+    let classes = |module: &str| -> Result<BTreeMap<String, BTreeSet<String>>, Error> {
+        let g = find_generation(&c, module)?;
+        let mut out: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+        for u in &g.units {
+            for (name, class) in &u.schema.classes {
+                out.insert(
+                    name.clone(),
+                    class.properties.iter().map(|p| p.name.clone()).collect(),
+                );
+            }
+        }
+        Ok(out)
+    };
+    let old_map = classes(older)?;
+    let new_map = classes(newer)?;
+    let classes_added: Vec<String> = new_map
+        .keys()
+        .filter(|k| !old_map.contains_key(*k))
+        .cloned()
+        .collect();
+    let mut attributes_added = Vec::new();
+    for (class, new_attrs) in &new_map {
+        if let Some(old_attrs) = old_map.get(class) {
+            for a in new_attrs.difference(old_attrs) {
+                attributes_added.push(format!("{class}.{a}"));
+            }
+        }
+    }
+    Ok(GenerationDelta {
+        classes_added,
+        attributes_added,
+    })
+}
+
 /// Find one generation of a composed crate by its module name.
 fn find_generation<'a>(
     c: &'a composition::Composed,

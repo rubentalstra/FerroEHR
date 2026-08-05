@@ -148,6 +148,8 @@ data:
   # .Values.config (minus `files`, which is mounted separately). Secrets are NOT
   # here — they are injected as FERROEHR_* env from the Secret and override the file.
   ferroehr.toml: |
+    spec_profile = "development"
+    
     [admin]
       enabled = true
     
@@ -334,7 +336,7 @@ spec:
     metadata:
       annotations:
         # Roll pods when the rendered ferroehr.toml changes.
-        checksum/config: 773326e914859d0ea3aac35699bf12691b23600e379b93ea1d77d971fc5f51fa
+        checksum/config: a2d63efe8ec551019dc4cff32f34360d2d33457a271779d2564428e23eb5a7b2
         prometheus.io/scrape: "true"
         prometheus.io/port: "9100"
         prometheus.io/path: "/management/prometheus"

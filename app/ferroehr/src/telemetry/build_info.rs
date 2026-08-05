@@ -30,7 +30,9 @@ pub struct BuildInfo {
     pub build_date: String,
     /// The `rustc` version string the binary was compiled with.
     pub rustc: &'static str,
-    /// The pinned openEHR specification versions.
+    /// The ACTIVE openEHR specification generation set (`spec_profile`).
+    pub spec_profile: crate::config::profile::SpecProfile,
+    /// The active profile's openEHR specification versions.
     pub spec: SpecVersions,
     /// The `PostgreSQL` version target.
     pub postgres_target: &'static str,
@@ -58,17 +60,27 @@ impl BuildInfo {
     /// The build info for this binary, from the values captured by `build.rs`.
     #[must_use]
     pub fn current() -> Self {
+        Self::for_profile(crate::config::profile::SpecProfile::default())
+    }
+
+    /// The build info reporting the given ACTIVE generation set — the
+    /// constructor the wiring layer calls with the configured
+    /// `spec_profile`, so `/management/info` names what the server actually
+    /// serves rather than the compile-time default.
+    #[must_use]
+    pub fn for_profile(profile: crate::config::profile::SpecProfile) -> Self {
         Self {
             name: env!("CARGO_PKG_NAME"),
             version: env!("CARGO_PKG_VERSION"),
             git_sha: env!("REVISION"),
             build_date: build_date(),
             rustc: env!("FERROEHR_RUSTC"),
+            spec_profile: profile,
             spec: SpecVersions {
                 its_rest: provenance::ITS_REST,
                 aql: provenance::AQL,
-                rm: provenance::RM,
-                base: provenance::BASE,
+                rm: provenance::rm_for(profile),
+                base: provenance::base_for(profile),
                 am: format!("{} + {}", provenance::AM14, provenance::AM24),
                 term: provenance::TERM,
             },

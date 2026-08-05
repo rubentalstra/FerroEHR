@@ -226,7 +226,7 @@ impl FerroEhrService {
         let expanded = aql::terminology::expand_matches(&mut ast, self)
             .await
             .map_err(Failure::plan)?;
-        let ir = Arc::new(aql::lower_query(&ast).map_err(Failure::plan)?);
+        let ir = Arc::new(aql::lower_query(&ast, self.spec_profile).map_err(Failure::plan)?);
         // Cache only terminology-free plans (a resolved expansion may change).
         if !expanded {
             self.plan_cache

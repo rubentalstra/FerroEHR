@@ -24,29 +24,28 @@ const WORDMARK: &str = r"
 /// The project's public repository.
 const PROJECT_URL: &str = "https://github.com/rubentalstra/FerroEHR";
 
-/// The load-bearing spec/platform pins, one per line — each version read
-/// from the shared [`crate::telemetry::provenance`] constants (themselves
-/// the `openehr-*` crate versions), so the banner can never drift from the
-/// actual pins. `(label, version)` pairs, aligned when rendered.
-const PINS: &[(&str, &str)] = &[
-    ("openEHR RM", crate::telemetry::provenance::RM),
-    ("ITS-REST", crate::telemetry::provenance::ITS_REST),
-    ("AQL", crate::telemetry::provenance::AQL),
-    ("PostgreSQL", crate::telemetry::provenance::PG_TARGET),
-];
-
-/// Render the full banner for the given product `version`.
+/// Render the full banner for the given product `version` and ACTIVE
+/// generation set.
 ///
-/// Kept version-parameterized (rather than reading `CARGO_PKG_VERSION`
-/// directly) so it is unit-testable; [`print()`] supplies the real version.
+/// Kept parameterized (rather than reading `CARGO_PKG_VERSION` / a global)
+/// so it is unit-testable; [`print()`] supplies the real values. The pins
+/// are read from the shared [`crate::telemetry::provenance`] source, so the
+/// banner can never drift from what the server actually serves.
 #[must_use]
-pub fn render(version: &str) -> String {
+pub fn render(version: &str, profile: crate::config::profile::SpecProfile) -> String {
     let mut out = format!(
         "{WORDMARK}\n\n  \
          openEHR-conformant Clinical Data Repository · v{version}\n  \
          Maintained by Ruben Talstra · {PROJECT_URL}\n\n"
     );
-    for (label, pin) in PINS {
+    let pins: &[(&str, &str)] = &[
+        ("Profile", profile.as_str()),
+        ("openEHR RM", crate::telemetry::provenance::rm_for(profile)),
+        ("ITS-REST", crate::telemetry::provenance::ITS_REST),
+        ("AQL", crate::telemetry::provenance::AQL),
+        ("PostgreSQL", crate::telemetry::provenance::PG_TARGET),
+    ];
+    for (label, pin) in pins {
         // Left-pad the version column so the pins line up as a list.
         let _ = writeln!(out, "  {label:<12}{pin}");
     }
@@ -60,8 +59,8 @@ pub fn render(version: &str) -> String {
     reason = "the boot banner IS console output, and it prints before any \
               tracing subscriber exists"
 )]
-pub fn print() {
-    println!("{}", render(env!("CARGO_PKG_VERSION")));
+pub fn print(profile: crate::config::profile::SpecProfile) {
+    println!("{}", render(env!("CARGO_PKG_VERSION"), profile));
 }
 
 #[cfg(test)]
@@ -70,25 +69,36 @@ mod tests {
 
     #[test]
     fn banner_contains_version_maintainer_and_url() {
-        let b = render("9.9.9");
+        let b = render("9.9.9", crate::config::profile::SpecProfile::Development);
         assert!(b.contains("v9.9.9"), "version must be substituted");
         assert!(b.contains("Ruben Talstra"), "maintainer credit must appear");
         assert!(
             b.contains("https://github.com/rubentalstra/FerroEHR"),
             "project URL must appear"
         );
-        // The load-bearing pins, each on its own line.
-        for (label, pin) in PINS {
-            assert!(b.contains(label), "pin label {label:?} must appear");
-            assert!(b.contains(pin), "pin version {pin:?} must appear");
-        }
+        assert!(b.contains("Profile"));
+        assert!(b.contains("development"));
         assert!(b.contains("openEHR RM"));
         assert!(b.contains("PostgreSQL"));
     }
 
+    /// The banner reports the ACTIVE generation, not a fixed pin: the stable
+    /// profile prints the released RM version.
+    #[test]
+    fn banner_follows_the_active_profile() {
+        let b = render("9.9.9", crate::config::profile::SpecProfile::Stable);
+        assert!(b.contains("stable"));
+        assert!(b.contains("1.1.0"), "stable profile serves RM 1.1.0");
+    }
+
     #[test]
     fn banner_lines_are_within_100_chars() {
-        for line in render(env!("CARGO_PKG_VERSION")).lines() {
+        for line in render(
+            env!("CARGO_PKG_VERSION"),
+            crate::config::profile::SpecProfile::default(),
+        )
+        .lines()
+        {
             assert!(
                 line.chars().count() <= 100,
                 "banner line exceeds 100 chars ({}): {line:?}",
@@ -99,6 +109,12 @@ mod tests {
 
     #[test]
     fn banner_uses_real_package_version() {
-        assert!(render(env!("CARGO_PKG_VERSION")).contains(env!("CARGO_PKG_VERSION")));
+        assert!(
+            render(
+                env!("CARGO_PKG_VERSION"),
+                crate::config::profile::SpecProfile::default()
+            )
+            .contains(env!("CARGO_PKG_VERSION"))
+        );
     }
 }

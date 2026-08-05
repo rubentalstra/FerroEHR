@@ -157,5 +157,4 @@ harness = false
 workspace = true
 
 [package.metadata.cargo-machete]
-# Wired for later phases, not consumed yet: openehr-lang (BMM at runtime).
-ignored = ["openehr-lang"]
+ignored = []
