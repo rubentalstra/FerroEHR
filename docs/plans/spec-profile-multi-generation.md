@@ -186,26 +186,71 @@ Design (in-session, critical path):
 
 ## Child (c) — feat(app): the `spec_profile` seam
 
-1. Config: `spec_profile` in the `ferroehr` config tree (+ `FERROEHR_*`
-   env), a two-variant profile enum mapping to the per-crate `Generation`
-   selectors — coherent pairs only, unrepresentable otherwise.
-2. Thread the profile through the generation-sensitive seams: canonical
-   JSON/XML codec selection, the RM attribute model the AQL planner reads,
-   validation/invariant passes, WebTemplate/FLAT conversion. Dispatch lives
-   in `ferroehr`/`ferroehr-rest`; generated crates stay dispatch-free; no
-   shadow models.
-3. Wire honesty: active generation visible on the served surface (native
-   OpenAPI metadata + conformance statement). Mixed-generation storage
-   position adjudicated and recorded (within-major supersets: newer reader
-   accepts older instances; the reverse direction is the design question —
-   spec-cited adjudication on the issue).
-4. `docs/VERSIONS.md` §Spec version policy REWRITTEN to the two-generation
+**Settled design (2026-08-05, from the measured seam survey below).** The
+key measured fact: `openehr_its::json::{to/from_canonical_*}` are GENERIC
+over `T` — the generation binding lives in the CALLER's type choice, and the
+emitted `_type` structural dispatch already covers every generation
+(current-first priority). So the seam is NOT a codec swap; it is (i) an
+acceptance-boundary judgement and (ii) a handful of explicit dispatch
+points:
+
+1. **Config**: `spec_profile = "development" | "stable"` (top-level key,
+   default `development` — today's behaviour). One `SpecProfile` enum in
+   `ferroehr::config`, two variants, each mapping to the coherent generation
+   triple (owner hard rule 2026-08-05): `development` → RM `V1_2` + BASE
+   `V1_3` + LANG `V1_1`; `stable` → RM `V1_1` + BASE `V1_2` + LANG `V1_0`.
+   Methods `rm()/base()/lang()` return the crates' own `Generation` values.
+2. **The typed INTERNAL model stays the current generation for both
+   profiles** — adjudicated, not a shortcut: openEHR's release strategy
+   makes every 1.1.0-valid instance 1.2.0-valid (within-major compatible
+   superset), so processing stable-profile data with the newer typed model
+   loses nothing and forks nothing. What the profile changes is the
+   ACCEPTANCE BOUNDARY: under `stable`, an incoming payload must ALSO be a
+   valid instance of the SELECTED generation's model — decoded through the
+   v1_1/v1_2 generation's own strict reader (its `json_serde` + validate
+   tree, emitted in (b)) BEFORE the current-generation processing path runs.
+   A construct the released generation does not admit is a 400-class
+   refusal naming the active profile (never-lax in both directions: the
+   stable profile must not silently accept development-only constructs).
+3. **AQL planner model**: the planner's `openehr_rm::v1_2::model` reads go
+   through a profile-selected model handle (`v1_1::model` vs `v1_2::model` —
+   both emitted); rejection messages name the active generation.
+4. **Identity surfaces**: `telemetry::provenance` RM/BASE/LANG pins become
+   profile-aware reads (the `TODO(#1943)` markers are the splice points);
+   banner, `/status`, OPTIONS conformance manifest and the served OpenAPI
+   carry the ACTIVE generation's `spec_version()`.
+5. **Storage position (adjudicated)**: stored canonical fragments are
+   generation-agnostic bytes; the newer-generation reader accepts every
+   older-minor instance (release strategy), so `development` reads
+   everything. The REVERSE direction is governed by the acceptance boundary
+   in (2): under `stable` the server never PRODUCES a beyond-1.1.0
+   construct because it never accepted one. Flipping a deployment from
+   development→stable with beyond-stable data already stored is surfaced,
+   not hidden: reads that fail the stable-generation re-judgement report
+   the profile conflict. Recorded on the issue with citations.
+6. `docs/VERSIONS.md` §Spec version policy REWRITTEN to the two-generation
    policy with the owner ruling (2026-08-05) recorded; website
    (`website/book/src`) configuration page for `spec_profile` in the same
    PR; CHANGELOG.
-5. Acceptance instrument: `bash scripts/conformance.sh` green on BOTH
+7. Acceptance instrument: `bash scripts/conformance.sh` green on BOTH
    profile selections; zero drift; full gate battery. This PR deletes this
    plan file.
+
+### Seam survey (measured 2026-08-05)
+
+- `openehr_its::json` entry points generic over `T` (json.rs:177/211/241);
+  callers: 24 ferroehr + 6 rest files. Binding = the caller's type.
+- `_type` structural dispatch covers all generations already (469 `v1_1`
+  references in the emitted `structural.rs`), current-first priority.
+- Current-generation type consumers (no churn — stay on the typed current
+  model per (2)): `openehr_rm::prelude` 24 ferroehr + 15 rest files;
+  `openehr_rm::v1_2` 18 + 2; `openehr_base::prelude` 26 + 5.
+- Planner/model reads to parameterize: `openehr_rm::v1_2::model` in 8
+  ferroehr files (aql/, storage/structure.rs, validation/opt) + 9 its;
+  `openehr_rm::v1_2::validate` in 3 ferroehr + 4 its.
+- Identity splice points: `provenance::` consumed by banner.rs,
+  config/server.rs, build_info.rs, rest config.rs + extensions/openapi.rs.
+- Storage carries no per-row generation column; none needed under (5).
 
 ## Blast-radius survey (measured 2026-08-05, grounds the (a) fan-out)
 
