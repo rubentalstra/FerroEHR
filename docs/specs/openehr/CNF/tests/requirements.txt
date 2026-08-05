@@ -10,5 +10,5 @@ docker == 4.0.2
 deepdiff == 4.3.2
 psycopg2-binary == 2.8.6
 
-pyjwt == 1.7.1
+pyjwt == 2.13.0
 # git+https://github.com/adiralashiva8/robotframework-metrics@v3.1.4
