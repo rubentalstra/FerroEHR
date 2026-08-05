@@ -182,6 +182,38 @@ pub enum AnalysisError {
     #[error("unknown RM class `{0}` (not in the generated RM model)")]
     UnknownClass(String),
 
+    /// A FROM class the ACTIVE `spec_profile`'s released RM generation does
+    /// not define (the class exists only in a newer generation).
+    #[error(
+        "RM class `{class}` is not defined by RM {generation} (the active spec_profile is \
+         `{profile}`)"
+    )]
+    ClassNotInProfile {
+        /// The class name.
+        class: String,
+        /// The active profile token.
+        profile: &'static str,
+        /// The active RM generation's spec version.
+        generation: &'static str,
+    },
+
+    /// A path attribute the ACTIVE `spec_profile`'s released RM generation
+    /// does not define on any candidate class.
+    #[error(
+        "attribute `{attribute}` on {on} is not defined by RM {generation} (the active \
+         spec_profile is `{profile}`)"
+    )]
+    AttributeNotInProfile {
+        /// The attribute name.
+        attribute: String,
+        /// The candidate class description.
+        on: String,
+        /// The active profile token.
+        profile: &'static str,
+        /// The active RM generation's spec version.
+        generation: &'static str,
+    },
+
     /// An identified-path root that is not a variable bound in FROM.
     #[error("unknown variable `{0}` (not bound in the FROM clause)")]
     UnknownVariable(String),

@@ -280,6 +280,7 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
 
     let audit_enabled = audit_sender.is_some();
     let mut service = FerroEhrService::new(pool.clone())
+        .with_spec_profile(config.spec_profile)
         .with_system_id(config.server.system_id.clone())
         .with_signer(signer)
         .with_outbox_enabled(outbox_enabled)

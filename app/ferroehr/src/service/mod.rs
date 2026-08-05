@@ -133,6 +133,10 @@ pub const SYSTEM_COMMITTER_NAME: &str = "FerroEHR";
 pub struct FerroEhrService {
     pub(crate) pool: PgPool,
     system_id: String,
+    /// The ACTIVE openEHR specification generation set (`spec_profile`).
+    /// Boot-fixed; the AQL planner's profile gate and the ingress acceptance
+    /// boundary read it.
+    pub(crate) spec_profile: crate::config::profile::SpecProfile,
     /// Cache of `WebTemplate`s built from stored OPTs, used by composition
     /// validation on create/update. Cheaply cloneable (moka-backed).
     ///
@@ -225,6 +229,7 @@ impl FerroEhrService {
         Self {
             pool,
             system_id: DEFAULT_SYSTEM_ID.to_owned(),
+            spec_profile: crate::config::profile::SpecProfile::default(),
             web_templates: WebTemplateCache::default(),
             signer: Arc::new(Signer::digest_default()),
             audit: None,
@@ -252,6 +257,14 @@ impl FerroEhrService {
     /// audit rows, and every minted `OBJECT_VERSION_ID`). The binary wires
     /// `[server] system_id`; without a call, [`DEFAULT_SYSTEM_ID`] stands.
     #[must_use]
+    /// Selects the openEHR specification generation set this service runs
+    /// (`spec_profile`; default `development`).
+    #[must_use]
+    pub fn with_spec_profile(mut self, profile: crate::config::profile::SpecProfile) -> Self {
+        self.spec_profile = profile;
+        self
+    }
+
     pub fn with_system_id(mut self, system_id: impl Into<String>) -> Self {
         self.system_id = system_id.into();
         self
