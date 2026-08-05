@@ -44,8 +44,12 @@ use ir::{
 ///   accepted feature envelope (each variant cites its QUERY spec section).
 /// * [`AqlError::Analysis`] — an unknown class/variable, an unresolvable
 ///   attribute, a type mismatch, or an unbound parameter.
-pub fn plan(query: &SelectQuery, params: &Params) -> Result<QueryIr, AqlError> {
-    let ir = lower_query(query)?;
+pub fn plan(
+    query: &SelectQuery,
+    params: &Params,
+    profile: crate::config::profile::SpecProfile,
+) -> Result<QueryIr, AqlError> {
+    let ir = lower_query(query, profile)?;
     check_params(&ir, params)?;
     Ok(ir)
 }
@@ -65,8 +69,11 @@ pub fn plan(query: &SelectQuery, params: &Params) -> Result<QueryIr, AqlError> {
 ///
 /// [`AqlError::Feature`] / [`AqlError::Analysis`] as [`plan`], minus the
 /// unbound-parameter check (which is [`check_params`]).
-pub fn lower_query(query: &SelectQuery) -> Result<QueryIr, AqlError> {
-    let mut ir = lower::lower(query)?;
+pub fn lower_query(
+    query: &SelectQuery,
+    profile: crate::config::profile::SpecProfile,
+) -> Result<QueryIr, AqlError> {
+    let mut ir = lower::lower(query, profile)?;
     ir.params = collect_params(&ir);
     Ok(ir)
 }
