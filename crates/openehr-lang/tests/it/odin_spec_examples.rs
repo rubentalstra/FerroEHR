@@ -5,7 +5,9 @@
 //! forms of `master04-odin_artefacts.adoc` — the schema-identifier prefix and
 //! the three §Document shapes (the #854 ch.4 audit).
 
-use openehr_lang::odin::{OdinErrorKind, OdinKey, OdinSchemaId, OdinValue, parse, parse_document};
+use openehr_lang::v1_1::odin::{
+    OdinErrorKind, OdinKey, OdinSchemaId, OdinValue, parse, parse_document,
+};
 
 /// The master02 exemplar VERBATIM (its lines 7–22). The line
 /// `[01235] = < -- etc >` is lexically self-inconsistent with the spec's own

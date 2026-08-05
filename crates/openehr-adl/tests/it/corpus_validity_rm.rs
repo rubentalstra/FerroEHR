@@ -10,7 +10,7 @@
 //!   `tests/corpus/adl2-reference/validity/rm_checking/`;
 //! - the openEHR `adltest`/`TEST_PKG` test schema (a BMM-loaded [`RmModel`]
 //!   built here from the vendored ODIN BMM `tests/corpus/rm/
-//!   openehr_adltest_100.bmm` via `openehr_lang::odin`) — the
+//!   openehr_adltest_100.bmm` via `openehr_lang::v1_1::odin`) — the
 //!   `openEHR-TEST_PKG-*` fixtures.
 //!
 //! The oracle is each file's `other_details["regression"]` tag (per
@@ -39,7 +39,7 @@ use openehr_adl::validate::rm::{
     production_model_governs, validate_rm_conformance,
 };
 use openehr_adl::validate::{ValidationIssue, validate_source};
-use openehr_lang::odin::{OdinInterval, OdinKey, OdinValue};
+use openehr_lang::v1_1::odin::{OdinInterval, OdinKey, OdinValue};
 
 const CORPUS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/corpus/adl2-reference");
 const TEST_BMM: &str = concat!(
@@ -69,7 +69,7 @@ struct BmmRmModel {
 impl BmmRmModel {
     fn load(path: &str) -> Self {
         let src = std::fs::read_to_string(path).expect("read vendored test BMM");
-        let tree = openehr_lang::odin::parse(&src).expect("parse test BMM as ODIN");
+        let tree = openehr_lang::v1_1::odin::parse(&src).expect("parse test BMM as ODIN");
         let mut classes = HashMap::new();
         if let OdinValue::Object(top) = &tree
             && let Some(OdinValue::KeyedList(defs)) = top.get("class_definitions")

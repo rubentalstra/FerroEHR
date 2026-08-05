@@ -16,20 +16,20 @@
 
 use std::path::PathBuf;
 
-use openehr_lang::el::ElBuilder;
-use openehr_lang::el::ElError;
-use openehr_lang::el::ElLiteral;
-use openehr_lang::el::ElOperator;
-use openehr_lang::el::parse_boolean_expression_with;
-use openehr_lang::v2::bmm_persistence::create_bmm3_model::create_bmm3_model_reporting;
-use openehr_lang::v2::bmm_persistence::error::PBmmReadError;
-use openehr_lang::v2::bmm_persistence::p_bmm_schema::PBmmSchema;
-use openehr_lang::v2::bmm_persistence::reader::read_schema;
-use openehr_lang::v2::bmm_persistence::validate::AssertionKind;
-use openehr_lang::v2::bmm_persistence::validate::PBmmValidityFinding;
-use openehr_lang::v3::bmm3::core::entity::bmm_class::BmmClass;
-use openehr_lang::v3::bmm3::core::entity::bmm_simple_class::BmmSimpleClass;
-use openehr_lang::v3::bmm3::expression::el_expression::ElExpression;
+use openehr_lang::v1_1::bmm_persistence::create_bmm3_model::create_bmm3_model_reporting;
+use openehr_lang::v1_1::bmm_persistence::error::PBmmReadError;
+use openehr_lang::v1_1::bmm_persistence::p_bmm_schema::PBmmSchema;
+use openehr_lang::v1_1::bmm_persistence::reader::read_schema;
+use openehr_lang::v1_1::bmm_persistence::validate::AssertionKind;
+use openehr_lang::v1_1::bmm_persistence::validate::PBmmValidityFinding;
+use openehr_lang::v1_1::bmm3::core::entity::bmm_class::BmmClass;
+use openehr_lang::v1_1::bmm3::core::entity::bmm_simple_class::BmmSimpleClass;
+use openehr_lang::v1_1::bmm3::expression::el_expression::ElExpression;
+use openehr_lang::v1_1::el::ElBuilder;
+use openehr_lang::v1_1::el::ElError;
+use openehr_lang::v1_1::el::ElLiteral;
+use openehr_lang::v1_1::el::ElOperator;
+use openehr_lang::v1_1::el::parse_boolean_expression_with;
 
 /// A builder that only proves the grammar accepts a text.
 struct Syntax;
@@ -476,7 +476,7 @@ const ASSERTION_SCHEMA: &str = r#"
 
 fn assertions_model() -> Result<
     (
-        openehr_lang::v3::bmm3::core::model::bmm_model::BmmModel,
+        openehr_lang::v1_1::bmm3::core::model::bmm_model::BmmModel,
         Vec<PBmmValidityFinding>,
     ),
     PBmmReadError,

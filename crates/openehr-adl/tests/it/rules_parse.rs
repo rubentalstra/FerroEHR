@@ -15,7 +15,7 @@ use openehr_am::v2_4::aom2::rules::expr_constraint::ExprConstraint;
 use openehr_am::v2_4::beom::core::expr_value_ref::ExprValueRef;
 use openehr_am::v2_4::beom::core::expression::Expression;
 use openehr_am::v2_4::beom::core::statement::Statement;
-use openehr_lang::v2::beom::types::expr_type_def::ExprTypeDef;
+use openehr_lang::v1_1::beom::types::expr_type_def::ExprTypeDef;
 
 fn only_assertion(body: &str) -> Expression {
     let set = parse_rules_body(body).unwrap_or_else(|e| panic!("parse {body:?}: {e:?}"));
@@ -368,7 +368,7 @@ fn external_query_assignment_is_refused_by_the_printer() {
     use openehr_am::v2_4::beom::core::assignment::Assignment;
     use openehr_am::v2_4::beom::core::expr_value::ExprValue;
     use openehr_am::v2_4::beom::core::statement_set::StatementSet;
-    use openehr_lang::v2::beom::core::external_query::ExternalQuery;
+    use openehr_lang::v1_1::beom::core::external_query::ExternalQuery;
 
     let src = "archetype (adl_version=2.0.5; rm_release=1.0.2)\n\
         \topenEHR-EHR-CLUSTER.external_query.v1.0.0\n\n\

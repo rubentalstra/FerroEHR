@@ -1,4 +1,4 @@
-//! Public-API conformance battery for the hand-written `openehr_lang::odin`
+//! Public-API conformance battery for the hand-written `openehr_lang::v1_1::odin`
 //! reader against the 17 vendored ODIN fixtures under `tests/vendor/odin/`.
 //!
 //! The fixtures are mirrored from the openEHR reference implementation
@@ -23,7 +23,7 @@
     reason = "integration-test assertions and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
 )]
 
-use openehr_lang::odin::{OdinErrorKind, OdinInterval, OdinKey, OdinValue, parse};
+use openehr_lang::v1_1::odin::{OdinErrorKind, OdinInterval, OdinKey, OdinValue, parse};
 use std::path::PathBuf;
 
 // ---------------------------------------------------------------------------

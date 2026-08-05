@@ -4,7 +4,7 @@
 //! `crates/openehr-adl/vendor/grammar/`) plus the spec-text section extensions
 //! the pinned grammar lacks. It produces a [`SourceArtefact`]: the artefact
 //! kind, identification meta + HRID, the specialise parent reference, each
-//! ODIN section parsed via `openehr_lang::odin`, and the cADL `definition` /
+//! ODIN section parsed via `openehr_lang::v1_1::odin`, and the cADL `definition` /
 //! `rules` bodies captured as **raw spans** (cADL parsing is a separate pass,
 //! `crate::parse`).
 //!
@@ -20,7 +20,7 @@ use openehr_am::v2_4::aom2::archetype::archetype_hrid::ArchetypeHrid;
 use crate::error::{SyntaxError, SyntaxErrorCode};
 use crate::hrid::parse_hrid;
 use crate::parse::Dialect;
-use openehr_lang::lexer::{Spanned, Token};
+use openehr_lang::v1_1::lexer::{Spanned, Token};
 
 /// The artefact kind (first keyword of an ADL2 source).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -69,7 +69,7 @@ pub struct ArtefactMeta {
 
 /// A parsed ADL2 source artefact (outer structure only; the definition/rules
 /// bodies stay raw here, parsed on demand by `crate::parse` /
-/// `openehr_lang::odin`).
+/// `openehr_lang::v1_1::odin`).
 #[derive(Debug, Clone, PartialEq)]
 pub struct SourceArtefact {
     /// The artefact kind.
@@ -93,17 +93,17 @@ pub struct SourceArtefact {
     /// (`ADL2/master07.09` lists `concept` among the obsolete clauses).
     pub concept: Option<String>,
     /// The `language` section (ODIN).
-    pub language: Option<openehr_lang::odin::OdinValue>,
+    pub language: Option<openehr_lang::v1_1::odin::OdinValue>,
     /// The `description` section (ODIN).
-    pub description: Option<openehr_lang::odin::OdinValue>,
+    pub description: Option<openehr_lang::v1_1::odin::OdinValue>,
     /// The `terminology` section (ODIN).
-    pub terminology: Option<openehr_lang::odin::OdinValue>,
+    pub terminology: Option<openehr_lang::v1_1::odin::OdinValue>,
     /// The `annotations` section (ODIN).
-    pub annotations: Option<openehr_lang::odin::OdinValue>,
+    pub annotations: Option<openehr_lang::v1_1::odin::OdinValue>,
     /// The `rm_overlay` section (ODIN; `master07.12`).
-    pub rm_overlay: Option<openehr_lang::odin::OdinValue>,
+    pub rm_overlay: Option<openehr_lang::v1_1::odin::OdinValue>,
     /// The `component_terminologies` section (ODIN; OPT only).
-    pub component_terminologies: Option<openehr_lang::odin::OdinValue>,
+    pub component_terminologies: Option<openehr_lang::v1_1::odin::OdinValue>,
     /// The ADL **1.4** `revision_history` section (ODIN;
     /// `AM/docs/ADL1.4/master08-adl` §Revision History Section: "The revision
     /// history section of an archetype shows the audit history of changes to
@@ -121,7 +121,7 @@ pub struct SourceArtefact {
     /// level, where a caller that wants the audit history can reach it, and it
     /// is not carried into the ADL2 artefact that
     /// [`crate::adl14::convert`] produces.
-    pub revision_history: Option<openehr_lang::odin::OdinValue>,
+    pub revision_history: Option<openehr_lang::v1_1::odin::OdinValue>,
     /// The `definition` (cADL) body as a raw span.
     pub definition: Option<RawSpan>,
     /// The `rules`/`invariant` body as a raw span.
@@ -133,7 +133,7 @@ pub struct SourceArtefact {
 /// Parse an ADL source into a [`SourceArtefact`], reading the outer structure
 /// with the rules of `dialect`.
 ///
-/// ODIN sections are delegated to `openehr_lang::odin::parse`; the `definition`
+/// ODIN sections are delegated to `openehr_lang::v1_1::odin::parse`; the `definition`
 /// and `rules` bodies are captured as [`RawSpan`]s. Recoverable errors are
 /// collected; the whole error list is returned on any failure.
 ///
@@ -162,7 +162,7 @@ pub struct SourceArtefact {
 /// or missing-required-section). ODIN parse failures surface as
 /// [`SyntaxErrorCode::Sdinv`] carrying the section name.
 pub fn parse_source(src: &str, dialect: Dialect) -> Result<SourceArtefact, Vec<SyntaxError>> {
-    let toks = match openehr_lang::lexer::lex_adl(src) {
+    let toks = match openehr_lang::v1_1::lexer::lex_adl(src) {
         Ok(t) => t,
         Err(failure) => return Err(vec![crate::error::lexical(&failure, src)]),
     };
@@ -564,14 +564,14 @@ impl Outer<'_> {
         RawSpan { bytes, tokens }
     }
 
-    /// Parse an ODIN section body (delegated to `openehr_lang::odin`), mapping
+    /// Parse an ODIN section body (delegated to `openehr_lang::v1_1::odin`), mapping
     /// any failure to [`SyntaxErrorCode::Sdinv`] with the section name.
     fn parse_odin(
         &mut self,
         body: std::ops::Range<usize>,
         header_idx: usize,
         name: &str,
-    ) -> Option<openehr_lang::odin::OdinValue> {
+    ) -> Option<openehr_lang::v1_1::odin::OdinValue> {
         if body.is_empty() {
             self.push(
                 SyntaxErrorCode::Sdinv,
@@ -582,7 +582,7 @@ impl Outer<'_> {
         }
         let byte_span = self.span_at(body.start).start..self.span_at(body.end - 1).end;
         let text = self.src.get(byte_span.clone()).unwrap_or("");
-        match openehr_lang::odin::parse(text) {
+        match openehr_lang::v1_1::odin::parse(text) {
             Ok(v) => Some(v),
             Err(e) => {
                 // Offset the ODIN-local byte span into the whole-file source.
@@ -701,8 +701,8 @@ fn local_code_text(t: &Token) -> Option<String> {
 
 /// True if an ODIN `ontology`/`terminology` section carries the old-form
 /// `primary_language` statement (`master08` §Ontology Header Statements NOTE).
-fn has_primary_language(section: &openehr_lang::odin::OdinValue) -> bool {
-    matches!(section, openehr_lang::odin::OdinValue::Object(map) if map.contains_key("primary_language"))
+fn has_primary_language(section: &openehr_lang::v1_1::odin::OdinValue) -> bool {
+    matches!(section, openehr_lang::v1_1::odin::OdinValue::Object(map) if map.contains_key("primary_language"))
 }
 
 /// The text a meta value token carries, if any.

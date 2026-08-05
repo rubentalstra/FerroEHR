@@ -1,5 +1,5 @@
 //! The per-language lexical surface battery: the pinned oracle for
-//! [`openehr_lang::lexer`].
+//! [`openehr_lang::v1_1::lexer`].
 //!
 //! One shared `logos` DFA serves ADL2/cADL, ODIN and BEL, and each language's
 //! reading is produced by a reclassification pass over it. This battery pins
@@ -28,7 +28,7 @@
     reason = "integration-test assertions and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
 )]
 
-use openehr_lang::lexer::{LexError, Spanned, lex_adl, lex_bel, lex_odin};
+use openehr_lang::v1_1::lexer::{LexError, Spanned, lex_adl, lex_bel, lex_odin};
 
 /// One per-language entry point of the shared lexer.
 type Reading = fn(&str) -> Result<Vec<Spanned>, LexError>;

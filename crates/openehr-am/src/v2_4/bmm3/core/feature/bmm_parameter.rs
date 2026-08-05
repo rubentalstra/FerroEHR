@@ -8,7 +8,7 @@
     reason = "adjudicated free-form JSON slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only where the spec leaves the slot open, and each adjudicated field's NOTE names its citation"
 )]
 use crate::v2_4::bmm::core::bmm_type::BmmType;
-use openehr_lang::v3::bmm3::core::feature::bmm_parameter_direction::BmmParameterDirection;
+use openehr_lang::v1_1::bmm3::core::feature::bmm_parameter_direction::BmmParameterDirection;
 
 /// A routine parameter variable (read-only).
 #[doc(alias = "BMM_PARAMETER")]

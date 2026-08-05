@@ -21,7 +21,7 @@ use crate::load::oas;
 use crate::plan::composition::{self, compose};
 use crate::plan::overrides;
 use crate::plan::{Emission, decide};
-use crate::render::emit::{CrateGeneration, GenFile, emit_composed};
+use crate::render::emit::{CrateGeneration, GenFile, RenderUnit, emit_composed};
 use crate::render::{emit_rest, emit_rm_model, emit_validate, model_query, naming};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -41,8 +41,9 @@ pub struct GenerationInfo {
     pub module: String,
     /// The generation's implemented spec version.
     pub spec_version: String,
-    /// The vendored BMM file.
-    pub file: String,
+    /// The vendored spec files composing the generation, each with its
+    /// prelude membership.
+    pub units: Vec<(String, bool)>,
     /// Whether this is the crate's current generation.
     pub current: bool,
     /// Paired dependency generations merged into the model, as
@@ -88,7 +89,11 @@ pub fn composition_infos() -> Vec<CompositionInfo> {
                 .map(|g| GenerationInfo {
                     module: g.module.to_string(),
                     spec_version: g.spec_version.to_string(),
-                    file: g.file.to_string(),
+                    units: g
+                        .units
+                        .iter()
+                        .map(|u| (u.file.to_string(), u.in_prelude))
+                        .collect(),
                     current: g.current,
                     model_deps: deps(g.model_deps),
                     prelude_deps: deps(g.prelude_deps),
@@ -138,40 +143,42 @@ pub struct Completeness {
 /// Returns an error if the crate's BMM files cannot be loaded.
 pub fn completeness(key: &str) -> Result<Vec<Completeness>, Error> {
     let c = compose(key)?;
-    let mut out = Vec::with_capacity(c.generations.len());
+    let mut out = Vec::new();
     for g in &c.generations {
-        let used = g.model.used_as_type();
-        let mut planned = 0;
-        let mut skipped_mapped = 0;
-        let mut skipped_abstract_unused = 0;
-        let mut silently_dropped = Vec::new();
-        for (name, class) in &g.schema.classes {
-            match decide(&g.model, class, &used) {
-                Emission::Skip => {
-                    if Model::is_mapped(name) {
-                        skipped_mapped += 1;
-                    } else if class.is_abstract
-                        && g.model.enum_variants(name).is_empty()
-                        && !used.contains(name)
-                    {
-                        skipped_abstract_unused += 1;
-                    } else {
-                        silently_dropped.push(name.clone());
+        for u in &g.units {
+            let used = u.model.used_as_type();
+            let mut planned = 0;
+            let mut skipped_mapped = 0;
+            let mut skipped_abstract_unused = 0;
+            let mut silently_dropped = Vec::new();
+            for (name, class) in &u.schema.classes {
+                match decide(&u.model, class, &used) {
+                    Emission::Skip => {
+                        if Model::is_mapped(name) {
+                            skipped_mapped += 1;
+                        } else if class.is_abstract
+                            && u.model.enum_variants(name).is_empty()
+                            && !used.contains(name)
+                        {
+                            skipped_abstract_unused += 1;
+                        } else {
+                            silently_dropped.push(name.clone());
+                        }
                     }
+                    _ => planned += 1,
                 }
-                _ => planned += 1,
             }
+            silently_dropped.sort();
+            out.push(Completeness {
+                key: key.to_string(),
+                file: u.spec.file.to_string(),
+                total: u.schema.classes.len(),
+                planned,
+                skipped_mapped,
+                skipped_abstract_unused,
+                silently_dropped,
+            });
         }
-        silently_dropped.sort();
-        out.push(Completeness {
-            key: key.to_string(),
-            file: g.spec.file.to_string(),
-            total: g.schema.classes.len(),
-            planned,
-            skipped_mapped,
-            skipped_abstract_unused,
-            silently_dropped,
-        });
     }
     Ok(out)
 }
@@ -214,42 +221,44 @@ pub fn attribute_gaps(key: &str) -> Result<(Vec<AttributeGap>, usize), Error> {
     let mut gaps = Vec::new();
     let mut checked = 0_usize;
     for g in &c.generations {
-        let used = g.model.used_as_type();
-        // Emitted field names per class (flattened, back-references omitted —
-        // exactly what `render_struct_def` writes).
-        let fields = |class_name: &str| -> BTreeSet<String> {
-            g.model.get(class_name).map_or_else(BTreeSet::new, |cls| {
-                g.model
-                    .flattened_props(cls)
-                    .iter()
-                    .filter(|rp| overrides::back_reference(&rp.owner, &rp.prop.name).is_none())
-                    .map(|rp| rp.prop.name.clone())
-                    .collect()
-            })
-        };
-        for (name, class) in &g.schema.classes {
-            let carriers: Vec<String> = match decide(&g.model, class, &used) {
-                Emission::Struct | Emission::PolyEnum(_) => vec![name.clone()],
-                Emission::Enum(variants) => variants,
-                // A literal enumeration and a transparent newtype are scalars on
-                // the wire and declare no attributes of their own; a mapped or
-                // unused-abstract class emits nothing (the name-level
-                // completeness check accounts for it).
-                Emission::EnumLiterals(_) | Emission::Newtype(_) | Emission::Skip => Vec::new(),
+        for u in &g.units {
+            let used = u.model.used_as_type();
+            // Emitted field names per class (flattened, back-references omitted —
+            // exactly what `render_struct_def` writes).
+            let fields = |class_name: &str| -> BTreeSet<String> {
+                u.model.get(class_name).map_or_else(BTreeSet::new, |cls| {
+                    u.model
+                        .flattened_props(cls)
+                        .iter()
+                        .filter(|rp| overrides::back_reference(&rp.owner, &rp.prop.name).is_none())
+                        .map(|rp| rp.prop.name.clone())
+                        .collect()
+                })
             };
-            for p in &class.properties {
-                if overrides::back_reference(name, &p.name).is_some() {
-                    continue;
-                }
-                for carrier in &carriers {
-                    checked += 1;
-                    if !fields(carrier).contains(&p.name) {
-                        gaps.push(AttributeGap {
-                            file: g.spec.file.to_string(),
-                            class: name.clone(),
-                            attribute: p.name.clone(),
-                            detail: format!("missing from the emitted `{carrier}` fields"),
-                        });
+            for (name, class) in &u.schema.classes {
+                let carriers: Vec<String> = match decide(&u.model, class, &used) {
+                    Emission::Struct | Emission::PolyEnum(_) => vec![name.clone()],
+                    Emission::Enum(variants) => variants,
+                    // A literal enumeration and a transparent newtype are scalars on
+                    // the wire and declare no attributes of their own; a mapped or
+                    // unused-abstract class emits nothing (the name-level
+                    // completeness check accounts for it).
+                    Emission::EnumLiterals(_) | Emission::Newtype(_) | Emission::Skip => Vec::new(),
+                };
+                for p in &class.properties {
+                    if overrides::back_reference(name, &p.name).is_some() {
+                        continue;
+                    }
+                    for carrier in &carriers {
+                        checked += 1;
+                        if !fields(carrier).contains(&p.name) {
+                            gaps.push(AttributeGap {
+                                file: u.spec.file.to_string(),
+                                class: name.clone(),
+                                attribute: p.name.clone(),
+                                detail: format!("missing from the emitted `{carrier}` fields"),
+                            });
+                        }
                     }
                 }
             }
@@ -291,8 +300,15 @@ pub fn generation_conflicts() -> Result<Vec<GenerationConflict>, Error> {
             .iter()
             .map(|g| CrateGeneration {
                 spec: g.spec,
-                model: &g.model,
-                schema: &g.schema,
+                units: g
+                    .units
+                    .iter()
+                    .map(|u| RenderUnit {
+                        spec: u.spec,
+                        model: &u.model,
+                        schema: &u.schema,
+                    })
+                    .collect(),
                 external: &g.external,
             })
             .collect();
@@ -305,7 +321,7 @@ pub fn generation_conflicts() -> Result<Vec<GenerationConflict>, Error> {
                 .generations
                 .iter()
                 .find(|g| f.path.starts_with(&format!("{}/", g.spec.module)))
-                .map_or("(crate-level)", |g| g.spec.file);
+                .map_or("(crate-level)", |g| g.spec.module);
             paths.entry(f.path).or_default().push(file.to_string());
         }
         for (what, files) in paths {
@@ -352,21 +368,23 @@ pub fn classify_invariants(key: &str) -> Result<Vec<ClassifiedInvariant>, Error>
     let c = compose(key)?;
     let mut out = Vec::new();
     for g in &c.generations {
-        for (class, def) in &g.schema.classes {
-            for (name, expr) in &def.invariants {
-                let (bucket, reason) = match invariants::classify(expr) {
-                    Bucket::Emitted => ("emitted", String::new()),
-                    Bucket::RuntimeHookMissing(r) => ("runtime-hook-missing", r.to_string()),
-                    Bucket::Complex(r) => ("complex", r.to_string()),
-                };
-                out.push(ClassifiedInvariant {
-                    generation: g.spec.module.to_string(),
-                    class: class.clone(),
-                    name: name.clone(),
-                    expr: expr.clone(),
-                    bucket,
-                    reason,
-                });
+        for u in &g.units {
+            for (class, def) in &u.schema.classes {
+                for (name, expr) in &def.invariants {
+                    let (bucket, reason) = match invariants::classify(expr) {
+                        Bucket::Emitted => ("emitted", String::new()),
+                        Bucket::RuntimeHookMissing(r) => ("runtime-hook-missing", r.to_string()),
+                        Bucket::Complex(r) => ("complex", r.to_string()),
+                    };
+                    out.push(ClassifiedInvariant {
+                        generation: g.spec.module.to_string(),
+                        class: class.clone(),
+                        name: name.clone(),
+                        expr: expr.clone(),
+                        bucket,
+                        reason,
+                    });
+                }
             }
         }
     }
@@ -387,7 +405,8 @@ pub fn constructibility_offenders(key: &str) -> Result<Vec<String>, Error> {
     let mut out: Vec<String> = c
         .generations
         .iter()
-        .flat_map(|g| g.model.constructibility_violations(&g.schema))
+        .flat_map(|g| &g.units)
+        .flat_map(|u| u.model.constructibility_violations(&u.schema))
         .collect();
     out.sort_unstable();
     out.dedup();
@@ -410,12 +429,14 @@ pub fn plan_shapes(key: &str) -> Result<BTreeMap<String, String>, Error> {
     let c = compose(key)?;
     let mut out = BTreeMap::new();
     for g in &c.generations {
-        let used = g.model.used_as_type();
-        for (name, class) in &g.schema.classes {
-            out.insert(
-                format!("{}::{name}", g.spec.file),
-                shape_name(&decide(&g.model, class, &used)).to_string(),
-            );
+        for u in &g.units {
+            let used = u.model.used_as_type();
+            for (name, class) in &u.schema.classes {
+                out.insert(
+                    format!("{}::{name}", u.spec.file),
+                    shape_name(&decide(&u.model, class, &used)).to_string(),
+                );
+            }
         }
     }
     Ok(out)
@@ -447,23 +468,36 @@ pub fn render_all_to_memory() -> Result<BTreeMap<String, String>, Error> {
     for comp in composition::COMPOSITIONS {
         let c = compose(comp.key)?;
         let impls = sibling_impls(comp.crate_name);
-        let augmented: Vec<BmmSchema> = c
+        let augmented: Vec<Vec<BmmSchema>> = c
             .generations
             .iter()
             .map(|g| {
-                let reemit = cross_schema_reemit(&g.model, &g.schema);
-                let deps: Vec<&BmmSchema> = g.dep_schemas.iter().collect();
-                augment_with_reemit(&g.schema, &g.model, &reemit, &deps)
+                g.units
+                    .iter()
+                    .map(|u| {
+                        let reemit = cross_schema_reemit(&u.model, &u.schema);
+                        let deps: Vec<&BmmSchema> = g.dep_schemas.iter().collect();
+                        augment_with_reemit(&u.schema, &u.model, &reemit, &deps)
+                    })
+                    .collect()
             })
             .collect();
         let gens: Vec<CrateGeneration<'_>> = c
             .generations
             .iter()
             .zip(&augmented)
-            .map(|(g, aug)| CrateGeneration {
+            .map(|(g, augs)| CrateGeneration {
                 spec: g.spec,
-                model: &g.model,
-                schema: aug,
+                units: g
+                    .units
+                    .iter()
+                    .zip(augs)
+                    .map(|(u, aug)| RenderUnit {
+                        spec: u.spec,
+                        model: &u.model,
+                        schema: aug,
+                    })
+                    .collect(),
                 external: &g.external,
             })
             .collect();
@@ -471,15 +505,19 @@ pub fn render_all_to_memory() -> Result<BTreeMap<String, String>, Error> {
         if comp.key == "rm" {
             // Mirror of `cli::cmd_emit`: every RM generation carries its own
             // attribute model + invariant cores.
-            for (g, aug) in c.generations.iter().zip(&augmented) {
+            for (g, augs) in c.generations.iter().zip(&augmented) {
                 let module = g.spec.module;
+                let unit = g.unit()?;
+                let aug = augs
+                    .first()
+                    .ok_or("an RM generation carries no specification unit")?;
                 inject_rm_model(
                     &mut files,
-                    prefix_gen_files(emit_rm_model::emit_files(&g.model), module),
+                    prefix_gen_files(emit_rm_model::emit_files(&unit.model), module),
                     module,
                 );
                 files.extend(prefix_gen_files(
-                    emit_validate::emit_files(&g.model, aug),
+                    emit_validate::emit_files(&unit.model, aug),
                     module,
                 ));
             }
@@ -561,9 +599,10 @@ fn find_generation<'a>(
 pub fn am24_reemit_mirrors() -> Result<Vec<Mirror>, Error> {
     let am = compose("am")?;
     let am24 = find_generation(&am, "v2_4")?;
-    let reemit = cross_schema_reemit(&am24.model, &am24.schema);
+    let unit = am24.unit()?;
+    let reemit = cross_schema_reemit(&unit.model, &unit.schema);
     let dep_refs: Vec<&BmmSchema> = am24.dep_schemas.iter().collect();
-    let aug = augment_with_reemit(&am24.schema, &am24.model, &reemit, &dep_refs);
+    let aug = augment_with_reemit(&unit.schema, &unit.model, &reemit, &dep_refs);
     let aug_paths = class_paths(&aug);
 
     // Source package path per class, first-wins across the dependency schemas
@@ -607,7 +646,10 @@ pub fn am24_reemit_closure() -> Result<BTreeSet<String>, Error> {
 pub fn reemit_closure(key: &str, module: &str) -> Result<BTreeSet<String>, Error> {
     let c = compose(key)?;
     let g = find_generation(&c, module)?;
-    Ok(cross_schema_reemit(&g.model, &g.schema))
+    Ok(g.units
+        .iter()
+        .flat_map(|u| cross_schema_reemit(&u.model, &u.schema))
+        .collect())
 }
 
 /// The set of type files (`"<crate>/<path>"`) emitted for one crate — the
@@ -625,8 +667,15 @@ pub fn rendered_files(key: &str) -> Result<Vec<String>, Error> {
         .iter()
         .map(|g| CrateGeneration {
             spec: g.spec,
-            model: &g.model,
-            schema: &g.schema,
+            units: g
+                .units
+                .iter()
+                .map(|u| RenderUnit {
+                    spec: u.spec,
+                    model: &u.model,
+                    schema: &u.schema,
+                })
+                .collect(),
             external: &g.external,
         })
         .collect();
@@ -878,7 +927,8 @@ pub fn accounted_emitted_invariants(key: &str) -> Result<Vec<AccountedInvariant>
     let triples: Vec<(String, String, String)> = c
         .generations
         .iter()
-        .flat_map(|g| &g.schema.classes)
+        .flat_map(|g| &g.units)
+        .flat_map(|u| &u.schema.classes)
         .flat_map(|(class, def)| {
             def.invariants
                 .iter()
@@ -975,9 +1025,10 @@ pub fn enum_variants(key: &str, class: &str) -> Result<Option<Vec<String>>, Erro
     Ok(c.generations
         .iter()
         .rev()
-        .find(|g| g.model.get(class).is_some())
-        .map(|g| {
-            let mut variants = g.model.enum_variants(class);
+        .flat_map(|g| g.units.iter().rev())
+        .find(|u| u.model.get(class).is_some())
+        .map(|u| {
+            let mut variants = u.model.enum_variants(class);
             variants.sort();
             variants
         }))
@@ -1002,7 +1053,8 @@ pub fn class_exists(class: &str) -> Result<bool, Error> {
         if compose(key)?
             .generations
             .iter()
-            .any(|g| g.model.get(class).is_some())
+            .flat_map(|g| &g.units)
+            .any(|u| u.model.get(class).is_some())
         {
             return Ok(true);
         }
@@ -1017,9 +1069,9 @@ pub fn class_exists(class: &str) -> Result<bool, Error> {
 /// Returns an error if any composition's BMM files cannot be loaded.
 pub fn field_exists(class: &str, field: &str) -> Result<bool, Error> {
     for key in crate_keys() {
-        for g in &compose(key)?.generations {
-            if let Some(cls) = g.model.get(class)
-                && g.model
+        for u in compose(key)?.generations.iter().flat_map(|g| &g.units) {
+            if let Some(cls) = u.model.get(class)
+                && u.model
                     .flattened_props(cls)
                     .iter()
                     .any(|rp| rp.prop.name == field)
@@ -1046,7 +1098,8 @@ pub fn declared_attributes(key: &str, class: &str) -> Result<Option<BTreeSet<Str
     Ok(c.generations
         .iter()
         .rev()
-        .find_map(|g| g.schema.classes.get(class))
+        .flat_map(|g| g.units.iter().rev())
+        .find_map(|u| u.schema.classes.get(class))
         .map(|cls| cls.properties.iter().map(|p| p.name.clone()).collect()))
 }
 
@@ -1078,8 +1131,8 @@ pub struct VendoredDefault {
 pub fn vendored_defaults() -> Result<Vec<VendoredDefault>, Error> {
     let mut out = Vec::new();
     for key in crate_keys() {
-        for g in &compose(key)?.generations {
-            for (owner, class) in &g.schema.classes {
+        for u in compose(key)?.generations.iter().flat_map(|g| &g.units) {
+            for (owner, class) in &u.schema.classes {
                 for prop in &class.properties {
                     if let Some(facet) = &prop.default {
                         out.push(VendoredDefault {
@@ -1202,18 +1255,19 @@ pub fn merged_fallback_schema_names() -> Result<(BTreeSet<String>, BTreeSet<Stri
             .iter()
             .find(|g| g.spec.current)
             .ok_or("composition has no current generation")?;
-        Ok(crate::analyze::emittable_specs(&g.model, &g.schema)
-            .into_iter()
-            .map(|spec| {
+        let mut out = BTreeMap::new();
+        for u in &g.units {
+            for spec in crate::analyze::emittable_specs(&u.model, &u.schema) {
                 let ident = naming::type_name(&spec);
                 let path = format!(
                     "{krate}::{}::{}::{ident}",
                     g.spec.module,
-                    crate::render::emit::type_module_path(&g.schema, &spec)
+                    crate::render::emit::type_module_path(&u.schema, &spec)
                 );
-                (ident, path)
-            })
-            .collect())
+                out.insert(ident, path);
+            }
+        }
+        Ok(out)
     };
     let names = emit_rest::RmNames {
         base: type_paths(&base)?,

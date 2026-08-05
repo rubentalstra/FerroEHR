@@ -35,7 +35,7 @@ use crate::aom::build::{
 use crate::error::SyntaxErrorCode;
 use crate::odin::{is_interval, odin_to_json};
 use crate::parse::{Dialect, PResult, Parser};
-use openehr_lang::lexer::Token;
+use openehr_lang::v1_1::lexer::Token;
 
 // ── productions ───────────────────────────────────────────────────────────
 impl Parser<'_> {
@@ -552,7 +552,7 @@ impl Parser<'_> {
     }
 
     /// `default_value : SYM_DEFAULT SYM_EQ '<' odin_text '>'` — the ODIN body
-    /// is parsed by `openehr_lang::odin` and converted to canonical JSON.
+    /// is parsed by `openehr_lang::v1_1::odin` and converted to canonical JSON.
     fn parse_default_value(&mut self) -> PResult<serde_json::Value> {
         self.pos += 1; // SYM_DEFAULT (`_default`)
         self.expect(
@@ -613,7 +613,7 @@ impl Parser<'_> {
             }
         }
         let text = self.src.get(start_byte..end_byte).unwrap_or_default();
-        match openehr_lang::odin::parse(text) {
+        match openehr_lang::v1_1::odin::parse(text) {
             Ok(v) => {
                 let mut json = match odin_to_json(&v) {
                     Ok(json) => json,

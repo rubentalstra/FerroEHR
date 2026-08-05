@@ -1,7 +1,7 @@
 # `openehr-lang` — BMM / P_BMM / ODIN (hand-written tooling layer)
 
 The LANG component: the BMM object model + the `*.bmm.json` loader that
-**feeds codegen**, and the hand-written ODIN reader (`src/odin/` — for
+**feeds codegen**, and the hand-written ODIN reader (`src/v1_1/odin/` — for
 ADL/ODIN *instance* parsing — deliberately off the codegen path).
 
 - **This crate is upstream of everything generated.** A change to the BMM
@@ -16,35 +16,37 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
   meta-model); SPECLANG-14 formalised the split
   (`LANG/docs/bmm3/master00-amendment_record.adoc`). Both are vendored as
   separate `*.bmm.json` files and BOTH are emitted COMPLETELY:
-  - v2.x → `src/v2/bmm/core/`, `src/v2/bmm/rm_access/`, `src/v2/bmm_persistence/`,
-    `src/beom/`;
-  - v3 → `src/v3/bmm3/**`.
+  - the BMM v2.x unit → `src/v1_1/bmm/core/`, `src/v1_1/bmm/rm_access/`,
+    `src/v1_1/bmm_persistence/`, `src/v1_1/beom/`;
+  - the BMM3 unit → `src/v1_1/bmm3/**`.
+  Both are SPECIFICATION UNITS of the ONE `v1_1` component-version
+  generation (the published LANG index lists BMM — STABLE — and BMM3 —
+  PAUSED — as sibling specifications of one version).
   18 class names occur in both files with materially different shapes
   (`BMM_CLASS`, `BMM_TYPE`, `BMM_PROPERTY`, `BMM_MODEL`, …), so each name
   yields TWO Rust types at two paths, each with its own intra-generation
-  cross-references. The crate **prelude re-exports the CURRENT generation
-  (`v2`, the `#[default]`) only** — the STABLE tool-implemented form per the
-  published LANG index (BMM3 is PAUSED upstream; hold record #1920); v3
-  types are reachable by their full `v3::` module paths only.
+  cross-references. The crate **prelude re-exports the generation's STABLE units only** (the
+  BMM v2.x unit — `bmm`/`bmm_persistence`/`beom`); the PAUSED BMM3 unit
+  (hold record #1920) is reachable by its full `v1_1::bmm3::` paths only.
   Never "unify" the two, never reach across generations in a type position,
   and never add a shadow/adapter type: a shape gap is a
   `tools/openehr-codegen` fix + regeneration.
 - **BOTH generations now carry a hand-written spec-function surface, and they
-  never share code.** v2.x: `src/v2/bmm/core/*_impl.rs` (`BMM_CLASSIFIER`,
+  never share code.** the BMM v2.x unit: `src/v1_1/bmm/core/*_impl.rs` (`BMM_CLASSIFIER`,
   `BMM_CLASS`, `BMM_TYPE`, `BMM_PROPERTY`, `BMM_MODEL`, `BMM_PACKAGE`,
   `BMM_GENERIC_PARAMETER`, `BMM_OPEN_TYPE`) — the generation `rm_access`
-  publishes. v3: `src/v3/bmm3/core/entity/bmm_type_impl.rs` (the type naming trio +
+  publishes. v3: `src/v1_1/bmm3/core/entity/bmm_type_impl.rs` (the type naming trio +
   flattening + the meta-type lattice: `is_abstract`/`is_primitive`/
   `type_base_name`/`unitary_type`/`effective_type`/`effective_base_class`/
   `is_open`/`is_closed`/`is_partially_closed`, plus the `From` impls that ARE the
   `BMM_TYPE ⊃ BMM_UNITARY_TYPE ⊃ BMM_EFFECTIVE_TYPE ⊃ BMM_MODEL_TYPE` lattice),
-  `src/v3/bmm3/core/entity/bmm_class_impl.rs` (class attributes, `type()` generators,
+  `src/v1_1/bmm3/core/entity/bmm_class_impl.rs` (class attributes, `type()` generators,
   `generic_parameter_conformance_type`, `has_ancestor_class`, `all_ancestors`,
   `flat_features`, `BMM_ENUMERATION.name_map`),
-  `src/v3/bmm3/core/feature/bmm_feature_impl.rs` (`signature()`/`arity()`/
-  `is_boolean()`), `src/v3/bmm3/core/literal_value/bmm_literal_value_impl.rs`
+  `src/v1_1/bmm3/core/feature/bmm_feature_impl.rs` (`signature()`/`arity()`/
+  `is_boolean()`), `src/v1_1/bmm3/core/literal_value/bmm_literal_value_impl.rs`
   (`value_literal`/`syntax` + the literal-evaluation boundary), and
-  `src/v3/bmm3/core/model/bmm_model_impl.rs` — the MODEL-level navigation the type
+  `src/v1_1/bmm3/core/model/bmm_model_impl.rs` — the MODEL-level navigation the type
   lattice is the precondition for (`class_definition`, `all_ancestor_classes`,
   `property_definition` over the model-flattened property set, and
   `type_conforms_to` per `LANG/docs/bmm3/master06-core-types.adoc` §Type
@@ -53,13 +55,13 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
   boundary is recorded, name WHICH generation it belongs to — attributing a
   generation-specific gap to "the openEHR specs" is a misattribution the citation
   rule exists to prevent.
-- **`src/el/` is the hand-written Expression Language parser, and it is the ONLY
-  writer of the `src/v3/bmm3/expression/` classes.** Spec oracle:
+- **`src/v1_1/el/` is the hand-written Expression Language parser, and it is the ONLY
+  writer of the `src/v1_1/bmm3/expression/` classes.** Spec oracle:
   `docs/specs/openehr/LANG/docs/EL/` plus the vendored normative grammars
   `vendor/grammar/{ElLexer.g4, ElParser.g4}` (openEHR-antlr4), which the EL
   syntax appendix `masterAppA-syntax.adoc` includes verbatim. It follows the BEL
   house pattern — a recursive-descent parser generic over an `ElBuilder` — but
-  shares NO productions with `src/bel/`: `ElParser.g4` imports `Cadl2Parser`, not
+  shares NO productions with `src/v1_1/bel/`: `ElParser.g4` imports `Cadl2Parser`, not
   `base_expressions.g4`, renames every production, and its operator precedence
   comes from the EL tables (`master05-expressions.adoc` §Primitive Operators +
   §Precedence and Parentheses: `NOT` > `AND` > `OR` > `XOR` > `IMPLIES`), which
@@ -76,14 +78,14 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
     `BLOCK_DELIM` and `?` lexical forms have no union production), the
     quantifiers' mapping to a container function taking a Function agent, and
     the `matches` constraint leaf.
-- **`src/v3/bmm3/statement/` stays inert, and `src/v3/bmm3/expression/` carries no
+- **`src/v1_1/bmm3/statement/` stays inert, and `src/v1_1/bmm3/expression/` carries no
   spec BEHAVIOUR.** None of `eval_type()`, `reference()`, `is_callable()`,
   `operator_definition()`, `equivalent_call()` exists and none of the 9 declared
   invariants is enforced; do not add a `*_impl.rs` speculatively. The statement
   package is optional by the spec's own words
   (`LANG/docs/bmm3/master12-statements.adoc` §Overview: "This facility is not
   needed for achieving the original purpose of BMM"). The expression classes
-  are now CONSTRUCTED (by `src/v2/bmm_persistence/create_bmm3_assertion.rs`), which
+  are now CONSTRUCTED (by `src/v1_1/bmm_persistence/create_bmm3_assertion.rs`), which
   is a different thing from evaluating them.
   `beom` is a DIFFERENT spec's object model (BEL, STABLE) and is never wired into
   `BMM_ASSERTION`; that would be a category error.
@@ -99,7 +101,7 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
 - Codegen consumes the JSON BMM serialization only
   (`tools/openehr-codegen/vendor/bmm/`); the ODIN reader exists for
   ADL/ODIN instance text, not for loading meta-models.
-- **`src/lexer/` is the ONE lexer in the workspace** for the ADL/ODIN/BEL
+- **`src/v1_1/lexer/` is the ONE lexer in the workspace** for the ADL/ODIN/BEL
   family — one `logos` token superset (`lexer::Token`/`Spanned`, the union of
   `base_lexer.g4` + `adl_keywords.g4` + `odin.g4`/`odin_values.g4` +
   `base_expressions.g4`) plus three thin entry points `lex_adl` / `lex_odin` /
@@ -127,7 +129,7 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
     `tests/it/lexer_equivalence.rs` against fixtures captured from the three
     pre-unification lexers. **Editing a fixture line changes an accepted or
     refused lexical surface** and needs an adjudicated, spec-cited reason.
-- **`src/v2/bmm_persistence/` is generated types + a hand-written P_BMM SCHEMA
+- **`src/v1_1/bmm_persistence/` is generated types + a hand-written P_BMM SCHEMA
   READER.** The `P_BMM_*` type files are generated; beside them live the
   hand-written pipeline `master02-overview.adoc` §Conceptual Approach
   prescribes — `reader.rs` (ODIN text → `P_BMM_SCHEMA`, a STRICT read: an
@@ -141,7 +143,7 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
   `load_model`), `error.rs` (the one typed `PBmmReadError`), `validate.rs` (the
   model validity checker), plus
   `p_bmm_*_impl.rs` spec functions, and `create_bmm3_assertion.rs` (persisted
-  assertion STRING → `BMM_ASSERTION`, over the `src/el/` parser).
+  assertion STRING → `BMM_ASSERTION`, over the `src/v1_1/el/` parser).
   **Two failure layers, deliberately separate.** `PBmmReadError` is FAIL-FAST
   and every variant names a condition under which no `BMM_*` object can be
   constructed. `validate.rs` COLLECTS what construction survives: the
@@ -199,7 +201,7 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
   name/documentation/functions, and `create_model.rs` projects it as an abstract
   `BMM_CLASS`. This reader is NOT the codegen path either — codegen still
   consumes only the `.bmm.json` serialisation via `openehr-codegen`.
-- **`src/v2/bmm/rm_access/` is the schema-REPOSITORY facade over that reader**
+- **`src/v1_1/bmm/rm_access/` is the schema-REPOSITORY facade over that reader**
   (`LANG/docs/bmm/master04-rm_access.adoc`): `*_impl.rs` behaviour on the
   generated `REFERENCE_MODEL_ACCESS` / `SCHEMA_DESCRIPTOR` data classes plus a
   typed `error.rs`. It is the ONLY module in this crate that touches the
@@ -210,14 +212,14 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
   candidate set (`is_top_level`, `create_schema`) take it as a parameter, each
   with the adjudication at the site — never a synthetic `meta_data` key or a
   shadow field.
-- **`src/odin/` is the real ODIN reader** (a `chumsky` parser over
+- **`src/v1_1/odin/` is the real ODIN reader** (a `chumsky` parser over
   `lexer::lex_odin` + an `OdinValue` tree; `openehr_lang::odin::parse`), NOT
   part of the generated/`bmm*`/`beom` model — never route it through codegen.
   Spec oracle: `docs/specs/openehr/LANG/docs/odin/` + the vendored grammars
   `vendor/grammar/{odin.g4,odin_values.g4,base_lexer.g4}`. `openehr-adl`
   consumes it to parse ADL2 ODIN sections. Do not touch
   `bmm`/`bmm3`/`beom`/`bmm_persistence` when editing `odin`.
-- **`src/escape.rs` is the ONE home for `master03` string-escape semantics**
+- **`src/v1_1/escape.rs` is the ONE home for `master03` string-escape semantics**
   (`LANG/docs/odin/master03-basics.adoc` §File Encoding + §Special Character
   Sequences, verbatim in `AM/docs/ADL2/master03-file_encoding.adoc`): the six
   quoted forms plus BOTH `\uHHHH` and `\uHHHHHHHH`, and NOTHING else — the set

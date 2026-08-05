@@ -1,9 +1,9 @@
-//! The ODIN bridge — one home for reading an `openehr_lang::odin` value tree
+//! The ODIN bridge — one home for reading an `openehr_lang::v1_1::odin` value tree
 //! into AOM/BASE types, plus the `master03` lexical decoding both ODIN and cADL
 //! share.
 //!
 //! ODIN is a LANG-component specification
-//! (`docs/specs/openehr/LANG/docs/odin/`), parsed by `openehr_lang::odin`; this
+//! (`docs/specs/openehr/LANG/docs/odin/`), parsed by `openehr_lang::v1_1::odin`; this
 //! module is the *reading* layer over that tree: type-cast peeling
 //! (`untyped`), scalar/list/map extraction, term-code and UUID conversion, and
 //! the canonical-JSON encoding a `C_DEFINED_OBJECT.default_value` needs.
@@ -13,7 +13,7 @@
 //! string/character literal decoding of `ADL2/master03-file_encoding.adoc`
 //! §File Encoding + §Special Character Sequences
 //! (`decode_string`/`decode_character` — delimiter stripping over
-//! [`openehr_lang::escape`], which owns the escape
+//! [`openehr_lang::v1_1::escape`], which owns the escape
 //! semantics for ODIN, BEL and cADL alike) and the delimited-regex handling of
 //! `AOM2/master04.5` §Class Definitions (`C_STRING`).
 //!
@@ -34,7 +34,7 @@ use std::collections::BTreeMap;
 
 use openehr_base::prelude::{TerminologyCode, Uuid};
 use openehr_base::v1_3::base_types::definitions::definitions_impl::LOCAL_TERMINOLOGY_ID;
-use openehr_lang::odin::{OdinInterval, OdinKey, OdinValue};
+use openehr_lang::v1_1::odin::{OdinInterval, OdinKey, OdinValue};
 
 // ── ODIN tree reading ─────────────────────────────────────────────────────
 
@@ -590,18 +590,18 @@ fn class_name(rm_type: &str) -> &str {
 /// Decode a double-quoted `master03` string literal (delimiters included).
 ///
 /// The escape semantics themselves live in
-/// [`openehr_lang::escape`] — one home for ODIN, BEL and
+/// [`openehr_lang::v1_1::escape`] — one home for ODIN, BEL and
 /// cADL, since `ADL2/master03-file_encoding.adoc` §File Encoding + §Special
 /// Character Sequences and their verbatim ODIN twin
 /// (`LANG/docs/odin/master03-basics.adoc`) define one escape set.
 ///
 /// # Errors
-/// [`openehr_lang::escape::EscapeError`] for a `\u` escape that denotes no
+/// [`openehr_lang::v1_1::escape::EscapeError`] for a `\u` escape that denotes no
 /// character. The cADL lexer's own escape check is STRUCTURAL only (4 or 8 hex
 /// digits), so this is where such a defect is caught, with the offending
 /// literal's span.
-pub(crate) fn decode_string(raw: &str) -> Result<String, openehr_lang::escape::EscapeError> {
-    openehr_lang::escape::decode_string_literal(raw)
+pub(crate) fn decode_string(raw: &str) -> Result<String, openehr_lang::v1_1::escape::EscapeError> {
+    openehr_lang::v1_1::escape::decode_string_literal(raw)
 }
 
 /// Decode a single-quoted `CHARACTER` literal (delimiters included) into the
@@ -610,8 +610,10 @@ pub(crate) fn decode_string(raw: &str) -> Result<String, openehr_lang::escape::E
 /// # Errors
 /// As [`decode_string`]. The lexer admits only the six quoted forms inside a
 /// character literal, so no `\u` escape reaches here in practice.
-pub(crate) fn decode_character(raw: &str) -> Result<String, openehr_lang::escape::EscapeError> {
-    openehr_lang::escape::decode_character_literal(raw)
+pub(crate) fn decode_character(
+    raw: &str,
+) -> Result<String, openehr_lang::v1_1::escape::EscapeError> {
+    openehr_lang::v1_1::escape::decode_character_literal(raw)
 }
 
 // ── delimited regex (`AOM2/master04.5` §`C_STRING`) ───────────────────────
@@ -725,7 +727,7 @@ mod tests {
     /// produce a dotted tag no RM reader recognises.
     #[test]
     fn a_namespaced_cast_tags_a_default_value_with_the_class_name() {
-        let value = openehr_lang::odin::parse(
+        let value = openehr_lang::v1_1::odin::parse(
             "a = (org.openehr.rm.data_types.text.DV_TEXT) <value = <\"x\">>",
         )
         .expect("the namespaced cast should parse");
@@ -737,7 +739,7 @@ mod tests {
     /// The canonical JSON of the interval `src` denotes, read as the sole
     /// attribute `a` of an ODIN text.
     fn interval_json(src: &str) -> serde_json::Value {
-        let value = openehr_lang::odin::parse(&format!("a = <{src}>"))
+        let value = openehr_lang::v1_1::odin::parse(&format!("a = <{src}>"))
             .unwrap_or_else(|e| panic!("{src} should parse: {e}"));
         let json = odin_to_json(&value).unwrap_or_else(|e| panic!("{src} should encode: {e}"));
         json["a"].clone()
@@ -745,7 +747,7 @@ mod tests {
 
     /// The `OdinJsonError` the interval `src` raises.
     fn interval_error(src: &str) -> OdinJsonError {
-        let value = openehr_lang::odin::parse(&format!("a = <{src}>"))
+        let value = openehr_lang::v1_1::odin::parse(&format!("a = <{src}>"))
             .unwrap_or_else(|e| panic!("{src} should parse: {e}"));
         odin_to_json(&value).expect_err("the interval should be refused")
     }

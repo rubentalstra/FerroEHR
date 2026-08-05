@@ -125,7 +125,7 @@ Design (in-session, critical path):
    collapse into a single generation-list renderer. Every generated crate —
    including single-generation `base`/`rm`/`term` — gains its version module
    now (`openehr_base::v1_3`, `openehr_rm::v1_2`, `openehr_term::v3_1`,
-   `openehr_am::v1_4`/`v2_4`, `openehr_lang::v2`/`v3`), so child (b) is
+   `openehr_am::v1_4`/`v2_4`, `openehr_lang::v1_1`), so child (b) is
    purely additive (no second workspace sweep).
 3. **Emitted `Generation` enum** per crate (from the same table): variants
    per generation (`V1_2`, …), `Generation::CURRENT`, `spec_version()`,

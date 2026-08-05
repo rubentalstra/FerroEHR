@@ -4,7 +4,7 @@
 //! meta-model.
 
 use crate::v2_4::bmm3::core::feature::bmm_local_routine::BmmLocalRoutine;
-use openehr_lang::v3::bmm3::core::feature::bmm_external_routine::BmmExternalRoutine;
+use openehr_lang::v1_1::bmm3::core::feature::bmm_external_routine::BmmExternalRoutine;
 
 /// Closed subtype set of `BMM_ROUTINE_DEFINITION`, dispatched on each payload's `_type`.
 ///

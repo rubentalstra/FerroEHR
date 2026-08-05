@@ -1,4 +1,4 @@
-//! openEHR LANG: the BMM object model in BOTH its extant generations, generated from the BMM meta-model — the STABLE, tool-implemented v2.x model (`v2`: the `bmm` object model, its `bmm_persistence` P_BMM form and the `beom` expression model) and the PAUSED v3 line (`v3`: `bmm3`, with the `EL_*` expression and `BMM_STATEMENT*` families). Each generation is emitted completely under its own version module; the crate prelude re-exports the current generation (`v2`) only. The generator's own BMM reader lives in openehr-codegen (tooling, not spec); the hand-written ODIN reader and BEL parser live beside this generated tree.
+//! openEHR LANG, generated from the BMM meta-model: one generation per component version. `v1_1` (the 1.1.0 development line, the current generation) carries the version's published specification units side by side — the STABLE, tool-implemented BMM v2.x model (`bmm`, its `bmm_persistence` P_BMM form, the `beom` BEL expression model; on the prelude) and the PAUSED BMM3 model (`bmm3`, full-path only) — plus the hand-written ODIN/BEL/EL readers and the shared lexer for that version's notations. The generator's own BMM reader lives in openehr-codegen (tooling, not spec).
 //!
 //! @generated module tree by openehr-codegen. The type files
 //! are generated; hand-written spec behaviour lives in sibling `*_impl.rs`.
@@ -20,24 +20,21 @@
 #![recursion_limit = "512"]
 
 pub mod prelude;
-pub mod v2;
-pub mod v3;
+pub mod v1_1;
 
 /// The BMM generations this crate emits, one variant per version module,
 /// oldest first.
 ///
 /// Generated from the openehr-codegen composition table — the single
 /// authority for which generations exist. [`std::fmt::Display`] and
-/// [`std::str::FromStr`] round-trip the generation-module name (`"v2"`). `Generation::default()` is the crate's CURRENT generation — the
+/// [`std::str::FromStr`] round-trip the generation-module name (`"v1_1"`). `Generation::default()` is the crate's CURRENT generation — the
 /// one `crate::prelude` re-exports (the composition table's `current`
 /// marker, via the std `#[default]` variant attribute).
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Generation {
-    /// The `v2` generation — openEHR specification version 1.1.0.
+    /// The `v1_1` generation — openEHR specification version 1.1.0.
     #[default]
-    V2,
-    /// The `v3` generation — openEHR specification version 1.1.0.
-    V3,
+    V1_1,
 }
 
 impl Generation {
@@ -45,7 +42,7 @@ impl Generation {
     #[must_use]
     pub const fn spec_version(self) -> &'static str {
         match self {
-            Self::V2 | Self::V3 => "1.1.0",
+            Self::V1_1 => "1.1.0",
         }
     }
 
@@ -55,8 +52,7 @@ impl Generation {
     #[must_use]
     pub const fn as_str(self) -> &'static str {
         match self {
-            Self::V2 => "v2",
-            Self::V3 => "v3",
+            Self::V1_1 => "v1_1",
         }
     }
 }
@@ -69,7 +65,7 @@ impl std::fmt::Display for Generation {
 
 /// Error returned when parsing a [`Generation`] from an unknown token.
 ///
-/// The valid tokens are the generation-module names (`v2`, `v3`).
+/// The valid tokens are the generation-module names (`v1_1`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GenerationParseError {
     unrecognized: String,
@@ -79,7 +75,7 @@ impl std::fmt::Display for GenerationParseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "unknown generation {:?} (valid: `v2`, `v3`)",
+            "unknown generation {:?} (valid: `v1_1`)",
             self.unrecognized
         )
     }
@@ -92,22 +88,13 @@ impl std::str::FromStr for Generation {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "v2" => Ok(Self::V2),
-            "v3" => Ok(Self::V3),
+            "v1_1" => Ok(Self::V1_1),
             other => Err(GenerationParseError {
                 unrecognized: other.to_owned(),
             }),
         }
     }
 }
-
-// hand-written modules (spec behaviour), auto-declared:
-pub mod bel;
-pub mod el;
-pub mod escape;
-pub mod lexer;
-pub mod odin;
-pub mod position;
 
 // canonical-JSON `serde` impls (openehr-codegen -- emit-json), auto-declared:
 mod json_serde;
