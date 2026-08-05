@@ -68,15 +68,6 @@ const BACK_REFERENCE: &str = "(omitted: back-reference)";
 /// The placeholder for a column the BMM states nothing for.
 const ABSENT: &str = "-";
 
-/// The composition keys whose emitted crate is rendered from the schema
-/// AUGMENTED with the cross-schema re-emission closure
-/// ([`crate::analyze::augment_with_reemit`]) — today only AM 2.4, the one
-/// composition `cli::cmd_emit` grafts the closure into before rendering. Every
-/// other composition is rendered from its own schema verbatim, so the report
-/// projects those verbatim too; it reports what `emit` emits, not what a
-/// closure would allow.
-const AUGMENTED_WITH_REEMIT: &[&str] = &["am24"];
-
 /// The report's output format.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Format {
@@ -287,26 +278,22 @@ fn collect(component: Option<&str>, flattened: bool) -> Result<Scope, Error> {
     };
     for key in select_keys(component)? {
         let composed = compose(key)?;
-        let deps: Vec<&BmmSchema> = composed.dep_schemas.iter().collect();
         for generation in &composed.generations {
             // Project the schema the emitter actually RENDERS this generation
             // from — its own schema, augmented with the cross-schema
-            // re-emission closure exactly where `cli::cmd_emit` augments it
-            // (see [`AUGMENTED_WITH_REEMIT`]). Projecting a differently-composed
-            // schema would attribute field shapes to a crate that emits no such
-            // class.
-            let schema = if AUGMENTED_WITH_REEMIT.contains(&key) {
-                let reemit = cross_schema_reemit(&generation.model, &generation.schema);
-                augment_with_reemit(&generation.schema, &generation.model, &reemit, &deps)
-            } else {
-                generation.schema.clone()
-            };
+            // re-emission closure exactly as `cli::cmd_emit` augments every
+            // generation (a generation with an empty closure is unchanged).
+            // Projecting a differently-composed schema would attribute field
+            // shapes to a crate that emits no such class.
+            let deps: Vec<&BmmSchema> = generation.dep_schemas.iter().collect();
+            let reemit = cross_schema_reemit(&generation.model, &generation.schema);
+            let schema = augment_with_reemit(&generation.schema, &generation.model, &reemit, &deps);
             collect_generation(
                 key,
-                generation.file,
+                generation.spec.file,
                 &generation.model,
                 &schema,
-                &composed.external,
+                &generation.external,
                 flattened,
                 &mut out,
             );

@@ -18,7 +18,7 @@ use crate::load::oas::{Oas, Operation};
 use crate::plan::overrides::oas_monomorphization;
 use crate::render::naming;
 use serde_json::Value;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
 /// Map non-`[A-Za-z0-9_]` chars to `_` (a valid-ident base).
@@ -137,10 +137,11 @@ fn emit_additional_properties(b: &mut String, name: &str, schema: &Value, ctx: &
     );
 }
 
-/// Names emitted by the RM and BASE crates, to resolve OAS `$ref`s to preludes.
+/// Types emitted by the RM and BASE crates — `PascalCase` Rust name → the full
+/// generation-module type path an OAS `$ref` resolves to (never a prelude).
 pub(crate) struct RmNames {
-    pub rm: BTreeSet<String>,
-    pub base: BTreeSet<String>,
+    pub rm: BTreeMap<String, String>,
+    pub base: BTreeMap<String, String>,
 }
 
 /// Component schemas the OAS declares GENERIC through a discriminator-typed
@@ -204,7 +205,7 @@ fn stable_repr(v: &Value) -> String {
             Value::Object(m) => Value::Object(
                 m.iter()
                     .map(|(k, val)| (k.clone(), sort(val)))
-                    .collect::<std::collections::BTreeMap<_, _>>()
+                    .collect::<BTreeMap<_, _>>()
                     .into_iter()
                     .collect(),
             ),
@@ -244,8 +245,8 @@ pub(crate) fn hoist_set(bundles: &[(&str, Oas)], names: &RmNames) -> BTreeSet<St
         .filter(|(n, c)| {
             **c > 1
                 && reprs.get(*n).is_some_and(|r| r.len() == 1)
-                && !names.rm.contains(*n)
-                && !names.base.contains(*n)
+                && !names.rm.contains_key(*n)
+                && !names.base.contains_key(*n)
                 && oas_monomorphization(n).is_none()
         })
         .map(|(n, _)| n.clone())
@@ -256,8 +257,8 @@ pub(crate) fn hoist_set(bundles: &[(&str, Oas)], names: &RmNames) -> BTreeSet<St
         hoisted.retain(|n| {
             refs.get(n).is_some_and(|rs| {
                 rs.iter().all(|r| {
-                    names.rm.contains(r)
-                        || names.base.contains(r)
+                    names.rm.contains_key(r)
+                        || names.base.contains_key(r)
                         || oas_monomorphization(r).is_some()
                         || snapshot.contains(r)
                 })
@@ -329,7 +330,9 @@ pub(crate) fn emit_group(
         .iter()
         .map(|(n, _)| n.clone())
         .filter(|n| {
-            !names.rm.contains(n) && !names.base.contains(n) && oas_monomorphization(n).is_none()
+            !names.rm.contains_key(n)
+                && !names.base.contains_key(n)
+                && oas_monomorphization(n).is_none()
         })
         .collect();
     let ctx = Ctx {
@@ -466,11 +469,11 @@ impl Ctx<'_> {
             // reader — so a typed field is strict by construction where an
             // untyped `Value` silently accepted anything (issue #1712; the
             // former "no serde derive" rationale this branch carried is gone).
-            if self.names.rm.contains(&name) {
-                return format!("openehr_rm::prelude::{name}");
+            if let Some(path) = self.names.rm.get(&name) {
+                return path.clone();
             }
-            if self.names.base.contains(&name) {
-                return format!("openehr_base::prelude::{name}");
+            if let Some(path) = self.names.base.get(&name) {
+                return path.clone();
             }
             if self.hoisted.contains(&name) && !self.in_common {
                 // A GENERIC-over schema has a group-local alias (bare name);

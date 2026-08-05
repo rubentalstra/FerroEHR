@@ -6,14 +6,13 @@ use crate::analyze::{augment_with_reemit, cross_schema_reemit, emittable_specs};
 use crate::load::bmm::BmmSchema;
 use crate::load::impls::SiblingImpls;
 use crate::load::{oas, xsd};
-use crate::plan::composition::{self, Composed, compose};
-use crate::render::emit::{
-    GenFile, crate_generations, emit_crate, emit_generations, emit_multi_crate, type_module_path,
-};
+use crate::plan::composition::{self, ComposedGeneration, compose};
+use crate::render::emit::{CrateGeneration, GenFile, emit_composed, type_module_path};
 use crate::render::{
     emit, emit_json, emit_opt, emit_rest, emit_rm_model, emit_validate, emit_xml, model_query,
     naming,
 };
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 /// The `openehr-its` crate root (holds the vendored XSDs/OAS and receives the
 /// generated XML/REST code). `../../crates/openehr-its` from this tool's
@@ -183,19 +182,22 @@ fn cmd_emit_rest() -> Result<(), Box<dyn std::error::Error>> {
         "query",
         "system",
     ];
+    // The REST contract is emitted against the CURRENT RM/BASE generations
+    // (the wire the server serves); OAS $ref names are PascalCase
+    // (`EhrStatus`) — the same as the emitted Rust type names — so map each
+    // current generation's emittable specs to full generation-module type
+    // paths.
     let base = compose("base")?;
     let rm = compose("rm")?;
-    // OAS $ref names are PascalCase (`EhrStatus`) — the same as the emitted Rust
-    // type names — so map each crate's emittable spec names through `type_name`.
     let names = emit_rest::RmNames {
-        base: emittable_specs(&base.model, &base.own_schema)
-            .iter()
-            .map(|s| naming::type_name(s))
-            .collect(),
-        rm: emittable_specs(&rm.model, &rm.own_schema)
-            .iter()
-            .map(|s| naming::type_name(s))
-            .collect(),
+        base: generation_type_paths(
+            base.current(),
+            &format!("openehr_base::{}", base.current().spec.module),
+        ),
+        rm: generation_type_paths(
+            rm.current(),
+            &format!("openehr_rm::{}", rm.current().spec.module),
+        ),
     };
 
     let oas_dir = Path::new(ITS_ROOT).join("vendor/rest-oas");
@@ -254,9 +256,13 @@ fn cmd_emit_rest() -> Result<(), Box<dyn std::error::Error>> {
 /// `openehr-its/src/xml/generated/`. Generates both wire lineages: v1
 /// (`.../v1`, parity target) and v2 (`.../v2`, latest).
 fn cmd_emit_xml() -> Result<(), Box<dyn std::error::Error>> {
+    // The XML codec covers the CURRENT RM/BASE generations (the wire the
+    // server serves).
     let base = compose("base")?;
     let rm = compose("rm")?;
-    let rm_aug = augmented_schema(&rm);
+    let base_root = format!("openehr_base::{}", base.current().spec.module);
+    let rm_root = format!("openehr_rm::{}", rm.current().spec.module);
+    let rm_aug = augmented_schema(rm.current());
 
     // The RM-instance wire shape (element names, order, xsi:type, attributes) is
     // identical across the two ITS-XML lineages; they differ only by the root
@@ -282,18 +288,18 @@ fn cmd_emit_xml() -> Result<(), Box<dyn std::error::Error>> {
 
     let schemas = [
         emit_xml::XmlSchema {
-            model: &base.model,
-            schema: &base.own_schema,
-            prelude: "openehr_base::prelude",
+            model: &base.current().model,
+            schema: &base.current().schema,
+            root: &base_root,
         },
         emit_xml::XmlSchema {
-            model: &rm.model,
+            model: &rm.current().model,
             // The XML codec covers the crate's re-emitted closure twins too
             // (#1699: the BASE Interval/Iso8601 family re-emitted into
             // openehr-rm) — the impls must exist for every type a field of
             // the augmented schema names.
             schema: &rm_aug,
-            prelude: "openehr_rm::prelude",
+            root: &rm_root,
         },
     ];
     let mut unmatched = Vec::new();
@@ -328,138 +334,86 @@ fn cmd_emit_xml() -> Result<(), Box<dyn std::error::Error>> {
 /// Covers the same crate composition `emit` consumes, including AM 2.4's
 /// cross-schema re-emission closure.
 fn cmd_emit_json() -> Result<(), Box<dyn std::error::Error>> {
-    let base = compose("base")?;
-    let rm = compose("rm")?;
-    let lang = compose("lang")?;
-    let am14 = compose("am14")?;
-    let am24 = compose("am24")?;
-    let term = compose("term")?;
-
-    // Every crate whose emission grafts a cross-schema re-emission closure
-    // (see `augmented_schema` — #1699: rm, am14, am24) needs the JSON codec to
-    // cover the re-emitted crate-local types too, so `json_types` must see
-    // exactly the class set `emit` renders.
-    let rm_aug = augmented_schema(&rm);
-    let am14_aug = augmented_schema(&am14);
-    let am24_aug = augmented_schema(&am24);
-
-    // The codec is keyed by the crate PRELUDE path, and `_type` dispatch admits
-    // exactly one impl per Rust type — so a crate composed of several BMM
-    // generations contributes one codec per prelude-OWNED class, per generation.
-    // For LANG that means the v3 (bmm3) shape for the 18 names both generations
-    // declare and the v2 shape for everything only the v2 file declares; the v2
-    // twins of the colliding names get NO wire codec, because they are not in
-    // the prelude and no wire route serves them (they are the in-process
-    // reflection surface the P_BMM pipeline materialises —
-    // `LANG/docs/bmm/master06-persistence.adoc`).
-    let no_unexported = std::collections::BTreeMap::new();
-    // A crate composed of several BMM generations exports one type per Rust NAME
-    // from its prelude, so for a class name both generations declare, the losing
-    // twin has to be named by its full module path. Both twins keep a codec: they
-    // are distinct Rust types, so the impls do not conflict and the emitted model
-    // stays codec-complete (see `emit_json::JsonSchema::unexported`).
-    let lang_unexported: Vec<std::collections::BTreeMap<String, String>> = lang
-        .generations
+    // One JsonSchema per (crate, generation), each named from its generation
+    // root — every generation is codec-complete, colliding twins included
+    // (see `JsonSchema::root` for the adjudication).
+    // Every generation's emission schema is the augmented one (`emit` renders
+    // the re-emission closure, so the codec must cover it too — #1699).
+    struct PreparedGen {
+        root: String,
+        aug: BmmSchema,
+    }
+    let keys = ["base", "rm", "lang", "am", "term"];
+    let mut composed = Vec::new();
+    for k in keys {
+        composed.push(compose(k)?);
+    }
+    let prepared: Vec<Vec<PreparedGen>> = composed
         .iter()
-        .map(|g| {
-            g.schema
-                .classes
-                .keys()
-                .filter(|name| !g.owned.contains(*name))
-                .map(|name| {
-                    (
-                        name.clone(),
-                        format!("openehr_lang::{}", type_module_path(&g.schema, name)),
-                    )
+        .map(|c| {
+            let krate = c.comp.crate_name.replace('-', "_");
+            c.generations
+                .iter()
+                .map(|g| PreparedGen {
+                    root: format!("{krate}::{}", g.spec.module),
+                    aug: augmented_schema(g),
+                })
+                .collect()
+        })
+        .collect();
+    let schemas_by_crate: Vec<Vec<emit_json::JsonSchema<'_>>> = composed
+        .iter()
+        .zip(&prepared)
+        .map(|(c, gens)| {
+            c.generations
+                .iter()
+                .zip(gens)
+                .map(|(g, p)| emit_json::JsonSchema {
+                    model: &g.model,
+                    schema: &p.aug,
+                    root: &p.root,
                 })
                 .collect()
         })
         .collect();
 
-    let base_schema = emit_json::JsonSchema {
-        model: &base.model,
-        schema: &base.own_schema,
-        prelude: "openehr_base::prelude",
-        unexported: &no_unexported,
-    };
-    let rm_schema = emit_json::JsonSchema {
-        model: &rm.model,
-        schema: &rm_aug,
-        prelude: "openehr_rm::prelude",
-        unexported: &no_unexported,
-    };
-    let lang_schemas: Vec<emit_json::JsonSchema<'_>> = lang
-        .generations
-        .iter()
-        .zip(&lang_unexported)
-        .map(|(g, unexported)| emit_json::JsonSchema {
-            model: &g.model,
-            schema: &g.schema,
-            prelude: "openehr_lang::prelude",
-            unexported,
-        })
-        .collect();
-    let meta_schemas = [
-        emit_json::JsonSchema {
-            model: &am14.model,
-            schema: &am14_aug,
-            prelude: "openehr_am::am14::prelude",
-            unexported: &no_unexported,
-        },
-        emit_json::JsonSchema {
-            model: &am24.model,
-            schema: &am24_aug,
-            prelude: "openehr_am::am24::prelude",
-            unexported: &no_unexported,
-        },
-        emit_json::JsonSchema {
-            model: &term.model,
-            schema: &term.own_schema,
-            prelude: "openehr_term::prelude",
-            unexported: &no_unexported,
-        },
-    ];
+    // One emitted file per SPEC CRATE: the impls must live where the types are
+    // defined (orphan rule), and being in-crate is also what lets them read the
+    // `pub(crate)` fields of a validated class and construct through its
+    // hand-written door (`plan::construction`).
+    let mut written = Vec::new();
+    for (c, schemas) in composed.iter().zip(&schemas_by_crate) {
+        let krate = c.comp.crate_name.replace('-', "_");
+        let src = crates_root().join(c.comp.crate_name).join("src");
+        std::fs::create_dir_all(&src)?;
+        let path = src.join("json_serde.rs");
+        std::fs::write(
+            &path,
+            emit::guard_value_carriers(&emit_json::emit_file(schemas, &krate)),
+        )?;
+        declare_json_serde_module(&src.join("lib.rs"), &mut written)?;
+        written.push(path);
+    }
 
     // The structural dispatch is keyed by the bare canonical-JSON `_type`
     // string, so a class name several components' BMMs declare (110 of them —
     // `RESOURCE_DESCRIPTION`, `AUTHORED_RESOURCE`, the `BMM_*` family) resolves
     // by SCHEMA PRIORITY, and this is the priority order: RM first, then BASE,
-    // then the archetype/meta components. Rationale: the dispatch's caller is
-    // the RM wire-boundary validator (`openehr_its::wire_validate`), and the
-    // same-named twins differ materially (RM's `RESOURCE_DESCRIPTION_ITEM.language`
-    // is a `CODE_PHRASE`, BASE's a `Terminology_code`), so decoding an RM wire
+    // then the archetype/meta components (each crate's generations in table
+    // order). Rationale: the dispatch's caller is the RM wire-boundary
+    // validator (`openehr_its::wire_validate`), and the same-named twins
+    // differ materially (RM's `RESOURCE_DESCRIPTION_ITEM.language` is a
+    // `CODE_PHRASE`, BASE's a `Terminology_code`), so decoding an RM wire
     // node with another component's shape would be wrong. No openEHR spec
     // governs a cross-component `_type` namespace — our own design.
-    let mut structural_schemas = vec![rm_schema, base_schema];
-    structural_schemas.extend(lang_schemas.iter().copied());
-    structural_schemas.extend(meta_schemas);
-
-    // One emitted file per SPEC CRATE: the impls must live where the types are
-    // defined (orphan rule), and being in-crate is also what lets them read the
-    // `pub(crate)` fields of a validated class and construct through its
-    // hand-written door (`plan::construction`).
-    let per_crate: [(&str, &str, Vec<emit_json::JsonSchema<'_>>); 5] = [
-        ("openehr-base", "openehr_base", vec![base_schema]),
-        ("openehr-rm", "openehr_rm", vec![rm_schema]),
-        ("openehr-lang", "openehr_lang", lang_schemas.clone()),
-        (
-            "openehr-am",
-            "openehr_am",
-            vec![meta_schemas[0], meta_schemas[1]],
-        ),
-        ("openehr-term", "openehr_term", vec![meta_schemas[2]]),
-    ];
-    let mut written = Vec::new();
-    for (dir, krate, schemas) in &per_crate {
-        let src = crates_root().join(dir).join("src");
-        std::fs::create_dir_all(&src)?;
-        let path = src.join("json_serde.rs");
-        std::fs::write(
-            &path,
-            emit::guard_value_carriers(&emit_json::emit_file(schemas, krate)),
-        )?;
-        declare_json_serde_module(&src.join("lib.rs"), &mut written)?;
-        written.push(path);
+    let mut structural_schemas: Vec<emit_json::JsonSchema<'_>> = Vec::new();
+    for key in ["rm", "base", "lang", "am", "term"] {
+        let schemas = keys
+            .iter()
+            .position(|k| *k == key)
+            .and_then(|i| schemas_by_crate.get(i))
+            .ok_or("structural priority names an unknown composition key")?;
+        structural_schemas.extend(schemas.iter().copied());
     }
 
     let gen_dir = Path::new(ITS_ROOT).join("src/json_codec/generated");
@@ -520,15 +474,15 @@ fn declare_json_serde_module(
 /// resolve to the already-generated `openehr-base`/`openehr-rm` XML impls while the
 /// archetype constraint model is generated fresh.
 fn emit_xsd_model(
-    base_specs: &std::collections::BTreeSet<String>,
-    rm_specs: &std::collections::BTreeSet<String>,
+    base_paths: &BTreeMap<String, String>,
+    rm_paths: &BTreeMap<String, String>,
     files: &[PathBuf],
     dir: &str,
     target: &'static emit_opt::ModelTarget,
     module: &emit_opt::ModuleSpec,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let xsd = xsd::XsdModel::parse_files(files)?;
-    let model = emit_opt::OptModel::new(&xsd, base_specs, rm_specs, target);
+    let model = emit_opt::OptModel::new(&xsd, base_paths, rm_paths, target);
 
     let gen_dir = Path::new(ITS_ROOT).join("src").join(dir);
     std::fs::create_dir_all(&gen_dir)?;
@@ -562,12 +516,18 @@ fn emit_xsd_model(
 fn cmd_emit_opt() -> Result<(), Box<dyn std::error::Error>> {
     let base = compose("base")?;
     let rm = compose("rm")?;
-    let base_specs = emittable_specs(&base.model, &base.own_schema);
-    let rm_specs = emittable_specs(&rm.model, &rm.own_schema);
+    let base_paths = generation_spec_paths(
+        base.current(),
+        &format!("openehr_base::{}", base.current().spec.module),
+    );
+    let rm_paths = generation_spec_paths(
+        rm.current(),
+        &format!("openehr_rm::{}", rm.current().spec.module),
+    );
 
     emit_xsd_model(
-        &base_specs,
-        &rm_specs,
+        &base_paths,
+        &rm_paths,
         &xsd::am_files_v1(Path::new(XSD_V1_DIR)),
         "opt14",
         &emit_opt::OPT_TARGET,
@@ -591,21 +551,27 @@ fn cmd_emit_opt() -> Result<(), Box<dyn std::error::Error>> {
 fn cmd_emit_aom2() -> Result<(), Box<dyn std::error::Error>> {
     let base = compose("base")?;
     let rm = compose("rm")?;
-    let base_specs = emittable_specs(&base.model, &base.own_schema);
-    let rm_specs = emittable_specs(&rm.model, &rm.own_schema);
+    let base_paths = generation_spec_paths(
+        base.current(),
+        &format!("openehr_base::{}", base.current().spec.module),
+    );
+    let rm_paths = generation_spec_paths(
+        rm.current(),
+        &format!("openehr_rm::{}", rm.current().spec.module),
+    );
     let aom2_dir = Path::new(XSD_AOM2_DIR);
 
     emit_xsd_model(
-        &base_specs,
-        &rm_specs,
+        &base_paths,
+        &rm_paths,
         &xsd::aom2_files(aom2_dir),
         "aom2",
         &emit_opt::AOM2_TARGET,
         &emit_opt::AOM2_MODULE,
     )?;
     emit_xsd_model(
-        &base_specs,
-        &rm_specs,
+        &base_paths,
+        &rm_paths,
         &xsd::aom2_model_files(aom2_dir),
         "aom2_model",
         &emit_opt::AOM2_MODEL_TARGET,
@@ -620,7 +586,9 @@ fn cmd_emit_aom2() -> Result<(), Box<dyn std::error::Error>> {
 /// absent, so it is correct run standalone; `emit` produces the identical output.
 fn cmd_emit_rm_model() -> Result<(), Box<dyn std::error::Error>> {
     let rm = compose("rm")?;
-    let files = emit_rm_model::emit_files(&rm.model);
+    let current = rm.current();
+    let module = current.spec.module;
+    let files = prefix_gen_files(emit_rm_model::emit_files(&current.model), module);
 
     let src = crates_root().join("openehr-rm").join("src");
     let mut written = Vec::new();
@@ -632,22 +600,23 @@ fn cmd_emit_rm_model() -> Result<(), Box<dyn std::error::Error>> {
         std::fs::write(&full, emit::guard_value_carriers(&f.body))?;
         written.push(full);
     }
-    // `emit` is the usual authority for lib.rs; ensure the module is declared so
-    // the standalone target is correct + byte-identical to `emit`'s output.
-    let lib = src.join("lib.rs");
-    if lib.exists() {
-        let mut body = std::fs::read_to_string(&lib)?;
+    // `emit` is the usual authority for the generation `mod.rs`; ensure the
+    // module is declared so the standalone target is correct + byte-identical
+    // to `emit`'s output.
+    let gen_mod = src.join(module).join("mod.rs");
+    if gen_mod.exists() {
+        let mut body = std::fs::read_to_string(&gen_mod)?;
         if !body.contains("pub mod model;") {
             body.push_str("pub mod model;\n");
-            std::fs::write(&lib, &body)?;
-            written.push(lib);
+            std::fs::write(&gen_mod, &body)?;
+            written.push(gen_mod);
         }
     }
     rustfmt(&written)?;
     println!(
         "emitted {} files into {}",
         files.len(),
-        src.join("model").display()
+        src.join(module).join("model").display()
     );
     Ok(())
 }
@@ -660,8 +629,10 @@ fn cmd_emit_rm_model() -> Result<(), Box<dyn std::error::Error>> {
 /// produces the identical output (via `inject_validate`).
 fn cmd_emit_validate() -> Result<(), Box<dyn std::error::Error>> {
     let rm = compose("rm")?;
-    let rm_aug = augmented_schema(&rm);
-    let files = emit_validate::emit_files(&rm.model, &rm_aug);
+    let current = rm.current();
+    let module = current.spec.module;
+    let rm_aug = augmented_schema(current);
+    let files = prefix_gen_files(emit_validate::emit_files(&current.model, &rm_aug), module);
 
     let src = crates_root().join("openehr-rm").join("src");
     let mut written = Vec::new();
@@ -677,23 +648,40 @@ fn cmd_emit_validate() -> Result<(), Box<dyn std::error::Error>> {
     println!(
         "emitted {} file(s) into {}",
         files.len(),
-        src.join("validate").display()
+        src.join(module).join("validate").display()
     );
     Ok(())
 }
 
+/// Prefix every generated file path with the generation module directory
+/// (`model/data.rs` → `v1_2/model/data.rs`) — the RM model/validate subtrees
+/// are generation-scoped like the type files they describe.
+fn prefix_gen_files(files: Vec<GenFile>, module: &str) -> Vec<GenFile> {
+    files
+        .into_iter()
+        .map(|f| GenFile {
+            path: format!("{module}/{}", f.path),
+            body: f.body,
+        })
+        .collect()
+}
+
 /// Append the generated invariant-core file to `openehr-rm`'s file set. The
 /// module is declared by the permanent `pub(crate) mod generated;` hand edit in
-/// the hand-written `validate.rs`, so nothing else is touched here.
+/// the hand-written `validate.rs` (inside the generation module), so nothing
+/// else is touched here.
 fn inject_validate(files: &mut Vec<GenFile>, mut validate_files: Vec<GenFile>) {
     files.append(&mut validate_files);
 }
 
-/// Append the generated RM-model files to `openehr-rm`'s file set and declare the
-/// module in its `lib.rs` (the authority for the crate layout).
-fn inject_rm_model(files: &mut Vec<GenFile>, mut model_files: Vec<GenFile>) {
+/// Append the generated RM-model files to `openehr-rm`'s file set and declare
+/// the module in its generation `mod.rs` (the authority for the generation's
+/// layout). `model_files` are already generation-prefixed
+/// ([`prefix_gen_files`]).
+fn inject_rm_model(files: &mut Vec<GenFile>, mut model_files: Vec<GenFile>, module: &str) {
+    let gen_mod = format!("{module}/mod.rs");
     for f in files.iter_mut() {
-        if f.path == "lib.rs" && !f.body.contains("pub mod model;") {
+        if f.path == gen_mod && !f.body.contains("pub mod model;") {
             f.body.push_str("pub mod model;\n");
         }
     }
@@ -740,20 +728,47 @@ fn cmd_check_xsd() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// A composition's own schema with its cross-schema re-emission closure
+/// A generation's own schema with its cross-schema re-emission closure
 /// grafted in (`cross_schema_reemit` → `augment_with_reemit`): every upstream
-/// class whose Rust form WIDENS in this crate (a closed-subtype-set enum the
-/// crate's own classes extend) is re-emitted crate-locally at its source
-/// package path, so downstream references resolve against the widened local
-/// twin — the completeness hard rule (owner 2026-07-19), applied uniformly to
-/// EVERY composition rather than am24 alone (#1699: rm re-emits BASE's
-/// `Interval`/`Iso8601_type` family; am14 re-emits `AUTHORED_RESOURCE` +
-/// `RESOURCE_DESCRIPTION`). A composition with an empty closure comes back
+/// class whose Rust form WIDENS in this generation (a closed-subtype-set enum
+/// the generation's own classes extend) is re-emitted crate-locally at its
+/// source package path, so downstream references resolve against the widened
+/// local twin — the completeness hard rule (owner 2026-07-19), applied
+/// uniformly to EVERY generation (#1699: rm re-emits BASE's
+/// `Interval`/`Iso8601_type` family; AM 1.4 re-emits `AUTHORED_RESOURCE` +
+/// `RESOURCE_DESCRIPTION`). A generation with an empty closure comes back
 /// unchanged, so applying this unconditionally is safe by construction.
-fn augmented_schema(c: &Composed) -> BmmSchema {
-    let reemit = cross_schema_reemit(&c.model, &c.own_schema);
-    let dep_refs: Vec<&BmmSchema> = c.dep_schemas.iter().collect();
-    augment_with_reemit(&c.own_schema, &c.model, &reemit, &dep_refs)
+fn augmented_schema(g: &ComposedGeneration) -> BmmSchema {
+    let reemit = cross_schema_reemit(&g.model, &g.schema);
+    let dep_refs: Vec<&BmmSchema> = g.dep_schemas.iter().collect();
+    augment_with_reemit(&g.schema, &g.model, &reemit, &dep_refs)
+}
+
+/// Spec class name → the full generation-module path of its defining module
+/// (`openehr_rm::v1_2::…`), over one generation's emittable specs — the map
+/// shape the XSD/OAS emitters resolve shared types against.
+fn generation_spec_paths(g: &ComposedGeneration, root: &str) -> BTreeMap<String, String> {
+    emittable_specs(&g.model, &g.schema)
+        .into_iter()
+        .map(|s| {
+            let path = format!("{root}::{}", type_module_path(&g.schema, &s));
+            (s, path)
+        })
+        .collect()
+}
+
+/// `PascalCase` Rust type name → full generation-module TYPE path
+/// (`openehr_rm::v1_2::…::EhrStatus`), over one generation's emittable specs —
+/// the map shape `emit-rest` resolves OAS `$ref` names against.
+fn generation_type_paths(g: &ComposedGeneration, root: &str) -> BTreeMap<String, String> {
+    emittable_specs(&g.model, &g.schema)
+        .into_iter()
+        .map(|s| {
+            let ident = naming::type_name(&s);
+            let path = format!("{root}::{}::{ident}", type_module_path(&g.schema, &s));
+            (ident, path)
+        })
+        .collect()
 }
 
 /// The hand-written `*_impl.rs` siblings a generated crate already carries — an
@@ -770,112 +785,66 @@ fn crates_root() -> PathBuf {
 }
 
 fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
-    // Each crate's schema composition (member BMM files, dependency preludes) is
-    // the declarative `plan::composition::COMPOSITIONS` table; `compose` resolves
-    // an entry into the merged model + own schema + prelude index. See that table
-    // for the `includes` citations behind each merge.
-
-    // openehr-base: single version, no dependency crates.
-    let base = compose("base")?;
-    write_crate(
-        "openehr-base",
-        &emit_crate(
-            &base.model,
-            &base.own_schema,
-            &base.external,
-            base.doc,
-            base.spec_version,
-            &sibling_impls("openehr-base"),
-        ),
-    )?;
-
-    // openehr-rm: depends on openehr-base. Also carries the static RM attribute/
-    // type model, emitted here too so a plain `emit` keeps the crate
-    // self-consistent (lib.rs declares `model`, and a later `emit` regenerates it
-    // byte-identically to the standalone `emit-rm-model` target).
-    let rm = compose("rm")?;
-    let rm_aug = augmented_schema(&rm);
-    let mut rm_files = emit_crate(
-        &rm.model,
-        &rm_aug,
-        &rm.external,
-        rm.doc,
-        rm.spec_version,
-        &sibling_impls("openehr-rm"),
-    );
-    inject_rm_model(&mut rm_files, emit_rm_model::emit_files(&rm.model));
-    inject_validate(&mut rm_files, emit_validate::emit_files(&rm.model, &rm_aug));
-    write_crate("openehr-rm", &rm_files)?;
-
-    // openehr-lang: the BMM/P_BMM object model, fully generated. The generator's
-    // own reader lives in `openehr-codegen`, so there is no bootstrap cycle.
-    // Emitted before AM because AM's rule model references LANG types
-    // (`ARCHETYPE.rules : List<STATEMENT_SET>`, `ARCHETYPE_SLOT.includes :
-    // List<ASSERTION>`), so AM resolves them against `openehr_lang::prelude`.
-    // LANG is composed of TWO BMM generations (the stable v2.x BMM + P_BMM +
-    // beom, and the v3 development line), each emitted completely at its own
-    // source-package path — see `plan::composition`'s LANG entry.
-    let lang = compose("lang")?;
-    write_crate(
-        "openehr-lang",
-        &emit_generations(
-            &crate_generations(&lang),
-            &lang.external,
-            lang.doc,
-            lang.spec_version,
-            &sibling_impls("openehr-lang"),
-        ),
-    )?;
-
-    // openehr-am: two versions in one crate, each depending on openehr-base and
-    // openehr-lang. Each version merges BASE so its ancestors (e.g. ARCHETYPE ←
-    // AUTHORED_RESOURCE) resolve; the two are kept in separate models because
-    // AM 1.4 and 2.4 share class names.
-    // AM 2.4's `rules` package declares subtypes of LANG's beom expression
-    // classes (EXPR_ARCHETYPE_REF ⊂ EXPR_VALUE_REF, EXPR_CONSTRAINT ⊂ EXPR_LEAF).
-    // Per the owner ruling 2026-07-19, that cross-`includes` extension is re-opened
-    // at the DOWNSTREAM crate: the reachable beom expression/statement closure is
-    // re-emitted into `openehr-am` as crate-local types (an extender-level enum
-    // set composing the LANG variants + the AM leaves), so `ARCHETYPE.rules` /
-    // `ARCHETYPE_SLOT.includes` resolve against the AM-level types. openehr-lang
-    // stays byte-identical (the closure is emitted only here, never upstream).
-    let am14 = compose("am14")?;
-    let am24 = compose("am24")?;
-    // `cross_schema_reemit` computes the COMPLETE set of upstream classes whose
-    // Rust form widens downstream and grafts them into each crate's schema at
-    // the source package paths — a full, non-minimal re-emission (owner ruling
-    // 2026-07-19), applied uniformly by `augmented_schema` (#1699): am14
-    // re-emits BASE's AUTHORED_RESOURCE + RESOURCE_DESCRIPTION (ARCHETYPE
-    // extends the former), am24 the reachable LANG beom closure.
-    let am14_aug = augmented_schema(&am14);
-    let am24_aug = augmented_schema(&am24);
-    let am_files = emit_multi_crate(
-        &[
-            ("am14", &am14.model, &am14_aug),
-            ("am24", &am24.model, &am24_aug),
-        ],
-        &am24.external,
-        am24.doc,
-        am24.spec_version,
-        &sibling_impls("openehr-am"),
-    );
-    write_crate("openehr-am", &am_files)?;
-
-    // openehr-term: the TERM data model (CODE_SET, TERMINOLOGY, …), depends on
-    // openehr-base (TERMINOLOGY.date : Iso8601_date). The vendored terminology
-    // XML in `assets/` is data (outside `src/`, survives regen).
-    let term = compose("term")?;
-    write_crate(
-        "openehr-term",
-        &emit_crate(
-            &term.model,
-            &term.own_schema,
-            &term.external,
-            term.doc,
-            term.spec_version,
-            &sibling_impls("openehr-term"),
-        ),
-    )?;
+    // ONE uniform path for every crate: the declarative
+    // `plan::composition::COMPOSITIONS` table lists each crate's BMM
+    // generations (vendored file, version module, per-generation spec pin,
+    // current marker, paired dependency generations); `compose` resolves an
+    // entry and `emit_composed` renders every generation under its version
+    // module. See the table for the `includes` citations behind each entry.
+    //
+    // `cross_schema_reemit` computes the COMPLETE set of upstream classes
+    // whose Rust form widens in a generation and grafts them into its schema
+    // at the source package paths — a full, non-minimal re-emission (owner
+    // ruling 2026-07-19), applied uniformly by `augmented_schema` (#1699):
+    // AM 1.4 re-emits BASE's AUTHORED_RESOURCE + RESOURCE_DESCRIPTION
+    // (ARCHETYPE extends the former), AM 2.4 the reachable LANG beom closure,
+    // RM the BASE Interval/Iso8601 family.
+    //
+    // openehr-rm additionally carries the static RM attribute/type model and
+    // the invariant cores, emitted here too (under the CURRENT generation
+    // module) so a plain `emit` keeps the crate self-consistent — the
+    // standalone `emit-rm-model`/`emit-validate` targets regenerate the same
+    // subtrees byte-identically.
+    for comp in composition::COMPOSITIONS {
+        let c = compose(comp.key)?;
+        let impls = sibling_impls(comp.crate_name);
+        let augmented: Vec<BmmSchema> = c.generations.iter().map(augmented_schema).collect();
+        let gens: Vec<CrateGeneration<'_>> = c
+            .generations
+            .iter()
+            .zip(&augmented)
+            .map(|(g, aug)| CrateGeneration {
+                spec: g.spec,
+                model: &g.model,
+                schema: aug,
+                external: &g.external,
+            })
+            .collect();
+        let mut files = emit_composed(comp, &gens, &impls);
+        if comp.key == "rm" {
+            let current = c.current();
+            let module = current.spec.module;
+            let current_aug = augmented
+                .iter()
+                .zip(&c.generations)
+                .find(|(_, g)| g.spec.current)
+                .map(|(aug, _)| aug)
+                .ok_or("rm composition has no current generation")?;
+            inject_rm_model(
+                &mut files,
+                prefix_gen_files(emit_rm_model::emit_files(&current.model), module),
+                module,
+            );
+            inject_validate(
+                &mut files,
+                prefix_gen_files(
+                    emit_validate::emit_files(&current.model, current_aug),
+                    module,
+                ),
+            );
+        }
+        write_crate(comp.crate_name, &files)?;
+    }
     Ok(())
 }
 

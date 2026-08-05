@@ -18,12 +18,26 @@ use crate::plan::{XmlField, XmlType};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
-/// One spec schema paired with the crate prelude its types are re-exported from.
+/// One spec GENERATION paired with the crate+generation root its types are
+/// named from.
 pub(crate) struct XmlSchema<'a> {
     pub model: &'a Model,
     pub schema: &'a BmmSchema,
-    /// e.g. `openehr_rm::prelude` / `openehr_base::prelude`.
-    pub prelude: &'a str,
+    /// The generation root every type of this schema is named under — crate
+    /// ident plus generation module, e.g. `openehr_rm::v1_2`. Impls name each
+    /// type by its full defining-module path (never a prelude).
+    pub root: &'a str,
+}
+
+/// The spec class an [`XmlType`] realizes — the key its Rust path is resolved
+/// by.
+fn xml_type_spec(ty: &XmlType) -> &str {
+    match ty {
+        XmlType::Struct { spec, .. }
+        | XmlType::Enum { spec, .. }
+        | XmlType::Newtype { spec, .. }
+        | XmlType::EnumLiterals { spec, .. } => spec,
+    }
 }
 
 /// Emit the whole generated impl file. `unmatched` receives `(type, element)`
@@ -78,8 +92,13 @@ pub(crate) fn emit_file(
                     appended.push(format!("{spec}.{}", f.wire_name));
                 }
             }
-            emit_to_xml(&mut b, &ty, s.prelude, xsd, unmatched);
-            emit_from_xml(&mut b, &ty, s.prelude, xsd);
+            let path = format!(
+                "{}::{}",
+                s.root,
+                crate::render::emit::type_module_path(s.schema, xml_type_spec(&ty))
+            );
+            emit_to_xml(&mut b, &ty, &path, xsd, unmatched);
+            emit_from_xml(&mut b, &ty, &path, xsd);
         }
     }
     if !appended.is_empty() {
@@ -213,7 +232,7 @@ fn check_bmm_field_coverage(ty: &XmlType, xsd: &XsdModel, violations: &mut Vec<S
 pub(crate) fn emit_to_xml(
     b: &mut String,
     ty: &XmlType,
-    prelude: &str,
+    path: &str,
     xsd: &XsdModel,
     unmatched: &mut Vec<(String, String)>,
 ) {
@@ -229,7 +248,7 @@ pub(crate) fn emit_to_xml(
                 fields.iter().map(|f| (f.wire_name.as_str(), f)).collect();
             let _ = write!(
                 b,
-                "impl{hdr} crate::xml::runtime::ToXml for {prelude}::{rust}{args} {{\n\
+                "impl{hdr} crate::xml::runtime::ToXml for {path}::{rust}{args} {{\n\
                  fn xml_type_name(&self) -> &'static str {{ \"{spec}\" }}\n\
                  fn write_xml(&self, w: &mut crate::xml::runtime::XmlWriter, tag: &str, declared: Option<&str>) -> Result<(), crate::xml::runtime::XmlError> {{\n\
                  let mut __attrs: Vec<(&str, String)> = Vec::new();\n\
@@ -306,18 +325,18 @@ pub(crate) fn emit_to_xml(
             let (hdr, args) = generic_header(generics, "crate::xml::runtime::ToXml");
             let _ = write!(
                 b,
-                "impl{hdr} crate::xml::runtime::ToXml for {prelude}::{rust}{args} {{\n\
+                "impl{hdr} crate::xml::runtime::ToXml for {path}::{rust}{args} {{\n\
                  fn xml_type_name(&self) -> &'static str {{ match self {{\n"
             );
             for v in variants {
-                let _ = writeln!(b, "{prelude}::{rust}::{}(x) => x.xml_type_name(),", v.ident);
+                let _ = writeln!(b, "{path}::{rust}::{}(x) => x.xml_type_name(),", v.ident);
             }
             b.push_str("} }\n");
             b.push_str("fn write_xml(&self, w: &mut crate::xml::runtime::XmlWriter, tag: &str, declared: Option<&str>) -> Result<(), crate::xml::runtime::XmlError> { match self {\n");
             for v in variants {
                 let _ = writeln!(
                     b,
-                    "{prelude}::{rust}::{}(x) => x.write_xml(w, tag, declared),",
+                    "{path}::{rust}::{}(x) => x.write_xml(w, tag, declared),",
                     v.ident
                 );
             }
@@ -326,7 +345,7 @@ pub(crate) fn emit_to_xml(
         XmlType::Newtype { rust, .. } => {
             let _ = write!(
                 b,
-                "impl crate::xml::runtime::ToXml for {prelude}::{rust} {{\n\
+                "impl crate::xml::runtime::ToXml for {path}::{rust} {{\n\
                  fn write_xml(&self, w: &mut crate::xml::runtime::XmlWriter, tag: &str, _declared: Option<&str>) -> Result<(), crate::xml::runtime::XmlError> {{\n\
                  w.write_text_element(tag, &self.0.to_string())\n}}\n}}\n\n"
             );
@@ -346,7 +365,7 @@ pub(crate) fn emit_to_xml(
             };
             let _ = write!(
                 b,
-                "impl crate::xml::runtime::ToXml for {prelude}::{rust} {{\n\
+                "impl crate::xml::runtime::ToXml for {path}::{rust} {{\n\
                  fn write_xml(&self, w: &mut crate::xml::runtime::XmlWriter, tag: &str, _declared: Option<&str>) -> Result<(), crate::xml::runtime::XmlError> {{\n\
                  {text}\n}}\n}}\n\n"
             );
@@ -432,7 +451,7 @@ fn emit_write_field(b: &mut String, f: &XmlField, validated: bool) {
 
 /// Emit `impl FromXml` for one [`XmlType`]. Public so the OPT emitter
 /// (`emit_opt`) can reuse it over XSD-derived [`XmlType`]s.
-pub(crate) fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &XsdModel) {
+pub(crate) fn emit_from_xml(b: &mut String, ty: &XmlType, path: &str, xsd: &XsdModel) {
     match ty {
         XmlType::Struct {
             spec,
@@ -455,7 +474,7 @@ pub(crate) fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &X
                 |f: &XmlField| f.target == "Hash" && f.map_value.as_deref() != Some("String");
             let _ = write!(
                 b,
-                "impl{hdr} crate::xml::runtime::FromXml for {prelude}::{rust}{args} {{\n\
+                "impl{hdr} crate::xml::runtime::FromXml for {path}::{rust}{args} {{\n\
                  fn from_xml(reader: &mut crate::xml::runtime::XmlReader, start: &crate::xml::runtime::StartTag) -> Result<Self, crate::xml::runtime::XmlError> {{\n"
             );
             // Accumulators for element fields. Types are intentionally left to
@@ -592,14 +611,14 @@ pub(crate) fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &X
                     if fallible {
                         let _ = writeln!(
                             b,
-                            "{prelude}::{rust}::new({args}).map_err(|__e| crate::xml::runtime::XmlError::Parse(::std::format!(\"{spec}: {{__e}}\").into()))"
+                            "{path}::{rust}::new({args}).map_err(|__e| crate::xml::runtime::XmlError::Parse(::std::format!(\"{spec}: {{__e}}\").into()))"
                         );
                     } else {
-                        let _ = writeln!(b, "Ok({prelude}::{rust}::new({args}))");
+                        let _ = writeln!(b, "Ok({path}::{rust}::new({args}))");
                     }
                 }
             } else {
-                let _ = writeln!(b, "Ok({prelude}::{rust} {{");
+                let _ = writeln!(b, "Ok({path}::{rust} {{");
                 for (fname, expr) in &values {
                     let _ = writeln!(b, "{fname}: {expr},");
                 }
@@ -621,21 +640,21 @@ pub(crate) fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &X
                 .map(|(_, i)| i.clone());
             let _ = write!(
                 b,
-                "impl{hdr} crate::xml::runtime::FromXml for {prelude}::{rust}{args} {{\n\
+                "impl{hdr} crate::xml::runtime::FromXml for {path}::{rust}{args} {{\n\
                  fn from_xml(reader: &mut crate::xml::runtime::XmlReader, start: &crate::xml::runtime::StartTag) -> Result<Self, crate::xml::runtime::XmlError> {{\n\
                  match start.xsi_type() {{\n"
             );
             for (xsi, ident) in dispatch {
                 let _ = writeln!(
                     b,
-                    "Some(\"{xsi}\") => Ok({prelude}::{rust}::{ident}(crate::xml::runtime::FromXml::from_xml(reader, start)?)),"
+                    "Some(\"{xsi}\") => Ok({path}::{rust}::{ident}(crate::xml::runtime::FromXml::from_xml(reader, start)?)),"
                 );
             }
             match self_ident {
                 Some(ident) => {
                     let _ = writeln!(
                         b,
-                        "None => Ok({prelude}::{rust}::{ident}(crate::xml::runtime::FromXml::from_xml(reader, start)?)),"
+                        "None => Ok({path}::{rust}::{ident}(crate::xml::runtime::FromXml::from_xml(reader, start)?)),"
                     );
                 }
                 None => {
@@ -654,9 +673,9 @@ pub(crate) fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &X
         XmlType::Newtype { rust, .. } => {
             let _ = write!(
                 b,
-                "impl crate::xml::runtime::FromXml for {prelude}::{rust} {{\n\
+                "impl crate::xml::runtime::FromXml for {path}::{rust} {{\n\
                  fn from_xml(reader: &mut crate::xml::runtime::XmlReader, start: &crate::xml::runtime::StartTag) -> Result<Self, crate::xml::runtime::XmlError> {{\n\
-                 Ok({prelude}::{rust}(crate::xml::runtime::FromXml::from_xml(reader, start)?))\n}}\n}}\n\n"
+                 Ok({path}::{rust}(crate::xml::runtime::FromXml::from_xml(reader, start)?))\n}}\n}}\n\n"
             );
         }
         XmlType::EnumLiterals {
@@ -668,16 +687,16 @@ pub(crate) fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &X
             // `from_wire`/`from_value` (an unknown token/integer becomes `Other`).
             let body = if *string_backed {
                 format!(
-                    "let __s = <::std::string::String as crate::xml::runtime::FromXml>::from_xml(reader, start)?;\nOk({prelude}::{rust}::from_wire(&__s))"
+                    "let __s = <::std::string::String as crate::xml::runtime::FromXml>::from_xml(reader, start)?;\nOk({path}::{rust}::from_wire(&__s))"
                 )
             } else {
                 format!(
-                    "let __v = <i32 as crate::xml::runtime::FromXml>::from_xml(reader, start)?;\nOk({prelude}::{rust}::from_value(__v))"
+                    "let __v = <i32 as crate::xml::runtime::FromXml>::from_xml(reader, start)?;\nOk({path}::{rust}::from_value(__v))"
                 )
             };
             let _ = write!(
                 b,
-                "impl crate::xml::runtime::FromXml for {prelude}::{rust} {{\n\
+                "impl crate::xml::runtime::FromXml for {path}::{rust} {{\n\
                  fn from_xml(reader: &mut crate::xml::runtime::XmlReader, start: &crate::xml::runtime::StartTag) -> Result<Self, crate::xml::runtime::XmlError> {{\n\
                  {body}\n}}\n}}\n\n"
             );
