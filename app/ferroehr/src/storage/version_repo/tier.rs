@@ -13,9 +13,9 @@
 //! - a **write** always thaws first ([`thaw`]), so a versioned object is never
 //!   split across tiers;
 //! - a **read** consults the cold tier only after the primary tier misses
-//!   ([`on_cold`]), so an unarchived read pays nothing at all.
+//!   (`on_cold`), so an unarchived read pays nothing at all.
 //!
-//! [`on_cold`] runs the caller's own statement — verbatim, no cold twin of the
+//! `on_cold` runs the caller's own statement — verbatim, no cold twin of the
 //! SQL — inside a transaction whose `SET LOCAL search_path` resolves the
 //! versioned-object spine to `cold`
 //! (<https://www.postgresql.org/docs/18/sql-set.html>: `SET LOCAL` reverts at

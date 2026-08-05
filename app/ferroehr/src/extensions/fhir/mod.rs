@@ -12,11 +12,11 @@
 //! Concerns, all on `FerroEhrService`:
 //! * the **mapping store** — CRUD over `fhir_mapping` (the deployable
 //!   "mapping-as-data" artefacts), mirroring the event-subscription store;
-//! * the **inbound ingest** — [`FerroEhrService::fhir_ingest`]: resolve a
+//! * the **inbound ingest** — [`FerroEhrService::fhir_ingest`](crate::service::FerroEhrService::fhir_ingest): resolve a
 //!   mapping by resource type + profile, build a COMPOSITION from it (the pure
 //!   transform in `mapping`), stamp `FEEDER_AUDIT` provenance
 //!   (`feeder_audit`), and commit it through the NORMAL validated create path;
-//! * the **read façade** ([`FerroEhrService::fhir_search`]) and the **outbound
+//! * the **read façade** ([`FerroEhrService::fhir_search`](crate::service::FerroEhrService::fhir_search)) and the **outbound
 //!   reverse-map** (`FerroEhrService::fhir_outbound_messages`) — the inverse
 //!   transform (`reverse`).
 
