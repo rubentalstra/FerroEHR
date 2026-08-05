@@ -580,7 +580,7 @@ pub struct Mirror {
     pub augmented_path: Option<String>,
 }
 
-/// The additive model delta between two generations of one crate.
+/// The model delta between two generations of one crate, in BOTH directions.
 #[derive(Debug, Clone)]
 pub struct GenerationDelta {
     /// Class names the newer generation declares and the older does not.
@@ -588,10 +588,16 @@ pub struct GenerationDelta {
     /// `CLASS.attribute` pairs the newer generation declares on classes both
     /// generations share, absent from the older.
     pub attributes_added: Vec<String>,
+    /// Class names the older generation declares and the newer does not.
+    pub classes_removed: Vec<String>,
+    /// `CLASS.attribute` pairs the older generation declares on classes both
+    /// generations share, absent from the newer.
+    pub attributes_removed: Vec<String>,
 }
 
-/// Compute the additive delta from generation `older` to `newer` of crate
-/// `key` — the acceptance-boundary ledger's input (#1943).
+/// Compute the model delta from generation `older` to `newer` of crate
+/// `key` — the acceptance-boundary ledger's input (#1943; the REMOVED
+/// direction #1961).
 ///
 /// Multi-unit generations fold their units' class maps last-wins before
 /// comparison (the crate-level naming view).
@@ -624,17 +630,28 @@ pub fn generation_attribute_delta(
         .filter(|k| !old_map.contains_key(*k))
         .cloned()
         .collect();
+    let classes_removed: Vec<String> = old_map
+        .keys()
+        .filter(|k| !new_map.contains_key(*k))
+        .cloned()
+        .collect();
     let mut attributes_added = Vec::new();
+    let mut attributes_removed = Vec::new();
     for (class, new_attrs) in &new_map {
         if let Some(old_attrs) = old_map.get(class) {
             for a in new_attrs.difference(old_attrs) {
                 attributes_added.push(format!("{class}.{a}"));
+            }
+            for a in old_attrs.difference(new_attrs) {
+                attributes_removed.push(format!("{class}.{a}"));
             }
         }
     }
     Ok(GenerationDelta {
         classes_added,
         attributes_added,
+        classes_removed,
+        attributes_removed,
     })
 }
 
