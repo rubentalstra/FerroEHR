@@ -102,6 +102,13 @@ verified_cache_ttl_seconds = 60
 #? algorithms = ["RS256"]
 #? hmac_secret = "..."            # or hmac_secret_file = "/run/secrets/hmac"
 #? jwks_json = "{...}"            # or jwks_json_file = "/etc/ferroehr/jwks.json"
+# Discovery/JWKS fetch hardening (used only when neither hmac_secret nor
+# jwks_json is set, i.e. keys come from the issuer's OIDC discovery document):
+#? connect_timeout_ms = 3000
+#? request_timeout_ms = 5000
+#? negative_cache_ttl_seconds = 10   # remember a FAILED fetch this long (0 = off);
+                                     # a down issuer then yields fast 401s instead of
+                                     # one discovery attempt per bearer request
 
 # ── [authz] — RBAC + ABAC ─────────────────────────────────────────────────────
 [authz.rbac]

@@ -472,6 +472,7 @@ mod tests {
                 ("FERROEHR__SERVER__MAX_IN_FLIGHT", "64"),
                 ("FERROEHR__AUTH__OIDC__ISSUER", "https://idp"),
                 ("FERROEHR__AUTH__OIDC__AUDIENCES", "ferroehr,other"),
+                ("FERROEHR__AUTH__OIDC__REQUEST_TIMEOUT_MS", "1500"),
                 (
                     "FERROEHR__SUBJECT_PROXY__SYSTEMS__PAS__BASE_URL",
                     "https://pas/r4",
@@ -486,6 +487,11 @@ mod tests {
             oidc.audiences,
             vec!["ferroehr".to_owned(), "other".to_owned()]
         );
+        // The discovery-client hardening keys: one overridden from the env, the
+        // other two at their documented defaults.
+        assert_eq!(oidc.request_timeout_ms, 1_500);
+        assert_eq!(oidc.connect_timeout_ms, 3_000);
+        assert_eq!(oidc.negative_cache_ttl_seconds, 10);
         assert_eq!(
             c.subject_proxy.systems.get("pas").expect("pas").base_url,
             "https://pas/r4"

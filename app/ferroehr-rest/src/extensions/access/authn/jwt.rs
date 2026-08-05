@@ -89,7 +89,7 @@ impl JwtValidator {
                 .map_err(|e| format!("invalid oidc.jwks_json: {e}"))?;
             KeySource::Static(set)
         } else {
-            KeySource::Remote(RemoteJwks::new(cfg.issuer.clone()))
+            KeySource::Remote(RemoteJwks::new(cfg)?)
         };
 
         Ok(Self {
@@ -184,45 +184,90 @@ fn jwk_to_key(set: &JwkSet, kid: Option<&str>) -> Result<DecodingKey, AuthError>
     DecodingKey::from_jwk(jwk).map_err(|e| AuthError::InvalidToken(format!("invalid JWK: {e}")))
 }
 
+/// How long successfully fetched key material stays usable without a refetch.
+const JWKS_TTL: Duration = Duration::from_mins(5);
+
+/// The single cache slot: one issuer per validator, so the key is a constant.
+const CACHE_KEY: &str = "jwks";
+
 /// A JWKS fetched from an issuer's OIDC discovery document, cached briefly.
+///
+/// Both outcomes are cached, with different lifetimes ([`JwksExpiry`]): success
+/// for [`JWKS_TTL`], failure for `oidc.negative_cache_ttl_seconds`. Caching the
+/// failure is what keeps an issuer outage from turning every bearer request into
+/// a fresh discovery attempt. No openEHR spec governs this — our own design.
 struct RemoteJwks {
     issuer: String,
-    cache: moka::future::Cache<&'static str, Arc<JwkSet>>,
+    /// Built once, so the timeouts are a configuration-time property and the
+    /// connection pool survives across fetches.
+    http: openidconnect::reqwest::Client,
+    cache: moka::future::Cache<&'static str, Result<Arc<JwkSet>, AuthError>>,
+}
+
+/// Per-entry lifetimes for the [`RemoteJwks`] cache.
+struct JwksExpiry {
+    negative_ttl: Duration,
+}
+
+impl moka::Expiry<&'static str, Result<Arc<JwkSet>, AuthError>> for JwksExpiry {
+    fn expire_after_create(
+        &self,
+        _key: &&'static str,
+        value: &Result<Arc<JwkSet>, AuthError>,
+        _created_at: std::time::Instant,
+    ) -> Option<Duration> {
+        match value {
+            Ok(_) => Some(JWKS_TTL),
+            // A zero negative TTL expires the entry on the next read, which is
+            // the documented "negative caching off" setting.
+            Err(_) => Some(self.negative_ttl),
+        }
+    }
 }
 
 impl RemoteJwks {
-    fn new(issuer: String) -> Self {
-        Self {
-            issuer,
+    /// Builds the discovery client and its cache from the `[auth.oidc]` section.
+    ///
+    /// # Errors
+    /// Returns a message when `reqwest` cannot build a client with the
+    /// configured timeouts.
+    fn new(cfg: &OidcConfig) -> Result<Self, String> {
+        let http = openidconnect::reqwest::ClientBuilder::new()
+            // SSRF hardening: an issuer must not redirect us anywhere.
+            .redirect(openidconnect::reqwest::redirect::Policy::none())
+            .connect_timeout(Duration::from_millis(cfg.connect_timeout_ms))
+            .timeout(Duration::from_millis(cfg.request_timeout_ms))
+            .build()
+            .map_err(|e| format!("oidc discovery HTTP client: {e}"))?;
+        let expiry = JwksExpiry {
+            negative_ttl: Duration::from_secs(cfg.negative_cache_ttl_seconds),
+        };
+        Ok(Self {
+            issuer: cfg.issuer.clone(),
+            http,
             cache: moka::future::Cache::builder()
                 .max_capacity(1)
-                .time_to_live(Duration::from_mins(5))
+                .expire_after(expiry)
                 .build(),
-        }
+        })
     }
 
     async fn jwks(&self) -> Result<Arc<JwkSet>, AuthError> {
-        self.cache
-            .try_get_with("jwks", Self::fetch(self.issuer.clone()))
-            .await
-            .map_err(|e: Arc<AuthError>| (*e).clone())
+        // `get_with` coalesces concurrent misses onto one fetch AND stores the
+        // outcome whichever way it went; `try_get_with` would discard the error.
+        self.cache.get_with(CACHE_KEY, self.fetch()).await
     }
 
-    async fn fetch(issuer: String) -> Result<Arc<JwkSet>, AuthError> {
-        use openidconnect::core::CoreProviderMetadata;
-        use openidconnect::{IssuerUrl, reqwest};
-
-        let http = reqwest::ClientBuilder::new()
-            .redirect(reqwest::redirect::Policy::none()) // SSRF hardening
-            .build()
-            .map_err(|e| AuthError::KeyResolution(format!("HTTP client: {e}")))?;
-        let issuer_url = IssuerUrl::new(issuer)
+    async fn fetch(&self) -> Result<Arc<JwkSet>, AuthError> {
+        let issuer_url = openidconnect::IssuerUrl::new(self.issuer.clone())
             .map_err(|e| AuthError::KeyResolution(format!("issuer URL: {e}")))?;
-        let metadata = CoreProviderMetadata::discover_async(issuer_url, &http)
-            .await
-            .map_err(|e| AuthError::KeyResolution(format!("OIDC discovery: {e}")))?;
+        let metadata =
+            openidconnect::core::CoreProviderMetadata::discover_async(issuer_url, &self.http)
+                .await
+                .map_err(|e| AuthError::KeyResolution(format!("OIDC discovery: {e}")))?;
         let jwks_uri = metadata.jwks_uri().url().clone();
-        let body = http
+        let body = self
+            .http
             .get(jwks_uri)
             .send()
             .await
@@ -408,5 +453,169 @@ mod tests {
             .unwrap();
         let roles = extract_roles(&claims, &["resource_access.client.roles".to_owned()]);
         assert_eq!(roles, vec!["WRITER".to_owned()]);
+    }
+
+    /// The remote (OIDC-discovery) key source: timeout budget + negative
+    /// caching. No openEHR spec governs auth transport hardening — our own
+    /// design.
+    mod remote_discovery {
+        use std::time::Instant;
+
+        use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        use super::*;
+
+        const DISCOVERY_PATH: &str = "/.well-known/openid-configuration";
+        const JWKS_PATH: &str = "/jwks";
+
+        /// A discovery-key-source config: no HMAC secret, no static JWKS.
+        fn oidc(
+            issuer: &str,
+            negative_cache_ttl_seconds: u64,
+            request_timeout_ms: u64,
+        ) -> OidcConfig {
+            OidcConfig {
+                issuer: issuer.to_owned(),
+                algorithms: vec!["HS256".to_owned()],
+                request_timeout_ms,
+                negative_cache_ttl_seconds,
+                ..OidcConfig::default()
+            }
+        }
+
+        /// The minimum OIDC provider metadata `CoreProviderMetadata` accepts;
+        /// `issuer` must echo the requested issuer exactly.
+        fn metadata(issuer: &str) -> Value {
+            json!({
+                "issuer": issuer,
+                "authorization_endpoint": format!("{issuer}/authorize"),
+                "token_endpoint": format!("{issuer}/token"),
+                "jwks_uri": format!("{issuer}{JWKS_PATH}"),
+                "response_types_supported": ["code"],
+                "subject_types_supported": ["public"],
+                "id_token_signing_alg_values_supported": ["HS256"],
+            })
+        }
+
+        /// A JWKS carrying the same HS256 secret [`token`] signs with, so a
+        /// recovered issuer can actually validate a token.
+        fn jwks_body() -> Value {
+            let jwk = jsonwebtoken::jwk::Jwk::from_encoding_key(
+                &EncodingKey::from_secret(SECRET.as_bytes()),
+                Algorithm::HS256,
+            )
+            .expect("jwk from secret");
+            json!({ "keys": [jwk] })
+        }
+
+        async fn mount_healthy(server: &MockServer) {
+            Mock::given(method("GET"))
+                .and(path(DISCOVERY_PATH))
+                .respond_with(ResponseTemplate::new(200).set_body_json(metadata(&server.uri())))
+                .mount(server)
+                .await;
+            Mock::given(method("GET"))
+                .and(path(JWKS_PATH))
+                .respond_with(ResponseTemplate::new(200).set_body_json(jwks_body()))
+                .mount(server)
+                .await;
+        }
+
+        #[tokio::test]
+        async fn stalled_issuer_fails_within_the_configured_request_timeout() {
+            let server = MockServer::start().await;
+            Mock::given(method("GET"))
+                .and(path(DISCOVERY_PATH))
+                .respond_with(
+                    ResponseTemplate::new(200)
+                        .set_body_json(metadata(&server.uri()))
+                        .set_delay(Duration::from_secs(30)),
+                )
+                .mount(&server)
+                .await;
+
+            let remote = RemoteJwks::new(&oidc(&server.uri(), 10, 300)).expect("client");
+            let started = Instant::now();
+            let err = remote.jwks().await.expect_err("the timeout must fire");
+            let elapsed = started.elapsed();
+
+            assert!(matches!(err, AuthError::KeyResolution(_)), "got {err:?}");
+            // The 300 ms budget, generously slacked; without it the request
+            // would park for the mock's 30 s (or, on a blackhole, the OS TCP
+            // timeout — 75 s+).
+            assert!(
+                elapsed < Duration::from_secs(5),
+                "discovery took {elapsed:?}: the request timeout did not fire"
+            );
+        }
+
+        #[tokio::test]
+        async fn failed_fetch_is_cached_so_no_second_request_reaches_the_issuer() {
+            let server = MockServer::start().await;
+            Mock::given(method("GET"))
+                .and(path(DISCOVERY_PATH))
+                .respond_with(ResponseTemplate::new(500))
+                .expect(1)
+                .mount(&server)
+                .await;
+
+            let remote = RemoteJwks::new(&oidc(&server.uri(), 60, 5_000)).expect("client");
+            assert!(remote.jwks().await.is_err(), "issuer is down");
+            assert!(
+                remote.jwks().await.is_err(),
+                "still down, answered from cache"
+            );
+
+            // The mock's `.expect(1)` is verified when the server drops; the
+            // explicit count names the failure if a second attempt goes out.
+            let attempts = server.received_requests().await.expect("recorded requests");
+            assert_eq!(
+                attempts.len(),
+                1,
+                "the negative cache did not suppress the second discovery attempt"
+            );
+        }
+
+        #[tokio::test]
+        async fn negative_entry_expires_and_a_recovered_issuer_validates() {
+            let server = MockServer::start().await;
+            Mock::given(method("GET"))
+                .and(path(DISCOVERY_PATH))
+                .respond_with(ResponseTemplate::new(503))
+                .mount(&server)
+                .await;
+
+            let cfg = oidc(&server.uri(), 1, 5_000);
+            let validator =
+                JwtValidator::with_role_claims(&cfg, default_role_claims()).expect("validator");
+            let mut claims = base_claims();
+            claims["iss"] = json!(server.uri());
+            let token = token(&claims);
+
+            let err = validator
+                .validate(&token)
+                .await
+                .expect_err("issuer is down");
+            assert!(matches!(err, AuthError::KeyResolution(_)), "got {err:?}");
+
+            server.reset().await;
+            mount_healthy(&server).await;
+
+            // Still inside the 1 s negative TTL: refused from cache, no wire I/O.
+            assert!(validator.validate(&token).await.is_err());
+            let during_ttl = server.received_requests().await.expect("recorded requests");
+            assert!(
+                during_ttl.is_empty(),
+                "a request escaped during the negative TTL: {during_ttl:?}"
+            );
+
+            tokio::time::sleep(Duration::from_millis(1_200)).await;
+            let principal = validator
+                .validate(&token)
+                .await
+                .expect("the recovered issuer must validate");
+            assert_eq!(principal.subject, "alice");
+        }
     }
 }
