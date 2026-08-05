@@ -1,4 +1,4 @@
-//! openEHR LANG: the BMM object model in BOTH its extant generations, generated from the BMM meta-model — the stable v2.x model (`v2`: the `bmm` object model, its `bmm_persistence` P_BMM form and the `beom` expression model) and the v3 development line (`v3`: `bmm3`, with the `EL_*` expression and `BMM_STATEMENT*` families). Each generation is emitted completely under its own version module; the crate prelude re-exports the current generation (`v3`) only. The generator's own BMM reader lives in openehr-codegen (tooling, not spec); the hand-written ODIN reader and BEL parser live beside this generated tree.
+//! openEHR LANG: the BMM object model in BOTH its extant generations, generated from the BMM meta-model — the STABLE, tool-implemented v2.x model (`v2`: the `bmm` object model, its `bmm_persistence` P_BMM form and the `beom` expression model) and the PAUSED v3 line (`v3`: `bmm3`, with the `EL_*` expression and `BMM_STATEMENT*` families). Each generation is emitted completely under its own version module; the crate prelude re-exports the current generation (`v2`) only. The generator's own BMM reader lives in openehr-codegen (tooling, not spec); the hand-written ODIN reader and BEL parser live beside this generated tree.
 //!
 //! @generated module tree by openehr-codegen. The type files
 //! are generated; hand-written spec behaviour lives in sibling `*_impl.rs`.
@@ -34,9 +34,9 @@ pub mod v3;
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Generation {
     /// The `v2` generation — openEHR specification version 1.1.0.
+    #[default]
     V2,
     /// The `v3` generation — openEHR specification version 1.1.0.
-    #[default]
     V3,
 }
 
