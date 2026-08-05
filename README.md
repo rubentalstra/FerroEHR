@@ -7,7 +7,7 @@
 *Pronounced "FER-ro-E-H-R" — from **ferrum**, iron. Rust is just iron oxide, so we went straight to the element.\
 (Saying "ferro-air" is unsupported, but we can't stop you.)*
 
-ITS-REST 1.1.0 &nbsp;·&nbsp; AQL 1.1 &nbsp;·&nbsp; RM 1.2.0 &nbsp;·&nbsp; ADL 1.4 + 2.4 &nbsp;·&nbsp; PostgreSQL 18 &nbsp;·&nbsp; Rust 1.96
+ITS-REST 1.1.0 &nbsp;·&nbsp; AQL 1.1 &nbsp;·&nbsp; RM 1.2.0 **+ 1.1.0** &nbsp;·&nbsp; ADL 1.4 + 2.4 &nbsp;·&nbsp; PostgreSQL 18 &nbsp;·&nbsp; Rust 1.96
 
 [![CI](https://github.com/rubentalstra/FerroEHR/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/FerroEHR/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fbadges%2Fcoverage.json)](https://github.com/rubentalstra/FerroEHR/actions/workflows/ci.yml)
@@ -16,7 +16,7 @@ ITS-REST 1.1.0 &nbsp;·&nbsp; AQL 1.1 &nbsp;·&nbsp; RM 1.2.0 &nbsp;·&nbsp; ADL
 [![GHCR](https://img.shields.io/badge/ghcr.io-ferroehr-2496ED.svg?logo=docker&logoColor=white)](https://github.com/rubentalstra/FerroEHR/pkgs/container/ferroehr)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-[**Documentation**](https://ferroehr.eu/) · [Quick start](#quick-start) · [Features](#features) · [Architecture](#architecture) · [Conformance](#conformance-measured-not-asserted) · [Deployment](#deployment) · [Roadmap](https://github.com/rubentalstra/FerroEHR/projects) · [Contributing](#contributing-and-security)
+[**Documentation**](https://ferroehr.eu/) · [Quick start](#quick-start) · [Features](#features) · [Spec versions](#choose-your-openehr-specification-generation) · [Rust crates](#the-openehr-specification-layer-as-rust-crates) · [Architecture](#architecture) · [Conformance](#conformance-measured-not-asserted) · [Deployment](#deployment) · [Roadmap](https://github.com/users/rubentalstra/projects/4) · [Contributing](#contributing-and-security)
 
 </div>
 
@@ -49,11 +49,17 @@ Conformance Statement and Certificate.
   results; a separate step-load stress instrument finds the maximum
   sustainable throughput. Every published chart regenerates from those
   committed records, guarded in CI.
-- **The latest openEHR specifications**, generated from the official
-  machine-readable models: REST API 1.1.0, AQL 1.1, RM 1.2.0, Archetype
-  Model 1.4 + 2.4, Terminology 3.1. A specification update is a
-  regeneration, not a rewrite — and a CI drift-check makes silent divergence
-  impossible.
+- **Two openEHR specification generations, and you choose which one runs.**
+  The specification layer is generated from the official machine-readable
+  models — and both the latest RELEASED generations and the development ones
+  are generated, side by side, as complete peers. One configuration key picks
+  the set the server serves, so staying on released specifications is a
+  setting rather than a fork. See
+  [Choose your openEHR specification generation](#choose-your-openehr-specification-generation).
+- **A specification update is a regeneration, not a rewrite**, and a CI
+  drift-check makes silent divergence impossible: REST API 1.1.0, AQL 1.1,
+  RM, BASE, Archetype Model 1.4 + 2.4, Terminology 3.1 all come from the
+  vendored machine-readable models, pinned per component.
 - **Both generations of the archetype language, end to end.** ADL 2.4
   source templates are parsed, validated against the full AOM2 validity
   catalogue, specialisation-flattened, and compiled to operational
@@ -216,6 +222,76 @@ a tunable alert-rule starter pack lives in
 
 </details>
 
+## Choose your openEHR specification generation
+
+openEHR publishes released specification versions and keeps developing the
+next ones. Most implementations pick one and hard-wire it. FerroEHR generates
+**both** — every generation is a complete peer with its own type model,
+canonical JSON/XML codecs, Reference Model attribute model, invariant cores
+and validation behaviour — and one configuration key decides which set the
+server runs:
+
+```toml
+# ferroehr.toml  (or FERROEHR__SPEC_PROFILE=stable)
+spec_profile = "development"   # the default
+```
+
+| `spec_profile` | RM | BASE | LANG | Use it when |
+|---|---|---|---|---|
+| `development` *(default)* | 1.2.0 | 1.3.0 | 1.1.0 | You want the generations this build is developed against |
+| `stable` | 1.1.0 | 1.2.0 | 1.0.0 | You need to run on RELEASED openEHR specifications only |
+
+The key is documented in full on the
+[configuration page](https://ferroehr.eu/docs/latest/installation/configuration.html).
+It is **one coupled choice**, not three independent knobs: the components'
+generations are modelled against each other (RM 1.1.0's own model declares
+that it includes BASE 1.2.0), so incoherent combinations are not
+representable. The active profile appears on the boot banner and at
+`/management/info`.
+
+Changing it later is a documented contract, not a gamble.
+`stable → development` is always safe, because openEHR minor releases are
+additive by the Foundation's own release strategy — everything stored under
+the released generations is valid under the development ones. The reverse
+direction is supported only for data that never used a development-only
+construct; anything that did is **refused loudly at read**, naming the
+profile conflict, and never silently down-converted or hidden. Under
+`stable`, a request that addresses surface the released generations do not
+define is refused with an error naming the profile — and released surface the
+development line later dropped stays accepted, so the boundary is exact in
+both directions.
+
+## The openEHR specification layer, as Rust crates
+
+You do not need the whole CDR to get the openEHR specifications in Rust. The
+generated specification layer is published on crates.io as eight
+independently usable crates — the same code this server runs on:
+
+| Crate | What it gives you |
+|---|---|
+| [`openehr-rm`](https://crates.io/crates/openehr-rm) | The Reference Model — `COMPOSITION`, `EHR_STATUS`, `OBSERVATION`, the data structures and data types, change control |
+| [`openehr-base`](https://crates.io/crates/openehr-base) | BASE: the foundation + base types (identifiers, intervals, the terminology-facing types) |
+| [`openehr-am`](https://crates.io/crates/openehr-am) | The Archetype Model, both generations: AOM 1.4 and AOM 2.4 |
+| [`openehr-adl`](https://crates.io/crates/openehr-adl) | The ADL engine: ADL2/cADL/ODIN parser, AOM2 validity catalogue, specialisation flattener, OPT2 generator, ADL 1.4 → 2 conversion |
+| [`openehr-its`](https://crates.io/crates/openehr-its) | Canonical JSON + XML codecs, the ITS-REST contract, and the Simplified Formats (WebTemplate, FLAT, STRUCTURED) |
+| [`openehr-query`](https://crates.io/crates/openehr-query) | The AQL 1.1 lexer, parser and AST |
+| [`openehr-term`](https://crates.io/crates/openehr-term) | The terminology model plus the bundled openEHR terminology |
+| [`openehr-lang`](https://crates.io/crates/openehr-lang) | The BMM/P_BMM object model and the ODIN instance reader |
+
+The multi-generation crates expose their generations as version-named modules
+(`openehr_rm::v1_2`, `openehr_rm::v1_1`, `openehr_am::v2_4`, …), with the
+current generation re-exported from the crate prelude and the others reachable
+by full path. Each crate's emitted `Generation` enum is the single authority on
+which openEHR version a generation implements — `Generation::default()` is the
+current one, and `spec_version()` tells you its version string.
+
+These crates version on **their own SemVer line**, deliberately decoupled from
+the openEHR specification versions they implement: the implementation can keep
+improving while a vendored specification stands still, and adopting a new
+specification generation does not force a semantic version on your code. The
+implemented specification version is always a runtime datum, never guessed
+from the package version.
+
 ## Architecture
 
 Three directories, one strict dependency direction — the application
@@ -231,11 +307,12 @@ flowchart TB
         openehr["openehr-base · openehr-rm · openehr-am · openehr-term · openehr-lang (BMM · ODIN · BEL)<br/>openehr-its (native canonical JSON/XML codecs + ITS-REST contract + Simplified Formats: WebTemplate · FLAT · STRUCTURED)<br/>openehr-adl (ADL 1.4 + 2.4 engine: parser · AOM2 validation · flattener · OPT2)<br/>openehr-query (AQL parser)"]
     end
 
-    subgraph app ["app/* — the application (four crates, four roles)"]
+    subgraph app ["app/* — the application (five crates, five roles)"]
         rest["ferroehr-rest<br/>ITS-REST 1.1.0 protocol adapter (axum)<br/>+ access (authn · RBAC/ABAC) + wire mapping"]
-        core["ferroehr<br/>the platform library: PG18 node storage · versioning ·<br/>AQL→SQL engine · validation · signing ·<br/>eventing · FHIR · multimedia — one service module<br/>per SM Platform Service Model chapter"]
+        core["ferroehr<br/>the platform library: PG18 node storage · versioning ·<br/>AQL→SQL engine · validation · signing · templates ·<br/>audit — one service module<br/>per SM Platform Service Model chapter"]
         bin["ferroehr-server<br/>the wiring-only binary"]
         adminui["ferroehr-admin-ui<br/>the Leptos SSR admin console (own OCI image,<br/>consumes the CDR strictly over ITS-REST)"]
+        ext["ferroehr-ext<br/>optional integrations behind additive features:<br/>FHIR conversion · AMQP events · multimedia store"]
     end
 
     subgraph tools ["tools/* — generation + verification (not shipped)"]
@@ -247,6 +324,7 @@ flowchart TB
     specs -- "openehr-codegen (deterministic, drift-checked in CI)" --> crates
     bin -- "wires" --> rest
     rest -- "calls the concrete service" --> core
+    core -- "optional, feature-forwarded" --> ext
     app --> crates
     conf -. "drives the deployed server over HTTP" .-> rest
     testkit --> core
@@ -393,9 +471,10 @@ cargo nextest run --workspace
 ```
 
 CI gates every commit: the full test suite against real PostgreSQL 18,
-`clippy -D warnings`, rustfmt, supply-chain policy (`cargo deny`, `cargo
-audit`), unused-dependency checks, spec-codegen drift, and a container smoke
-test. See [CONTRIBUTING.md](CONTRIBUTING.md) for the developer workflow.
+`clippy -D warnings`, rustfmt, the rustdoc lints, supply-chain policy
+(`cargo deny` — same advisory database as `cargo audit`, plus yanked-crate,
+license, ban and source policy), MSRV, unused-dependency checks,
+spec-codegen drift, comment style, and a container smoke test. See [CONTRIBUTING.md](CONTRIBUTING.md) for the developer workflow.
 
 ## Documentation
 
@@ -404,15 +483,17 @@ test. See [CONTRIBUTING.md](CONTRIBUTING.md) for the developer workflow.
 | [Documentation website](https://ferroehr.eu/) | The user guide + OpenAPI endpoint reference (versioned per release) |
 | [Architecture](docs/architecture.md) | How the system is built, and why |
 | [Conformance report](docs/conformance/ferroehr/CONFORMANCE_REPORT.md) | The latest measured results, per test case |
-| [Version matrix](docs/VERSIONS.md) | Every pin: openEHR spec versions, Rust toolchain, PostgreSQL |
-| [Roadmap board](https://github.com/rubentalstra/FerroEHR/projects) | Where the product goes next — planned, in progress, and shipped, live |
+| [Version matrix](docs/VERSIONS.md) | Every pin: openEHR spec generations, Rust toolchain, PostgreSQL |
+| [`openehr-*` crates](https://crates.io/search?q=openehr) | The specification layer as standalone Rust libraries |
+| [Roadmap board](https://github.com/users/rubentalstra/projects/4) | Where the product goes next — planned, in progress, and shipped, live |
 | [Developer documentation](docs/README.md) | Contributing, design decisions, specifications |
 | [Vendored openEHR specifications](docs/specs/openehr/) | The oracle every spec-facing decision cites |
 
 For the openEHR standard itself, see the
-[openEHR specifications](https://specifications.openehr.org/); for the
-EHRbase, the
-[EHRbase documentation](https://docs.ehrbase.org).
+[openEHR specifications](https://specifications.openehr.org/). The
+specification text this project treats as its oracle is vendored in-repo and
+pinned per component, so every conformance decision cites a file you can
+read.
 
 ## Contributing and security
 
