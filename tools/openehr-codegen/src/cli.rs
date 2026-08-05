@@ -301,6 +301,7 @@ fn cmd_emit_xml() -> Result<(), Box<dyn std::error::Error>> {
             model: &base.current().model,
             schema: &base.current().schema,
             root: &base_root,
+            external: &base.current().external,
         },
         emit_xml::XmlSchema {
             model: &rm.current().model,
@@ -310,6 +311,7 @@ fn cmd_emit_xml() -> Result<(), Box<dyn std::error::Error>> {
             // the augmented schema names.
             schema: &rm_aug,
             root: &rm_root,
+            external: &rm.current().external,
         },
     ];
     let mut unmatched = Vec::new();
