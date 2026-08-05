@@ -331,6 +331,8 @@ pub fn generation_conflicts() -> Result<Vec<GenerationConflict>, Error> {
 /// analyzer assigns it.
 #[derive(Debug, Clone)]
 pub struct ClassifiedInvariant {
+    /// The generation module (`v1_2`) whose schema declares it.
+    pub generation: String,
     /// The owning BMM class name.
     pub class: String,
     /// The BMM invariant name.
@@ -352,23 +354,28 @@ pub struct ClassifiedInvariant {
 pub fn classify_invariants(key: &str) -> Result<Vec<ClassifiedInvariant>, Error> {
     let c = compose(key)?;
     let mut out = Vec::new();
-    for (class, def) in c.generations.iter().flat_map(|g| &g.schema.classes) {
-        for (name, expr) in &def.invariants {
-            let (bucket, reason) = match invariants::classify(expr) {
-                Bucket::Emitted => ("emitted", String::new()),
-                Bucket::RuntimeHookMissing(r) => ("runtime-hook-missing", r.to_string()),
-                Bucket::Complex(r) => ("complex", r.to_string()),
-            };
-            out.push(ClassifiedInvariant {
-                class: class.clone(),
-                name: name.clone(),
-                expr: expr.clone(),
-                bucket,
-                reason,
-            });
+    for g in &c.generations {
+        for (class, def) in &g.schema.classes {
+            for (name, expr) in &def.invariants {
+                let (bucket, reason) = match invariants::classify(expr) {
+                    Bucket::Emitted => ("emitted", String::new()),
+                    Bucket::RuntimeHookMissing(r) => ("runtime-hook-missing", r.to_string()),
+                    Bucket::Complex(r) => ("complex", r.to_string()),
+                };
+                out.push(ClassifiedInvariant {
+                    generation: g.spec.module.to_string(),
+                    class: class.clone(),
+                    name: name.clone(),
+                    expr: expr.clone(),
+                    bucket,
+                    reason,
+                });
+            }
         }
     }
-    out.sort_by(|a, b| (&a.class, &a.name).cmp(&(&b.class, &b.name)));
+    out.sort_by(|a, b| {
+        (&a.generation, &a.class, &a.name).cmp(&(&b.generation, &b.class, &b.name))
+    });
     Ok(out)
 }
 
@@ -467,27 +474,20 @@ pub fn render_all_to_memory() -> Result<BTreeMap<String, String>, Error> {
             .collect();
         let mut files = emit_composed(comp, &gens, &impls);
         if comp.key == "rm" {
-            let current = c
-                .generations
-                .iter()
-                .find(|g| g.spec.current)
-                .ok_or("rm composition has no current generation")?;
-            let current_aug = augmented
-                .iter()
-                .zip(&c.generations)
-                .find(|(_, g)| g.spec.current)
-                .map(|(aug, _)| aug)
-                .ok_or("rm composition has no current generation")?;
-            let module = current.spec.module;
-            inject_rm_model(
-                &mut files,
-                prefix_gen_files(emit_rm_model::emit_files(&current.model), module),
-                module,
-            );
-            files.extend(prefix_gen_files(
-                emit_validate::emit_files(&current.model, current_aug),
-                module,
-            ));
+            // Mirror of `cli::cmd_emit`: every RM generation carries its own
+            // attribute model + invariant cores.
+            for (g, aug) in c.generations.iter().zip(&augmented) {
+                let module = g.spec.module;
+                inject_rm_model(
+                    &mut files,
+                    prefix_gen_files(emit_rm_model::emit_files(&g.model), module),
+                    module,
+                );
+                files.extend(prefix_gen_files(
+                    emit_validate::emit_files(&g.model, aug),
+                    module,
+                ));
+            }
         }
         for f in files {
             out.insert(format!("{}/{}", comp.crate_name, f.path), f.body);

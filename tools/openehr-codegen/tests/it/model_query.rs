@@ -185,10 +185,23 @@ const LOCATABLE: [[&str; 14]; 6] = [
     ],
 ];
 
-/// The TSV text a header plus these rows must render as.
+/// The TSV text a header plus these rows must render as. The RM crate emits
+/// TWO generations (#1942: RM 1.1.0 released beside RM 1.2.0), and both
+/// declare these classes with identical shapes, so the expected report is the
+/// golden rows once per generation — `bmm` column first `openehr_rm_1.1.0`,
+/// then the pinned `openehr_rm_1.2.0` rows verbatim (the report sorts by
+/// (component, bmm, class, attribute)).
 fn expected_tsv(rows: &[[&str; 14]]) -> String {
     let mut out = String::new();
-    for row in std::iter::once(&HEADER).chain(rows) {
+    out.push_str(&HEADER.join("\t"));
+    out.push('\n');
+    for row in rows {
+        let mut v1_1 = *row;
+        v1_1[1] = "openehr_rm_1.1.0";
+        out.push_str(&v1_1.join("\t"));
+        out.push('\n');
+    }
+    for row in rows {
         out.push_str(&row.join("\t"));
         out.push('\n');
     }
@@ -293,8 +306,9 @@ fn unknown_filter_values_are_rejected_with_the_valid_ones() {
 /// `LOCATABLE.links` is declared once on the abstract `LOCATABLE`
 /// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
 /// §Attributes) and inherited by every archetyped RM class, so the declared
-/// view reports it once while the flattened view reports it once per carrier,
-/// each naming `LOCATABLE` as the declaring class.
+/// view reports it once PER GENERATION (both emitted RM generations declare
+/// it) while the flattened view reports it once per carrier, each naming
+/// `LOCATABLE` as the declaring class.
 #[test]
 fn the_flattened_view_reports_inherited_attributes_per_carrier() {
     let declared = testsupport::model_query_view(Some("rm"), None, Some("links"), "tsv", false)
@@ -304,8 +318,8 @@ fn the_flattened_view_reports_inherited_attributes_per_carrier() {
     let rows = |report: &str| report.lines().skip(1).count();
     assert_eq!(
         rows(&declared),
-        1,
-        "links is declared exactly once, on LOCATABLE"
+        2,
+        "links is declared exactly once per RM generation, on LOCATABLE"
     );
     assert!(
         rows(&flattened) > 1,

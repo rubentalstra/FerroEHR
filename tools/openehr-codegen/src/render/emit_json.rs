@@ -68,6 +68,9 @@ pub(crate) struct JsonSchema<'a> {
     /// canonical-JSON wire at all (this codec is our own extension), so there is
     /// no cross-generation wire contract to break.
     pub root: &'a str,
+    /// The generation's cross-crate index — resolves a `@SPEC` construction
+    /// door parameter to the PAIRED dependency generation's defining module.
+    pub external: &'a crate::analyze::External,
 }
 
 impl JsonSchema<'_> {
@@ -91,6 +94,30 @@ impl JsonSchema<'_> {
         absolute
             .split_once("::")
             .map_or_else(|| "crate".to_owned(), |(_, rest)| format!("crate::{rest}"))
+    }
+
+    /// Resolve one construction-door parameter type: a `@SPEC` marker becomes
+    /// the generation-correct full type path (this generation's own module
+    /// when it declares the class, else the paired dependency generation's);
+    /// any other string is a literal Rust type and passes through.
+    ///
+    /// # Panics
+    /// Panics when a marker names a class neither this generation nor its
+    /// paired dependencies emit — a construction-table bug.
+    fn door_param(&self, ty: &str) -> String {
+        let Some(spec) = ty.strip_prefix('@') else {
+            return ty.to_owned();
+        };
+        let ident = crate::render::naming::type_name(spec);
+        if self.schema.classes.contains_key(spec) {
+            return format!("{}::{ident}", self.local_path_of(spec));
+        }
+        let module = self.external.module_of(spec).unwrap_or_else(|| {
+            panic!(
+                "construction door parameter @{spec}: neither the declaring generation nor its                  paired dependency generations emit this class (a plan::construction table bug)"
+            )
+        });
+        format!("{module}::{ident}")
     }
 }
 
@@ -147,7 +174,7 @@ pub(crate) fn emit_file(schemas: &[JsonSchema<'_>], krate: &str) -> String {
         for ty in s.model.json_types(s.schema) {
             let path = s.local_path_of(json_type_spec(&ty));
             emit_serialize(&mut b, &ty, &path);
-            emit_deserialize(&mut b, &ty, &path, support);
+            emit_deserialize(&mut b, &ty, &path, support, s);
         }
     }
     b
@@ -584,14 +611,14 @@ fn emit_write_field(b: &mut String, f: &JsonField) {
 // ── Deserialize side ─────────────────────────────────────────────────────────
 
 /// Emit `impl serde::Deserialize` for one [`JsonType`].
-fn emit_deserialize(b: &mut String, ty: &JsonType, path: &str, support: &str) {
+fn emit_deserialize(b: &mut String, ty: &JsonType, path: &str, support: &str, s: &JsonSchema<'_>) {
     match ty {
         JsonType::Struct {
             spec,
             rust,
             generics,
             fields,
-        } => emit_struct_deserialize(b, spec, rust, generics, fields, path, support),
+        } => emit_struct_deserialize(b, spec, rust, generics, fields, path, support, s),
         JsonType::Enum {
             spec: _,
             rust,
@@ -712,6 +739,7 @@ fn emit_struct_deserialize(
     fields: &[JsonField],
     path: &str,
     support: &str,
+    schema: &JsonSchema<'_>,
 ) {
     let (hdr, args) = deserialize_header(generics);
     let (vis_args, vis_body, vis_ctor) = phantom(generics);
@@ -824,6 +852,7 @@ fn emit_struct_deserialize(
         let mut locals = String::new();
         let mut names = Vec::new();
         for (i, (ty, value)) in params.iter().zip(&finals).enumerate() {
+            let ty = schema.door_param(ty);
             let _ = writeln!(locals, "let __a{i}: {ty} = {value};");
             names.push(format!("__a{i}"));
         }
