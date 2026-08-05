@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/common/generic/audit_details_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariant for `AUDIT_DETAILS`.
 //!
 //! Spec: RM `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.audit_details.adoc`

@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/common/resource/authored_resource_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariants for `AUTHORED_RESOURCE`.
 //!
 //! Spec: RM 1.2.0

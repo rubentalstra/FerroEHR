@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-base/base_types/identification/internet_id_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM/BASE class invariant + validating construction for
 //! `INTERNET_ID`.
 //!

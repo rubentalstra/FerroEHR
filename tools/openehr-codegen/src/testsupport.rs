@@ -1420,3 +1420,92 @@ pub fn model_query_view(
         model_query::Format::parse(format)?,
     )
 }
+
+/// Hand-written generation-twin pairs of `key`'s crate that are byte-identical
+/// modulo generation tokens — each MUST be a template (#1964).
+///
+/// Walks every non-current generation module against the current one; a
+/// hand-written file (no `@generated` first line) at the same relative path
+/// in both is normalized with the template substitution and compared. The
+/// returned relative paths are the families the template mechanism must
+/// absorb; the emitter-invariants suite asserts the list is EMPTY.
+///
+/// # Errors
+/// Returns an error if the composition fails to load or a crate tree cannot
+/// be read.
+pub fn identical_hand_written_twins(key: &str) -> Result<Vec<String>, Error> {
+    let comp = composition::COMPOSITIONS
+        .iter()
+        .find(|c| c.key == key)
+        .ok_or_else(|| Error::from(format!("unknown composition key {key}")))?;
+    let Some(current) = crate::render::emit_templates::current_generation(comp) else {
+        return Err(Error::from(format!("no current generation for {key}")));
+    };
+    let src = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../crates")
+        .join(comp.crate_name)
+        .join("src");
+    let current_files = hand_written_files(&src.join(current.module))?;
+    let mut identical = Vec::new();
+    for generation in comp.generations {
+        if generation.module == current.module {
+            continue;
+        }
+        for (rel, body) in hand_written_files(&src.join(generation.module))? {
+            let Some(current_body) = current_files.get(&rel) else {
+                continue;
+            };
+            let normalized = crate::render::emit_templates::substitute(&body, generation, current);
+            if &normalized == current_body {
+                identical.push(format!("{}/{rel}", generation.module));
+            }
+        }
+    }
+    identical.sort();
+    Ok(identical)
+}
+
+/// Hand-written `.rs` files under `dir` (relative slash path → body), the
+/// module anchors excluded.
+fn hand_written_files(dir: &std::path::Path) -> Result<BTreeMap<String, String>, Error> {
+    let mut out = BTreeMap::new();
+    if !dir.exists() {
+        return Ok(out);
+    }
+    let mut stack = vec![dir.to_path_buf()];
+    while let Some(d) = stack.pop() {
+        for entry in std::fs::read_dir(&d).map_err(|e| Error::from(e.to_string()))? {
+            let path = entry.map_err(|e| Error::from(e.to_string()))?.path();
+            if path.is_dir() {
+                stack.push(path);
+                continue;
+            }
+            let name = path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or_default();
+            if path.extension().and_then(|e| e.to_str()) != Some("rs")
+                || matches!(name, "mod.rs" | "prelude.rs")
+            {
+                continue;
+            }
+            let body = std::fs::read_to_string(&path).map_err(|e| Error::from(e.to_string()))?;
+            if body
+                .lines()
+                .next()
+                .is_some_and(|l| l.contains("@generated"))
+            {
+                continue;
+            }
+            let rel = path
+                .strip_prefix(dir)
+                .map_err(|e| Error::from(e.to_string()))?
+                .components()
+                .map(|c| c.as_os_str().to_string_lossy())
+                .collect::<Vec<_>>()
+                .join("/");
+            out.insert(rel, body);
+        }
+    }
+    Ok(out)
+}

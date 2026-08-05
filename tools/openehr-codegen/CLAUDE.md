@@ -32,6 +32,19 @@ The single deterministic generator behind the whole spec layer. Lives under
   the form "does every class that carries X emit the same shape".
 - `check` / `check-xsd` — input validation.
 
+**Generation-twin templates** (`templates/<crate>/…`, stamped by `emit` —
+`src/render/emit_templates.rs`, #1964): a hand-written spec-behaviour file
+that is identical across a crate's generations modulo generation paths keeps
+ONE source here, written against the CURRENT generation; `emit` stamps the
+per-generation copies (own module + paired dependency-generation tokens from
+the composition table) under an `@generated-from-template` header, so the
+purge/drift machinery owns them and divergence is impossible. A genuinely
+generation-specific difference is a per-generation override
+(`templates/<crate>/overrides/<module>/…`, taken verbatim, carrying its
+adjudication — the live case: RM v1_1 `item_tag_impl`, the 1.1.0 field
+order). The `hand_written_twins_are_templates` emitter invariant fails on
+any remaining identical hand-written twin pair.
+
 ## Pipeline structure (four stages + CLI)
 
 Four stages, one directory each — every stage consumes the previous stage's

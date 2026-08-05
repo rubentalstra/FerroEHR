@@ -16,6 +16,7 @@ pub(crate) mod emit_json;
 pub(crate) mod emit_opt;
 pub(crate) mod emit_rest;
 pub(crate) mod emit_rm_model;
+pub(crate) mod emit_templates;
 pub(crate) mod emit_validate;
 pub(crate) mod emit_xml;
 pub(crate) mod model_query;

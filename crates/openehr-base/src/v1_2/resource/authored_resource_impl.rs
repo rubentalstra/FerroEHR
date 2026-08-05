@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-base/resource/authored_resource_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written spec functions of `AUTHORED_RESOURCE`.
 //!
 //! Spec: `BASE/docs/UML/classes/org.openehr.base.resource.authored_resource.adoc`

@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/validate/typed_dispatch.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! The **typed dispatch tier** of the RM class-invariant check (hand-written).
 //!
 //! This is the `_type` → concrete-RM-type table that deserializes a

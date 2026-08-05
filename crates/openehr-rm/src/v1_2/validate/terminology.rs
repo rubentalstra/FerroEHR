@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/validate/terminology.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! The **terminology-backed RM class invariants**.
 //!
 //! These are the RM invariants whose

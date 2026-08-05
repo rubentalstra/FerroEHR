@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/composition/content/navigation/section_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariant for `SECTION`.
 //!
 //! Only the inherited LOCATABLE `Archetype_node_id_valid`. archie's own

@@ -8,6 +8,7 @@ use crate::load::impls::SiblingImpls;
 use crate::load::{oas, xsd};
 use crate::plan::composition::{self, ComposedGeneration, ComposedUnit, compose};
 use crate::render::emit::{CrateGeneration, GenFile, RenderUnit, emit_composed, type_module_path};
+use crate::render::emit_templates;
 use crate::render::{
     emit, emit_json, emit_opt, emit_rest, emit_rm_model, emit_validate, emit_xml, model_query,
     naming,
@@ -641,7 +642,15 @@ fn cmd_emit_rm_model() -> Result<(), Box<dyn std::error::Error>> {
             if let Some(parent) = full.parent() {
                 std::fs::create_dir_all(parent)?;
             }
-            std::fs::write(&full, emit::guard_value_carriers(&f.body))?;
+            // A template-stamped body is hand-written text that already carries
+            // its own scoped suppressions — the generated-file guard would
+            // duplicate them.
+            let body = if f.body.starts_with(emit_templates::TEMPLATE_MARKER) {
+                f.body.clone()
+            } else {
+                emit::guard_value_carriers(&f.body)
+            };
+            std::fs::write(&full, body)?;
             written.push(full);
         }
         n += files.len();
@@ -684,7 +693,12 @@ fn cmd_emit_validate() -> Result<(), Box<dyn std::error::Error>> {
             if let Some(parent) = full.parent() {
                 std::fs::create_dir_all(parent)?;
             }
-            std::fs::write(&full, emit::guard_value_carriers(&f.body))?;
+            let body = if f.body.starts_with(emit_templates::TEMPLATE_MARKER) {
+                f.body.clone()
+            } else {
+                emit::guard_value_carriers(&f.body)
+            };
+            std::fs::write(&full, body)?;
             written.push(full);
         }
         n += files.len();
@@ -827,6 +841,11 @@ fn crates_root() -> PathBuf {
         .join("crates")
 }
 
+/// The generation-twin template sources (`render::emit_templates`).
+fn templates_root() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("templates")
+}
+
 fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
     // ONE uniform path for every crate: the declarative
     // `plan::composition::COMPOSITIONS` table lists each crate's BMM
@@ -900,6 +919,19 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
                 );
             }
         }
+        // Generation-twin templates: one hand-written source per family,
+        // stamped per generation (render::emit_templates). A path collision
+        // with a generated file is a defect, never a silent overwrite.
+        for stamped in emit_templates::stamp_templates(&templates_root(), comp)? {
+            if files.iter().any(|f| f.path == stamped.path) {
+                return Err(format!(
+                    "template stamp collides with a generated file: {}",
+                    stamped.path
+                )
+                .into());
+            }
+            files.push(stamped);
+        }
         write_crate(comp.crate_name, &files)?;
     }
     Ok(())
@@ -924,7 +956,12 @@ fn write_crate(crate_name: &str, files: &[GenFile]) -> Result<(), Box<dyn std::e
         if let Some(parent) = full.parent() {
             std::fs::create_dir_all(parent)?;
         }
-        std::fs::write(&full, emit::guard_value_carriers(&f.body))?;
+        let body = if f.body.starts_with(emit_templates::TEMPLATE_MARKER) {
+            f.body.clone()
+        } else {
+            emit::guard_value_carriers(&f.body)
+        };
+        std::fs::write(&full, body)?;
         written.push(full);
     }
     // Weave hand-written modules into the generated tree: any hand-written `.rs`
@@ -1006,8 +1043,11 @@ fn declare_hand_written_modules(
                 }
             } else if p.extension().and_then(|e| e.to_str()) == Some("rs")
                 && !matches!(stem, "mod" | "lib" | "prelude")
-                && !is_generated_file(&p)
+                && (!is_generated_file(&p) || emit_templates::is_template_stamped(&p))
             {
+                // Template-stamped copies are generated files, but the
+                // generated module tree does not know them — they are woven
+                // exactly like the hand-written siblings they replace.
                 hand_written.push(stem.to_owned());
             }
         }

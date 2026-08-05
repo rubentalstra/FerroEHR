@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-base/base_types/identification/object_version_id_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written accessor functions + lexical invariant for
 //! `OBJECT_VERSION_ID`.
 //!
