@@ -516,10 +516,21 @@ fn emit_generation_enum(comp: &CrateComposition) -> String {
         "    /// The openEHR specification version this generation implements.\n    \
          #[must_use]\n    pub const fn spec_version(self) -> &'static str {\n        match self {\n",
     );
+    // Variants sharing one spec version fold into a single or-pattern arm
+    // (LANG's v2/v3 both carry the 1.1.0-line release) — identical match
+    // arms are a clippy deny in the generated output.
+    let mut version_arms: Vec<(&str, Vec<String>)> = Vec::new();
     for (variant, g) in &variants {
+        if let Some((_, vs)) = version_arms.iter_mut().find(|(v, _)| *v == g.spec_version) {
+            vs.push(format!("Self::{variant}"));
+        } else {
+            version_arms.push((g.spec_version, vec![format!("Self::{variant}")]));
+        }
+    }
+    for (version, patterns) in &version_arms {
         b.push_str(&format!(
-            "            Self::{variant} => \"{}\",\n",
-            g.spec_version
+            "            {} => \"{version}\",\n",
+            patterns.join(" | ")
         ));
     }
     b.push_str(

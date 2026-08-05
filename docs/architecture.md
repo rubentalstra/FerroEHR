@@ -37,7 +37,7 @@ chapter, concrete methods).
 
 - **Spec types** (BMM → Rust, `openehr-codegen -- emit`): `openehr-base` (BASE
   1.3.0), `openehr-rm` (RM 1.2.0 — the domain model everything consumes),
-  `openehr-am` (AM 1.4 + 2.4, as `am14`/`am24`), `openehr-term` (TERM data
+  `openehr-am` (AM 1.4 + 2.4, as `v1_4`/`v2_4`), `openehr-term` (TERM data
   classes + hand-written bundle/assets), `openehr-lang` (BMM/P_BMM model).
 - **Canonical JSON** — emitted **manual serde impls** (`emit-json` → each
   defining crate's `src/json_serde.rs`; no derives, no serde attributes on
@@ -156,9 +156,9 @@ vendored (`docs/VERSIONS.md` is the ladder). openEHR's own release strategy
 guarantees within-major compatibility (minor releases are additive), so the
 newer-generation pin accepts every valid older-minor instance — no version
 negotiation and no parallel generations, with exactly one exception: **AM
-ships both extant majors** (`am14` + `am24`), because the spec itself keeps
+ships both extant majors** (`v1_4` + `v2_4`), because the spec itself keeps
 ADL 1.4 and ADL 2 side by side. A future major release triggers a
-per-component decision (dual generation via the `am14`/`am24` codegen
+per-component decision (dual generation via the version-module codegen
 pattern only if the ecosystem runs both; otherwise cutover). ITS-REST is
 single-version by owner ruling: the CDR implements the latest released REST
 API, nothing else. **ITS-XML is not a second generation either**: its 2.0.0
@@ -234,7 +234,7 @@ The service layer realizes the openEHR **SM Platform Service Model**
 |---|---|---|
 | `openehr-base` | BASE 1.3.0 | generated |
 | `openehr-rm` | RM 1.2.0 — the domain model | generated |
-| `openehr-am` | AM 1.4 + 2.4 (`am14`/`am24`) | generated |
+| `openehr-am` | AM 1.4 + 2.4 (`v1_4`/`v2_4`) | generated |
 | `openehr-term` | TERM classes + terminology bundle | generated + hand-written |
 | `openehr-lang` | BMM/P_BMM object model | generated |
 | `openehr-its` | Canonical JSON/XML + ITS-REST contract + runtimes + gates + Simplified Formats (`flat`: FLAT / STRUCTURED / Web Template) | generated + hand-written |
