@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/data_types/encapsulated/dv_multimedia_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariants for `DV_MULTIMEDIA`.
 //!
 //! Mirrors archie `DvMultimedia` (the non-terminology invariants):

@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/data_types/quantity/dv_quantity_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariants for `DV_QUANTITY`.
 //!
 //! `DV_QUANTITY` declares no own invariants; it inherits the DV_AMOUNT

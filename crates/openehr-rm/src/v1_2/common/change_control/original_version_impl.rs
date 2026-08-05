@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/common/change_control/original_version_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written spec function of `ORIGINAL_VERSION` (hand-written spec
 //! behaviour).
 //!

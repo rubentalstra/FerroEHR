@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/data_structures/item_structure/item_table_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariants for `ITEM_TABLE`.
 //!
 //! Mirrors archie `ItemTable` + inherited LOCATABLE:

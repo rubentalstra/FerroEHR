@@ -7,6 +7,11 @@ authority (no version constants exist in this crate);
 the package version is the crate's own SemVer line
 (`.claude/rules/crates-publishing.md`).
 
+- A sibling identical across the generations (`v1_1`/`v1_2`) modulo generation
+  paths is a generation-twin TEMPLATE: the hand-written source lives at
+  `tools/openehr-codegen/templates/openehr-rm/…` and `emit` stamps the
+  per-generation copies (`@generated-from-template` header — edit the
+  template, never a stamped copy; overrides carry their adjudication).
 - **NEVER hand-edit a file with a `// @generated … DO NOT EDIT` header.**
   Change the emitter (`tools/openehr-codegen/src/render/emit.rs`) and regenerate
   (`/regen-codegen`); the `codegen-drift` CI job guards this.

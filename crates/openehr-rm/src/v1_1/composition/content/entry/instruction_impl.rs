@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/composition/content/entry/instruction_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariants for `INSTRUCTION`.
 //!
 //! Inherited `Entry` + LOCATABLE invariants (`Is_archetype_root`,

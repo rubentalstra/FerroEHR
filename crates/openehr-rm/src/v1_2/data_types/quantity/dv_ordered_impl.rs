@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/data_types/quantity/dv_ordered_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM spec functions for the `DV_ORDERED` / `DV_QUANTIFIED` family.
 //!
 //! The surface is `magnitude()`, `is_strictly_comparable_to()`,

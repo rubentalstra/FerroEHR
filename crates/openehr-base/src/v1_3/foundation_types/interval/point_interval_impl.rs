@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-base/foundation_types/interval/point_interval_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM/BASE class invariants for `Point_interval`.
 //!
 //! A point interval represents a single value (`lower == upper`, both included).

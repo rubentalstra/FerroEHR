@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/data_types/quantity/dv_interval_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariants + interval functions for
 //! `DV_INTERVAL`.
 //!

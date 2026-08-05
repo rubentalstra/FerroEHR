@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/composition/content/entry/action_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariants for `ACTION`.
 //!
 //! Inherited `Entry` + LOCATABLE invariants (`Is_archetype_root`,

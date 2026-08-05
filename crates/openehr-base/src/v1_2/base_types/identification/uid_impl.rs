@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-base/base_types/identification/uid_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written accessor for the abstract `UID` class.
 //!
 //! Spec: BASE 1.3.0

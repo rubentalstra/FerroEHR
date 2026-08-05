@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/common/tags/item_tag_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written validating construction + RM class invariants for `ITEM_TAG`.
 //!
 //! Spec: RM 1.2.0

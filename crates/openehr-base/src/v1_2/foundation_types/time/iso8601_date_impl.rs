@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-base/foundation_types/time/iso8601_date_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written `Iso8601_date` spec behaviour.
 //!
 //! Covers the accessor functions (`is_partial`, `is_extended`, `month_unknown`,

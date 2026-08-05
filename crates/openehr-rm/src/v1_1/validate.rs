@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/validate.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! RM-level validation glue (hand-written spec behaviour).
 //!
 //! The module is preserved

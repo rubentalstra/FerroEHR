@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/composition/content/entry/activity_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariants for `ACTIVITY`.
 //!
 //! - `Action_archetype_id_valid` (archie `Activity`, `nullOrNotEmpty`):

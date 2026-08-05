@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-base/base_types/identification/iso_oid_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM/BASE class invariant + validating construction for
 //! `ISO_OID`.
 //!
