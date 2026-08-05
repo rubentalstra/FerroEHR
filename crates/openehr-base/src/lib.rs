@@ -115,3 +115,6 @@ impl std::str::FromStr for Generation {
 pub mod containers;
 pub mod serde_support;
 pub mod validate;
+
+// canonical-JSON `serde` impls (openehr-codegen -- emit-json), auto-declared:
+mod json_serde;
