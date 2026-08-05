@@ -9,9 +9,11 @@ DELETED in the PR that closes the last child issue.
 ## Settled decisions (do not re-litigate)
 
 - **One coupled profile**: `spec_profile = "stable" | "development"` selects
-  RM+BASE together. `development` = RM 1.2.0 + BASE 1.3.0 (current pins);
-  `stable` = RM 1.1.0 + BASE 1.2.0 (latest RELEASED). Per-component free
-  choice rejected — incoherent RM×BASE combinations stay unrepresentable.
+  the generation SET together — owner HARD RULE (2026-08-05, extended the
+  same day to LANG): `development` = RM 1.2.0 + BASE 1.3.0 + LANG 1.1.0
+  (current pins); `stable` = RM 1.1.0 + BASE 1.2.0 + LANG 1.0.0 (the
+  released generations). Per-component free choice rejected — incoherent
+  combinations stay unrepresentable.
 - **One uniform structure for every generated crate** (no package is
   special): version-named generation modules, the codegen composition table
   as the single authority for which generations exist, an emitted per-crate

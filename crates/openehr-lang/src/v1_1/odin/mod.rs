@@ -6,7 +6,7 @@
 //! returns an [`OdinValue`] tree (insertion order preserved).
 //!
 //! Spec oracle: `docs/specs/openehr/LANG/docs/odin/` and the vendored grammars
-//! `crates/openehr-lang/vendor/grammar/{odin.g4,odin_values.g4}` (which import
+//! `crates/openehr-lang/vendor/grammar/v1_1/{odin.g4,odin_values.g4}` (which import
 //! `base_lexer.g4`). This module is **deliberately off the codegen path** — it
 //! parses ODIN *instances*, it does not load the BMM meta-model (the codegen
 //! input is the JSON BMM serialization under `openehr-codegen/vendor/bmm/`).

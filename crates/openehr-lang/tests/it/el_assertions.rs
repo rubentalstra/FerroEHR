@@ -137,7 +137,7 @@ const PARSING_ASSERTIONS: usize = 319;
 ///
 /// These are not EL. openEHR's published BMM schemas write their invariants in
 /// an Eiffel-flavoured surface syntax, and the vendored normative EL grammar
-/// (`vendor/grammar/{ElLexer.g4, ElParser.g4}`, which
+/// (`vendor/grammar/v1_1/{ElLexer.g4, ElParser.g4}`, which
 /// `LANG/docs/EL/masterAppA-syntax.adoc` includes) admits none of the following
 /// forms. Each row falls into exactly one class:
 ///

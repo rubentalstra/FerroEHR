@@ -1,6 +1,6 @@
 //! The BEL recursive-descent parser, generic over a [`BelBuilder`].
 //!
-//! Grammar: `crates/openehr-lang/vendor/grammar/base_expressions.g4` (the
+//! Grammar: `crates/openehr-lang/vendor/grammar/v1_1/base_expressions.g4` (the
 //! normative BEL syntax; `docs/specs/openehr/LANG/docs/BEL/masterAppA-syntax`).
 //! Operator precedence follows that grammar: `implies` < `or` < `xor` < `and` <
 //! `not` < comparison/`matches` < `+ -` < `* / %` < `^` < unary < primary.
