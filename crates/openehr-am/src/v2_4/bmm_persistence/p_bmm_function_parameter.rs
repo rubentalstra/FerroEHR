@@ -5,8 +5,8 @@
 
 use crate::v2_4::bmm_persistence::p_bmm_container_function_parameter::PBmmContainerFunctionParameter;
 use crate::v2_4::bmm_persistence::p_bmm_generic_function_parameter::PBmmGenericFunctionParameter;
-use openehr_lang::v2::bmm_persistence::p_bmm_single_function_parameter::PBmmSingleFunctionParameter;
-use openehr_lang::v2::bmm_persistence::p_bmm_single_function_parameter_open::PBmmSingleFunctionParameterOpen;
+use openehr_lang::v1_1::bmm_persistence::p_bmm_single_function_parameter::PBmmSingleFunctionParameter;
+use openehr_lang::v1_1::bmm_persistence::p_bmm_single_function_parameter_open::PBmmSingleFunctionParameterOpen;
 
 /// Closed subtype set of `P_BMM_FUNCTION_PARAMETER`, dispatched on each payload's `_type`.
 ///

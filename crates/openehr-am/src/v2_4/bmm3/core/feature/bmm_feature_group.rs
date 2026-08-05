@@ -4,7 +4,7 @@
 //! meta-model.
 
 use crate::v2_4::bmm3::core::feature::bmm_feature::BmmFeature;
-use openehr_lang::v3::bmm3::core::feature::bmm_visibility::BmmVisibility;
+use openehr_lang::v1_1::bmm3::core::feature::bmm_visibility::BmmVisibility;
 
 /// A logical group of features, with a name and set of properties that applies to the group.
 #[doc(alias = "BMM_FEATURE_GROUP")]

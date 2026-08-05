@@ -1,7 +1,7 @@
 //! The cADL definition-section parser.
 //!
 //! A hand-written recursive-descent parser over the shared openEHR token
-//! stream under its cADL reading ([`openehr_lang::lexer::lex_adl`]),
+//! stream under its cADL reading ([`openehr_lang::v1_1::lexer::lex_adl`]),
 //! transcribed 1:1 from the vendored normative grammars
 //! `crates/openehr-adl/vendor/grammar/{cadl2.g4, cadl2_primitives.g4}`. It
 //! builds the **generated** AOM2 constraint model
@@ -50,7 +50,7 @@ use openehr_am::v2_4::aom2::constraint_model::primitive::c_string::CString;
 use crate::aom::build::{cobject_to_primitive, cstring_regex};
 use crate::error::{SyntaxError, SyntaxErrorCode};
 use crate::odin::regex_inner;
-use openehr_lang::lexer::{Spanned, Token};
+use openehr_lang::v1_1::lexer::{Spanned, Token};
 
 /// Internal parse result: `Err(())` signals a bail-out; the concrete
 /// [`SyntaxError`] is already recorded in [`Parser::errors`].
@@ -107,7 +107,7 @@ pub fn parse_definition_body(
     body: &str,
     dialect: Dialect,
 ) -> Result<CComplexObject, Vec<SyntaxError>> {
-    let toks = match openehr_lang::lexer::lex_adl(body) {
+    let toks = match openehr_lang::v1_1::lexer::lex_adl(body) {
         Ok(t) => t,
         Err(failure) => return Err(vec![crate::error::lexical(&failure, body)]),
     };
@@ -208,12 +208,12 @@ impl Parser<'_> {
     /// Rules) and carries no code for a lexical defect INSIDE a literal, so
     /// this reuses `SUNK` ("Syntax error (unknown cause)") — the same bucket
     /// every other lexical failure reports under
-    /// ([`openehr_lang::lexer::lex_adl`]) — and
+    /// ([`openehr_lang::v1_1::lexer::lex_adl`]) — and
     /// names the defect in the message. Inventing a code would break the 1:1
     /// mirror.
     pub(crate) fn decoded_literal(
         &mut self,
-        decoded: Result<String, openehr_lang::escape::EscapeError>,
+        decoded: Result<String, openehr_lang::v1_1::escape::EscapeError>,
         span: std::ops::Range<usize>,
     ) -> PResult<String> {
         match decoded {
@@ -286,7 +286,7 @@ impl Parser<'_> {
     /// The only negation the grammars DO admit is prefix `not`/`~`/`!`/`¬` on a
     /// whole boolean expression (`base_expressions.g4` `boolean_expr : SYM_NOT
     /// boolean_expr`), i.e. inside a slot `include`/`exclude` assertion or the
-    /// rules section, which this crate parses through `openehr_lang::bel`. So
+    /// rules section, which this crate parses through `openehr_lang::v1_1::bel`. So
     /// the negated operator is refused HERE, in cADL constraint position, and
     /// accepted there — never silently read as an affirmative `matches`, which
     /// would invert the constraint.
@@ -336,7 +336,7 @@ impl Parser<'_> {
 /// Returns the cADL `S*` catalogue errors if the constraint is malformed or its
 /// body is not a single primitive constraint.
 pub(crate) fn parse_inline_primitive_text(raw: &str) -> Result<CPrimitiveObject, Vec<SyntaxError>> {
-    let toks = openehr_lang::lexer::lex_adl(raw)
+    let toks = openehr_lang::v1_1::lexer::lex_adl(raw)
         .map_err(|failure| vec![crate::error::lexical(&failure, raw)])?;
     let mut parser = Parser {
         src: raw,
@@ -406,7 +406,7 @@ pub(crate) fn parse_contained_regexp_text(raw: &str) -> Result<CString, Vec<Synt
     // The regex body itself is NEVER escape-decoded (`master03` §Special
     // Character Sequences, final paragraph); only the `;"assumed"` suffix is.
     let assumed = match quoted_assumed {
-        Some(text) => Some(openehr_lang::escape::decode(text).map_err(|defect| {
+        Some(text) => Some(openehr_lang::v1_1::escape::decode(text).map_err(|defect| {
             vec![SyntaxError::at(
                 SyntaxErrorCode::Sunk,
                 defect.to_string(),

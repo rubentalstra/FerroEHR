@@ -12,7 +12,7 @@ use crate::v2_4::bmm_persistence::p_bmm_function::PBmmFunction;
 use crate::v2_4::bmm_persistence::p_bmm_generic_parameter::PBmmGenericParameter;
 use crate::v2_4::bmm_persistence::p_bmm_generic_type::PBmmGenericType;
 use crate::v2_4::bmm_persistence::p_bmm_property::PBmmProperty;
-use openehr_lang::v2::bmm_persistence::p_bmm_constant::PBmmConstant;
+use openehr_lang::v1_1::bmm_persistence::p_bmm_constant::PBmmConstant;
 
 /// Persistent form of `BMM_ENUMERATION_STRING`.
 #[doc(alias = "P_BMM_ENUMERATION_STRING")]

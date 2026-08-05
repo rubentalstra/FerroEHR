@@ -15,7 +15,7 @@ use openehr_am::v2_4::beom::core::assertion::Assertion;
 
 use crate::error::{SyntaxError, SyntaxErrorCode};
 use crate::parse::{Dialect, PResult, Parser};
-use openehr_lang::lexer::Token;
+use openehr_lang::v1_1::lexer::Token;
 
 // ── slots, archetype roots, internal references ───────────────────────────
 impl Parser<'_> {

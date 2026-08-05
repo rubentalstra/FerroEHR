@@ -11,8 +11,8 @@ use crate::v2_4::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup;
 use crate::v2_4::bmm3::core::feature::bmm_parameter::BmmParameter;
 use crate::v2_4::bmm3::core::feature::bmm_routine_definition::BmmRoutineDefinition;
 use crate::v2_4::bmm3::statement::bmm_assertion::BmmAssertion;
-use openehr_lang::v3::bmm3::core::entity::bmm_status_type::BmmStatusType;
-use openehr_lang::v3::bmm3::core::feature::bmm_feature_extension::BmmFeatureExtension;
+use openehr_lang::v1_1::bmm3::core::entity::bmm_status_type::BmmStatusType;
+use openehr_lang::v1_1::bmm3::core::feature::bmm_feature_extension::BmmFeatureExtension;
 
 /// A formal element with signature of the form: `name ({arg:TArg}*):TStatus`, where `TStatus` is the built-in type `BMM_STATUS_TYPE`..
 ///

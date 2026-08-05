@@ -34,7 +34,9 @@ use crate::load::bmm::{
     BmmClass, BmmConstant, BmmEnumValue, BmmEnumeration, BmmPropKind, BmmSchema, BmmType,
 };
 use crate::load::impls::SiblingImpls;
-use crate::plan::composition::{CrateComposition, GenerationSpec, generation_variant};
+use crate::plan::composition::{
+    CrateComposition, GenerationSpec, GenerationUnit, generation_variant,
+};
 use crate::plan::construction;
 use crate::plan::overrides::{back_reference, class_binding, type_override, untyped_field};
 use crate::plan::{Emission, decide};
@@ -127,15 +129,23 @@ pub(crate) struct CrateGeneration<'a> {
     /// The table row this generation emits from (module name, spec version,
     /// current marker).
     pub spec: &'static GenerationSpec,
-    /// The resolution model this generation's classes resolve against.
-    pub model: &'a Model,
-    /// This generation's schema WITH its cross-schema re-emission closure
-    /// grafted in (`augmented_schema` — a generation with an empty closure is
-    /// unchanged).
-    pub schema: &'a BmmSchema,
+    /// The generation's specification units, in table order.
+    pub units: Vec<RenderUnit<'a>>,
     /// The full-path index resolving this generation's cross-crate references
     /// to its PAIRED dependency generations.
     pub external: &'a External,
+}
+
+/// One specification unit of a [`CrateGeneration`] as the render loop
+/// consumes it.
+pub(crate) struct RenderUnit<'a> {
+    /// The table row this unit emits from (`in_prelude`).
+    pub spec: &'static GenerationUnit,
+    /// The resolution model this unit's classes resolve against.
+    pub model: &'a Model,
+    /// This unit's schema WITH its cross-schema re-emission closure grafted
+    /// in (`augmented_schema` — a unit with an empty closure is unchanged).
+    pub schema: &'a BmmSchema,
 }
 
 /// The emission shapes that produce a file: [`Emission`] minus its `Skip`
@@ -169,10 +179,11 @@ impl<'a> Shape<'a> {
     }
 }
 
-/// Emit one BMM generation under its version-named top module. Produces the
-/// type files, the `mod.rs` tree, the generation's own `prelude.rs` and its
-/// `SPEC_VERSION` constant; the caller assembles the crate `lib.rs` and the
-/// crate prelude.
+/// Emit one specification unit under its generation's version-named top
+/// module. Produces the type files and the `mod.rs` tree (plus, for the
+/// generation's FIRST unit, the `SPEC_VERSION` constant in the generation
+/// `mod.rs`); the caller assembles the generation prelude, the crate prelude
+/// and `lib.rs`.
 fn emit_version(
     model: &Model,
     schema: &BmmSchema,
@@ -180,6 +191,7 @@ fn emit_version(
     spec_version: &str,
     external: &External,
     impls: &SiblingImpls,
+    first_unit: bool,
 ) -> Version {
     struct Planned<'a> {
         class: &'a BmmClass,
@@ -282,23 +294,24 @@ fn emit_version(
     let type_chains: Vec<Vec<String>> = planned.iter().map(|p| p.chain.clone()).collect();
 
     // Module tree, with the generation's own `<prefix>/prelude` registered so
-    // the generation `mod.rs` declares it.
+    // the generation `mod.rs` declares it (the caller assembles the prelude
+    // file itself, over the generation's prelude-carrying units).
     let mut tree_chains = type_chains.clone();
     tree_chains.push(vec![prefix.to_string(), "prelude".to_string()]);
     files.extend(emit_module_tree(&tree_chains));
-    // The generation module carries its own spec-version constant (the table's
-    // per-generation pin) and its own prelude; the caller assembles the crate
-    // prelude from the CURRENT generation's `emitted` set.
-    let mod_path = format!("{prefix}/mod.rs");
-    for f in &mut files {
-        if f.path == mod_path {
-            f.body.push_str(&format!(
-                "\n/// The openEHR specification version this generation implements.\n\
-                 pub const SPEC_VERSION: &str = \"{spec_version}\";\n",
-            ));
+    // The generation module carries its own spec-version constant (the
+    // table's per-generation pin), appended once — with the first unit.
+    if first_unit {
+        let mod_path = format!("{prefix}/mod.rs");
+        for f in &mut files {
+            if f.path == mod_path {
+                f.body.push_str(&format!(
+                    "\n/// The openEHR specification version this generation implements.\n\
+                     pub const SPEC_VERSION: &str = \"{spec_version}\";\n",
+                ));
+            }
         }
     }
-    files.push(emit_prelude(&emitted, &format!("{prefix}/prelude.rs")));
 
     Version {
         files,
@@ -342,23 +355,71 @@ pub(crate) fn emit_composed(
     let mut top: BTreeSet<String> = BTreeSet::new();
     let mut current: Vec<Emitted> = Vec::new();
     for g in generations {
-        let v = emit_version(
-            g.model,
-            g.schema,
-            g.spec.module,
-            g.spec.spec_version,
-            g.external,
-            impls,
-        );
-        files.extend(v.files);
-        top.extend(v.top);
+        let mut paths: BTreeSet<String> = BTreeSet::new();
+        let mut gen_emitted: Vec<Emitted> = Vec::new();
+        for (i, u) in g.units.iter().enumerate() {
+            let v = emit_version(
+                u.model,
+                u.schema,
+                g.spec.module,
+                g.spec.spec_version,
+                g.external,
+                impls,
+                i == 0,
+            );
+            for f in &v.files {
+                assert!(
+                    // The module tree and the generation mod.rs are shared
+                    // between units; type files must be unit-unique.
+                    !f.path.ends_with("mod.rs")
+                        && !f.path.ends_with("prelude.rs")
+                        && paths.insert(f.path.clone())
+                        || f.path.ends_with("mod.rs")
+                        || f.path.ends_with("prelude.rs"),
+                    "openehr-codegen: two specification units of {:?} both emit {:?} — unit \
+                     package paths must be disjoint so each unit lands at its own path \
+                     (emitting one over the other silently picks a single shape for a \
+                     colliding class).",
+                    g.spec.module,
+                    f.path,
+                );
+            }
+            merge_files(&mut files, v.files);
+            top.extend(v.top);
+            if u.spec.in_prelude {
+                gen_emitted.extend(v.emitted);
+            }
+        }
+        files.push(emit_prelude(
+            &gen_emitted,
+            &format!("{}/prelude.rs", g.spec.module),
+        ));
         if g.spec.current {
-            current = v.emitted;
+            current = gen_emitted;
         }
     }
     files.push(emit_prelude(&current, "prelude.rs"));
     files.push(emit_lib(&top, comp));
     files
+}
+
+/// Merge one unit's rendered files into the crate set, unioning the shared
+/// `mod.rs` module declarations where both units contribute to one directory.
+fn merge_files(files: &mut Vec<GenFile>, new: Vec<GenFile>) {
+    for f in new {
+        if let Some(existing) = files.iter_mut().find(|e| e.path == f.path) {
+            // Only mod.rs trees legitimately collide (the disjoint-path
+            // assert upstream guarantees it); union their `pub mod` lines.
+            for line in f.body.lines() {
+                if line.starts_with("pub mod ") && !existing.body.contains(line) {
+                    existing.body.push_str(line);
+                    existing.body.push('\n');
+                }
+            }
+        } else {
+            files.push(f);
+        }
+    }
 }
 
 /// Build every `mod.rs` from the set of emitted module chains.

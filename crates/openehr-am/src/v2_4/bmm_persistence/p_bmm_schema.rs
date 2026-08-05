@@ -5,7 +5,7 @@
 
 use crate::v2_4::bmm_persistence::p_bmm_class::PBmmClass;
 use crate::v2_4::bmm_persistence::p_bmm_package::PBmmPackage;
-use openehr_lang::v3::bmm3::model_access::bmm_include_spec::BmmIncludeSpec;
+use openehr_lang::v1_1::bmm3::model_access::bmm_include_spec::BmmIncludeSpec;
 
 /// Persisted form of `BMM_SCHEMA`.
 #[doc(alias = "P_BMM_SCHEMA")]

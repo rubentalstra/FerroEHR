@@ -11,7 +11,7 @@ use crate::v2_4::bmm::core::bmm_container_type::BmmContainerType;
 use crate::v2_4::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup;
 use crate::v2_4::bmm3::core::feature::bmm_indexed_container_property::BmmIndexedContainerProperty;
 use openehr_base::v1_3::foundation_types::interval::multiplicity_interval::MultiplicityInterval;
-use openehr_lang::v3::bmm3::core::feature::bmm_feature_extension::BmmFeatureExtension;
+use openehr_lang::v1_1::bmm3::core::feature::bmm_feature_extension::BmmFeatureExtension;
 
 /// Meta-type of for properties of linear container type, such as List\<T\> etc.
 #[doc(alias = "BMM_CONTAINER_PROPERTY")]

@@ -25,19 +25,19 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
-use openehr_lang::v2::bmm_persistence::create_bmm3_model::create_bmm3_model;
-use openehr_lang::v2::bmm_persistence::error::PBmmReadError;
-use openehr_lang::v2::bmm_persistence::include_resolution::resolve_includes;
-use openehr_lang::v2::bmm_persistence::p_bmm_schema::PBmmSchema;
-use openehr_lang::v2::bmm_persistence::reader::read_schema;
-use openehr_lang::v3::bmm3::core::entity::bmm_class::BmmClass;
-use openehr_lang::v3::bmm3::core::entity::bmm_model_type::BmmModelType;
-use openehr_lang::v3::bmm3::core::entity::bmm_simple_class::BmmSimpleClass;
-use openehr_lang::v3::bmm3::core::entity::bmm_type::BmmType;
-use openehr_lang::v3::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType;
-use openehr_lang::v3::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumeration;
-use openehr_lang::v3::bmm3::core::feature::bmm_property::BmmProperty;
-use openehr_lang::v3::bmm3::core::model::bmm_model::BmmModel;
+use openehr_lang::v1_1::bmm_persistence::create_bmm3_model::create_bmm3_model;
+use openehr_lang::v1_1::bmm_persistence::error::PBmmReadError;
+use openehr_lang::v1_1::bmm_persistence::include_resolution::resolve_includes;
+use openehr_lang::v1_1::bmm_persistence::p_bmm_schema::PBmmSchema;
+use openehr_lang::v1_1::bmm_persistence::reader::read_schema;
+use openehr_lang::v1_1::bmm3::core::entity::bmm_class::BmmClass;
+use openehr_lang::v1_1::bmm3::core::entity::bmm_model_type::BmmModelType;
+use openehr_lang::v1_1::bmm3::core::entity::bmm_simple_class::BmmSimpleClass;
+use openehr_lang::v1_1::bmm3::core::entity::bmm_type::BmmType;
+use openehr_lang::v1_1::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType;
+use openehr_lang::v1_1::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumeration;
+use openehr_lang::v1_1::bmm3::core::feature::bmm_property::BmmProperty;
+use openehr_lang::v1_1::bmm3::core::model::bmm_model::BmmModel;
 
 /// The vendored openEHR RM 1.0.2 inclusion chain, deepest first.
 const CHAIN: &[&str] = &[
@@ -327,7 +327,7 @@ fn a_formal_parameter_reduces_to_its_constraint() -> Result<(), Box<dyn std::err
     // An unconstrained parameter has no effective type object; its conformance
     // name is the `Any` top.
     let unconstrained =
-        openehr_lang::v3::bmm3::core::entity::bmm_parameter_type::BmmParameterType {
+        openehr_lang::v1_1::bmm3::core::entity::bmm_parameter_type::BmmParameterType {
             name: "U".to_owned(),
             type_constraint: None,
             inheritance_precursor: None,
@@ -557,7 +557,7 @@ fn a_class_constant_materialises_with_its_literal_generator()
     let statics = class(&model, "SERVICE")
         .static_properties()
         .ok_or("SERVICE declares static properties")?;
-    let openehr_lang::v3::bmm3::core::feature::bmm_static::BmmStatic::BmmConstant(constant) =
+    let openehr_lang::v1_1::bmm3::core::feature::bmm_static::BmmStatic::BmmConstant(constant) =
         statics.get("Max_retries").ok_or("SERVICE.Max_retries")?
     else {
         return Err("Max_retries is a constant".into());

@@ -1,6 +1,6 @@
 //! The ADL2 `rules` section + structured slot-assertion parser.
 //!
-//! The core BEL grammar is `openehr_lang::bel` (a LANG spec — statements,
+//! The core BEL grammar is `openehr_lang::v1_1::bel` (a LANG spec — statements,
 //! assertions, assignments, operators, literals → the generated `beom` model).
 //! This module supplies the **AOM composition**: a [`BelBuilder`] that produces
 //! the AM-level expression model (`openehr_am::v2_4::beom` — the extender enums
@@ -17,7 +17,7 @@
 //!   `EXPR_ARCHETYPE_ID_CONSTRAINT` (an archetype-id regex matcher).
 //!
 //! No expression grammar is duplicated: this drives
-//! [`openehr_lang::bel::parse_statements_with`] with the AOM builder.
+//! [`openehr_lang::v1_1::bel::parse_statements_with`] with the AOM builder.
 
 use openehr_am::v2_4::aom2::constraint_model::archetype_constraint::ArchetypeConstraint;
 use openehr_am::v2_4::aom2::constraint_model::c_complex_object::{
@@ -39,13 +39,13 @@ use openehr_am::v2_4::beom::core::expr_value_ref::{ExprValueRef, ExprValueRefDat
 use openehr_am::v2_4::beom::core::expression::Expression;
 use openehr_am::v2_4::beom::core::statement::Statement;
 use openehr_am::v2_4::beom::core::statement_set::StatementSet;
-use openehr_lang::bel::{BelBuilder, BelError, BelLiteral, parse_statements_with};
-use openehr_lang::v2::beom::core::expr_literal::ExprLiteral;
-use openehr_lang::v2::beom::core::expr_variable_ref::ExprVariableRef;
-use openehr_lang::v2::beom::core::operator_kind::OperatorKind;
-use openehr_lang::v2::beom::core::variable_declaration::VariableDeclaration;
-use openehr_lang::v2::beom::types::expr_type_def::ExprTypeDef;
-use openehr_lang::v2::beom::types::type_def_object_ref::TypeDefObjectRef;
+use openehr_lang::v1_1::bel::{BelBuilder, BelError, BelLiteral, parse_statements_with};
+use openehr_lang::v1_1::beom::core::expr_literal::ExprLiteral;
+use openehr_lang::v1_1::beom::core::expr_variable_ref::ExprVariableRef;
+use openehr_lang::v1_1::beom::core::operator_kind::OperatorKind;
+use openehr_lang::v1_1::beom::core::variable_declaration::VariableDeclaration;
+use openehr_lang::v1_1::beom::types::expr_type_def::ExprTypeDef;
+use openehr_lang::v1_1::beom::types::type_def_object_ref::TypeDefObjectRef;
 
 use crate::error::{SyntaxError, SyntaxErrorCode};
 use crate::parse::{parse_contained_regexp_text, parse_inline_primitive_text};
@@ -61,7 +61,7 @@ enum ConstraintMode {
     Slot,
 }
 
-/// The AOM [`BelBuilder`]: drives `openehr_lang::bel` to construct the AM-level
+/// The AOM [`BelBuilder`]: drives `openehr_lang::v1_1::bel` to construct the AM-level
 /// expression model with the AOM leaf productions spliced in.
 struct AmBuilder {
     mode: ConstraintMode,
@@ -339,7 +339,7 @@ fn to_expr_value(e: Expression) -> ExprValue {
     }
 }
 
-/// Map a `openehr_lang::bel` error to the ADL2 syntax catalogue. Rules
+/// Map a `openehr_lang::v1_1::bel` error to the ADL2 syntax catalogue. Rules
 /// expressions are AOM invariants: a malformed one is `SINVS`, a missing path
 /// after `exists` is `SEXPT` (`master04.6`).
 fn bel_to_syntax(err: &BelError, offset: usize, src: &str) -> SyntaxError {

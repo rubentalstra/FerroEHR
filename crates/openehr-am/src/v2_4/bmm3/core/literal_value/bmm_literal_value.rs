@@ -4,9 +4,9 @@
 //! meta-model.
 
 use crate::v2_4::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValue;
-use openehr_lang::v3::bmm3::core::literal_value::bmm_container_value::BmmContainerValue;
-use openehr_lang::v3::bmm3::core::literal_value::bmm_indexed_container_value::BmmIndexedContainerValue;
-use openehr_lang::v3::bmm3::core::literal_value::bmm_interval_value::BmmIntervalValue;
+use openehr_lang::v1_1::bmm3::core::literal_value::bmm_container_value::BmmContainerValue;
+use openehr_lang::v1_1::bmm3::core::literal_value::bmm_indexed_container_value::BmmIndexedContainerValue;
+use openehr_lang::v1_1::bmm3::core::literal_value::bmm_interval_value::BmmIntervalValue;
 
 /// Closed subtype set of `BMM_LITERAL_VALUE`, dispatched on each payload's `_type`.
 ///

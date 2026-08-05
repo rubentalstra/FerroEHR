@@ -18,13 +18,13 @@ fn odin_character_escapes() {
         "x = <'ü'>",
     ] {
         assert!(
-            openehr_lang::odin::parse(ok).is_ok(),
+            openehr_lang::v1_1::odin::parse(ok).is_ok(),
             "legal character must parse: {ok}"
         );
     }
     for bad in [r"x = <'\q'>", r"x = <'\d'>"] {
         assert!(
-            openehr_lang::odin::parse(bad).is_err(),
+            openehr_lang::v1_1::odin::parse(bad).is_err(),
             "illegal escape must be rejected: {bad}"
         );
     }
@@ -34,7 +34,7 @@ fn odin_character_escapes() {
 /// accepting the legal forms including `\u`-encoded unicode in strings.
 #[test]
 fn bel_string_and_character_escapes() {
-    let parses = |expr: &str| openehr_lang::bel::parse_statements(expr).is_ok();
+    let parses = |expr: &str| openehr_lang::v1_1::bel::parse_statements(expr).is_ok();
     for ok in [
         r#"/a[at0001]/b = "a\n\t\\\"z""#,
         r#"/a[at0001]/b = "grüße""#,

@@ -10,7 +10,7 @@ use crate::v2_4::bmm_persistence::p_bmm_generic_parameter::PBmmGenericParameter;
 use crate::v2_4::bmm_persistence::p_bmm_generic_type::PBmmGenericType;
 use crate::v2_4::bmm_persistence::p_bmm_interface::PBmmInterface;
 use crate::v2_4::bmm_persistence::p_bmm_property::PBmmProperty;
-use openehr_lang::v2::bmm_persistence::p_bmm_constant::PBmmConstant;
+use openehr_lang::v1_1::bmm_persistence::p_bmm_constant::PBmmConstant;
 
 /// Definition of persistent form of `BMM_CLASS` for serialisation to ODIN, JSON, XML etc.
 #[doc(alias = "P_BMM_CLASS")]

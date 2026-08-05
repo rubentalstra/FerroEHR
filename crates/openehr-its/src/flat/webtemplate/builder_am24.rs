@@ -65,7 +65,7 @@ use openehr_am::v2_4::aom2::terminology::archetype_terminology::ArchetypeTermino
 use openehr_am::v2_4::beom::core::assertion::Assertion;
 use openehr_am::v2_4::beom::core::expression::Expression;
 use openehr_base::prelude::{Cardinality, Interval, MultiplicityInterval, ProperInterval};
-use openehr_lang::v2::beom::core::operator_kind::OperatorKind;
+use openehr_lang::v1_1::beom::core::operator_kind::OperatorKind;
 
 use super::model::{
     WebTemplate, WebTemplateArchetypeSlot, WebTemplateBindingCodedValue, WebTemplateCardinality,
