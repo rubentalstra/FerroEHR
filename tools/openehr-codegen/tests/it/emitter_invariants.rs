@@ -1168,19 +1168,24 @@ fn rm_base_twin_classes_keep_both_generations() {
     );
 }
 
-/// The acceptance-boundary ledger (#1943): the EXACT model delta between the
-/// stable profile's released generations and the development pins, pinned so
-/// a re-vendor that widens it FAILS here until the application's profile
+/// The acceptance-boundary ledger (#1943; the REMOVED direction #1961): the
+/// EXACT model delta between the stable profile's released generations and
+/// the development pins, in BOTH directions, pinned so a re-vendor that
+/// changes either direction FAILS here until the application's profile
 /// boundary is extended to cover the new surface.
 ///
 /// Verified first-hand 2026-08-05 over the vendored BMMs. The wire
-/// consequence the pin protects: none of these deltas is client-postable
+/// consequences the pins protect: no ADDED delta is client-postable
 /// (`EHR.tags` is server-managed — the item-tag API stores rows, the EHR
 /// wire never carries the attribute; `CODE_PHRASE`/`RESOURCE_DESCRIPTION`
-/// are BASE resource-metadata surface outside the REST ingress), so the
-/// stable profile's ingress needs no per-payload double-decode TODAY. A new
-/// delta entry invalidates that adjudication — extend the boundary in
-/// `ferroehr` first, then re-pin here.
+/// are BASE resource-metadata surface outside the REST ingress). In the
+/// REMOVED direction, `PARTY.reverse_relationships` IS client-postable
+/// released surface, and the stable demographic ingress boundary accepts it
+/// (`ferroehr-rest` `api::demographic::party::rm_party`); the nine
+/// 1.1.0-BMM-only classes carry no enforceable wire surface (documented
+/// nowhere — the #1927 defect family) and no served root reaches them. A
+/// new delta entry invalidates the matching adjudication — extend the
+/// boundary in `ferroehr` first, then re-pin here.
 #[test]
 fn profile_generation_delta_is_pinned() {
     // RM: 1.2.0 adds exactly `EHR.tags` over 1.1.0 (and no classes).
@@ -1189,8 +1194,34 @@ fn profile_generation_delta_is_pinned() {
     assert_eq!(rm.classes_added, Vec::<String>::new());
     assert_eq!(rm.attributes_added, vec!["EHR.tags".to_owned()]);
 
+    // RM REMOVED direction (#1961): the development generation drops the
+    // nine 1.1.0-BMM-only classes (undocumented machine-readable classes of
+    // a released artifact — the #1927 defect family; no docs text anywhere
+    // defines them, so they carry no enforceable wire surface) and
+    // `PARTY.reverse_relationships` (upstream SPECRM-124, RM
+    // `demographic/master00-amendment_record.adoc` — real released surface,
+    // the stable ingress boundary accepts it).
+    assert_eq!(
+        rm.classes_removed,
+        vec![
+            "CITATION".to_owned(),
+            "CONSUMABLE_USE".to_owned(),
+            "RESOURCE_USAGE".to_owned(),
+            "RESOURCE_USE".to_owned(),
+            "SERVICE_USE".to_owned(),
+            "VIEW_ENTRY".to_owned(),
+            "VIEW_ITEM".to_owned(),
+            "VIEW_SECTION".to_owned(),
+            "VIEW_STATUS".to_owned(),
+        ]
+    );
+    assert_eq!(
+        rm.attributes_removed,
+        vec!["PARTY.reverse_relationships".to_owned()]
+    );
+
     // BASE: 1.3.0 adds exactly the legacy CODE_PHRASE class (SPECAM-82) and
-    // RESOURCE_DESCRIPTION.title over 1.2.0.
+    // RESOURCE_DESCRIPTION.title over 1.2.0, and removes nothing.
     let base = testsupport::generation_attribute_delta("base", "v1_2", "v1_3")
         .expect("base generations load");
     assert_eq!(base.classes_added, vec!["CODE_PHRASE".to_owned()]);
@@ -1198,4 +1229,6 @@ fn profile_generation_delta_is_pinned() {
         base.attributes_added,
         vec!["RESOURCE_DESCRIPTION.title".to_owned()]
     );
+    assert_eq!(base.classes_removed, Vec::<String>::new());
+    assert_eq!(base.attributes_removed, Vec::<String>::new());
 }

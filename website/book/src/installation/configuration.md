@@ -115,7 +115,12 @@ other and never vary independently:
 The active profile is visible on the boot banner and `/management/info`.
 Under `stable`, requests that address specification surface the released
 generations do not define are refused with an error naming the profile —
-never answered as if the surface existed.
+never answered as if the surface existed. The reverse also holds: released
+surface that the development generations later dropped stays accepted under
+`stable` — a demographic party carrying the RM 1.1.0
+`reverse_relationships` attribute is validated and accepted (the attribute
+is derived data the server recomputes, so its inbound copy is not stored),
+while `development` refuses it as undeclared.
 
 **Changing the profile on an existing deployment:**
 
