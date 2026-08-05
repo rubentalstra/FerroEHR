@@ -6,8 +6,8 @@
 //! RM payload types resolve to `openehr-rm`/`openehr-base` rather than being
 //! re-emitted. This module is the hand-written [`runtime`] (the `ApiError`
 //! response type) + re-exports. `ferroehr-rest` implements the generated traits
-//! and wires axum; the handler bodies are our own service layer (`ferroehr`,
-//! the openEHR specs are the authority, EHRbase is prior art).
+//! and wires axum; the handler bodies are our own service layer (`ferroehr`),
+//! with the openEHR specs as the authority.
 //! Regenerate with `cargo run -p openehr-codegen -- emit-rest`.
 
 // The generated contract and its runtime need the crate's dependency set (axum,

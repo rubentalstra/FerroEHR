@@ -1,20 +1,21 @@
 //! Hand-written RM class invariants for `DV_MULTIMEDIA`.
 //!
-//! Mirrors archie `DvMultimedia` (the non-terminology invariants):
-//! - `Not_empty`: `data` (inline) or `uri` (external) must be present.
-//! - `Integrity_check_validity`: an integrity check implies an integrity-check
-//!   algorithm.
-//! - `Size_valid`: `size >= 0`.
+//! Spec:
+//! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_multimedia.adoc`
+//! §Invariants. Enforced here — the three that need no code set:
+//! - `Not_empty` (`is_inline or is_external`): `is_inline` is "computed from the
+//!   value of the data attribute" and `is_external` from `uri` (§Functions), so
+//!   at least one of `data` / `uri` must be present.
+//! - `Integrity_check_validity` (`integrity_check /= Void implies
+//!   integrity_check_algorithm /= Void`).
+//! - `Size_valid` (`size >= 0`), which admits `size = 0`.
 //!
-//! NOTE: openEHR's `Size_valid` is `size >= 0`; archie implements it as
-//! `size > 0` (a known reference quirk that rejects a legitimately empty
-//! multimedia). We follow the **spec** (`>= 0`) — by design the openEHR
-//! spec, not a specific reference implementation, the conformance target.
-//!
-//! NOTE: the terminology-bound invariants (`Media_type_valid`,
-//! `Compression_algorithm_valid`, `Integrity_check_algorithm_validity`,
-//! `Charset_valid`, `Language_valid`) are deferred to the composition validator
-//! + `openehr-term`.
+//! The five code-set-bound invariants — `Media_type_valid`,
+//! `Compression_algorithm_validity`, `Integrity_check_algorithm_validity`, and
+//! DV_ENCAPSULATED's `Charset_valid` / `Language_valid` — cannot be decided in
+//! this crate, which has no terminology dependency; they are enforced in the
+//! terminology-aware path (`validate::terminology`, the `DV_MULTIMEDIA` slots)
+//! against the `openehr-term` bundle.
 
 use crate::v1_2::data_types::encapsulated::dv_multimedia::DvMultimedia;
 use openehr_base::validate::{InvariantViolation, Validate};
@@ -108,9 +109,10 @@ mod tests {
         );
     }
 
+    /// `dv_multimedia.adoc` §Invariants `Size_valid` is `size >= 0`, so a
+    /// zero-length multimedia is valid.
     #[test]
     fn zero_size_valid_per_spec() {
-        // openEHR spec permits size == 0 (archie's `> 0` quirk would reject it).
         let mut m = valid();
         m.size = 0;
         assert!(m.invariants().is_empty());

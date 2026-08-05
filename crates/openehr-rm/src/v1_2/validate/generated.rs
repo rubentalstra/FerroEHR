@@ -5,9 +5,9 @@
 //! failed on type <RM_TYPE>`) so a failure is identifiable by its BMM invariant
 //! name.
 //!
-//! NOTE: no openEHR spec governs the wording of a violation message — that
-//! message shape is our own convention (it originated in openEHR's reference
-//! implementation, which is prior art only, never the ground).
+//! NOTE: no openEHR spec governs the wording of a violation message — the
+//! shape below is our own convention, carrying the BMM invariant name so a
+//! failure names the rule it violated.
 //!
 //! # Emitted cores
 //!
@@ -386,8 +386,7 @@ pub(crate) fn temporal_value_core(ty: &str, valid: bool, out: &mut Vec<Invariant
 // The released invariants compare the denominator against the exact values
 // 0/1/100 (RM `dv_proportion.adoc` §Invariants: `Valid_denominator`,
 // `Unitary_validity`, `Percent_validity` — `denominator = 1`, `= 100`,
-// `<> 0`), so exact float comparison IS the spec semantics (archie renders
-// them the same way — prior art, not the ground).
+// `<> 0`), so exact float comparison IS the spec semantics.
 #[expect(
     clippy::float_cmp,
     reason = "the released invariants compare the denominator against exact 0/1/100 values"
@@ -421,12 +420,14 @@ pub(crate) fn dv_proportion_core(
     }
     // Fraction_validity: `(type = pk_fraction or type = pk_integer_fraction)
     // implies is_integral`, where `is_integral()` is "True … if precision is 0"
-    // (RM dv_proportion.adoc §Functions; archie `getPrecision() != null &&
-    // getPrecision() == 0`). A fraction / integer_fraction is therefore invalid
-    // when its numerator/denominator are non-integral OR its precision is a
-    // present, non-zero value: CNF `master17.3` (CONT-DV_PROPORTION-validate_open)
-    // rejects `type 3, 10/500, precision 1` under fraction_validity. (Precision 0
-    // or absent keeps a whole-numerator/denominator fraction valid.)
+    // (RM dv_proportion.adoc §Functions). A fraction / integer_fraction is
+    // therefore invalid when its numerator/denominator are non-integral OR its
+    // precision is a present, non-zero value. (Precision 0 or absent keeps a
+    // whole-numerator/denominator fraction valid.)
+    //
+    // NOTE: `Is_integral_validity` (`is_integral implies …`) needs no separate
+    // push — `is_integral()` IS "precision is 0" (§Functions), so the
+    // invariant is extensionally the `Precision_validity` check above.
     if (kind == PK_FRACTION || kind == PK_INTEGER_FRACTION)
         && (!integral || precision.is_some_and(|p| p != 0))
     {

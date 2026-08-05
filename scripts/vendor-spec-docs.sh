@@ -64,7 +64,26 @@ trap 'rm -rf "$TMP"' EXIT
 # `tmp-*` is upstream's own scratch-note prefix (e.g. the CNF repo's
 # tmp-docs-how-to-get-code-coverage-from-all-tests.md, a JaCoCo/Java how-to
 # with no conformance content) — noise in a tree we treat as an oracle.
+#
+# DEPENDENCY MANIFESTS of upstream's own build/test tooling are excluded by
+# name, for a reason beyond noise: a vendored manifest makes this repository's
+# dependency graph claim an ecosystem the workspace does not use (upstream's
+# PHP artifact tooling, its stalled Python Robot harness), and the scanners
+# then raise advisories against pinned third-party versions nothing here ever
+# installs. This workspace's only dependency manifests are its own Cargo
+# files. The list covers the common ecosystems so a future component's
+# re-vendor cannot reintroduce the class.
+MANIFESTS=(
+  'requirements*.txt' 'Pipfile*' 'pyproject.toml' 'setup.py' 'setup.cfg'
+  'composer.json' 'composer.lock'
+  'package.json' 'package-lock.json' 'yarn.lock' 'pnpm-lock.yaml'
+  'Gemfile*' '*.gemspec'
+  'pom.xml' 'build.gradle*' 'go.mod' 'go.sum'
+)
 rsync_args=(--exclude='.git' --exclude='.claude' --exclude='.junie' --exclude='.github' --exclude='AGENTS.md' --exclude='tmp-*')
+for manifest in "${MANIFESTS[@]}"; do
+  rsync_args+=(--exclude="$manifest")
+done
 for ext in "${INCLUDE_EXT[@]}"; do
   rsync_args+=(--include="*.$ext")
 done

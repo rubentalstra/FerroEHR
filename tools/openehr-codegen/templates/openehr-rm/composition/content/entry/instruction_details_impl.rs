@@ -1,7 +1,8 @@
 //! Hand-written RM class invariant for `INSTRUCTION_DETAILS`.
 //!
-//! `Activity_path_valid` (archie `InstructionDetails`, `nullOrNotEmpty`):
-//! `activity_id` must be non-empty.
+//! `Activity_path_valid` (`not activity_id.is_empty`) —
+//! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.instruction_details.adoc`
+//! §Invariants.
 
 use crate::v1_2::composition::content::entry::instruction_details::InstructionDetails;
 use openehr_base::validate::{InvariantViolation, Validate};

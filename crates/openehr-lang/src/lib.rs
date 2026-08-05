@@ -52,7 +52,7 @@ impl Generation {
     }
 
     /// Returns the generation token — the version-module name
-    /// (`"v1_2"`), which is also the [`std::fmt::Display`] and
+    /// (`"v1_1"`), which is also the [`std::fmt::Display`] and
     /// [`std::str::FromStr`] form.
     #[must_use]
     pub const fn as_str(self) -> &'static str {

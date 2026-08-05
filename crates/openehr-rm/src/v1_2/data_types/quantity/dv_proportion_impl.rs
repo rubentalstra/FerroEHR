@@ -1,9 +1,12 @@
 // @generated-from-template templates/openehr-rm/data_types/quantity/dv_proportion_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariants for `DV_PROPORTION`.
 //!
-//! Mirrors archie `DvProportion` (`ProportionKind` = ratio 0, unitary 1,
-//! percent 2, fraction 3, integer_fraction 4), plus the inherited DV_AMOUNT /
-//! DV_QUANTIFIED invariants.
+//! Spec:
+//! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_proportion.adoc`
+//! §Invariants (the seven own invariants), over the kind constants of
+//! `…org.openehr.rm.data_types.proportion_kind.adoc` §Constants (`pk_ratio` 0,
+//! `pk_unitary` 1, `pk_percent` 2, `pk_fraction` 3, `pk_integer_fraction` 4),
+//! plus the inherited DV_AMOUNT / DV_QUANTIFIED / DV_ORDERED invariants.
 
 use crate::v1_2::data_types::quantity::dv_ordered_impl::push_normal_range_consistency;
 use crate::v1_2::data_types::quantity::dv_proportion::DvProportion;

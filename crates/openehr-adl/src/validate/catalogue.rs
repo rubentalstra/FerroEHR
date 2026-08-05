@@ -31,8 +31,9 @@ pub enum Severity {
 ///
 /// Each variant's doc comment names the spec file + section that defines it.
 /// The catalogue is the phase-1 set of `docs/specs/openehr/AM/docs/AOM2/`
-/// plus the two corpus-adjudicated additions (VRDLA, WOUC — archie parity, no
-/// full vendored text, NOTE-flagged). Deferred variants (their check needs the
+/// plus the two corpus-adjudicated additions (VRDLA, WOUC — no openEHR spec
+/// names either code, NOTE-flagged at their variants and check sites).
+/// Deferred variants (their check needs the
 /// RM model, the flat parent, or an external terminology service) are present
 /// as the vocabulary but not raised in phase 1 — see the phase-1 topic modules.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -225,14 +226,14 @@ pub enum ValidationCode {
     /// `specialisation`: a new object node in a specialised container whose flattened
     /// siblings are identified must itself be identified.
     Vsonif,
-    /// VRDLA — resource-description language-code consistency (archie parity; no
-    /// openEHR spec governs this — our own design/extension, NOTE-flagged).
+    /// VRDLA — resource-description language-code consistency (no openEHR spec
+    /// governs this — our own design/extension, NOTE-flagged at its check site).
     Vrdla,
     /// WACMCL — cardinality/occurrences lower bound warning (`master04.5`
     /// §`C_ATTRIBUTE`; WARNING).
     Wacmcl,
-    /// WOUC — defined terminology code unused in the definition (archie parity;
-    /// no openEHR spec governs this — our own design/extension; WARNING).
+    /// WOUC — defined terminology code unused in the definition (no openEHR spec
+    /// governs this — our own design/extension; WARNING).
     Wouc,
     /// W14DEP — a deprecated ADL 1.4 spelling was used
     /// (`ADL1.4/master05-cadl.adoc` §Symbols `V_C_DOMAIN_TYPE` marks the
