@@ -510,7 +510,7 @@ fn emit_generation_enum(comp: &CrateComposition) -> String {
             .join(", "),
     ));
     b.push_str(
-        "    /// The openEHR specification version this generation implements.\n    \
+        "    /// Returns the openEHR specification version this generation implements.\n    \
          #[must_use]\n    pub const fn spec_version(self) -> &'static str {\n        match self {\n",
     );
     // Variants sharing one spec version fold into a single or-pattern arm
@@ -531,9 +531,10 @@ fn emit_generation_enum(comp: &CrateComposition) -> String {
         ));
     }
     b.push_str(
-        "        }\n    }\n\n    /// The generation-module name (`\"v1_2\"`) — the\n    \
-         /// [`std::fmt::Display`]/[`std::str::FromStr`] token.\n    \
-         #[must_use]\n    pub const fn module(self) -> &'static str {\n        match self {\n",
+        "        }\n    }\n\n    /// Returns the generation token — the version-module name\n    \
+         /// (`\"v1_2\"`), which is also the [`std::fmt::Display`] and\n    \
+         /// [`std::str::FromStr`] form.\n    \
+         #[must_use]\n    pub const fn as_str(self) -> &'static str {\n        match self {\n",
     );
     for (variant, g) in &variants {
         b.push_str(&format!(
@@ -551,7 +552,7 @@ fn emit_generation_enum(comp: &CrateComposition) -> String {
         "        }}\n    }}\n}}\n\n\
          impl std::fmt::Display for Generation {{\n    \
          fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {{\n        \
-         f.write_str(self.module())\n    }}\n}}\n\n\
+         f.write_str(self.as_str())\n    }}\n}}\n\n\
          /// Error returned when parsing a [`Generation`] from an unknown token.\n\
          ///\n\
          /// The valid tokens are the generation-module names (`{tokens}`).\n\

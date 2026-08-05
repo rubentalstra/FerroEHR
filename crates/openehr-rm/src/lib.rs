@@ -44,7 +44,7 @@ impl Generation {
     /// Every generation this crate emits, oldest first.
     pub const ALL: &'static [Self] = &[Self::V1_1, Self::V1_2];
 
-    /// The openEHR specification version this generation implements.
+    /// Returns the openEHR specification version this generation implements.
     #[must_use]
     pub const fn spec_version(self) -> &'static str {
         match self {
@@ -53,10 +53,11 @@ impl Generation {
         }
     }
 
-    /// The generation-module name (`"v1_2"`) — the
-    /// [`std::fmt::Display`]/[`std::str::FromStr`] token.
+    /// Returns the generation token — the version-module name
+    /// (`"v1_2"`), which is also the [`std::fmt::Display`] and
+    /// [`std::str::FromStr`] form.
     #[must_use]
-    pub const fn module(self) -> &'static str {
+    pub const fn as_str(self) -> &'static str {
         match self {
             Self::V1_1 => "v1_1",
             Self::V1_2 => "v1_2",
@@ -66,7 +67,7 @@ impl Generation {
 
 impl std::fmt::Display for Generation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.module())
+        f.write_str(self.as_str())
     }
 }
 
