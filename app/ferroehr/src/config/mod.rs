@@ -753,11 +753,11 @@ mod tests {
     #[test]
     fn validate_hmac_and_jwks_together_is_refused() {
         let mut c = FerroEhrConfig::default();
-        c.auth.oidc = Some(crate::config::auth::OidcConfig {
+        c.auth.oidc = Some(auth::OidcConfig {
             issuer: "https://idp.example.test".to_owned(),
             hmac_secret: Some(Secret::new("topsecret")),
             jwks_json: Some("{\"keys\":[]}".to_owned()),
-            ..crate::config::auth::OidcConfig::default()
+            ..auth::OidcConfig::default()
         });
         let err = c.validate().expect_err("competing key sources must refuse");
         assert!(err.to_string().contains("competing key sources"), "{err}");

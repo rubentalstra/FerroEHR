@@ -67,7 +67,7 @@ mod tests {
     use crate::v1_2::data_types::text::code_phrase::CodePhrase;
     use crate::v1_2::data_types::text::dv_coded_text::DvCodedText;
     use crate::v1_2::data_types::text::dv_text::{DvText, DvTextData};
-    use openehr_base::prelude::{ObjectVersionId, TerminologyId};
+    use openehr_base::v1_3::prelude::{ObjectVersionId, TerminologyId};
 
     fn dv_date_time(value: &str) -> DvDateTime {
         DvDateTime {

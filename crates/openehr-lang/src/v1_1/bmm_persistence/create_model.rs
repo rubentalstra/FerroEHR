@@ -57,10 +57,10 @@
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 
-use openehr_base::prelude::Interval;
-use openehr_base::prelude::MultiplicityInterval;
-use openehr_base::prelude::PointInterval;
-use openehr_base::prelude::ProperInterval;
+use openehr_base::v1_3::prelude::Interval;
+use openehr_base::v1_3::prelude::MultiplicityInterval;
+use openehr_base::v1_3::prelude::PointInterval;
+use openehr_base::v1_3::prelude::ProperInterval;
 
 use crate::v1_1::bmm::core::bmm_class::BmmClass;
 use crate::v1_1::bmm::core::bmm_class::BmmClassData;

@@ -34,7 +34,7 @@
 
 use crate::v1_2::common::change_control::imported_version::ImportedVersion;
 use crate::v1_2::data_types::text::dv_coded_text::DvCodedText;
-use openehr_base::prelude::ObjectVersionId;
+use openehr_base::v1_3::prelude::ObjectVersionId;
 
 impl<T> ImportedVersion<T> {
     /// `IMPORTED_VERSION.uid`: the wrapped original's own version identifier —
@@ -82,7 +82,9 @@ mod tests {
     use crate::v1_2::common::generic::party_self::PartySelf;
     use crate::v1_2::data_types::quantity::date_time::dv_date_time::DvDateTime;
     use crate::v1_2::data_types::text::code_phrase::CodePhrase;
-    use openehr_base::prelude::{HierObjectId, ObjectId, ObjectRef, ObjectRefData, TerminologyId};
+    use openehr_base::v1_3::prelude::{
+        HierObjectId, ObjectId, ObjectRef, ObjectRefData, TerminologyId,
+    };
 
     fn coded(code: &str, rubric: &str) -> DvCodedText {
         DvCodedText {

@@ -10,7 +10,7 @@
 //! ("Class properties are defined using the generic class
 //! `BMM_PROPERTY <T: BMM_TYPE>`").
 
-use openehr_base::prelude::MultiplicityInterval;
+use openehr_base::v1_3::prelude::MultiplicityInterval;
 
 use crate::v1_1::bmm::core::bmm_property::BmmProperty;
 use crate::v1_1::bmm::core::bmm_type::BmmType;
@@ -122,7 +122,7 @@ impl BmmProperty<BmmType> {
 
 #[cfg(test)]
 mod tests {
-    use openehr_base::prelude::MultiplicityInterval;
+    use openehr_base::v1_3::prelude::MultiplicityInterval;
 
     use crate::v1_1::bmm::core::bmm_class::BmmClass;
     use crate::v1_1::bmm::core::bmm_class::BmmClassData;
