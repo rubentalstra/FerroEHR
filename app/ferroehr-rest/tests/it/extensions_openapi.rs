@@ -443,6 +443,7 @@ fn app_config() -> AppConfig {
         fhir_api_enabled: true,
         terminology_api_enabled: true,
         events_admin_api: true,
+        spec_profile: ferroehr::config::profile::SpecProfile::default(),
     }
 }
 
