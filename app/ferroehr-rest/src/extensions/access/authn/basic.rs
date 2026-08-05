@@ -133,7 +133,7 @@ mod tests {
     #[test]
     fn configured_roles_are_upper_cased() {
         // The configured lower-case `user` role surfaces normalized on the
-        // Principal (§5.1 — Basic role config, upper-casing).
+        // Principal (Basic role config, upper-casing).
         let p = verify(&header("alice", "s3cret"), &store()).expect("ok");
         assert_eq!(p.roles, vec!["USER".to_owned()]);
         assert!(p.claims.is_empty(), "Basic carries no JWT claims");

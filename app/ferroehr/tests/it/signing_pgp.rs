@@ -1,4 +1,4 @@
-//! `OpenPGP`-mode integration tests (design §6.2): sign→verify round-trip with a
+//! `OpenPGP`-mode integration tests: sign→verify round-trip with a
 //! generated key, tamper detection, armor-parse failures, and the fail-closed
 //! boot validation (missing path, garbled key, wrong passphrase).
 //!

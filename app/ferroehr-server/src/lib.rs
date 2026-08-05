@@ -252,8 +252,8 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
 
     telemetry.start_samplers(pool.clone());
 
-    // `/management/env` reports the whole redacted config tree (secrets rendered
-    // `***` by construction — P-6), replacing the old ad-hoc snapshot.
+    // `/management/env` reports the whole redacted config tree (secrets render
+    // `***` by construction of the Secret type).
     let env_snapshot = Arc::new(serde_json::to_value(&config).unwrap_or(serde_json::Value::Null));
     let observability = Observability {
         management: config.management.clone(),

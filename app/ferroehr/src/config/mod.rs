@@ -3,7 +3,7 @@
 //!
 //! No openEHR spec governs configuration — this is entirely our own design.
 //! [`FerroEhrConfig`] is the single serde root; each section is owned by the
-//! crate that consumes it (§5.2) and referenced here. There is exactly one
+//! crate that consumes it and referenced here. There is exactly one
 //! loader ([`load`]/[`assemble`]) replacing the fourteen former per-subsystem
 //! loaders — no figment, no per-subsystem `FERROEHR_*_CONFIG` file pointers.
 //!
@@ -44,8 +44,8 @@ use serde::{Deserialize, Serialize};
 /// The complete server configuration.
 ///
 /// Every section has a `Default`, so the file may be empty or absent
-/// (zero-config boot, §3.16). `deny_unknown_fields` makes a misspelled
-/// top-level table a boot error (§P-5).
+/// (zero-config boot). `deny_unknown_fields` makes a misspelled top-level
+/// table a boot error.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct FerroEhrConfig {
@@ -96,7 +96,7 @@ pub struct FerroEhrConfig {
 pub const DEFAULT_TEMPLATE: &str = include_str!("../../assets/ferroehr.default.toml");
 
 impl FerroEhrConfig {
-    /// Aggregated semantic validation (§5.8): every cross-field rule reported at
+    /// Aggregated semantic validation: every cross-field rule reported at
     /// once, so an operator fixes the config in one iteration.
     ///
     /// # Errors
@@ -159,6 +159,19 @@ impl FerroEhrConfig {
                     "set only one of auth.oidc.jwks_json / auth.oidc.jwks_json_file".to_owned(),
                 ));
             }
+            // A symmetric secret and a static JWKS are competing explicit key
+            // sources; both configured is a contradiction, never resolved by
+            // silent precedence.
+            let hmac_configured = oidc.hmac_secret.is_some() || oidc.hmac_secret_file.is_some();
+            let jwks_configured = oidc.jwks_json.is_some() || oidc.jwks_json_file.is_some();
+            if hmac_configured && jwks_configured {
+                errors.push(ConfigError::semantic(
+                    "auth.oidc configures BOTH a symmetric secret (hmac_secret[_file]) and a \
+                     static JWKS (jwks_json[_file]) — these are competing key sources; set \
+                     exactly one, or neither to use issuer discovery"
+                        .to_owned(),
+                ));
+            }
         }
         if self.multimedia.secret_access_key.is_some()
             && self.multimedia.secret_access_key_file.is_some()
@@ -213,11 +226,10 @@ impl FerroEhrConfig {
     /// leak by being renamed and a secret nested anywhere is masked by its own
     /// type.
     ///
-    /// This is **fail-closed for a newly-added secret**: the configuration
-    /// discipline (`.claude/rules/configuration.md` P-6) requires every secret
-    /// to be a `Secret`/`SecretUrl` with a `*_file` sibling, so a correctly
+    /// This is **fail-closed for a newly-added secret**: every secret field
+    /// is a `Secret`/`SecretUrl` with a `*_file` sibling, so a correctly
     /// typed new secret is redacted automatically with no change here. A secret
-    /// smuggled in as a bare `String` would be a P-6 violation; the
+    /// smuggled in as a bare `String` breaks that property; the
     /// `redacted_json_masks_every_secret_field` test enumerates the current
     /// secret set as the standing CI backstop. Non-secret identifiers (a Basic
     /// user's `username`/`roles`, `multimedia.access_key_id`, an OIDC `issuer`,
@@ -242,8 +254,8 @@ fn server_bind_port(bind: &str) -> Option<u16> {
 /// silently — a route to a missing provider quietly falls back to the default
 /// server, an `oauth2_client` naming a missing client would send
 /// unauthenticated requests, and half a mutual-TLS identity would connect
-/// without a client certificate — so all three are boot errors (§P-5: never
-/// make a bad value a silent default). The TLS material itself (readable PEM,
+/// without a client certificate — so all three are boot errors (never make a
+/// bad value a silent default). The TLS material itself (readable PEM,
 /// a certificate where a certificate belongs, a key where a key belongs) is
 /// validated when the provider is built, which is also boot time. No openEHR
 /// spec governs configuration — our own design.
@@ -314,7 +326,7 @@ fn validate_terminology(
 }
 
 /// Assemble the configuration from explicit inputs — the pure seam every test
-/// drives (§5.1/§6.6).
+/// drives.
 ///
 /// Runs the alias sweep (warning once per set legacy var), the strict env +
 /// file passes, the layered merge, and `*_file` secret resolution.
@@ -334,10 +346,10 @@ pub fn assemble(
     loader::assemble(file, env, overrides)
 }
 
-/// Boot loader: a thin process-environment shim over [`assemble`] (§5.2).
+/// Boot loader: a thin process-environment shim over [`assemble`].
 ///
-/// Discovers the config file (§5.4), snapshots the environment, assembles,
-/// and emits the dev-default-DB boot warning (§3.16 review condition).
+/// Discovers the config file, snapshots the environment, assembles, and emits
+/// the dev-default-DB boot warning.
 ///
 /// # Errors
 /// [`ConfigErrors`] on discovery failure or any assembly error.
@@ -350,7 +362,7 @@ pub fn load(
     let config = assemble(file.as_deref(), &env, overrides)?;
 
     // Review condition 1: never a silent production trap — announce the dev
-    // default DSN prominently at boot (§3.16).
+    // default DSN prominently at boot.
     if config.db.is_dev_default() {
         tracing::warn!(
             url = crate::db::DEFAULT_URL,
@@ -514,7 +526,7 @@ mod tests {
         let c = assemble_ok(Some(file.path()), &env(&[]), &[]);
         assert_eq!(c.server.system_id, "cdr.hospital.example");
 
-        // Env wins over the file (the P-4 uniform grammar).
+        // Env wins over the file (the uniform `__` grammar).
         let c = assemble_ok(
             Some(file.path()),
             &env(&[("FERROEHR__SERVER__SYSTEM_ID", "cdr.env.example")]),
@@ -634,8 +646,8 @@ mod tests {
     /// with a unique high-entropy sentinel; none may appear in the rendered
     /// JSON, while non-secret siblings (a Basic user's `username`/`roles`) stay
     /// visible. This is the standing enumeration of the current secret set: a
-    /// new secret field added without redaction (a P-6 violation) is caught here
-    /// once wired into the fixture.
+    /// new secret field added without redaction is caught here once wired
+    /// into the fixture.
     #[test]
     fn redacted_json_masks_every_secret_field() {
         use crate::config::auth::{BasicConfig, BasicUser, OidcConfig};
@@ -703,7 +715,7 @@ mod tests {
         assert_eq!(value["multimedia"]["access_key_id"], "AKIA_PUBLIC_ID");
     }
 
-    // ── 6. Template sync (§5.5) ───────────────────────────────────────────────
+    // ── 6. Template sync ──────────────────────────────────────────────────────
 
     #[test]
     fn template_parses_to_default() {
@@ -727,7 +739,7 @@ mod tests {
         }
     }
 
-    // ── 7. Semantic validation (§5.8) ─────────────────────────────────────────
+    // ── 7. Semantic validation ────────────────────────────────────────────────
 
     #[test]
     fn validate_pgp_requires_key_path() {
@@ -735,6 +747,24 @@ mod tests {
         c.signing.mode = crate::versioning::signature::config::Mode::Pgp;
         assert!(c.validate().is_err());
         c.signing.key_path = Some(PathBuf::from("/k.asc"));
+        assert!(c.validate().is_ok());
+    }
+
+    #[test]
+    fn validate_hmac_and_jwks_together_is_refused() {
+        let mut c = FerroEhrConfig::default();
+        c.auth.oidc = Some(crate::config::auth::OidcConfig {
+            issuer: "https://idp.example.test".to_owned(),
+            hmac_secret: Some(Secret::new("topsecret")),
+            jwks_json: Some("{\"keys\":[]}".to_owned()),
+            ..crate::config::auth::OidcConfig::default()
+        });
+        let err = c.validate().expect_err("competing key sources must refuse");
+        assert!(err.to_string().contains("competing key sources"), "{err}");
+        // Each source alone stays valid.
+        if let Some(oidc) = c.auth.oidc.as_mut() {
+            oidc.jwks_json = None;
+        }
         assert!(c.validate().is_ok());
     }
 
@@ -896,8 +926,8 @@ mod tests {
         assert!(c.validate().is_ok());
     }
 
-    /// The new terminology keys are reachable through the one env grammar
-    /// (§P-4), map keys included.
+    /// The new terminology keys are reachable through the one env grammar, map
+    /// keys included.
     #[test]
     fn env_mapping_terminology_routes_and_oauth2_clients() {
         let c = assemble_ok(
@@ -1018,7 +1048,7 @@ mod tests {
         assert!(c.validate().is_ok(), "a CA bundle alone is valid");
     }
 
-    /// The mutual-TLS keys are reachable through the one env grammar (§P-4).
+    /// The mutual-TLS keys are reachable through the one env grammar.
     #[test]
     fn env_mapping_terminology_provider_mtls_paths() {
         let c = assemble_ok(

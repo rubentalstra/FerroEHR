@@ -200,7 +200,7 @@ impl Authenticator {
         )
     }
 
-    /// Build from configuration with explicit RBAC role-claim paths (§5.1 —
+    /// Build from configuration with explicit RBAC role-claim paths (from
     /// `authz.rbac.role_claims`), used when an [`crate::extensions::access::authz::AuthzHandle`] is
     /// wired; [`Authenticator::new`] defaults them.
     ///
@@ -370,7 +370,7 @@ pub(crate) async fn middleware(
 
     match auth.authenticate(req.headers()).await {
         Ok(Authenticated { principal, fresh }) => {
-            // RBAC gate (§5.2): resolve the matched operation's class and gate it
+            // RBAC gate: resolve the matched operation's class and gate it
             // against the caller's roles. `None` authz handle = auth-only.
             if let Some(rbac) = layer.authz.as_deref().and_then(AuthzHandle::rbac) {
                 let matched = req
@@ -398,7 +398,7 @@ pub(crate) async fn middleware(
                     )
                     .increment(1);
                     // Attribute the 403 to the authenticated caller so the outer
-                    // ATNA audit layer records the denied access (§7).
+                    // ATNA audit layer records the denied access.
                     let mut resp = RestError(ApiError::Forbidden(reason)).into_response();
                     resp.extensions_mut().insert(principal);
                     return resp;
@@ -648,10 +648,6 @@ mod tests {
             "a first Basic verification is a genuine authentication"
         );
     }
-
-    // The old placeholder `authorize_admin`/`is_admin_path` path-string gate was
-    // deleted (§5.2); the RBAC gate replaces it and is covered by the
-    // `access::authz` unit tests + the `rbac_e2e` integration suite.
 
     #[tokio::test]
     async fn bearer_without_oidc_is_rejected() {

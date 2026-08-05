@@ -1,15 +1,15 @@
 //! The authorization request types the ABAC PDP seam consumes.
 //!
 //! Covers the resource kind, the access mode (the Cedar action axis), the
-//! resolved attributes, and the multi-valued fan-out semantics (§5.4) both
+//! resolved attributes, and the multi-valued fan-out semantics both
 //! engines share.
 //!
 //! Attributes (`organization`, `patient`, `template`) are resolved by the PEP
 //! before the engine is called; `patient`/`template` may be *sets* (query,
 //! contribution), which the engine fans out over as a full cartesian product,
-//! **all-must-permit** (v1 parity, §2.1).
+//! **all-must-permit** (EHRbase v1 parity).
 
-/// The resource family a clinical operation acts on (§5.3). Derived from the
+/// The resource family a clinical operation acts on. Derived from the
 /// operation-id prefix by [`crate::extensions::access::authz::classify::kind_of`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResourceKind {
@@ -43,7 +43,7 @@ impl ResourceKind {
     }
 }
 
-/// The access mode of an operation (the Cedar *action* axis, §5.6): op ids map
+/// The access mode of an operation (the Cedar *action* axis): op ids map
 /// onto `ResourceKind × AccessMode` rather than 96 raw op ids.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AccessMode {
@@ -81,7 +81,7 @@ pub enum Attr {
     /// Exactly one value.
     One(String),
     /// A set of values (the engine fans out over it; an **empty** set yields no
-    /// combinations, i.e. a vacuous permit — v1's empty-result behaviour, §6.4).
+    /// combinations, i.e. a vacuous permit — EHRbase v1's empty-result behaviour).
     Set(Vec<String>),
 }
 
@@ -117,7 +117,7 @@ pub struct Combination<'a> {
 }
 
 impl AuthzRequest<'_> {
-    /// The cartesian product of the patient × template candidates (§5.4). A
+    /// The cartesian product of the patient × template candidates. A
     /// single-valued or absent attribute contributes one candidate (`None` when
     /// absent); an **empty** set contributes none, so the product is empty and
     /// the all-must-permit fold is a vacuous permit.
@@ -150,7 +150,7 @@ fn candidates(attr: Option<&Attr>) -> Vec<Option<&str>> {
     }
 }
 
-/// The engine's verdict for a request (§5.4).
+/// The engine's verdict for a request.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Decision {
     /// The caller may proceed.
@@ -213,7 +213,7 @@ mod tests {
 
     #[test]
     fn empty_set_yields_no_combinations() {
-        // An empty result set (§6.4) → vacuous permit at the engine.
+        // An empty result set → vacuous permit at the engine.
         let r = req(Some(Attr::Set(vec![])), Some(Attr::One("t1".to_owned())));
         assert!(r.combinations().is_empty());
     }

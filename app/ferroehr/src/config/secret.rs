@@ -1,7 +1,7 @@
 //! Shared configuration value types for the whole server configuration tree.
 //!
 //! No openEHR spec governs configuration — our own design. These two newtypes
-//! centralise secret handling (principle P-6) so redaction is a property of the
+//! centralise secret handling so redaction is a property of the
 //! type, not of a per-endpoint redactor list:
 //!
 //! - [`Secret`] wraps a [`secrecy::SecretString`]; it deserializes from a plain
@@ -29,7 +29,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 pub const REDACTED: &str = "***";
 
 /// A secret string that never renders itself. Deserializes from a plain string;
-/// `Serialize`/`Display`/`Debug` all emit [`REDACTED`] (P-6).
+/// `Serialize`/`Display`/`Debug` all emit [`REDACTED`].
 #[derive(Clone)]
 pub struct Secret(SecretString);
 

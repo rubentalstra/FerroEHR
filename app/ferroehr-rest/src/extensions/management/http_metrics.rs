@@ -10,12 +10,12 @@
 //!   installed) records `trace_id`/`span_id` on the span and returns the
 //!   `x-trace-id` response header. Cardinality-safe: the raw path with ids
 //!   never enters the span *name*.
-//! - [`http_metrics`] — records the §1.2 HTTP metric family over the `metrics`
+//! - [`http_metrics`] — records the HTTP metric family over the `metrics`
 //!   facade: request duration by `(http_route, http_request_method,
 //!   status_class)`, an active-requests gauge, and request/response body sizes,
 //!   all keyed by the route *template* only.
 //!
-//! **PHI rule (§8.4):** every label value here is a closed set — route
+//! **PHI rule:** every label value here is a closed set — route
 //! templates, method, status class. No ids ever become a label.
 
 use std::net::SocketAddr;
@@ -33,7 +33,7 @@ use opentelemetry::trace::TraceContextExt;
 use tracing::Instrument;
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 
-// ── Metric names (§1.2) — the single source of truth for the emitters here and
+// ── Metric names — the single source of truth for the emitters here and
 //    the bucket-ladder / description registration in `ferroehr::telemetry`. ────
 
 /// The label value used when a request did not match any route template (the
@@ -43,7 +43,7 @@ const UNMATCHED_ROUTE: &str = "unmatched";
 /// The response header carrying the current trace id for support correlation.
 const X_TRACE_ID: &str = "x-trace-id";
 
-/// Root-span middleware (§1.1). Creates the per-request span, propagates W3C
+/// Root-span middleware. Creates the per-request span, propagates W3C
 /// trace context, and stamps `x-trace-id` when tracing is active.
 pub async fn root_span(req: Request, next: Next) -> Response {
     let method = req.method().clone();
@@ -103,7 +103,7 @@ pub async fn root_span(req: Request, next: Next) -> Response {
     .await
 }
 
-/// HTTP metrics middleware (§1.2).
+/// HTTP metrics middleware.
 pub async fn http_metrics(req: Request, next: Next) -> Response {
     let route = matched_route(&req);
     let method = req.method().as_str().to_owned();
