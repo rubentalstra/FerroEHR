@@ -1,10 +1,10 @@
 //! Path analysis + typing against the generated RM model
-//! (`openehr_rm::model`) — the AQL planner's oracle.
+//! (`openehr_rm::v1_2::model`) — the AQL planner's oracle.
 //!
 //! The central operation is the **path split**: every identified path deterministically splits into
 //!
 //! 1. a sequence of **structure hops** — attribute steps whose resolved node is
-//!    a structure root (its own `node` row per [`openehr_rm::model::is_structure_root`],
+//!    a structure root (its own `node` row per [`openehr_rm::v1_2::model::is_structure_root`],
 //!    mirrored from `ferroehr::storage::codec`), ending at the deepest node-row
 //!    anchor; and
 //! 2. a **fragment suffix** — the first non-structure step onward, addressed
@@ -30,7 +30,7 @@ use openehr_query::ast::{
     // PathPart intentionally not imported: parts are walked via ObjectPath.
 };
 use openehr_query::lexer::CompOp;
-use openehr_rm::model;
+use openehr_rm::v1_2::model;
 use std::collections::HashMap;
 
 use super::error::{AnalysisError, AqlError, AqlFeatureError};
@@ -540,16 +540,16 @@ fn apply_standard(sp: &StandardPredicate, out: &mut NodeConstraint) -> Result<()
     // (master03 §Archetype predicate: "These predicates could also be written
     // as standard predicates"). Which of the two the operand is, is decided by
     // the RM's own reading of `LOCATABLE.archetype_node_id`
-    // (`openehr_rm::paths`), never a leader guess: an id in `ARCHETYPE_ID`
+    // (`openehr_rm::v1_2::paths`), never a leader guess: an id in `ARCHETYPE_ID`
     // lexical form is an archetype root, an `at`/`id` term code is an interior
     // node, and anything else addresses no node at all.
     if sp.op == CompOp::Eq
         && parts == ["archetype_node_id"]
         && let Bind::Literal(TypedLit::String(s)) = &value
     {
-        out.archetype = Some(if openehr_rm::paths::is_archetype_root_node_id(s) {
+        out.archetype = Some(if openehr_rm::v1_2::paths::is_archetype_root_node_id(s) {
             ArchetypeConstraint::Archetype(s.clone())
-        } else if openehr_rm::paths::archetype_node_id_is_term_code(s) {
+        } else if openehr_rm::v1_2::paths::archetype_node_id_is_term_code(s) {
             ArchetypeConstraint::NodeCode(s.clone())
         } else {
             return Err(AnalysisError::MalformedArchetypeNodeId(s.clone()).into());

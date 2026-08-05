@@ -5,12 +5,12 @@
     let_underscore_drop,
     reason = "integration-test assertions, diagnostics and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
 )]
-//! Tests for the generated static RM attribute/type model (`openehr_rm::model`,
+//! Tests for the generated static RM attribute/type model (`openehr_rm::v1_2::model`,
 //! the AQL planner's oracle). These assert behaviour the
 //! planner relies on: inheritance-aware attribute resolution, descendant/ancestor
 //! sets, container multiplicity, and the node-codec structure classification.
 
-use openehr_rm::model::{
+use openehr_rm::v1_2::model::{
     Container, ancestors, attribute, attributes, class, descendants, is_a, is_structure_root,
 };
 

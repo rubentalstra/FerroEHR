@@ -17,7 +17,7 @@
               (#1694)"
 )]
 
-use openehr_base::base_types::definitions::definitions_impl::LOCAL_TERMINOLOGY_ID;
+use openehr_base::v1_3::base_types::definitions::definitions_impl::LOCAL_TERMINOLOGY_ID;
 use serde_json::Value;
 
 use super::{ValidationKind, Validator};

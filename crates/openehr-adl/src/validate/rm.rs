@@ -14,7 +14,7 @@
 //!
 //! The checks are generic over a [`RmModel`] so the same code validates against
 //! the openEHR RM 1.2.0 ([`ProductionRmModel`], the generated
-//! `openehr_rm::model`) or any other reference model the archetype declares
+//! `openehr_rm::v1_2::model`) or any other reference model the archetype declares
 //! (the conformance corpus authors fixtures against openEHR's `TEST_PKG` test
 //! schema; a BMM-loaded [`RmModel`] serves those). This pluggable seam realises
 //! the RM-adaptation architecture of
@@ -28,13 +28,13 @@
 
 use std::collections::BTreeSet;
 
-use openehr_am::am24::aom2::archetype::archetype::Archetype;
-use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
-use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
-use openehr_am::am24::aom2::constraint_model::c_complex_object_proxy::CComplexObjectProxy;
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute::CAttribute;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object_proxy::CComplexObjectProxy;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
 use openehr_base::prelude::Interval;
-use openehr_rm::model;
+use openehr_rm::v1_2::model;
 
 use super::catalogue::ValidationCode;
 use super::{ValidationIssue, push_issue};
@@ -234,7 +234,7 @@ pub(crate) fn type_conforms(rm: &dyn RmModel, child: &str, declared: &str) -> Op
     Some(true)
 }
 
-/// The openEHR RM 1.2.0 reference model — the generated `openehr_rm::model`
+/// The openEHR RM 1.2.0 reference model — the generated `openehr_rm::v1_2::model`
 /// static attribute/type table (`crates/openehr-rm/src/model`), the same oracle
 /// the AQL planner types against.
 ///

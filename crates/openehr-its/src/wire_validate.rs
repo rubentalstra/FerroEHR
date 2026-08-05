@@ -2,9 +2,9 @@
 //! that compose the validation tiers at the codec boundary.
 //!
 //! The tiers themselves are RM model semantics and live upstream in
-//! [`openehr_rm::validate`]: the allocation-free fast path
-//! ([`openehr_rm::validate::try_fast_validate`]) and the authoritative typed
-//! dispatch ([`openehr_rm::validate::typed_dispatch::dispatch_typed`], the
+//! [`openehr_rm::v1_2::validate`]: the allocation-free fast path
+//! ([`openehr_rm::v1_2::validate::try_fast_validate`]) and the authoritative typed
+//! dispatch ([`openehr_rm::v1_2::validate::typed_dispatch::dispatch_typed`], the
 //! `_type` → concrete-RM-type table). What stays HERE is what genuinely needs
 //! this crate:
 //!
@@ -27,7 +27,7 @@
 //! register is the per-invariant authority); this module only routes a node
 //! to the right tier. A node that does not deserialize into its declared concrete RM type
 //! surfaces `does not conform to RM type …` (see
-//! [`openehr_rm::validate::typed_dispatch::record_type_mismatch`]).
+//! [`openehr_rm::v1_2::validate::typed_dispatch::record_type_mismatch`]).
 
 #![expect(
     clippy::disallowed_types,
@@ -39,7 +39,7 @@
 use serde_json::Value;
 
 use openehr_base::validate::InvariantViolation;
-use openehr_rm::validate::typed_dispatch::record_type_mismatch;
+use openehr_rm::v1_2::validate::typed_dispatch::record_type_mismatch;
 
 use crate::json::JsonParseError;
 use crate::json_codec::generated::structural::{declared_fields, structural_check};
@@ -54,7 +54,7 @@ use crate::json_codec::generated::structural::{declared_fields, structural_check
 /// commit, ~1.5k for a populated composition, so the per-node cost is
 /// load-bearing):
 ///
-/// 1. the **fast path** ([`openehr_rm::validate::try_fast_validate`]) verifies
+/// 1. the **fast path** ([`openehr_rm::v1_2::validate::try_fast_validate`]) verifies
 ///    structural conformance directly against the live JSON node using the
 ///    generated static RM model and runs the class invariants through the same
 ///    cores the typed impls call — no deserialization, no allocation,
@@ -66,7 +66,7 @@ use crate::json_codec::generated::structural::{declared_fields, structural_check
 ///
 /// This is the tier the fast-path equivalence battery pins (the fast path must
 /// vouch only when byte-identical to the typed oracle). The terminology-backed
-/// invariants ([`openehr_rm::validate::terminology`]) are an orthogonal layer
+/// invariants ([`openehr_rm::v1_2::validate::terminology`]) are an orthogonal layer
 /// added by [`validate_rm_value`], not part of the fast/typed equivalence.
 pub fn validate_rm_invariants(value: &Value, out: &mut Vec<InvariantViolation>) {
     let Some(ty) = value.get("_type").and_then(Value::as_str) else {
@@ -80,7 +80,7 @@ pub fn validate_rm_invariants(value: &Value, out: &mut Vec<InvariantViolation>) 
 /// This is the entry a tree walker uses for a node whose wire `_type` is
 /// legitimately absent (canonical JSON requires `_type` only where the declared
 /// attribute type is abstract; see
-/// [`openehr_rm::model::declared_concrete_type`]). The `_type`-reading
+/// [`openehr_rm::v1_2::model::declared_concrete_type`]). The `_type`-reading
 /// wrapper stays for callers with no declaration context.
 pub fn validate_rm_invariants_as(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
     // The strict reader refuses an undeclared wire key, so a node carrying one
@@ -92,7 +92,7 @@ pub fn validate_rm_invariants_as(ty: &str, value: &Value, out: &mut Vec<Invarian
         out.push(violation);
         return;
     }
-    if !openehr_rm::validate::try_fast_validate(ty, value, out) {
+    if !openehr_rm::v1_2::validate::try_fast_validate(ty, value, out) {
         validate_rm_value_typed(ty, value, out);
     }
 }
@@ -110,13 +110,13 @@ pub fn validate_rm_invariants_as(ty: &str, value: &Value, out: &mut Vec<Invarian
 ///
 /// 1. an **undeclared member** is wrong, never missing — refused first, as on
 ///    the strict path;
-/// 2. a node with **nothing missing** ([`mandatory_data_present`](openehr_rm::validate::incomplete::mandatory_data_present))
+/// 2. a node with **nothing missing** ([`mandatory_data_present`](openehr_rm::v1_2::validate::incomplete::mandatory_data_present))
 ///    runs the strict tiers unchanged: the relaxation costs it no strictness;
 /// 3. a node that **is** missing mandatory data does not have its TYPED
 ///    construction driven — that tier's refusal IS the presence rule the state
 ///    lifts (the generated types make existence and cardinality lower bounds
 ///    structural). Wrongness is still judged: a positive type contradiction
-///    ([`contradicts_rm_type`](openehr_rm::validate::incomplete::contradicts_rm_type))
+///    ([`contradicts_rm_type`](openehr_rm::v1_2::validate::incomplete::contradicts_rm_type))
 ///    is reported through the authoritative typed tier, and the class
 ///    invariants run wherever the fast path can still vouch for the node as it
 ///    stands.
@@ -125,7 +125,7 @@ pub fn validate_rm_invariants_as(ty: &str, value: &Value, out: &mut Vec<Invarian
 /// `LOCATABLE.Archetyped_valid`, the data-structure shape duties, and the
 /// archetype-conformance pass — are NOT relaxed here; only the
 /// mandatory-presence and cardinality-lower-bound layers are
-/// (`openehr_rm::validate::check_mandatory_containers` /
+/// (`openehr_rm::v1_2::validate::check_mandatory_containers` /
 /// `nonempty_list_violations`, which the relaxed walker skips).
 pub fn validate_rm_invariants_relaxed_as(
     ty: &str,
@@ -136,13 +136,13 @@ pub fn validate_rm_invariants_relaxed_as(
         out.push(violation);
         return;
     }
-    if openehr_rm::validate::incomplete::mandatory_data_present(ty, value) {
-        if !openehr_rm::validate::try_fast_validate(ty, value, out) {
+    if openehr_rm::v1_2::validate::incomplete::mandatory_data_present(ty, value) {
+        if !openehr_rm::v1_2::validate::try_fast_validate(ty, value, out) {
             validate_rm_value_typed(ty, value, out);
         }
         return;
     }
-    if openehr_rm::validate::incomplete::contradicts_rm_type(ty, value) {
+    if openehr_rm::v1_2::validate::incomplete::contradicts_rm_type(ty, value) {
         validate_rm_value_typed(ty, value, out);
         return;
     }
@@ -151,7 +151,7 @@ pub fn validate_rm_invariants_relaxed_as(
     // node as it stands, and a decline is the honest answer — an invariant
     // over an absent attribute has nothing to judge, which is exactly the
     // "data may be missing" case §Incomplete Content admits.
-    let _vouched = openehr_rm::validate::try_fast_validate(ty, value, out);
+    let _vouched = openehr_rm::v1_2::validate::try_fast_validate(ty, value, out);
 }
 
 /// The violation for the first undeclared member of `value` under class `ty`,
@@ -179,7 +179,7 @@ fn undeclared_key(ty: &str, value: &Value) -> Option<InvariantViolation> {
 /// The set is the core
 /// (fast/typed) invariants ([`validate_rm_invariants`]) plus the
 /// terminology-backed invariants
-/// ([`openehr_rm::validate::terminology::validate_rm_terminology`], the
+/// ([`openehr_rm::v1_2::validate::terminology::validate_rm_terminology`], the
 /// openEHR-terminology group and code-set membership checks the generated
 /// invariant cores cannot express mechanically). This is the unified dispatcher
 /// every consumer calls; the composition validator invokes it per node and
@@ -194,9 +194,9 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
     // (each dispatches on the same `_type`). The core tiers stay a pure pair so
     // the fast-vs-typed equivalence property holds exactly.
     validate_rm_invariants_as(ty, value, out);
-    openehr_rm::validate::check_mandatory_containers(ty, value, out);
-    openehr_rm::validate::nonempty_list_violations(ty, value, out);
-    openehr_rm::validate::terminology::validate_rm_terminology(ty, value, out);
+    openehr_rm::v1_2::validate::check_mandatory_containers(ty, value, out);
+    openehr_rm::v1_2::validate::nonempty_list_violations(ty, value, out);
+    openehr_rm::v1_2::validate::terminology::validate_rm_terminology(ty, value, out);
 }
 
 /// The typed dispatch tier of [`validate_rm_value`]: deserialize the node
@@ -211,7 +211,7 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
 /// 1. the **undeclared-key refusal**, ahead of any decode (the private
 ///    `undeclared_key` walk over [`declared_fields`]);
 /// 2. the **typed table**
-///    ([`openehr_rm::validate::typed_dispatch::dispatch_typed`]), which covers
+///    ([`openehr_rm::v1_2::validate::typed_dispatch::dispatch_typed`]), which covers
 ///    the concrete `openehr-rm` / `openehr-base` types carrying a
 ///    non-terminology class invariant — those need a typed value to run the
 ///    invariant on;
@@ -231,7 +231,7 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
 /// (`not archetype_node_id.is_empty`,
 /// `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
 /// §Invariants) is closed out for **every** concrete LOCATABLE descendant via
-/// [`openehr_rm::validate::locatable_node_id_violation`], whose applicable-type
+/// [`openehr_rm::v1_2::validate::locatable_node_id_violation`], whose applicable-type
 /// set is the generated RM model's transitive concrete-descendant closure of
 /// LOCATABLE — not a hand-maintained list. The typed table's arms realize it
 /// themselves through their typed `Validate` impls, so the violation is appended
@@ -259,10 +259,10 @@ pub fn validate_rm_value_typed(ty: &str, value: &Value, out: &mut Vec<InvariantV
         return;
     }
     let before = out.len();
-    if !openehr_rm::validate::typed_dispatch::dispatch_typed(ty, value, out) {
+    if !openehr_rm::v1_2::validate::typed_dispatch::dispatch_typed(ty, value, out) {
         run_structural(ty, value, out);
     }
-    if let Some(v) = openehr_rm::validate::locatable_node_id_violation(ty, value)
+    if let Some(v) = openehr_rm::v1_2::validate::locatable_node_id_violation(ty, value)
         && !out.get(before..).is_some_and(|added| added.contains(&v))
     {
         out.push(v);
@@ -274,7 +274,7 @@ pub fn validate_rm_value_typed(ty: &str, value: &Value, out: &mut Vec<InvariantV
 /// does not conform.
 ///
 /// The classes the typed table
-/// ([`openehr_rm::validate::typed_dispatch::dispatch_typed`]) handles already
+/// ([`openehr_rm::v1_2::validate::typed_dispatch::dispatch_typed`]) handles already
 /// decode there — its arms report the same `does not conform to RM type …` on
 /// failure — and the table returns `true` for them, so they never reach here: no
 /// node is decoded twice. A `_type` naming no emitted class

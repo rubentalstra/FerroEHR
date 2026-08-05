@@ -17,7 +17,7 @@
 //!   types; the codec owns the `_type` / number-typing / omission contract).
 //! - [`wire_validate`] — the wire-boundary RM class-invariant dispatch layer:
 //!   reads a canonical-JSON node, deserializes via the codec, and runs the RM
-//!   invariant cores of `openehr_rm::validate` (the `Validate` impls and every
+//!   invariant cores of `openehr_rm::v1_2::validate` (the `Validate` impls and every
 //!   value-level decision stay in `openehr-rm`/`openehr-base`).
 //! - [`rm_instance`] — the template-independent validation of a whole RM
 //!   instance tree: the RM-invariant and terminology passes, the

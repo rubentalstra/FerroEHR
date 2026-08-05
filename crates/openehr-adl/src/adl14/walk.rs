@@ -9,11 +9,11 @@
 //! NOTE: no openEHR spec governs 1.4→2 conversion — the whole `adl14` module is
 //! our own design (see the [`crate::adl14`] flag).
 
-use openehr_am::am24::aom2::constraint_model::c_complex_object::{
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::{
     CComplexObject, CComplexObjectData,
 };
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
 
 /// The mutable `C_COMPLEX_OBJECT` data, if this is a plain complex object.
 ///

@@ -12,7 +12,7 @@ use openehr_query::ast::{
     IdentifiedExpr, LikeOperand, MatchesOperand, OrderByExpr, SelectQuery, SortOrder, StatFunc,
     Terminal, TopDirection, ValueListItem, VersionPredicate, WhereExpr,
 };
-use openehr_rm::model;
+use openehr_rm::v1_2::model;
 
 use super::analyze::{
     Binding, BindingKind, Bindings, analyze_path, param_name, resolve_ehr_predicate,

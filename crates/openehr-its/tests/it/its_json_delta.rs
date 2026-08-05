@@ -8,7 +8,7 @@
 //! all-schema) is a CLOSED schema (`additionalProperties: false` per class)
 //! judging RM **1.2.0**-generation output. This module machine-derives the
 //! full per-class attribute delta between that schema and the generated RM
-//! 1.2.0 model (`openehr_rm::model`) on every run and pins it — the XSD-gate
+//! 1.2.0 model (`openehr_rm::v1_2::model`) on every run and pins it — the XSD-gate
 //! precedent (`xml_xsd_validity.rs`): the known 1.1.0↔1.2.0 divergence is
 //! ADJUDICATED and visible, and any NEW divergence (a pin bump, an emitter
 //! change, a re-vendored schema) fails loud instead of surfacing later as a
@@ -68,7 +68,7 @@ const SCHEMA_ONLY: &[&str] = &[
 const SCHEMA_ONLY_CLASSES: &[&str] = &[
     // BASE foundation/base-types classes the schema embeds for reference —
     // they live in `openehr-base`, not the RM attribute model, so a name
-    // lookup in `openehr_rm::model` legitimately misses them. Their per-class
+    // lookup in `openehr_rm::v1_2::model` legitimately misses them. Their per-class
     // property shape is exercised structurally through the RM classes that
     // embed them.
     "ARCHETYPE_HRID",
@@ -109,7 +109,7 @@ fn the_1_1_0_oracle_delta_is_exactly_the_pinned_set() {
     let mut schema_only_classes = BTreeSet::new();
 
     for (class, props) in &defs {
-        let Some(rm) = openehr_rm::model::class(class) else {
+        let Some(rm) = openehr_rm::v1_2::model::class(class) else {
             schema_only_classes.insert(class.clone());
             continue;
         };

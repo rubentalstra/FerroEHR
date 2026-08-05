@@ -29,7 +29,7 @@
 
 use std::collections::BTreeSet;
 
-use openehr_am::am24::aom2::archetype::archetype::Archetype;
+use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
 
 use super::ValidationIssue;
 use super::catalogue::ValidationCode;

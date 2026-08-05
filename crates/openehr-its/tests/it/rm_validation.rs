@@ -10,8 +10,8 @@
 //! (`openehr_its::wire_validate`).
 //!
 //! Both validation tiers are RM model semantics and live in `openehr-rm`: the
-//! fast path (`openehr_rm::validate::try_fast_validate`, untyped) and the typed
-//! dispatch (`openehr_rm::validate::typed_dispatch::dispatch_typed`, which
+//! fast path (`openehr_rm::v1_2::validate::try_fast_validate`, untyped) and the typed
+//! dispatch (`openehr_rm::v1_2::validate::typed_dispatch::dispatch_typed`, which
 //! decodes through the emitted canonical-JSON `serde` impls). What this crate
 //! keeps — and why the gate runs HERE — is the composition: the GENERATED
 //! five-crate structural fallthrough
@@ -27,8 +27,8 @@ use openehr_base::validate::InvariantViolation;
 use openehr_its::wire_validate::{
     validate_rm_invariants, validate_rm_value, validate_rm_value_typed,
 };
-use openehr_rm::validate::terminology::validate_rm_terminology;
-use openehr_rm::validate::try_fast_validate;
+use openehr_rm::v1_2::validate::terminology::validate_rm_terminology;
+use openehr_rm::v1_2::validate::try_fast_validate;
 use serde_json::{Value, json};
 
 /// Run only the typed (fallback) dispatch — the oracle.
@@ -615,7 +615,7 @@ fn ips_nodes_ride_the_fast_path() {
 // ── terminology-backed invariants ────────────────────────────────────────────
 //
 // The terminology binding table
-// (`openehr_rm::validate::terminology::validate_rm_terminology`, run by
+// (`openehr_rm::v1_2::validate::terminology::validate_rm_terminology`, run by
 // `validate_rm_value` as a post-core check). Two properties: the corpus-audit
 // safety property (no valid corpus document is newly rejected) and the
 // per-vocabulary enforcement property (an out-of-vocabulary code IS rejected).

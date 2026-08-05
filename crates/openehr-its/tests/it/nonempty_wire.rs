@@ -444,12 +444,12 @@ fn a_cluster_without_items_is_refused_by_the_canonical_xml_reader() {
 /// corpus adjudication of `flat_folder_insert.json` (`common::excluded`).
 #[test]
 fn a_present_but_empty_optional_nonempty_list_refuses_at_parse() {
-    let refused = from_canonical_json::<openehr_rm::data_types::text::dv_text::DvTextData>(
+    let refused = from_canonical_json::<openehr_rm::v1_2::data_types::text::dv_text::DvTextData>(
         r#"{"_type":"DV_TEXT","value":"x","mappings":[]}"#,
     )
     .expect_err("Mappings_valid holds by construction (#1730)");
     assert!(refused.to_string().contains("mappings"), "{refused}");
-    from_canonical_json::<openehr_rm::data_types::text::dv_text::DvTextData>(
+    from_canonical_json::<openehr_rm::v1_2::data_types::text::dv_text::DvTextData>(
         r#"{"_type":"DV_TEXT","value":"x"}"#,
     )
     .expect("absent mappings is legal (0..1)");

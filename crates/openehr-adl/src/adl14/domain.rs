@@ -14,12 +14,12 @@
 //! READ side of the encoding produced here is
 //! `crate::adl14::convert::convert_constraint`.
 
-use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
-use openehr_am::am24::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
-use openehr_am::am24::aom2::constraint_model::c_primitive_tuple::CPrimitiveTuple;
-use openehr_am::am24::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute::CAttribute;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
+use openehr_am::v2_4::aom2::constraint_model::c_primitive_tuple::CPrimitiveTuple;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
 use openehr_base::prelude::{Interval, ProperInterval, ProperIntervalData};
 use openehr_lang::odin::OdinValue;
 
@@ -845,9 +845,9 @@ fn real_to_i32(r: f64) -> i32 {
 
 #[cfg(test)]
 mod tests {
-    use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
-    use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-    use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
+    use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
+    use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+    use openehr_am::v2_4::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
     use openehr_base::prelude::{Interval, ProperInterval};
 
     use crate::error::SyntaxErrorCode;

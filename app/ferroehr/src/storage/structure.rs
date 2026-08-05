@@ -4,7 +4,7 @@
 //! No openEHR spec governs the decomposition granularity — it is our own
 //! storage design. The *composition-content*
 //! structure set is NOT hand-maintained here: it is delegated to the single
-//! BMM-generated oracle [`openehr_rm::model::is_structure_root`], which the
+//! BMM-generated oracle [`openehr_rm::v1_2::model::is_structure_root`], which the
 //! codegen keeps in lockstep with this codec — never a local duplicate
 //! constant. The only local addition is the five demographic **party roots**,
 //! which are versioned objects of their own but are deliberately outside the
@@ -33,7 +33,8 @@ const DEMOGRAPHIC_PARTY_ROOTS: [&str; 5] = ["PERSON", "ORGANISATION", "GROUP", "
 /// composition-content structure set, plus the demographic party roots.
 #[must_use]
 pub fn is_structure_type(rm_type: &str) -> bool {
-    openehr_rm::model::is_structure_root(rm_type) || DEMOGRAPHIC_PARTY_ROOTS.contains(&rm_type)
+    openehr_rm::v1_2::model::is_structure_root(rm_type)
+        || DEMOGRAPHIC_PARTY_ROOTS.contains(&rm_type)
 }
 
 /// Whether an RM `_type` may be the **root** of a versioned object handed to
@@ -110,7 +111,7 @@ mod tests {
             "FEEDER_AUDIT",
             "ITEM_TREE",
         ] {
-            assert!(openehr_rm::model::is_structure_root(t));
+            assert!(openehr_rm::v1_2::model::is_structure_root(t));
             assert!(is_structure_type(t), "{t}");
         }
     }
@@ -122,7 +123,7 @@ mod tests {
         // model excludes the demographic hierarchy), confirming the split.
         for t in DEMOGRAPHIC_PARTY_ROOTS {
             assert!(
-                !openehr_rm::model::is_structure_root(t),
+                !openehr_rm::v1_2::model::is_structure_root(t),
                 "{t} unexpectedly in the RM-model structure set"
             );
         }

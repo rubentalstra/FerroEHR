@@ -45,7 +45,7 @@ use crate::service::status::{CallStatusType, SmError};
 use crate::system_log::event::EventActionCode;
 use crate::versioning::read::{read_current, read_version_by_ordinal};
 use crate::versioning::wire::{original_version, revision_history, versioned_object};
-use openehr_rm::ehr_extract::common::extract_spec::ExtractSpec;
+use openehr_rm::v1_2::ehr_extract::common::extract_spec::ExtractSpec;
 
 /// The extract-local reference namespace (`master09-semantics.adoc` §Creation
 /// Semantics: "rewriting its `OBJECT_REFs` so that `namespace` = \"local\"").
@@ -263,7 +263,7 @@ impl FerroEhrService {
     async fn entity_primary_set(
         &self,
         ehr_id: EhrId,
-        entity: &openehr_rm::ehr_extract::common::extract_entity_manifest::ExtractEntityManifest,
+        entity: &openehr_rm::v1_2::ehr_extract::common::extract_entity_manifest::ExtractEntityManifest,
         criteria_present: bool,
         extract_spec: &ExtractSpec,
     ) -> Result<Vec<(VoId, String)>, SmError> {
@@ -344,7 +344,7 @@ impl FerroEhrService {
     async fn criteria_primary_set(
         &self,
         ehr_id: EhrId,
-        criteria: &[openehr_rm::data_types::encapsulated::dv_parsable::DvParsable],
+        criteria: &[openehr_rm::v1_2::data_types::encapsulated::dv_parsable::DvParsable],
     ) -> Result<Vec<(VoId, String)>, SmError> {
         let mut out: Vec<(VoId, String)> = Vec::new();
         for (idx, criterion) in criteria.iter().enumerate() {
@@ -504,7 +504,7 @@ impl FerroEhrService {
         let (vo, _) = versioned_object(&self.pool, vo_id, ehr_id, versioned_rm_type(kind)).await?;
         let field = |name: &str| vo.get(name).cloned().unwrap_or(Value::Null);
         // TODO(#1695): build the EXTRACT tree from the generated
-        // `openehr_rm::ehr_extract` types (`Extract`, `ExtractChapter`,
+        // `openehr_rm::v1_2::ehr_extract` types (`Extract`, `ExtractChapter`,
         // `XVersionedObject`, `OpenehrContentItem`) instead of these JSON
         // literals. Blocked on the composition shape, not a missing type: every
         // branch here splices ALREADY-CANONICAL opaque fragments, so a typed

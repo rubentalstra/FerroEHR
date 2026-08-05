@@ -3,7 +3,7 @@
 //! The AOM2 RM-conformance rules (`AOM2/master08-validation.adoc` lines 70–75,
 //! `AOM2/master04.5-constraint_model-class_definitions.adoc`) require "a
 //! computational representation of the reference model"; we use the
-//! BMM-generated static RM model (`openehr_rm::model`) — the same spec-pinned
+//! BMM-generated static RM model (`openehr_rm::v1_2::model`) — the same spec-pinned
 //! oracle the AQL planner uses. Rules:
 //!
 //! - **VCORM** — an object-constraint type name must exist in the RM
@@ -24,7 +24,7 @@ use std::collections::BTreeSet;
 use std::sync::LazyLock;
 
 use openehr_its::opt14::{CAttribute, CObject, Cardinality, Intervalofinteger};
-use openehr_rm::model;
+use openehr_rm::v1_2::model;
 
 use super::interval::{iv_lower, iv_upper};
 use super::{NodeView, RuleViolation};
@@ -215,7 +215,7 @@ fn rm_conformance(
 /// (`AOM2/master04.5-…class_definitions.adoc` line 162).
 ///
 /// The RM bounds come from the BMM-generated static model
-/// ([`openehr_rm::model::RmAttribute::cardinality`], the BMM `cardinality` of a
+/// ([`openehr_rm::v1_2::model::RmAttribute::cardinality`], the BMM `cardinality` of a
 /// container attribute); an attribute the BMM leaves unconstrained has no RM
 /// interval to conform to and is skipped. Containment is the ordinary interval
 /// rule in both directions:

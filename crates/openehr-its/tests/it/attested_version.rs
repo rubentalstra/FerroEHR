@@ -28,8 +28,8 @@ use std::path::{Path, PathBuf};
 use openehr_its::xml::{
     Namespace, from_canonical_xml, to_canonical_xml, to_canonical_xml_declared,
 };
-use openehr_rm::common::change_control::original_version::OriginalVersion;
-use openehr_rm::composition::composition::Composition;
+use openehr_rm::v1_2::common::change_control::original_version::OriginalVersion;
+use openehr_rm::v1_2::composition::composition::Composition;
 
 /// The CNF corpus directory holding the committed vector pair.
 fn corpus_dir() -> PathBuf {

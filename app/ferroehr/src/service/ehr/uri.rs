@@ -4,7 +4,7 @@
 //! Spec + spec-silence flag: BASE
 //! `docs/specs/openehr/BASE/docs/architecture_overview/master11-paths.adoc`
 //! §"EHR URIs" defines the URI *grammar* (parsed by
-//! [`openehr_rm::paths::EhrUri`]) but explicitly leaves *resolution* to an
+//! [`openehr_rm::v1_2::paths::EhrUri`]) but explicitly leaves *resolution* to an
 //! unspecified name-resolution service: "An `ehr:` URI implies the
 //! availability of a name resolution mechanism in ehr-space … Until such
 //! services are established, ad hoc means of dealing with `ehr:` URIs are
@@ -26,7 +26,7 @@
               fragment the seam produced once; stored-content serving"
 )]
 
-use openehr_rm::paths::{EhrUri, TopLevelLocator, VersionLocator};
+use openehr_rm::v1_2::paths::{EhrUri, TopLevelLocator, VersionLocator};
 use serde_json::Value;
 use uuid::Uuid;
 
@@ -109,7 +109,7 @@ impl FerroEhrService {
 
         match &uri.item_path {
             None => Ok(vec![object]),
-            Some(path) => Ok(openehr_rm::paths::items_at_path(&object, path)
+            Some(path) => Ok(openehr_rm::v1_2::paths::items_at_path(&object, path)
                 .into_iter()
                 .cloned()
                 .collect()),

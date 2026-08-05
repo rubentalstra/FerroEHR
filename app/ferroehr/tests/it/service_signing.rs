@@ -30,8 +30,8 @@ use openehr_base::prelude::ObjectVersionId;
 use openehr_its::rest::generated::common::{
     UpdateAttestation, UpdateAudit, UpdateAuditData, UpdateVersion,
 };
-use openehr_rm::common::change_control::version_impl::canonical_form_of_json;
 use openehr_rm::prelude::{DvText, PartyProxy};
+use openehr_rm::v1_2::common::change_control::version_impl::canonical_form_of_json;
 use serde_json::{Value, json};
 use sqlx::{PgPool, Row};
 
@@ -512,8 +512,8 @@ async fn warn_and_off_verify_on_read_serve_a_tampered_row() {
 async fn canonical_xml_carries_the_signature() {
     // The generated canonical-XML serialization (the same `to_canonical_xml` the
     // REST negotiate path uses) emits the `signature` element (design §4.4/§6.4).
-    use openehr_rm::common::change_control::original_version::OriginalVersion;
-    use openehr_rm::composition::composition::Composition;
+    use openehr_rm::v1_2::common::change_control::original_version::OriginalVersion;
+    use openehr_rm::v1_2::composition::composition::Composition;
 
     // A full corpus COMPOSITION (all mandatory fields) as the version data —
     // the VALID TWIN of the vendored SDK fixture, whose upstream half carries a

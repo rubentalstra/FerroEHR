@@ -70,8 +70,8 @@ use crate::versioning::lifecycle;
 use crate::versioning::lifecycle::lifecycle_state_code;
 use crate::versioning::object_version_id::parse_object_version_id;
 use openehr_base::prelude::ObjectRef;
-use openehr_rm::common::generic::audit_details::AuditDetails;
-use openehr_rm::ehr_extract::common::extract::Extract;
+use openehr_rm::v1_2::common::generic::audit_details::AuditDetails;
+use openehr_rm::v1_2::ehr_extract::common::extract::Extract;
 
 impl FerroEhrService {
     /// SM `import_ehr(an_ehr_id[0..1], an_extract)` — clone a whole EHR into an

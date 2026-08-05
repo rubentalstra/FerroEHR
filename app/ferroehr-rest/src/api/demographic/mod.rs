@@ -211,7 +211,7 @@ fn read_meta(versioned_object_uid: &str, body: &serde_json::Value) -> ResourceMe
 /// §Functions —
 /// `Post: Result.is_equal (items.last.audits.first.time_committed.value)`),
 /// realized as
-/// [`openehr_rm::common::generic::revision_history::RevisionHistory::most_recent_version_time_committed`].
+/// [`openehr_rm::v1_2::common::generic::revision_history::RevisionHistory::most_recent_version_time_committed`].
 /// It is read off the JSON here rather than through that function because this
 /// seam holds an already-serialized body it only needs one leaf of: decoding a
 /// whole `REVISION_HISTORY` — every item, every audit, every committer — to

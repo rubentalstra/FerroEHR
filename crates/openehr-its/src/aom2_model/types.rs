@@ -165,7 +165,7 @@ pub struct AuthoredArchetype {
     /// The `uid` attribute/element of the AOM2 model-form `AUTHORED_ARCHETYPE` XSD type.
     pub uid: Option<String>,
     /// The `annotations` attribute/element of the AOM2 model-form `AUTHORED_ARCHETYPE` XSD type.
-    pub annotations: Vec<openehr_base::prelude::ResourceAnnotations>,
+    pub annotations: Vec<openehr_base::v1_3::resource::resource_annotations::ResourceAnnotations>,
     /// The `archetype_id` attribute/element of the AOM2 model-form `AUTHORED_ARCHETYPE` XSD type.
     pub archetype_id: ArchetypeHrid,
     /// The `parent_archetype_id` attribute/element of the AOM2 model-form `AUTHORED_ARCHETYPE` XSD type.

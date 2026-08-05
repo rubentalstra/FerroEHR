@@ -29,13 +29,13 @@
 //! model", so it lives in the RM pass ([`super::rm`]) where an [`RmModel`] decides
 //! super-type-hood, exactly as VACSO does.
 
-use openehr_am::am24::aom2::archetype::archetype::Archetype;
-use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
-use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
-use openehr_am::am24::aom2::constraint_model::c_complex_object_proxy::CComplexObjectProxy;
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-use openehr_am::am24::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
-use openehr_am::am24::aom2::constraint_model::primitive::constraint_status::ConstraintStatus;
+use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute::CAttribute;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object_proxy::CComplexObjectProxy;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
+use openehr_am::v2_4::aom2::constraint_model::primitive::constraint_status::ConstraintStatus;
 use openehr_base::prelude::MultiplicityInterval;
 
 use super::catalogue::ValidationCode;
@@ -88,7 +88,7 @@ pub(super) fn validate_against_flat_parent<'a>(
 /// terminology, for the VPOV `value_set_expanded` subset check (`master04.5`
 /// §`C_TERMINOLOGY_NODE` L683-690).
 fn value_set_members(
-    term: &openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology,
+    term: &openehr_am::v2_4::aom2::terminology::archetype_terminology::ArchetypeTerminology,
 ) -> std::collections::BTreeMap<String, Vec<String>> {
     term.value_sets
         .as_ref()
@@ -1212,7 +1212,7 @@ terminology
         // flattened siblings are identified must itself be identified. An
         // unidentified new node is only constructible in the AOM model (ADL2 source
         // requires node ids), so it is built by stripping the id off a parsed node.
-        use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
+        use openehr_am::v2_4::aom2::archetype::authored_archetype::AuthoredArchetype;
         let parent = parse_artefact(PARENT, Dialect::Adl2).unwrap();
         let mut child = parse_artefact(
             &child("\t\titems matches { ELEMENT[id0.5] }", &term("id0.5")),

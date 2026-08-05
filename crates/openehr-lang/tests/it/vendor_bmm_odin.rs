@@ -19,7 +19,7 @@
 //! Where a fixture's BMM-semantic verdict is worth pinning beside its ODIN
 //! reading, the test states it in this crate's own terms — a typed
 //! [`PBmmReadError`] refusal, or a collecting-pass
-//! [`openehr_lang::bmm_persistence::validate::PBmmValidityFinding`]; archie's
+//! [`openehr_lang::v2::bmm_persistence::validate::PBmmValidityFinding`]; archie's
 //! `EC_*` codes are named only as the fixtures' provenance, never as an
 //! expectation. `vendor_bmm_schema.rs` carries the full outcome tables.
 
@@ -34,13 +34,13 @@
     reason = "the module docs name archie Java classes (BmmOdinParser, BmmSchemaConverter, …) and BMM error codes (EC_…) as prose, not code refs"
 )]
 
-use openehr_lang::bmm_persistence::create_model::create_bmm_model;
-use openehr_lang::bmm_persistence::error::PBmmReadError;
-use openehr_lang::bmm_persistence::include_resolution::resolve_includes;
-use openehr_lang::bmm_persistence::reader::read_schema;
-use openehr_lang::bmm_persistence::validate::PBmmValidityFinding;
-use openehr_lang::bmm_persistence::validate::validate_schema;
 use openehr_lang::odin::{OdinKey, OdinValue, parse};
+use openehr_lang::v2::bmm_persistence::create_model::create_bmm_model;
+use openehr_lang::v2::bmm_persistence::error::PBmmReadError;
+use openehr_lang::v2::bmm_persistence::include_resolution::resolve_includes;
+use openehr_lang::v2::bmm_persistence::reader::read_schema;
+use openehr_lang::v2::bmm_persistence::validate::PBmmValidityFinding;
+use openehr_lang::v2::bmm_persistence::validate::validate_schema;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 

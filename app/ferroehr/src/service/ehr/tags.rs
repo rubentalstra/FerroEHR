@@ -361,13 +361,13 @@ fn ehr_owner_ref(ehr_id: EhrId) -> ObjectRef {
 pub(in crate::service) fn normalized_target_path(raw: Option<&str>) -> Option<&str> {
     raw.filter(|p| !p.is_empty())
 }
-/// Refuse an [`ItemTagError`](openehr_rm::common::tags::item_tag_impl::ItemTagError)
+/// Refuse an [`ItemTagError`](openehr_rm::v1_2::common::tags::item_tag_impl::ItemTagError)
 /// as the ITS-REST 422 shape (the same
 /// `Violation` the pre-constructor `validate_item_tag` produced): the typed
 /// constructor IS the invariant check now (#1839 — construction =
 /// validation), so the service seam only maps the refusal onto the wire.
 pub(in crate::service) fn item_tag_refusal(
-    err: &openehr_rm::common::tags::item_tag_impl::ItemTagError,
+    err: &openehr_rm::v1_2::common::tags::item_tag_impl::ItemTagError,
 ) -> ServiceError {
     ServiceError::Unprocessable(
         Violation::new(format!("item tag violates its RM invariants: {err}")).with_path("ITEM_TAG"),

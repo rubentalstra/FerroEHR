@@ -53,7 +53,7 @@ mod leaf;
 mod subtype;
 
 use indexmap::IndexMap;
-use openehr_rm::paths::PathSegment;
+use openehr_rm::v1_2::paths::PathSegment;
 use serde_json::{Map, Value};
 
 use crate::rm_instance::{ValidationKind, ValidationMessage};
@@ -602,7 +602,7 @@ struct Validator {
 fn rm_declares_attribute(attr: &str) -> bool {
     static DECLARED: std::sync::LazyLock<std::collections::BTreeSet<&'static str>> =
         std::sync::LazyLock::new(|| {
-            openehr_rm::model::classes()
+            openehr_rm::v1_2::model::classes()
                 .flat_map(|c| c.attributes.iter().map(|a| a.name))
                 .collect()
         });
@@ -827,7 +827,9 @@ impl Validator {
                     // NOTE: an unmatched archetype-rooted child is admitted where
                     // the attribute declares no ARCHETYPE_SLOT, OPT 1.4 flattening
                     // not enumerating the slot-fill universe; slots still gate.
-                    if ca.slots.is_empty() && openehr_rm::paths::is_archetype_root_node_id(nid) {
+                    if ca.slots.is_empty()
+                        && openehr_rm::v1_2::paths::is_archetype_root_node_id(nid)
+                    {
                         continue;
                     }
                     let ct = child.get("_type").and_then(Value::as_str).unwrap_or("");
@@ -1007,7 +1009,7 @@ impl Validator {
         let structural_id_seg;
         let id_seg: &PathSegment = if structural_match {
             let mut stripped = raw_id_seg.clone();
-            stripped.predicate = openehr_rm::paths::Predicate::default();
+            stripped.predicate = openehr_rm::v1_2::paths::Predicate::default();
             structural_id_seg = stripped;
             &structural_id_seg
         } else {
@@ -1148,7 +1150,7 @@ impl Validator {
                     continue;
                 }
                 let count =
-                    i32::try_from(openehr_rm::paths::select_children(container, last).len())
+                    i32::try_from(openehr_rm::v1_2::paths::select_children(container, last).len())
                         .unwrap_or(i32::MAX);
                 let min = card.min.unwrap_or(0).max(0);
                 // The cardinality lower bound is relaxed away for a
@@ -1181,7 +1183,7 @@ impl Validator {
 //
 // RM-path parsing (`[atNNNN]` / `[archetype-id]` / `[atNNNN,'name']` predicates)
 // and per-step navigation over the canonical-JSON tree are the single
-// implementation in [`openehr_rm::paths`], reached here via [`crate::flat::rmpath`]
+// implementation in [`openehr_rm::v1_2::paths`], reached here via [`crate::flat::rmpath`]
 // (`parse` / `navigate` / `select_children`). Only the checks below —
 // attribute-presence for the existence rule and RM instance-path
 // normalisation — are validation-specific.
@@ -1230,13 +1232,14 @@ fn select_group_children<'a>(
 /// Whether an RM type inherits `LOCATABLE` and therefore carries an
 /// `archetype_node_id` (and `name`) in canonical JSON (RM common
 /// `UML/classes/org.openehr.rm.common.locatable.adoc`). Backed by the
-/// BMM-generated RM inheritance graph ([`openehr_rm::model::is_a`]). A type the
+/// BMM-generated RM inheritance graph ([`openehr_rm::v1_2::model::is_a`]). A type the
 /// model does not recognise is treated as `LOCATABLE` (the historic default —
 /// stay strict rather than silently widen matching for an unknown type). Generic
 /// arguments are stripped first.
 fn is_locatable(rm_type: &str) -> bool {
     let base = rm_type.split('<').next().unwrap_or(rm_type).trim();
-    openehr_rm::model::class(base).is_none() || openehr_rm::model::is_a(base, "LOCATABLE")
+    openehr_rm::v1_2::model::class(base).is_none()
+        || openehr_rm::v1_2::model::is_a(base, "LOCATABLE")
 }
 
 /// The instance child objects directly under `attr` (array elements or a single
@@ -1848,7 +1851,7 @@ mod tests {
 
     #[test]
     fn segment_parsing_respects_brackets() {
-        // Parsing routes through the single `openehr_rm::paths` implementation
+        // Parsing routes through the single `openehr_rm::v1_2::paths` implementation
         // via `crate::flat::rmpath`; this asserts the validator sees the same segments.
         let segs = rmpath::parse("/content[openEHR-EHR-SECTION.x.v1]/items[at0004,'Sys']/value");
         assert_eq!(segs.len(), 3);

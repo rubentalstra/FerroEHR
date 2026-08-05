@@ -498,7 +498,7 @@ pub(crate) fn validate_commit_audit(audit: &AuditInput) -> Result<(), ServiceErr
 /// (`openehr_its::rm_instance::validate_rm_and_terminology_as`). That
 /// dispatcher is what runs the generated structural check, the typed invariant
 /// cores, the model-driven mandatory-container bounds and the
-/// terminology-backed invariants (all defined in `openehr_rm::validate`).
+/// terminology-backed invariants (all defined in `openehr_rm::v1_2::validate`).
 ///
 /// It has to be invoked EXPLICITLY here because a commit audit is not part of
 /// any committed RM document: the `AUDIT_DETAILS` is written to its own row and
