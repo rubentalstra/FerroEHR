@@ -114,7 +114,7 @@ these same versions (exact commits in each component's `PROVENANCE.md` and in
 the script). It is the read/conformance oracle; codegen still consumes only
 `tools/openehr-codegen/vendor/**` and `crates/openehr-its/schemas/**`.
 
-## Spec version policy (owner rulings 2026-07-20)
+## Spec version policy (owner rulings 2026-07-20, superseded in part 2026-08-05)
 
 Grounded in the official openEHR release strategy
 (specifications.openehr.org/governance/release_strategy, read 2026-07-20):
@@ -124,15 +124,41 @@ of the existing part of the release"; major = "changes to the semantics or
 large changes", incompatible and "most likely requiring software upgrade and
 possibly data migration".
 
-- **Single pin per component.** Within a major line every release is a
-  compatible superset, so the newest-generation pin accepts every valid
-  older-minor instance — no version negotiation, no second generation.
-  Proven in practice: the fidelity gate validates our canonical wire against
-  the 1.1.0-era ITS-JSON schema while the types are RM 1.2.0-generation, and
-  stock-EHRbase's RM 1.1.0-era wire round-trips the corpus.
-- **Dual generations exist ONLY across major boundaries, decided per
-  component when a major actually releases.** There are two live cases, both
-  mandated by upstream keeping two generations side by side:
+- **TWO generations per BASE/RM/LANG component — the released one and the
+  development one, both emitted, selected at the application level (owner
+  ruling 2026-08-05, issue #1936; this supersedes the 2026-07-20 single-pin
+  rule for those components).** The development pins are pre-release
+  generations, so a deployment must be able to run on RELEASED spec text:
+  every future re-vendor keeps the previous generation emitted and
+  selectable, and dropping a generation is an owner decision, never a bump
+  side effect. Selection is the ONE coupled `spec_profile` configuration key
+  (`development` = RM 1.2.0 + BASE 1.3.0 + LANG 1.1.0, the default;
+  `stable` = RM 1.1.0 + BASE 1.2.0 + LANG 1.0.0) — per-component free choice
+  is rejected because the generations are modelled against each other
+  (RM 1.1.0's own BMM `includes` names BASE 1.2.0), so incoherent
+  combinations stay unrepresentable. Runtime behaviour: one typed core on
+  the development generations (within-major supersets make every
+  stable-generation instance valid there); the profile is the ACCEPTANCE
+  boundary — surface the released generation does not define is a typed,
+  profile-naming refusal (the AQL planning gate), and the exact additive
+  delta between the generation sets is MACHINE-PINNED
+  (`profile_generation_delta_is_pinned`, the emitter invariants), so a
+  re-vendor that widens it fails until the boundary is extended.
+  Direction contract: `stable → development` is always safe (minor releases
+  are additive); `development → stable` is supported only for data that
+  never used development-only constructs — anything else is refused loudly
+  at read, never silently down-converted. No openEHR spec governs runtime
+  version selection — our own design/extension.
+- **Single pin still holds for TERM/QUERY/ITS-REST/ITS-XML** (the components
+  the 2026-08-05 ruling did not touch): within a major line every release is
+  a compatible superset, so the newest-generation pin accepts every valid
+  older-minor instance. Proven in practice: the fidelity gate validates our
+  canonical wire against the 1.1.0-era ITS-JSON schema while the types are
+  RM 1.2.0-generation, and stock-EHRbase's RM 1.1.0-era wire round-trips
+  the corpus.
+- **Across major boundaries, dual generations are decided per component when
+  a major actually releases.** There are two live cases, both mandated by
+  upstream keeping two generations side by side:
   - **AM** — the BASE Architecture Overview
     (`master05-package_structure.adoc`) mandates ADL 1.4 and ADL 2
     "maintained side by side", and `openehr-am` ships both as

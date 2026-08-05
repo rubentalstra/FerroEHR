@@ -78,6 +78,8 @@ data:
   # .Values.config (minus `files`, which is mounted separately). Secrets are NOT
   # here — they are injected as FERROEHR_* env from the Secret and override the file.
   ferroehr.toml: |
+    spec_profile = "development"
+    
     [admin]
       enabled = false
     
@@ -203,7 +205,7 @@ spec:
     metadata:
       annotations:
         # Roll pods when the rendered ferroehr.toml changes.
-        checksum/config: d22562d7cd3111b552eac17cce7c11445a6dca8fa2546445b8cc3fd442f76c85
+        checksum/config: 9f2e16fa6cbda6145934e4505bafa6a1c93e195c8b31846cc243dd30c5aad80d
       labels:
         app.kubernetes.io/name: ferroehr
         app.kubernetes.io/instance: ferroehr

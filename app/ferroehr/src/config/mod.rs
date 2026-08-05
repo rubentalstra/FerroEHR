@@ -31,6 +31,7 @@ mod strict;
 pub mod auth;
 pub mod authz;
 pub mod management;
+pub mod profile;
 pub mod secret;
 pub mod server;
 pub mod smart;
@@ -48,6 +49,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct FerroEhrConfig {
+    /// `spec_profile` — the openEHR specification generation set the server
+    /// runs (`development` | `stable`; default `development`).
+    pub spec_profile: profile::SpecProfile,
     /// `[server]` — HTTP listener + REST surface + System-Options identity.
     pub server: server::ServerConfig,
     /// `[db]` — `PostgreSQL` connection.
@@ -707,8 +711,11 @@ mod tests {
         for section in alias::SECTIONS {
             let header = format!("[{section}]");
             let dotted = format!("[{section}."); // sub-tables count too
+            let scalar = format!("\n{section} = "); // top-level scalar keys
             assert!(
-                DEFAULT_TEMPLATE.contains(&header) || DEFAULT_TEMPLATE.contains(&dotted),
+                DEFAULT_TEMPLATE.contains(&header)
+                    || DEFAULT_TEMPLATE.contains(&dotted)
+                    || DEFAULT_TEMPLATE.contains(&scalar),
                 "template missing section {section}"
             );
         }
