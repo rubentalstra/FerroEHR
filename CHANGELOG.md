@@ -21,7 +21,7 @@ workflow refuses a tag that has no matching section here.
 
 ### Removed
 
-- The generated `openehr-*` spec crates no longer carry a crate-level `SPEC_VERSION` constant: a multi-generation crate has no single implemented spec version, and a fixed crate-root pin would contradict a configured non-current generation. The pin authorities are the emitted `Generation` enum (per-variant `spec_version()`; the derived `Default` variant is the current generation) and each generation module's own `SPEC_VERSION`; the hand-written single-spec crates (`openehr-its`, `openehr-query`, `openehr-adl`) keep their literal constant.
+- The generated `openehr-*` spec crates no longer carry a crate-level `SPEC_VERSION` constant: a multi-generation crate has no single implemented spec version, and a fixed crate-root pin would contradict a configured non-current generation. The ONLY pin authority is the emitted `Generation` enum (per-variant `const fn spec_version()`; the derived `Default` variant is the current generation) — the generation modules carry no version constant either; the hand-written single-spec crates (`openehr-its`, `openehr-query`, `openehr-adl`) keep their literal constant.
 
 ### Changed
 

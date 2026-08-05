@@ -9,6 +9,3 @@ pub mod bmm3;
 pub mod bmm_persistence;
 pub mod prelude;
 pub mod resource;
-
-/// The openEHR specification version this generation implements.
-pub const SPEC_VERSION: &str = "2.4.0";

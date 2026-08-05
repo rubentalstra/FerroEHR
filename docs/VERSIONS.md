@@ -27,9 +27,9 @@ version). The implemented spec version is a separate datum, per GENERATION
 (owner ruling 2026-08-05, #1942: a multi-generation crate has no single
 crate-level pin — a fixed one would contradict a configured non-current
 generation): the generated crates carry an emitted `Generation` enum
-(per-variant `spec_version()`, derived `Default` marking the current
-generation, from the codegen composition table) plus a `SPEC_VERSION`
-constant inside each generation module; the hand-written single-spec crates keep a literal
+(per-variant `spec_version()` — a `const fn`, so const contexts need no
+constant — with derived `Default` marking the current generation, from the
+codegen composition table); no version CONSTANT exists anywhere in them; the hand-written single-spec crates keep a literal
 crate-level `SPEC_VERSION`. The crates release in lockstep — while the line is
 `0.0.x`, a bump bumps all eight plus their internal version requirements
 (cargo treats every `0.0.x` as its own compatibility set). Spec-crate

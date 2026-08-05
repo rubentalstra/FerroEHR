@@ -11,13 +11,10 @@ pub mod ehr;
 pub mod ehr_extract;
 pub mod foundation_types;
 pub mod integration;
+pub mod model;
 pub mod prelude;
 pub mod resource;
 pub mod support;
-
-/// The openEHR specification version this generation implements.
-pub const SPEC_VERSION: &str = "1.1.0";
-pub mod model;
 
 // hand-written modules (spec behaviour), auto-declared:
 pub mod paths;
