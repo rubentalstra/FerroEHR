@@ -20,7 +20,7 @@
 //! instance does not carry, so they remain service-layer checks.
 
 use crate::v1_2::common::tags::item_tag::ItemTag;
-use openehr_base::prelude::{ObjectRef, UidBasedId};
+use openehr_base::v1_3::prelude::{ObjectRef, UidBasedId};
 use openehr_base::validate::{InvariantViolation, Validate};
 
 /// Why an [`ItemTag`] could not be constructed — one variant per released
@@ -118,7 +118,9 @@ impl Validate for ItemTag {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use openehr_base::prelude::{HierObjectId, ObjectId, ObjectRef, ObjectRefData, UidBasedId};
+    use openehr_base::v1_3::prelude::{
+        HierObjectId, ObjectId, ObjectRef, ObjectRefData, UidBasedId,
+    };
 
     fn tag(key: &str, value: Option<&str>) -> ItemTag {
         ItemTag {

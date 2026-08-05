@@ -108,7 +108,7 @@ mod tests {
     fn normal_range_and_status_consistency() {
         use crate::v1_2::data_types::quantity::dv_interval::DvInterval;
         use crate::v1_2::data_types::text::code_phrase::CodePhrase;
-        use openehr_base::prelude::TerminologyId;
+        use openehr_base::v1_3::prelude::TerminologyId;
 
         let range = |lo: f64, hi: f64| {
             Box::new(DvInterval {

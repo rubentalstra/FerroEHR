@@ -81,7 +81,7 @@ use serde_json::Value;
 use std::fmt;
 use std::str::FromStr;
 
-use openehr_base::prelude::{ArchetypeId, ObjectVersionId, Uid};
+use openehr_base::v1_3::prelude::{ArchetypeId, ObjectVersionId, Uid};
 use uuid::Uuid;
 
 /// Error raised when parsing an openEHR path expression.

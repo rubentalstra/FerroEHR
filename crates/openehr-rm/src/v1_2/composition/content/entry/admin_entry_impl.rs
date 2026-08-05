@@ -27,7 +27,7 @@ mod tests {
     use crate::v1_2::data_structures::item_structure::item_tree::ItemTree;
     use crate::v1_2::data_types::text::code_phrase::CodePhrase;
     use crate::v1_2::data_types::text::dv_text::{DvText, DvTextData};
-    use openehr_base::prelude::{ArchetypeId, TerminologyId};
+    use openehr_base::v1_3::prelude::{ArchetypeId, TerminologyId};
 
     fn text(value: &str) -> DvText {
         DvText::DvText(DvTextData {

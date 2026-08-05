@@ -582,7 +582,7 @@ fn run_invariants(ty: &str, obj: &Map<String, Value>, out: &mut Vec<InvariantVio
             let Some(value) = str_of(obj, "value") else {
                 return false;
             };
-            openehr_base::prelude::TerminologyId {
+            openehr_base::v1_3::prelude::TerminologyId {
                 value: value.to_owned(),
             }
             .validate_invariants(out);
@@ -591,7 +591,7 @@ fn run_invariants(ty: &str, obj: &Map<String, Value>, out: &mut Vec<InvariantVio
             let Some(value) = str_of(obj, "value") else {
                 return false;
             };
-            openehr_base::prelude::ArchetypeId {
+            openehr_base::v1_3::prelude::ArchetypeId {
                 value: value.to_owned(),
             }
             .validate_invariants(out);

@@ -58,7 +58,7 @@ impl Validate for TermMapping {
 mod tests {
     use super::*;
     use crate::v1_2::data_types::text::code_phrase::CodePhrase;
-    use openehr_base::prelude::TerminologyId;
+    use openehr_base::v1_3::prelude::TerminologyId;
 
     fn term_mapping(m: char) -> TermMapping {
         TermMapping {
