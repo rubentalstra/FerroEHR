@@ -21,9 +21,7 @@ use crate::load::oas;
 use crate::plan::composition::{self, compose};
 use crate::plan::overrides;
 use crate::plan::{Emission, decide};
-use crate::render::emit::{
-    CrateGeneration, GenFile, crate_generations, emit_crate, emit_generations, emit_multi_crate,
-};
+use crate::render::emit::{CrateGeneration, GenFile, emit_composed};
 use crate::render::{emit_rest, emit_rm_model, emit_validate, model_query, naming};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -35,40 +33,70 @@ pub fn crate_keys() -> Vec<&'static str> {
     composition::COMPOSITIONS.iter().map(|c| c.key).collect()
 }
 
-/// One crate → schema-merge composition entry, flattened for the integrity
-/// invariant (the merge table is itself declarative decision data).
+/// One generation row of a composition entry, flattened for the integrity
+/// invariant.
+#[derive(Debug, Clone)]
+pub struct GenerationInfo {
+    /// The emitted generation-module name (`v1_2`).
+    pub module: String,
+    /// The generation's implemented spec version.
+    pub spec_version: String,
+    /// The vendored BMM file.
+    pub file: String,
+    /// Whether this is the crate's current generation.
+    pub current: bool,
+    /// Paired dependency generations merged into the model, as
+    /// `(key, generation)` pairs in merge order.
+    pub model_deps: Vec<(String, String)>,
+    /// Paired dependency generations resolving cross-crate references, as
+    /// `(key, generation)` pairs in lookup order.
+    pub prelude_deps: Vec<(String, String)>,
+}
+
+/// One crate → generation composition entry, flattened for the integrity
+/// invariant (the table is itself declarative decision data).
 #[derive(Debug, Clone)]
 pub struct CompositionInfo {
     /// The composition key.
     pub key: String,
     /// The emitted crate directory.
     pub crate_name: String,
-    /// The version-module prefix for a multi-version crate, else `None`.
-    pub variant: Option<String>,
-    /// The crate's own BMM member files.
-    pub own: Vec<String>,
-    /// Dependency composition keys merged into the model.
-    pub model_deps: Vec<String>,
-    /// Dependency composition keys whose prelude the `External` index offers.
-    pub prelude_deps: Vec<String>,
-    /// The `includes` citation behind the merge.
+    /// The crate-level implemented-spec pin.
+    pub spec_version: String,
+    /// The crate's BMM generations, oldest first.
+    pub generations: Vec<GenerationInfo>,
+    /// The `includes` citation behind the composition.
     pub citation: String,
     /// The one-line reason.
     pub reason: String,
 }
 
-/// Every crate → schema-merge composition entry.
+/// Every crate → generation composition entry.
 #[must_use]
 pub fn composition_infos() -> Vec<CompositionInfo> {
+    let deps = |d: &[composition::DepGeneration]| {
+        d.iter()
+            .map(|d| (d.key.to_string(), d.generation.to_string()))
+            .collect()
+    };
     composition::COMPOSITIONS
         .iter()
         .map(|c| CompositionInfo {
             key: c.key.to_string(),
             crate_name: c.crate_name.to_string(),
-            variant: c.variant.map(str::to_string),
-            own: c.own.iter().map(|s| (*s).to_string()).collect(),
-            model_deps: c.model_deps.iter().map(|s| (*s).to_string()).collect(),
-            prelude_deps: c.prelude_deps.iter().map(|s| (*s).to_string()).collect(),
+            spec_version: c.spec_version.to_string(),
+            generations: c
+                .generations
+                .iter()
+                .map(|g| GenerationInfo {
+                    module: g.module.to_string(),
+                    spec_version: g.spec_version.to_string(),
+                    file: g.file.to_string(),
+                    current: g.current,
+                    model_deps: deps(g.model_deps),
+                    prelude_deps: deps(g.prelude_deps),
+                })
+                .collect(),
             citation: c.citation.to_string(),
             reason: c.reason.to_string(),
         })
@@ -140,7 +168,7 @@ pub fn completeness(key: &str) -> Result<Vec<Completeness>, Error> {
         silently_dropped.sort();
         out.push(Completeness {
             key: key.to_string(),
-            file: g.file.to_string(),
+            file: g.spec.file.to_string(),
             total: g.schema.classes.len(),
             planned,
             skipped_mapped,
@@ -220,7 +248,7 @@ pub fn attribute_gaps(key: &str) -> Result<(Vec<AttributeGap>, usize), Error> {
                     checked += 1;
                     if !fields(carrier).contains(&p.name) {
                         gaps.push(AttributeGap {
-                            file: g.file.to_string(),
+                            file: g.spec.file.to_string(),
                             class: name.clone(),
                             attribute: p.name.clone(),
                             detail: format!("missing from the emitted `{carrier}` fields"),
@@ -245,62 +273,48 @@ pub struct GenerationConflict {
     pub files: Vec<String>,
 }
 
-/// Emitted-path and prelude-identifier conflicts between the BMM generations
-/// composing each crate.
+/// Emitted-path conflicts between the BMM generations composing each crate.
 ///
-/// Both must be empty: two generations sharing an emitted path means one
-/// overwrites the other (a silently picked shape), and two generations
-/// exporting one prelude name means the crate's one-type-per-name contract is
-/// broken.
+/// Must be empty: every generation renders under its own version-named top
+/// module, so two generations sharing an emitted path would mean one
+/// overwrites the other (a silently picked shape). Cross-generation prelude
+/// collisions no longer exist by construction — the crate prelude re-exports
+/// the CURRENT generation only, and each generation carries its own in-tree
+/// prelude.
 ///
 /// # Errors
 /// Returns an error if any composition's BMM files cannot be loaded.
 pub fn generation_conflicts() -> Result<Vec<GenerationConflict>, Error> {
     let mut out = Vec::new();
-    for key in crate_keys() {
-        let c = compose(key)?;
+    for comp in composition::COMPOSITIONS {
+        let c = compose(comp.key)?;
         let mut paths: BTreeMap<String, Vec<String>> = BTreeMap::new();
-        let mut idents: BTreeMap<String, Vec<String>> = BTreeMap::new();
-        for g in &c.generations {
-            let gen_view = [CrateGeneration {
+        let gens: Vec<CrateGeneration<'_>> = c
+            .generations
+            .iter()
+            .map(|g| CrateGeneration {
+                spec: g.spec,
                 model: &g.model,
                 schema: &g.schema,
-                prelude_owned: Some(&g.owned),
-            }];
-            // Path/ident conflicts are independent of the banner input, so an
-            // empty sibling set is the right (and cheapest) view here.
-            for f in emit_generations(
-                &gen_view,
-                &c.external,
-                c.doc,
-                c.spec_version,
-                &SiblingImpls::default(),
-            ) {
-                paths.entry(f.path).or_default().push(g.file.to_string());
-            }
-            for spec in &g.owned {
-                idents
-                    .entry(naming::type_name(spec))
-                    .or_default()
-                    .push(g.file.to_string());
-            }
+                external: &g.external,
+            })
+            .collect();
+        // Path conflicts are independent of the banner input, so an empty
+        // sibling set is the right (and cheapest) view here. Attribute each
+        // emitted path to the generation whose module prefixes it; the
+        // crate-level artifacts (`lib.rs`, `prelude.rs`) are assembled once.
+        for f in emit_composed(comp, &gens, &SiblingImpls::default()) {
+            let file = c
+                .generations
+                .iter()
+                .find(|g| f.path.starts_with(&format!("{}/", g.spec.module)))
+                .map_or("(crate-level)", |g| g.spec.file);
+            paths.entry(f.path).or_default().push(file.to_string());
         }
-        // `prelude.rs` and `lib.rs` are crate-level artifacts assembled ONCE
-        // from all generations, so a per-generation render naming them twice is
-        // expected; every spec type file must be claimed exactly once.
         for (what, files) in paths {
-            if files.len() > 1 && !matches!(what.as_str(), "prelude.rs" | "lib.rs") {
-                out.push(GenerationConflict {
-                    key: key.to_string(),
-                    what,
-                    files,
-                });
-            }
-        }
-        for (what, files) in idents {
             if files.len() > 1 {
                 out.push(GenerationConflict {
-                    key: key.to_string(),
+                    key: comp.key.to_string(),
                     what,
                     files,
                 });
@@ -397,7 +411,7 @@ pub fn plan_shapes(key: &str) -> Result<BTreeMap<String, String>, Error> {
         let used = g.model.used_as_type();
         for (name, class) in &g.schema.classes {
             out.insert(
-                format!("{}::{name}", g.file),
+                format!("{}::{name}", g.spec.file),
                 shape_name(&decide(&g.model, class, &used)).to_string(),
             );
         }
@@ -428,84 +442,57 @@ fn shape_name(e: &Emission) -> &'static str {
 /// Returns an error if any crate's BMM files cannot be loaded.
 pub fn render_all_to_memory() -> Result<BTreeMap<String, String>, Error> {
     let mut out = BTreeMap::new();
-    let mut add = |crate_name: &str, files: &[GenFile]| {
-        for f in files {
-            out.insert(format!("{crate_name}/{}", f.path), f.body.clone());
+    for comp in composition::COMPOSITIONS {
+        let c = compose(comp.key)?;
+        let impls = sibling_impls(comp.crate_name);
+        let augmented: Vec<BmmSchema> = c
+            .generations
+            .iter()
+            .map(|g| {
+                let reemit = cross_schema_reemit(&g.model, &g.schema);
+                let deps: Vec<&BmmSchema> = g.dep_schemas.iter().collect();
+                augment_with_reemit(&g.schema, &g.model, &reemit, &deps)
+            })
+            .collect();
+        let gens: Vec<CrateGeneration<'_>> = c
+            .generations
+            .iter()
+            .zip(&augmented)
+            .map(|(g, aug)| CrateGeneration {
+                spec: g.spec,
+                model: &g.model,
+                schema: aug,
+                external: &g.external,
+            })
+            .collect();
+        let mut files = emit_composed(comp, &gens, &impls);
+        if comp.key == "rm" {
+            let current = c
+                .generations
+                .iter()
+                .find(|g| g.spec.current)
+                .ok_or("rm composition has no current generation")?;
+            let current_aug = augmented
+                .iter()
+                .zip(&c.generations)
+                .find(|(_, g)| g.spec.current)
+                .map(|(aug, _)| aug)
+                .ok_or("rm composition has no current generation")?;
+            let module = current.spec.module;
+            inject_rm_model(
+                &mut files,
+                prefix_gen_files(emit_rm_model::emit_files(&current.model), module),
+                module,
+            );
+            files.extend(prefix_gen_files(
+                emit_validate::emit_files(&current.model, current_aug),
+                module,
+            ));
         }
-    };
-
-    let base = compose("base")?;
-    add(
-        "openehr-base",
-        &emit_crate(
-            &base.model,
-            &base.own_schema,
-            &base.external,
-            base.doc,
-            base.spec_version,
-            &sibling_impls("openehr-base"),
-        ),
-    );
-
-    let rm = compose("rm")?;
-    let mut rm_files = emit_crate(
-        &rm.model,
-        &rm.own_schema,
-        &rm.external,
-        rm.doc,
-        rm.spec_version,
-        &sibling_impls("openehr-rm"),
-    );
-    inject_rm_model(&mut rm_files, emit_rm_model::emit_files(&rm.model));
-    inject_validate(
-        &mut rm_files,
-        emit_validate::emit_files(&rm.model, &rm.own_schema),
-    );
-    add("openehr-rm", &rm_files);
-
-    let lang = compose("lang")?;
-    add(
-        "openehr-lang",
-        &emit_generations(
-            &crate_generations(&lang),
-            &lang.external,
-            lang.doc,
-            lang.spec_version,
-            &sibling_impls("openehr-lang"),
-        ),
-    );
-
-    let am14 = compose("am14")?;
-    let am24 = compose("am24")?;
-    let reemit = cross_schema_reemit(&am24.model, &am24.own_schema);
-    let dep_refs: Vec<&BmmSchema> = am24.dep_schemas.iter().collect();
-    let am24_aug = augment_with_reemit(&am24.own_schema, &am24.model, &reemit, &dep_refs);
-    add(
-        "openehr-am",
-        &emit_multi_crate(
-            &[
-                ("am14", &am14.model, &am14.own_schema),
-                ("am24", &am24.model, &am24_aug),
-            ],
-            &am24.external,
-            am24.doc,
-            am24.spec_version,
-            &sibling_impls("openehr-am"),
-        ),
-    );
-
-    let term = compose("term")?;
-    add(
-        "openehr-term",
-        &emit_crate(
-            &term.model,
-            &term.own_schema,
-            &term.external,
-            term.doc,
-            term.spec_version,
-            &sibling_impls("openehr-term"),
-        ),
-    );
+        for f in files {
+            out.insert(format!("{}/{}", comp.crate_name, f.path), f.body);
+        }
+    }
     Ok(out)
 }
 
@@ -521,17 +508,25 @@ fn sibling_impls(crate_name: &str) -> SiblingImpls {
     )
 }
 
-/// Mirror of `cli::inject_validate` (kept private there): append the generated
-/// invariant-core file (the module is declared by a hand edit in `validate.rs`).
-fn inject_validate(files: &mut Vec<GenFile>, mut validate_files: Vec<GenFile>) {
-    files.append(&mut validate_files);
+/// Mirror of `cli::prefix_gen_files` (kept private there): prefix generated
+/// file paths with the generation module directory.
+fn prefix_gen_files(files: Vec<GenFile>, module: &str) -> Vec<GenFile> {
+    files
+        .into_iter()
+        .map(|f| GenFile {
+            path: format!("{module}/{}", f.path),
+            body: f.body,
+        })
+        .collect()
 }
 
 /// Mirror of `cli::inject_rm_model` (kept private there): append the RM-model
-/// files and declare `pub mod model;` in the crate's `lib.rs`.
-fn inject_rm_model(files: &mut Vec<GenFile>, mut model_files: Vec<GenFile>) {
+/// files (already generation-prefixed) and declare `pub mod model;` in the
+/// generation `mod.rs`.
+fn inject_rm_model(files: &mut Vec<GenFile>, mut model_files: Vec<GenFile>, module: &str) {
+    let gen_mod = format!("{module}/mod.rs");
     for f in files.iter_mut() {
-        if f.path == "lib.rs" && !f.body.contains("pub mod model;") {
+        if f.path == gen_mod && !f.body.contains("pub mod model;") {
             f.body.push_str("pub mod model;\n");
         }
     }
@@ -552,16 +547,28 @@ pub struct Mirror {
     pub augmented_path: Option<String>,
 }
 
+/// Find one generation of a composed crate by its module name.
+fn find_generation<'a>(
+    c: &'a composition::Composed,
+    module: &str,
+) -> Result<&'a composition::ComposedGeneration, Error> {
+    c.generations
+        .iter()
+        .find(|g| g.spec.module == module)
+        .ok_or_else(|| format!("composition {:?} has no generation {module:?}", c.comp.key).into())
+}
+
 /// The AM 2.4 downstream re-emission closure (the upstream classes whose Rust
 /// form widens downstream) with the source vs augmented package paths of each.
 ///
 /// # Errors
 /// Returns an error if the AM/BASE/LANG BMM files cannot be loaded.
 pub fn am24_reemit_mirrors() -> Result<Vec<Mirror>, Error> {
-    let am24 = compose("am24")?;
-    let reemit = cross_schema_reemit(&am24.model, &am24.own_schema);
+    let am = compose("am")?;
+    let am24 = find_generation(&am, "v2_4")?;
+    let reemit = cross_schema_reemit(&am24.model, &am24.schema);
     let dep_refs: Vec<&BmmSchema> = am24.dep_schemas.iter().collect();
-    let aug = augment_with_reemit(&am24.own_schema, &am24.model, &reemit, &dep_refs);
+    let aug = augment_with_reemit(&am24.schema, &am24.model, &reemit, &dep_refs);
     let aug_paths = class_paths(&aug);
 
     // Source package path per class, first-wins across the dependency schemas
@@ -588,26 +595,28 @@ pub fn am24_reemit_mirrors() -> Result<Vec<Mirror>, Error> {
 /// # Errors
 /// Returns an error if the AM/BASE/LANG BMM files cannot be loaded.
 pub fn am24_reemit_closure() -> Result<BTreeSet<String>, Error> {
-    reemit_closure("am24")
+    reemit_closure("am", "v2_4")
 }
 
-/// One composition's raw downstream re-emission closure — the upstream classes
-/// `analyze::cross_schema_reemit` (crate-private) reports for crate `key`.
+/// One generation's raw downstream re-emission closure — the upstream classes
+/// `analyze::cross_schema_reemit` (crate-private) reports for generation
+/// `module` of crate `key`.
 ///
-/// Queryable per composition (not just AM 2.4) so the "which compositions have a
+/// Queryable per generation (not just AM 2.4) so the "which generations have a
 /// non-empty closure, and does the emitter act on it" question is answered from
 /// the analysis itself rather than from a citation that can go stale.
 ///
 /// # Errors
-/// Returns an error if the composition's BMM files cannot be loaded.
-pub fn reemit_closure(key: &str) -> Result<BTreeSet<String>, Error> {
+/// Returns an error if the composition's BMM files cannot be loaded or
+/// `module` names no generation of `key`.
+pub fn reemit_closure(key: &str, module: &str) -> Result<BTreeSet<String>, Error> {
     let c = compose(key)?;
-    Ok(cross_schema_reemit(&c.model, &c.own_schema))
+    let g = find_generation(&c, module)?;
+    Ok(cross_schema_reemit(&g.model, &g.schema))
 }
 
-/// The set of type files (`"<crate>/<path>"`) emitted for one composition
-/// variant — the crate `key`'s rendered output alone (not shared crate
-/// mates).
+/// The set of type files (`"<crate>/<path>"`) emitted for one crate — the
+/// crate `key`'s rendered output alone.
 ///
 /// Used to prove upstream (LANG) output is untouched by downstream (AM)
 /// analysis.
@@ -616,13 +625,17 @@ pub fn reemit_closure(key: &str) -> Result<BTreeSet<String>, Error> {
 /// Returns an error if the crate's BMM files cannot be loaded.
 pub fn rendered_files(key: &str) -> Result<Vec<String>, Error> {
     let c = compose(key)?;
-    let files = emit_generations(
-        &crate_generations(&c),
-        &c.external,
-        c.doc,
-        c.spec_version,
-        &SiblingImpls::default(),
-    );
+    let gens: Vec<CrateGeneration<'_>> = c
+        .generations
+        .iter()
+        .map(|g| CrateGeneration {
+            spec: g.spec,
+            model: &g.model,
+            schema: &g.schema,
+            external: &g.external,
+        })
+        .collect();
+    let files = emit_composed(c.comp, &gens, &SiblingImpls::default());
     Ok(files.into_iter().map(|f| f.path).collect())
 }
 
@@ -962,10 +975,14 @@ pub fn untyped_fields() -> Vec<(String, String, String)> {
 /// Returns an error if the composition's BMM files cannot be loaded.
 pub fn enum_variants(key: &str, class: &str) -> Result<Option<Vec<String>>, Error> {
     let c = compose(key)?;
-    Ok(c.model
-        .get(class)
-        .map(|_| c.model.enum_variants(class))
-        .map(|mut variants| {
+    // Newest generation first (mirroring the retired merged-view semantics
+    // where the last generation won a colliding name).
+    Ok(c.generations
+        .iter()
+        .rev()
+        .find(|g| g.model.get(class).is_some())
+        .map(|g| {
+            let mut variants = g.model.enum_variants(class);
             variants.sort();
             variants
         }))
@@ -1030,9 +1047,11 @@ pub fn field_exists(class: &str, field: &str) -> Result<bool, Error> {
 /// Returns an error if the composition's BMM files cannot be loaded.
 pub fn declared_attributes(key: &str, class: &str) -> Result<Option<BTreeSet<String>>, Error> {
     let c = compose(key)?;
-    Ok(c.own_schema
-        .classes
-        .get(class)
+    // Newest generation first (the retired merged-view semantics).
+    Ok(c.generations
+        .iter()
+        .rev()
+        .find_map(|g| g.schema.classes.get(class))
         .map(|cls| cls.properties.iter().map(|p| p.name.clone()).collect()))
 }
 
@@ -1181,15 +1200,29 @@ pub fn merged_fallback_schema_names() -> Result<(BTreeSet<String>, BTreeSet<Stri
 
     let base = compose("base")?;
     let rm = compose("rm")?;
+    let type_paths = |c: &composition::Composed| -> Result<BTreeMap<String, String>, Error> {
+        let krate = c.comp.crate_name.replace('-', "_");
+        let g = c
+            .generations
+            .iter()
+            .find(|g| g.spec.current)
+            .ok_or("composition has no current generation")?;
+        Ok(crate::analyze::emittable_specs(&g.model, &g.schema)
+            .into_iter()
+            .map(|spec| {
+                let ident = naming::type_name(&spec);
+                let path = format!(
+                    "{krate}::{}::{}::{ident}",
+                    g.spec.module,
+                    crate::render::emit::type_module_path(&g.schema, &spec)
+                );
+                (ident, path)
+            })
+            .collect())
+    };
     let names = emit_rest::RmNames {
-        base: crate::analyze::emittable_specs(&base.model, &base.own_schema)
-            .iter()
-            .map(|s| naming::type_name(s))
-            .collect(),
-        rm: crate::analyze::emittable_specs(&rm.model, &rm.own_schema)
-            .iter()
-            .map(|s| naming::type_name(s))
-            .collect(),
+        base: type_paths(&base)?,
+        rm: type_paths(&rm)?,
     };
     let hoisted = emit_rest::hoist_set(&bundles, &names);
     let merged = oas::Oas::merged_schemas(&bundles, &hoisted);
