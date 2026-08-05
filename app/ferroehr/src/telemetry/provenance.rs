@@ -8,9 +8,10 @@
 //! generation); the hand-written single-spec crates keep their literal
 //! `SPEC_VERSION`.
 
-// TODO(#1943): the RM/BASE pins below advertise `Generation::CURRENT`; once
-// the `spec_profile` seam lands they must follow the CONFIGURED generation on
-// every served identity surface (banner, /status, OPTIONS manifest, OpenAPI).
+// TODO(#1943): the RM/BASE pins below advertise the default (current)
+// generation; once the `spec_profile` seam lands they must follow the
+// CONFIGURED generation on every served identity surface (banner, /status,
+// OPTIONS manifest, OpenAPI).
 
 /// The openEHR ITS-REST contract version this server implements.
 ///
@@ -22,10 +23,14 @@
 pub const ITS_REST: &str = openehr_its::SPEC_VERSION;
 /// The AQL (QUERY) specification version.
 pub const AQL: &str = openehr_query::SPEC_VERSION;
-/// The openEHR Reference Model version — the current RM generation's.
-pub const RM: &str = openehr_rm::Generation::CURRENT.spec_version();
-/// The openEHR BASE version — the current BASE generation's.
-pub const BASE: &str = openehr_base::Generation::CURRENT.spec_version();
+/// The openEHR Reference Model version — the default (current) RM
+/// generation's pin. A const cannot call `Generation::default()` (trait fns
+/// are not const-callable), so this reads the current generation MODULE's
+/// constant; the test below pins the two together.
+pub const RM: &str = openehr_rm::v1_2::SPEC_VERSION;
+/// The openEHR BASE version — the default (current) BASE generation's pin
+/// (same const/`Default` pairing as [`RM`]).
+pub const BASE: &str = openehr_base::v1_3::SPEC_VERSION;
 /// The ADL 1.4 generation of the Archetype Model (the `openehr-am` crate
 /// ships both extant generations side by side; this is the `v1_4` module's
 /// own pin).
@@ -33,8 +38,9 @@ pub const AM14: &str = openehr_am::v1_4::SPEC_VERSION;
 /// The ADL 2 generation of the Archetype Model (the `openehr-am` crate's
 /// current generation, the `v2_4` module).
 pub const AM24: &str = openehr_am::v2_4::SPEC_VERSION;
-/// The openEHR Terminology version — the current TERM generation's.
-pub const TERM: &str = openehr_term::Generation::CURRENT.spec_version();
+/// The openEHR Terminology version — the default (current) TERM
+/// generation's pin (same const/`Default` pairing as [`RM`]).
+pub const TERM: &str = openehr_term::v3_1::SPEC_VERSION;
 /// The `PostgreSQL` version this server targets. No openEHR spec governs the
 /// datastore — our own design; no crate carries this pin, so it stays
 /// hand-maintained here.
@@ -63,15 +69,14 @@ mod tests {
     fn pins_are_the_crate_spec_versions() {
         assert_eq!(ITS_REST, openehr_its::SPEC_VERSION);
         assert_eq!(AQL, openehr_query::SPEC_VERSION);
-        assert_eq!(RM, openehr_rm::v1_2::SPEC_VERSION);
-        assert_eq!(BASE, openehr_base::v1_3::SPEC_VERSION);
+        // The compile-time consts equal the DEFAULT (current) generation's
+        // runtime pin — the pairing that keeps a composition-table `current`
+        // flip from silently diverging the served identity surfaces.
+        assert_eq!(RM, openehr_rm::Generation::default().spec_version());
+        assert_eq!(BASE, openehr_base::Generation::default().spec_version());
+        assert_eq!(TERM, openehr_term::Generation::default().spec_version());
         assert_eq!(AM14, openehr_am::v1_4::SPEC_VERSION);
-        assert_eq!(AM24, openehr_am::v2_4::SPEC_VERSION);
-        assert_eq!(TERM, openehr_term::v3_1::SPEC_VERSION);
-        assert_eq!(
-            openehr_am::Generation::CURRENT.spec_version(),
-            openehr_am::v2_4::SPEC_VERSION
-        );
+        assert_eq!(AM24, openehr_am::Generation::default().spec_version());
         // The released generations carry their own pins, selectable later
         // (#1943) — pinned here so a table edit is a visible identity change.
         assert_eq!(openehr_rm::Generation::V1_1.spec_version(), "1.1.0");

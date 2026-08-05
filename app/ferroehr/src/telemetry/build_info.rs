@@ -103,7 +103,10 @@ mod tests {
         // The pins are the owning crates' own authorities (the Generation
         // enum / generation-module constants) — no re-typed literals in the
         // chain, so a pin bump cannot silently diverge.
-        assert_eq!(info.spec.rm, openehr_rm::Generation::CURRENT.spec_version());
+        assert_eq!(
+            info.spec.rm,
+            openehr_rm::Generation::default().spec_version()
+        );
         assert_eq!(info.spec.its_rest, openehr_its::SPEC_VERSION);
         assert_eq!(
             info.spec.am,

@@ -472,7 +472,7 @@ pub(in crate::service) fn archetyped(archetype_id: &str) -> Archetyped {
             value: archetype_id.to_owned(),
         },
         template_id: None,
-        rm_version: openehr_rm::Generation::CURRENT.spec_version().to_owned(),
+        rm_version: openehr_rm::Generation::default().spec_version().to_owned(),
     }
 }
 

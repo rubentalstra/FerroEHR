@@ -28,19 +28,19 @@ pub mod v2_4;
 ///
 /// Generated from the openehr-codegen composition table — the single
 /// authority for which generations exist. [`std::fmt::Display`] and
-/// [`std::str::FromStr`] round-trip the generation-module name (`"v1_4"`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+/// [`std::str::FromStr`] round-trip the generation-module name (`"v1_4"`). `Generation::default()` is the crate's CURRENT generation — the
+/// one `crate::prelude` re-exports (the composition table's `current`
+/// marker, via the std `#[default]` variant attribute).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Generation {
     /// The `v1_4` generation — openEHR specification version 1.4.0.
     V1_4,
     /// The `v2_4` generation — openEHR specification version 2.4.0.
+    #[default]
     V2_4,
 }
 
 impl Generation {
-    /// The crate's CURRENT generation — the one `crate::prelude` re-exports.
-    pub const CURRENT: Self = Self::V2_4;
-
     /// Every generation this crate emits, oldest first.
     pub const ALL: &'static [Self] = &[Self::V1_4, Self::V2_4];
 
