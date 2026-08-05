@@ -40,10 +40,12 @@ by the `crate-version-guard` CI job.
   version would freeze the crates' ability to keep improving while the
   vendored spec stands still). The spec pin is PER GENERATION (owner ruling
   2026-08-05, #1942): the generated crates carry the emitted `Generation`
-  enum (derived `Default` marking the current generation, per-variant `spec_version()`, from the composition table) plus a
-  `SPEC_VERSION` constant inside each generation module — no crate-level
-  constant exists; the hand-written single-spec crates keep a literal
-  crate-level `SPEC_VERSION`. None of these move with the package version.
+  enum ONLY (derived `Default` marking the current generation, per-variant
+  `const fn spec_version()`, from the composition table) — no version
+  constant exists in them at any level (a constant is a second copy of the
+  enum's fact and can only drift); the hand-written single-spec crates keep
+  a literal crate-level `SPEC_VERSION`. None of these move with the package
+  version.
 - A spec-pin bump (new vendored generation) changes the composition table
   + regeneration (the `Generation` enum follows); the package still just
   takes its next ordinary SemVer step.
