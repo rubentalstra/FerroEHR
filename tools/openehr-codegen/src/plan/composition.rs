@@ -67,7 +67,7 @@ use std::path::Path;
 
 /// The vendored BMM root. Paths below mirror the upstream ITS-BMM layout
 /// (`components/<COMPONENT>/json/…`); the JSON forms are the codegen input for
-/// our pinned versions (see `docs/VERSIONS.md`).
+/// our pinned versions (each schema's pin is recorded in its `PROVENANCE.md`).
 const VENDOR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/bmm");
 
 pub(crate) const BASE_BMM: &str = "components/BASE/json/openehr_base_1.3.0.bmm.json";

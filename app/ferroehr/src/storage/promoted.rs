@@ -5,7 +5,7 @@
 //! column instead of re-extracting the value through a correlated subtree scan.
 //!
 //! No openEHR spec governs storage columns or their derivation — this is our own
-//! design (`docs/architecture.md` §Storage; the first entry realizes the
+//! design (the first entry realizes the
 //! patient-dashboard hot path). openEHR defines the *language*
 //! (QUERY master03), not how a leaf is physically materialized.
 //!
@@ -32,7 +32,7 @@
 #![expect(
     clippy::disallowed_types,
     reason = "owner-approved 2026-08-03 (#1694 family 1): stored canonical fragments — a typed \
-              round-trip drops forward-compatible keys (docs/VERSIONS.md §Spec version policy)"
+              round-trip drops forward-compatible keys (the openEHR release strategy: minors are compatible supersets)"
 )]
 
 use serde_json::Value;

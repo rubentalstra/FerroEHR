@@ -4,15 +4,14 @@
 //! version commit, the lineage-tip close, and the folder-membership +
 //! event-outbox writes that ride along inside the same commit transaction.
 //!
-//! No openEHR spec governs the SQL — our own design (`docs/architecture.md`
-//! §Storage). The change-control law realized here is RM common master06
+//! No openEHR spec governs the SQL — our own design. The change-control law realized here is RM common master06
 //! (§Committal and Audits, §The 'Virtual Version Tree'); `AUDIT_DETAILS` is
 //! master04.
 
 #![expect(
     clippy::disallowed_types,
     reason = "owner-approved 2026-08-03 (#1694 family 1): stored canonical fragments — a typed \
-              round-trip drops forward-compatible keys (docs/VERSIONS.md §Spec version policy)"
+              round-trip drops forward-compatible keys (the openEHR release strategy: minors are compatible supersets)"
 )]
 
 use serde_json::Value;

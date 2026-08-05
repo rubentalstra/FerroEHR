@@ -558,7 +558,7 @@ enum ResponseKind {
 #[derive(Debug, Clone)]
 #[cfg_attr(
     not(feature = "fhir"),
-    allow(
+    expect(
         dead_code,
         reason = "a slim build decodes no FHIR response: the router refuses a configured \
                   provider at boot"

@@ -22,8 +22,8 @@ pub mod runtime;
 mod generated;
 
 pub use runtime::{
-    FromXml, Namespace, StartTag, ToXml, XmlError, XmlEvent, XmlReader, XmlWriter, from_xml,
-    to_xml, to_xml_declared,
+    FromXml, Namespace, StartTag, ToXml, XmlAny, XmlAnyNode, XmlError, XmlEvent, XmlReader,
+    XmlWriter, from_xml, to_xml, to_xml_declared,
 };
 
 /// One published ITS-XML **document element** (a global `xs:element` of the

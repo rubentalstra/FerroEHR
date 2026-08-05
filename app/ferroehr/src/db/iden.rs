@@ -2,7 +2,7 @@
 //! (`migrations/ehr/0001_baseline.sql`).
 //!
 //! No openEHR spec governs the SQL schema — this is our own PG18-native
-//! design (`docs/architecture.md` §Storage).
+//! design.
 //!
 //! One enum per table, in the official `sea-query` derive shape: the `Table`
 //! variant carries an explicit `#[iden = "..."]` and renders the table name;

@@ -20,10 +20,14 @@
 //!   reverse-map** (`FerroEhrService::fhir_outbound_messages`) — the inverse
 //!   transform (`reverse`).
 
-#![expect(
-    clippy::disallowed_types,
-    reason = "owner-approved 2026-08-03 (#1694 family 6): FHIR resources are an external standard \
-              with no RM type (typed-FHIR evaluation tracked separately)"
+#![cfg_attr(
+    feature = "fhir",
+    expect(
+        clippy::disallowed_types,
+        reason = "owner-approved 2026-08-03 (#1694 family 6): FHIR resources are an external \
+                  standard with no RM type; the Value sites are fhir-gated, so the expectation \
+                  exists only where it is fulfilled"
+    )
 )]
 
 //

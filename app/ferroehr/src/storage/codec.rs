@@ -2,7 +2,7 @@
 //! decomposed store.
 //!
 //! No openEHR spec governs storage; this is our own design
-//! (`docs/architecture.md` §Storage). [`decompose`] turns a versioned object's
+//!. [`decompose`] turns a versioned object's
 //! canonical JSON into nested-set-numbered [`NodeRow`]s (structure children
 //! pruned out of their parents' fragments, everything else kept verbatim);
 //! [`reassemble`] is its lossless inverse over the lean [`crate::storage::row::ReadRow`] the
@@ -14,7 +14,7 @@
 #![expect(
     clippy::disallowed_types,
     reason = "owner-approved 2026-08-03 (#1694 family 1): stored canonical fragments — a typed \
-              round-trip drops forward-compatible keys (docs/VERSIONS.md §Spec version policy)"
+              round-trip drops forward-compatible keys (the openEHR release strategy: minors are compatible supersets)"
 )]
 
 use serde_json::{Map, Value};

@@ -39,12 +39,6 @@
 //! service layer already depends on both `openehr_its::opt14` and
 //! `openehr_adl::adl14`, so it is the existing meeting point.
 
-#![expect(
-    clippy::disallowed_types,
-    reason = "owner-approved 2026-08-03 (#1694): stored template/query artefacts served verbatim + \
-              ADL/OPT wire envelopes"
-)]
-
 use std::collections::BTreeMap;
 
 use openehr_adl::adl14::convert::{ConvertConfig, ConvertError, convert};
@@ -1297,25 +1291,31 @@ fn render_expr(e: &opt14::ExprItem) -> Option<String> {
 /// or a constraint (`C_STRING` pattern/list) as the `{/…/}`/`{"…"}` block.
 fn render_leaf(leaf: &opt14::ExprLeaf) -> Option<String> {
     let item = &leaf.item;
+    let text = item.text();
     match leaf.reference_type.to_lowercase().as_str() {
-        "attribute" => item.as_str().map(str::to_owned),
-        "constant" => item
-            .as_str()
-            .map(|s| format!("{s:?}"))
-            .or_else(|| item.as_i64().map(|n| n.to_string())),
+        "attribute" => (!text.is_empty()).then_some(text),
+        "constant" => {
+            if text.is_empty() {
+                None
+            } else if item.xsi_type() == Some("string") || text.trim().parse::<i64>().is_err() {
+                Some(format!("{text:?}"))
+            } else {
+                Some(text.trim().to_owned())
+            }
+        }
         "constraint" => {
             // The XML leaf item is a C_STRING: a regex `pattern` or a literal
             // string list.
-            if let Some(p) = item.get("pattern").and_then(serde_json::Value::as_str) {
+            if let Some(p) = item.child("pattern") {
+                let p = p.text();
                 let body = p.trim_matches('/');
                 return Some(format!("{{/{body}/}}"));
             }
-            let list = item.get("list").and_then(serde_json::Value::as_array)?;
-            let items = list
-                .iter()
-                .map(|v| v.as_str().map(|s| format!("{s:?}")))
-                .collect::<Option<Vec<_>>>()?;
-            Some(format!("{{{}}}", items.join(", ")))
+            let items: Vec<String> = item
+                .children_named("list")
+                .map(|v| format!("{:?}", v.text()))
+                .collect();
+            (!items.is_empty()).then(|| format!("{{{}}}", items.join(", ")))
         }
         _ => None,
     }

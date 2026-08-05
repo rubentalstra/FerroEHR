@@ -104,6 +104,12 @@ fresh**:
 - **`ext`** — our own `IMMUTABLE` helper functions (e.g.
   `openehr_magnitude(jsonb)` for DV_ORDERED ordering semantics), usable in
   btree **expression indexes** for measured hot paths.
+- **`cold`** — the physical archival tier: FK-free mirror relations of
+  `vo_version`/`node`/`vo_attestation` plus `*_all` union views.
+  Admin-archived objects move there transactionally (reversibly restored, or
+  thawed automatically on write); point reads retry cold only on a primary
+  miss, whole-repository readers use the views, and AQL stays primary-only —
+  archived content leaves the queryable store until restored.
 - Migrations via `sqlx migrate add` (official CLI); `sqlx` pool + two-schema
   migrator infrastructure.
 

@@ -328,7 +328,7 @@ fn emit_static_gauges(build: &BuildInfo) {
     )
     .set(1.0);
 
-    // Wall clock comes from jiff (the pinned time library, docs/VERSIONS.md);
+    // Wall clock comes from jiff (the workspace's one pinned time library);
     // `as_duration` is the signed span since the Unix epoch, so no fallible
     // `duration_since` and no lossy cast
     // (https://docs.rs/jiff/latest/jiff/struct.Timestamp.html#method.as_duration).

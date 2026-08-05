@@ -1071,7 +1071,7 @@ pub(crate) struct XmlBmmOnlyField {
 /// `render::emit_xml`), forcing an explicit decision instead of a silent drop.
 ///
 /// The governing spec citation for every entry is the pinned-version delta
-/// (`docs/VERSIONS.md`): the emitted model is RM 1.2.0 / BASE 1.3.0, while the
+///: the emitted model is RM 1.2.0 / BASE 1.3.0, while the
 /// vendored canonical-XML schemas are ITS-XML 1.0.2 (namespace `.../v1`) and, for
 /// the EHR/demographic/extract closure, ITS-XML 2.0.0 (RM 1.1.0). Where the model
 /// added or renamed a field after those XSDs were cut, no XSD slot exists.

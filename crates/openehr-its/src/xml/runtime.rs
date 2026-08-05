@@ -10,9 +10,9 @@
 
 #![expect(
     clippy::disallowed_types,
-    reason = "canonical JSON / Simplified Formats operate on the wire value by definition \
-              (ITS-JSON; ITS-REST Simplified Formats) — serde_json::Value IS the subject matter \
-              (#1694)"
+    reason = "the BMM `Any` monomorphization (`X_VERSIONED_OBJECT<Any>` on \
+              `OPENEHR_CONTENT_ITEM.item`) renders as serde_json::Value in the generated RM \
+              model, so this runtime must implement the codec traits for it (#1694)"
 )]
 
 use quick_xml::Reader;
@@ -139,6 +139,18 @@ impl XmlWriter {
         self.w.write_event(Event::Start(start))?;
         self.w.write_event(Event::Text(BytesText::new(text)))?;
         self.write_end(tag)
+    }
+
+    /// Write a bare character-data node (XML-escaped by quick-xml).
+    ///
+    /// The mixed-content half of [`XmlAny`]: an element that carries both text
+    /// and children cannot go through [`XmlWriter::write_text_element`].
+    ///
+    /// # Errors
+    /// Propagates the underlying writer error.
+    pub fn write_text(&mut self, text: &str) -> Result<(), XmlError> {
+        self.w.write_event(Event::Text(BytesText::new(text)))?;
+        Ok(())
     }
 
     /// Write `<tag id="id">text</tag>` — the openEHR `StringDictionaryItem`
@@ -375,16 +387,134 @@ impl ToXml for uuid::Uuid {
 }
 
 impl ToXml for serde_json::Value {
-    // SCOPE: a `serde_json::Value` slot is a codegen
-    // *monomorphization artifact* — the version-family payloads
-    // (`X_VERSIONED_*.data`) and BMM-`Any` fields that the codegen deliberately
-    // leaves untyped. These are not concrete openEHR types and have no
-    // spec-defined canonical-XML shape, so there is nothing to serialize
-    // faithfully; they never occur on the RM composition/EHR wire. The JSON
-    // value is emitted as element text as a last resort rather than guessing a
-    // shape. (Resolved if/when the codegen monomorphization is made precise.)
+    // SCOPE: the BMM-`Any` monomorphization the RM model keeps untyped —
+    // `OPENEHR_CONTENT_ITEM.item: X_VERSIONED_OBJECT<Any>`. It is not a
+    // concrete openEHR type and has no spec-defined canonical-XML shape, so
+    // the JSON value is emitted as element text rather than guessing one. The
+    // schema-declared open slots (`xs:anyType`) do NOT come here — they carry
+    // their subtree in [`XmlAny`].
     fn write_xml(&self, w: &mut XmlWriter, tag: &str, _d: Option<&str>) -> Result<(), XmlError> {
         w.write_text_element(tag, &self.to_string())
+    }
+}
+
+/// An arbitrary XML element subtree, held verbatim for an `xs:anyType` slot.
+///
+/// The XSD-driven archetype codecs (`opt14`, `aom2`, `aom2_model`) have slots
+/// whose content model the schema leaves open, and the model behind them leaves
+/// it open too: `EXPR_LEAF.item` is typed `Any` — "a manifest constant, an
+/// attribute path (in the form of a `String`), or for the right-hand side of a
+/// 'matches' node, a constraint, often a `C_PRIMITIVE_OBJECT`"
+/// (`AM aom14 §EXPR_LEAF Class`). There is no closed set of payload types to
+/// dispatch to, so the codec keeps the element as it read it: attributes
+/// (`xsi:type` among them), character data, and child elements in document
+/// order. `ToXml` writes the subtree back, so an `xs:anyType` payload survives
+/// a parse → serialize → parse cycle unchanged.
+///
+/// Element names arrive with any namespace prefix stripped, as everywhere else
+/// in this reader; attribute keys keep theirs.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct XmlAny {
+    attrs: Vec<(String, String)>,
+    content: Vec<XmlAnyNode>,
+}
+
+/// One node of an [`XmlAny`] element's content, in document order.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum XmlAnyNode {
+    /// Character data (adjacent runs are coalesced on read).
+    Text(String),
+    /// A child element: its name, then its own subtree.
+    Element(String, XmlAny),
+}
+
+impl XmlAny {
+    /// The element's attributes as `(name, value)` pairs, in document order.
+    #[must_use]
+    pub fn attrs(&self) -> &[(String, String)] {
+        &self.attrs
+    }
+
+    /// The value of attribute `key`, if present.
+    #[must_use]
+    pub fn attr(&self, key: &str) -> Option<&str> {
+        self.attrs
+            .iter()
+            .find(|(k, _)| k == key)
+            .map(|(_, v)| v.as_str())
+    }
+
+    /// The `xsi:type` discriminator, if present, with any namespace prefix on
+    /// the *value* stripped (`xsd:string` → `string`, `C_STRING` → `C_STRING`).
+    ///
+    /// The raw spelling stays reachable through [`XmlAny::attr`].
+    #[must_use]
+    pub fn xsi_type(&self) -> Option<&str> {
+        self.attrs
+            .iter()
+            .find(|(k, _)| k == "xsi:type" || (k.ends_with(":type") && k.contains("xsi")))
+            .map(|(_, v)| v.rsplit(':').next().unwrap_or(v))
+    }
+
+    /// The element's content nodes, in document order.
+    #[must_use]
+    pub fn content(&self) -> &[XmlAnyNode] {
+        &self.content
+    }
+
+    /// The child elements, as `(name, subtree)` pairs in document order.
+    pub fn children(&self) -> impl Iterator<Item = (&str, &XmlAny)> {
+        self.content.iter().filter_map(|n| match n {
+            XmlAnyNode::Element(name, child) => Some((name.as_str(), child)),
+            XmlAnyNode::Text(_) => None,
+        })
+    }
+
+    /// The child elements named `name`, in document order.
+    pub fn children_named<'a>(&'a self, name: &'a str) -> impl Iterator<Item = &'a XmlAny> {
+        self.children()
+            .filter_map(move |(n, c)| (n == name).then_some(c))
+    }
+
+    /// The first child element named `name`.
+    #[must_use]
+    pub fn child(&self, name: &str) -> Option<&XmlAny> {
+        self.children().find(|(n, _)| *n == name).map(|(_, c)| c)
+    }
+
+    /// The element's own character data, with child elements' text excluded.
+    #[must_use]
+    pub fn text(&self) -> String {
+        self.content
+            .iter()
+            .filter_map(|n| match n {
+                XmlAnyNode::Text(t) => Some(t.as_str()),
+                XmlAnyNode::Element(_, _) => None,
+            })
+            .collect()
+    }
+
+    /// Whether the element carries neither attributes nor content.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.attrs.is_empty() && self.content.is_empty()
+    }
+}
+
+impl ToXml for XmlAny {
+    fn write_xml(&self, w: &mut XmlWriter, tag: &str, _d: Option<&str>) -> Result<(), XmlError> {
+        let mut e = BytesStart::new(tag);
+        for (k, v) in &self.attrs {
+            e.push_attribute((k.as_str(), v.as_str()));
+        }
+        w.write_start(e)?;
+        for node in &self.content {
+            match node {
+                XmlAnyNode::Text(t) => w.write_text(t)?,
+                XmlAnyNode::Element(name, child) => child.write_xml(w, name, None)?,
+            }
+        }
+        w.write_end(tag)
     }
 }
 
@@ -610,11 +740,40 @@ impl<T: FromXml> FromXml for Box<T> {
 }
 
 impl FromXml for serde_json::Value {
-    // SCOPE: mirror of the `ToXml` impl above — an untyped codegen
-    // monomorphization artifact with no spec canonical-XML shape, never on the
-    // RM composition/EHR wire. Consume the element and yield Null.
+    // SCOPE: mirror of the `ToXml` impl above — the RM's untyped BMM-`Any`
+    // monomorphization, which has no canonical-XML shape to read back.
     fn from_xml(reader: &mut XmlReader, _start: &StartTag) -> Result<Self, XmlError> {
         reader.skip_element()?;
         Ok(serde_json::Value::Null)
+    }
+}
+
+impl FromXml for XmlAny {
+    fn from_xml(reader: &mut XmlReader, start: &StartTag) -> Result<Self, XmlError> {
+        let mut any = XmlAny {
+            attrs: start.attrs.clone(),
+            content: Vec::new(),
+        };
+        loop {
+            match reader.read()? {
+                XmlEvent::Text(t) => match any.content.last_mut() {
+                    // quick-xml splits text at an entity reference, so adjacent
+                    // runs are joined to keep one node per character-data run.
+                    Some(XmlAnyNode::Text(prev)) => prev.push_str(&t),
+                    _ => any.content.push(XmlAnyNode::Text(t)),
+                },
+                XmlEvent::Start(child) => {
+                    let sub = XmlAny::from_xml(reader, &child)?;
+                    any.content.push(XmlAnyNode::Element(child.name, sub));
+                }
+                XmlEvent::End => break,
+                XmlEvent::Eof => {
+                    return Err(XmlError::Parse(
+                        "unexpected EOF in xs:anyType element".into(),
+                    ));
+                }
+            }
+        }
+        Ok(any)
     }
 }

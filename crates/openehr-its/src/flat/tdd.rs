@@ -90,7 +90,7 @@ use crate::flat::webtemplate::{WebTemplate, WebTemplateNode};
 pub const TDD_TEMPLATE_NS: &str = "http://schemas.oceanehr.com/templates";
 
 /// openEHR reference-model release stamped into a rebuilt `ARCHETYPED.rm_version`
-/// (workspace RM pin, `docs/VERSIONS.md`). Shared meaning with the FLAT
+/// (the workspace RM pin). Shared meaning with the FLAT
 /// converter's `RM_VERSION`.
 const RM_VERSION: &str = "1.2.0";
 

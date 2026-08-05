@@ -374,7 +374,7 @@ mod column_vocab {
     //! so a schema rename fails this test instead of failing at query runtime.
 
     /// The baseline migration — the authoritative schema (no openEHR spec
-    /// governs the SQL; `docs/architecture.md` §Storage).
+    /// governs the SQL — our own design).
     const BASELINE: &str = include_str!("../../../migrations/ehr/0001_baseline.sql");
 
     /// The columns the builder references, grouped by the table each `sea-query`

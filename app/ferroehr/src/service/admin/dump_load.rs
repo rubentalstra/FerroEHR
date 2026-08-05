@@ -1117,41 +1117,50 @@ impl FerroEhrService {
     /// records into `blobs/<hex>` archive entries, returning the blob keys
     /// written (empty when externalization is off). Our own extension — no
     /// openEHR spec governs multimedia offload.
+    #[cfg(feature = "multimedia")]
     async fn export_referenced_blobs(
         &self,
         archive: &mut ArchiveWriter,
         records: &[EhrRecord],
     ) -> Result<Vec<String>, SmError> {
-        #[cfg(not(feature = "multimedia"))]
-        {
-            let _ = (archive, records);
+        let Some(engine) = &self.multimedia else {
             return Ok(Vec::new());
+        };
+        let mut keys: Vec<String> = records
+            .iter()
+            .flat_map(|r| r.versions.iter())
+            .flat_map(|v| engine.referenced_keys(&v.body))
+            .collect();
+        keys.sort_unstable();
+        keys.dedup();
+        for hex in &keys {
+            let bytes = engine.store().get(hex).await.map_err(|e| {
+                crate::service::error::internal_fault("export a multimedia blob", &e)
+            })?;
+            archive.write(&format!("{BLOB_PREFIX}{hex}"), &bytes)?;
         }
-        #[cfg(feature = "multimedia")]
-        {
-            let Some(engine) = &self.multimedia else {
-                return Ok(Vec::new());
-            };
-            let mut keys: Vec<String> = records
-                .iter()
-                .flat_map(|r| r.versions.iter())
-                .flat_map(|v| engine.referenced_keys(&v.body))
-                .collect();
-            keys.sort_unstable();
-            keys.dedup();
-            for hex in &keys {
-                let bytes = engine.store().get(hex).await.map_err(|e| {
-                    crate::service::error::internal_fault("export a multimedia blob", &e)
-                })?;
-                archive.write(&format!("{BLOB_PREFIX}{hex}"), &bytes)?;
-            }
-            Ok(keys)
-        }
+        Ok(keys)
+    }
+
+    /// The slim twin: externalization is compiled out, so no stored record
+    /// references a blob and nothing is exported.
+    #[cfg(not(feature = "multimedia"))]
+    #[expect(
+        clippy::unused_async,
+        reason = "the multimedia twin awaits; callers await unconditionally"
+    )]
+    async fn export_referenced_blobs(
+        &self,
+        _archive: &mut ArchiveWriter,
+        _records: &[EhrRecord],
+    ) -> Result<Vec<String>, SmError> {
+        Ok(Vec::new())
     }
 
     /// Re-put each archived blob (`blobs/<hex>`) into the object store on load
     /// (idempotent, content-addressed). A no-op when the archive carries no
     /// blobs. Our own extension.
+    #[cfg(feature = "multimedia")]
     async fn import_blobs(
         &self,
         archive: &mut ArchiveReader,
@@ -1160,35 +1169,46 @@ impl FerroEhrService {
         if blobs.is_empty() {
             return Ok(());
         }
-        #[cfg(not(feature = "multimedia"))]
-        {
-            let _ = archive;
+        let Some(engine) = &self.multimedia else {
+            // The archive carries blobs but this target has no store configured.
             return Err(SmError::precondition(
-                "archive carries externalized multimedia blobs but this binary \
-                 was built without the `multimedia` cargo feature",
-            ));
-        }
-        #[cfg(feature = "multimedia")]
-        {
-            let Some(engine) = &self.multimedia else {
-                // The archive carries blobs but this target has no store configured.
-                return Err(SmError::precondition(
-                    "archive carries externalized multimedia blobs but multimedia \
+                "archive carries externalized multimedia blobs but multimedia \
                  externalization is not enabled on this server",
-                ));
-            };
-            for hex in blobs {
-                let bytes = archive.read(&format!("{BLOB_PREFIX}{hex}"))?;
-                engine
-                    .store()
-                    .put_if_absent(hex, bytes)
-                    .await
-                    .map_err(|e| {
-                        crate::service::error::internal_fault("import a multimedia blob", &e)
-                    })?;
-            }
-            Ok(())
+            ));
+        };
+        for hex in blobs {
+            let bytes = archive.read(&format!("{BLOB_PREFIX}{hex}"))?;
+            engine
+                .store()
+                .put_if_absent(hex, bytes)
+                .await
+                .map_err(|e| {
+                    crate::service::error::internal_fault("import a multimedia blob", &e)
+                })?;
         }
+        Ok(())
+    }
+
+    /// The slim twin: a blob-carrying archive cannot be loaded into a binary
+    /// built without the `multimedia` feature — refuse loudly rather than
+    /// silently dropping content.
+    #[cfg(not(feature = "multimedia"))]
+    #[expect(
+        clippy::unused_async,
+        reason = "the multimedia twin awaits; callers await unconditionally"
+    )]
+    async fn import_blobs(
+        &self,
+        _archive: &mut ArchiveReader,
+        blobs: &[String],
+    ) -> Result<(), SmError> {
+        if blobs.is_empty() {
+            return Ok(());
+        }
+        Err(SmError::precondition(
+            "archive carries externalized multimedia blobs but this binary \
+             was built without the `multimedia` cargo feature",
+        ))
     }
 
     /// Whether an EHR with `ehr_id` already exists in the target repository.

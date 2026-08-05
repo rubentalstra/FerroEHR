@@ -103,12 +103,13 @@ impl From<std::io::Error> for AuditError {
     }
 }
 
-/// The loud slim-build refusal: both the local Audit Record Repository and
-/// the ITI-20 ATX:FHIR Feed carry a FHIR R4B `AuditEvent` document, which a
-/// binary built without the `fhir` cargo feature cannot render. A
-/// configuration that enables either is a boot error, never a silently
-/// document-less audit trail (the syslog sink needs no FHIR and stays
-/// available).
+/// The loud slim-build refusal for the FHIR-rendering audit sinks.
+///
+/// Both the local Audit Record Repository and the ITI-20 ATX:FHIR Feed carry
+/// a FHIR R4B `AuditEvent` document, which a binary built without the `fhir`
+/// cargo feature cannot render. A configuration that enables either is a
+/// boot error, never a silently document-less audit trail (the syslog sink
+/// needs no FHIR and stays available).
 ///
 /// # Errors
 /// The refusal message when `[audit.store]` or `[audit.fhir_feed]` is

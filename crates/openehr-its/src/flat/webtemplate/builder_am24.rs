@@ -258,7 +258,7 @@ fn term_bindings_of(
 fn build_node(
     ctx: &Ctx,
     term: &ArchetypeTerminology,
-    attr_name: Option<&str>,
+    owner: Option<&CAttribute>,
     co: &CObject,
     parent_path: &str,
     identity: shape::Identity,
@@ -276,7 +276,7 @@ fn build_node(
         }
         _ => term,
     };
-    let mut node = create_node(ctx, term, child_term, attr_name, co, parent_path, identity);
+    let mut node = create_node(ctx, term, child_term, owner, co, parent_path, identity);
     build_children(ctx, child_term, co, &mut node);
     node
 }
@@ -285,11 +285,12 @@ fn create_node(
     ctx: &Ctx,
     name_term: &ArchetypeTerminology,
     parent_term: &ArchetypeTerminology,
-    attr_name: Option<&str>,
+    owner: Option<&CAttribute>,
     co: &CObject,
     parent_path: &str,
     identity: shape::Identity,
 ) -> WebTemplateNode {
+    let attr_name = owner.map(|a| a.rm_attribute_name.as_str());
     let archetyped = identity == shape::Identity::Archetyped;
     let rm_type = object_rm_type(co).to_owned();
     let arch_node_id = if archetyped {
@@ -297,7 +298,8 @@ fn create_node(
     } else {
         String::new()
     };
-    let (min, max) = occurrences(object_occurrences(co));
+    let (occ_min, max) = occurrences(object_occurrences(co));
+    let min = meet_single_existence(occ_min, owner);
 
     let path = build_path(parent_path, attr_name, &arch_node_id);
     let mut node = WebTemplateNode::new(rm_type, path);
@@ -366,7 +368,7 @@ fn build_children(
                 built.push(build_node(
                     ctx,
                     term,
-                    Some(&attr.rm_attribute_name),
+                    Some(attr),
                     child_co,
                     &node.aql_path,
                     identity,
@@ -1336,6 +1338,35 @@ fn object_occurrences(co: &CObject) -> Option<&MultiplicityInterval> {
         CObject::CDateTime(c) => c.occurrences.as_ref(),
         CObject::CDuration(c) => c.occurrences.as_ref(),
     }
+}
+
+/// The node's effective `min`: its own occurrences lower bound met with the
+/// owning SINGLE attribute's `C_ATTRIBUTE.existence` lower bound.
+///
+/// ADL 2 `AM/docs/ADL2/master04.3-cadl_complex_types.adoc` §Occurrences: "the
+/// occurrences of an object that is the value of a single-valued attribute can
+/// only be `0..1` or `1..1`, and this is already defined by the attribute's
+/// `existence`" — it is used there only "to exclude a possibility defined in a
+/// parent archetype". So an optional single attribute never yields a mandatory
+/// child, whatever occurrences the constraint carries, and a `0..0` exclusion
+/// still lands at `0`.
+///
+/// AOM2 keeps `existence` optional "since [it is] only needed to override the
+/// settings from the reference model"
+/// (`AM/docs/AOM2/master04.2-constraint_model-semantics.adoc` §"Attribute
+/// Nodes"), so an unset existence leaves occurrences untouched — the RM's own
+/// bound is not knowable here. A container attribute is left alone for the same
+/// reason as in the OPT-1.4 front end: there occurrences is the significant
+/// constraint.
+fn meet_single_existence(occurrences_min: Option<i32>, owner: Option<&CAttribute>) -> Option<i32> {
+    let Some(existence) = owner
+        .filter(|a| !a.is_multiple)
+        .and_then(|a| a.existence.as_ref())
+    else {
+        return occurrences_min;
+    };
+    let existence_min = occ(existence).0.unwrap_or(0);
+    occurrences_min.map(|m| m.min(existence_min))
 }
 
 /// `(min, max)` from an object's occurrences; an unset occurrences defaults to

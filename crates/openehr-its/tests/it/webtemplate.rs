@@ -337,6 +337,53 @@ fn ids_are_deduplicated_within_a_parent() {
     assert_unique_sibling_ids(&wt.tree);
 }
 
+// ── existence ∧ occurrences (ADL 1.4 master05-cadl §Occurrences) ─────────────
+
+/// A child of an OPTIONAL single attribute is optional whatever occurrences the
+/// constraint object carries.
+///
+/// ADL 1.4 `AM/docs/ADL1.4/master05-cadl.adoc` §Occurrences: for the value of a
+/// single-valued attribute the occurrences "can only be `0..1` or `1..1`, and
+/// this is already defined by the attribute `existence`". `action test.opt`
+/// carries the canonical shape — `ISM_TRANSITION.careflow_step` with
+/// `existence {0..1}` over a `DV_CODED_TEXT` with `occurrences {1..1}` — and RM
+/// declares that attribute `0..1`
+/// (`RM/docs/UML/classes/org.openehr.rm.composition.ism_transition.adoc`;
+/// Simplified Formats `master05-rm_mapping.adoc` §`ISM_TRANSITION` Required "no").
+#[test]
+fn optional_single_attribute_never_yields_a_mandatory_child() {
+    let wt =
+        build_from_file(&better_fixtures_dir().join("action test.opt")).expect("build action test");
+
+    let mut checked = 0usize;
+    for_each_node(&wt.tree, &mut |n| {
+        if n.aql_path.ends_with("/ism_transition/careflow_step") {
+            checked += 1;
+            assert_eq!(
+                n.min,
+                Some(0),
+                "careflow_step is existence 0..1, so its child cannot be mandatory at {}",
+                n.aql_path
+            );
+        }
+        // The mandatory sibling keeps its bound: `current_state` is
+        // existence 1..1 over occurrences 1..1 (RM Required "yes").
+        if n.aql_path.ends_with("/ism_transition/current_state") {
+            checked += 1;
+            assert_eq!(
+                n.min,
+                Some(1),
+                "current_state is existence 1..1 and must stay mandatory at {}",
+                n.aql_path
+            );
+        }
+    });
+    assert!(
+        checked >= 2,
+        "expected the ism_transition pair in the tree, saw {checked} nodes"
+    );
+}
+
 // ── term bindings (node + coded-value level) ─────────────────────────────────
 
 #[test]
