@@ -45,9 +45,8 @@ by the `crate-version-guard` CI job.
   constant exists; the hand-written single-spec crates keep a literal
   crate-level `SPEC_VERSION`. None of these move with the package version.
 - A spec-pin bump (new vendored generation) changes the composition table
-  + regeneration (the `Generation` enum and the generation-module
-  `SPEC_VERSION`s follow); the package still just takes its next ordinary
-  SemVer step.
+  + regeneration (the `Generation` enum follows); the package still just
+  takes its next ordinary SemVer step.
 - Graduating the line past `0.x` (declaring API stability) is an owner
   decision that re-opens the C-STABLE adjudication
   (`.claude/rules/reliability.md`) — the version chosen then is still ours,

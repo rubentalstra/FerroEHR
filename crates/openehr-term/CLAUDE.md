@@ -15,7 +15,7 @@ derivable, so this crate is NOT generated).
 - External terminology-server integration (FHIR TS) does NOT live here —
   it is the terminology provider seam in `ferroehr` (`service::terminology`).
   This crate is the local openEHR bundle only.
-- Spec pin: TERM 3.1.0 via the emitted `Generation` enum (`V3_1`, the `#[default]`) + the `v3_1` module's `SPEC_VERSION` — no crate-level pin; the package version is the
+- Spec pin: TERM 3.1.0 via the emitted `Generation` enum (`V3_1`, the `#[default]`) — the enum is the ONLY pin authority (no version constants); the package version is the
   crate's own SemVer line (`.claude/rules/crates-publishing.md`).
 - Gates: `cargo clippy -p openehr-term --all-targets` +
   `cargo nextest run -p openehr-term`.

@@ -4,6 +4,3 @@
 
 pub mod prelude;
 pub mod terminology;
-
-/// The openEHR specification version this generation implements.
-pub const SPEC_VERSION: &str = "3.1.0";

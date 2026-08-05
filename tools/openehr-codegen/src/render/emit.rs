@@ -180,18 +180,18 @@ impl<'a> Shape<'a> {
 }
 
 /// Emit one specification unit under its generation's version-named top
-/// module. Produces the type files and the `mod.rs` tree (plus, for the
-/// generation's FIRST unit, the `SPEC_VERSION` constant in the generation
-/// `mod.rs`); the caller assembles the generation prelude, the crate prelude
-/// and `lib.rs`.
+/// module. Produces the type files and the `mod.rs` tree; the caller
+/// assembles the generation prelude, the crate prelude and `lib.rs`. The
+/// generation's spec version lives ONLY on the [`Generation`] enum (owner
+/// ruling 2026-08-05: no version constants anywhere — a second copy of the
+/// same fact can only drift, and `spec_version()` is a `const fn`, so even
+/// const contexts need no constant).
 fn emit_version(
     model: &Model,
     schema: &BmmSchema,
     prefix: &str,
-    spec_version: &str,
     external: &External,
     impls: &SiblingImpls,
-    first_unit: bool,
 ) -> Version {
     struct Planned<'a> {
         class: &'a BmmClass,
@@ -303,19 +303,6 @@ fn emit_version(
     let mut tree_chains = type_chains.clone();
     tree_chains.push(vec![prefix.to_string(), "prelude".to_string()]);
     files.extend(emit_module_tree(&tree_chains));
-    // The generation module carries its own spec-version constant (the
-    // table's per-generation pin), appended once — with the first unit.
-    if first_unit {
-        let mod_path = format!("{prefix}/mod.rs");
-        for f in &mut files {
-            if f.path == mod_path {
-                f.body.push_str(&format!(
-                    "\n/// The openEHR specification version this generation implements.\n\
-                     pub const SPEC_VERSION: &str = \"{spec_version}\";\n",
-                ));
-            }
-        }
-    }
 
     Version {
         files,
@@ -361,16 +348,8 @@ pub(crate) fn emit_composed(
     for g in generations {
         let mut paths: BTreeSet<String> = BTreeSet::new();
         let mut gen_emitted: Vec<Emitted> = Vec::new();
-        for (i, u) in g.units.iter().enumerate() {
-            let v = emit_version(
-                u.model,
-                u.schema,
-                g.spec.module,
-                g.spec.spec_version,
-                g.external,
-                impls,
-                i == 0,
-            );
+        for u in &g.units {
+            let v = emit_version(u.model, u.schema, g.spec.module, g.external, impls);
             for f in &v.files {
                 assert!(
                     // The module tree and the generation mod.rs are shared

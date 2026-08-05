@@ -7,5 +7,9 @@ pub mod bmm_persistence;
 pub mod obsolete_elom;
 pub mod prelude;
 
-/// The openEHR specification version this generation implements.
-pub const SPEC_VERSION: &str = "1.0.0";
+// hand-written modules (spec behaviour), auto-declared:
+pub mod el;
+pub mod escape;
+pub mod lexer;
+pub mod odin;
+pub mod position;

@@ -112,8 +112,8 @@ mod tests {
             info.spec.am,
             format!(
                 "{} + {}",
-                openehr_am::v1_4::SPEC_VERSION,
-                openehr_am::v2_4::SPEC_VERSION
+                openehr_am::Generation::V1_4.spec_version(),
+                openehr_am::Generation::V2_4.spec_version()
             )
         );
         assert_eq!(info.postgres_target, "18.4+");
