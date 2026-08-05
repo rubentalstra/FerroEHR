@@ -41,9 +41,6 @@ pub enum Generation {
 }
 
 impl Generation {
-    /// Every generation this crate emits, oldest first.
-    pub const ALL: &'static [Self] = &[Self::V2, Self::V3];
-
     /// Returns the openEHR specification version this generation implements.
     #[must_use]
     pub const fn spec_version(self) -> &'static str {

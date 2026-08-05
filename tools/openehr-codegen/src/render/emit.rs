@@ -494,15 +494,6 @@ fn emit_generation_enum(comp: &CrateComposition) -> String {
         ));
     }
     b.push_str("}\n\nimpl Generation {\n");
-    b.push_str("    /// Every generation this crate emits, oldest first.\n");
-    b.push_str(&format!(
-        "    pub const ALL: &'static [Self] = &[{}];\n\n",
-        variants
-            .iter()
-            .map(|(v, _)| format!("Self::{v}"))
-            .collect::<Vec<_>>()
-            .join(", "),
-    ));
     b.push_str(
         "    /// Returns the openEHR specification version this generation implements.\n    \
          #[must_use]\n    pub const fn spec_version(self) -> &'static str {\n        match self {\n",
