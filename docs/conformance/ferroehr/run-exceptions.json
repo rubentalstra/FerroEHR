@@ -264,12 +264,5 @@
       "kind": "unrealized",
       "detail": "option sf-deprecated-types-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     }
-  },
-  {
-    "case": "SF-LEGACY-nc_flat_media_supported",
-    "exception": {
-      "kind": "unrealized",
-      "detail": "option legacy-alt-formats-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
-    }
   }
 ]
