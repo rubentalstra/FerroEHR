@@ -8,29 +8,40 @@ package (English, Spanish, Japanese, Portuguese, Chinese).
 ## What it provides
 
 - The generated TERM data classes (`TERMINOLOGY`, `CODE_SET`, concept/group
-  structures).
+  structures), emitted under the single generation module `v3_1` (TERM 3.1.0)
+  and re-exported by the crate prelude (`openehr_term::prelude`).
 - `bundle` — a zero-I/O, `include_str!`-embedded bundle of the official
   openEHR terminology XML releases (`assets/`, provenance-stamped), parsed
   once and served through typed lookups: terminology groups, code sets,
   rubrics per language.
 - The support-terminology queries RM invariant enforcement needs (e.g. "is
-  this code in group X"), as consumed by `openehr-rm::validate`.
+  this code in group X"), as consumed by `openehr-rm`'s validation layer.
+- `measurement` — the `MEASUREMENT_SERVICE.is_valid_units_string` UCUM
+  syntax validator.
 
 ## Generated code — do not edit
 
-Every type file carries a `// @generated` header. The crate is emitted
-deterministically by [`openehr-codegen`](https://github.com/rubentalstra/FerroEHR/tree/develop/tools/openehr-codegen)
-from the vendored openEHR BMM meta-model; hand-written spec behaviour
-(invariants, spec functions) lives in sibling `*_impl.rs` files the generator
-never rewrites. Changes belong in the emitter, never in the generated output.
+The types under the `v3_1` generation module each carry a `// @generated`
+header and are emitted deterministically by
+[`openehr-codegen`](https://github.com/rubentalstra/FerroEHR/tree/develop/tools/openehr-codegen)
+from the vendored openEHR BMM meta-model; changes to them belong in the
+emitter, never in the generated output. The terminology content is a different
+matter: the BMM declares only the data classes, so the embedded XML assets and
+everything that reads them (`bundle`, `measurement`) are hand-written and
+edited normally.
 
 ## Versioning
 
 The package version is the crate's **own independent SemVer line** — it
 tracks this implementation's code and moves freely with fixes and
-improvements, never with the vendored openEHR specification (TERM 3.1.0). The implemented spec version is always
-available at runtime as `openehr_term::SPEC_VERSION` (`"3.1.0"`), independent of
-the package version.
+improvements, never with the vendored openEHR specification.
+
+The implemented spec version is a **per-generation** datum, carried by the
+emitted `Generation` enum — the crate's only pin authority (there is no
+crate-level or module-level spec-version constant). This crate has one
+generation: `Generation::default()` is `V3_1` and
+`Generation::V3_1.spec_version()` is `"3.1.0"` (a `const fn`);
+`Display`/`FromStr` round-trip the generation-module token (`"v3_1"`).
 
 ## Minimum supported Rust version
 

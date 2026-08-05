@@ -56,7 +56,8 @@
 //! `invariant_failed`): `<Name>` is the invariant's released class-table name
 //! (`docs/specs/openehr/RM/docs/UML/classes/*.adoc` §Invariants), so a
 //! violation is identifiable by the spec's own vocabulary. No openEHR spec
-//! governs the message wording itself — see [`invariant_failed`].
+//! governs the message wording itself — the `invariant_failed` helper below
+//! is its single home.
 //!
 //! What deliberately does **not** run in the *core/typed* tiers:
 //! - **Terminology-bound invariants** (the class-table rules that invoke
