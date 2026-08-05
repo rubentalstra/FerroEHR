@@ -29,9 +29,9 @@ use crate::config::secret::Secret;
 mod strict;
 
 pub mod auth;
-pub mod profile;
 pub mod authz;
 pub mod management;
+pub mod profile;
 pub mod secret;
 pub mod server;
 pub mod smart;

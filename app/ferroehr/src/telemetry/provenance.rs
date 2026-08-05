@@ -8,10 +8,23 @@
 //! generation); the hand-written single-spec crates keep their literal
 //! `SPEC_VERSION`.
 
-// TODO(#1943): the RM/BASE pins below advertise the default (current)
-// generation; once the `spec_profile` seam lands they must follow the
-// CONFIGURED generation on every served identity surface (banner, /status,
-// OPTIONS manifest, OpenAPI).
+/// Returns the openEHR RM version the given profile serves.
+#[must_use]
+pub const fn rm_for(profile: crate::config::profile::SpecProfile) -> &'static str {
+    profile.rm().spec_version()
+}
+
+/// Returns the openEHR BASE version the given profile serves.
+#[must_use]
+pub const fn base_for(profile: crate::config::profile::SpecProfile) -> &'static str {
+    profile.base().spec_version()
+}
+
+/// Returns the openEHR LANG version the given profile serves.
+#[must_use]
+pub const fn lang_for(profile: crate::config::profile::SpecProfile) -> &'static str {
+    profile.lang().spec_version()
+}
 
 /// The openEHR ITS-REST contract version this server implements.
 ///
