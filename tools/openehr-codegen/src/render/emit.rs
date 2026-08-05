@@ -470,11 +470,6 @@ fn emit_generation_enum(comp: &CrateComposition) -> String {
         .iter()
         .map(|g| (generation_variant(g.module), g))
         .collect();
-    let current = variants
-        .iter()
-        .find(|(_, g)| g.current)
-        .map(|(v, _)| v.clone())
-        .unwrap_or_default();
     let mut b = String::from(
         "\n/// The BMM generations this crate emits, one variant per version module,\n\
          /// oldest first.\n\
@@ -485,21 +480,20 @@ fn emit_generation_enum(comp: &CrateComposition) -> String {
     );
     b.push_str(comp.generations.first().map_or("", |g| g.module));
     b.push_str(
-        "\"`).\n\
-         #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]\n\
+        "\"`). `Generation::default()` is the crate's CURRENT generation — the\n\
+         /// one `crate::prelude` re-exports (the composition table's `current`\n\
+         /// marker, via the std `#[default]` variant attribute).\n\
+         #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]\n\
          pub enum Generation {\n",
     );
     for (variant, g) in &variants {
+        let default_attr = if g.current { "    #[default]\n" } else { "" };
         b.push_str(&format!(
-            "    /// The `{}` generation — openEHR specification version {}.\n    {variant},\n",
+            "    /// The `{}` generation — openEHR specification version {}.\n{default_attr}    {variant},\n",
             g.module, g.spec_version,
         ));
     }
     b.push_str("}\n\nimpl Generation {\n");
-    b.push_str(&format!(
-        "    /// The crate's CURRENT generation — the one `crate::prelude` re-exports.\n    \
-         pub const CURRENT: Self = Self::{current};\n\n",
-    ));
     b.push_str("    /// Every generation this crate emits, oldest first.\n");
     b.push_str(&format!(
         "    pub const ALL: &'static [Self] = &[{}];\n\n",

@@ -15,8 +15,8 @@ DELETED in the PR that closes the last child issue.
 - **One uniform structure for every generated crate** (no package is
   special): version-named generation modules, the codegen composition table
   as the single authority for which generations exist, an emitted per-crate
-  `Generation` enum (`CURRENT`, per-variant `spec_version()`,
-  `FromStr`/`Display`), prelude re-exporting the current generation only,
+  `Generation` enum (derived `Default` marking the current generation,
+  per-variant `spec_version()`/`as_str()`, `FromStr`/`Display`), prelude re-exporting the current generation only,
   runtime dispatch in the APPLICATION (generated crates stay dispatch-free).
 - **Migration order**: (a) uniform-structure rename, zero behaviour change →
   (b) emit released RM 1.1.0 / BASE 1.2.0 side by side → (c) the application
@@ -46,8 +46,10 @@ emitter producing that quality BY CONSTRUCTION, never via suppressions:
   (`Generation`, the profile enum) derive
   `Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord`; ordering =
   declaration order = oldest generation first, which is the meaningful order.
-- **Associated items over free functions:** `CURRENT` and `ALL` are
-  associated consts; pure accessors are `const fn` + `#[must_use]`.
+- **Built-in std mechanisms over bespoke items:** the current generation is
+  the derived-`Default` `#[default]` variant (std 1.62 mechanism), never a
+  bespoke `CURRENT` const (removed 2026-08-05); `ALL` stays an associated
+  const; pure accessors are `const fn` + `#[must_use]`.
 - **Deliberately exhaustive enums:** the `Generation` and profile enums are
   NOT `#[non_exhaustive]` — the set comes from the composition table and a
   new generation is a deliberate, semver-visible API event; consumers should

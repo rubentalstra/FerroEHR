@@ -136,7 +136,8 @@ pub(crate) struct GenerationSpec {
     /// The vendored BMM file (relative to the vendor root).
     pub file: &'static str,
     /// Whether this is the crate's CURRENT generation: the one the crate
-    /// prelude re-exports and the crate-level `Generation::CURRENT` names.
+    /// prelude re-exports and the emitted `Generation` enum's derived
+    /// `Default` variant marks.
     /// Exactly one generation per crate is current ([`compose`] asserts it).
     pub current: bool,
     /// Dependency generations merged (in order, before this generation's own
