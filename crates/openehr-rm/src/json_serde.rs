@@ -18816,14 +18816,14 @@ impl<'de> ::serde::Deserialize<'de> for crate::v1_1::common::tags::item_tag::Ite
                         }
                     }
                 }
-                let __a0: String = __s0
+                let __a0: String = __s2
                     .flatten()
-                    .ok_or_else(|| ::serde::de::Error::missing_field("target"))?;
-                let __a1: Option<String> = __s1.flatten();
+                    .ok_or_else(|| ::serde::de::Error::missing_field("key"))?;
+                let __a1: Option<String> = __s3.flatten();
                 let __a2: openehr_base::v1_2::base_types::identification::uid_based_id::UidBasedId =
-                    __s2.flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("key"))?;
-                let __a3: Option<String> = __s3.flatten();
+                    __s0.flatten()
+                        .ok_or_else(|| ::serde::de::Error::missing_field("target"))?;
+                let __a3: Option<String> = __s1.flatten();
                 let __a4: openehr_base::v1_2::base_types::identification::object_ref::ObjectRef =
                     __s4.flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("owner_id"))?;

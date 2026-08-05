@@ -60,20 +60,25 @@ pub(crate) enum Door {
     /// validating `new(..) -> Result<Self, _>` (plus `FromStr`/`TryFrom`), and
     /// the generated codecs construct through it.
     Validated {
-        /// The hand-written constructor's parameter TYPES, in BMM field order
+        /// The hand-written constructor's parameters as `(field, type)` pairs
         /// — the contract between the generated struct and the `*_impl.rs`
-        /// sibling. The emitters bind each decoded field to a local of this
-        /// type before calling `new`, so an `impl Into<String>` parameter has
-        /// no inference ambiguity, and a BMM change that adds a field fails
-        /// loudly (an arity mismatch) instead of silently emitting a call the
-        /// constructor cannot answer.
+        /// sibling, keyed by FIELD NAME so it is independent of any
+        /// generation's BMM declaration order (RM 1.1.0 and 1.2.0 declare
+        /// `ITEM_TAG`'s fields in different orders; a positional contract
+        /// mis-binds one of them). The emitters bind each decoded field to a
+        /// local of the declared type — so an `impl Into<String>` parameter
+        /// has no inference ambiguity — and call `new` in THIS declared
+        /// order, one canonical signature for every generation. A BMM change
+        /// that adds or renames a field fails loudly (a name/arity mismatch)
+        /// instead of silently emitting a call the constructor cannot
+        /// answer.
         ///
         /// A parameter that is itself a spec type is written as the marker
         /// `@<SPEC_CLASS>` (`@UID_BASED_ID`), never a literal Rust path: the
         /// emitter resolves it per GENERATION (the declaring generation's own
         /// module, or the paired dependency generation's), so one table row
         /// serves every generation of the declaring crate.
-        params: &'static [&'static str],
+        params: &'static [(&'static str, &'static str)],
         /// `true` when `new` returns `Result` (the normal case: the constructor
         /// runs a grammar or an invariant over the incoming values). `false`
         /// when the field types already make an invalid value unrepresentable,
@@ -131,7 +136,7 @@ pub(crate) static CONSTRUCTION: &[Construction] = &[
     Construction {
         class: "UUID",
         door: Door::Validated {
-            params: &["uuid::Uuid"],
+            params: &[("value", "uuid::Uuid")],
             fallible: false,
             citation: "docs/specs/openehr/BASE/docs/base_types/\
                        master05-identification_package.adoc \u{a7}Syntaxes: `uuid = hex-number, \
@@ -145,7 +150,7 @@ pub(crate) static CONSTRUCTION: &[Construction] = &[
     Construction {
         class: "ISO_OID",
         door: Door::Validated {
-            params: &["String"],
+            params: &[("value", "String")],
             fallible: true,
             citation: "docs/specs/openehr/BASE/docs/base_types/\
                        master05-identification_package.adoc \u{a7}Syntaxes: \
@@ -155,7 +160,7 @@ pub(crate) static CONSTRUCTION: &[Construction] = &[
     Construction {
         class: "INTERNET_ID",
         door: Door::Validated {
-            params: &["String"],
+            params: &[("value", "String")],
             fallible: true,
             citation: "docs/specs/openehr/BASE/docs/base_types/\
                        master05-identification_package.adoc \u{a7}Syntaxes: \
@@ -166,7 +171,7 @@ pub(crate) static CONSTRUCTION: &[Construction] = &[
     Construction {
         class: "HIER_OBJECT_ID",
         door: Door::Validated {
-            params: &["String"],
+            params: &[("value", "String")],
             fallible: true,
             citation: "docs/specs/openehr/BASE/docs/base_types/\
                        master05-identification_package.adoc \u{a7}Syntaxes: \
@@ -177,7 +182,7 @@ pub(crate) static CONSTRUCTION: &[Construction] = &[
     Construction {
         class: "OBJECT_VERSION_ID",
         door: Door::Validated {
-            params: &["String"],
+            params: &[("value", "String")],
             fallible: true,
             citation: "docs/specs/openehr/BASE/docs/base_types/\
                        master05-identification_package.adoc \u{a7}Syntaxes: \
@@ -188,7 +193,7 @@ pub(crate) static CONSTRUCTION: &[Construction] = &[
     Construction {
         class: "VERSION_TREE_ID",
         door: Door::Validated {
-            params: &["String"],
+            params: &[("value", "String")],
             fallible: true,
             citation: "docs/specs/openehr/BASE/docs/base_types/\
                        master05-identification_package.adoc \u{a7}Syntaxes: \
@@ -204,11 +209,11 @@ pub(crate) static CONSTRUCTION: &[Construction] = &[
         class: "ITEM_TAG",
         door: Door::Validated {
             params: &[
-                "String",
-                "Option<String>",
-                "@UID_BASED_ID",
-                "Option<String>",
-                "@OBJECT_REF",
+                ("key", "String"),
+                ("value", "Option<String>"),
+                ("target", "@UID_BASED_ID"),
+                ("target_path", "Option<String>"),
+                ("owner_id", "@OBJECT_REF"),
             ],
             fallible: true,
             citation: "docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.item_tag.adoc \
@@ -296,7 +301,9 @@ pub(crate) fn is_validated(class: &str) -> bool {
 /// The declared `(parameter types, fallible)` of a validated `class`'s
 /// constructor, or `None` when the class has no validating door.
 #[must_use]
-pub(crate) fn validated_ctor(class: &str) -> Option<(&'static [&'static str], bool)> {
+pub(crate) fn validated_ctor(
+    class: &str,
+) -> Option<(&'static [(&'static str, &'static str)], bool)> {
     match door(class) {
         Some(Door::Validated {
             params, fallible, ..

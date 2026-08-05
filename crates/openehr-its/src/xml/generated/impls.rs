@@ -13532,12 +13532,15 @@ impl crate::xml::runtime::FromXml for openehr_rm::v1_2::common::tags::item_tag::
         let __a0: String = __key
             .ok_or_else(|| crate::xml::runtime::XmlError::Parse("missing element key".into()))?;
         let __a1: Option<String> = __value;
-        let __a2: openehr_base::prelude::UidBasedId = __target
-            .ok_or_else(|| crate::xml::runtime::XmlError::Parse("missing element target".into()))?;
+        let __a2: openehr_base::v1_3::base_types::identification::uid_based_id::UidBasedId =
+            __target.ok_or_else(|| {
+                crate::xml::runtime::XmlError::Parse("missing element target".into())
+            })?;
         let __a3: Option<String> = __target_path;
-        let __a4: openehr_base::prelude::ObjectRef = __owner_id.ok_or_else(|| {
-            crate::xml::runtime::XmlError::Parse("missing element owner_id".into())
-        })?;
+        let __a4: openehr_base::v1_3::base_types::identification::object_ref::ObjectRef =
+            __owner_id.ok_or_else(|| {
+                crate::xml::runtime::XmlError::Parse("missing element owner_id".into())
+            })?;
         openehr_rm::v1_2::common::tags::item_tag::ItemTag::new(__a0, __a1, __a2, __a3, __a4)
             .map_err(|__e| {
                 crate::xml::runtime::XmlError::Parse(::std::format!("ITEM_TAG: {__e}").into())

@@ -62,10 +62,10 @@ impl ItemTag {
             return Err(ItemTagError::ValueEmpty);
         }
         Ok(Self {
-            key,
-            value,
             target,
             target_path,
+            key,
+            value,
             owner_id,
         })
     }

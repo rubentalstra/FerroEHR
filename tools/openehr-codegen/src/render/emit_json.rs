@@ -872,9 +872,23 @@ fn emit_struct_deserialize(
             params.len(),
             finals.len(),
         );
+        // Bind BY FIELD NAME, call in the table's declared order: the door
+        // signature is one canonical contract across generations, while each
+        // generation's BMM may declare the fields in a different order.
         let mut locals = String::new();
         let mut names = Vec::new();
-        for (i, (ty, value)) in params.iter().zip(&finals).enumerate() {
+        for (i, (param, ty)) in params.iter().enumerate() {
+            let value = fields
+                .iter()
+                .position(|f| f.rust_name == *param)
+                .and_then(|j| finals.get(j))
+                .unwrap_or_else(|| {
+                    panic!(
+                        "construction map parameter {param:?} of {spec} names no emitted field \
+                         (fields: {:?})",
+                        fields.iter().map(|f| &f.rust_name).collect::<Vec<_>>()
+                    )
+                });
             let ty = schema.door_param(ty);
             let _ = writeln!(locals, "let __a{i}: {ty} = {value};");
             names.push(format!("__a{i}"));
