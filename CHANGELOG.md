@@ -17,6 +17,8 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- New top-level configuration key `spec_profile` (`development` | `stable`, default `development`; env `FERROEHR__SPEC_PROFILE`): selects the openEHR specification generation set the server runs as ONE coupled choice — `development` = RM 1.2.0 + BASE 1.3.0 + LANG 1.1.0 (today's behaviour), `stable` = the latest RELEASED generations, RM 1.1.0 + BASE 1.2.0 + LANG 1.0.0. The active profile and its generation versions appear on the boot banner and `GET /management/info`. Under `stable`, AQL that addresses specification surface the released generation does not define is refused with an error naming the active profile. Profile-change contract: `stable` → `development` is always safe (openEHR minor releases are additive); `development` → `stable` is supported only for data that never used development-only constructs — such stored objects are refused loudly at read, never silently down-converted.
+
 - The `openehr-rm` and `openehr-base` crates now ALSO emit the latest RELEASED specification generations beside the development pins — `openehr_rm::v1_1` (RM 1.1.0, resolving against BASE 1.2.0 per its own BMM `includes`) and `openehr_base::v1_2` (BASE 1.2.0) — each a complete peer: full type model, canonical-JSON codecs, RM attribute model, invariant cores, and validation behaviour. The served wire is unchanged (the current generations stay `v1_2`/`v1_3`); runtime selection between generations arrives with the `spec_profile` configuration key.
 
 ### Removed
