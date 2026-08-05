@@ -322,6 +322,18 @@ algorithms = ["RS256"]
 | `algorithms` | list of string | `["RS256"]` | Accepted signature algorithms. |
 | `hmac_secret` / `hmac_secret_file` | secret / path | unset | Symmetric HS256 secret (dev/test). At most one of the pair. |
 | `jwks_json` / `jwks_json_file` | string / path | unset | Static JWKS document; preferred over discovery when present. |
+| `connect_timeout_ms` | int | `3000` | TCP connect timeout for the discovery + JWKS fetches. |
+| `request_timeout_ms` | int | `5000` | Whole-request timeout for the discovery + JWKS fetches (connect, TLS, body read). |
+| `negative_cache_ttl_seconds` | int | `10` | How long a *failed* discovery/JWKS fetch is remembered (`0` disables). |
+
+The last three keys apply only when keys come from the issuer's OIDC discovery
+document — that is, when neither `hmac_secret` nor `jwks_json` is set. The
+timeouts stop an unresponsive identity provider from parking bearer requests
+until the operating system's TCP timeout; the negative cache means an identity
+provider outage costs one discovery attempt per `negative_cache_ttl_seconds`
+rather than one per incoming request, so callers get fast `401`s instead of slow
+ones. Keep the negative TTL short: it is also how long recovery takes to be
+noticed after the provider comes back.
 
 ## `[authz]`
 
