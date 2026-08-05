@@ -1,14 +1,21 @@
 //! Hand-written RM class invariants for `ELEMENT`.
 //!
-//! Mirrors archie `Element` (non-terminology invariants) + inherited LOCATABLE:
-//! - `Inv_null_flavour_indicated`: exactly one of `value` / `null_flavour` is
-//!   present (XOR).
-//! - `Inv_null_reason_valid`: a `null_reason` implies `value` is absent.
-//! - `Archetype_node_id_valid`: `archetype_node_id` non-empty.
+//! Spec:
+//! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.element.adoc`
+//! §Functions + §Invariants. Enforced here:
+//! - `Inv_null_flavour_indicated` (`is_null() xor null_flavour = Void`):
+//!   exactly one of `value` / `null_flavour` is present.
+//! - `Inv_null_reason_valid` (`null_reason /= Void implies is_null()`): a
+//!   `null_reason` implies `value` is absent.
+//! - the inherited LOCATABLE `Archetype_node_id_valid`
+//!   (`…org.openehr.rm.common.locatable.adoc` §Invariants).
 //!
-//! NOTE: archie's `Inv_null_flavour_valid` (the null flavour code belongs
-//! to the openEHR "null flavours" group) is terminology-bound — deferred to the
-//! composition validator + `openehr-term`.
+//! `Inv_is_null_valid` (`is_null() = (value = Void)`) is unfalsifiable here:
+//! that clause IS the definition of [`Element::is_null`], which this crate
+//! computes from `value` rather than storing. `Inv_null_flavour_valid` is
+//! group-bound and is enforced in the terminology-aware path
+//! (`validate::terminology`, the `ELEMENT` slot) against the `openehr-term`
+//! bundle, which this crate does not depend on.
 
 use crate::v1_2::data_structures::representation::element::Element;
 use openehr_base::validate::{InvariantViolation, Validate};
@@ -22,7 +29,8 @@ pub(crate) fn push_element_invariants(
     archetype_node_id: &str,
     out: &mut Vec<InvariantViolation>,
 ) {
-    // Inv_null_flavour_indicated: exactly one of value / null_flavour.
+    // Inv_null_flavour_indicated: `is_null() xor null_flavour = Void`, i.e.
+    // exactly one of value / null_flavour is present.
     if has_value == has_null_flavour {
         out.push(InvariantViolation::here(
             "Invariant Inv_null_flavour_indicated failed on type ELEMENT",
@@ -35,6 +43,18 @@ pub(crate) fn push_element_invariants(
         ));
     }
     crate::v1_2::validate::generated::archetype_node_id_core("ELEMENT", archetype_node_id, out);
+}
+
+impl Element {
+    /// Returns `true` when this element's value is logically not known.
+    ///
+    /// RM `ELEMENT.is_null()` (`element.adoc` §Functions), computed from
+    /// `value` as its `Inv_is_null_valid` invariant requires
+    /// (`is_null() = (value = Void)`).
+    #[must_use]
+    pub fn is_null(&self) -> bool {
+        self.value.is_none()
+    }
 }
 
 impl Validate for Element {
@@ -137,6 +157,24 @@ mod tests {
                 .any(|m| m.message == "Invariant Inv_null_reason_valid failed on type ELEMENT"),
             "got {v:?}"
         );
+    }
+
+    /// `element.adoc` §Invariants `Inv_is_null_valid`: `is_null()` is exactly
+    /// value-absence, so a valued element is not null.
+    #[test]
+    fn is_null_is_false_when_a_value_is_present() {
+        assert!(!element().is_null());
+    }
+
+    /// `element.adoc` §Invariants `Inv_is_null_valid`, refusing twin: an element
+    /// with no value IS null, whether or not a null flavour accompanies it.
+    #[test]
+    fn is_null_is_true_when_the_value_is_absent() {
+        let mut e = element();
+        e.value = None;
+        assert!(e.is_null());
+        e.null_flavour = Some(null_flavour());
+        assert!(e.is_null());
     }
 
     #[test]

@@ -1,12 +1,14 @@
 // @generated-from-template templates/openehr-rm/data_types/quantity/date_time/dv_date_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariants for `DV_DATE`.
 //!
-//! `Value_valid`: `value` is a valid (possibly partial) ISO-8601 date. Plus the
-//! inherited DV_QUANTIFIED `Magnitude_status_valid`.
+//! `Value_valid` (`valid_iso8601_date(value)`) —
+//! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_date.adoc`
+//! §Invariants — plus the inherited DV_QUANTIFIED `Magnitude_status_valid` and
+//! the DV_ORDERED `Normal_range_and_status_consistency`.
 //!
-//! NOTE: archie has no `@Invariant` for date well-formedness — it enforces
-//! it at parse time via a typed temporal parse. Our `value` is a `String`, so we
-//! express that guarantee explicitly (see `crate::v1_2::validate` ISO-8601 helpers).
+//! `value` is carried as a `String`, so `valid_iso8601_date` is a runtime check
+//! here rather than a parse-time type guarantee (the ISO-8601 helpers live in
+//! `crate::v1_2::validate`).
 
 use crate::v1_2::data_types::quantity::date_time::dv_date::DvDate;
 use crate::v1_2::data_types::quantity::dv_ordered::DvOrdered;

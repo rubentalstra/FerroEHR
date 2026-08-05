@@ -440,11 +440,10 @@ fn emit_leaf(node: &WebTemplateNode, base: &str, out: &mut Map<String, Value>) -
                 .and_then(|cl| cl.codes.first())
                 .map_or("text/plain", String::as_str);
             put(out, base, "mediatype", json!(media));
-            // A plausible non-zero size. The RM invariant is `size >= 0`
-            // (RM data_types §DV_MULTIMEDIA `Size_valid`), so 0 is valid —
-            // but a referenced resource of zero bytes is unreal, and the
-            // reference implementation's known `size > 0` quirk rejects it
-            // (the DV_MULTIMEDIA NOTE); a realistic example avoids both.
+            // A plausible non-zero size. `Size_valid` is `size >= 0`
+            // (`RM docs/UML/classes/org.openehr.rm.data_types.dv_multimedia.adoc`
+            // §Invariants), so 0 is spec-valid — but a referenced resource of
+            // zero bytes is unreal, and these are illustrative examples.
             put(out, base, "size", json!(1024));
         }
         "DV_PARSABLE" => {

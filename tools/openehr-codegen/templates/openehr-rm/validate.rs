@@ -55,9 +55,8 @@
 //! message `Invariant <Name> failed on type <RM_TYPE>` (see
 //! `invariant_failed`): `<Name>` is the invariant's released class-table name
 //! (`docs/specs/openehr/RM/docs/UML/classes/*.adoc` §Invariants), so a
-//! violation is identifiable by the spec's own vocabulary. (The rendering
-//! matches openEHR's `archie` reference implementation — prior art the tests
-//! and stored diagnostics were pinned against, never the authority.)
+//! violation is identifiable by the spec's own vocabulary. No openEHR spec
+//! governs the message wording itself — see [`invariant_failed`].
 //!
 //! What deliberately does **not** run in the *core/typed* tiers:
 //! - **Terminology-bound invariants** (the class-table rules that invoke
@@ -473,18 +472,20 @@ pub fn check_data_structure_shapes(
 /// invariant's own BMM name, so a failure is identifiable by that name alone.
 ///
 /// NOTE: no openEHR spec governs the wording of a violation message — the
-/// shape is our own convention (it originated in openEHR's reference
-/// implementation, which is prior art only, never the ground). The path is
-/// left empty (the value itself); the composition validator prefixes the
-/// absolute RM path.
+/// `Invariant <Name> failed on type <RM_TYPE>` shape is our own design, and only
+/// `<Name>`/`<RM_TYPE>` are the spec's. The path is left empty (the value
+/// itself); the composition validator prefixes the absolute RM path.
 #[must_use]
 pub(crate) fn invariant_failed(name: &str, rm_type: &str) -> InvariantViolation {
     InvariantViolation::here(format!("Invariant {name} failed on type {rm_type}"))
 }
 
 /// `true` when a floating value denotes a whole number — the integrality
-/// probe the DV_PROPORTION precision/fraction invariants need (RM
-/// `dv_proportion.adoc` §Invariants; archie's `isInteger` is the prior art).
+/// probe the DV_PROPORTION `Precision_validity` / `Is_integral_validity` /
+/// `Fraction_validity` invariants need, which state integrality as
+/// `numerator.floor = numerator and denominator.floor = denominator`
+/// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_proportion.adoc`
+/// §Invariants).
 #[must_use]
 #[expect(
     clippy::float_cmp,
@@ -529,15 +530,14 @@ pub(crate) fn valid_proportion_kind(k: i32) -> bool {
 }
 
 // ── ISO-8601 value validation ────────────────────────────────────────────────
-//
-// NOTE: archie has no `@Invariant` for DV_DATE/DV_TIME/DV_DATE_TIME/
-// DV_DURATION value well-formedness — it enforces it structurally by parsing
-// `value` into a typed `java.time` object at construction. In our model the
-// value is a `String`, so we express the same guarantee as an explicit RM class
-// invariant (`Value_valid`). The forms accepted are the openEHR ISO-8601 subset
-// (partial precision permitted; DV_DURATION permits a leading sign and a `W`
-// designator mixed with others, per the openEHR deviation). Kept intentionally
-// lenient: it rejects clearly-malformed values, not valid partial ones.
+
+// The DV_DATE / DV_TIME / DV_DATE_TIME / DV_DURATION `Value_valid` invariants
+// are `valid_iso8601_date` / `_time` / `_date_time` / `_duration` (each class
+// page's §Invariants); their accepted complete, compact and partial forms are
+// enumerated in BASE `…foundation_types.time_definitions.adoc` §Functions,
+// including that page's stated exception allowing a `W` designator alongside
+// the others in a duration. `value` is a `String` here, so those grammars are
+// checked at runtime rather than guaranteed by a parsed temporal type.
 
 fn all_digits(s: &str) -> bool {
     !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit())

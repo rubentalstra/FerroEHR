@@ -1,7 +1,7 @@
 # Vendored real-world openEHR canonical-JSON test corpus
 
 These are **real** openEHR canonical-JSON instances used as the integration
-oracle for `openehr-serde` (deserialize → re-serialize → equality + ITS-JSON
+oracle for `openehr-its` (deserialize → re-serialize → equality + ITS-JSON
 schema validation). They are external ground truth — not hand-authored in this
 repo — so the round-trip suite tests genuine interoperability, not our own
 assumptions. Do not edit the vendored files; if a fixture needs correcting,

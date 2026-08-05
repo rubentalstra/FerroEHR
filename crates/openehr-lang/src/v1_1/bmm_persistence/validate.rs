@@ -370,7 +370,8 @@ mod tests {
     }
 
     /// A schema whose one package lists `ParentType1` twice — the shape of the
-    /// archie `duplicate_class.bmm` fixture.
+    /// vendored fixture
+    /// `tests/vendor/bmm/…/persistence/validation/duplicate_class.bmm`.
     const DUPLICATE_LISTING: &str = r#"
         bmm_version = <"2.4">
         rm_publisher = <"openehr">
@@ -413,8 +414,8 @@ mod tests {
     "#;
 
     /// A child redefining an inherited `String` property as a non-conformant
-    /// type — the shape of the archie
-    /// `overridden_property_non_conformance.bmm` fixture.
+    /// type — the shape of the vendored fixture
+    /// `tests/vendor/bmm/…/persistence/validation/overridden_property_non_conformance.bmm`.
     const NON_CONFORMANT_OVERRIDE: &str = r#"
         bmm_version = <"2.4">
         rm_publisher = <"openehr">

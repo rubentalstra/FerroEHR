@@ -1,8 +1,9 @@
 //! Hand-written RM/BASE class invariant + validating construction for
 //! `ISO_OID`.
 //!
-//! `UID.Value_valid`: the identifier string must be non-empty (archie `UID`,
-//! `!Strings.isNullOrEmpty(value)`). Surfaces under the concrete type name.
+//! Inherited `UID.Value_valid` (`not value.empty`) — BASE
+//! `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.uid.adoc`
+//! §Invariants — surfaced under the concrete type name.
 //! Lexical form: `iso_oid = number, { '.', number }` (BASE `base_types`
 //! `master05-identification_package.adoc` §Syntaxes).
 

@@ -2,8 +2,10 @@
 //! Hand-written RM class invariants + functions for `HISTORY`.
 //!
 //! Spec: RM 1.2.0
-//! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.history.adoc`:
-//! - `Events_valid`: at least one event, or a summary, must be present.
+//! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.history.adoc`
+//! §Invariants:
+//! - `Events_valid` (`(events /= Void and then not events.is_empty) or summary
+//!   /= Void`): at least one event, or a summary, must be present.
 //! - `Period_consistency`: `is_periodic implies events.for_all (e |
 //!   e.offset.to_seconds mod period.to_seconds = 0)` — checked over the
 //!   available temporal magnitudes (an event whose `time` or a `period` whose
@@ -13,11 +15,9 @@
 //!   equivalent).
 //! - Inherited LOCATABLE `Archetype_node_id_valid`.
 //!
-//! NOTE: `Periodic_validity` (`is_periodic xor period = Void`) holds by
-//! construction with `is_periodic()` computed from `period` (archie marks it
-//! `ignored` for the same reason). `Period_consistency` is a distinct,
-//! non-ignored invariant per the spec and IS enforced here — the spec is the
-//! authority even though archie does not run it.
+//! `Periodic_validity` (`is_periodic xor period = Void`, same §Invariants
+//! section) is unfalsifiable here: `is_periodic()` is computed from `period`
+//! rather than stored, so the two sides of the xor can never disagree.
 
 use crate::v1_2::data_structures::history::event_impl::offset_seconds;
 use crate::v1_2::data_structures::history::history::History;

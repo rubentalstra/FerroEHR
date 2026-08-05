@@ -7,9 +7,14 @@
 //! machinery in `dv_ordered_impl`). The comparison functions
 //! (`less_than` / `is_strictly_comparable_to`) live in `dv_ordered_impl`.
 //!
-//! NOTE: the DV_ORDERED `Normal_status_validity` invariant (terminology)
-//! is deferred to the composition validator + `openehr-term`; archie's
-//! `Reference_range_valid` (symbol resolution) is archetype-level.
+//! Of the remaining DV_ORDERED invariants
+//! (`…org.openehr.rm.data_types.dv_ordered.adoc` §Invariants),
+//! `Normal_status_validity` is code-set-bound and is enforced in the
+//! terminology-aware path (`validate::terminology`) against the `openehr-term`
+//! bundle; `Other_reference_ranges_validity` is unrepresentable against an
+//! `Option<NonEmptyVec<…>>` field (`openehr_base::containers`); and
+//! `Is_simple_validity` restates the §Functions definition of `is_simple`, which
+//! this crate computes from the same two attributes.
 
 use crate::v1_2::data_types::quantity::dv_ordered::DvOrdered;
 use crate::v1_2::data_types::quantity::dv_ordered_impl::push_normal_range_consistency;

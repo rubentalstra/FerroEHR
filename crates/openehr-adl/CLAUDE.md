@@ -172,7 +172,11 @@ else; each helper has exactly ONE home.
   `Dialect::Adl14` basic-integrity path only. The `S*` error space is a verbatim 1:1
   mirror of the openEHR catalogue (`ADL2/master04.6`): never invent a code —
   reuse the catalogue code for the parse position and name the construct in
-  the message.
+  the message. The `V*`/`W*` VALIDITY space is the AOM2 `master08` catalogue
+  plus a CLOSED set of three flagged local extensions (`VRDLA`, `WOUC`,
+  `W14DEP` — each carrying the explicit "no openEHR spec defines this code"
+  flag at its variant); extending that set is an adjudicated decision, since
+  a new code is a new accepted/refused surface, never a convenience.
 - **1.4 defaults are EFFECTIVE-value accessors, never mutations** —
   `validate::conformance::effective_{existence,occurrences}_adl14` apply
   master05's `{1..1}` defaults (and the `use_node` inheritance rule) on read;

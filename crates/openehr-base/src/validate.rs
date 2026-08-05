@@ -5,12 +5,14 @@
 //! `pub mod validate;`). Concrete invariant bodies live in sibling `*_impl.rs`
 //! files next to each generated type and `impl Validate for <Type>`.
 //!
-//! The instance-validation *algorithm* is spec-underdetermined (openEHR's AOM2
-//! `validation` spec covers archetype validation, not RM-instance validation);
-//! these are the openEHR **Reference Model class invariants** — the checks a
-//! value must satisfy independent of any archetype — mirroring the reference
-//! implementation's invariant set. See `// NOTE:` markers in the impls for
-//! spec-underdetermined choices.
+//! The invariant SET is the specification's own: every check corresponds to a
+//! named invariant in an RM/BASE class page's §Invariants section
+//! (`docs/specs/openehr/{RM,BASE}/docs/UML/classes/`), and each impl cites the
+//! page and invariant name it enforces. What the specifications leave
+//! underdetermined is the *algorithm* — openEHR's AOM2 `validation` spec covers
+//! ARCHETYPE validation, not RM-instance validation — so the traversal,
+//! violation shape and sub-path reporting below are our own design; the
+//! `// NOTE:` markers in the impls flag each such choice.
 
 /// An RM class-invariant violation: a human-readable message plus the RM
 /// sub-path (relative to the value being checked) it applies to.

@@ -1,6 +1,5 @@
 // @generated-from-template templates/openehr-base/foundation_types/interval/multiplicity_interval_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
-//! Hand-written BASE `Multiplicity_interval` spec functions + invariants
-//!.
+//! Hand-written BASE `Multiplicity_interval` spec functions + invariants.
 //!
 //! `Multiplicity_interval` is an `Interval<Integer>` used to express
 //! multiplicity, cardinality and optionality in models (it is the interval the
@@ -10,10 +9,10 @@
 //! `is_open`/`is_optional`/`is_mandatory`/`is_prohibited`.
 //!
 //! Spec sources (vendored):
-//! - `BASE/docs/UML/classes/org.openehr.base.foundation_types.multiplicity_interval.adoc`
-//!   (the four classification functions).
-//! - `BASE/docs/UML/classes/org.openehr.base.foundation_types.interval.adoc`
-//!   (inherited `has`/`intersects`/`contains` + invariants).
+//! - `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.multiplicity_interval.adoc`
+//!   §Functions (the four classification functions).
+//! - `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.interval.adoc`
+//!   §Functions + §Invariants (inherited `has`/`intersects`/`contains`).
 
 use super::interval_impl::BoundaryView;
 use super::multiplicity_interval::MultiplicityInterval;
@@ -83,8 +82,10 @@ impl MultiplicityInterval {
     }
 }
 
-// The inherited `Interval` invariants (`interval.adoc`); mirrors
-// `proper_interval_impl.rs`. archie reports them under the base type `INTERVAL`.
+// The inherited `Interval` invariants (`interval.adoc` §Invariants), reported
+// under `INTERVAL` — the class that declares them. `Inv_not_point` and
+// `Limits_comparable` are not enforced; see `proper_interval_impl.rs` for the
+// two adjudications, the first of which turns on this very class.
 impl Validate for MultiplicityInterval {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
         // Lower_included_valid: an unbounded lower boundary is not included.
