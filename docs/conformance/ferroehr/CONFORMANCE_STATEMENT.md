@@ -97,7 +97,7 @@ Beside the openEHR resources of ITS-REST 1.1.0, this product serves the route fa
 | CORE | FAIL |
 | STANDARD | FAIL |
 | OPTIONS | PASS |
-| SEC-BASIC | FAIL |
+| SEC-BASIC | PASS |
 | Performance class POC (claimed) | EARNED |
 
 ## Attestation

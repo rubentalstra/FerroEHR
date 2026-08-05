@@ -658,6 +658,7 @@ pub struct UnenforceableConstraint {
 ///     eprintln!("unenforceable at {}: {}", skipped.path, skipped.attribute);
 /// }
 /// # }
+/// # let _ = demo;
 /// ```
 #[must_use]
 pub fn unenforceable_existence_constraints(wt: &WebTemplate) -> Vec<UnenforceableConstraint> {

@@ -919,7 +919,7 @@ jobs:
               exit 1
             fi
           done
-          reqs=$(git grep -hoE 'path = "\.\./openehr-[a-z]+", version = "[0-9.]+"' "$HEAD" -- 'crates/*/Cargo.toml' | grep -oE '[0-9.]+' | sort -u)
+          reqs=$(git grep -hoE 'path = "\.\./openehr-[a-z]+", version = "[0-9.]+"' "$HEAD" -- 'crates/*/Cargo.toml' | grep -oE 'version = "[0-9.]+"' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | sort -u)
           if [ "$reqs" != "$ver" ]; then
             echo "::error::internal openehr-* version requirements ($reqs) do not all match the lockstep version $ver — update every 'version =' on the path dependencies too." >&2
             exit 1

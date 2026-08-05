@@ -14,7 +14,7 @@
 | Dimension | Value |
 | --- | --- |
 | Functional | CORE, STANDARD, OPTIONS, SEC-BASIC |
-| Sec & Priv | SEC-BASIC FAIL |
+| Sec & Priv | SEC-BASIC PASS |
 | Performance | class POC (earned) |
 | Ext Data Fmt | canonical-json, canonical-xml, wt-flat, wt-structured |
 
@@ -29,46 +29,46 @@ The Realization column says what the row's cases were verified against: `release
 | Platform | Adl14ArchetypeProvisioning | OPT | extension | pass |
 | Platform | Adl14OptProvisioning | Y | released-wire | pass |
 | Platform | Adl2ArchetypeProvisioning | OPT | released-wire | pass |
-| Platform | Adl2OptProvisioning | OPT | released-wire | FAIL |
+| Platform | Adl2OptProvisioning | OPT | released-wire | pass |
 | Platform | TemplateExamples | OPT | released-wire | pass |
 | Platform | QueryProvisioning | Y | released-wire | pass |
-| Platform | EhrOperations | Y | released-wire | INCONCLUSIVE (errored rows — never green by absorption) |
-| Platform | EhrStatus | Y | released-wire | FAIL |
-| Platform | CompositionOps | Y | released-wire | FAIL |
-| Platform | DirectoryOps | Y | released-wire | FAIL |
+| Platform | EhrOperations | Y | released-wire | pass |
+| Platform | EhrStatus | Y | released-wire | pass |
+| Platform | CompositionOps | Y | released-wire | pass |
+| Platform | DirectoryOps | Y | released-wire | pass |
 | Platform | ChangeSets | Y | released-wire | FAIL |
-| Platform | Versioning | Y | released-wire | FAIL |
-| Platform | ArchetypeValidation | Y | released-wire | FAIL |
-| Platform | PartyOperations | OPT | released-wire | FAIL |
-| Platform | PartyRelationshipOperations | OPT | extension | FAIL |
-| Platform | DemographicArchetypeValidation | OPT | released-wire | FAIL |
-| Platform | AqlBasic | Y | released-wire | FAIL |
+| Platform | Versioning | Y | released-wire | pass |
+| Platform | ArchetypeValidation | Y | released-wire | pass |
+| Platform | PartyOperations | OPT | released-wire | pass |
+| Platform | PartyRelationshipOperations | OPT | extension | pass |
+| Platform | DemographicArchetypeValidation | OPT | released-wire | pass |
+| Platform | AqlBasic | Y | released-wire | pass |
 | Platform | AqlAdvanced | OPT | released-wire | pass |
 | Platform | AqlTerminology | OPT | released-wire | pass |
 | Platform | ActivityReport | OPT | extension | pass |
 | Platform | PhysicalDeletion | OPT | released-wire | pass |
 | Platform | EhrDumpLoad | OPT | extension | pass |
-| Platform | BulkEhrLoad | OPT | released-wire | FAIL |
+| Platform | BulkEhrLoad | OPT | released-wire | pass |
 | Platform | EhrArchive | OPT | extension | pass |
 | Platform | DemographicArchive | OPT | extension | pass |
-| Platform | EhrExtract | OPT | extension | INCONCLUSIVE (errored rows — never green by absorption) |
+| Platform | EhrExtract | OPT | extension | pass |
 | Platform | Tds | OPT | extension | pass |
 | Platform | DefinitionApi | Y | released-wire | pass |
 | Platform | EhrApi | Y | released-wire | pass |
-| Platform | DemographicApi | OPT | released-wire | FAIL |
-| Platform | QueryApi | Y | released-wire | FAIL |
+| Platform | DemographicApi | OPT | released-wire | pass |
+| Platform | QueryApi | Y | released-wire | pass |
 | Platform | AdminApi | OPT | released-wire | pass |
 | Platform | MessageApi | OPT | extension | pass |
 | Platform | SystemApi | OPT | released-wire | pass |
-| Platform | ItemTags | OPT | released-wire | FAIL |
-| Platform | Signing | OPT | released-wire | FAIL |
-| Platform | SimplifiedFormats | OPT | released-wire | FAIL |
+| Platform | ItemTags | OPT | released-wire | pass |
+| Platform | Signing | OPT | released-wire | pass |
+| Platform | SimplifiedFormats | OPT | released-wire | pass |
 | Platform | SmartAppLaunch | OPT | released-wire | pass |
 | Security | EhrDemographicSeparation | Y | released-wire | pass |
 | Security | AuthenticatedAccess | Y | released-wire | pass |
 | Security | AuthorizationSeparation | Y | released-wire | pass |
 | Security | AuditAccountability | Y | released-wire | pass |
-| Security | AnonymousEhrs | Y | released-wire | FAIL |
+| Security | AnonymousEhrs | Y | released-wire | pass |
 
 ## Workload Coverage
 
