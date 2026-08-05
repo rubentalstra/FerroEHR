@@ -26,7 +26,16 @@ RELEASED OAS fills that silence (no conflict, so it is citable):
 in a closed slot / an empty `1..*` list CANNOT be converted ⇒ **400**. A body that
 converts and then fails a template constraint, an RM invariant, or a terminology
 binding ⇒ **422**. Same as the owner ruling on issue #1727 (2026-08-03), and the
-same line AMB-36 already applies to `import_ehr_extract-invalid`.
+same line **AMB-34** already applies to `import_ehr_extract-invalid` (corrected
+2026-08-05 — it is AMB-34, not AMB-36). On the CONTRIBUTION route the register
+fixes both halves explicitly: **AMB-193** (empty mandatory list = "refused at
+parse") + **AMB-194** ("400 is reserved on this route for the SHAPE class …
+and a complete-but-incomplete body parses").
+
+**Caveat on the empty-list half:** the OAS `required:` list does NOT ground it —
+see [[oas-required-does-not-forbid-empty-arrays]]; the BMM cardinality does.
+The seam that gets this wrong in the app is
+[[contribution-seam-skips-strict-reader]].
 
 **Confirmed live (2026-08-04 run):** of 807 authored `rejected` decision-table
 rows, every row whose `violates` carries `rm_schema: <attr> is mandatory` got 400

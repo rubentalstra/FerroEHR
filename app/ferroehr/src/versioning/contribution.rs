@@ -613,6 +613,7 @@ pub(crate) async fn commit_version_set(
                 })?;
                 let kind = data_kind(&data)?;
                 check_kind_scope(kind, party_only)?;
+                typed_decode_gate(kind, &data, v.incomplete)?;
                 // A CONTRIBUTION commit is a full commit route: its versions
                 // are validated exactly as a direct create/update, relaxed for
                 // a `553|incomplete|` lifecycle (master06 §Incomplete Content).
@@ -656,6 +657,7 @@ pub(crate) async fn commit_version_set(
                 };
                 let kind = require_kind(vo_id)?;
                 check_kind_scope(kind, party_only)?;
+                typed_decode_gate(kind, &data, v.incomplete)?;
                 cx.validate_for_commit(kind, &data, v.incomplete).await?;
                 // Same template stamping as the Create arm (the delete guard
                 // counts every version row, modifications included).
@@ -1114,6 +1116,64 @@ fn data_kind(data: &Value) -> Result<Kind, ServiceError> {
             .with_path("data._type"),
         )
     })
+}
+
+/// The strict canonical-JSON door over a raw commit member's `data`.
+///
+/// A CONTRIBUTION member arrives raw (the envelope tolerates the 666/523
+/// member shapes the typed reader refuses), so the payload itself runs the
+/// same typed door every direct commit route passes through: content that
+/// cannot be converted to its RM resource is the 400 row, never the 422 one
+/// (ITS-REST overview `Requests_and_responses.md` §HTTP status codes; the
+/// released `responses/422.yaml` scopes 422 to content that "could be
+/// converted to a resource"). The demographic kinds keep their typed door in
+/// `service::demographic::validate` — this gate covers the EHR kinds whose
+/// commit validators walk the raw value.
+///
+/// A `553|incomplete|` commit skips the door: the generated types make
+/// mandatory attributes structural, and RM common master06 §Incomplete
+/// Content lifts precisely those bounds.
+///
+/// # Errors
+/// [`ServiceError::BadRequest`] when the strict reader refuses the payload.
+fn typed_decode_gate(kind: Kind, data: &Value, incomplete: bool) -> Result<(), ServiceError> {
+    if incomplete {
+        return Ok(());
+    }
+    let refused = match kind {
+        Kind::Composition => {
+            openehr_its::json::from_canonical_value::<openehr_rm::prelude::Composition>(data)
+                .map(drop)
+                .err()
+        }
+        Kind::EhrStatus => {
+            openehr_its::json::from_canonical_value::<openehr_rm::prelude::EhrStatus>(data)
+                .map(drop)
+                .err()
+        }
+        Kind::EhrAccess => {
+            openehr_its::json::from_canonical_value::<openehr_rm::prelude::EhrAccess>(data)
+                .map(drop)
+                .err()
+        }
+        Kind::Folder => {
+            openehr_its::json::from_canonical_value::<openehr_rm::prelude::Folder>(data)
+                .map(drop)
+                .err()
+        }
+        Kind::Agent
+        | Kind::Group
+        | Kind::Organisation
+        | Kind::Person
+        | Kind::Role
+        | Kind::PartyRelationship => None,
+    };
+    match refused {
+        Some(e) => Err(ServiceError::BadRequest(format!(
+            "invalid canonical JSON body: {e}"
+        ))),
+        None => Ok(()),
+    }
 }
 
 /// Parse a VERSION's `preceding_version_uid` (`OBJECT_VERSION_ID`, string or

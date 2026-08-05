@@ -501,6 +501,67 @@ impl XmlAny {
     }
 }
 
+impl ToXml for openehr_base::serde_support::OpenSubtype {
+    // NOTE: canonical XML defines element mappings per published class only;
+    // no openEHR spec maps a scheme-defined subtype's members onto XML — a
+    // member-carrying instance is refused rather than given an invented shape.
+    fn write_xml(
+        &self,
+        w: &mut XmlWriter,
+        tag: &str,
+        declared: Option<&str>,
+    ) -> Result<(), XmlError> {
+        if !self.members().is_empty() {
+            return Err(XmlError::Parse(format!(
+                "no canonical-XML mapping exists for the scheme-defined `{}` members",
+                self.type_name()
+            )));
+        }
+        let mut e = BytesStart::new(tag);
+        if declared != Some(self.type_name()) {
+            e.push_attribute(("xsi:type", self.type_name()));
+        }
+        w.write_start(e)?;
+        w.write_end(tag)
+    }
+}
+
+impl FromXml for openehr_base::serde_support::OpenSubtype {
+    fn from_xml(reader: &mut XmlReader, start: &StartTag) -> Result<Self, XmlError> {
+        let type_name = start
+            .attrs
+            .iter()
+            .find(|(k, _)| k == "xsi:type" || (k.ends_with(":type") && k.contains("xsi")))
+            .map_or("ACCESS_CONTROL_SETTINGS", |(_, v)| {
+                v.rsplit(':').next().unwrap_or(v)
+            })
+            .to_owned();
+        loop {
+            match reader.read()? {
+                XmlEvent::Start(_) => {
+                    return Err(XmlError::Parse(format!(
+                        "no canonical-XML mapping exists for the scheme-defined `{type_name}` members"
+                    )));
+                }
+                XmlEvent::Text(t) if !t.trim().is_empty() => {
+                    return Err(XmlError::Parse(format!(
+                        "no canonical-XML mapping exists for scheme-defined `{type_name}` content"
+                    )));
+                }
+                XmlEvent::Text(_) => {}
+                XmlEvent::End => break,
+                XmlEvent::Eof => {
+                    return Err(XmlError::Parse(
+                        "unexpected EOF in an open-subtype element".into(),
+                    ));
+                }
+            }
+        }
+        openehr_base::serde_support::OpenSubtype::new(type_name, serde_json::Map::new())
+            .map_err(|e| XmlError::Parse(e.to_string()))
+    }
+}
+
 impl ToXml for XmlAny {
     fn write_xml(&self, w: &mut XmlWriter, tag: &str, _d: Option<&str>) -> Result<(), XmlError> {
         let mut e = BytesStart::new(tag);

@@ -7,7 +7,6 @@ use crate::common::archetyped::archetyped::Archetyped;
 use crate::common::archetyped::feeder_audit::FeederAudit;
 use crate::common::archetyped::link::Link;
 use crate::data_types::text::dv_text::DvText;
-use crate::ehr::access_control_settings::AccessControlSettings;
 use openehr_base::prelude::UidBasedId;
 
 /// EHR-wide access control object. All access decisions to data in the EHR must be made in accordance with the policies and rules in this object.
@@ -37,5 +36,5 @@ pub struct EhrAccess {
     /// Audit trail from non-openEHR system of original commit of information forming the content of this node, or from a conversion gateway which has synthesised this node.
     pub feeder_audit: Option<FeederAudit>,
     /// Access control settings for the EHR. Instance is a subtype of the type `ACCESS_CONTROL_SETTINGS`, allowing for the use of different access control schemes.
-    pub settings: Option<AccessControlSettings>,
+    pub settings: Option<openehr_base::serde_support::OpenSubtype>,
 }

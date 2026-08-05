@@ -49,6 +49,9 @@ fn primitive(name: &str) -> Option<Value> {
         "Iso8601_date_time" => json!("2020-01-01T10:00:00"),
         "Iso8601_duration" => json!("PT1H"),
         "Hash" => Value::Object(Map::new()),
+        // The one spec-declared OPEN extension point: any tagged object is a
+        // legal scheme instance (`ehr_access.adoc` §settings; #1935).
+        "ACCESS_CONTROL_SETTINGS" => json!({ "_type": "ACCESS_CONTROL_SETTINGS" }),
         _ => return None,
     })
 }

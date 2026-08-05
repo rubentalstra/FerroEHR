@@ -117,6 +117,22 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- A CONTRIBUTION commit whose version `data` cannot be converted to its RM
+  resource — an empty mandatory `1..*` container, a missing mandatory
+  attribute — is now refused as `400 Bad Request`, exactly as the same bytes
+  are refused on every direct commit route, instead of `422`. The commit
+  seam runs the same strict canonical-JSON door the direct routes run
+  (the released `responses/422.yaml` scopes 422 to content that "could be
+  converted to a resource"); demographic party and party-relationship
+  bodies take the same correction. Incomplete (`553`) commits keep their
+  master06 relaxation.
+- `EHR_ACCESS.settings` now constructs typed: the spec leaves
+  `ACCESS_CONTROL_SETTINGS` open for scheme-defined subtypes, and the
+  generated model carries such an instance verbatim through a validated
+  open-subtype carrier instead of refusing every legal scheme instance.
+  Canonical JSON round-trips a scheme instance byte-identically; canonical
+  XML — which defines no mapping for scheme members — refuses one honestly
+  instead of dropping content.
 - **Commits into an OPT 1.4 archetype slot are now checked against the slot's
   allowed archetypes.** The slot's `include`/`exclude` archetype-id patterns
   were read only from each assertion's optional `string_expression` string,
