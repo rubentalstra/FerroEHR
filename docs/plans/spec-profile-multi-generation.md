@@ -23,6 +23,53 @@ DELETED in the PR that closes the last child issue.
   profile seam. Each step is a child issue; (b) blocked-by (a), (c)
   blocked-by (b). All milestoned v3.17.4.
 
+## The Rust best-practice bar (owner directive 2026-08-05 — applies to every
+## remaining child and to ALL emitted API surface)
+
+The program ships PUBLISHED crate API; every new or emitted item is held to
+the official conventions — the Rust API Guidelines checklist
+(<https://rust-lang.github.io/api-guidelines/checklist.html>), the Rust Book,
+and RFC 505/1574 (already binding via `.claude/rules/comments.md`) — with the
+emitter producing that quality BY CONSTRUCTION, never via suppressions:
+
+- **Standard names, never bespoke ones (C-CASE, C-GETTER, C-CONV):** the
+  canonical string form of an enum is `as_str()` (the std spelling — `str`,
+  `ParseError` families), never an invented accessor (`module()` was removed
+  for exactly this, 2026-08-05); conversions follow `as_`/`to_`/`into_` cost
+  semantics; no `get_` prefixes.
+- **`Display`/`FromStr` are a round-tripping pair (C-STR):** `Display`
+  forwards to `as_str()`; `FromStr::Err` is a dedicated `…ParseError` type
+  shaped like std's `ParseIntError` — a struct with private fields, `Display`
+  naming the valid tokens, implementing `std::error::Error` (C-GOOD-ERR:
+  errors are types, not strings).
+- **Common traits derived eagerly (C-COMMON-TRAITS):** small closed enums
+  (`Generation`, the profile enum) derive
+  `Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord`; ordering =
+  declaration order = oldest generation first, which is the meaningful order.
+- **Associated items over free functions:** `CURRENT` and `ALL` are
+  associated consts; pure accessors are `const fn` + `#[must_use]`.
+- **Deliberately exhaustive enums:** the `Generation` and profile enums are
+  NOT `#[non_exhaustive]` — the set comes from the composition table and a
+  new generation is a deliberate, semver-visible API event; consumers should
+  be forced to handle it (recorded decision, not an omission).
+- **Doc comments per RFC 1574:** method summaries in third person
+  ("Returns…"), one sentence, blank line, then detail — the same bar
+  `comments.md` enforces.
+- **Emitted code passes the full workspace clippy bar by construction**
+  (pedantic included): a lint finding in generated output is an emitter bug,
+  fixed structurally (e.g. an 8-argument emitter fn becomes a context
+  struct; identical match arms fold into or-patterns), never `#[allow]`ed
+  away beyond the adjudicated verbatim-spec-prose exceptions in the
+  generated `lib.rs` header.
+- **No fixed crate-level pins that contradict selection:** removed
+  (owner ruling 2026-08-05) — a multi-generation crate exposes its pins ONLY
+  through the `Generation` enum and per-generation-module `SPEC_VERSION`s;
+  any future "one value for the whole crate" convenience is the same legacy
+  class and gets refused.
+- **Legacy residue discovered en route is never carried** (owner directive
+  2026-08-05): remove it properly in-scope, or file it as a sub-issue of
+  #1936 so it queues inside the program.
+
 ## Ground facts (verified 2026-08-05)
 
 - The composition table is `tools/openehr-codegen/src/plan/composition.rs`
