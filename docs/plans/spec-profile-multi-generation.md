@@ -46,10 +46,15 @@ emitter producing that quality BY CONSTRUCTION, never via suppressions:
   (`Generation`, the profile enum) derive
   `Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord`; ordering =
   declaration order = oldest generation first, which is the meaningful order.
-- **Built-in std mechanisms over bespoke items:** the current generation is
-  the derived-`Default` `#[default]` variant (std 1.62 mechanism), never a
-  bespoke `CURRENT` const (removed 2026-08-05); `ALL` stays an associated
-  const; pure accessors are `const fn` + `#[must_use]`.
+- **Built-in std mechanisms over bespoke items, and no speculative API:**
+  the current generation is the derived-`Default` `#[default]` variant (std
+  1.62 mechanism), never a bespoke `CURRENT` const (removed 2026-08-05); the
+  unconsumed `ALL` variant-list const was removed the same day (the official
+  guidelines prescribe NO variant-enumeration shape — verified first-hand
+  2026-08-05 — so shipping one before a consumer exists is speculative
+  surface; when one is needed it arrives as the ecosystem-standard shape,
+  a deliberate minor-version addition); pure accessors are `const fn` +
+  `#[must_use]`.
 - **Deliberately exhaustive enums:** the `Generation` and profile enums are
   NOT `#[non_exhaustive]` — the set comes from the composition table and a
   new generation is a deliberate, semver-visible API event; consumers should
