@@ -27,6 +27,8 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- A bearer token whose `sub` claim is missing or blank is now refused with `401`. Previously a validated token without a subject authenticated as a principal literally named `unknown`, and that fabricated identity was stamped into the audit trail; an unattributable caller is now rejected instead of silently mis-attributed.
+- Configuring both a symmetric secret (`auth.oidc.hmac_secret`/`_file`) and a static JWKS (`auth.oidc.jwks_json`/`_file`) is now a boot-time configuration error naming both keys. Previously the server silently used the symmetric secret and ignored the JWKS.
 - An unreachable or unresponsive OAuth2/OIDC issuer no longer stalls bearer-token requests or hammers the issuer with outbound connections. The client that fetches the issuer's discovery document and JWKS now carries explicit timeouts, and a failed fetch is remembered briefly, so bearer requests during an issuer outage are refused fast instead of each one opening a fresh connection and waiting for the operating system's TCP timeout. Three new `[auth.oidc]` keys tune this (they apply only when signing keys come from discovery — that is, when neither `hmac_secret` nor `jwks_json` is set): `connect_timeout_ms` (default `3000`), `request_timeout_ms` (default `5000`), and `negative_cache_ttl_seconds` (default `10`, `0` disables). Successfully fetched keys keep their existing five-minute lifetime, and recovery is automatic once the negative entry expires.
 
 ### Removed

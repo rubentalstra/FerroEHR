@@ -523,7 +523,7 @@ async fn node_codec_round_trips_through_the_database() {
     assert_eq!(contains, expected);
 }
 
-/// §6.2: the stored `vo_version.template_id` is read back through the version
+/// The stored `vo_version.template_id` is read back through the version
 /// read-back and surfaced by `FerroEhrService::template_of_version` (the ABAC
 /// template attribute).
 #[tokio::test]
@@ -575,10 +575,11 @@ async fn template_id_is_read_back_from_vo_version() {
     );
 }
 
-/// §6.4 projection-independence regression (v1 defect #1): the ABAC query
-/// subject-scope pre-filter restricts rows to the caller's patient EHRs, and the
-/// executor collects the touched EHR/template sets, **even when the query
-/// projects neither `ehr_id`/`value` nor a template path**.
+/// Projection-independence regression (EHRbase v1 read these attributes off the
+/// SELECT columns): the ABAC query subject-scope pre-filter restricts rows to
+/// the caller's patient EHRs, and the executor collects the touched
+/// EHR/template sets, **even when the query projects neither `ehr_id`/`value`
+/// nor a template path**.
 #[tokio::test]
 async fn query_subject_scope_filters_and_collects_projection_independently() {
     use ferroehr::service::FerroEhrService;

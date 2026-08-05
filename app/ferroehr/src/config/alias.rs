@@ -65,7 +65,7 @@ pub(super) const SECTIONS: &[&str] = &[
     "subject_proxy",
 ];
 
-/// The two PERMANENT conventional aliases (§P-3) — 12-factor ecosystem names,
+/// The two PERMANENT conventional aliases — 12-factor ecosystem names,
 /// not legacy: they sit BELOW their `FERROEHR__` forms within the env layer.
 /// `(external_name, canonical FERROEHR__ env form)`.
 pub(super) const CONVENTIONAL: &[(&str, &str)] = &[
@@ -88,7 +88,7 @@ pub(super) const LIST_KEYS: &[&str] = &[
 ];
 
 /// The `FERROEHR__<SECTION>__<TAIL>` env name for a dotted config key path —
-/// the P-4 grammar in the file→env direction, pinned by the tests below.
+/// the uniform `__` grammar in the file→env direction, pinned by the tests below.
 /// Test-only for now: the deserialize-error enrichment reports serde leaf
 /// fields (not full paths), so it cannot reconstruct env provenance yet.
 #[cfg(test)]

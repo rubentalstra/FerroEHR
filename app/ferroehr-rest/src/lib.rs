@@ -133,7 +133,7 @@ pub fn build_full(
 
 /// Build the [`Authenticator`], threading the RBAC role-claim paths from the
 /// authorization handle (default paths when none is wired) so Bearer role
-/// extraction matches the gate's configuration (§5.1).
+/// extraction matches the gate's configuration.
 fn build_authenticator(
     config: &AppConfig,
     authz: Option<&AuthzHandle>,

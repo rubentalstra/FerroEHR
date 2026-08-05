@@ -281,7 +281,7 @@ async fn rbac_disabled_restores_admin_access() {
 async fn scope_role_extraction_clears_admin_gate() {
     // Scope→role extraction: a token whose `scope`
     // carries `ADMIN` surfaces role `ADMIN` and clears the admin gate, while a
-    // non-admin scope is rejected — the automatic migration path (§5.2).
+    // non-admin scope is rejected — the automatic migration path.
     let (_pg, app) = app(true, None).await;
     let denied = status(
         &app,
@@ -373,7 +373,7 @@ async fn oauth2_committer_identifier_names_the_token_issuer() {
 #[tokio::test]
 async fn rbac_deny_is_audited() {
     // A 403 from the RBAC gate carries the Principal, so the ATNA audit layer
-    // records a failure audit for the denied caller (§7). The emitter ships a
+    // records a failure audit for the denied caller. The emitter ships a
     // DICOM record over syslog/UDP; we assert on the datagram: a
     // User-Authentication event (`csd-code="110114"`, DICOM PS3.15 §A.5.1 —
     // a rejected access attempt), a minor-failure outcome

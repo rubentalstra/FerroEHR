@@ -6,7 +6,7 @@
 //! loader of its own** — the whole tree is assembled once by `ferroehr::config`
 //! and this struct is deserialized as a field of it.
 //!
-//! Secrets use the shared [`crate::config::secret::Secret`] newtype (P-6): a password hash
+//! Secrets use the shared [`crate::config::secret::Secret`] newtype: a password hash
 //! or HMAC secret deserializes from a plain string but never renders itself
 //! (`Debug`, `/management/env`, `ferroehr config check` all show `***`). Each
 //! secret key has a `*_file` sibling for file-based indirection

@@ -1,4 +1,4 @@
-//! Strict-validation helpers (§5.3): the reserved-namespace env sweep, the
+//! Strict-validation helpers: the reserved-namespace env sweep, the
 //! did-you-mean suggester, and its Damerau-Levenshtein metric. No openEHR spec
 //! governs configuration — our own design.
 
@@ -10,8 +10,7 @@ use super::loader::ConfigError;
 /// Sweep the reserved `FERROEHR_` namespace: every such variable must be an
 /// allowlisted non-config name or a known-section uniform key — anything else
 /// is a boot error (with a did-you-mean), which is what makes a
-/// set-but-never-read variable (the historical C-3/C-5 defect class)
-/// impossible. There is no legacy remapping (greenfield, owner ruling
+/// set-but-never-read variable impossible. There is no legacy remapping (greenfield, owner ruling
 /// 2026-07-15): a pre-redesign spelling fails here with the exact uniform
 /// suggestion. Deeper key typos inside a known section are caught at
 /// deserialize by `deny_unknown_fields`.

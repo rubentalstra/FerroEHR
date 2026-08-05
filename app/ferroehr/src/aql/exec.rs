@@ -153,7 +153,7 @@ pub struct QueryScope {
 }
 
 /// Run the scope-collection query for `ir` and return the distinct EHR-id and
-/// template-id sets it touches (§6.4). Empty when the query has no VO root.
+/// template-id sets it touches. Empty when the query has no VO root.
 ///
 /// # Errors
 /// [`AqlError::Sql`] if the scope query cannot be lowered; [`AqlError::Exec`] if

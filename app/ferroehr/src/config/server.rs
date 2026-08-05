@@ -5,7 +5,7 @@
 //! once by the binary. This module owns the REST-adapter's slice of it:
 //!
 //! - [`ServerConfig`] — the `[server]` section (the HTTP listener + REST
-//!   surface + the `OPTIONS /` System-Options identity, §3.1).
+//!   surface + the `OPTIONS /` System-Options identity).
 //! - `AppConfig` — the adapter's runtime view, assembled by the binary (the
 //!   composition root) from the root config's `[server]`, `[auth]`, `[admin]`,
 //!   `[tenancy]`, `[smart]` sections plus the extension-group mount toggles.
@@ -18,7 +18,7 @@
 
 use serde::{Deserialize, Serialize};
 
-/// The `[server]` section — the HTTP listener and REST surface (§3.1).
+/// The `[server]` section — the HTTP listener and REST surface.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct ServerConfig {
@@ -68,8 +68,8 @@ pub struct ServerConfig {
     /// openEHR spec governs the configuration mechanism — our own design; the
     /// specs govern only that a system HAS such an identifier.
     pub system_id: String,
-    /// The `OPTIONS /` System-Options manifest identity (`[server.identity]`,
-    /// §3.1). Sourced from config so the public identity and advertised profile
+    /// The `OPTIONS /` System-Options manifest identity
+    /// (`[server.identity]`). Sourced from config so the public identity and advertised profile
     /// are not string literals in the handler; the live endpoint list is
     /// supplied separately by `ferroehr_rest::router`. This is the *display* identity
     /// of the manifest — the data-authoring identity is [`Self::system_id`].
@@ -180,7 +180,7 @@ const fn default_max_in_flight() -> usize {
     256
 }
 
-/// Multi-tenancy configuration (`[tenancy]`, §3.8).
+/// Multi-tenancy configuration (`[tenancy]`).
 ///
 /// Off by default: with `enabled = false` the tenant middleware is never
 /// installed, the pool takes no per-acquire hook, and the `/admin/tenant` CRUD
@@ -212,7 +212,7 @@ impl Default for TenancyConfig {
     }
 }
 
-/// Configuration of the ADMIN API group (`[admin]`, §3.7; SM `I_ADMIN_SERVICE`).
+/// Configuration of the ADMIN API group (`[admin]`; SM `I_ADMIN_SERVICE`).
 ///
 /// NOTE: gating the admin surface behind an opt-in flag — when inactive every
 /// admin route answers `405 Method Not Allowed` with an empty `Allow`

@@ -34,7 +34,7 @@ async fn run(
     op: &'static str,
     parts: RequestParts,
 ) -> Result<Response, RestError> {
-    // ABAC (§6.4): the patient subject-scope pre-filter + collection flag. A
+    // ABAC: the patient subject-scope pre-filter + collection flag. A
     // missing configured patient claim is a ready 403. The PEP entry points
     // (`extensions::access::pep::{query_pre,query_post}`) are `pub(crate)`, so
     // this cross-module dispatcher calls them directly.
@@ -64,7 +64,7 @@ async fn run(
         }
     };
 
-    // ABAC query post-check (§6.4): PDP fan-out over the touched template set.
+    // ABAC query post-check: PDP fan-out over the touched template set.
     if let Err(deny) = crate::extensions::access::pep::query_post(&state, op, &outcome).await {
         return Ok(deny);
     }
