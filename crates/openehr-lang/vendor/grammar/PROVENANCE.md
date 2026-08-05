@@ -1,12 +1,11 @@
-<!-- Layout note (2026-08-05, #1942): grammars are VERSION-SCOPED — each LANG
-component version keeps its grammar set under its own `vX_Y/` directory,
-mirroring the crate's generation modules. `v1_1/` = the 1.1.0-line normative
-grammars pinned below; `v1_0/` = a STOPGAP copy of the v1_1 set (its
-STOPGAP.md carries the adjudication: LANG 1.0.0 publishes no machine-readable
-grammar — openEHR-antlr4 postdates the release — so the honest 1.0.0 set is
-extracted from the release docs text under tracker #1946). The ONE vendoring
-script is `scripts/vendor-lang-grammars.sh` (replacing vendor-el-grammar.sh);
-it writes every version directory — never hand-copy between them. -->
+<!-- Layout note (2026-08-05, #1942/#1946): grammars are VERSION-SCOPED —
+each LANG component version keeps its grammar set under its own `vX_Y/`
+directory, mirroring the crate's generation modules. `v1_1/` = the
+1.1.0-line normative grammars pinned below; `v1_0/` = the LANG 1.0.0
+release's own normative ODIN set (pinned in its section below). The ONE
+vendoring script is `scripts/vendor-lang-grammars.sh` (replacing
+vendor-el-grammar.sh); it writes every version directory — never hand-copy
+between them. -->
 
 # Provenance — the normative ODIN + BEL ANTLR4 grammars
 
@@ -47,5 +46,26 @@ Why here: the LANG EL syntax appendix
 of exactly these two files — they are the normative EL syntax, and the
 reference input for the hand-written `openehr_lang` EL parser (no ANTLR
 runtime).
+
+## The `v1_0/` set — LANG Release-1.0.0's normative ODIN grammar
+
+- Source: https://github.com/openEHR/adl-antlr (same Apache-2.0 `LICENSE`).
+- Commit: `7e0131ade4bcb94ee8c312e3905fa0c4343e785d` (2021-01-21 — the last
+  adl-antlr commit before the LANG Release-1.0.0 tag was placed, 2021-03-01),
+  via `scripts/vendor-lang-grammars.sh`.
+- Files: `src/main/antlr/adl2/{odin.g4, odin_values.g4, base_patterns.g4,
+  base_lexer.g4}`, copied verbatim (that era's layout kept the grammars
+  under `adl2/`; the appendix includes the first three, and `base_lexer.g4`
+  is `base_patterns.g4`'s transitive import — it defines
+  `INCLUDED_LANGUAGE_FRAGMENT` among others — vendored so the set resolves
+  standalone, the same treatment the v1_1 set gives its imports).
+
+Why this set: the Release-1.0.0 ODIN syntax appendix
+(`docs/odin/masterAppB-syntax_spec.adoc`, verified first-hand 2026-08-05) is
+an `include::` of exactly these three files. The 1.0.0 Expression Language
+(DEVELOPMENT) publishes NO grammar — no syntax appendix, zero grammar
+includes across its five chapters — so no EL files exist here and
+`openehr_lang::v1_0` carries no EL parser; BEL likewise first appears in
+1.1.0.
 
 Never hand-edit; re-vendor from upstream and update the commit pin here.

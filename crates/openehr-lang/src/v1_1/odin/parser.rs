@@ -92,13 +92,21 @@ impl<'a> LabelError<'a, &'a [Token], DefaultExpected<'a, Token>> for Failure {
         self.preferred(Self::Syntax(span))
     }
 
+    // A REPLACE keeps a typed uniqueness violation (it always carries more
+    // information) but must actually replace a plain syntax conflict —
+    // chumsky has already decided the new position supersedes the old one,
+    // and keeping the stale span would pin every report to the first
+    // backtracked branch failure.
     fn replace_expected_found<E: IntoIterator<Item = DefaultExpected<'a, Token>>>(
         self,
         _expected: E,
         _found: Option<MaybeRef<'a, Token>>,
         span: SimpleSpan,
     ) -> Self {
-        self.preferred(Self::Syntax(span))
+        match self {
+            Self::Syntax(_) => Self::Syntax(span),
+            typed => typed,
+        }
     }
 }
 
@@ -274,14 +282,46 @@ fn keyed_objects<'a>(
 /// more broadly "any primitive comparable value is allowed as the key"; the
 /// syntax appendix is the specific syntax authority, so the five-type set
 /// stands and the tension is recorded here (#1376).
+///
+/// The integer key takes the optional sign of `odin_values.g4`
+/// (`integer_value : ('+'|'-')? INTEGER`), and its lexeme is evaluated via
+/// [`integer_lexeme`] — an unevaluable lexeme is a typed refusal, never a
+/// silent substitute value.
 fn key_id<'a>() -> impl Parser<'a, &'a [Token], OdinKey, Err<'a>> + Clone {
-    select! {
-        Token::String(s) => OdinKey::String(decode_string(&s)),
-        Token::Integer(s) => OdinKey::Integer(s.parse::<i64>().unwrap_or(0)),
-        Token::Iso8601Date(s) => OdinKey::Date(s),
-        Token::Iso8601Time(s) => OdinKey::Time(s),
-        Token::Iso8601DateTime(s) => OdinKey::DateTime(s),
-    }
+    // A `custom` primitive with ONE failure point: a composed
+    // sign-prefix parser would emit a stray branch failure on every
+    // unsigned key, and chumsky's furthest-position error tracking would
+    // then outrank the typed VDOBU refusal raised behind it.
+    custom(|inp| {
+        let before = inp.cursor();
+        let sign = match inp.peek() {
+            Some(Token::SymPlus) => {
+                inp.next();
+                Some(1i64)
+            }
+            Some(Token::SymMinus) => {
+                inp.next();
+                Some(-1i64)
+            }
+            _ => None,
+        };
+        let token = inp.next();
+        let span = inp.span_since(&before);
+        match (sign, token) {
+            (sign, Some(Token::Integer(s))) => {
+                let mag = integer_lexeme(&s).ok_or(Failure::Syntax(span))?;
+                sign.unwrap_or(1)
+                    .checked_mul(mag)
+                    .map(OdinKey::Integer)
+                    .ok_or(Failure::Syntax(span))
+            }
+            (None, Some(Token::String(s))) => Ok(OdinKey::String(decode_string(&s))),
+            (None, Some(Token::Iso8601Date(s))) => Ok(OdinKey::Date(s)),
+            (None, Some(Token::Iso8601Time(s))) => Ok(OdinKey::Time(s)),
+            (None, Some(Token::Iso8601DateTime(s))) => Ok(OdinKey::DateTime(s)),
+            _ => Err(Failure::Syntax(span)),
+        }
+    })
 }
 
 /// `object_block : object_value_block | object_reference_block` (+ the

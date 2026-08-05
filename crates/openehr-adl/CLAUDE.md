@@ -143,8 +143,9 @@ else; each helper has exactly ONE home.
   spec file/section; master08-only codes and all other spec-silences carry the
   explicit `// NOTE:` flag.
 - **No ANTLR runtime, ever.** The normative `.g4` grammars from
-  `openEHR/adl-antlr` are vendored under `vendor/grammar/` (with PROVENANCE.md)
-  as reference input only.
+  `openEHR/adl-antlr` are vendored under `vendor/grammar/` (version-scoped by
+  AM generation — `v1_4/`/`v2_4/` — with PROVENANCE.md; refresh via
+  `scripts/vendor-adl-grammars.sh`) as reference input only.
 - **The dialect is a PUBLIC PARAMETER, never a twin function.**
   `parse::Dialect` is the seam: `parse_source`, `parse_definition_body`,
   `parse_artefact`, `assemble`, `validate::validate_source_integrity` and

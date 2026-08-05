@@ -8,7 +8,6 @@ pub mod obsolete_elom;
 pub mod prelude;
 
 // hand-written modules (spec behaviour), auto-declared:
-pub mod el;
 pub mod escape;
 pub mod lexer;
 pub mod odin;

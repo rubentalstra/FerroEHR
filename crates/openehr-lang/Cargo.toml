@@ -1,6 +1,6 @@
 [package]
 name = "openehr-lang"
-version = "0.0.7"
+version = "0.0.8"
 description = "openEHR LANG 1.0.0: BMM/P_BMM object model (generated from BMM) plus a hand-written ODIN instance parser (the `odin` module — deliberately off the codegen path)."
 edition.workspace = true
 rust-version.workspace = true
@@ -14,7 +14,7 @@ categories = ["parser-implementations", "data-structures"]
 include = ["src/**", "README.md", "LICENSE-MIT", "LICENSE-APACHE-2.0"]
 
 [dependencies]
-openehr-base = { path = "../openehr-base", version = "0.0.7" }
+openehr-base = { path = "../openehr-base", version = "0.0.8" }
 # Canonical-JSON (de)serialization is EMITTED manual `serde` impls on the
 # generated types (`openehr-codegen -- emit-json`, into `src/json_serde.rs`) —
 # never a derive. `serde_json` also carries the untyped `Value` fields the
