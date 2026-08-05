@@ -429,7 +429,9 @@ fn cmd_emit_json() -> Result<(), Box<dyn std::error::Error>> {
         // Within a crate the CURRENT generation resolves first: the dispatch's
         // caller is the wire validator for the SERVED wire, so an older
         // generation's twin shape must never shadow the current one.
-        let comp = &composed[i];
+        let comp = composed
+            .get(i)
+            .ok_or("structural priority names an unknown composition key")?;
         for (g, schema) in comp.generations.iter().zip(schemas) {
             if g.spec.current {
                 structural_schemas.push(*schema);

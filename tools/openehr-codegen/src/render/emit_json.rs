@@ -121,6 +121,18 @@ impl JsonSchema<'_> {
     }
 }
 
+/// The environment one type's deserialize impl is emitted in: the type's own
+/// module path, the shared runtime path, and the generation whose model and
+/// pairings resolve construction-door parameters.
+struct DeserializeEnv<'a> {
+    /// The emitted type's defining-module path, crate-local form.
+    path: &'a str,
+    /// The shared `serde_support` runtime path.
+    support: &'a str,
+    /// The generation being emitted (resolves `@SPEC` door parameters).
+    schema: &'a JsonSchema<'a>,
+}
+
 /// The shared hand-written runtime path, as named from inside the crate being
 /// emitted (`openehr-base` cannot refer to itself by crate name).
 fn support_path(krate: &str) -> &'static str {
@@ -174,7 +186,15 @@ pub(crate) fn emit_file(schemas: &[JsonSchema<'_>], krate: &str) -> String {
         for ty in s.model.json_types(s.schema) {
             let path = s.local_path_of(json_type_spec(&ty));
             emit_serialize(&mut b, &ty, &path);
-            emit_deserialize(&mut b, &ty, &path, support, s);
+            emit_deserialize(
+                &mut b,
+                &ty,
+                &DeserializeEnv {
+                    path: &path,
+                    support,
+                    schema: s,
+                },
+            );
         }
     }
     b
@@ -611,14 +631,16 @@ fn emit_write_field(b: &mut String, f: &JsonField) {
 // ── Deserialize side ─────────────────────────────────────────────────────────
 
 /// Emit `impl serde::Deserialize` for one [`JsonType`].
-fn emit_deserialize(b: &mut String, ty: &JsonType, path: &str, support: &str, s: &JsonSchema<'_>) {
+fn emit_deserialize(b: &mut String, ty: &JsonType, env: &DeserializeEnv<'_>) {
+    let path = env.path;
+    let support = env.support;
     match ty {
         JsonType::Struct {
             spec,
             rust,
             generics,
             fields,
-        } => emit_struct_deserialize(b, spec, rust, generics, fields, path, support, s),
+        } => emit_struct_deserialize(b, spec, rust, generics, fields, env),
         JsonType::Enum {
             spec: _,
             rust,
@@ -737,10 +759,11 @@ fn emit_struct_deserialize(
     rust: &str,
     generics: &[String],
     fields: &[JsonField],
-    path: &str,
-    support: &str,
-    schema: &JsonSchema<'_>,
+    env: &DeserializeEnv<'_>,
 ) {
+    let path = env.path;
+    let support = env.support;
+    let schema = env.schema;
     let (hdr, args) = deserialize_header(generics);
     let (vis_args, vis_body, vis_ctor) = phantom(generics);
     let mut known: Vec<&str> = fields.iter().map(|f| f.wire_name.as_str()).collect();
