@@ -2706,7 +2706,7 @@ dependencies = [
  "pgp",
  "pprof",
  "quick-xml 0.41.0",
- "rand 0.8.7",
+ "rand 0.10.2",
  "regex",
  "reqwest 0.13.4",
  "rustls",

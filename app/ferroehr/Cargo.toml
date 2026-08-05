@@ -99,7 +99,7 @@ sevenz-rust2.workspace = true
 # `rng: Rng + CryptoRng` from rand 0.8's rand_core 0.6; the workspace `rand`
 # pin (0.10) is a trait-incompatible major, so the `signing` module pins the
 # rand version pgp itself requires purely to name `OsRng` for that one call.
-rand = "0.8"
+rand = "0.10"
 # `system_log` module (IHE ATNA audit trail, SM `I_SYSTEM_LOG`; moved from the
 # former ferroehr-audit crate): TLS syslog transport.
 tokio-rustls.workspace = true
