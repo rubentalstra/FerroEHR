@@ -994,6 +994,22 @@ pub(crate) const BACK_REFERENCES: &[BackReference] = &[
                  (docs/specs/openehr/AM/docs/UML/classes/\
                  org.openehr.am.aom14.archetype_ontology.adoc)",
     },
+    // ── LANG 1.0.0 `scope`: the same declaring-context back-reference ─────────
+    // The released 1.0.0 model declares it on BMM_DECLARATION (the
+    // pre-SPECLANG-14 spelling of the v3 BMM_MODEL_ELEMENT edge below): an
+    // owning field would make every declaration an infinite value.
+    BackReference {
+        class: "BMM_DECLARATION",
+        field: "scope",
+        citation: "LANG 1.0.0 BMM_DECLARATION (scope: the model element within which the \
+                   declaration appears — the declaring-context edge the 1.1.0 line restates \
+                   on BMM_MODEL_ELEMENT)",
+        reason: "The declaring-context back-reference of the released 1.0.0 generation — the \
+                 same owner/parent edge as the v3 entries below, keyed by that model's own \
+                 declaring class. \
+                 (tools/openehr-codegen/vendor/bmm/components/LANG/json/\
+                 openehr_lang_1.0.0.bmm.json)",
+    },
     // ── LANG BMM v3 `scope`: the declaring-context back-reference ──────────────
     // The v3 generation makes every model element name its declaring context,
     // and the root's context is ITSELF (`is_root_scope(): Result = (scope =

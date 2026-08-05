@@ -118,36 +118,50 @@ fn lang_emits_both_bmm_generations_at_their_own_paths() {
     // ch.6–ch.8 chapter audits pinned as materially different).
     for (v2, bmm3) in [
         (
-            "v2/bmm/core/bmm_class.rs",
-            "v3/bmm3/core/entity/bmm_class.rs",
-        ),
-        ("v2/bmm/core/bmm_type.rs", "v3/bmm3/core/entity/bmm_type.rs"),
-        (
-            "v2/bmm/core/bmm_container_type.rs",
-            "v3/bmm3/core/entity/bmm_container_type.rs",
+            "v1_1/bmm/core/bmm_class.rs",
+            "v1_1/bmm3/core/entity/bmm_class.rs",
         ),
         (
-            "v2/bmm/core/bmm_property.rs",
-            "v3/bmm3/core/feature/bmm_property.rs",
+            "v1_1/bmm/core/bmm_type.rs",
+            "v1_1/bmm3/core/entity/bmm_type.rs",
         ),
         (
-            "v2/bmm/core/bmm_model.rs",
-            "v3/bmm3/core/model/bmm_model.rs",
+            "v1_1/bmm/core/bmm_container_type.rs",
+            "v1_1/bmm3/core/entity/bmm_container_type.rs",
         ),
         (
-            "v2/bmm/core/bmm_model_element.rs",
-            "v3/bmm3/core/bmm_model_element.rs",
+            "v1_1/bmm/core/bmm_property.rs",
+            "v1_1/bmm3/core/feature/bmm_property.rs",
+        ),
+        (
+            "v1_1/bmm/core/bmm_model.rs",
+            "v1_1/bmm3/core/model/bmm_model.rs",
+        ),
+        (
+            "v1_1/bmm/core/bmm_model_element.rs",
+            "v1_1/bmm3/core/bmm_model_element.rs",
         ),
     ] {
-        assert!(has(v2), "LANG did not emit the v2 generation's {v2}");
-        assert!(has(bmm3), "LANG did not emit the v3 generation's {bmm3}");
+        assert!(has(v2), "LANG did not emit the BMM v2.x unit's {v2}");
+        assert!(has(bmm3), "LANG did not emit the BMM3 unit's {bmm3}");
     }
     // The two classes the merge left descendant-less and therefore unemitted.
     for bmm3_only in [
-        "v3/bmm3/core/entity/bmm_model_type.rs",
-        "v3/bmm3/core/entity/bmm_module.rs",
+        "v1_1/bmm3/core/entity/bmm_model_type.rs",
+        "v1_1/bmm3/core/entity/bmm_module.rs",
     ] {
         assert!(has(bmm3_only), "LANG did not emit {bmm3_only}");
+    }
+    // The released 1.0.0 generation emits beside the 1.1.0 line (faithful
+    // emission, #1942 — incl. the sanitised `obsolete_elom` package name).
+    for v1_0 in [
+        "v1_0/bmm/core/entity/bmm_class.rs",
+        "v1_0/obsolete_elom/types/type_def_date.rs",
+    ] {
+        assert!(
+            has(v1_0),
+            "LANG did not emit the released 1.0.0 generation's {v1_0}"
+        );
     }
 }
 
@@ -485,12 +499,12 @@ fn composition_table_integrity() {
             }
         }
         // Resolving the composition loads every member/dependency BMM file, one
-        // completeness row per generation.
+        // completeness row per specification UNIT.
+        let unit_n: usize = info.generations.iter().map(|g| g.units.len()).sum();
         let rows = testsupport::completeness(&info.key);
         assert!(
-            rows.as_ref()
-                .is_ok_and(|r| r.len() == info.generations.len()),
-            "composition {:?} failed to resolve one generation per table row",
+            rows.as_ref().is_ok_and(|r| r.len() == unit_n),
+            "composition {:?} failed to resolve one row per specification unit",
             info.key,
         );
     }
