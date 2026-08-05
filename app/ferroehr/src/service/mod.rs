@@ -253,10 +253,6 @@ impl FerroEhrService {
 
     // ── Builders (the binary wires each configured subsystem) ────────────────
 
-    /// Set the openEHR system id (identifies this CDR in `EHR.system_id`,
-    /// audit rows, and every minted `OBJECT_VERSION_ID`). The binary wires
-    /// `[server] system_id`; without a call, [`DEFAULT_SYSTEM_ID`] stands.
-    #[must_use]
     /// Selects the openEHR specification generation set this service runs
     /// (`spec_profile`; default `development`).
     #[must_use]
@@ -265,6 +261,10 @@ impl FerroEhrService {
         self
     }
 
+    /// Set the openEHR system id (identifies this CDR in `EHR.system_id`,
+    /// audit rows, and every minted `OBJECT_VERSION_ID`). The binary wires
+    /// `[server] system_id`; without a call, [`DEFAULT_SYSTEM_ID`] stands.
+    #[must_use]
     pub fn with_system_id(mut self, system_id: impl Into<String>) -> Self {
         self.system_id = system_id.into();
         self
