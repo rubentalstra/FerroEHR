@@ -1,7 +1,9 @@
 # `openehr-base` — BASE 1.3.0 (GENERATED)
 
 Foundation + base types, **generated from the vendored BMM** by
-`openehr-codegen -- emit`. Spec pin: BASE 1.3.0 via `SPEC_VERSION`; the
+`openehr-codegen -- emit`. Spec pins are per generation: the emitted
+`Generation` enum (`V1_2`/`V1_3`, `CURRENT = V1_3`) + each generation
+module's `SPEC_VERSION` — there is no crate-level pin; the
 package version is the crate's own SemVer line, never the spec's and never
 the product's (`.claude/rules/crates-publishing.md`).
 

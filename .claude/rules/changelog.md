@@ -44,8 +44,10 @@ optional:
   tooling) follows the product SemVer (3.x line). The `openehr-*` **spec
   crates** publish to crates.io on their own independent SemVer line —
   permanently decoupled from the vendored spec versions (owner rulings
-  2026-08-04, issue #1886 + same-day correction; each crate's `SPEC_VERSION`
-  constant carries the implemented spec pin — full policy in
+  2026-08-04, issue #1886 + same-day correction; the implemented spec pins
+  live per generation — the emitted `Generation` enum + generation-module
+  `SPEC_VERSION`s in the generated crates, a literal crate-level
+  `SPEC_VERSION` in the hand-written ones — full policy in
   `docs/VERSIONS.md` §Product and crate versioning); they release in
   lockstep and never with the product version.
 

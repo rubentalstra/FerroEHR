@@ -1,7 +1,9 @@
 # `openehr-rm` — RM 1.2.0 (GENERATED) — the domain model
 
 The Reference Model everything consumes, **generated from the vendored
-BMM** by `openehr-codegen -- emit`. Spec pin: RM 1.2.0 via `SPEC_VERSION`;
+BMM** by `openehr-codegen -- emit`. Spec pins are per generation: the
+emitted `Generation` enum (`V1_1`/`V1_2`, `CURRENT = V1_2`) + each
+generation module's `SPEC_VERSION` — there is no crate-level pin;
 the package version is the crate's own SemVer line
 (`.claude/rules/crates-publishing.md`).
 

@@ -465,14 +465,14 @@ const DEFAULT_EHR_STATUS_ARCHETYPE: &str = "openEHR-EHR-EHR_STATUS.generic.v1";
 
 /// A root `ARCHETYPED` block for a server-minted LOCATABLE (RM common
 /// `archetyped.adoc`: `archetype_id` 1..1, `rm_version` 1..1 — the RM
-/// release this server implements — the generated crates' `SPEC_VERSION`).
+/// release this server implements — the current RM `Generation`'s pin).
 pub(in crate::service) fn archetyped(archetype_id: &str) -> Archetyped {
     Archetyped {
         archetype_id: ArchetypeId {
             value: archetype_id.to_owned(),
         },
         template_id: None,
-        rm_version: openehr_rm::SPEC_VERSION.to_owned(),
+        rm_version: openehr_rm::Generation::CURRENT.spec_version().to_owned(),
     }
 }
 

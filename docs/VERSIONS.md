@@ -23,10 +23,14 @@ same-day correction: the package version is PERMANENTLY decoupled from the
 vendored spec versions — it tracks this implementation's code and moves
 freely with every fix and improvement, while the spec pins move only on a
 re-vendoring; the crates never adopt a spec version as their package
-version). The implemented spec version is a separate datum: each crate's
-`SPEC_VERSION` constant carries the pin (emitted by `openehr-codegen` from
-the declarative composition table for the generated crates; a literal in the
-hand-written ones). The crates release in lockstep — while the line is
+version). The implemented spec version is a separate datum, per GENERATION
+(owner ruling 2026-08-05, #1942: a multi-generation crate has no single
+crate-level pin — a fixed one would contradict a configured non-current
+generation): the generated crates carry an emitted `Generation` enum
+(per-variant `spec_version()`, `CURRENT` for the default surface, from the
+codegen composition table) plus a `SPEC_VERSION` constant inside each
+generation module; the hand-written single-spec crates keep a literal
+crate-level `SPEC_VERSION`. The crates release in lockstep — while the line is
 `0.0.x`, a bump bumps all eight plus their internal version requirements
 (cargo treats every `0.0.x` as its own compatibility set). Spec-crate
 releases never ride the product version.
@@ -89,8 +93,8 @@ pin accepts every valid older-minor instance.
 
 | Component | Our pin | Latest official release | Upstream WIP | Notes |
 |---|---|---|---|---|
-| BASE (Foundation + Base Types) | **1.3.0** (pre-release generation; text + BMM refreshed 2026-07-25 @ `e4879576` — SPECBASE-48 invariants, SPECAM-82 CODE_PHRASE move, SPECPR-426/386/460) | 1.2.0 (09-Apr-2021) | 1.3.0 | generated → `openehr-base` (foundation + base types; `openehr-foundation` folded in) |
-| RM (Reference Model) | **1.2.0** (development generation; text + BMM refreshed 2026-07-26 @ `66d3ac45` — asterisk-entity normalization only, zero generated-output change) | 1.1.0 (29-Sep-2020) | dev | generated → `openehr-rm` |
+| BASE (Foundation + Base Types) | **1.3.0** (pre-release generation; text + BMM refreshed 2026-07-25 @ `e4879576` — SPECBASE-48 invariants, SPECAM-82 CODE_PHRASE move, SPECPR-426/386/460) **+ 1.2.0 released, emitted side by side** (#1942: generation module `v1_2` beside the current `v1_3`) | 1.2.0 (09-Apr-2021) | 1.3.0 | generated → `openehr-base` (foundation + base types; `openehr-foundation` folded in) |
+| RM (Reference Model) | **1.2.0** (development generation; text + BMM refreshed 2026-07-26 @ `66d3ac45` — asterisk-entity normalization only, zero generated-output change) **+ 1.1.0 released, emitted side by side** (#1942: generation module `v1_1` beside the current `v1_2`; RM 1.1.0's own BMM `includes` names `openehr_base_1.2.0`, so `v1_1` resolves against BASE `v1_2` — the released pairing) | 1.1.0 (29-Sep-2020) | dev | generated → `openehr-rm` |
 | AM (Archetype Model) | **1.4 + 2.4.0** (1.4 released; 2.4.0 WIP generation) | 2.3.0 (20-Mar-2024) | 2.4.0, **3.0.0** | generated → `openehr-am`, both majors side by side as the generation modules `v1_4` (ADL 1.4) + `v2_4` (ADL 2) — the spec-mandated dual-generation case |
 | QUERY (AQL) | 1.1.0 (= the release) | 1.1.0 (14-May-2021) | 1.2.0 | `openehr-query`; grammar-driven (AqlLexer/Parser `.g4`), not BMM |
 | LANG (BMM / ODIN / EL) | master snapshot beyond 1.0.0 (development toward 1.1.0); **both extant BMM generations vendored** — the stable v2.x BMM (`openehr_lang_1.1.0.bmm.json`) and the v3 development line (`openehr_lang_1.1.0-bmm3.bmm.json`) | 1.0.0 (11-May-2020) | dev | `openehr-lang` — the ODIN + BMM reader that feeds codegen; the crate carries 1.0.0 as its spec version. **The two BMM generations are emitted side by side** (the second live dual-generation case beside AM's `v1_4`/`v2_4`): 18 class names occur in both files with materially different shapes, so the v2.x model (`bmm` + `bmm_persistence` + `beom`) emits under the `v2` generation module and the v3 model (`bmm3`) under `v3`. Upstream formalised the split in SPECLANG-14 (`LANG/docs/bmm3/master00-amendment_record.adoc`) and keeps v2.x as "the normative, tool-implemented version" (`LANG/docs/bmm/master01-preface.adoc` §History). The crate prelude re-exports the CURRENT generation (`v3`) only; the v2.x types are reachable by full module path |

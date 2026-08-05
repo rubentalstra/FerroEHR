@@ -533,7 +533,10 @@ fn invariant_classification_is_a_total_tripartition() {
         );
         assert_eq!(total, p_total, "{generation}: RM invariant count changed");
         assert_eq!(emitted, p_emitted, "{generation}: EMITTED count drifted");
-        assert_eq!(hook, p_hook, "{generation}: RUNTIME-HOOK-MISSING count drifted");
+        assert_eq!(
+            hook, p_hook,
+            "{generation}: RUNTIME-HOOK-MISSING count drifted"
+        );
         assert_eq!(complex, p_complex, "{generation}: COMPLEX count drifted");
     }
 
@@ -883,7 +886,10 @@ fn register_records_terminology_invariants_as_enforced() {
             "{generation}: invariant(s) carry no adjudication verdict in the register: \
              {unadjudicated:?}",
         );
-        assert_eq!(enforced, 30, "{generation}: terminology-enforced count drifted");
+        assert_eq!(
+            enforced, 30,
+            "{generation}: terminology-enforced count drifted"
+        );
         assert_eq!(
             aggregate, 4,
             "{generation}: versioned-aggregate pending count drifted"

@@ -22,13 +22,6 @@
 pub mod prelude;
 pub mod v3_1;
 
-/// The openEHR specification version this crate implements.
-///
-/// The pin is emitted by `openehr-codegen` from the vendored inputs and is
-/// deliberately independent of the crates.io package version, which is the
-/// crate's own `SemVer` line and moves only with this implementation's code.
-pub const SPEC_VERSION: &str = "3.1.0";
-
 /// The BMM generations this crate emits, one variant per version module,
 /// oldest first.
 ///
