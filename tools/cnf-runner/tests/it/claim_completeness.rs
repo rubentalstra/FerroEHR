@@ -521,11 +521,13 @@ fn an_extension_only_capability_marked_released_wire_fails_validate() {
 #[test]
 fn a_stale_extension_realization_marker_fails_validate() {
     let world = World::new();
+    // The prefix stops before `min_cases`, so the seed survives the floor's
+    // upward ratchet.
     world.edit(MATRIX, |text| {
         text.replace(
-            "PartyOperations: { family: Platform, tier: OPTIONS, required: false, min_cases: 58,",
+            "PartyOperations: { family: Platform, tier: OPTIONS, required: false,",
             "PartyOperations: { family: Platform, tier: OPTIONS, required: false, realization: \
-             extension, min_cases: 58,",
+             extension,",
         )
     });
     assert_gate(
