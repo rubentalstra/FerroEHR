@@ -7,50 +7,30 @@
 
 lexer grammar base_lexer;
 
-// ---------- whitespace & comments ----------
+//
+// -------------------------- Parse Rules --------------------------
+//
 
-WS         : [ \t\r]+    -> channel(HIDDEN) ;
-LINE       : '\r'? EOL  -> channel(HIDDEN) ;  // increment line count
-CMT_LINE   : '--' .*? '\r'? EOL  -> skip ;   // (increment line count)
-fragment EOL : '\n' ;
+ADL_PATH          : ADL_ABSOLUTE_PATH | ADL_RELATIVE_PATH;
+fragment ADL_ABSOLUTE_PATH : ('/' PATH_SEGMENT)+;
+fragment ADL_RELATIVE_PATH : PATH_SEGMENT ('/' PATH_SEGMENT)+;
+
+fragment PATH_SEGMENT      : ALPHA_LC_ID ('[' PATH_ATTRIBUTE ']')?;
+fragment PATH_ATTRIBUTE    : ID_CODE | STRING | INTEGER | ARCHETYPE_REF;
+
+//
+//  ======================= Lexical rules ========================
+//
+
+// ---------- various ADL2 codes -------
+
+ROOT_ID_CODE : 'id1' '.1'* ;
+ID_CODE      : 'id' CODE_STR ;
+AT_CODE      : 'at' CODE_STR ;
+AC_CODE      : 'ac' CODE_STR ;
+fragment CODE_STR : ('0' | [1-9][0-9]*) ( '.' ('0' | [1-9][0-9]* ))* ;
 
 
-// -------------- template overlay cannot be handled in a more simple way because it includes the comment line
-SYM_TEMPLATE_OVERLAY : H_CMT_LINE (WS|LINE)* SYM_TEMPLATE_OVERLAY_ONLY;
-fragment H_CMT_LINE : '--------' '-'*? ('\n'|'\r''\n'|'\r')  ;  // special type of comment for splitting template overlays
-fragment SYM_TEMPLATE_OVERLAY_ONLY     : [Tt][Ee][Mm][Pp][Ll][Aa][Tt][Ee]'_'[Oo][Vv][Ee][Rr][Ll][Aa][Yy] ;
-
-// ---------- path patterns -----------
-
-ADL_PATH : ADL_ABSOLUTE_PATH | ADL_RELATIVE_PATH;
-fragment ADL_ABSOLUTE_PATH : ('/' ADL_PATH_SEGMENT)+;
-fragment ADL_RELATIVE_PATH : ADL_PATH_SEGMENT ('/' ADL_PATH_SEGMENT)+;
-
-fragment ADL_PATH_SEGMENT      : ALPHA_LC_ID ('[' ADL_PATH_ATTRIBUTE ']')?;
-fragment ADL_PATH_ATTRIBUTE    : ID_CODE | STRING | INTEGER | ARCHETYPE_REF | ARCHETYPE_HRID;
-
-
-// ---------- ISO8601-based date/time/duration constraint patterns
-
-DATE_CONSTRAINT_PATTERN      : YEAR_PATTERN '-' MONTH_PATTERN '-' DAY_PATTERN ;
-TIME_CONSTRAINT_PATTERN      : HOUR_PATTERN ':' MINUTE_PATTERN ':' SECOND_PATTERN TZ_PATTERN? ;
-DATE_TIME_CONSTRAINT_PATTERN : DATE_CONSTRAINT_PATTERN 'T' TIME_CONSTRAINT_PATTERN ;
-
-fragment YEAR_PATTERN   : 'yyyy' | 'YYYY' | 'yyy' | 'YYY' ;
-fragment MONTH_PATTERN  : 'mm' | 'MM' | '??' | 'XX' | 'xx' ;
-fragment DAY_PATTERN    : 'dd' | 'DD' | '??' | 'XX' | 'xx'  ;
-fragment HOUR_PATTERN   : 'hh' | 'HH' | '??' | 'XX' | 'xx'  ;
-fragment MINUTE_PATTERN : 'mm' | 'MM' | '??' | 'XX' | 'xx'  ;
-fragment SECOND_PATTERN : 'ss' | 'SS' | '??' | 'XX' | 'xx'  ;
-fragment TZ_PATTERN     : '±' ('hh' | 'HH') (':'? ('mm' | 'MM'))? | 'Z' ;
-
-DURATION_CONSTRAINT_PATTERN  : 'P' [yY]?[mM]?[Ww]?[dD]? ( 'T' [hH]?[mM]?[sS]? )? ;
-
-// ---------- Delimited Regex matcher ------------
-// In ADL, a regexp can only exist between {}.
-// allows for '/' or '^' delimiters
-// logical form - REGEX: '/' ( '\\/' | ~'/' )+ '/' | '^' ( '\\^' | ~'^' )+ '^';
-// The following is used to ensure REGEXes don't get mixed up with paths, which use '/' chars
 
 //a
 // regexp can only exist between {}. It can optionally have an assumed value, by adding ;"value"
@@ -61,34 +41,39 @@ fragment SLASH_REGEXP_CHAR: ~[/\n\r] | ESCAPE_SEQ | '\\/';
 fragment CARET_REGEXP: '^' CARET_REGEXP_CHAR+ '^';
 fragment CARET_REGEXP_CHAR: ~[^\n\r] | ESCAPE_SEQ | '\\^';
 
-// ---------- various ADL2 codes -------
+//
+// -------------------------- Lexer patterns --------------------------
+//
 
-ROOT_ID_CODE : 'id1' '.1'* ;
-ID_CODE      : 'id' CODE_STR ;
-AT_CODE      : 'at' CODE_STR ;
-AC_CODE      : 'ac' CODE_STR ;
-fragment CODE_STR : ('0' | [1-9][0-9]*) ( '.' ('0' | [1-9][0-9]* ))* ;
+// ---------- whitespace & comments ----------
+
+SYM_TEMPLATE_OVERLAY : H_CMT_LINE (WS|LINE)* SYM_TEMPLATE_OVERLAY_ONLY;
+fragment H_CMT_LINE : '--------' '-'*? ('\n'|'\r''\n'|'\r')  ;  // special type of comment for splitting template overlays
+fragment SYM_TEMPLATE_OVERLAY_ONLY     : [Tt][Ee][Mm][Pp][Ll][Aa][Tt][Ee]'_'[Oo][Vv][Ee][Rr][Ll][Aa][Yy] ;
+
+WS         : [ \t\r]+    -> channel(HIDDEN) ;
+LINE       : '\n'        -> channel(HIDDEN) ;     // increment line count
+CMT_LINE   : '--' .*? ('\n'|'\r''\n'|'\r')  -> skip ;  // (increment line count)
 
 // ---------- ISO8601 Date/Time values ----------
 
-ISO8601_DATE      : YEAR '-' MONTH ( '-' DAY )? | YEAR '-' MONTH '-' UNKNOWN_DT | YEAR '-' UNKNOWN_DT '-' UNKNOWN_DT ;
-ISO8601_TIME      : ( HOUR ':' MINUTE ( ':' SECOND ( SECOND_DEC_SEP DIGIT+ )?)? | HOUR ':' MINUTE ':' UNKNOWN_DT | HOUR ':' UNKNOWN_DT ':' UNKNOWN_DT ) TIMEZONE? ;
-ISO8601_DATE_TIME : ( YEAR '-' MONTH '-' DAY 'T' HOUR (':' MINUTE (':' SECOND ( SECOND_DEC_SEP DIGIT+ )?)?)? | YEAR '-' MONTH '-' DAY 'T' HOUR ':' MINUTE ':' UNKNOWN_DT | YEAR '-' MONTH '-' DAY 'T' HOUR ':' UNKNOWN_DT ':' UNKNOWN_DT ) TIMEZONE? ;
+// TODO: consider adding non-standard but unambiguous patterns like YEAR '-' ( MONTH | '??' ) '-' ( DAY | '??' )
+ISO8601_DATE      : YEAR '-' MONTH ( '-' DAY )? ;
+ISO8601_TIME      : HOUR SYM_COLON MINUTE ( SYM_COLON SECOND ( SYM_COMMA INTEGER )?)? ( TIMEZONE )? ;
+ISO8601_DATE_TIME : YEAR '-' MONTH '-' DAY 'T' HOUR (SYM_COLON MINUTE (SYM_COLON SECOND ( SYM_COMMA DIGIT+ )?)?)? ( TIMEZONE )? ;
 fragment TIMEZONE : 'Z' | ('+'|'-') HOUR_MIN ;   // hour offset, e.g. `+0930`, or else literal `Z` indicating +0000.
-fragment YEAR     : [0-9][0-9][0-9][0-9] ;		   // Year in ISO8601:2004 is 4 digits with 0-filling as needed
-fragment MONTH    : ( [0][1-9] | [1][0-2] ) ;    // month in year
-fragment DAY      : ( [0][1-9] | [12][0-9] | [3][0-1] ) ;  // day in month
+fragment YEAR     : [1-9][0-9]* ;
+fragment MONTH    : ( [0][0-9] | [1][0-2] ) ;    // month in year
+fragment DAY      : ( [012][0-9] | [3][0-2] ) ;  // day in month
 fragment HOUR     : ( [01]?[0-9] | [2][0-3] ) ;  // hour in 24 hour clock
 fragment MINUTE   : [0-5][0-9] ;                 // minutes
 fragment HOUR_MIN : ( [01]?[0-9] | [2][0-3] ) [0-5][0-9] ;  // hour / minutes quad digit pattern
 fragment SECOND   : [0-5][0-9] ;                 // seconds
-fragment SECOND_DEC_SEP : '.' | ',' ;
-fragment UNKNOWN_DT  : '??' ;                    // any unknown date/time value, except years.
 
-// ISO8601 DURATION PnYnMnWnDTnnHnnMnn.nnnS 
+// ISO8601 DURATION PnYnMnWnDTnnHnnMnn.nnnS
 // here we allow a deviation from the standard to allow weeks to be // mixed in with the rest since this commonly occurs in medicine
 // TODO: the following will incorrectly match just 'P'
-ISO8601_DURATION : '-'?'P' (DIGIT+ [yY])? (DIGIT+ [mM])? (DIGIT+ [wW])? (DIGIT+[dD])? ('T' (DIGIT+[hH])? (DIGIT+[mM])? (DIGIT+ (SECOND_DEC_SEP DIGIT+)?[sS])?)? ;
+ISO8601_DURATION : '-'?'P' (DIGIT+ [yY])? (DIGIT+ [mM])? (DIGIT+ [wW])? (DIGIT+[dD])? ('T' (DIGIT+[hH])? (DIGIT+[mM])? (DIGIT+ ('.'DIGIT+)?[sS])?)? ;
 
 // ------------------- special word symbols --------------
 SYM_TRUE  : [Tt][Rr][Uu][Ee] ;
@@ -96,25 +81,26 @@ SYM_FALSE : [Ff][Aa][Ll][Ss][Ee] ;
 
 // ---------------------- Identifiers ---------------------
 
-ARCHETYPE_HRID      : ARCHETYPE_HRID_ROOT '.v' ARCHETYPE_VERSION_ID ;
+ARCHETYPE_HRID      : ARCHETYPE_HRID_ROOT '.v' VERSION_ID ;
 ARCHETYPE_REF       : ARCHETYPE_HRID_ROOT '.v' INTEGER ( '.' DIGIT+ )* ;
-fragment ARCHETYPE_HRID_ROOT : (NAMESPACE '::')? IDENTIFIER '-' IDENTIFIER '-' IDENTIFIER '.' LABEL ;
-fragment ARCHETYPE_VERSION_ID: DIGIT+ ('.' DIGIT+ ('.' DIGIT+ ( ( '-rc' | '-alpha' | '-beta' ) ( '.' DIGIT+ )? )?)?)? ;
-VERSION_ID          : DIGIT+ '.' DIGIT+ '.' DIGIT+ ( ( '-rc' | '-alpha' | '-beta' ) ( '.' DIGIT+ )? )? ;
+fragment ARCHETYPE_HRID_ROOT : (NAMESPACE '::')? IDENTIFIER '-' IDENTIFIER '-' IDENTIFIER '.' ARCHETYPE_CONCEPT_ID ;
+VERSION_ID          : DIGIT+ '.' DIGIT+ '.' DIGIT+ ( ( '-rc' | '-alpha' ) ( '.' DIGIT+ )? )? ;
 fragment IDENTIFIER : ALPHA_CHAR WORD_CHAR* ;
+fragment ARCHETYPE_CONCEPT_ID : ALPHA_CHAR NAME_CHAR* ;
+
 
 // --------------------- composed primitive types -------------------
 
-// e.g. [ICD10AM(1998)::F23]; [ISO_639-1::en]
-TERM_CODE_REF : '[' TERM_CODE_CHAR+ ( '(' TERM_CODE_CHAR+ ')' )? '::' TERM_CODE_CHAR+ ']' ;
+TERM_CODE_REF : '[' TERM_CODE_CHAR+ ( '(' TERM_CODE_CHAR+ ')' )? '::' TERM_CODE_CHAR+ ']' ;  // e.g. [ICD10AM(1998)::F23]; [ISO_639-1::en]
 fragment TERM_CODE_CHAR: NAME_CHAR | '.';
 
-// --------------------- URIs --------------------
+VARIABLE_DECLARATION: SYM_VARIABLE_START RULE_IDENTIFIER SYM_COLON RULE_IDENTIFIER;
+fragment RULE_IDENTIFIER: ALPHA_UC_ID | ALPHA_LC_ID;
 
-// URI recogniser based on https://tools.ietf.org/html/rfc3986 and
-// http://www.w3.org/Addressing/URL/5_URI_BNF.html
+
 EMBEDDED_URI: '<' ([ \t\r\n]|CMT_LINE)* URI ([ \t\r\n]|CMT_LINE)* '>';
-
+// URIs - simple recogniser based on https://tools.ietf.org/html/rfc3986 and
+// http://www.w3.org/Addressing/URL/5_URI_BNF.html
 fragment URI : URI_SCHEME ':' URI_HIER_PART ( '?' URI_QUERY )? ('#' URI_FRAGMENT)? ;
 
 fragment URI_HIER_PART : ( '//' URI_AUTHORITY ) URI_PATH_ABEMPTY
@@ -131,7 +117,7 @@ fragment URI_PORT: DIGIT*;
 
 fragment URI_IP_LITERAL   : '[' URI_IPV6_LITERAL ']'; //TODO, if needed: IPvFuture
 fragment URI_IPV4_ADDRESS : URI_DEC_OCTET '.' URI_DEC_OCTET '.' URI_DEC_OCTET '.' URI_DEC_OCTET ;
-fragment URI_IPV6_LITERAL : HEX_QUAD (':' HEX_QUAD )* ':' ':' HEX_QUAD (':' HEX_QUAD )* ;
+fragment URI_IPV6_LITERAL : HEX_QUAD (SYM_COLON HEX_QUAD )* SYM_COLON SYM_COLON HEX_QUAD (SYM_COLON HEX_QUAD )* ;
 
 fragment URI_DEC_OCTET  : DIGIT | [1-9] DIGIT | '1' DIGIT DIGIT | '2' [0-4] DIGIT | '25' [0-5];
 fragment URI_REG_NAME: (URI_UNRESERVED | URI_PCT_ENCODED | URI_SUB_DELIMS)*;
@@ -166,12 +152,10 @@ fragment URI_SUB_DELIMS: '!' | '$' | '&' | '\'' | '(' | ')'
 fragment NAMESPACE : LABEL ('.' LABEL)* ;
 fragment LABEL : ALPHA_CHAR (NAME_CHAR|URI_PCT_ENCODED)* ;
 
-
 GUID : HEX_DIGIT+ '-' HEX_DIGIT+ '-' HEX_DIGIT+ '-' HEX_DIGIT+ '-' HEX_DIGIT+ ;
 
-ALPHA_UC_ID :   ALPHA_UCHAR WORD_CHAR* ;   // used for type ids
-ALPHA_LC_ID :   ALPHA_LCHAR WORD_CHAR* ;   // used for attribute / method ids
-ALPHA_UNDERSCORE_ID : '_' WORD_CHAR* ;     // usually used for meta-model ids
+ALPHA_UC_ID : ALPHA_UCHAR WORD_CHAR* ;           // used for type ids
+ALPHA_LC_ID : ALPHA_LCHAR WORD_CHAR* ;           // used for attribute / method ids
 
 // --------------------- atomic primitive types -------------------
 
@@ -201,49 +185,21 @@ fragment UTF8CHAR    : '\\u' HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT ;
 fragment DIGIT     : [0-9] ;
 fragment HEX_DIGIT : [0-9a-fA-F] ;
 
-// -------------------- common symbols ---------------------
 
-SYM_COMMA: ',' ;
-SYM_SEMI_COLON : ';' ;
+SYM_VARIABLE_START: '$';
+SYM_ASSIGNMENT: '::=';
 
-SYM_LPAREN   : '(';
-SYM_RPAREN   : ')';
-SYM_LBRACKET : '[';
-SYM_RBRACKET : ']';
-SYM_LCURLY   : '{' ;
-SYM_RCURLY   : '}' ;
+SYM_SEMICOLON: ';';
+SYM_LT: '<';
+SYM_GT: '>';
+SYM_LE: '<=';
+SYM_GE: '>=';
+SYM_EQ: '=';
+SYM_LEFT_PAREN: '(';
+SYM_RIGHT_PAREN: ')';
+SYM_COLON: ':';
+SYM_COMMA: ',';
 
-// --------- symbols ----------
-SYM_ASSIGNMENT: ':=' | '::=' ;
+INCLUDED_LANGUAGE_FRAGMENT: '(' ALPHANUM_CHAR+ ')' (WS|LINE)* '<#' .*? '#>';
 
-SYM_NE : '/=' | '!=' | '≠' ;
-SYM_EQ : '=' ;
-SYM_GT : '>' ;
-SYM_LT : '<' ;
-SYM_LE : '<=' | '≤' ;
-SYM_GE : '>=' | '≥' ;
-
-// TODO: remove when [] path predicates supported
-VARIABLE_WITH_PATH: VARIABLE_ID ADL_ABSOLUTE_PATH ;
-
-VARIABLE_ID: '$' ALPHA_LC_ID ;
-
-
-//
-// ========================= Lexer ============================
-//
-
-// -------------------- symbols for lists ------------------------
-SYM_LIST_CONTINUE: '...' ;
-
-// ------------------ symbols for intervals ----------------------
-
-SYM_PLUS : '+' ;
-SYM_MINUS : '-' ;
-SYM_PLUS_OR_MINUS : '+/-' | '±' ;
-SYM_PERCENT : '%' ;
-SYM_CARAT: '^' ;
-
-SYM_IVL_DELIM: '|' ;
-SYM_IVL_SEP  : '..' ;
 

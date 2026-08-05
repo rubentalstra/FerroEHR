@@ -1,4 +1,4 @@
-//! The `master03` string-escape decoder — one home for ODIN, BEL and cADL.
+//! The `master03` string-escape decoder — one home for this generation.
 //!
 //! `LANG/docs/odin/master03-basics.adoc` §File Encoding (verbatim twin:
 //! `AM/docs/ADL2/master03-file_encoding.adoc` §File Encoding) defines the
@@ -48,7 +48,8 @@
 //! literal hex text, so a plain `A` never changes meaning because hex
 //! characters happen to follow it.
 
-// TODO(#1946): stopgap copy of the v1_1 reader — re-derive against the LANG 1.0.0 release docs.
+// NOTE: `master03-basics.adoc` is byte-identical in Release-1.0.0 (verified
+// first-hand 2026-08-05) — the escape semantics are generation-invariant.
 /// A `master03` escape-sequence defect.
 ///
 /// Every variant is a decode failure with no sound fallback: the alternative
@@ -207,10 +208,9 @@ pub fn validate(inner: &str) -> Result<(), EscapeError> {
 ///
 /// The delimiters are `master03`'s (`LANG/docs/odin/master03-basics` §Special
 /// Character Sequences: `\"` is the escape *because* `"` delimits), and every
-/// reader of a `master03` string literal — the ODIN parser, the BEL parser and
-/// the cADL parser — strips them the same way, so the rule lives here once. A
-/// slice that is not delimited is decoded as-is rather than losing a
-/// character.
+/// reader of a `master03` string literal strips them the same way, so the
+/// rule lives here once. A slice that is not delimited is decoded as-is
+/// rather than losing a character.
 ///
 /// # Errors
 /// As [`decode`].

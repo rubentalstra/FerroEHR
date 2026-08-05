@@ -5,7 +5,8 @@
 //!
 //! Spec oracle: `docs/specs/openehr/AM/docs/{ADL2,AOM2,OPT2}/` (+ the ODIN
 //! spec at `docs/specs/openehr/LANG/docs/odin/`). The normative ANTLR4
-//! grammars are vendored under `vendor/grammar/` as reference input for the
+//! grammars are vendored under `vendor/grammar/` (version-scoped by AM
+//! generation: `v1_4/`, `v2_4/`) as reference input for the
 //! hand-written `logos`/`chumsky` implementation — no ANTLR runtime.
 //!
 //! Components: the outer artefact parser ([`source`]), the

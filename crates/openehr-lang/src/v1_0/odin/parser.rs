@@ -92,13 +92,21 @@ impl<'a> LabelError<'a, &'a [Token], DefaultExpected<'a, Token>> for Failure {
         self.preferred(Self::Syntax(span))
     }
 
+    // A REPLACE keeps a typed uniqueness violation (it always carries more
+    // information) but must actually replace a plain syntax conflict —
+    // chumsky has already decided the new position supersedes the old one,
+    // and keeping the stale span would pin every report to the first
+    // backtracked branch failure.
     fn replace_expected_found<E: IntoIterator<Item = DefaultExpected<'a, Token>>>(
         self,
         _expected: E,
         _found: Option<MaybeRef<'a, Token>>,
         span: SimpleSpan,
     ) -> Self {
-        self.preferred(Self::Syntax(span))
+        match self {
+            Self::Syntax(_) => Self::Syntax(span),
+            typed => typed,
+        }
     }
 }
 
@@ -136,22 +144,23 @@ pub(super) fn parse_tokens(spanned: &[Spanned]) -> Result<super::OdinDocument, L
 }
 
 /// `odin_text : ( schema_identifier )? main_text`, where the main text is
-/// `attr_vals | keyed_objects | object_value_block`.
+/// `attr_vals | keyed_objects | included_other_language |
+/// object_value_block`.
 ///
-/// The prefix and the top-level keyed-object form are both docs-text
-/// productions of `LANG/docs/odin/master04-odin_artefacts`: the chapter intro
-/// defines `odin_text ::= ( schema_identifier )? main_text`, and §Identified
-/// Object Document defines the multi-object document as top-level
-/// `["id"] = <…>` entries — the vendored `odin.g4` start rule
-/// (`attr_vals | object_value_block`) carries neither, and the docs text
-/// wins.
+/// The prefix is a docs-text production of
+/// `LANG/docs/odin/master04-odin_artefacts` (the chapter intro defines
+/// `odin_text ::= ( schema_identifier )? main_text`); the top-level
+/// keyed-object and whole-document plug-in alternatives are the
+/// Release-1.0.0 `odin.g4` start rule's own `keyed_object+` and
+/// `included_other_language` branches, agreeing with §Identified Object
+/// Document.
 fn odin_text<'a>() -> impl Parser<'a, &'a [Token], super::OdinDocument, Err<'a>> {
     let block = object_block();
     let attrs = attr_vals(block.clone());
     let keyed = keyed_objects(block.clone());
     schema_identifier()
         .or_not()
-        .then(choice((attrs, keyed, block)))
+        .then(choice((attrs, keyed, plug_in(), block)))
         .map(|(schema, root)| super::OdinDocument { schema, root })
         .then_ignore(end())
 }
@@ -163,14 +172,13 @@ fn odin_text<'a>() -> impl Parser<'a, &'a [Token], super::OdinDocument, Err<'a>>
 /// NOTE: two ambiguities in that production, adjudicated here (the chapter
 /// defines neither and gives no example): its `schema` is an unquoted,
 /// never-defined nonterminal — read as the identifier naming the schema
-/// (commonly the literal word `schema`), in the same identifier classes as an
-/// ODIN object key; and its `URI` ("a value of the URI primitive type") is
-/// taken in the embedded `<uri>` spelling every other ODIN URI value uses.
+/// (commonly the literal word `schema`), in the same identifier class as an
+/// ODIN attribute key (`ALPHA_LC_ID` in this generation); and its `URI`
+/// ("a value of the URI primitive type") is taken in the embedded `<uri>`
+/// spelling every other ODIN URI value uses.
 fn schema_identifier<'a>() -> impl Parser<'a, &'a [Token], super::OdinSchemaId, Err<'a>> + Clone {
     let name = select! {
-        Token::AlphaUcId(s) => s,
         Token::AlphaLcId(s) => s,
-        Token::AlphaUnderscoreId(s) => s,
     };
     just(Token::SymAt)
         .ignore_then(name)
@@ -189,13 +197,16 @@ fn schema_identifier<'a>() -> impl Parser<'a, &'a [Token], super::OdinSchemaId, 
 /// be unique" in `AM/docs/ADL1.4/master04-dadl` §General Form. A repeat is a
 /// typed [`Failure::DuplicateAttribute`], never a silent last-one-wins
 /// overwrite.
+///
+/// NOTE: the attribute key is `ALPHA_LC_ID` alone — the Release-1.0.0
+/// `base_patterns.g4` `attribute_id : ALPHA_LC_ID` (the docs text names no
+/// lexical class, so the appendix is the specific syntax authority; the
+/// broader `odin_object_key` postdates this generation).
 fn attr_vals<'a>(
     block: impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone + 'a,
 ) -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone {
     let key = select! {
-        Token::AlphaUcId(s) => s,
         Token::AlphaLcId(s) => s,
-        Token::AlphaUnderscoreId(s) => s,
     };
     key.then_ignore(just(Token::SymEq))
         .then(block)
@@ -215,12 +226,11 @@ fn attr_vals<'a>(
         })
 }
 
-/// `( keyed_object ';'? )+` with `keyed_object : '[' key_id ']' '='
-/// object_block` → [`OdinValue::KeyedList`] — the container-item form, both
-/// inside a block and as a whole Identified Object Document
-/// (`LANG/docs/odin/master04-odin_artefacts` §Identified Object Document;
-/// "Identifiers can be values of the String, Integer or any Date/Time
-/// primitive types").
+/// `( keyed_object ';'? )+` with `keyed_object : '[' primitive_value ']' '='
+/// object_block` (Release-1.0.0 `odin.g4`) → [`OdinValue::KeyedList`] — the
+/// container-item form, both inside a block and as a whole Identified Object
+/// Document (`LANG/docs/odin/master04-odin_artefacts` §Identified Object
+/// Document).
 ///
 /// NOTE: the trailing optional `';'` is a docs-text widening over the
 /// vendored `odin.g4`, which writes the separator only on `attr_vals`:
@@ -239,49 +249,131 @@ fn keyed_objects<'a>(
     // Keys compare as their typed values, so `[01]` duplicates `[1]`. A
     // repeat is a typed [`Failure::DuplicateKey`], never a silent
     // last-one-wins overwrite.
-    just(Token::LBracket)
-        .ignore_then(key_id)
-        .then_ignore(just(Token::RBracket))
-        .then_ignore(just(Token::SymEq))
-        .then(block)
-        .then_ignore(just(Token::SymSemiColon).or_not())
-        .map_with(|pair, e| (pair, e.span()))
-        .repeated()
-        .at_least(1)
-        .collect::<Vec<((OdinKey, OdinValue), SimpleSpan)>>()
-        .try_map(|entries, _| {
-            let mut seen: std::collections::HashSet<OdinKey> =
-                std::collections::HashSet::with_capacity(entries.len());
-            let mut list = Vec::with_capacity(entries.len());
-            for ((key, value), span) in entries {
-                if !seen.insert(key.clone()) {
-                    return Err(Failure::DuplicateKey {
-                        key: key.path_text(),
-                        span,
-                    });
-                }
-                list.push((key, value));
+    choice((
+        just(Token::LBracket)
+            .ignore_then(key_id)
+            .then_ignore(just(Token::RBracket)),
+        local_key(),
+    ))
+    .then_ignore(just(Token::SymEq))
+    .then(block)
+    .then_ignore(just(Token::SymSemiColon).or_not())
+    .map_with(|pair, e| (pair, e.span()))
+    .repeated()
+    .at_least(1)
+    .collect::<Vec<((OdinKey, OdinValue), SimpleSpan)>>()
+    .try_map(|entries, _| {
+        let mut seen: std::collections::HashSet<OdinKey> =
+            std::collections::HashSet::with_capacity(entries.len());
+        let mut list = Vec::with_capacity(entries.len());
+        for ((key, value), span) in entries {
+            if !seen.insert(key.clone()) {
+                return Err(Failure::DuplicateKey {
+                    key: key.path_text(),
+                    span,
+                });
             }
-            Ok(OdinValue::KeyedList(list))
-        })
+            list.push((key, value));
+        }
+        Ok(OdinValue::KeyedList(list))
+    })
 }
 
-/// `'[' key_id ']'`'s inner key (`odin.g4 key_id`).
+/// `'[' … ']'`'s inner key.
 ///
-/// NOTE: the five key types are App.B's `odin.g4` `key_id : string_value |
-/// integer_value | date_value | time_value | date_time_value` — the appendix
-/// includes the grammar as its normative text. §Container Objects prose says
-/// more broadly "any primitive comparable value is allowed as the key"; the
-/// syntax appendix is the specific syntax authority, so the five-type set
-/// stands and the tension is recorded here (#1376).
+/// NOTE: the key is any `primitive_value` — the Release-1.0.0 `odin.g4`
+/// `keyed_object : '[' primitive_value ']' '=' object_block`, agreeing with
+/// §Container Objects ("any primitive comparable value is allowed as the
+/// key"); the five-type `key_id` narrowing postdates this generation. The
+/// signed numeric forms follow `odin_values.g4`
+/// (`integer_value : ('+'|'-')? INTEGER`, likewise `real_value`).
 fn key_id<'a>() -> impl Parser<'a, &'a [Token], OdinKey, Err<'a>> + Clone {
-    select! {
-        Token::String(s) => OdinKey::String(decode_string(&s)),
-        Token::Integer(s) => OdinKey::Integer(s.parse::<i64>().unwrap_or(0)),
-        Token::Iso8601Date(s) => OdinKey::Date(s),
-        Token::Iso8601Time(s) => OdinKey::Time(s),
-        Token::Iso8601DateTime(s) => OdinKey::DateTime(s),
-    }
+    // A `custom` primitive with ONE failure point: a composed
+    // sign-prefix parser would emit a stray branch failure on every
+    // unsigned key, and chumsky's furthest-position error tracking would
+    // then outrank the typed VDOBU refusal raised behind it.
+    custom(|inp| {
+        let before = inp.cursor();
+        let sign = match inp.peek() {
+            Some(Token::SymPlus) => {
+                inp.next();
+                Some(1i64)
+            }
+            Some(Token::SymMinus) => {
+                inp.next();
+                Some(-1i64)
+            }
+            _ => None,
+        };
+        let token = inp.next();
+        let span = inp.span_since(&before);
+        match (sign, token) {
+            (sign, Some(Token::Integer(s))) => {
+                let mag = integer_lexeme(&s).ok_or(Failure::Syntax(span))?;
+                sign.unwrap_or(1)
+                    .checked_mul(mag)
+                    .map(OdinKey::Integer)
+                    .ok_or(Failure::Syntax(span))
+            }
+            (sign, Some(Token::Real(s))) => {
+                let Ok(mag) = s.parse::<f64>() else {
+                    return Err(Failure::Syntax(span));
+                };
+                let value = if sign == Some(-1) { -mag } else { mag };
+                Ok(OdinKey::Real(super::OdinRealKey::new(value)))
+            }
+            (None, Some(Token::String(s))) => Ok(OdinKey::String(decode_string(&s))),
+            (None, Some(Token::SymTrue)) => Ok(OdinKey::Boolean(true)),
+            (None, Some(Token::SymFalse)) => Ok(OdinKey::Boolean(false)),
+            (None, Some(Token::Character(s))) => Ok(OdinKey::Character(decode_char(&s))),
+            (None, Some(Token::TermCodeRef(s) | Token::LocalTermCodeRef(s))) => {
+                Ok(OdinKey::TermCode(s))
+            }
+            (None, Some(Token::Iso8601Date(s))) => Ok(OdinKey::Date(s)),
+            (None, Some(Token::Iso8601Time(s))) => Ok(OdinKey::Time(s)),
+            (None, Some(Token::Iso8601DateTime(s))) => Ok(OdinKey::DateTime(s)),
+            (None, Some(Token::Iso8601Duration(s))) => Ok(OdinKey::Duration(s)),
+            _ => Err(Failure::Syntax(span)),
+        }
+    })
+}
+
+/// A `[True]` / `[P1Y]`-shaped container key that arrives from the lexer as
+/// ONE `LocalTermCodeRef` token.
+///
+/// The local-code token is the ADL 1.4 leaf widening the shared lexer
+/// carries, and it swallows any `[alpha…]` bracket construct whole — but in
+/// key position the Release-1.0.0 `keyed_object : '[' primitive_value ']'`
+/// production is the specific authority, so the token's body is re-read and
+/// admitted exactly when it spells a primitive key (a case-insensitive
+/// boolean per `master07-leaf_data` §Boolean Data, or an ISO 8601 duration).
+/// Any other body (`[at0200]`, …) is not a `primitive_value` and stays a
+/// refusal in key position, exactly as in the v1_1 reading.
+fn local_key<'a>() -> impl Parser<'a, &'a [Token], OdinKey, Err<'a>> + Clone {
+    custom(|inp| {
+        let before = inp.cursor();
+        let token = inp.next();
+        let span = inp.span_since(&before);
+        let Some(Token::LocalTermCodeRef(text)) = token else {
+            return Err(Failure::Syntax(span));
+        };
+        let body = text
+            .strip_prefix('[')
+            .and_then(|rest| rest.strip_suffix(']'))
+            .unwrap_or(&text);
+        let Ok(tokens) = crate::v1_0::lexer::lex_odin(body) else {
+            return Err(Failure::Syntax(span));
+        };
+        match tokens.as_slice() {
+            [one] => match &one.token {
+                Token::SymTrue => Ok(OdinKey::Boolean(true)),
+                Token::SymFalse => Ok(OdinKey::Boolean(false)),
+                Token::Iso8601Duration(d) => Ok(OdinKey::Duration(d.clone())),
+                _ => Err(Failure::Syntax(span)),
+            },
+            _ => Err(Failure::Syntax(span)),
+        }
+    })
 }
 
 /// `object_block : object_value_block | object_reference_block` (+ the
@@ -371,41 +463,47 @@ fn object_block<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clon
 
         let uri = select! { Token::EmbeddedUri(s) => OdinValue::Uri(s) };
 
-        // `attr_name = (syntax) <# … #>` — a plug-in-syntax object block
-        // (`LANG/docs/odin/master09-plug_in_syntaxes`: "Plug-in syntaxes are
-        // indicated in ODIN … by the use of the syntax type in parentheses
-        // preceding the `<>` block. For a plug-in section, the `<>` delimiters
-        // are modified to `<# #>`"). The general form makes the `(syntax)` tag
-        // part of the construct, so a bare `<# … #>` with no tag stays a parse
-        // error. The tag is an ordinary identifier and the body is handed over
-        // verbatim.
-        let plug_in_tag = select! {
-            Token::AlphaLcId(s) => s,
-            Token::AlphaUcId(s) => s,
-        };
-        let plug_in = plug_in_tag
-            .delimited_by(just(Token::LParen), just(Token::RParen))
-            .then(select! { Token::PlugInBlock(s) => s })
-            .map(|(syntax, raw)| OdinValue::PlugIn {
-                syntax,
-                text: raw
-                    .strip_prefix("<#")
-                    .and_then(|t| t.strip_suffix("#>"))
-                    .unwrap_or(&raw)
-                    .to_owned(),
-            });
-
-        choice((uri, plug_in, value_block))
+        choice((uri, plug_in(), value_block))
     })
 }
 
-/// `rm_type_id : ( package_id '.' )* ALPHA_UC_ID ( '<' rm_type_id ( ','
-/// rm_type_id )* '>' )?`, reconstructed as a flat string (e.g.
+/// `(syntax) <# … #>` — a plug-in-syntax object block
+/// (`LANG/docs/odin/master09-plug_in_syntaxes`: "Plug-in syntaxes are
+/// indicated in ODIN … by the use of the syntax type in parentheses
+/// preceding the `<>` block. For a plug-in section, the `<>` delimiters are
+/// modified to `<# #>`").
+///
+/// The general form makes the `(syntax)` tag part of the construct, so a
+/// bare `<# … #>` with no tag stays a parse error. The tag is an ordinary
+/// identifier and the body is handed over verbatim. The same form is legal
+/// as a whole document — the Release-1.0.0 `odin.g4` start rule's
+/// `included_other_language` alternative — so [`odin_text`] offers it
+/// beside the block position.
+fn plug_in<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone {
+    let plug_in_tag = select! {
+        Token::AlphaLcId(s) => s,
+        Token::AlphaUcId(s) => s,
+    };
+    plug_in_tag
+        .delimited_by(just(Token::LParen), just(Token::RParen))
+        .then(select! { Token::PlugInBlock(s) => s })
+        .map(|(syntax, raw)| OdinValue::PlugIn {
+            syntax,
+            text: raw
+                .strip_prefix("<#")
+                .and_then(|t| t.strip_suffix("#>"))
+                .unwrap_or(&raw)
+                .to_owned(),
+        })
+}
+
+/// `type_id : ( package_id '.' )* ALPHA_UC_ID ( '<' type_id ( ','
+/// type_id )* '>' )?`, reconstructed as a flat string (e.g.
 /// `Interval<Quantity>`, `org.openehr.rm.ehr.content.ENTRY`).
 ///
-/// NOTE: the vendored `odin.g4` writes this rule as bare
-/// `ALPHA_UC_ID ( '<' rm_type_id ( ',' rm_type_id )* '>' )?` — no namespace
-/// form. The docs text, which is the oracle where it and a grammar artefact
+/// NOTE: the Release-1.0.0 `base_patterns.g4` writes this rule as bare
+/// `type_id : ALPHA_UC_ID ( '<' type_id ( ',' type_id )* '>' )?` — no
+/// namespace form. The docs text, which is the oracle where it and a grammar artefact
 /// disagree, allows the qualified spelling on any type identifier:
 /// "Type identifiers can also include namespace information, which is
 /// necessary when same-named types appear in different packages of a model.
@@ -555,6 +653,10 @@ fn interval_value<'a>(
         });
 
     // `| a '+/-' b |`
+    //
+    // NOTE: `master07-leaf_data` §Intervals (generation-identical text)
+    // defines `|N +/-M|` / `|N±M|` with worked examples — the docs text
+    // wins over the Release-1.0.0 `odin_values.g4`'s missing ± production.
     let plus_minus = leaf
         .clone()
         .then_ignore(just(Token::SymPlusOrMinus))

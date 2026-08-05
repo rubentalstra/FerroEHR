@@ -22,7 +22,7 @@
 //!
 //! The grammar productions cited (`c_ordinal`, `ordinal_term`,
 //! `assumed_ordinal_value`, `domain_specific_extension`, `c_terminology_code`)
-//! are the vendored normative ANTLR set at `vendor/grammar/cadl14.g4` +
+//! are the vendored normative ANTLR set at `vendor/grammar/v1_4/cadl14.g4` +
 //! `cadl14_primitives.g4`.
 
 #![allow(

@@ -3,7 +3,7 @@
 //! A hand-written recursive-descent parser over the shared openEHR token
 //! stream under its cADL reading ([`openehr_lang::v1_1::lexer::lex_adl`]),
 //! transcribed 1:1 from the vendored normative grammars
-//! `crates/openehr-adl/vendor/grammar/{cadl2.g4, cadl2_primitives.g4}`. It
+//! `crates/openehr-adl/vendor/grammar/v2_4/{cadl2.g4, cadl2_primitives.g4}`. It
 //! builds the **generated** AOM2 constraint model
 //! (`openehr_am::v2_4::aom2::constraint_model`) directly — never a new model
 //! type — producing a [`CComplexObject`] tree for a `definition` section body.
