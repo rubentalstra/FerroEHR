@@ -1,6 +1,6 @@
 //! The EL recursive-descent parser, generic over an [`ElBuilder`].
 //!
-//! Grammar: `crates/openehr-lang/vendor/grammar/ElParser.g4` (the normative EL
+//! Grammar: `crates/openehr-lang/vendor/grammar/v1_1/ElParser.g4` (the normative EL
 //! syntax; `docs/specs/openehr/LANG/docs/EL/masterAppA-syntax.adoc` is an
 //! include of it). Precedence comes from the EL operator tables — see
 //! [`crate::v1_1::el::parse_boolean_expression_with`].

@@ -1,3 +1,9 @@
+<!-- Layout note (2026-08-05, #1942): grammars are VERSION-SCOPED — each LANG
+component version keeps its grammar set under its own `vX_Y/` directory,
+mirroring the crate's generation modules (`v1_1/` = the 1.1.0-line normative
+grammars pinned below). A future version's grammars land in their own
+directory via `scripts/vendor-el-grammar.sh`, never mixed. -->
+
 # Provenance — the normative ODIN + BEL ANTLR4 grammars
 
 - Source: https://github.com/openEHR/adl-antlr (Apache-2.0; `LICENSE`

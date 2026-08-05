@@ -19,7 +19,10 @@ set -euo pipefail
 
 REPO="openEHR/openEHR-antlr4"
 COMMIT="3494da942f3ed35963279837447b3039dd098e20"   # master 2025-12-15
-DEST="$(cd "$(dirname "$0")/.." && pwd)/crates/openehr-lang/vendor/grammar"
+# Grammars are VERSION-SCOPED vendored artifacts (the multi-generation
+# foundation, #1936/#1942): each LANG component version keeps its grammars
+# under its own vX_Y directory, mirroring the crate's generation modules.
+DEST="$(cd "$(dirname "$0")/.." && pwd)/crates/openehr-lang/vendor/grammar/v1_1"
 
 fetch() {
   local path="$1" out="$2"

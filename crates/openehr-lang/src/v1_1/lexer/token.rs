@@ -2,7 +2,7 @@
 //! ODIN and BEL lexical layers.
 //!
 //! The patterns are transcribed from the authoritative vendored grammars
-//! (`vendor/grammar/base_lexer.g4`, `adl_keywords.g4`, `odin.g4`,
+//! (`vendor/grammar/v1_1/base_lexer.g4`, `adl_keywords.g4`, `odin.g4`,
 //! `odin_values.g4`, `base_expressions.g4`) and the normative chapters they
 //! implement. Which of these tokens a given language actually produces is
 //! decided by [`super::reclassify()`], not here — see the module docs of

@@ -5,7 +5,7 @@
 //! (`master04-terminal_entities.adoc`), the operator tables and precedence
 //! (`master05-expressions.adoc`), and the syntax appendix
 //! `masterAppA-syntax.adoc`, which is an `include::` of exactly the two
-//! vendored grammars `crates/openehr-lang/vendor/grammar/{ElLexer.g4,
+//! vendored grammars `crates/openehr-lang/vendor/grammar/v1_1/{ElLexer.g4,
 //! ElParser.g4}`. Where EL expressions are used in BMM models the shape is
 //! fixed: "Expressions as used in BMM models to express class invariants and
 //! routine pre- and post-conditions are always in the form of an

@@ -3,7 +3,7 @@
 //!
 //! ADL2/cADL, ODIN, BEL and EL are four readings of one family of lexical
 //! rules — the vendored `.g4` grammars all build on the same base id/symbol
-//! layer (`vendor/grammar/`), and each language's syntax appendix is an
+//! layer (`vendor/grammar/v1_1/`), and each language's syntax appendix is an
 //! include of those files, which makes them normative-by-reference. This
 //! module is that shared layer, and it is the ONLY lexer in the workspace:
 //! `openehr-adl` and the `odin`/`bel`/`el` readers here all consume
@@ -170,7 +170,7 @@ pub fn lex_bel(src: &str) -> Result<Vec<Spanned>, LexError> {
 }
 
 /// Lex `src` under the Expression Language reading (`LANG/docs/EL/`;
-/// `vendor/grammar/ElLexer.g4`, which the EL syntax appendix
+/// `vendor/grammar/v1_1/ElLexer.g4`, which the EL syntax appendix
 /// `masterAppA-syntax.adoc` includes verbatim).
 ///
 /// `ElLexer.g4` imports `Cadl2Lexer`, `SymbolsLexer` and `GeneralIdsLexer`

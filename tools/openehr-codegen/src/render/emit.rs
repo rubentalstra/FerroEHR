@@ -231,7 +231,11 @@ fn emit_version(
         if !prefix.is_empty() {
             chain.push(prefix.to_string());
         }
-        chain.extend(pkg.split('/').filter(|s| !s.is_empty()).map(str::to_string));
+        chain.extend(
+            pkg.split('/')
+                .filter(|s| !s.is_empty())
+                .map(naming::module_ident),
+        );
         chain.push(naming::field_ident(&to_snake(name)));
         index.insert(naming::type_name(name), chain.clone());
         emitted.push(Emitted {
@@ -331,7 +335,7 @@ pub(crate) fn type_module_path(schema: &BmmSchema, class: &str) -> String {
     let mut chain: Vec<String> = pkg
         .split('/')
         .filter(|s| !s.is_empty())
-        .map(str::to_string)
+        .map(naming::module_ident)
         .collect();
     chain.push(naming::field_ident(&to_snake(class)));
     chain.join("::")

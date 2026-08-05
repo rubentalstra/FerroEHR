@@ -89,6 +89,11 @@ pub(crate) const AM24_BMM: &str = "components/AM/json/openehr_am_2.4.0.bmm.json"
 /// (`…beom`, with `EXPR_*` and `STATEMENT_SET`/`ASSERTION`, which AM's rules/slots
 /// reference). `LANG/docs/bmm/master01-preface.adoc` §History calls this "the
 /// normative, tool-implemented version".
+/// LANG's released 1.0.0 machine-readable BMM (owner directive 2026-08-05:
+/// emitted FAITHFULLY despite its published defects — it declares no
+/// `includes`, so its BASE references stay open slots; BMM is TRIAL in that
+/// release; defect class reported upstream in #1927).
+pub(crate) const LANG10_BMM: &str = "components/LANG/json/openehr_lang_1.0.0.bmm.json";
 pub(crate) const LANG_BMM: &str = "components/LANG/json/openehr_lang_1.1.0.bmm.json";
 /// LANG's **v3 generation** (`org.openehr.lang.bmm3`): the evolved `BMM_*` object
 /// model with the `EL_*` expression language and the `BMM_STATEMENT*` family,
@@ -279,29 +284,45 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
     CrateComposition {
         key: "lang",
         crate_name: "openehr-lang",
-        generations: &[GenerationSpec {
-            module: "v1_1",
-            spec_version: "1.1.0",
-            units: &[
-                GenerationUnit {
-                    file: LANG_BMM,
+        generations: &[
+            GenerationSpec {
+                module: "v1_0",
+                spec_version: "1.0.0",
+                units: &[GenerationUnit {
+                    file: LANG10_BMM,
                     in_prelude: true,
-                },
-                GenerationUnit {
-                    file: LANG_BMM3,
-                    in_prelude: false,
-                },
-            ],
-            current: true,
-            model_deps: &[DepGeneration {
-                key: "base",
-                generation: "v1_3",
-            }],
-            prelude_deps: &[DepGeneration {
-                key: "base",
-                generation: "v1_3",
-            }],
-        }],
+                }],
+                current: false,
+                // The released file declares NO includes (its BASE references
+                // stay open slots) — emitted verbatim, owner directive
+                // 2026-08-05; upstream defect class in #1927.
+                model_deps: &[],
+                prelude_deps: &[],
+            },
+            GenerationSpec {
+                module: "v1_1",
+                spec_version: "1.1.0",
+                units: &[
+                    GenerationUnit {
+                        file: LANG_BMM,
+                        in_prelude: true,
+                    },
+                    GenerationUnit {
+                        file: LANG_BMM3,
+                        in_prelude: false,
+                    },
+                ],
+                current: true,
+                model_deps: &[DepGeneration {
+                    key: "base",
+                    generation: "v1_3",
+                }],
+                prelude_deps: &[DepGeneration {
+                    key: "base",
+                    generation: "v1_3",
+                }],
+            },
+        ],
         doc: LANG_DOC,
         citation: "LANG 1.1.0 BMM includes openehr_base_1.3.0. ONE component-version \
                    generation (`v1_1`) composed of TWO published specification units, per the \

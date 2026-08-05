@@ -4,7 +4,7 @@
 //! Spec oracle: `docs/specs/openehr/LANG/docs/BEL/` — the statement/assertion/
 //! assignment grammar (`master03-language.adoc`, syntax appendix
 //! `masterAppA-syntax.adoc`) whose normative productions are the vendored ADL
-//! grammar `crates/openehr-lang/vendor/grammar/base_expressions.g4` (BEL imports
+//! grammar `crates/openehr-lang/vendor/grammar/v1_1/base_expressions.g4` (BEL imports
 //! `cadl2_primitives`, which is why the `matches { … }` constraint leaf is an
 //! extension point — see below). The `OPERATOR_KIND` vocabulary is
 //! `master04-expression_object_model.adoc`.

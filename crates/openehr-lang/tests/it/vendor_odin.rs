@@ -5,7 +5,7 @@
 //! (archie, commit `e8d92f28`, `odin/src/test/resources/odin/`); archie's own
 //! `OdinBaseVisitorTest` / `OdinBaseVisitorTest2` / `OdinBaseVisitorReferencingTest`
 //! are the outcome oracle for what each fixture parses to. The ODIN grammar
-//! (`crates/openehr-lang/vendor/grammar/{odin.g4,odin_values.g4,base_lexer.g4}`)
+//! (`crates/openehr-lang/vendor/grammar/v1_1/{odin.g4,odin_values.g4,base_lexer.g4}`)
 //! and the normative spec text (`docs/specs/openehr/LANG/docs/odin/`) are the
 //! syntax authority.
 //!

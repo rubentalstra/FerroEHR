@@ -58,7 +58,7 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
 - **`src/v1_1/el/` is the hand-written Expression Language parser, and it is the ONLY
   writer of the `src/v1_1/bmm3/expression/` classes.** Spec oracle:
   `docs/specs/openehr/LANG/docs/EL/` plus the vendored normative grammars
-  `vendor/grammar/{ElLexer.g4, ElParser.g4}` (openEHR-antlr4), which the EL
+  `vendor/grammar/v1_1/{ElLexer.g4, ElParser.g4}` (openEHR-antlr4), which the EL
   syntax appendix `masterAppA-syntax.adoc` includes verbatim. It follows the BEL
   house pattern — a recursive-descent parser generic over an `ElBuilder` — but
   shares NO productions with `src/v1_1/bel/`: `ElParser.g4` imports `Cadl2Parser`, not
@@ -216,7 +216,7 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
   `lexer::lex_odin` + an `OdinValue` tree; `openehr_lang::odin::parse`), NOT
   part of the generated/`bmm*`/`beom` model — never route it through codegen.
   Spec oracle: `docs/specs/openehr/LANG/docs/odin/` + the vendored grammars
-  `vendor/grammar/{odin.g4,odin_values.g4,base_lexer.g4}`. `openehr-adl`
+  `vendor/grammar/v1_1/{odin.g4,odin_values.g4,base_lexer.g4}`. `openehr-adl`
   consumes it to parse ADL2 ODIN sections. Do not touch
   `bmm`/`bmm3`/`beom`/`bmm_persistence` when editing `odin`.
 - **`src/v1_1/escape.rs` is the ONE home for `master03` string-escape semantics**

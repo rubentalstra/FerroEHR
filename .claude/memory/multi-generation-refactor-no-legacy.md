@@ -25,3 +25,10 @@ queue. Examples already handled in-session: crate-root `SPEC_VERSION`
 removed (enum + generation-module consts are the only authorities);
 `#1944` (generate the hand-written `*_impl.rs` surface) parented under
 #1936 by the owner.
+
+**Profile coupling (owner HARD RULE 2026-08-05):** `spec_profile = stable`
+selects RM 1.1.0 + BASE 1.2.0 + LANG 1.0.0; `development` selects RM 1.2.0 +
+BASE 1.3.0 + LANG 1.1.0. LANG is IN the coupled set — never RM+BASE only.
+Generation modules are named by COMPONENT VERSION (`v1_0`, `v1_1`, `v1_2`);
+a component version's several published spec files are UNITS inside one
+generation (LANG v1_1 = bmm + bmm3), never separate generations.
