@@ -4,8 +4,8 @@
 //! meta-model.
 
 use crate::v2_4::bmm::core::bmm_model::BmmModel;
-use openehr_lang::v3::bmm3::model_access::bmm_include_spec::BmmIncludeSpec;
-use openehr_lang::v3::bmm3::model_access::bmm_schema_state::BmmSchemaState;
+use openehr_lang::v1_1::bmm3::model_access::bmm_include_spec::BmmIncludeSpec;
+use openehr_lang::v1_1::bmm3::model_access::bmm_schema_state::BmmSchemaState;
 
 /// Abstract parent of any persistable form of a BMM model, e.g. `P_BMM_SCHEMA`.
 #[doc(alias = "BMM_SCHEMA")]

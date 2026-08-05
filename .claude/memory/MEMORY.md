@@ -24,3 +24,4 @@
 - [SVG text: keep owner wording](svg-text-owner-wording.md) — never reword/rewrap approved chart text off px estimates; adjust geometry, wording is fixed
 - [Published crates cite specs only](published-crates-cite-specs-only.md) — openehr-* sources never reference AMB ids/cnf-runner; adjudications state decision + released ground in place
 - [BMM v3 on hold](bmm3-on-hold.md) — record #1920; v3-only issues get on-hold + blocked-by #1920, never the worklist; tracker-state only, landed code stays
+- [Multi-gen refactor: no legacy carried](multi-generation-refactor-no-legacy.md) — residue found under #1936 is removed or filed as a sub-issue of #1936, never kept

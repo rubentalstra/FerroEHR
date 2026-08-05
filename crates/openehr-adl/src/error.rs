@@ -10,7 +10,7 @@
 //! are present-but-unused here by design — the enum is the catalogue, not only
 //! the slice this outer parser reaches.
 
-use openehr_lang::position::line_col;
+use openehr_lang::v1_1::position::line_col;
 
 /// An ADL2 syntax-error code.
 ///
@@ -252,7 +252,7 @@ impl SyntaxError {
 /// carries no code for a lexical defect, so every lexical failure reports
 /// under `SUNK` ("Syntax error (unknown cause)") and names the offending input
 /// in the message.
-pub(crate) fn lexical(failure: &openehr_lang::lexer::LexError, src: &str) -> SyntaxError {
+pub(crate) fn lexical(failure: &openehr_lang::v1_1::lexer::LexError, src: &str) -> SyntaxError {
     SyntaxError::at(
         SyntaxErrorCode::Sunk,
         format!("unrecognised token {:?}", failure.text),
@@ -323,7 +323,7 @@ mod tests {
     }
 
     /// A defect's reported position comes from the shared
-    /// [`openehr_lang::position::line_col`] (whose own tests pin the
+    /// [`openehr_lang::v1_1::position::line_col`] (whose own tests pin the
     /// arithmetic); what this crate owns is that `SyntaxError::at` resolves the
     /// SPAN START against the source it was handed.
     #[test]

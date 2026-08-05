@@ -1,4 +1,4 @@
-//! Public-API tests for the pure-BEL parser (`openehr_lang::bel`, the
+//! Public-API tests for the pure-BEL parser (`openehr_lang::v1_1::bel`, the
 //! [`BeomBuilder`] path). Structural assertions over the generated `beom` tree;
 //! the AOM-extended path is exercised in `openehr-adl`.
 
@@ -8,9 +8,9 @@
     reason = "integration-test assertions and fixture plumbing outside #[test] fns, which the clippy.toml allow-*-in-tests scoping does not reach"
 )]
 
-use openehr_lang::bel::{BelError, parse_statements};
-use openehr_lang::v2::beom::core::expression::Expression;
-use openehr_lang::v2::beom::core::statement::Statement;
+use openehr_lang::v1_1::bel::{BelError, parse_statements};
+use openehr_lang::v1_1::beom::core::expression::Expression;
+use openehr_lang::v1_1::beom::core::statement::Statement;
 
 fn one_assertion(src: &str) -> Expression {
     let stmts = parse_statements(src).unwrap_or_else(|e| panic!("parse {src:?}: {e}"));

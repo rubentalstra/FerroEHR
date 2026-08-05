@@ -33,7 +33,7 @@ use crate::aom::build::{
 use crate::aom::interval::{point_value_f64, point_value_i32};
 use crate::error::SyntaxErrorCode;
 use crate::parse::{PResult, Parser};
-use openehr_lang::lexer::Token;
+use openehr_lang::v1_1::lexer::Token;
 
 // ── the ADL 1.4-only object productions ───────────────────────────────────
 impl Parser<'_> {
@@ -412,7 +412,7 @@ impl Parser<'_> {
 
     /// 1.4-only: an inline dADL domain constraint `(C_DV_QUANTITY) <…>` /
     /// `C_DV_ORDINAL <…>` / `C_CODE_PHRASE <…>`. The ODIN block is parsed via
-    /// `openehr_lang::odin` and lowered to the constraint the RM type the domain
+    /// `openehr_lang::v1_1::odin` and lowered to the constraint the RM type the domain
     /// constrainer targets takes:
     ///
     /// * `C_DV_QUANTITY`/`C_DV_ORDINAL` → a `DV_QUANTITY`/`DV_ORDINAL`
@@ -519,7 +519,7 @@ impl Parser<'_> {
             .src
             .get(self.span_at(open).start..self.span_at(close).end)
             .unwrap_or_default();
-        let Ok(odin) = openehr_lang::odin::parse(block) else {
+        let Ok(odin) = openehr_lang::v1_1::odin::parse(block) else {
             self.push(SyntaxErrorCode::Sdinv, "invalid dADL in domain block", span);
             return Err(());
         };

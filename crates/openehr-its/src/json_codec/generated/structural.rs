@@ -37,7 +37,130 @@
     unused_qualifications,
     reason = "mechanically generated dispatch text: one uniform arm per emitted class, every item named by its full path — length and style lints do not apply, the hand-written runtime carries the lint bar"
 )]
-// Shadowed twins (139):
+// Shadowed twins (382):
+//   ACTION: openehr_rm::v1_2::composition::content::entry::action::Action wins over openehr_rm::v1_1::composition::content::entry::action::Action
+//   ACTIVITY: openehr_rm::v1_2::composition::content::entry::activity::Activity wins over openehr_rm::v1_1::composition::content::entry::activity::Activity
+//   ADDRESS: openehr_rm::v1_2::demographic::address::Address wins over openehr_rm::v1_1::demographic::address::Address
+//   ADDRESSED_MESSAGE: openehr_rm::v1_2::ehr_extract::message::addressed_message::AddressedMessage wins over openehr_rm::v1_1::ehr_extract::message::addressed_message::AddressedMessage
+//   ADMIN_ENTRY: openehr_rm::v1_2::composition::content::entry::admin_entry::AdminEntry wins over openehr_rm::v1_1::composition::content::entry::admin_entry::AdminEntry
+//   AGENT: openehr_rm::v1_2::demographic::agent::Agent wins over openehr_rm::v1_1::demographic::agent::Agent
+//   ARCHETYPED: openehr_rm::v1_2::common::archetyped::archetyped::Archetyped wins over openehr_rm::v1_1::common::archetyped::archetyped::Archetyped
+//   ATTESTATION: openehr_rm::v1_2::common::generic::attestation::Attestation wins over openehr_rm::v1_1::common::generic::attestation::Attestation
+//   AUDIT_DETAILS: openehr_rm::v1_2::common::generic::audit_details::AuditDetailsData wins over openehr_rm::v1_1::common::generic::audit_details::AuditDetailsData
+//   AUTHORED_RESOURCE: openehr_rm::v1_2::common::resource::authored_resource::AuthoredResource wins over openehr_rm::v1_1::common::resource::authored_resource::AuthoredResource
+//   CAPABILITY: openehr_rm::v1_2::demographic::capability::Capability wins over openehr_rm::v1_1::demographic::capability::Capability
+//   CLUSTER: openehr_rm::v1_2::data_structures::representation::cluster::Cluster wins over openehr_rm::v1_1::data_structures::representation::cluster::Cluster
+//   CODE_PHRASE: openehr_rm::v1_2::data_types::text::code_phrase::CodePhrase wins over openehr_rm::v1_1::data_types::text::code_phrase::CodePhrase
+//   CODE_SET_ACCESS: openehr_rm::v1_2::support::terminology::code_set_access::CodeSetAccess wins over openehr_rm::v1_1::support::terminology::code_set_access::CodeSetAccess
+//   COMPOSITION: openehr_rm::v1_2::composition::composition::Composition wins over openehr_rm::v1_1::composition::composition::Composition
+//   CONTACT: openehr_rm::v1_2::demographic::contact::Contact wins over openehr_rm::v1_1::demographic::contact::Contact
+//   CONTRIBUTION: openehr_rm::v1_2::common::change_control::contribution::Contribution wins over openehr_rm::v1_1::common::change_control::contribution::Contribution
+//   DV_BOOLEAN: openehr_rm::v1_2::data_types::basic::dv_boolean::DvBoolean wins over openehr_rm::v1_1::data_types::basic::dv_boolean::DvBoolean
+//   DV_CODED_TEXT: openehr_rm::v1_2::data_types::text::dv_coded_text::DvCodedText wins over openehr_rm::v1_1::data_types::text::dv_coded_text::DvCodedText
+//   DV_COUNT: openehr_rm::v1_2::data_types::quantity::dv_count::DvCount wins over openehr_rm::v1_1::data_types::quantity::dv_count::DvCount
+//   DV_DATE: openehr_rm::v1_2::data_types::quantity::date_time::dv_date::DvDate wins over openehr_rm::v1_1::data_types::quantity::date_time::dv_date::DvDate
+//   DV_DATE_TIME: openehr_rm::v1_2::data_types::quantity::date_time::dv_date_time::DvDateTime wins over openehr_rm::v1_1::data_types::quantity::date_time::dv_date_time::DvDateTime
+//   DV_DURATION: openehr_rm::v1_2::data_types::quantity::date_time::dv_duration::DvDuration wins over openehr_rm::v1_1::data_types::quantity::date_time::dv_duration::DvDuration
+//   DV_EHR_URI: openehr_rm::v1_2::data_types::uri::dv_ehr_uri::DvEhrUri wins over openehr_rm::v1_1::data_types::uri::dv_ehr_uri::DvEhrUri
+//   DV_GENERAL_TIME_SPECIFICATION: openehr_rm::v1_2::data_types::time_specification::dv_general_time_specification::DvGeneralTimeSpecification wins over openehr_rm::v1_1::data_types::time_specification::dv_general_time_specification::DvGeneralTimeSpecification
+//   DV_IDENTIFIER: openehr_rm::v1_2::data_types::basic::dv_identifier::DvIdentifier wins over openehr_rm::v1_1::data_types::basic::dv_identifier::DvIdentifier
+//   DV_INTERVAL: openehr_rm::v1_2::data_types::quantity::dv_interval::DvInterval<::serde_json::Value> wins over openehr_rm::v1_1::data_types::quantity::dv_interval::DvInterval<::serde_json::Value>
+//   DV_MULTIMEDIA: openehr_rm::v1_2::data_types::encapsulated::dv_multimedia::DvMultimedia wins over openehr_rm::v1_1::data_types::encapsulated::dv_multimedia::DvMultimedia
+//   DV_ORDINAL: openehr_rm::v1_2::data_types::quantity::dv_ordinal::DvOrdinal wins over openehr_rm::v1_1::data_types::quantity::dv_ordinal::DvOrdinal
+//   DV_PARAGRAPH: openehr_rm::v1_2::data_types::text::dv_paragraph::DvParagraph wins over openehr_rm::v1_1::data_types::text::dv_paragraph::DvParagraph
+//   DV_PARSABLE: openehr_rm::v1_2::data_types::encapsulated::dv_parsable::DvParsable wins over openehr_rm::v1_1::data_types::encapsulated::dv_parsable::DvParsable
+//   DV_PERIODIC_TIME_SPECIFICATION: openehr_rm::v1_2::data_types::time_specification::dv_periodic_time_specification::DvPeriodicTimeSpecification wins over openehr_rm::v1_1::data_types::time_specification::dv_periodic_time_specification::DvPeriodicTimeSpecification
+//   DV_PROPORTION: openehr_rm::v1_2::data_types::quantity::dv_proportion::DvProportion wins over openehr_rm::v1_1::data_types::quantity::dv_proportion::DvProportion
+//   DV_QUANTITY: openehr_rm::v1_2::data_types::quantity::dv_quantity::DvQuantity wins over openehr_rm::v1_1::data_types::quantity::dv_quantity::DvQuantity
+//   DV_SCALE: openehr_rm::v1_2::data_types::quantity::dv_scale::DvScale wins over openehr_rm::v1_1::data_types::quantity::dv_scale::DvScale
+//   DV_STATE: openehr_rm::v1_2::data_types::basic::dv_state::DvState wins over openehr_rm::v1_1::data_types::basic::dv_state::DvState
+//   DV_TEXT: openehr_rm::v1_2::data_types::text::dv_text::DvTextData wins over openehr_rm::v1_1::data_types::text::dv_text::DvTextData
+//   DV_TIME: openehr_rm::v1_2::data_types::quantity::date_time::dv_time::DvTime wins over openehr_rm::v1_1::data_types::quantity::date_time::dv_time::DvTime
+//   DV_URI: openehr_rm::v1_2::data_types::uri::dv_uri::DvUriData wins over openehr_rm::v1_1::data_types::uri::dv_uri::DvUriData
+//   EHR: openehr_rm::v1_2::ehr::ehr::Ehr wins over openehr_rm::v1_1::ehr::ehr::Ehr
+//   EHR_ACCESS: openehr_rm::v1_2::ehr::ehr_access::EhrAccess wins over openehr_rm::v1_1::ehr::ehr_access::EhrAccess
+//   EHR_STATUS: openehr_rm::v1_2::ehr::ehr_status::EhrStatus wins over openehr_rm::v1_1::ehr::ehr_status::EhrStatus
+//   ELEMENT: openehr_rm::v1_2::data_structures::representation::element::Element wins over openehr_rm::v1_1::data_structures::representation::element::Element
+//   EVALUATION: openehr_rm::v1_2::composition::content::entry::evaluation::Evaluation wins over openehr_rm::v1_1::composition::content::entry::evaluation::Evaluation
+//   EVENT_CONTEXT: openehr_rm::v1_2::composition::event_context::EventContext wins over openehr_rm::v1_1::composition::event_context::EventContext
+//   EXTRACT: openehr_rm::v1_2::ehr_extract::common::extract::Extract wins over openehr_rm::v1_1::ehr_extract::common::extract::Extract
+//   EXTRACT_ACTION_REQUEST: openehr_rm::v1_2::ehr_extract::common::extract_action_request::ExtractActionRequest wins over openehr_rm::v1_1::ehr_extract::common::extract_action_request::ExtractActionRequest
+//   EXTRACT_CHAPTER: openehr_rm::v1_2::ehr_extract::common::extract_chapter::ExtractChapterData wins over openehr_rm::v1_1::ehr_extract::common::extract_chapter::ExtractChapterData
+//   EXTRACT_ENTITY_CHAPTER: openehr_rm::v1_2::ehr_extract::common::extract_entity_chapter::ExtractEntityChapter wins over openehr_rm::v1_1::ehr_extract::common::extract_entity_chapter::ExtractEntityChapter
+//   EXTRACT_ENTITY_MANIFEST: openehr_rm::v1_2::ehr_extract::common::extract_entity_manifest::ExtractEntityManifest wins over openehr_rm::v1_1::ehr_extract::common::extract_entity_manifest::ExtractEntityManifest
+//   EXTRACT_ERROR: openehr_rm::v1_2::ehr_extract::common::extract_error::ExtractError wins over openehr_rm::v1_1::ehr_extract::common::extract_error::ExtractError
+//   EXTRACT_FOLDER: openehr_rm::v1_2::ehr_extract::common::extract_folder::ExtractFolder wins over openehr_rm::v1_1::ehr_extract::common::extract_folder::ExtractFolder
+//   EXTRACT_MANIFEST: openehr_rm::v1_2::ehr_extract::common::extract_manifest::ExtractManifest wins over openehr_rm::v1_1::ehr_extract::common::extract_manifest::ExtractManifest
+//   EXTRACT_PARTICIPATION: openehr_rm::v1_2::ehr_extract::common::extract_participation::ExtractParticipation wins over openehr_rm::v1_1::ehr_extract::common::extract_participation::ExtractParticipation
+//   EXTRACT_REQUEST: openehr_rm::v1_2::ehr_extract::common::extract_request::ExtractRequest wins over openehr_rm::v1_1::ehr_extract::common::extract_request::ExtractRequest
+//   EXTRACT_SPEC: openehr_rm::v1_2::ehr_extract::common::extract_spec::ExtractSpec wins over openehr_rm::v1_1::ehr_extract::common::extract_spec::ExtractSpec
+//   EXTRACT_UPDATE_SPEC: openehr_rm::v1_2::ehr_extract::common::extract_update_spec::ExtractUpdateSpec wins over openehr_rm::v1_1::ehr_extract::common::extract_update_spec::ExtractUpdateSpec
+//   EXTRACT_VERSION_SPEC: openehr_rm::v1_2::ehr_extract::common::extract_version_spec::ExtractVersionSpec wins over openehr_rm::v1_1::ehr_extract::common::extract_version_spec::ExtractVersionSpec
+//   FEEDER_AUDIT: openehr_rm::v1_2::common::archetyped::feeder_audit::FeederAudit wins over openehr_rm::v1_1::common::archetyped::feeder_audit::FeederAudit
+//   FEEDER_AUDIT_DETAILS: openehr_rm::v1_2::common::archetyped::feeder_audit_details::FeederAuditDetails wins over openehr_rm::v1_1::common::archetyped::feeder_audit_details::FeederAuditDetails
+//   FOLDER: openehr_rm::v1_2::common::directory::folder::Folder wins over openehr_rm::v1_1::common::directory::folder::Folder
+//   GENERIC_CONTENT_ITEM: openehr_rm::v1_2::ehr_extract::generic_extract::generic_content_item::GenericContentItem wins over openehr_rm::v1_1::ehr_extract::generic_extract::generic_content_item::GenericContentItem
+//   GENERIC_ENTRY: openehr_rm::v1_2::integration::generic_entry::GenericEntry wins over openehr_rm::v1_1::integration::generic_entry::GenericEntry
+//   GROUP: openehr_rm::v1_2::demographic::group::Group wins over openehr_rm::v1_1::demographic::group::Group
+//   HISTORY: openehr_rm::v1_2::data_structures::history::history::History<::serde_json::Value> wins over openehr_rm::v1_1::data_structures::history::history::History<::serde_json::Value>
+//   IMPORTED_VERSION: openehr_rm::v1_2::common::change_control::imported_version::ImportedVersion<::serde_json::Value> wins over openehr_rm::v1_1::common::change_control::imported_version::ImportedVersion<::serde_json::Value>
+//   INSTRUCTION: openehr_rm::v1_2::composition::content::entry::instruction::Instruction wins over openehr_rm::v1_1::composition::content::entry::instruction::Instruction
+//   INSTRUCTION_DETAILS: openehr_rm::v1_2::composition::content::entry::instruction_details::InstructionDetails wins over openehr_rm::v1_1::composition::content::entry::instruction_details::InstructionDetails
+//   INTERVAL_EVENT: openehr_rm::v1_2::data_structures::history::interval_event::IntervalEvent<::serde_json::Value> wins over openehr_rm::v1_1::data_structures::history::interval_event::IntervalEvent<::serde_json::Value>
+//   ISM_TRANSITION: openehr_rm::v1_2::composition::content::entry::ism_transition::IsmTransition wins over openehr_rm::v1_1::composition::content::entry::ism_transition::IsmTransition
+//   ITEM_LIST: openehr_rm::v1_2::data_structures::item_structure::item_list::ItemList wins over openehr_rm::v1_1::data_structures::item_structure::item_list::ItemList
+//   ITEM_SINGLE: openehr_rm::v1_2::data_structures::item_structure::item_single::ItemSingle wins over openehr_rm::v1_1::data_structures::item_structure::item_single::ItemSingle
+//   ITEM_TABLE: openehr_rm::v1_2::data_structures::item_structure::item_table::ItemTable wins over openehr_rm::v1_1::data_structures::item_structure::item_table::ItemTable
+//   ITEM_TAG: openehr_rm::v1_2::common::tags::item_tag::ItemTag wins over openehr_rm::v1_1::common::tags::item_tag::ItemTag
+//   ITEM_TREE: openehr_rm::v1_2::data_structures::item_structure::item_tree::ItemTree wins over openehr_rm::v1_1::data_structures::item_structure::item_tree::ItemTree
+//   Iso8601_date: openehr_rm::v1_2::foundation_types::time::iso8601_date::Iso8601DateData wins over openehr_rm::v1_1::foundation_types::time::iso8601_date::Iso8601DateData
+//   Iso8601_date_time: openehr_rm::v1_2::foundation_types::time::iso8601_date_time::Iso8601DateTimeData wins over openehr_rm::v1_1::foundation_types::time::iso8601_date_time::Iso8601DateTimeData
+//   Iso8601_duration: openehr_rm::v1_2::foundation_types::time::iso8601_duration::Iso8601DurationData wins over openehr_rm::v1_1::foundation_types::time::iso8601_duration::Iso8601DurationData
+//   Iso8601_time: openehr_rm::v1_2::foundation_types::time::iso8601_time::Iso8601TimeData wins over openehr_rm::v1_1::foundation_types::time::iso8601_time::Iso8601TimeData
+//   LINK: openehr_rm::v1_2::common::archetyped::link::Link wins over openehr_rm::v1_1::common::archetyped::link::Link
+//   MEASUREMENT_SERVICE: openehr_rm::v1_2::support::measurement::measurement_service::MeasurementService wins over openehr_rm::v1_1::support::measurement::measurement_service::MeasurementService
+//   MESSAGE: openehr_rm::v1_2::ehr_extract::message::message::Message wins over openehr_rm::v1_1::ehr_extract::message::message::Message
+//   OBSERVATION: openehr_rm::v1_2::composition::content::entry::observation::Observation wins over openehr_rm::v1_1::composition::content::entry::observation::Observation
+//   OPENEHR_CODE_SET_IDENTIFIERS: openehr_rm::v1_2::support::terminology::openehr_code_set_identifiers::OpenehrCodeSetIdentifiersData wins over openehr_rm::v1_1::support::terminology::openehr_code_set_identifiers::OpenehrCodeSetIdentifiersData
+//   OPENEHR_CONTENT_ITEM: openehr_rm::v1_2::ehr_extract::openehr_extract::openehr_content_item::OpenehrContentItem wins over openehr_rm::v1_1::ehr_extract::openehr_extract::openehr_content_item::OpenehrContentItem
+//   OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS: openehr_rm::v1_2::support::terminology::openehr_terminology_group_identifiers::OpenehrTerminologyGroupIdentifiersData wins over openehr_rm::v1_1::support::terminology::openehr_terminology_group_identifiers::OpenehrTerminologyGroupIdentifiersData
+//   ORGANISATION: openehr_rm::v1_2::demographic::organisation::Organisation wins over openehr_rm::v1_1::demographic::organisation::Organisation
+//   ORIGINAL_VERSION: openehr_rm::v1_2::common::change_control::original_version::OriginalVersion<::serde_json::Value> wins over openehr_rm::v1_1::common::change_control::original_version::OriginalVersion<::serde_json::Value>
+//   PARTICIPATION: openehr_rm::v1_2::common::generic::participation::Participation wins over openehr_rm::v1_1::common::generic::participation::Participation
+//   PARTY_IDENTIFIED: openehr_rm::v1_2::common::generic::party_identified::PartyIdentifiedData wins over openehr_rm::v1_1::common::generic::party_identified::PartyIdentifiedData
+//   PARTY_IDENTITY: openehr_rm::v1_2::demographic::party_identity::PartyIdentity wins over openehr_rm::v1_1::demographic::party_identity::PartyIdentity
+//   PARTY_RELATED: openehr_rm::v1_2::common::generic::party_related::PartyRelated wins over openehr_rm::v1_1::common::generic::party_related::PartyRelated
+//   PARTY_RELATIONSHIP: openehr_rm::v1_2::demographic::party_relationship::PartyRelationship wins over openehr_rm::v1_1::demographic::party_relationship::PartyRelationship
+//   PARTY_SELF: openehr_rm::v1_2::common::generic::party_self::PartySelf wins over openehr_rm::v1_1::common::generic::party_self::PartySelf
+//   PERSON: openehr_rm::v1_2::demographic::person::Person wins over openehr_rm::v1_1::demographic::person::Person
+//   POINT_EVENT: openehr_rm::v1_2::data_structures::history::point_event::PointEvent<::serde_json::Value> wins over openehr_rm::v1_1::data_structures::history::point_event::PointEvent<::serde_json::Value>
+//   REFERENCE_RANGE: openehr_rm::v1_2::data_types::quantity::reference_range::ReferenceRange wins over openehr_rm::v1_1::data_types::quantity::reference_range::ReferenceRange
+//   RESOURCE_DESCRIPTION: openehr_rm::v1_2::common::resource::resource_description::ResourceDescription wins over openehr_rm::v1_1::common::resource::resource_description::ResourceDescription
+//   RESOURCE_DESCRIPTION_ITEM: openehr_rm::v1_2::common::resource::resource_description_item::ResourceDescriptionItem wins over openehr_rm::v1_1::common::resource::resource_description_item::ResourceDescriptionItem
+//   REVISION_HISTORY: openehr_rm::v1_2::common::generic::revision_history::RevisionHistory wins over openehr_rm::v1_1::common::generic::revision_history::RevisionHistory
+//   REVISION_HISTORY_ITEM: openehr_rm::v1_2::common::generic::revision_history_item::RevisionHistoryItem wins over openehr_rm::v1_1::common::generic::revision_history_item::RevisionHistoryItem
+//   ROLE: openehr_rm::v1_2::demographic::role::Role wins over openehr_rm::v1_1::demographic::role::Role
+//   SECTION: openehr_rm::v1_2::composition::content::navigation::section::Section wins over openehr_rm::v1_1::composition::content::navigation::section::Section
+//   SYNC_EXTRACT: openehr_rm::v1_2::ehr_extract::sync_extract::sync_extract::SyncExtract wins over openehr_rm::v1_1::ehr_extract::sync_extract::sync_extract::SyncExtract
+//   SYNC_EXTRACT_REQUEST: openehr_rm::v1_2::ehr_extract::sync_extract::sync_extract_request::SyncExtractRequest wins over openehr_rm::v1_1::ehr_extract::sync_extract::sync_extract_request::SyncExtractRequest
+//   SYNC_EXTRACT_SPEC: openehr_rm::v1_2::ehr_extract::sync_extract::sync_extract_spec::SyncExtractSpec wins over openehr_rm::v1_1::ehr_extract::sync_extract::sync_extract_spec::SyncExtractSpec
+//   TERMINOLOGY_ACCESS: openehr_rm::v1_2::support::terminology::terminology_access::TerminologyAccess wins over openehr_rm::v1_1::support::terminology::terminology_access::TerminologyAccess
+//   TERMINOLOGY_SERVICE: openehr_rm::v1_2::support::terminology::terminology_service::TerminologyService wins over openehr_rm::v1_1::support::terminology::terminology_service::TerminologyService
+//   TERM_MAPPING: openehr_rm::v1_2::data_types::text::term_mapping::TermMapping wins over openehr_rm::v1_1::data_types::text::term_mapping::TermMapping
+//   TRANSLATION_DETAILS: openehr_rm::v1_2::common::resource::translation_details::TranslationDetails wins over openehr_rm::v1_1::common::resource::translation_details::TranslationDetails
+//   VERSIONED_COMPOSITION: openehr_rm::v1_2::ehr::versioned_composition::VersionedComposition wins over openehr_rm::v1_1::ehr::versioned_composition::VersionedComposition
+//   VERSIONED_EHR_ACCESS: openehr_rm::v1_2::ehr::versioned_ehr_access::VersionedEhrAccess wins over openehr_rm::v1_1::ehr::versioned_ehr_access::VersionedEhrAccess
+//   VERSIONED_EHR_STATUS: openehr_rm::v1_2::ehr::versioned_ehr_status::VersionedEhrStatus wins over openehr_rm::v1_1::ehr::versioned_ehr_status::VersionedEhrStatus
+//   VERSIONED_FOLDER: openehr_rm::v1_2::common::directory::versioned_folder::VersionedFolder wins over openehr_rm::v1_1::common::directory::versioned_folder::VersionedFolder
+//   VERSIONED_OBJECT: openehr_rm::v1_2::common::change_control::versioned_object::VersionedObjectData wins over openehr_rm::v1_1::common::change_control::versioned_object::VersionedObjectData
+//   VERSIONED_PARTY: openehr_rm::v1_2::demographic::versioned_party::VersionedParty wins over openehr_rm::v1_1::demographic::versioned_party::VersionedParty
+//   X_CONTRIBUTION: openehr_rm::v1_2::ehr_extract::sync_extract::x_contribution::XContribution wins over openehr_rm::v1_1::ehr_extract::sync_extract::x_contribution::XContribution
+//   X_VERSIONED_COMPOSITION: openehr_rm::v1_2::ehr_extract::openehr_extract::x_versioned_composition::XVersionedComposition wins over openehr_rm::v1_1::ehr_extract::openehr_extract::x_versioned_composition::XVersionedComposition
+//   X_VERSIONED_EHR_ACCESS: openehr_rm::v1_2::ehr_extract::openehr_extract::x_versioned_ehr_access::XVersionedEhrAccess wins over openehr_rm::v1_1::ehr_extract::openehr_extract::x_versioned_ehr_access::XVersionedEhrAccess
+//   X_VERSIONED_EHR_STATUS: openehr_rm::v1_2::ehr_extract::openehr_extract::x_versioned_ehr_status::XVersionedEhrStatus wins over openehr_rm::v1_1::ehr_extract::openehr_extract::x_versioned_ehr_status::XVersionedEhrStatus
+//   X_VERSIONED_FOLDER: openehr_rm::v1_2::ehr_extract::openehr_extract::x_versioned_folder::XVersionedFolder wins over openehr_rm::v1_1::ehr_extract::openehr_extract::x_versioned_folder::XVersionedFolder
+//   X_VERSIONED_OBJECT: openehr_rm::v1_2::ehr_extract::openehr_extract::x_versioned_object::XVersionedObjectData<::serde_json::Value> wins over openehr_rm::v1_1::ehr_extract::openehr_extract::x_versioned_object::XVersionedObjectData<::serde_json::Value>
+//   X_VERSIONED_PARTY: openehr_rm::v1_2::ehr_extract::openehr_extract::x_versioned_party::XVersionedParty wins over openehr_rm::v1_1::ehr_extract::openehr_extract::x_versioned_party::XVersionedParty
 //   AUTHORED_RESOURCE: openehr_rm::v1_2::common::resource::authored_resource::AuthoredResource wins over openehr_base::v1_3::resource::authored_resource::AuthoredResource
 //   CODE_PHRASE: openehr_rm::v1_2::data_types::text::code_phrase::CodePhrase wins over openehr_base::v1_3::base_types::terminology::code_phrase::CodePhrase
 //   Iso8601_date: openehr_rm::v1_2::foundation_types::time::iso8601_date::Iso8601DateData wins over openehr_base::v1_3::foundation_types::time::iso8601_date::Iso8601Date
@@ -47,137 +170,257 @@
 //   RESOURCE_DESCRIPTION: openehr_rm::v1_2::common::resource::resource_description::ResourceDescription wins over openehr_base::v1_3::resource::resource_description::ResourceDescription
 //   RESOURCE_DESCRIPTION_ITEM: openehr_rm::v1_2::common::resource::resource_description_item::ResourceDescriptionItem wins over openehr_base::v1_3::resource::resource_description_item::ResourceDescriptionItem
 //   TRANSLATION_DETAILS: openehr_rm::v1_2::common::resource::translation_details::TranslationDetails wins over openehr_base::v1_3::resource::translation_details::TranslationDetails
-//   BMM_CONTAINER_PROPERTY: openehr_lang::v2::bmm::core::bmm_container_property::BmmContainerProperty wins over openehr_lang::v3::bmm3::core::feature::bmm_container_property::BmmContainerPropertyData
-//   BMM_CONTAINER_TYPE: openehr_lang::v2::bmm::core::bmm_container_type::BmmContainerTypeData wins over openehr_lang::v3::bmm3::core::entity::bmm_container_type::BmmContainerTypeData
-//   BMM_DEFINITIONS: openehr_lang::v2::bmm::core::bmm_definitions::BmmDefinitionsData wins over openehr_lang::v3::bmm3::bmm_definitions::BmmDefinitions
-//   BMM_ENUMERATION: openehr_lang::v2::bmm::core::bmm_enumeration::BmmEnumerationData wins over openehr_lang::v3::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumerationData
-//   BMM_ENUMERATION_INTEGER: openehr_lang::v2::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger wins over openehr_lang::v3::bmm3::core::entity::range_constrained::bmm_enumeration_integer::BmmEnumerationInteger
-//   BMM_ENUMERATION_STRING: openehr_lang::v2::bmm::core::bmm_enumeration_string::BmmEnumerationString wins over openehr_lang::v3::bmm3::core::entity::range_constrained::bmm_enumeration_string::BmmEnumerationString
-//   BMM_GENERIC_CLASS: openehr_lang::v2::bmm::core::bmm_generic_class::BmmGenericClass wins over openehr_lang::v3::bmm3::core::entity::bmm_generic_class::BmmGenericClass
-//   BMM_GENERIC_TYPE: openehr_lang::v2::bmm::core::bmm_generic_type::BmmGenericType wins over openehr_lang::v3::bmm3::core::entity::bmm_generic_type::BmmGenericType
-//   BMM_INCLUDE_SPEC: openehr_lang::v2::bmm::core::bmm_include_spec::BmmIncludeSpec wins over openehr_lang::v3::bmm3::model_access::bmm_include_spec::BmmIncludeSpec
-//   BMM_INDEXED_CONTAINER_TYPE: openehr_lang::v2::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType wins over openehr_lang::v3::bmm3::core::entity::bmm_indexed_container_type::BmmIndexedContainerType
-//   BMM_MODEL: openehr_lang::v2::bmm::core::bmm_model::BmmModel wins over openehr_lang::v3::bmm3::core::model::bmm_model::BmmModel
-//   BMM_PACKAGE: openehr_lang::v2::bmm::core::bmm_package::BmmPackage wins over openehr_lang::v3::bmm3::core::model::bmm_package::BmmPackage
-//   BMM_SIMPLE_TYPE: openehr_lang::v2::bmm::core::bmm_simple_type::BmmSimpleType wins over openehr_lang::v3::bmm3::core::entity::bmm_simple_type::BmmSimpleType
-//   ASSERTION: openehr_lang::v2::beom::core::assertion::Assertion wins over openehr_am::v1_4::aom14::archetype::assertion::assertion::Assertion
-//   EXPR_BINARY_OPERATOR: openehr_lang::v2::beom::core::expr_binary_operator::ExprBinaryOperator wins over openehr_am::v1_4::aom14::archetype::assertion::expr_binary_operator::ExprBinaryOperator
-//   EXPR_UNARY_OPERATOR: openehr_lang::v2::beom::core::expr_unary_operator::ExprUnaryOperator wins over openehr_am::v1_4::aom14::archetype::assertion::expr_unary_operator::ExprUnaryOperator
-//   RESOURCE_DESCRIPTION: openehr_rm::v1_2::common::resource::resource_description::ResourceDescription wins over openehr_am::v1_4::resource::resource_description::ResourceDescription
-//   ARCHETYPE_SLOT: openehr_am::v1_4::aom14::archetype::constraint_model::archetype_slot::ArchetypeSlot wins over openehr_am::v2_4::aom2::constraint_model::archetype_slot::ArchetypeSlot
-//   ARCHETYPE_TERM: openehr_am::v1_4::aom14::archetype::ontology::archetype_term::ArchetypeTerm wins over openehr_am::v2_4::aom2::terminology::archetype_term::ArchetypeTerm
-//   ASSERTION: openehr_lang::v2::beom::core::assertion::Assertion wins over openehr_am::v2_4::beom::core::assertion::Assertion
-//   ASSIGNMENT: openehr_lang::v2::beom::core::assignment::Assignment wins over openehr_am::v2_4::beom::core::assignment::Assignment
-//   BMM_ASSERTION: openehr_lang::v3::bmm3::statement::bmm_assertion::BmmAssertion wins over openehr_am::v2_4::bmm3::statement::bmm_assertion::BmmAssertion
-//   BMM_ASSIGNMENT: openehr_lang::v3::bmm3::statement::bmm_assignment::BmmAssignment wins over openehr_am::v2_4::bmm3::statement::bmm_assignment::BmmAssignment
-//   BMM_BOOLEAN_VALUE: openehr_lang::v3::bmm3::core::literal_value::bmm_boolean_value::BmmBooleanValue wins over openehr_am::v2_4::bmm3::core::literal_value::bmm_boolean_value::BmmBooleanValue
-//   BMM_CONSTANT: openehr_lang::v3::bmm3::core::feature::bmm_constant::BmmConstant wins over openehr_am::v2_4::bmm3::core::feature::bmm_constant::BmmConstant
-//   BMM_CONTAINER_PROPERTY: openehr_lang::v2::bmm::core::bmm_container_property::BmmContainerProperty wins over openehr_am::v2_4::bmm::core::bmm_container_property::BmmContainerPropertyData
-//   BMM_CONTAINER_TYPE: openehr_lang::v2::bmm::core::bmm_container_type::BmmContainerTypeData wins over openehr_am::v2_4::bmm::core::bmm_container_type::BmmContainerTypeData
-//   BMM_DECLARATION: openehr_lang::v3::bmm3::statement::bmm_declaration::BmmDeclaration wins over openehr_am::v2_4::bmm3::statement::bmm_declaration::BmmDeclaration
-//   BMM_DEFINITIONS: openehr_lang::v2::bmm::core::bmm_definitions::BmmDefinitionsData wins over openehr_am::v2_4::bmm::core::bmm_definitions::BmmDefinitionsData
-//   BMM_ENUMERATION: openehr_lang::v2::bmm::core::bmm_enumeration::BmmEnumerationData wins over openehr_am::v2_4::bmm::core::bmm_enumeration::BmmEnumerationData
-//   BMM_ENUMERATION_INTEGER: openehr_lang::v2::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger wins over openehr_am::v2_4::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger
-//   BMM_ENUMERATION_STRING: openehr_lang::v2::bmm::core::bmm_enumeration_string::BmmEnumerationString wins over openehr_am::v2_4::bmm::core::bmm_enumeration_string::BmmEnumerationString
-//   BMM_FEATURE_GROUP: openehr_lang::v3::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup wins over openehr_am::v2_4::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup
-//   BMM_FUNCTION: openehr_lang::v3::bmm3::core::feature::bmm_function::BmmFunction wins over openehr_am::v2_4::bmm3::core::feature::bmm_function::BmmFunction
-//   BMM_FUNCTION_TYPE: openehr_lang::v3::bmm3::core::entity::bmm_function_type::BmmFunctionType wins over openehr_am::v2_4::bmm3::core::entity::bmm_function_type::BmmFunctionType
-//   BMM_GENERIC_CLASS: openehr_lang::v2::bmm::core::bmm_generic_class::BmmGenericClass wins over openehr_am::v2_4::bmm::core::bmm_generic_class::BmmGenericClass
-//   BMM_GENERIC_PARAMETER: openehr_lang::v2::bmm::core::bmm_generic_parameter::BmmGenericParameter wins over openehr_am::v2_4::bmm::core::bmm_generic_parameter::BmmGenericParameter
-//   BMM_GENERIC_TYPE: openehr_lang::v2::bmm::core::bmm_generic_type::BmmGenericType wins over openehr_am::v2_4::bmm::core::bmm_generic_type::BmmGenericType
-//   BMM_INDEXED_CONTAINER_PROPERTY: openehr_lang::v3::bmm3::core::feature::bmm_indexed_container_property::BmmIndexedContainerProperty wins over openehr_am::v2_4::bmm3::core::feature::bmm_indexed_container_property::BmmIndexedContainerProperty
-//   BMM_INDEXED_CONTAINER_TYPE: openehr_lang::v2::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType wins over openehr_am::v2_4::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType
-//   BMM_INTEGER_VALUE: openehr_lang::v3::bmm3::core::literal_value::bmm_integer_value::BmmIntegerValue wins over openehr_am::v2_4::bmm3::core::literal_value::bmm_integer_value::BmmIntegerValue
-//   BMM_LOCAL: openehr_lang::v3::bmm3::core::feature::bmm_local::BmmLocal wins over openehr_am::v2_4::bmm3::core::feature::bmm_local::BmmLocal
-//   BMM_LOCAL_ROUTINE: openehr_lang::v3::bmm3::core::feature::bmm_local_routine::BmmLocalRoutine wins over openehr_am::v2_4::bmm3::core::feature::bmm_local_routine::BmmLocalRoutine
-//   BMM_MODEL: openehr_lang::v2::bmm::core::bmm_model::BmmModel wins over openehr_am::v2_4::bmm::core::bmm_model::BmmModel
-//   BMM_MODEL_ACCESS: openehr_lang::v3::bmm3::model_access::bmm_model_access::BmmModelAccess wins over openehr_am::v2_4::bmm3::model_access::bmm_model_access::BmmModelAccess
-//   BMM_MODEL_METADATA: openehr_lang::v3::bmm3::core::model::bmm_model_metadata::BmmModelMetadataData wins over openehr_am::v2_4::bmm3::core::model::bmm_model_metadata::BmmModelMetadataData
-//   BMM_OPEN_TYPE: openehr_lang::v2::bmm::core::bmm_open_type::BmmOpenType wins over openehr_am::v2_4::bmm::core::bmm_open_type::BmmOpenType
-//   BMM_PACKAGE: openehr_lang::v2::bmm::core::bmm_package::BmmPackage wins over openehr_am::v2_4::bmm::core::bmm_package::BmmPackage
-//   BMM_PARAMETER: openehr_lang::v3::bmm3::core::feature::bmm_parameter::BmmParameter wins over openehr_am::v2_4::bmm3::core::feature::bmm_parameter::BmmParameter
-//   BMM_PARAMETER_TYPE: openehr_lang::v3::bmm3::core::entity::bmm_parameter_type::BmmParameterType wins over openehr_am::v2_4::bmm3::core::entity::bmm_parameter_type::BmmParameterType
-//   BMM_PRIMITIVE_VALUE: openehr_lang::v3::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValueData wins over openehr_am::v2_4::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValueData
-//   BMM_PROCEDURE: openehr_lang::v3::bmm3::core::feature::bmm_procedure::BmmProcedure wins over openehr_am::v2_4::bmm3::core::feature::bmm_procedure::BmmProcedure
-//   BMM_PROCEDURE_CALL: openehr_lang::v3::bmm3::statement::bmm_procedure_call::BmmProcedureCall wins over openehr_am::v2_4::bmm3::statement::bmm_procedure_call::BmmProcedureCall
-//   BMM_PROCEDURE_TYPE: openehr_lang::v3::bmm3::core::entity::bmm_procedure_type::BmmProcedureType wins over openehr_am::v2_4::bmm3::core::entity::bmm_procedure_type::BmmProcedureType
-//   BMM_PROPERTY_TYPE: openehr_lang::v3::bmm3::core::entity::bmm_property_type::BmmPropertyType wins over openehr_am::v2_4::bmm3::core::entity::bmm_property_type::BmmPropertyType
-//   BMM_RESULT: openehr_lang::v3::bmm3::core::feature::bmm_result::BmmResult wins over openehr_am::v2_4::bmm3::core::feature::bmm_result::BmmResult
-//   BMM_ROUTINE_TYPE: openehr_lang::v3::bmm3::core::entity::bmm_routine_type::BmmRoutineTypeData wins over openehr_am::v2_4::bmm3::core::entity::bmm_routine_type::BmmRoutineTypeData
-//   BMM_SCHEMA: openehr_lang::v3::bmm3::model_access::bmm_schema::BmmSchema wins over openehr_am::v2_4::bmm3::model_access::bmm_schema::BmmSchema
-//   BMM_SCHEMA_CORE: openehr_lang::v2::bmm::core::bmm_schema_core::BmmSchemaCoreData wins over openehr_am::v2_4::bmm::core::bmm_schema_core::BmmSchemaCoreData
-//   BMM_SCHEMA_DESCRIPTOR: openehr_lang::v3::bmm3::model_access::bmm_schema_descriptor::BmmSchemaDescriptor wins over openehr_am::v2_4::bmm3::model_access::bmm_schema_descriptor::BmmSchemaDescriptor
-//   BMM_SELF: openehr_lang::v3::bmm3::core::feature::bmm_self::BmmSelf wins over openehr_am::v2_4::bmm3::core::feature::bmm_self::BmmSelf
-//   BMM_SIGNATURE: openehr_lang::v3::bmm3::core::entity::bmm_signature::BmmSignatureData wins over openehr_am::v2_4::bmm3::core::entity::bmm_signature::BmmSignatureData
-//   BMM_SIMPLE_CLASS: openehr_lang::v3::bmm3::core::entity::bmm_simple_class::BmmSimpleClassData wins over openehr_am::v2_4::bmm3::core::entity::bmm_simple_class::BmmSimpleClassData
-//   BMM_SIMPLE_TYPE: openehr_lang::v2::bmm::core::bmm_simple_type::BmmSimpleType wins over openehr_am::v2_4::bmm::core::bmm_simple_type::BmmSimpleType
-//   BMM_SINGLETON: openehr_lang::v3::bmm3::core::feature::bmm_singleton::BmmSingleton wins over openehr_am::v2_4::bmm3::core::feature::bmm_singleton::BmmSingleton
-//   BMM_STATEMENT_BLOCK: openehr_lang::v3::bmm3::statement::bmm_statement_block::BmmStatementBlock wins over openehr_am::v2_4::bmm3::statement::bmm_statement_block::BmmStatementBlock
-//   BMM_STRING_VALUE: openehr_lang::v3::bmm3::core::literal_value::bmm_string_value::BmmStringValue wins over openehr_am::v2_4::bmm3::core::literal_value::bmm_string_value::BmmStringValue
-//   BMM_TUPLE_TYPE: openehr_lang::v3::bmm3::core::entity::bmm_tuple_type::BmmTupleType wins over openehr_am::v2_4::bmm3::core::entity::bmm_tuple_type::BmmTupleType
-//   BMM_UNITARY_PROPERTY: openehr_lang::v3::bmm3::core::feature::bmm_unitary_property::BmmUnitaryProperty wins over openehr_am::v2_4::bmm3::core::feature::bmm_unitary_property::BmmUnitaryProperty
-//   C_BOOLEAN: openehr_am::v1_4::aom14::archetype::primitive::c_boolean::CBoolean wins over openehr_am::v2_4::aom2::constraint_model::primitive::c_boolean::CBoolean
-//   C_COMPLEX_OBJECT: openehr_am::v1_4::aom14::archetype::constraint_model::c_complex_object::CComplexObject wins over openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObjectData
-//   C_DATE: openehr_am::v1_4::aom14::archetype::primitive::c_date::CDate wins over openehr_am::v2_4::aom2::constraint_model::primitive::c_date::CDate
-//   C_DATE_TIME: openehr_am::v1_4::aom14::archetype::primitive::c_date_time::CDateTime wins over openehr_am::v2_4::aom2::constraint_model::primitive::c_date_time::CDateTime
-//   C_DURATION: openehr_am::v1_4::aom14::archetype::primitive::c_duration::CDuration wins over openehr_am::v2_4::aom2::constraint_model::primitive::c_duration::CDuration
-//   C_INTEGER: openehr_am::v1_4::aom14::archetype::primitive::c_integer::CInteger wins over openehr_am::v2_4::aom2::constraint_model::primitive::c_integer::CInteger
-//   C_REAL: openehr_am::v1_4::aom14::archetype::primitive::c_real::CReal wins over openehr_am::v2_4::aom2::constraint_model::primitive::c_real::CReal
-//   C_STRING: openehr_am::v1_4::aom14::archetype::primitive::c_string::CString wins over openehr_am::v2_4::aom2::constraint_model::primitive::c_string::CString
-//   C_TIME: openehr_am::v1_4::aom14::archetype::primitive::c_time::CTime wins over openehr_am::v2_4::aom2::constraint_model::primitive::c_time::CTime
-//   EL_ATTACHED: openehr_lang::v3::bmm3::expression::el_attached::ElAttached wins over openehr_am::v2_4::bmm3::expression::el_attached::ElAttached
-//   EL_BINARY_OPERATOR: openehr_lang::v3::bmm3::expression::el_binary_operator::ElBinaryOperator wins over openehr_am::v2_4::bmm3::expression::el_binary_operator::ElBinaryOperator
-//   EL_BOOLEAN_EXPRESSION: openehr_lang::v3::bmm3::expression::el_boolean_expression::ElBooleanExpression wins over openehr_am::v2_4::bmm3::expression::el_boolean_expression::ElBooleanExpression
-//   EL_CASE: openehr_lang::v3::bmm3::expression::el_case::ElCase<::serde_json::Value> wins over openehr_am::v2_4::bmm3::expression::el_case::ElCase<::serde_json::Value>
-//   EL_CASE_TABLE: openehr_lang::v3::bmm3::expression::el_case_table::ElCaseTable<::serde_json::Value> wins over openehr_am::v2_4::bmm3::expression::el_case_table::ElCaseTable<::serde_json::Value>
-//   EL_CONDITIONAL_EXPRESSION: openehr_lang::v3::bmm3::expression::el_conditional_expression::ElConditionalExpression<::serde_json::Value> wins over openehr_am::v2_4::bmm3::expression::el_conditional_expression::ElConditionalExpression<::serde_json::Value>
-//   EL_CONDITION_CHAIN: openehr_lang::v3::bmm3::expression::el_condition_chain::ElConditionChain<::serde_json::Value> wins over openehr_am::v2_4::bmm3::expression::el_condition_chain::ElConditionChain<::serde_json::Value>
-//   EL_DEFINED: openehr_lang::v3::bmm3::expression::el_defined::ElDefined wins over openehr_am::v2_4::bmm3::expression::el_defined::ElDefined
-//   EL_FUNCTION_AGENT: openehr_lang::v3::bmm3::expression::el_function_agent::ElFunctionAgent wins over openehr_am::v2_4::bmm3::expression::el_function_agent::ElFunctionAgent
-//   EL_FUNCTION_CALL: openehr_lang::v3::bmm3::expression::el_function_call::ElFunctionCall wins over openehr_am::v2_4::bmm3::expression::el_function_call::ElFunctionCall
-//   EL_LITERAL: openehr_lang::v3::bmm3::expression::el_literal::ElLiteral wins over openehr_am::v2_4::bmm3::expression::el_literal::ElLiteral
-//   EL_PROCEDURE_AGENT: openehr_lang::v3::bmm3::expression::el_procedure_agent::ElProcedureAgent wins over openehr_am::v2_4::bmm3::expression::el_procedure_agent::ElProcedureAgent
-//   EL_PROPERTY_REF: openehr_lang::v3::bmm3::expression::el_property_ref::ElPropertyRef wins over openehr_am::v2_4::bmm3::expression::el_property_ref::ElPropertyRef
-//   EL_READONLY_VARIABLE: openehr_lang::v3::bmm3::expression::el_readonly_variable::ElReadonlyVariable wins over openehr_am::v2_4::bmm3::expression::el_readonly_variable::ElReadonlyVariable
-//   EL_STATIC_REF: openehr_lang::v3::bmm3::expression::el_static_ref::ElStaticRef wins over openehr_am::v2_4::bmm3::expression::el_static_ref::ElStaticRef
-//   EL_TUPLE: openehr_lang::v3::bmm3::expression::el_tuple::ElTuple wins over openehr_am::v2_4::bmm3::expression::el_tuple::ElTuple
-//   EL_TUPLE_ITEM: openehr_lang::v3::bmm3::expression::el_tuple_item::ElTupleItem wins over openehr_am::v2_4::bmm3::expression::el_tuple_item::ElTupleItem
-//   EL_TYPE_REF: openehr_lang::v3::bmm3::expression::el_type_ref::ElTypeRef wins over openehr_am::v2_4::bmm3::expression::el_type_ref::ElTypeRef
-//   EL_UNARY_OPERATOR: openehr_lang::v3::bmm3::expression::el_unary_operator::ElUnaryOperator wins over openehr_am::v2_4::bmm3::expression::el_unary_operator::ElUnaryOperator
-//   EL_WRITABLE_VARIABLE: openehr_lang::v3::bmm3::expression::el_writable_variable::ElWritableVariable wins over openehr_am::v2_4::bmm3::expression::el_writable_variable::ElWritableVariable
-//   EXPR_BINARY_OPERATOR: openehr_lang::v2::beom::core::expr_binary_operator::ExprBinaryOperator wins over openehr_am::v2_4::beom::core::expr_binary_operator::ExprBinaryOperator
-//   EXPR_FOR_ALL: openehr_lang::v2::beom::core::expr_for_all::ExprForAll wins over openehr_am::v2_4::beom::core::expr_for_all::ExprForAll
-//   EXPR_FUNCTION_CALL: openehr_lang::v2::beom::core::expr_function_call::ExprFunctionCall wins over openehr_am::v2_4::beom::core::expr_function_call::ExprFunctionCall
-//   EXPR_UNARY_OPERATOR: openehr_lang::v2::beom::core::expr_unary_operator::ExprUnaryOperator wins over openehr_am::v2_4::beom::core::expr_unary_operator::ExprUnaryOperator
-//   EXPR_VALUE_REF: openehr_lang::v2::beom::core::expr_value_ref::ExprValueRef wins over openehr_am::v2_4::beom::core::expr_value_ref::ExprValueRefData
-//   P_BMM_CLASS: openehr_lang::v2::bmm_persistence::p_bmm_class::PBmmClassData wins over openehr_am::v2_4::bmm_persistence::p_bmm_class::PBmmClassData
-//   P_BMM_CONTAINER_FUNCTION_PARAMETER: openehr_lang::v2::bmm_persistence::p_bmm_container_function_parameter::PBmmContainerFunctionParameter wins over openehr_am::v2_4::bmm_persistence::p_bmm_container_function_parameter::PBmmContainerFunctionParameter
-//   P_BMM_CONTAINER_PROPERTY: openehr_lang::v2::bmm_persistence::p_bmm_container_property::PBmmContainerPropertyData wins over openehr_am::v2_4::bmm_persistence::p_bmm_container_property::PBmmContainerPropertyData
-//   P_BMM_CONTAINER_TYPE: openehr_lang::v2::bmm_persistence::p_bmm_container_type::PBmmContainerTypeData wins over openehr_am::v2_4::bmm_persistence::p_bmm_container_type::PBmmContainerTypeData
-//   P_BMM_ENUMERATION: openehr_lang::v2::bmm_persistence::p_bmm_enumeration::PBmmEnumerationData wins over openehr_am::v2_4::bmm_persistence::p_bmm_enumeration::PBmmEnumerationData
-//   P_BMM_ENUMERATION_INTEGER: openehr_lang::v2::bmm_persistence::p_bmm_enumeration_integer::PBmmEnumerationInteger wins over openehr_am::v2_4::bmm_persistence::p_bmm_enumeration_integer::PBmmEnumerationInteger
-//   P_BMM_ENUMERATION_STRING: openehr_lang::v2::bmm_persistence::p_bmm_enumeration_string::PBmmEnumerationString wins over openehr_am::v2_4::bmm_persistence::p_bmm_enumeration_string::PBmmEnumerationString
-//   P_BMM_FUNCTION: openehr_lang::v2::bmm_persistence::p_bmm_function::PBmmFunction wins over openehr_am::v2_4::bmm_persistence::p_bmm_function::PBmmFunction
-//   P_BMM_GENERIC_FUNCTION_PARAMETER: openehr_lang::v2::bmm_persistence::p_bmm_generic_function_parameter::PBmmGenericFunctionParameter wins over openehr_am::v2_4::bmm_persistence::p_bmm_generic_function_parameter::PBmmGenericFunctionParameter
-//   P_BMM_GENERIC_PARAMETER: openehr_lang::v2::bmm_persistence::p_bmm_generic_parameter::PBmmGenericParameter wins over openehr_am::v2_4::bmm_persistence::p_bmm_generic_parameter::PBmmGenericParameter
-//   P_BMM_GENERIC_PROPERTY: openehr_lang::v2::bmm_persistence::p_bmm_generic_property::PBmmGenericProperty wins over openehr_am::v2_4::bmm_persistence::p_bmm_generic_property::PBmmGenericProperty
-//   P_BMM_GENERIC_TYPE: openehr_lang::v2::bmm_persistence::p_bmm_generic_type::PBmmGenericType wins over openehr_am::v2_4::bmm_persistence::p_bmm_generic_type::PBmmGenericType
-//   P_BMM_INDEXED_CONTAINER_PROPERTY: openehr_lang::v2::bmm_persistence::p_bmm_indexed_container_property::PBmmIndexedContainerProperty wins over openehr_am::v2_4::bmm_persistence::p_bmm_indexed_container_property::PBmmIndexedContainerProperty
-//   P_BMM_INDEXED_CONTAINER_TYPE: openehr_lang::v2::bmm_persistence::p_bmm_indexed_container_type::PBmmIndexedContainerType wins over openehr_am::v2_4::bmm_persistence::p_bmm_indexed_container_type::PBmmIndexedContainerType
-//   P_BMM_INTERFACE: openehr_lang::v2::bmm_persistence::p_bmm_interface::PBmmInterface wins over openehr_am::v2_4::bmm_persistence::p_bmm_interface::PBmmInterface
-//   P_BMM_OPEN_TYPE: openehr_lang::v2::bmm_persistence::p_bmm_open_type::PBmmOpenType wins over openehr_am::v2_4::bmm_persistence::p_bmm_open_type::PBmmOpenType
-//   P_BMM_PACKAGE: openehr_lang::v2::bmm_persistence::p_bmm_package::PBmmPackage wins over openehr_am::v2_4::bmm_persistence::p_bmm_package::PBmmPackage
-//   P_BMM_PACKAGE_CONTAINER: openehr_lang::v2::bmm_persistence::p_bmm_package_container::PBmmPackageContainerData wins over openehr_am::v2_4::bmm_persistence::p_bmm_package_container::PBmmPackageContainerData
-//   P_BMM_SCHEMA: openehr_lang::v2::bmm_persistence::p_bmm_schema::PBmmSchema wins over openehr_am::v2_4::bmm_persistence::p_bmm_schema::PBmmSchema
-//   P_BMM_SCHEMA_DESCRIPTOR: openehr_lang::v2::bmm_persistence::p_bmm_schema_descriptor::PBmmSchemaDescriptor wins over openehr_am::v2_4::bmm_persistence::p_bmm_schema_descriptor::PBmmSchemaDescriptor
-//   P_BMM_SIMPLE_TYPE: openehr_lang::v2::bmm_persistence::p_bmm_simple_type::PBmmSimpleType wins over openehr_am::v2_4::bmm_persistence::p_bmm_simple_type::PBmmSimpleType
-//   P_BMM_SINGLE_PROPERTY: openehr_lang::v2::bmm_persistence::p_bmm_single_property::PBmmSingleProperty wins over openehr_am::v2_4::bmm_persistence::p_bmm_single_property::PBmmSingleProperty
-//   P_BMM_SINGLE_PROPERTY_OPEN: openehr_lang::v2::bmm_persistence::p_bmm_single_property_open::PBmmSinglePropertyOpen wins over openehr_am::v2_4::bmm_persistence::p_bmm_single_property_open::PBmmSinglePropertyOpen
-//   REFERENCE_MODEL_ACCESS: openehr_lang::v2::bmm::rm_access::reference_model_access::ReferenceModelAccess wins over openehr_am::v2_4::bmm::rm_access::reference_model_access::ReferenceModelAccess
+//   ACCESS_GROUP_REF: openehr_base::v1_3::base_types::identification::access_group_ref::AccessGroupRef wins over openehr_base::v1_2::base_types::identification::access_group_ref::AccessGroupRef
+//   ARCHETYPE_ID: openehr_base::v1_3::base_types::identification::archetype_id::ArchetypeId wins over openehr_base::v1_2::base_types::identification::archetype_id::ArchetypeId
+//   AUTHORED_RESOURCE: openehr_rm::v1_2::common::resource::authored_resource::AuthoredResource wins over openehr_base::v1_2::resource::authored_resource::AuthoredResource
+//   Cardinality: openehr_base::v1_3::foundation_types::interval::cardinality::Cardinality wins over openehr_base::v1_2::foundation_types::interval::cardinality::Cardinality
+//   GENERIC_ID: openehr_base::v1_3::base_types::identification::generic_id::GenericId wins over openehr_base::v1_2::base_types::identification::generic_id::GenericId
+//   HIER_OBJECT_ID: openehr_base::v1_3::base_types::identification::hier_object_id::HierObjectId wins over openehr_base::v1_2::base_types::identification::hier_object_id::HierObjectId
+//   INTERNET_ID: openehr_base::v1_3::base_types::identification::internet_id::InternetId wins over openehr_base::v1_2::base_types::identification::internet_id::InternetId
+//   ISO_OID: openehr_base::v1_3::base_types::identification::iso_oid::IsoOid wins over openehr_base::v1_2::base_types::identification::iso_oid::IsoOid
+//   Iso8601_date: openehr_rm::v1_2::foundation_types::time::iso8601_date::Iso8601DateData wins over openehr_base::v1_2::foundation_types::time::iso8601_date::Iso8601Date
+//   Iso8601_date_time: openehr_rm::v1_2::foundation_types::time::iso8601_date_time::Iso8601DateTimeData wins over openehr_base::v1_2::foundation_types::time::iso8601_date_time::Iso8601DateTime
+//   Iso8601_duration: openehr_rm::v1_2::foundation_types::time::iso8601_duration::Iso8601DurationData wins over openehr_base::v1_2::foundation_types::time::iso8601_duration::Iso8601Duration
+//   Iso8601_time: openehr_rm::v1_2::foundation_types::time::iso8601_time::Iso8601TimeData wins over openehr_base::v1_2::foundation_types::time::iso8601_time::Iso8601Time
+//   Iso8601_timezone: openehr_base::v1_3::foundation_types::time::iso8601_timezone::Iso8601Timezone wins over openehr_base::v1_2::foundation_types::time::iso8601_timezone::Iso8601Timezone
+//   LOCATABLE_REF: openehr_base::v1_3::base_types::identification::locatable_ref::LocatableRef wins over openehr_base::v1_2::base_types::identification::locatable_ref::LocatableRef
+//   Multiplicity_interval: openehr_base::v1_3::foundation_types::interval::multiplicity_interval::MultiplicityInterval wins over openehr_base::v1_2::foundation_types::interval::multiplicity_interval::MultiplicityInterval
+//   OBJECT_REF: openehr_base::v1_3::base_types::identification::object_ref::ObjectRefData wins over openehr_base::v1_2::base_types::identification::object_ref::ObjectRefData
+//   OBJECT_VERSION_ID: openehr_base::v1_3::base_types::identification::object_version_id::ObjectVersionId wins over openehr_base::v1_2::base_types::identification::object_version_id::ObjectVersionId
+//   PARTY_REF: openehr_base::v1_3::base_types::identification::party_ref::PartyRef wins over openehr_base::v1_2::base_types::identification::party_ref::PartyRef
+//   Point_interval: openehr_base::v1_3::foundation_types::interval::point_interval::PointInterval<::serde_json::Value> wins over openehr_base::v1_2::foundation_types::interval::point_interval::PointInterval<::serde_json::Value>
+//   Proper_interval: openehr_base::v1_3::foundation_types::interval::proper_interval::ProperIntervalData<::serde_json::Value> wins over openehr_base::v1_2::foundation_types::interval::proper_interval::ProperIntervalData<::serde_json::Value>
+//   RESOURCE_ANNOTATIONS: openehr_base::v1_3::resource::resource_annotations::ResourceAnnotations wins over openehr_base::v1_2::resource::resource_annotations::ResourceAnnotations
+//   RESOURCE_DESCRIPTION: openehr_rm::v1_2::common::resource::resource_description::ResourceDescription wins over openehr_base::v1_2::resource::resource_description::ResourceDescription
+//   RESOURCE_DESCRIPTION_ITEM: openehr_rm::v1_2::common::resource::resource_description_item::ResourceDescriptionItem wins over openehr_base::v1_2::resource::resource_description_item::ResourceDescriptionItem
+//   TEMPLATE_ID: openehr_base::v1_3::base_types::identification::template_id::TemplateId wins over openehr_base::v1_2::base_types::identification::template_id::TemplateId
+//   TERMINOLOGY_ID: openehr_base::v1_3::base_types::identification::terminology_id::TerminologyId wins over openehr_base::v1_2::base_types::identification::terminology_id::TerminologyId
+//   TRANSLATION_DETAILS: openehr_rm::v1_2::common::resource::translation_details::TranslationDetails wins over openehr_base::v1_2::resource::translation_details::TranslationDetails
+//   Terminology_code: openehr_base::v1_3::foundation_types::terminology::terminology_code::TerminologyCode wins over openehr_base::v1_2::foundation_types::terminology::terminology_code::TerminologyCode
+//   Terminology_term: openehr_base::v1_3::foundation_types::terminology::terminology_term::TerminologyTerm wins over openehr_base::v1_2::foundation_types::terminology::terminology_term::TerminologyTerm
+//   UUID: openehr_base::v1_3::base_types::identification::uuid::Uuid wins over openehr_base::v1_2::base_types::identification::uuid::Uuid
+//   VERSION_TREE_ID: openehr_base::v1_3::base_types::identification::version_tree_id::VersionTreeId wins over openehr_base::v1_2::base_types::identification::version_tree_id::VersionTreeId
+//   BMM_CONTAINER_PROPERTY: openehr_lang::v1_1::bmm::core::bmm_container_property::BmmContainerProperty wins over openehr_lang::v1_1::bmm3::core::feature::bmm_container_property::BmmContainerPropertyData
+//   BMM_CONTAINER_TYPE: openehr_lang::v1_1::bmm::core::bmm_container_type::BmmContainerTypeData wins over openehr_lang::v1_1::bmm3::core::entity::bmm_container_type::BmmContainerTypeData
+//   BMM_DEFINITIONS: openehr_lang::v1_1::bmm::core::bmm_definitions::BmmDefinitionsData wins over openehr_lang::v1_1::bmm3::bmm_definitions::BmmDefinitions
+//   BMM_ENUMERATION: openehr_lang::v1_1::bmm::core::bmm_enumeration::BmmEnumerationData wins over openehr_lang::v1_1::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumerationData
+//   BMM_ENUMERATION_INTEGER: openehr_lang::v1_1::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger wins over openehr_lang::v1_1::bmm3::core::entity::range_constrained::bmm_enumeration_integer::BmmEnumerationInteger
+//   BMM_ENUMERATION_STRING: openehr_lang::v1_1::bmm::core::bmm_enumeration_string::BmmEnumerationString wins over openehr_lang::v1_1::bmm3::core::entity::range_constrained::bmm_enumeration_string::BmmEnumerationString
+//   BMM_GENERIC_CLASS: openehr_lang::v1_1::bmm::core::bmm_generic_class::BmmGenericClass wins over openehr_lang::v1_1::bmm3::core::entity::bmm_generic_class::BmmGenericClass
+//   BMM_GENERIC_TYPE: openehr_lang::v1_1::bmm::core::bmm_generic_type::BmmGenericType wins over openehr_lang::v1_1::bmm3::core::entity::bmm_generic_type::BmmGenericType
+//   BMM_INCLUDE_SPEC: openehr_lang::v1_1::bmm::core::bmm_include_spec::BmmIncludeSpec wins over openehr_lang::v1_1::bmm3::model_access::bmm_include_spec::BmmIncludeSpec
+//   BMM_INDEXED_CONTAINER_TYPE: openehr_lang::v1_1::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType wins over openehr_lang::v1_1::bmm3::core::entity::bmm_indexed_container_type::BmmIndexedContainerType
+//   BMM_MODEL: openehr_lang::v1_1::bmm::core::bmm_model::BmmModel wins over openehr_lang::v1_1::bmm3::core::model::bmm_model::BmmModel
+//   BMM_PACKAGE: openehr_lang::v1_1::bmm::core::bmm_package::BmmPackage wins over openehr_lang::v1_1::bmm3::core::model::bmm_package::BmmPackage
+//   BMM_SIMPLE_TYPE: openehr_lang::v1_1::bmm::core::bmm_simple_type::BmmSimpleType wins over openehr_lang::v1_1::bmm3::core::entity::bmm_simple_type::BmmSimpleType
+//   BMM_ACTION_TABLE: openehr_lang::v1_1::bmm3::statement::bmm_action_table::BmmActionTable wins over openehr_lang::v1_0::bmm::statement::bmm_action_table::BmmActionTable
+//   BMM_ASSERTION: openehr_lang::v1_1::bmm3::statement::bmm_assertion::BmmAssertion wins over openehr_lang::v1_0::bmm::statement::bmm_assertion::BmmAssertion
+//   BMM_ASSIGNMENT: openehr_lang::v1_1::bmm3::statement::bmm_assignment::BmmAssignment wins over openehr_lang::v1_0::bmm::statement::bmm_assignment::BmmAssignment
+//   BMM_BOOLEAN_VALUE: openehr_lang::v1_1::bmm3::core::literal_value::bmm_boolean_value::BmmBooleanValue wins over openehr_lang::v1_0::bmm::core::literal_value::bmm_boolean_value::BmmBooleanValue
+//   BMM_CONSTANT: openehr_lang::v1_1::bmm3::core::feature::bmm_constant::BmmConstant wins over openehr_lang::v1_0::bmm::core::feature::bmm_constant::BmmConstant
+//   BMM_CONTAINER_PROPERTY: openehr_lang::v1_1::bmm::core::bmm_container_property::BmmContainerProperty wins over openehr_lang::v1_0::bmm::core::feature::bmm_container_property::BmmContainerPropertyData
+//   BMM_CONTAINER_TYPE: openehr_lang::v1_1::bmm::core::bmm_container_type::BmmContainerTypeData wins over openehr_lang::v1_0::bmm::core::entity::bmm_container_type::BmmContainerTypeData
+//   BMM_CONTAINER_VALUE: openehr_lang::v1_1::bmm3::core::literal_value::bmm_container_value::BmmContainerValue wins over openehr_lang::v1_0::bmm::core::literal_value::bmm_container_value::BmmContainerValueData
+//   BMM_DEFINITIONS: openehr_lang::v1_1::bmm::core::bmm_definitions::BmmDefinitionsData wins over openehr_lang::v1_0::bmm::bmm_definitions::BmmDefinitions
+//   BMM_ENUMERATION: openehr_lang::v1_1::bmm::core::bmm_enumeration::BmmEnumerationData wins over openehr_lang::v1_0::bmm::core::entity::range_constrained::bmm_enumeration::BmmEnumerationData
+//   BMM_ENUMERATION_INTEGER: openehr_lang::v1_1::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger wins over openehr_lang::v1_0::bmm::core::entity::range_constrained::bmm_enumeration_integer::BmmEnumerationInteger
+//   BMM_ENUMERATION_STRING: openehr_lang::v1_1::bmm::core::bmm_enumeration_string::BmmEnumerationString wins over openehr_lang::v1_0::bmm::core::entity::range_constrained::bmm_enumeration_string::BmmEnumerationString
+//   BMM_FEATURE_EXTENSION: openehr_lang::v1_1::bmm3::core::feature::bmm_feature_extension::BmmFeatureExtension wins over openehr_lang::v1_0::bmm::core::feature::bmm_feature_extension::BmmFeatureExtension
+//   BMM_FEATURE_GROUP: openehr_lang::v1_1::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup wins over openehr_lang::v1_0::bmm::core::feature::bmm_feature_group::BmmFeatureGroup
+//   BMM_FUNCTION: openehr_lang::v1_1::bmm3::core::feature::bmm_function::BmmFunction wins over openehr_lang::v1_0::bmm::core::feature::bmm_function::BmmFunction
+//   BMM_GENERIC_CLASS: openehr_lang::v1_1::bmm::core::bmm_generic_class::BmmGenericClass wins over openehr_lang::v1_0::bmm::core::entity::bmm_generic_class::BmmGenericClass
+//   BMM_GENERIC_TYPE: openehr_lang::v1_1::bmm::core::bmm_generic_type::BmmGenericType wins over openehr_lang::v1_0::bmm::core::entity::bmm_generic_type::BmmGenericType
+//   BMM_INCLUDE_SPEC: openehr_lang::v1_1::bmm::core::bmm_include_spec::BmmIncludeSpec wins over openehr_lang::v1_0::bmm_persistence::bmm_include_spec::BmmIncludeSpec
+//   BMM_INDEXED_CONTAINER_PROPERTY: openehr_lang::v1_1::bmm3::core::feature::bmm_indexed_container_property::BmmIndexedContainerProperty wins over openehr_lang::v1_0::bmm::core::feature::bmm_indexed_container_property::BmmIndexedContainerProperty
+//   BMM_INDEXED_CONTAINER_TYPE: openehr_lang::v1_1::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType wins over openehr_lang::v1_0::bmm::core::entity::bmm_indexed_container_type::BmmIndexedContainerType
+//   BMM_INDEXED_CONTAINER_VALUE: openehr_lang::v1_1::bmm3::core::literal_value::bmm_indexed_container_value::BmmIndexedContainerValue wins over openehr_lang::v1_0::bmm::core::literal_value::bmm_indexed_container_value::BmmIndexedContainerValue
+//   BMM_INTEGER_VALUE: openehr_lang::v1_1::bmm3::core::literal_value::bmm_integer_value::BmmIntegerValue wins over openehr_lang::v1_0::bmm::core::literal_value::bmm_integer_value::BmmIntegerValue
+//   BMM_INTERVAL_VALUE: openehr_lang::v1_1::bmm3::core::literal_value::bmm_interval_value::BmmIntervalValue wins over openehr_lang::v1_0::bmm::core::literal_value::bmm_interval_value::BmmIntervalValue
+//   BMM_LOCAL: openehr_lang::v1_1::bmm3::core::feature::bmm_local::BmmLocal wins over openehr_lang::v1_0::bmm::core::feature::bmm_local::BmmLocal
+//   BMM_MODEL: openehr_lang::v1_1::bmm::core::bmm_model::BmmModel wins over openehr_lang::v1_0::bmm::core::model::bmm_model::BmmModel
+//   BMM_MODEL_ACCESS: openehr_lang::v1_1::bmm3::model_access::bmm_model_access::BmmModelAccess wins over openehr_lang::v1_0::bmm::model_access::bmm_model_access::BmmModelAccess
+//   BMM_MODEL_METADATA: openehr_lang::v1_1::bmm3::core::model::bmm_model_metadata::BmmModelMetadataData wins over openehr_lang::v1_0::bmm::core::model::bmm_model_metadata::BmmModelMetadataData
+//   BMM_OPERATOR: openehr_lang::v1_1::bmm3::core::feature::bmm_operator::BmmOperator wins over openehr_lang::v1_0::bmm::core::feature::bmm_operator::BmmOperator
+//   BMM_PACKAGE: openehr_lang::v1_1::bmm::core::bmm_package::BmmPackage wins over openehr_lang::v1_0::bmm::core::model::bmm_package::BmmPackage
+//   BMM_PARAMETER: openehr_lang::v1_1::bmm3::core::feature::bmm_parameter::BmmParameter wins over openehr_lang::v1_0::bmm::core::feature::bmm_parameter::BmmParameter
+//   BMM_PARAMETER_TYPE: openehr_lang::v1_1::bmm3::core::entity::bmm_parameter_type::BmmParameterType wins over openehr_lang::v1_0::bmm::core::entity::bmm_parameter_type::BmmParameterType
+//   BMM_PRIMITIVE_VALUE: openehr_lang::v1_1::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValueData wins over openehr_lang::v1_0::bmm::core::literal_value::bmm_primitive_value::BmmPrimitiveValueData
+//   BMM_PROCEDURE: openehr_lang::v1_1::bmm3::core::feature::bmm_procedure::BmmProcedure wins over openehr_lang::v1_0::bmm::core::feature::bmm_procedure::BmmProcedure
+//   BMM_PROCEDURE_CALL: openehr_lang::v1_1::bmm3::statement::bmm_procedure_call::BmmProcedureCall wins over openehr_lang::v1_0::bmm::statement::bmm_procedure_call::BmmProcedureCall
+//   BMM_RESULT: openehr_lang::v1_1::bmm3::core::feature::bmm_result::BmmResult wins over openehr_lang::v1_0::bmm::core::feature::bmm_result::BmmResult
+//   BMM_SIGNATURE: openehr_lang::v1_1::bmm3::core::entity::bmm_signature::BmmSignatureData wins over openehr_lang::v1_0::bmm::core::entity::bmm_signature::BmmSignature
+//   BMM_SIMPLE_CLASS: openehr_lang::v1_1::bmm3::core::entity::bmm_simple_class::BmmSimpleClassData wins over openehr_lang::v1_0::bmm::core::entity::bmm_simple_class::BmmSimpleClassData
+//   BMM_SIMPLE_TYPE: openehr_lang::v1_1::bmm::core::bmm_simple_type::BmmSimpleType wins over openehr_lang::v1_0::bmm::core::entity::bmm_simple_type::BmmSimpleType
+//   BMM_STATEMENT_BLOCK: openehr_lang::v1_1::bmm3::statement::bmm_statement_block::BmmStatementBlock wins over openehr_lang::v1_0::bmm::statement::bmm_statement_block::BmmStatementBlock
+//   BMM_STRING_VALUE: openehr_lang::v1_1::bmm3::core::literal_value::bmm_string_value::BmmStringValue wins over openehr_lang::v1_0::bmm::core::literal_value::bmm_string_value::BmmStringValue
+//   BMM_TUPLE_TYPE: openehr_lang::v1_1::bmm3::core::entity::bmm_tuple_type::BmmTupleType wins over openehr_lang::v1_0::bmm::core::entity::bmm_tuple_type::BmmTupleType
+//   BMM_UNITARY_PROPERTY: openehr_lang::v1_1::bmm3::core::feature::bmm_unitary_property::BmmUnitaryProperty wins over openehr_lang::v1_0::bmm::core::feature::bmm_unitary_property::BmmUnitaryProperty
+//   BMM_VALUE_SET_SPEC: openehr_lang::v1_1::bmm3::core::entity::range_constrained::bmm_value_set_spec::BmmValueSetSpec wins over openehr_lang::v1_0::bmm::core::entity::range_constrained::bmm_value_set_spec::BmmValueSetSpec
+//   BMM_VISIBILITY: openehr_lang::v1_1::bmm3::core::feature::bmm_visibility::BmmVisibility wins over openehr_lang::v1_0::bmm::core::feature::bmm_visibility::BmmVisibility
+//   EL_ATTACHED: openehr_lang::v1_1::bmm3::expression::el_attached::ElAttached wins over openehr_lang::v1_0::bmm::expression::el_attached::ElAttached
+//   EL_BINARY_OPERATOR: openehr_lang::v1_1::bmm3::expression::el_binary_operator::ElBinaryOperator wins over openehr_lang::v1_0::bmm::expression::el_binary_operator::ElBinaryOperator
+//   EL_BOOLEAN_EXPRESSION: openehr_lang::v1_1::bmm3::expression::el_boolean_expression::ElBooleanExpression wins over openehr_lang::v1_0::bmm::expression::el_boolean_expression::ElBooleanExpression
+//   EL_CASE: openehr_lang::v1_1::bmm3::expression::el_case::ElCase<::serde_json::Value> wins over openehr_lang::v1_0::bmm::expression::el_case::ElCase
+//   EL_CASE_TABLE: openehr_lang::v1_1::bmm3::expression::el_case_table::ElCaseTable<::serde_json::Value> wins over openehr_lang::v1_0::bmm::expression::el_case_table::ElCaseTable
+//   EL_CONDITIONAL_EXPRESSION: openehr_lang::v1_1::bmm3::expression::el_conditional_expression::ElConditionalExpression<::serde_json::Value> wins over openehr_lang::v1_0::bmm::expression::el_conditional_expression::ElConditionalExpression
+//   EL_CONDITION_CHAIN: openehr_lang::v1_1::bmm3::expression::el_condition_chain::ElConditionChain<::serde_json::Value> wins over openehr_lang::v1_0::bmm::expression::el_condition_chain::ElConditionChain
+//   EL_DEFINED: openehr_lang::v1_1::bmm3::expression::el_defined::ElDefined wins over openehr_lang::v1_0::bmm::expression::el_defined::ElDefined
+//   EL_FUNCTION_AGENT: openehr_lang::v1_1::bmm3::expression::el_function_agent::ElFunctionAgent wins over openehr_lang::v1_0::bmm::expression::el_function_agent::ElFunctionAgent
+//   EL_FUNCTION_CALL: openehr_lang::v1_1::bmm3::expression::el_function_call::ElFunctionCall wins over openehr_lang::v1_0::bmm::expression::el_function_call::ElFunctionCall
+//   EL_LITERAL: openehr_lang::v1_1::bmm3::expression::el_literal::ElLiteral wins over openehr_lang::v1_0::bmm::expression::el_literal::ElLiteral
+//   EL_PROCEDURE_AGENT: openehr_lang::v1_1::bmm3::expression::el_procedure_agent::ElProcedureAgent wins over openehr_lang::v1_0::bmm::expression::el_procedure_agent::ElProcedureAgent
+//   EL_TUPLE: openehr_lang::v1_1::bmm3::expression::el_tuple::ElTuple wins over openehr_lang::v1_0::bmm::expression::el_tuple::ElTuple
+//   EL_TUPLE_ITEM: openehr_lang::v1_1::bmm3::expression::el_tuple_item::ElTupleItem wins over openehr_lang::v1_0::bmm::expression::el_tuple_item::ElTupleItem
+//   EL_TYPE_REF: openehr_lang::v1_1::bmm3::expression::el_type_ref::ElTypeRef wins over openehr_lang::v1_0::bmm::expression::el_type_ref::ElTypeRef
+//   EL_UNARY_OPERATOR: openehr_lang::v1_1::bmm3::expression::el_unary_operator::ElUnaryOperator wins over openehr_lang::v1_0::bmm::expression::el_unary_operator::ElUnaryOperator
+//   P_BMM_CLASS: openehr_lang::v1_1::bmm_persistence::p_bmm_class::PBmmClassData wins over openehr_lang::v1_0::bmm_persistence::p_bmm_class::PBmmClassData
+//   P_BMM_CONTAINER_PROPERTY: openehr_lang::v1_1::bmm_persistence::p_bmm_container_property::PBmmContainerPropertyData wins over openehr_lang::v1_0::bmm_persistence::p_bmm_container_property::PBmmContainerPropertyData
+//   P_BMM_CONTAINER_TYPE: openehr_lang::v1_1::bmm_persistence::p_bmm_container_type::PBmmContainerTypeData wins over openehr_lang::v1_0::bmm_persistence::p_bmm_container_type::PBmmContainerTypeData
+//   P_BMM_ENUMERATION: openehr_lang::v1_1::bmm_persistence::p_bmm_enumeration::PBmmEnumerationData wins over openehr_lang::v1_0::bmm_persistence::p_bmm_enumeration::PBmmEnumerationData
+//   P_BMM_ENUMERATION_INTEGER: openehr_lang::v1_1::bmm_persistence::p_bmm_enumeration_integer::PBmmEnumerationInteger wins over openehr_lang::v1_0::bmm_persistence::p_bmm_enumeration_integer::PBmmEnumerationInteger
+//   P_BMM_ENUMERATION_STRING: openehr_lang::v1_1::bmm_persistence::p_bmm_enumeration_string::PBmmEnumerationString wins over openehr_lang::v1_0::bmm_persistence::p_bmm_enumeration_string::PBmmEnumerationString
+//   P_BMM_GENERIC_PARAMETER: openehr_lang::v1_1::bmm_persistence::p_bmm_generic_parameter::PBmmGenericParameter wins over openehr_lang::v1_0::bmm_persistence::p_bmm_generic_parameter::PBmmGenericParameter
+//   P_BMM_GENERIC_PROPERTY: openehr_lang::v1_1::bmm_persistence::p_bmm_generic_property::PBmmGenericProperty wins over openehr_lang::v1_0::bmm_persistence::p_bmm_generic_property::PBmmGenericProperty
+//   P_BMM_GENERIC_TYPE: openehr_lang::v1_1::bmm_persistence::p_bmm_generic_type::PBmmGenericType wins over openehr_lang::v1_0::bmm_persistence::p_bmm_generic_type::PBmmGenericType
+//   P_BMM_INDEXED_CONTAINER_PROPERTY: openehr_lang::v1_1::bmm_persistence::p_bmm_indexed_container_property::PBmmIndexedContainerProperty wins over openehr_lang::v1_0::bmm_persistence::p_bmm_indexed_container_property::PBmmIndexedContainerProperty
+//   P_BMM_INDEXED_CONTAINER_TYPE: openehr_lang::v1_1::bmm_persistence::p_bmm_indexed_container_type::PBmmIndexedContainerType wins over openehr_lang::v1_0::bmm_persistence::p_bmm_indexed_container_type::PBmmIndexedContainerType
+//   P_BMM_OPEN_TYPE: openehr_lang::v1_1::bmm_persistence::p_bmm_open_type::PBmmOpenType wins over openehr_lang::v1_0::bmm_persistence::p_bmm_open_type::PBmmOpenType
+//   P_BMM_PACKAGE: openehr_lang::v1_1::bmm_persistence::p_bmm_package::PBmmPackage wins over openehr_lang::v1_0::bmm_persistence::p_bmm_package::PBmmPackage
+//   P_BMM_PACKAGE_CONTAINER: openehr_lang::v1_1::bmm_persistence::p_bmm_package_container::PBmmPackageContainerData wins over openehr_lang::v1_0::bmm_persistence::p_bmm_package_container::PBmmPackageContainerData
+//   P_BMM_SCHEMA: openehr_lang::v1_1::bmm_persistence::p_bmm_schema::PBmmSchema wins over openehr_lang::v1_0::bmm_persistence::p_bmm_schema::PBmmSchema
+//   P_BMM_SCHEMA_DESCRIPTOR: openehr_lang::v1_1::bmm_persistence::p_bmm_schema_descriptor::PBmmSchemaDescriptor wins over openehr_lang::v1_0::bmm_persistence::p_bmm_schema_descriptor::PBmmSchemaDescriptor
+//   P_BMM_SIMPLE_TYPE: openehr_lang::v1_1::bmm_persistence::p_bmm_simple_type::PBmmSimpleType wins over openehr_lang::v1_0::bmm_persistence::p_bmm_simple_type::PBmmSimpleType
+//   P_BMM_SINGLE_PROPERTY: openehr_lang::v1_1::bmm_persistence::p_bmm_single_property::PBmmSingleProperty wins over openehr_lang::v1_0::bmm_persistence::p_bmm_single_property::PBmmSingleProperty
+//   P_BMM_SINGLE_PROPERTY_OPEN: openehr_lang::v1_1::bmm_persistence::p_bmm_single_property_open::PBmmSinglePropertyOpen wins over openehr_lang::v1_0::bmm_persistence::p_bmm_single_property_open::PBmmSinglePropertyOpen
+//   TYPE_DEF_BOOLEAN: openehr_lang::v1_1::beom::types::type_def_boolean::TypeDefBoolean wins over openehr_lang::v1_0::obsolete_elom::types::type_def_boolean::TypeDefBoolean
+//   TYPE_DEF_DATE: openehr_lang::v1_1::beom::types::type_def_date::TypeDefDate wins over openehr_lang::v1_0::obsolete_elom::types::type_def_date::TypeDefDate
+//   TYPE_DEF_DATE_TIME: openehr_lang::v1_1::beom::types::type_def_date_time::TypeDefDateTime wins over openehr_lang::v1_0::obsolete_elom::types::type_def_date_time::TypeDefDateTime
+//   TYPE_DEF_DURATION: openehr_lang::v1_1::beom::types::type_def_duration::TypeDefDuration wins over openehr_lang::v1_0::obsolete_elom::types::type_def_duration::TypeDefDuration
+//   TYPE_DEF_INTEGER: openehr_lang::v1_1::beom::types::type_def_integer::TypeDefInteger wins over openehr_lang::v1_0::obsolete_elom::types::type_def_integer::TypeDefInteger
+//   TYPE_DEF_OBJECT_REF: openehr_lang::v1_1::beom::types::type_def_object_ref::TypeDefObjectRef wins over openehr_lang::v1_0::obsolete_elom::types::type_def_object_ref::TypeDefObjectRef
+//   TYPE_DEF_REAL: openehr_lang::v1_1::beom::types::type_def_real::TypeDefReal wins over openehr_lang::v1_0::obsolete_elom::types::type_def_real::TypeDefReal
+//   TYPE_DEF_STRING: openehr_lang::v1_1::beom::types::type_def_string::TypeDefString wins over openehr_lang::v1_0::obsolete_elom::types::type_def_string::TypeDefString
+//   TYPE_DEF_TERMINOLOGY_CODE: openehr_lang::v1_1::beom::types::type_def_terminology_code::TypeDefTerminologyCode wins over openehr_lang::v1_0::obsolete_elom::types::type_def_terminology_code::TypeDefTerminologyCode
+//   TYPE_DEF_TIME: openehr_lang::v1_1::beom::types::type_def_time::TypeDefTime wins over openehr_lang::v1_0::obsolete_elom::types::type_def_time::TypeDefTime
+//   TYPE_DEF_URI: openehr_lang::v1_1::beom::types::type_def_uri::TypeDefUri wins over openehr_lang::v1_0::obsolete_elom::types::type_def_uri::TypeDefUri
+//   ASSERTION: openehr_lang::v1_1::beom::core::assertion::Assertion wins over openehr_am::v2_4::beom::core::assertion::Assertion
+//   ASSIGNMENT: openehr_lang::v1_1::beom::core::assignment::Assignment wins over openehr_am::v2_4::beom::core::assignment::Assignment
+//   BMM_ASSERTION: openehr_lang::v1_1::bmm3::statement::bmm_assertion::BmmAssertion wins over openehr_am::v2_4::bmm3::statement::bmm_assertion::BmmAssertion
+//   BMM_ASSIGNMENT: openehr_lang::v1_1::bmm3::statement::bmm_assignment::BmmAssignment wins over openehr_am::v2_4::bmm3::statement::bmm_assignment::BmmAssignment
+//   BMM_BOOLEAN_VALUE: openehr_lang::v1_1::bmm3::core::literal_value::bmm_boolean_value::BmmBooleanValue wins over openehr_am::v2_4::bmm3::core::literal_value::bmm_boolean_value::BmmBooleanValue
+//   BMM_CONSTANT: openehr_lang::v1_1::bmm3::core::feature::bmm_constant::BmmConstant wins over openehr_am::v2_4::bmm3::core::feature::bmm_constant::BmmConstant
+//   BMM_CONTAINER_PROPERTY: openehr_lang::v1_1::bmm::core::bmm_container_property::BmmContainerProperty wins over openehr_am::v2_4::bmm::core::bmm_container_property::BmmContainerPropertyData
+//   BMM_CONTAINER_TYPE: openehr_lang::v1_1::bmm::core::bmm_container_type::BmmContainerTypeData wins over openehr_am::v2_4::bmm::core::bmm_container_type::BmmContainerTypeData
+//   BMM_DECLARATION: openehr_lang::v1_1::bmm3::statement::bmm_declaration::BmmDeclaration wins over openehr_am::v2_4::bmm3::statement::bmm_declaration::BmmDeclaration
+//   BMM_DEFINITIONS: openehr_lang::v1_1::bmm::core::bmm_definitions::BmmDefinitionsData wins over openehr_am::v2_4::bmm::core::bmm_definitions::BmmDefinitionsData
+//   BMM_ENUMERATION: openehr_lang::v1_1::bmm::core::bmm_enumeration::BmmEnumerationData wins over openehr_am::v2_4::bmm::core::bmm_enumeration::BmmEnumerationData
+//   BMM_ENUMERATION_INTEGER: openehr_lang::v1_1::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger wins over openehr_am::v2_4::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger
+//   BMM_ENUMERATION_STRING: openehr_lang::v1_1::bmm::core::bmm_enumeration_string::BmmEnumerationString wins over openehr_am::v2_4::bmm::core::bmm_enumeration_string::BmmEnumerationString
+//   BMM_FEATURE_GROUP: openehr_lang::v1_1::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup wins over openehr_am::v2_4::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup
+//   BMM_FUNCTION: openehr_lang::v1_1::bmm3::core::feature::bmm_function::BmmFunction wins over openehr_am::v2_4::bmm3::core::feature::bmm_function::BmmFunction
+//   BMM_FUNCTION_TYPE: openehr_lang::v1_1::bmm3::core::entity::bmm_function_type::BmmFunctionType wins over openehr_am::v2_4::bmm3::core::entity::bmm_function_type::BmmFunctionType
+//   BMM_GENERIC_CLASS: openehr_lang::v1_1::bmm::core::bmm_generic_class::BmmGenericClass wins over openehr_am::v2_4::bmm::core::bmm_generic_class::BmmGenericClass
+//   BMM_GENERIC_PARAMETER: openehr_lang::v1_1::bmm::core::bmm_generic_parameter::BmmGenericParameter wins over openehr_am::v2_4::bmm::core::bmm_generic_parameter::BmmGenericParameter
+//   BMM_GENERIC_TYPE: openehr_lang::v1_1::bmm::core::bmm_generic_type::BmmGenericType wins over openehr_am::v2_4::bmm::core::bmm_generic_type::BmmGenericType
+//   BMM_INDEXED_CONTAINER_PROPERTY: openehr_lang::v1_1::bmm3::core::feature::bmm_indexed_container_property::BmmIndexedContainerProperty wins over openehr_am::v2_4::bmm3::core::feature::bmm_indexed_container_property::BmmIndexedContainerProperty
+//   BMM_INDEXED_CONTAINER_TYPE: openehr_lang::v1_1::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType wins over openehr_am::v2_4::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType
+//   BMM_INTEGER_VALUE: openehr_lang::v1_1::bmm3::core::literal_value::bmm_integer_value::BmmIntegerValue wins over openehr_am::v2_4::bmm3::core::literal_value::bmm_integer_value::BmmIntegerValue
+//   BMM_LOCAL: openehr_lang::v1_1::bmm3::core::feature::bmm_local::BmmLocal wins over openehr_am::v2_4::bmm3::core::feature::bmm_local::BmmLocal
+//   BMM_LOCAL_ROUTINE: openehr_lang::v1_1::bmm3::core::feature::bmm_local_routine::BmmLocalRoutine wins over openehr_am::v2_4::bmm3::core::feature::bmm_local_routine::BmmLocalRoutine
+//   BMM_MODEL: openehr_lang::v1_1::bmm::core::bmm_model::BmmModel wins over openehr_am::v2_4::bmm::core::bmm_model::BmmModel
+//   BMM_MODEL_ACCESS: openehr_lang::v1_1::bmm3::model_access::bmm_model_access::BmmModelAccess wins over openehr_am::v2_4::bmm3::model_access::bmm_model_access::BmmModelAccess
+//   BMM_MODEL_METADATA: openehr_lang::v1_1::bmm3::core::model::bmm_model_metadata::BmmModelMetadataData wins over openehr_am::v2_4::bmm3::core::model::bmm_model_metadata::BmmModelMetadataData
+//   BMM_OPEN_TYPE: openehr_lang::v1_1::bmm::core::bmm_open_type::BmmOpenType wins over openehr_am::v2_4::bmm::core::bmm_open_type::BmmOpenType
+//   BMM_PACKAGE: openehr_lang::v1_1::bmm::core::bmm_package::BmmPackage wins over openehr_am::v2_4::bmm::core::bmm_package::BmmPackage
+//   BMM_PARAMETER: openehr_lang::v1_1::bmm3::core::feature::bmm_parameter::BmmParameter wins over openehr_am::v2_4::bmm3::core::feature::bmm_parameter::BmmParameter
+//   BMM_PARAMETER_TYPE: openehr_lang::v1_1::bmm3::core::entity::bmm_parameter_type::BmmParameterType wins over openehr_am::v2_4::bmm3::core::entity::bmm_parameter_type::BmmParameterType
+//   BMM_PRIMITIVE_VALUE: openehr_lang::v1_1::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValueData wins over openehr_am::v2_4::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValueData
+//   BMM_PROCEDURE: openehr_lang::v1_1::bmm3::core::feature::bmm_procedure::BmmProcedure wins over openehr_am::v2_4::bmm3::core::feature::bmm_procedure::BmmProcedure
+//   BMM_PROCEDURE_CALL: openehr_lang::v1_1::bmm3::statement::bmm_procedure_call::BmmProcedureCall wins over openehr_am::v2_4::bmm3::statement::bmm_procedure_call::BmmProcedureCall
+//   BMM_PROCEDURE_TYPE: openehr_lang::v1_1::bmm3::core::entity::bmm_procedure_type::BmmProcedureType wins over openehr_am::v2_4::bmm3::core::entity::bmm_procedure_type::BmmProcedureType
+//   BMM_PROPERTY_TYPE: openehr_lang::v1_1::bmm3::core::entity::bmm_property_type::BmmPropertyType wins over openehr_am::v2_4::bmm3::core::entity::bmm_property_type::BmmPropertyType
+//   BMM_RESULT: openehr_lang::v1_1::bmm3::core::feature::bmm_result::BmmResult wins over openehr_am::v2_4::bmm3::core::feature::bmm_result::BmmResult
+//   BMM_ROUTINE_TYPE: openehr_lang::v1_1::bmm3::core::entity::bmm_routine_type::BmmRoutineTypeData wins over openehr_am::v2_4::bmm3::core::entity::bmm_routine_type::BmmRoutineTypeData
+//   BMM_SCHEMA: openehr_lang::v1_1::bmm3::model_access::bmm_schema::BmmSchema wins over openehr_am::v2_4::bmm3::model_access::bmm_schema::BmmSchema
+//   BMM_SCHEMA_CORE: openehr_lang::v1_1::bmm::core::bmm_schema_core::BmmSchemaCoreData wins over openehr_am::v2_4::bmm::core::bmm_schema_core::BmmSchemaCoreData
+//   BMM_SCHEMA_DESCRIPTOR: openehr_lang::v1_1::bmm3::model_access::bmm_schema_descriptor::BmmSchemaDescriptor wins over openehr_am::v2_4::bmm3::model_access::bmm_schema_descriptor::BmmSchemaDescriptor
+//   BMM_SELF: openehr_lang::v1_1::bmm3::core::feature::bmm_self::BmmSelf wins over openehr_am::v2_4::bmm3::core::feature::bmm_self::BmmSelf
+//   BMM_SIGNATURE: openehr_lang::v1_1::bmm3::core::entity::bmm_signature::BmmSignatureData wins over openehr_am::v2_4::bmm3::core::entity::bmm_signature::BmmSignatureData
+//   BMM_SIMPLE_CLASS: openehr_lang::v1_1::bmm3::core::entity::bmm_simple_class::BmmSimpleClassData wins over openehr_am::v2_4::bmm3::core::entity::bmm_simple_class::BmmSimpleClassData
+//   BMM_SIMPLE_TYPE: openehr_lang::v1_1::bmm::core::bmm_simple_type::BmmSimpleType wins over openehr_am::v2_4::bmm::core::bmm_simple_type::BmmSimpleType
+//   BMM_SINGLETON: openehr_lang::v1_1::bmm3::core::feature::bmm_singleton::BmmSingleton wins over openehr_am::v2_4::bmm3::core::feature::bmm_singleton::BmmSingleton
+//   BMM_STATEMENT_BLOCK: openehr_lang::v1_1::bmm3::statement::bmm_statement_block::BmmStatementBlock wins over openehr_am::v2_4::bmm3::statement::bmm_statement_block::BmmStatementBlock
+//   BMM_STRING_VALUE: openehr_lang::v1_1::bmm3::core::literal_value::bmm_string_value::BmmStringValue wins over openehr_am::v2_4::bmm3::core::literal_value::bmm_string_value::BmmStringValue
+//   BMM_TUPLE_TYPE: openehr_lang::v1_1::bmm3::core::entity::bmm_tuple_type::BmmTupleType wins over openehr_am::v2_4::bmm3::core::entity::bmm_tuple_type::BmmTupleType
+//   BMM_UNITARY_PROPERTY: openehr_lang::v1_1::bmm3::core::feature::bmm_unitary_property::BmmUnitaryProperty wins over openehr_am::v2_4::bmm3::core::feature::bmm_unitary_property::BmmUnitaryProperty
+//   EL_ATTACHED: openehr_lang::v1_1::bmm3::expression::el_attached::ElAttached wins over openehr_am::v2_4::bmm3::expression::el_attached::ElAttached
+//   EL_BINARY_OPERATOR: openehr_lang::v1_1::bmm3::expression::el_binary_operator::ElBinaryOperator wins over openehr_am::v2_4::bmm3::expression::el_binary_operator::ElBinaryOperator
+//   EL_BOOLEAN_EXPRESSION: openehr_lang::v1_1::bmm3::expression::el_boolean_expression::ElBooleanExpression wins over openehr_am::v2_4::bmm3::expression::el_boolean_expression::ElBooleanExpression
+//   EL_CASE: openehr_lang::v1_1::bmm3::expression::el_case::ElCase<::serde_json::Value> wins over openehr_am::v2_4::bmm3::expression::el_case::ElCase<::serde_json::Value>
+//   EL_CASE_TABLE: openehr_lang::v1_1::bmm3::expression::el_case_table::ElCaseTable<::serde_json::Value> wins over openehr_am::v2_4::bmm3::expression::el_case_table::ElCaseTable<::serde_json::Value>
+//   EL_CONDITIONAL_EXPRESSION: openehr_lang::v1_1::bmm3::expression::el_conditional_expression::ElConditionalExpression<::serde_json::Value> wins over openehr_am::v2_4::bmm3::expression::el_conditional_expression::ElConditionalExpression<::serde_json::Value>
+//   EL_CONDITION_CHAIN: openehr_lang::v1_1::bmm3::expression::el_condition_chain::ElConditionChain<::serde_json::Value> wins over openehr_am::v2_4::bmm3::expression::el_condition_chain::ElConditionChain<::serde_json::Value>
+//   EL_DEFINED: openehr_lang::v1_1::bmm3::expression::el_defined::ElDefined wins over openehr_am::v2_4::bmm3::expression::el_defined::ElDefined
+//   EL_FUNCTION_AGENT: openehr_lang::v1_1::bmm3::expression::el_function_agent::ElFunctionAgent wins over openehr_am::v2_4::bmm3::expression::el_function_agent::ElFunctionAgent
+//   EL_FUNCTION_CALL: openehr_lang::v1_1::bmm3::expression::el_function_call::ElFunctionCall wins over openehr_am::v2_4::bmm3::expression::el_function_call::ElFunctionCall
+//   EL_LITERAL: openehr_lang::v1_1::bmm3::expression::el_literal::ElLiteral wins over openehr_am::v2_4::bmm3::expression::el_literal::ElLiteral
+//   EL_PROCEDURE_AGENT: openehr_lang::v1_1::bmm3::expression::el_procedure_agent::ElProcedureAgent wins over openehr_am::v2_4::bmm3::expression::el_procedure_agent::ElProcedureAgent
+//   EL_PROPERTY_REF: openehr_lang::v1_1::bmm3::expression::el_property_ref::ElPropertyRef wins over openehr_am::v2_4::bmm3::expression::el_property_ref::ElPropertyRef
+//   EL_READONLY_VARIABLE: openehr_lang::v1_1::bmm3::expression::el_readonly_variable::ElReadonlyVariable wins over openehr_am::v2_4::bmm3::expression::el_readonly_variable::ElReadonlyVariable
+//   EL_STATIC_REF: openehr_lang::v1_1::bmm3::expression::el_static_ref::ElStaticRef wins over openehr_am::v2_4::bmm3::expression::el_static_ref::ElStaticRef
+//   EL_TUPLE: openehr_lang::v1_1::bmm3::expression::el_tuple::ElTuple wins over openehr_am::v2_4::bmm3::expression::el_tuple::ElTuple
+//   EL_TUPLE_ITEM: openehr_lang::v1_1::bmm3::expression::el_tuple_item::ElTupleItem wins over openehr_am::v2_4::bmm3::expression::el_tuple_item::ElTupleItem
+//   EL_TYPE_REF: openehr_lang::v1_1::bmm3::expression::el_type_ref::ElTypeRef wins over openehr_am::v2_4::bmm3::expression::el_type_ref::ElTypeRef
+//   EL_UNARY_OPERATOR: openehr_lang::v1_1::bmm3::expression::el_unary_operator::ElUnaryOperator wins over openehr_am::v2_4::bmm3::expression::el_unary_operator::ElUnaryOperator
+//   EL_WRITABLE_VARIABLE: openehr_lang::v1_1::bmm3::expression::el_writable_variable::ElWritableVariable wins over openehr_am::v2_4::bmm3::expression::el_writable_variable::ElWritableVariable
+//   EXPR_BINARY_OPERATOR: openehr_lang::v1_1::beom::core::expr_binary_operator::ExprBinaryOperator wins over openehr_am::v2_4::beom::core::expr_binary_operator::ExprBinaryOperator
+//   EXPR_FOR_ALL: openehr_lang::v1_1::beom::core::expr_for_all::ExprForAll wins over openehr_am::v2_4::beom::core::expr_for_all::ExprForAll
+//   EXPR_FUNCTION_CALL: openehr_lang::v1_1::beom::core::expr_function_call::ExprFunctionCall wins over openehr_am::v2_4::beom::core::expr_function_call::ExprFunctionCall
+//   EXPR_UNARY_OPERATOR: openehr_lang::v1_1::beom::core::expr_unary_operator::ExprUnaryOperator wins over openehr_am::v2_4::beom::core::expr_unary_operator::ExprUnaryOperator
+//   EXPR_VALUE_REF: openehr_lang::v1_1::beom::core::expr_value_ref::ExprValueRef wins over openehr_am::v2_4::beom::core::expr_value_ref::ExprValueRefData
+//   P_BMM_CLASS: openehr_lang::v1_1::bmm_persistence::p_bmm_class::PBmmClassData wins over openehr_am::v2_4::bmm_persistence::p_bmm_class::PBmmClassData
+//   P_BMM_CONTAINER_FUNCTION_PARAMETER: openehr_lang::v1_1::bmm_persistence::p_bmm_container_function_parameter::PBmmContainerFunctionParameter wins over openehr_am::v2_4::bmm_persistence::p_bmm_container_function_parameter::PBmmContainerFunctionParameter
+//   P_BMM_CONTAINER_PROPERTY: openehr_lang::v1_1::bmm_persistence::p_bmm_container_property::PBmmContainerPropertyData wins over openehr_am::v2_4::bmm_persistence::p_bmm_container_property::PBmmContainerPropertyData
+//   P_BMM_CONTAINER_TYPE: openehr_lang::v1_1::bmm_persistence::p_bmm_container_type::PBmmContainerTypeData wins over openehr_am::v2_4::bmm_persistence::p_bmm_container_type::PBmmContainerTypeData
+//   P_BMM_ENUMERATION: openehr_lang::v1_1::bmm_persistence::p_bmm_enumeration::PBmmEnumerationData wins over openehr_am::v2_4::bmm_persistence::p_bmm_enumeration::PBmmEnumerationData
+//   P_BMM_ENUMERATION_INTEGER: openehr_lang::v1_1::bmm_persistence::p_bmm_enumeration_integer::PBmmEnumerationInteger wins over openehr_am::v2_4::bmm_persistence::p_bmm_enumeration_integer::PBmmEnumerationInteger
+//   P_BMM_ENUMERATION_STRING: openehr_lang::v1_1::bmm_persistence::p_bmm_enumeration_string::PBmmEnumerationString wins over openehr_am::v2_4::bmm_persistence::p_bmm_enumeration_string::PBmmEnumerationString
+//   P_BMM_FUNCTION: openehr_lang::v1_1::bmm_persistence::p_bmm_function::PBmmFunction wins over openehr_am::v2_4::bmm_persistence::p_bmm_function::PBmmFunction
+//   P_BMM_GENERIC_FUNCTION_PARAMETER: openehr_lang::v1_1::bmm_persistence::p_bmm_generic_function_parameter::PBmmGenericFunctionParameter wins over openehr_am::v2_4::bmm_persistence::p_bmm_generic_function_parameter::PBmmGenericFunctionParameter
+//   P_BMM_GENERIC_PARAMETER: openehr_lang::v1_1::bmm_persistence::p_bmm_generic_parameter::PBmmGenericParameter wins over openehr_am::v2_4::bmm_persistence::p_bmm_generic_parameter::PBmmGenericParameter
+//   P_BMM_GENERIC_PROPERTY: openehr_lang::v1_1::bmm_persistence::p_bmm_generic_property::PBmmGenericProperty wins over openehr_am::v2_4::bmm_persistence::p_bmm_generic_property::PBmmGenericProperty
+//   P_BMM_GENERIC_TYPE: openehr_lang::v1_1::bmm_persistence::p_bmm_generic_type::PBmmGenericType wins over openehr_am::v2_4::bmm_persistence::p_bmm_generic_type::PBmmGenericType
+//   P_BMM_INDEXED_CONTAINER_PROPERTY: openehr_lang::v1_1::bmm_persistence::p_bmm_indexed_container_property::PBmmIndexedContainerProperty wins over openehr_am::v2_4::bmm_persistence::p_bmm_indexed_container_property::PBmmIndexedContainerProperty
+//   P_BMM_INDEXED_CONTAINER_TYPE: openehr_lang::v1_1::bmm_persistence::p_bmm_indexed_container_type::PBmmIndexedContainerType wins over openehr_am::v2_4::bmm_persistence::p_bmm_indexed_container_type::PBmmIndexedContainerType
+//   P_BMM_INTERFACE: openehr_lang::v1_1::bmm_persistence::p_bmm_interface::PBmmInterface wins over openehr_am::v2_4::bmm_persistence::p_bmm_interface::PBmmInterface
+//   P_BMM_OPEN_TYPE: openehr_lang::v1_1::bmm_persistence::p_bmm_open_type::PBmmOpenType wins over openehr_am::v2_4::bmm_persistence::p_bmm_open_type::PBmmOpenType
+//   P_BMM_PACKAGE: openehr_lang::v1_1::bmm_persistence::p_bmm_package::PBmmPackage wins over openehr_am::v2_4::bmm_persistence::p_bmm_package::PBmmPackage
+//   P_BMM_PACKAGE_CONTAINER: openehr_lang::v1_1::bmm_persistence::p_bmm_package_container::PBmmPackageContainerData wins over openehr_am::v2_4::bmm_persistence::p_bmm_package_container::PBmmPackageContainerData
+//   P_BMM_SCHEMA: openehr_lang::v1_1::bmm_persistence::p_bmm_schema::PBmmSchema wins over openehr_am::v2_4::bmm_persistence::p_bmm_schema::PBmmSchema
+//   P_BMM_SCHEMA_DESCRIPTOR: openehr_lang::v1_1::bmm_persistence::p_bmm_schema_descriptor::PBmmSchemaDescriptor wins over openehr_am::v2_4::bmm_persistence::p_bmm_schema_descriptor::PBmmSchemaDescriptor
+//   P_BMM_SIMPLE_TYPE: openehr_lang::v1_1::bmm_persistence::p_bmm_simple_type::PBmmSimpleType wins over openehr_am::v2_4::bmm_persistence::p_bmm_simple_type::PBmmSimpleType
+//   P_BMM_SINGLE_PROPERTY: openehr_lang::v1_1::bmm_persistence::p_bmm_single_property::PBmmSingleProperty wins over openehr_am::v2_4::bmm_persistence::p_bmm_single_property::PBmmSingleProperty
+//   P_BMM_SINGLE_PROPERTY_OPEN: openehr_lang::v1_1::bmm_persistence::p_bmm_single_property_open::PBmmSinglePropertyOpen wins over openehr_am::v2_4::bmm_persistence::p_bmm_single_property_open::PBmmSinglePropertyOpen
+//   REFERENCE_MODEL_ACCESS: openehr_lang::v1_1::bmm::rm_access::reference_model_access::ReferenceModelAccess wins over openehr_am::v2_4::bmm::rm_access::reference_model_access::ReferenceModelAccess
 //   RESOURCE_DESCRIPTION: openehr_rm::v1_2::common::resource::resource_description::ResourceDescription wins over openehr_am::v2_4::resource::resource_description::ResourceDescription
-//   SCHEMA_DESCRIPTOR: openehr_lang::v2::bmm::rm_access::schema_descriptor::SchemaDescriptorData wins over openehr_am::v2_4::bmm::rm_access::schema_descriptor::SchemaDescriptorData
-//   STATEMENT_SET: openehr_lang::v2::beom::core::statement_set::StatementSet wins over openehr_am::v2_4::beom::core::statement_set::StatementSet
-// Shapes with no `_type` key (230):
+//   SCHEMA_DESCRIPTOR: openehr_lang::v1_1::bmm::rm_access::schema_descriptor::SchemaDescriptorData wins over openehr_am::v2_4::bmm::rm_access::schema_descriptor::SchemaDescriptorData
+//   STATEMENT_SET: openehr_lang::v1_1::beom::core::statement_set::StatementSet wins over openehr_am::v2_4::beom::core::statement_set::StatementSet
+//   ARCHETYPE_SLOT: openehr_am::v2_4::aom2::constraint_model::archetype_slot::ArchetypeSlot wins over openehr_am::v1_4::aom14::archetype::constraint_model::archetype_slot::ArchetypeSlot
+//   ARCHETYPE_TERM: openehr_am::v2_4::aom2::terminology::archetype_term::ArchetypeTerm wins over openehr_am::v1_4::aom14::archetype::ontology::archetype_term::ArchetypeTerm
+//   ASSERTION: openehr_lang::v1_1::beom::core::assertion::Assertion wins over openehr_am::v1_4::aom14::archetype::assertion::assertion::Assertion
+//   C_BOOLEAN: openehr_am::v2_4::aom2::constraint_model::primitive::c_boolean::CBoolean wins over openehr_am::v1_4::aom14::archetype::primitive::c_boolean::CBoolean
+//   C_COMPLEX_OBJECT: openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObjectData wins over openehr_am::v1_4::aom14::archetype::constraint_model::c_complex_object::CComplexObject
+//   C_DATE: openehr_am::v2_4::aom2::constraint_model::primitive::c_date::CDate wins over openehr_am::v1_4::aom14::archetype::primitive::c_date::CDate
+//   C_DATE_TIME: openehr_am::v2_4::aom2::constraint_model::primitive::c_date_time::CDateTime wins over openehr_am::v1_4::aom14::archetype::primitive::c_date_time::CDateTime
+//   C_DURATION: openehr_am::v2_4::aom2::constraint_model::primitive::c_duration::CDuration wins over openehr_am::v1_4::aom14::archetype::primitive::c_duration::CDuration
+//   C_INTEGER: openehr_am::v2_4::aom2::constraint_model::primitive::c_integer::CInteger wins over openehr_am::v1_4::aom14::archetype::primitive::c_integer::CInteger
+//   C_REAL: openehr_am::v2_4::aom2::constraint_model::primitive::c_real::CReal wins over openehr_am::v1_4::aom14::archetype::primitive::c_real::CReal
+//   C_STRING: openehr_am::v2_4::aom2::constraint_model::primitive::c_string::CString wins over openehr_am::v1_4::aom14::archetype::primitive::c_string::CString
+//   C_TIME: openehr_am::v2_4::aom2::constraint_model::primitive::c_time::CTime wins over openehr_am::v1_4::aom14::archetype::primitive::c_time::CTime
+//   EXPR_BINARY_OPERATOR: openehr_lang::v1_1::beom::core::expr_binary_operator::ExprBinaryOperator wins over openehr_am::v1_4::aom14::archetype::assertion::expr_binary_operator::ExprBinaryOperator
+//   EXPR_UNARY_OPERATOR: openehr_lang::v1_1::beom::core::expr_unary_operator::ExprUnaryOperator wins over openehr_am::v1_4::aom14::archetype::assertion::expr_unary_operator::ExprUnaryOperator
+//   RESOURCE_DESCRIPTION: openehr_rm::v1_2::common::resource::resource_description::ResourceDescription wins over openehr_am::v1_4::resource::resource_description::ResourceDescription
+// Shapes with no `_type` key (343):
 //   Actor: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   AuditDetails: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   CareEntry: untagged enum: the wire `_type` is the active variant's, which has its own arm
@@ -218,6 +461,59 @@
 //   Version: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   VersionedObject: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   XVersionedObject: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   Actor: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   AuditDetails: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   CareEntry: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ContentItem: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   DataStructure: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   DataValue: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   DvAbsoluteQuantity: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   DvAmount: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   DvEncapsulated: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   DvOrdered: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   DvQuantified: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   DvTemporal: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   DvText: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   DvTimeSpecification: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   DvUri: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   Entry: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   Event: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ExtractChapter: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ExtractContentItem: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ExtractItem: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   Item: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ItemStructure: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   Interval: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   Iso8601Date: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   Iso8601DateTime: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   Iso8601Duration: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   Iso8601Time: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   Iso8601Type: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   Locatable: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   MessageContent: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   OpenehrCodeSetIdentifiers: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   OpenehrTerminologyGroupIdentifiers: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   Party: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   PartyIdentified: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   PartyProxy: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   Pathable: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ProportionKind: BMM enumeration: a literal token/integer on the wire, never `_type`-tagged
+//   ResourceUse: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   Version: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   VersionedObject: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ViewEntry: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ViewItem: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ViewStatus: BMM enumeration: a literal token/integer on the wire, never `_type`-tagged
+//   XVersionedObject: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   Interval: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   Iso8601Type: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ObjectId: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ObjectRef: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ProperInterval: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   Uid: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   UidBasedId: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ValidityKind: BMM enumeration: a literal token/integer on the wire, never `_type`-tagged
+//   VersionStatus: BMM enumeration: a literal token/integer on the wire, never `_type`-tagged
 //   Interval: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   Iso8601Type: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   ObjectId: untagged enum: the wire `_type` is the active variant's, which has its own arm
@@ -306,17 +602,66 @@
 //   ElTerminal: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   ElValueGenerator: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   ElVariable: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   ArchetypeConstraint: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   AuthoredResource: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   CAttribute: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   CDefinedObject: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   CDomainType: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   CObject: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   CPrimitive: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   CReferenceObject: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   ExprItem: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   ExprOperator: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   OperatorKind: BMM enumeration: a literal token/integer on the wire, never `_type`-tagged
+//   BmmClass: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmClassEntity: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmClassFeature: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmContainerProperty: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmContainerType: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmContainerValue: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmDeclaration: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmEffectiveType: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmEntityMetatype: BMM enumeration: a literal token/integer on the wire, never `_type`-tagged
+//   BmmEnumeration: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmInstantiable: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmLiteralValue: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmModelMetadata: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmModelType: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmModule: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmOperatorPosition: BMM enumeration: a literal token/integer on the wire, never `_type`-tagged
+//   BmmPackageContainer: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmParameterDirection: BMM enumeration: a literal token/integer on the wire, never `_type`-tagged
+//   BmmPrimitiveValue: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmProperty: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmRoutine: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmRoutineBody: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmSchema: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmSchemaDescriptor: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmSchemaMetadataKey: BMM enumeration: a literal token/integer on the wire, never `_type`-tagged
+//   BmmSchemaState: BMM enumeration: a literal token/integer on the wire, never `_type`-tagged
+//   BmmSimpleClass: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmSimpleStatement: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmStatement: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmStatementItem: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmType: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmTyped: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmTypedFeature: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmUnitaryType: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmUnitaryValue: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmVariable: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ElAgent: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ElAgentCall: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ElConstrained: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ElDecisionBranch: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ElDecisionTable: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ElExpression: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ElInstanceRef: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ElOperator: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ElPredicate: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ElScopedRef: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ElSimple: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ElTerminal: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ElTypeDef: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   FunctionDefExternal: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   OperatorDefExternal: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   PBmmBaseType: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   PBmmClass: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   PBmmContainerProperty: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   PBmmContainerType: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   PBmmEnumeration: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   PBmmModelElement: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   PBmmPackageContainer: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   PBmmProperty: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   PBmmType: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   AdlCodeDefinitions: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   Archetype: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   ArchetypeConstraint: untagged enum: the wire `_type` is the active variant's, which has its own arm
@@ -407,6 +752,17 @@
 //   Statement: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   TerminologyRelation: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   VisibilityType: BMM enumeration: a literal token/integer on the wire, never `_type`-tagged
+//   ArchetypeConstraint: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   AuthoredResource: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   CAttribute: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   CDefinedObject: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   CDomainType: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   CObject: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   CPrimitive: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   CReferenceObject: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ExprItem: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ExprOperator: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   OperatorKind: BMM enumeration: a literal token/integer on the wire, never `_type`-tagged
 //   TerminologyStatus: BMM enumeration: a literal token/integer on the wire, never `_type`-tagged
 #![expect(
     clippy::disallowed_types,
@@ -446,81 +802,84 @@ pub fn structural_check(
 "ARCHETYPE_ID_CONSTRAINT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::constraint_model::archetype_id_constraint::ArchetypeIdConstraint>(node).map(|_| ())),
 "ARCHETYPE_INTERNAL_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v1_4::aom14::archetype::constraint_model::archetype_internal_ref::ArchetypeInternalRef>(node).map(|_| ())),
 "ARCHETYPE_ONTOLOGY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v1_4::aom14::archetype::ontology::archetype_ontology::ArchetypeOntology>(node).map(|_| ())),
-"ARCHETYPE_SLOT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v1_4::aom14::archetype::constraint_model::archetype_slot::ArchetypeSlot>(node).map(|_| ())),
-"ARCHETYPE_TERM" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v1_4::aom14::archetype::ontology::archetype_term::ArchetypeTerm>(node).map(|_| ())),
+"ARCHETYPE_SLOT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::constraint_model::archetype_slot::ArchetypeSlot>(node).map(|_| ())),
+"ARCHETYPE_TERM" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::terminology::archetype_term::ArchetypeTerm>(node).map(|_| ())),
 "ARCHETYPE_TERMINOLOGY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::terminology::archetype_terminology::ArchetypeTerminology>(node).map(|_| ())),
-"ASSERTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::beom::core::assertion::Assertion>(node).map(|_| ())),
+"ASSERTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::beom::core::assertion::Assertion>(node).map(|_| ())),
 "ASSERTION_VARIABLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v1_4::aom14::archetype::assertion::assertion_variable::AssertionVariable>(node).map(|_| ())),
-"ASSIGNMENT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::beom::core::assignment::Assignment>(node).map(|_| ())),
+"ASSIGNMENT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::beom::core::assignment::Assignment>(node).map(|_| ())),
 "ATTESTATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::common::generic::attestation::Attestation>(node).map(|_| ())),
 "AUDIT_DETAILS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::common::generic::audit_details::AuditDetailsData>(node).map(|_| ())),
 "AUTHORED_ARCHETYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::archetype::authored_archetype::AuthoredArchetypeData>(node).map(|_| ())),
 "AUTHORED_RESOURCE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::common::resource::authored_resource::AuthoredResource>(node).map(|_| ())),
-"BMM_ACTION_DECISION_TABLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::statement::bmm_action_decision_table::BmmActionDecisionTable>(node).map(|_| ())),
-"BMM_ACTION_TABLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::statement::bmm_action_table::BmmActionTable>(node).map(|_| ())),
-"BMM_ASSERTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::statement::bmm_assertion::BmmAssertion>(node).map(|_| ())),
-"BMM_ASSIGNMENT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::statement::bmm_assignment::BmmAssignment>(node).map(|_| ())),
-"BMM_BOOLEAN_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::literal_value::bmm_boolean_value::BmmBooleanValue>(node).map(|_| ())),
-"BMM_CLASS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_class::BmmClassData>(node).map(|_| ())),
-"BMM_CONSTANT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_constant::BmmConstant>(node).map(|_| ())),
-"BMM_CONTAINER_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_container_property::BmmContainerProperty>(node).map(|_| ())),
-"BMM_CONTAINER_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_container_type::BmmContainerTypeData>(node).map(|_| ())),
-"BMM_CONTAINER_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::literal_value::bmm_container_value::BmmContainerValue>(node).map(|_| ())),
-"BMM_DECLARATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::statement::bmm_declaration::BmmDeclaration>(node).map(|_| ())),
-"BMM_DEFINITIONS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_definitions::BmmDefinitionsData>(node).map(|_| ())),
-"BMM_ENUMERATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_enumeration::BmmEnumerationData>(node).map(|_| ())),
-"BMM_ENUMERATION_INTEGER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger>(node).map(|_| ())),
-"BMM_ENUMERATION_STRING" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_enumeration_string::BmmEnumerationString>(node).map(|_| ())),
-"BMM_EXTERNAL_ROUTINE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_external_routine::BmmExternalRoutine>(node).map(|_| ())),
-"BMM_FEATURE_EXTENSION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_feature_extension::BmmFeatureExtension>(node).map(|_| ())),
-"BMM_FEATURE_GROUP" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup>(node).map(|_| ())),
-"BMM_FUNCTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_function::BmmFunction>(node).map(|_| ())),
-"BMM_FUNCTION_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::entity::bmm_function_type::BmmFunctionType>(node).map(|_| ())),
-"BMM_GENERIC_CLASS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_generic_class::BmmGenericClass>(node).map(|_| ())),
-"BMM_GENERIC_PARAMETER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_generic_parameter::BmmGenericParameter>(node).map(|_| ())),
-"BMM_GENERIC_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_generic_type::BmmGenericType>(node).map(|_| ())),
-"BMM_INCLUDE_SPEC" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_include_spec::BmmIncludeSpec>(node).map(|_| ())),
-"BMM_INDEXED_CONTAINER_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_indexed_container_property::BmmIndexedContainerProperty>(node).map(|_| ())),
-"BMM_INDEXED_CONTAINER_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType>(node).map(|_| ())),
-"BMM_INDEXED_CONTAINER_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::literal_value::bmm_indexed_container_value::BmmIndexedContainerValue>(node).map(|_| ())),
-"BMM_INTEGER_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::literal_value::bmm_integer_value::BmmIntegerValue>(node).map(|_| ())),
-"BMM_INTERVAL_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::literal_value::bmm_interval_value::BmmIntervalValue>(node).map(|_| ())),
-"BMM_LOCAL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_local::BmmLocal>(node).map(|_| ())),
-"BMM_LOCAL_ROUTINE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_local_routine::BmmLocalRoutine>(node).map(|_| ())),
-"BMM_MODEL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_model::BmmModel>(node).map(|_| ())),
-"BMM_MODEL_ACCESS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::model_access::bmm_model_access::BmmModelAccess>(node).map(|_| ())),
-"BMM_MODEL_METADATA" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::model::bmm_model_metadata::BmmModelMetadataData>(node).map(|_| ())),
-"BMM_OPEN_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_open_type::BmmOpenType>(node).map(|_| ())),
-"BMM_OPERATOR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_operator::BmmOperator>(node).map(|_| ())),
-"BMM_PACKAGE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_package::BmmPackage>(node).map(|_| ())),
-"BMM_PACKAGE_CONTAINER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_package_container::BmmPackageContainerData>(node).map(|_| ())),
-"BMM_PARAMETER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_parameter::BmmParameter>(node).map(|_| ())),
-"BMM_PARAMETER_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::entity::bmm_parameter_type::BmmParameterType>(node).map(|_| ())),
-"BMM_PRIMITIVE_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValueData>(node).map(|_| ())),
-"BMM_PROCEDURE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_procedure::BmmProcedure>(node).map(|_| ())),
-"BMM_PROCEDURE_CALL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::statement::bmm_procedure_call::BmmProcedureCall>(node).map(|_| ())),
-"BMM_PROCEDURE_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::entity::bmm_procedure_type::BmmProcedureType>(node).map(|_| ())),
-"BMM_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_property::BmmPropertyData<::serde_json::Value>>(node).map(|_| ())),
-"BMM_PROPERTY_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::entity::bmm_property_type::BmmPropertyType>(node).map(|_| ())),
-"BMM_RESULT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_result::BmmResult>(node).map(|_| ())),
-"BMM_ROUTINE_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::entity::bmm_routine_type::BmmRoutineTypeData>(node).map(|_| ())),
-"BMM_SCHEMA" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::model_access::bmm_schema::BmmSchema>(node).map(|_| ())),
-"BMM_SCHEMA_CORE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_schema_core::BmmSchemaCoreData>(node).map(|_| ())),
-"BMM_SCHEMA_DESCRIPTOR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::model_access::bmm_schema_descriptor::BmmSchemaDescriptor>(node).map(|_| ())),
-"BMM_SELF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_self::BmmSelf>(node).map(|_| ())),
-"BMM_SIGNATURE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::entity::bmm_signature::BmmSignatureData>(node).map(|_| ())),
-"BMM_SIMPLE_CLASS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::entity::bmm_simple_class::BmmSimpleClassData>(node).map(|_| ())),
-"BMM_SIMPLE_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_simple_type::BmmSimpleType>(node).map(|_| ())),
-"BMM_SINGLETON" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_singleton::BmmSingleton>(node).map(|_| ())),
-"BMM_STATEMENT_BLOCK" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::statement::bmm_statement_block::BmmStatementBlock>(node).map(|_| ())),
-"BMM_STATUS_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::entity::bmm_status_type::BmmStatusType>(node).map(|_| ())),
-"BMM_STRING_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::literal_value::bmm_string_value::BmmStringValue>(node).map(|_| ())),
-"BMM_TUPLE_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::entity::bmm_tuple_type::BmmTupleType>(node).map(|_| ())),
-"BMM_UNITARY_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_unitary_property::BmmUnitaryProperty>(node).map(|_| ())),
-"BMM_VALUE_SET_SPEC" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::entity::range_constrained::bmm_value_set_spec::BmmValueSetSpec>(node).map(|_| ())),
-"BMM_VISIBILITY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_visibility::BmmVisibility>(node).map(|_| ())),
+"BMM_ACTION_DECISION_TABLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::statement::bmm_action_decision_table::BmmActionDecisionTable>(node).map(|_| ())),
+"BMM_ACTION_TABLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::statement::bmm_action_table::BmmActionTable>(node).map(|_| ())),
+"BMM_ASSERTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::statement::bmm_assertion::BmmAssertion>(node).map(|_| ())),
+"BMM_ASSIGNMENT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::statement::bmm_assignment::BmmAssignment>(node).map(|_| ())),
+"BMM_BOOLEAN_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::literal_value::bmm_boolean_value::BmmBooleanValue>(node).map(|_| ())),
+"BMM_CLASS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm::core::bmm_class::BmmClassData>(node).map(|_| ())),
+"BMM_CONDITIONAL_ACTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_0::bmm::statement::bmm_conditional_action::BmmConditionalAction>(node).map(|_| ())),
+"BMM_CONSTANT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::feature::bmm_constant::BmmConstant>(node).map(|_| ())),
+"BMM_CONTAINER_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm::core::bmm_container_property::BmmContainerProperty>(node).map(|_| ())),
+"BMM_CONTAINER_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm::core::bmm_container_type::BmmContainerTypeData>(node).map(|_| ())),
+"BMM_CONTAINER_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::literal_value::bmm_container_value::BmmContainerValue>(node).map(|_| ())),
+"BMM_DECLARATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::statement::bmm_declaration::BmmDeclaration>(node).map(|_| ())),
+"BMM_DEFINITIONS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm::core::bmm_definitions::BmmDefinitionsData>(node).map(|_| ())),
+"BMM_ENUMERATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm::core::bmm_enumeration::BmmEnumerationData>(node).map(|_| ())),
+"BMM_ENUMERATION_INTEGER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger>(node).map(|_| ())),
+"BMM_ENUMERATION_STRING" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm::core::bmm_enumeration_string::BmmEnumerationString>(node).map(|_| ())),
+"BMM_EXTERNAL_ROUTINE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::feature::bmm_external_routine::BmmExternalRoutine>(node).map(|_| ())),
+"BMM_FEATURE_EXTENSION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::feature::bmm_feature_extension::BmmFeatureExtension>(node).map(|_| ())),
+"BMM_FEATURE_GROUP" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup>(node).map(|_| ())),
+"BMM_FUNCTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::feature::bmm_function::BmmFunction>(node).map(|_| ())),
+"BMM_FUNCTION_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::entity::bmm_function_type::BmmFunctionType>(node).map(|_| ())),
+"BMM_GENERIC_CLASS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm::core::bmm_generic_class::BmmGenericClass>(node).map(|_| ())),
+"BMM_GENERIC_PARAMETER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm::core::bmm_generic_parameter::BmmGenericParameter>(node).map(|_| ())),
+"BMM_GENERIC_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm::core::bmm_generic_type::BmmGenericType>(node).map(|_| ())),
+"BMM_INCLUDE_SPEC" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm::core::bmm_include_spec::BmmIncludeSpec>(node).map(|_| ())),
+"BMM_INDEXED_CONTAINER_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::feature::bmm_indexed_container_property::BmmIndexedContainerProperty>(node).map(|_| ())),
+"BMM_INDEXED_CONTAINER_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType>(node).map(|_| ())),
+"BMM_INDEXED_CONTAINER_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::literal_value::bmm_indexed_container_value::BmmIndexedContainerValue>(node).map(|_| ())),
+"BMM_INTEGER_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::literal_value::bmm_integer_value::BmmIntegerValue>(node).map(|_| ())),
+"BMM_INTERVAL_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::literal_value::bmm_interval_value::BmmIntervalValue>(node).map(|_| ())),
+"BMM_LOCAL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::feature::bmm_local::BmmLocal>(node).map(|_| ())),
+"BMM_LOCAL_ROUTINE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::feature::bmm_local_routine::BmmLocalRoutine>(node).map(|_| ())),
+"BMM_MODEL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm::core::bmm_model::BmmModel>(node).map(|_| ())),
+"BMM_MODEL_ACCESS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::model_access::bmm_model_access::BmmModelAccess>(node).map(|_| ())),
+"BMM_MODEL_METADATA" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::model::bmm_model_metadata::BmmModelMetadataData>(node).map(|_| ())),
+"BMM_OPEN_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm::core::bmm_open_type::BmmOpenType>(node).map(|_| ())),
+"BMM_OPERATOR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::feature::bmm_operator::BmmOperator>(node).map(|_| ())),
+"BMM_PACKAGE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm::core::bmm_package::BmmPackage>(node).map(|_| ())),
+"BMM_PACKAGE_CONTAINER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm::core::bmm_package_container::BmmPackageContainerData>(node).map(|_| ())),
+"BMM_PARAMETER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::feature::bmm_parameter::BmmParameter>(node).map(|_| ())),
+"BMM_PARAMETER_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::entity::bmm_parameter_type::BmmParameterType>(node).map(|_| ())),
+"BMM_PRIMITIVE_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValueData>(node).map(|_| ())),
+"BMM_PROCEDURE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::feature::bmm_procedure::BmmProcedure>(node).map(|_| ())),
+"BMM_PROCEDURE_CALL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::statement::bmm_procedure_call::BmmProcedureCall>(node).map(|_| ())),
+"BMM_PROCEDURE_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::entity::bmm_procedure_type::BmmProcedureType>(node).map(|_| ())),
+"BMM_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm::core::bmm_property::BmmPropertyData<::serde_json::Value>>(node).map(|_| ())),
+"BMM_PROPERTY_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::entity::bmm_property_type::BmmPropertyType>(node).map(|_| ())),
+"BMM_RESULT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::feature::bmm_result::BmmResult>(node).map(|_| ())),
+"BMM_ROUTINE_EXTERNAL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_0::bmm::core::feature::bmm_routine_external::BmmRoutineExternal>(node).map(|_| ())),
+"BMM_ROUTINE_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::entity::bmm_routine_type::BmmRoutineTypeData>(node).map(|_| ())),
+"BMM_SCHEMA" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::model_access::bmm_schema::BmmSchema>(node).map(|_| ())),
+"BMM_SCHEMA_CORE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm::core::bmm_schema_core::BmmSchemaCoreData>(node).map(|_| ())),
+"BMM_SCHEMA_DESCRIPTOR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::model_access::bmm_schema_descriptor::BmmSchemaDescriptor>(node).map(|_| ())),
+"BMM_SELF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::feature::bmm_self::BmmSelf>(node).map(|_| ())),
+"BMM_SIGNATURE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::entity::bmm_signature::BmmSignatureData>(node).map(|_| ())),
+"BMM_SIMPLE_CLASS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::entity::bmm_simple_class::BmmSimpleClassData>(node).map(|_| ())),
+"BMM_SIMPLE_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm::core::bmm_simple_type::BmmSimpleType>(node).map(|_| ())),
+"BMM_SINGLETON" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::feature::bmm_singleton::BmmSingleton>(node).map(|_| ())),
+"BMM_STATEMENT_BLOCK" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::statement::bmm_statement_block::BmmStatementBlock>(node).map(|_| ())),
+"BMM_STATUS_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::entity::bmm_status_type::BmmStatusType>(node).map(|_| ())),
+"BMM_STRING_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::literal_value::bmm_string_value::BmmStringValue>(node).map(|_| ())),
+"BMM_TUPLE_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::entity::bmm_tuple_type::BmmTupleType>(node).map(|_| ())),
+"BMM_UNITARY_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::feature::bmm_unitary_property::BmmUnitaryProperty>(node).map(|_| ())),
+"BMM_VALUE_SET_SPEC" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::entity::range_constrained::bmm_value_set_spec::BmmValueSetSpec>(node).map(|_| ())),
+"BMM_VISIBILITY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::core::feature::bmm_visibility::BmmVisibility>(node).map(|_| ())),
 "CAPABILITY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::demographic::capability::Capability>(node).map(|_| ())),
 "CARDINALITY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v1_4::aom14::archetype::constraint_model::cardinality::Cardinality>(node).map(|_| ())),
+"CITATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_1::composition::view::citation::Citation<::serde_json::Value>>(node).map(|_| ())),
 "CLUSTER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::data_structures::representation::cluster::Cluster>(node).map(|_| ())),
 "CODE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_term::v3_1::terminology::code::Code>(node).map(|_| ())),
 "CODE_PHRASE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::data_types::text::code_phrase::CodePhrase>(node).map(|_| ())),
@@ -528,31 +887,32 @@ pub fn structural_check(
 "CODE_SET_ACCESS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::support::terminology::code_set_access::CodeSetAccess>(node).map(|_| ())),
 "COMPOSITION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::composition::composition::Composition>(node).map(|_| ())),
 "CONSTRAINT_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v1_4::aom14::archetype::constraint_model::constraint_ref::ConstraintRef>(node).map(|_| ())),
+"CONSUMABLE_USE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_1::resource::consumable_use::ConsumableUse>(node).map(|_| ())),
 "CONTACT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::demographic::contact::Contact>(node).map(|_| ())),
 "CONTRIBUTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::common::change_control::contribution::Contribution>(node).map(|_| ())),
 "C_ARCHETYPE_ROOT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::constraint_model::c_archetype_root::CArchetypeRoot>(node).map(|_| ())),
 "C_ATTRIBUTE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::constraint_model::c_attribute::CAttribute>(node).map(|_| ())),
 "C_ATTRIBUTE_TUPLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::constraint_model::c_attribute_tuple::CAttributeTuple>(node).map(|_| ())),
-"C_BOOLEAN" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v1_4::aom14::archetype::primitive::c_boolean::CBoolean>(node).map(|_| ())),
+"C_BOOLEAN" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::constraint_model::primitive::c_boolean::CBoolean>(node).map(|_| ())),
 "C_CODED_TEXT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v1_4::aom14::openehr_archetype_profile::c_coded_text::CCodedText>(node).map(|_| ())),
-"C_COMPLEX_OBJECT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v1_4::aom14::archetype::constraint_model::c_complex_object::CComplexObject>(node).map(|_| ())),
+"C_COMPLEX_OBJECT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObjectData>(node).map(|_| ())),
 "C_COMPLEX_OBJECT_PROXY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::constraint_model::c_complex_object_proxy::CComplexObjectProxy>(node).map(|_| ())),
-"C_DATE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v1_4::aom14::archetype::primitive::c_date::CDate>(node).map(|_| ())),
-"C_DATE_TIME" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v1_4::aom14::archetype::primitive::c_date_time::CDateTime>(node).map(|_| ())),
-"C_DURATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v1_4::aom14::archetype::primitive::c_duration::CDuration>(node).map(|_| ())),
-"C_INTEGER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v1_4::aom14::archetype::primitive::c_integer::CInteger>(node).map(|_| ())),
+"C_DATE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::constraint_model::primitive::c_date::CDate>(node).map(|_| ())),
+"C_DATE_TIME" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::constraint_model::primitive::c_date_time::CDateTime>(node).map(|_| ())),
+"C_DURATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::constraint_model::primitive::c_duration::CDuration>(node).map(|_| ())),
+"C_INTEGER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::constraint_model::primitive::c_integer::CInteger>(node).map(|_| ())),
 "C_MULTIPLE_ATTRIBUTE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v1_4::aom14::archetype::constraint_model::c_multiple_attribute::CMultipleAttribute>(node).map(|_| ())),
 "C_ORDINAL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v1_4::aom14::openehr_archetype_profile::c_ordinal::COrdinal>(node).map(|_| ())),
 "C_PRIMITIVE_OBJECT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v1_4::aom14::archetype::constraint_model::c_primitive_object::CPrimitiveObject>(node).map(|_| ())),
 "C_PRIMITIVE_TUPLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::constraint_model::c_primitive_tuple::CPrimitiveTuple>(node).map(|_| ())),
 "C_QUANTITY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v1_4::aom14::openehr_archetype_profile::c_quantity::CQuantity>(node).map(|_| ())),
 "C_QUANTITY_ITEM" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v1_4::aom14::openehr_archetype_profile::c_quantity_item::CQuantityItem>(node).map(|_| ())),
-"C_REAL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v1_4::aom14::archetype::primitive::c_real::CReal>(node).map(|_| ())),
+"C_REAL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::constraint_model::primitive::c_real::CReal>(node).map(|_| ())),
 "C_SINGLE_ATTRIBUTE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v1_4::aom14::archetype::constraint_model::c_single_attribute::CSingleAttribute>(node).map(|_| ())),
-"C_STRING" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v1_4::aom14::archetype::primitive::c_string::CString>(node).map(|_| ())),
+"C_STRING" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::constraint_model::primitive::c_string::CString>(node).map(|_| ())),
 "C_TEMPORAL_DEFINITIONS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::constraint_model::primitive::c_temporal_definitions::CTemporalDefinitions>(node).map(|_| ())),
 "C_TERMINOLOGY_CODE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode>(node).map(|_| ())),
-"C_TIME" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v1_4::aom14::archetype::primitive::c_time::CTime>(node).map(|_| ())),
+"C_TIME" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::constraint_model::primitive::c_time::CTime>(node).map(|_| ())),
 "Cardinality" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::v1_3::foundation_types::interval::cardinality::Cardinality>(node).map(|_| ())),
 "DV_BOOLEAN" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::data_types::basic::dv_boolean::DvBoolean>(node).map(|_| ())),
 "DV_CODED_TEXT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::data_types::text::dv_coded_text::DvCodedText>(node).map(|_| ())),
@@ -580,40 +940,42 @@ pub fn structural_check(
 "EHR_ACCESS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::ehr::ehr_access::EhrAccess>(node).map(|_| ())),
 "EHR_STATUS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::ehr::ehr_status::EhrStatus>(node).map(|_| ())),
 "ELEMENT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::data_structures::representation::element::Element>(node).map(|_| ())),
-"EL_ATTACHED" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::expression::el_attached::ElAttached>(node).map(|_| ())),
-"EL_BINARY_OPERATOR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::expression::el_binary_operator::ElBinaryOperator>(node).map(|_| ())),
-"EL_BOOLEAN_EXPRESSION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::expression::el_boolean_expression::ElBooleanExpression>(node).map(|_| ())),
-"EL_CASE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::expression::el_case::ElCase<::serde_json::Value>>(node).map(|_| ())),
-"EL_CASE_TABLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::expression::el_case_table::ElCaseTable<::serde_json::Value>>(node).map(|_| ())),
-"EL_CONDITIONAL_EXPRESSION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::expression::el_conditional_expression::ElConditionalExpression<::serde_json::Value>>(node).map(|_| ())),
-"EL_CONDITION_CHAIN" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::expression::el_condition_chain::ElConditionChain<::serde_json::Value>>(node).map(|_| ())),
-"EL_DEFINED" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::expression::el_defined::ElDefined>(node).map(|_| ())),
-"EL_FUNCTION_AGENT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::expression::el_function_agent::ElFunctionAgent>(node).map(|_| ())),
-"EL_FUNCTION_CALL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::expression::el_function_call::ElFunctionCall>(node).map(|_| ())),
-"EL_LITERAL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::expression::el_literal::ElLiteral>(node).map(|_| ())),
-"EL_PROCEDURE_AGENT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::expression::el_procedure_agent::ElProcedureAgent>(node).map(|_| ())),
-"EL_PROPERTY_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::expression::el_property_ref::ElPropertyRef>(node).map(|_| ())),
-"EL_READONLY_VARIABLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::expression::el_readonly_variable::ElReadonlyVariable>(node).map(|_| ())),
-"EL_STATIC_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::expression::el_static_ref::ElStaticRef>(node).map(|_| ())),
-"EL_TUPLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::expression::el_tuple::ElTuple>(node).map(|_| ())),
-"EL_TUPLE_ITEM" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::expression::el_tuple_item::ElTupleItem>(node).map(|_| ())),
-"EL_TYPE_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::expression::el_type_ref::ElTypeRef>(node).map(|_| ())),
-"EL_UNARY_OPERATOR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::expression::el_unary_operator::ElUnaryOperator>(node).map(|_| ())),
-"EL_WRITABLE_VARIABLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::expression::el_writable_variable::ElWritableVariable>(node).map(|_| ())),
+"EL_ATTACHED" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::expression::el_attached::ElAttached>(node).map(|_| ())),
+"EL_BINARY_OPERATOR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::expression::el_binary_operator::ElBinaryOperator>(node).map(|_| ())),
+"EL_BOOLEAN_EXPRESSION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::expression::el_boolean_expression::ElBooleanExpression>(node).map(|_| ())),
+"EL_CASE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::expression::el_case::ElCase<::serde_json::Value>>(node).map(|_| ())),
+"EL_CASE_TABLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::expression::el_case_table::ElCaseTable<::serde_json::Value>>(node).map(|_| ())),
+"EL_CONDITIONAL_EXPRESSION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::expression::el_conditional_expression::ElConditionalExpression<::serde_json::Value>>(node).map(|_| ())),
+"EL_CONDITION_CHAIN" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::expression::el_condition_chain::ElConditionChain<::serde_json::Value>>(node).map(|_| ())),
+"EL_DEFINED" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::expression::el_defined::ElDefined>(node).map(|_| ())),
+"EL_FUNCTION_AGENT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::expression::el_function_agent::ElFunctionAgent>(node).map(|_| ())),
+"EL_FUNCTION_CALL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::expression::el_function_call::ElFunctionCall>(node).map(|_| ())),
+"EL_INSTANTIABLE_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_0::bmm::expression::el_instantiable_ref::ElInstantiableRef<::serde_json::Value>>(node).map(|_| ())),
+"EL_LITERAL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::expression::el_literal::ElLiteral>(node).map(|_| ())),
+"EL_PROCEDURE_AGENT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::expression::el_procedure_agent::ElProcedureAgent>(node).map(|_| ())),
+"EL_PROPERTY_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::expression::el_property_ref::ElPropertyRef>(node).map(|_| ())),
+"EL_READONLY_VARIABLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::expression::el_readonly_variable::ElReadonlyVariable>(node).map(|_| ())),
+"EL_SELF_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_0::bmm::expression::el_self_ref::ElSelfRef>(node).map(|_| ())),
+"EL_STATIC_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::expression::el_static_ref::ElStaticRef>(node).map(|_| ())),
+"EL_TUPLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::expression::el_tuple::ElTuple>(node).map(|_| ())),
+"EL_TUPLE_ITEM" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::expression::el_tuple_item::ElTupleItem>(node).map(|_| ())),
+"EL_TYPE_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::expression::el_type_ref::ElTypeRef>(node).map(|_| ())),
+"EL_UNARY_OPERATOR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::expression::el_unary_operator::ElUnaryOperator>(node).map(|_| ())),
+"EL_WRITABLE_VARIABLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm3::expression::el_writable_variable::ElWritableVariable>(node).map(|_| ())),
 "EVALUATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::composition::content::entry::evaluation::Evaluation>(node).map(|_| ())),
 "EVENT_CONTEXT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::composition::event_context::EventContext>(node).map(|_| ())),
 "EXPR_ARCHETYPE_ID_CONSTRAINT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::rules::expr_archetype_id_constraint::ExprArchetypeIdConstraint>(node).map(|_| ())),
 "EXPR_ARCHETYPE_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::rules::expr_archetype_ref::ExprArchetypeRef>(node).map(|_| ())),
-"EXPR_BINARY_OPERATOR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::beom::core::expr_binary_operator::ExprBinaryOperator>(node).map(|_| ())),
+"EXPR_BINARY_OPERATOR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::beom::core::expr_binary_operator::ExprBinaryOperator>(node).map(|_| ())),
 "EXPR_CONSTRAINT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::rules::expr_constraint::ExprConstraintData>(node).map(|_| ())),
-"EXPR_FOR_ALL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::beom::core::expr_for_all::ExprForAll>(node).map(|_| ())),
-"EXPR_FUNCTION_CALL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::beom::core::expr_function_call::ExprFunctionCall>(node).map(|_| ())),
+"EXPR_FOR_ALL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::beom::core::expr_for_all::ExprForAll>(node).map(|_| ())),
+"EXPR_FUNCTION_CALL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::beom::core::expr_function_call::ExprFunctionCall>(node).map(|_| ())),
 "EXPR_LEAF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v1_4::aom14::archetype::assertion::expr_leaf::ExprLeaf>(node).map(|_| ())),
-"EXPR_LITERAL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::beom::core::expr_literal::ExprLiteral>(node).map(|_| ())),
-"EXPR_UNARY_OPERATOR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::beom::core::expr_unary_operator::ExprUnaryOperator>(node).map(|_| ())),
-"EXPR_VALUE_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::beom::core::expr_value_ref::ExprValueRef>(node).map(|_| ())),
-"EXPR_VARIABLE_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::beom::core::expr_variable_ref::ExprVariableRef>(node).map(|_| ())),
-"EXTERNAL_QUERY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::beom::core::external_query::ExternalQuery>(node).map(|_| ())),
+"EXPR_LITERAL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::beom::core::expr_literal::ExprLiteral>(node).map(|_| ())),
+"EXPR_UNARY_OPERATOR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::beom::core::expr_unary_operator::ExprUnaryOperator>(node).map(|_| ())),
+"EXPR_VALUE_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::beom::core::expr_value_ref::ExprValueRef>(node).map(|_| ())),
+"EXPR_VARIABLE_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::beom::core::expr_variable_ref::ExprVariableRef>(node).map(|_| ())),
+"EXTERNAL_QUERY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::beom::core::external_query::ExternalQuery>(node).map(|_| ())),
 "EXTRACT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::ehr_extract::common::extract::Extract>(node).map(|_| ())),
 "EXTRACT_ACTION_REQUEST" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::ehr_extract::common::extract_action_request::ExtractActionRequest>(node).map(|_| ())),
 "EXTRACT_CHAPTER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::ehr_extract::common::extract_chapter::ExtractChapterData>(node).map(|_| ())),
@@ -630,6 +992,7 @@ pub fn structural_check(
 "FEEDER_AUDIT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::common::archetyped::feeder_audit::FeederAudit>(node).map(|_| ())),
 "FEEDER_AUDIT_DETAILS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::common::archetyped::feeder_audit_details::FeederAuditDetails>(node).map(|_| ())),
 "FOLDER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::common::directory::folder::Folder>(node).map(|_| ())),
+"FUNCTION_DEF_EXAMPLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_0::obsolete_elom::extension::function_def_example::FunctionDefExample>(node).map(|_| ())),
 "GENERIC_CONTENT_ITEM" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::ehr_extract::generic_extract::generic_content_item::GenericContentItem>(node).map(|_| ())),
 "GENERIC_ENTRY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::integration::generic_entry::GenericEntry>(node).map(|_| ())),
 "GENERIC_ID" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::v1_3::base_types::identification::generic_id::GenericId>(node).map(|_| ())),
@@ -665,6 +1028,10 @@ pub fn structural_check(
 "OPENEHR_CONTENT_ITEM" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::ehr_extract::openehr_extract::openehr_content_item::OpenehrContentItem>(node).map(|_| ())),
 "OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::support::terminology::openehr_terminology_group_identifiers::OpenehrTerminologyGroupIdentifiersData>(node).map(|_| ())),
 "OPERATIONAL_TEMPLATE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::archetype::operational_template::OperationalTemplate>(node).map(|_| ())),
+"OP_DEF_AND" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_0::obsolete_elom::extension::op_def_and::OpDefAnd>(node).map(|_| ())),
+"OP_DEF_EXAMPLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_0::obsolete_elom::extension::op_def_example::OpDefExample>(node).map(|_| ())),
+"OP_DEF_EXISTS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_0::obsolete_elom::extension::op_def_exists::OpDefExists>(node).map(|_| ())),
+"OP_DEF_PLUS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_0::obsolete_elom::extension::op_def_plus::OpDefPlus>(node).map(|_| ())),
 "ORDINAL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v1_4::aom14::openehr_archetype_profile::ordinal::Ordinal>(node).map(|_| ())),
 "ORGANISATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::demographic::organisation::Organisation>(node).map(|_| ())),
 "ORIGINAL_VERSION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::common::change_control::original_version::OriginalVersion<::serde_json::Value>>(node).map(|_| ())),
@@ -681,32 +1048,32 @@ pub fn structural_check(
 "P_ARCHETYPE_SLOT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::persistence::constraint_model::p_archetype_slot::PArchetypeSlot>(node).map(|_| ())),
 "P_ARCHETYPE_TERMINOLOGY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::persistence::terminology::p_archetype_terminology::PArchetypeTerminology>(node).map(|_| ())),
 "P_AUTHORED_ARCHETYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::persistence::archetype::p_authored_archetype::PAuthoredArchetypeData>(node).map(|_| ())),
-"P_BMM_CLASS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_class::PBmmClassData>(node).map(|_| ())),
-"P_BMM_CONSTANT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_constant::PBmmConstant>(node).map(|_| ())),
-"P_BMM_CONTAINER_FUNCTION_PARAMETER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_container_function_parameter::PBmmContainerFunctionParameter>(node).map(|_| ())),
-"P_BMM_CONTAINER_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_container_property::PBmmContainerPropertyData>(node).map(|_| ())),
-"P_BMM_CONTAINER_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_container_type::PBmmContainerTypeData>(node).map(|_| ())),
-"P_BMM_ENUMERATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_enumeration::PBmmEnumerationData>(node).map(|_| ())),
-"P_BMM_ENUMERATION_INTEGER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_enumeration_integer::PBmmEnumerationInteger>(node).map(|_| ())),
-"P_BMM_ENUMERATION_STRING" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_enumeration_string::PBmmEnumerationString>(node).map(|_| ())),
-"P_BMM_FUNCTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_function::PBmmFunction>(node).map(|_| ())),
-"P_BMM_GENERIC_FUNCTION_PARAMETER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_generic_function_parameter::PBmmGenericFunctionParameter>(node).map(|_| ())),
-"P_BMM_GENERIC_PARAMETER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_generic_parameter::PBmmGenericParameter>(node).map(|_| ())),
-"P_BMM_GENERIC_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_generic_property::PBmmGenericProperty>(node).map(|_| ())),
-"P_BMM_GENERIC_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_generic_type::PBmmGenericType>(node).map(|_| ())),
-"P_BMM_INDEXED_CONTAINER_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_indexed_container_property::PBmmIndexedContainerProperty>(node).map(|_| ())),
-"P_BMM_INDEXED_CONTAINER_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_indexed_container_type::PBmmIndexedContainerType>(node).map(|_| ())),
-"P_BMM_INTERFACE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_interface::PBmmInterface>(node).map(|_| ())),
-"P_BMM_OPEN_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_open_type::PBmmOpenType>(node).map(|_| ())),
-"P_BMM_PACKAGE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_package::PBmmPackage>(node).map(|_| ())),
-"P_BMM_PACKAGE_CONTAINER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_package_container::PBmmPackageContainerData>(node).map(|_| ())),
-"P_BMM_SCHEMA" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_schema::PBmmSchema>(node).map(|_| ())),
-"P_BMM_SCHEMA_DESCRIPTOR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_schema_descriptor::PBmmSchemaDescriptor>(node).map(|_| ())),
-"P_BMM_SIMPLE_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_simple_type::PBmmSimpleType>(node).map(|_| ())),
-"P_BMM_SINGLE_FUNCTION_PARAMETER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_single_function_parameter::PBmmSingleFunctionParameter>(node).map(|_| ())),
-"P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_single_function_parameter_open::PBmmSingleFunctionParameterOpen>(node).map(|_| ())),
-"P_BMM_SINGLE_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_single_property::PBmmSingleProperty>(node).map(|_| ())),
-"P_BMM_SINGLE_PROPERTY_OPEN" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm_persistence::p_bmm_single_property_open::PBmmSinglePropertyOpen>(node).map(|_| ())),
+"P_BMM_CLASS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_class::PBmmClassData>(node).map(|_| ())),
+"P_BMM_CONSTANT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_constant::PBmmConstant>(node).map(|_| ())),
+"P_BMM_CONTAINER_FUNCTION_PARAMETER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_container_function_parameter::PBmmContainerFunctionParameter>(node).map(|_| ())),
+"P_BMM_CONTAINER_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_container_property::PBmmContainerPropertyData>(node).map(|_| ())),
+"P_BMM_CONTAINER_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_container_type::PBmmContainerTypeData>(node).map(|_| ())),
+"P_BMM_ENUMERATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_enumeration::PBmmEnumerationData>(node).map(|_| ())),
+"P_BMM_ENUMERATION_INTEGER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_enumeration_integer::PBmmEnumerationInteger>(node).map(|_| ())),
+"P_BMM_ENUMERATION_STRING" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_enumeration_string::PBmmEnumerationString>(node).map(|_| ())),
+"P_BMM_FUNCTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_function::PBmmFunction>(node).map(|_| ())),
+"P_BMM_GENERIC_FUNCTION_PARAMETER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_generic_function_parameter::PBmmGenericFunctionParameter>(node).map(|_| ())),
+"P_BMM_GENERIC_PARAMETER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_generic_parameter::PBmmGenericParameter>(node).map(|_| ())),
+"P_BMM_GENERIC_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_generic_property::PBmmGenericProperty>(node).map(|_| ())),
+"P_BMM_GENERIC_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_generic_type::PBmmGenericType>(node).map(|_| ())),
+"P_BMM_INDEXED_CONTAINER_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_indexed_container_property::PBmmIndexedContainerProperty>(node).map(|_| ())),
+"P_BMM_INDEXED_CONTAINER_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_indexed_container_type::PBmmIndexedContainerType>(node).map(|_| ())),
+"P_BMM_INTERFACE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_interface::PBmmInterface>(node).map(|_| ())),
+"P_BMM_OPEN_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_open_type::PBmmOpenType>(node).map(|_| ())),
+"P_BMM_PACKAGE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_package::PBmmPackage>(node).map(|_| ())),
+"P_BMM_PACKAGE_CONTAINER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_package_container::PBmmPackageContainerData>(node).map(|_| ())),
+"P_BMM_SCHEMA" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_schema::PBmmSchema>(node).map(|_| ())),
+"P_BMM_SCHEMA_DESCRIPTOR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_schema_descriptor::PBmmSchemaDescriptor>(node).map(|_| ())),
+"P_BMM_SIMPLE_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_simple_type::PBmmSimpleType>(node).map(|_| ())),
+"P_BMM_SINGLE_FUNCTION_PARAMETER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_single_function_parameter::PBmmSingleFunctionParameter>(node).map(|_| ())),
+"P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_single_function_parameter_open::PBmmSingleFunctionParameterOpen>(node).map(|_| ())),
+"P_BMM_SINGLE_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_single_property::PBmmSingleProperty>(node).map(|_| ())),
+"P_BMM_SINGLE_PROPERTY_OPEN" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm_persistence::p_bmm_single_property_open::PBmmSinglePropertyOpen>(node).map(|_| ())),
 "P_C_ARCHETYPE_ROOT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::persistence::constraint_model::p_c_archetype_root::PCArchetypeRoot>(node).map(|_| ())),
 "P_C_ATTRIBUTE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::persistence::constraint_model::p_c_attribute::PCAttribute>(node).map(|_| ())),
 "P_C_ATTRIBUTE_TUPLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::persistence::constraint_model::p_c_attribute_tuple::PCAttributeTuple>(node).map(|_| ())),
@@ -725,20 +1092,22 @@ pub fn structural_check(
 "P_TEMPLATE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::persistence::archetype::p_template::PTemplate>(node).map(|_| ())),
 "Point_interval" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::v1_3::foundation_types::interval::point_interval::PointInterval<::serde_json::Value>>(node).map(|_| ())),
 "Proper_interval" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::v1_3::foundation_types::interval::proper_interval::ProperIntervalData<::serde_json::Value>>(node).map(|_| ())),
-"REFERENCE_MODEL_ACCESS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::rm_access::reference_model_access::ReferenceModelAccess>(node).map(|_| ())),
+"REFERENCE_MODEL_ACCESS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm::rm_access::reference_model_access::ReferenceModelAccess>(node).map(|_| ())),
 "REFERENCE_RANGE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::data_types::quantity::reference_range::ReferenceRange>(node).map(|_| ())),
 "RESOURCE_ANNOTATIONS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::v1_3::resource::resource_annotations::ResourceAnnotations>(node).map(|_| ())),
 "RESOURCE_DESCRIPTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::common::resource::resource_description::ResourceDescription>(node).map(|_| ())),
 "RESOURCE_DESCRIPTION_ITEM" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::common::resource::resource_description_item::ResourceDescriptionItem>(node).map(|_| ())),
+"RESOURCE_USAGE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_1::resource::resource_usage::ResourceUsage>(node).map(|_| ())),
 "REVISION_HISTORY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::common::generic::revision_history::RevisionHistory>(node).map(|_| ())),
 "REVISION_HISTORY_ITEM" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::common::generic::revision_history_item::RevisionHistoryItem>(node).map(|_| ())),
 "RM_ATTRIBUTE_VISIBILITY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::rm_overlay::rm_attribute_visibility::RmAttributeVisibility>(node).map(|_| ())),
 "RM_OVERLAY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::rm_overlay::rm_overlay::RmOverlay>(node).map(|_| ())),
 "ROLE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::demographic::role::Role>(node).map(|_| ())),
-"SCHEMA_DESCRIPTOR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::rm_access::schema_descriptor::SchemaDescriptorData>(node).map(|_| ())),
+"SCHEMA_DESCRIPTOR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::bmm::rm_access::schema_descriptor::SchemaDescriptorData>(node).map(|_| ())),
 "SECTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::composition::content::navigation::section::Section>(node).map(|_| ())),
+"SERVICE_USE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_1::resource::service_use::ServiceUse>(node).map(|_| ())),
 "SIBLING_ORDER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::constraint_model::sibling_order::SiblingOrder>(node).map(|_| ())),
-"STATEMENT_SET" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::beom::core::statement_set::StatementSet>(node).map(|_| ())),
+"STATEMENT_SET" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::beom::core::statement_set::StatementSet>(node).map(|_| ())),
 "SYNC_EXTRACT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::ehr_extract::sync_extract::sync_extract::SyncExtract>(node).map(|_| ())),
 "SYNC_EXTRACT_REQUEST" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::ehr_extract::sync_extract::sync_extract_request::SyncExtractRequest>(node).map(|_| ())),
 "SYNC_EXTRACT_SPEC" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::ehr_extract::sync_extract::sync_extract_spec::SyncExtractSpec>(node).map(|_| ())),
@@ -753,22 +1122,22 @@ pub fn structural_check(
 "TERMINOLOGY_SERVICE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::support::terminology::terminology_service::TerminologyService>(node).map(|_| ())),
 "TERM_MAPPING" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::data_types::text::term_mapping::TermMapping>(node).map(|_| ())),
 "TRANSLATION_DETAILS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::common::resource::translation_details::TranslationDetails>(node).map(|_| ())),
-"TYPE_DEF_BOOLEAN" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::beom::types::type_def_boolean::TypeDefBoolean>(node).map(|_| ())),
-"TYPE_DEF_DATE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::beom::types::type_def_date::TypeDefDate>(node).map(|_| ())),
-"TYPE_DEF_DATE_TIME" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::beom::types::type_def_date_time::TypeDefDateTime>(node).map(|_| ())),
-"TYPE_DEF_DURATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::beom::types::type_def_duration::TypeDefDuration>(node).map(|_| ())),
-"TYPE_DEF_INTEGER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::beom::types::type_def_integer::TypeDefInteger>(node).map(|_| ())),
-"TYPE_DEF_OBJECT_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::beom::types::type_def_object_ref::TypeDefObjectRef>(node).map(|_| ())),
-"TYPE_DEF_REAL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::beom::types::type_def_real::TypeDefReal>(node).map(|_| ())),
-"TYPE_DEF_STRING" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::beom::types::type_def_string::TypeDefString>(node).map(|_| ())),
-"TYPE_DEF_TERMINOLOGY_CODE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::beom::types::type_def_terminology_code::TypeDefTerminologyCode>(node).map(|_| ())),
-"TYPE_DEF_TIME" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::beom::types::type_def_time::TypeDefTime>(node).map(|_| ())),
-"TYPE_DEF_URI" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::beom::types::type_def_uri::TypeDefUri>(node).map(|_| ())),
+"TYPE_DEF_BOOLEAN" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::beom::types::type_def_boolean::TypeDefBoolean>(node).map(|_| ())),
+"TYPE_DEF_DATE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::beom::types::type_def_date::TypeDefDate>(node).map(|_| ())),
+"TYPE_DEF_DATE_TIME" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::beom::types::type_def_date_time::TypeDefDateTime>(node).map(|_| ())),
+"TYPE_DEF_DURATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::beom::types::type_def_duration::TypeDefDuration>(node).map(|_| ())),
+"TYPE_DEF_INTEGER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::beom::types::type_def_integer::TypeDefInteger>(node).map(|_| ())),
+"TYPE_DEF_OBJECT_REF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::beom::types::type_def_object_ref::TypeDefObjectRef>(node).map(|_| ())),
+"TYPE_DEF_REAL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::beom::types::type_def_real::TypeDefReal>(node).map(|_| ())),
+"TYPE_DEF_STRING" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::beom::types::type_def_string::TypeDefString>(node).map(|_| ())),
+"TYPE_DEF_TERMINOLOGY_CODE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::beom::types::type_def_terminology_code::TypeDefTerminologyCode>(node).map(|_| ())),
+"TYPE_DEF_TIME" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::beom::types::type_def_time::TypeDefTime>(node).map(|_| ())),
+"TYPE_DEF_URI" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::beom::types::type_def_uri::TypeDefUri>(node).map(|_| ())),
 "Terminology_code" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::v1_3::foundation_types::terminology::terminology_code::TerminologyCode>(node).map(|_| ())),
 "Terminology_term" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::v1_3::foundation_types::terminology::terminology_term::TerminologyTerm>(node).map(|_| ())),
 "UUID" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::v1_3::base_types::identification::uuid::Uuid>(node).map(|_| ())),
 "VALUE_SET" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_am::v2_4::aom2::terminology::value_set::ValueSet>(node).map(|_| ())),
-"VARIABLE_DECLARATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::beom::core::variable_declaration::VariableDeclaration>(node).map(|_| ())),
+"VARIABLE_DECLARATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v1_1::beom::core::variable_declaration::VariableDeclaration>(node).map(|_| ())),
 "VERSIONED_COMPOSITION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::ehr::versioned_composition::VersionedComposition>(node).map(|_| ())),
 "VERSIONED_EHR_ACCESS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::ehr::versioned_ehr_access::VersionedEhrAccess>(node).map(|_| ())),
 "VERSIONED_EHR_STATUS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::ehr::versioned_ehr_status::VersionedEhrStatus>(node).map(|_| ())),
@@ -776,6 +1145,7 @@ pub fn structural_check(
 "VERSIONED_OBJECT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::common::change_control::versioned_object::VersionedObjectData>(node).map(|_| ())),
 "VERSIONED_PARTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::demographic::versioned_party::VersionedParty>(node).map(|_| ())),
 "VERSION_TREE_ID" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_base::v1_3::base_types::identification::version_tree_id::VersionTreeId>(node).map(|_| ())),
+"VIEW_SECTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_1::composition::view::view_section::ViewSection>(node).map(|_| ())),
 "X_CONTRIBUTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::ehr_extract::sync_extract::x_contribution::XContribution>(node).map(|_| ())),
 "X_VERSIONED_COMPOSITION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::ehr_extract::openehr_extract::x_versioned_composition::XVersionedComposition>(node).map(|_| ())),
 "X_VERSIONED_EHR_ACCESS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_rm::v1_2::ehr_extract::openehr_extract::x_versioned_ehr_access::XVersionedEhrAccess>(node).map(|_| ())),
@@ -935,13 +1305,21 @@ pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static st
             "terminologies_available",
         ]),
         "ARCHETYPE_SLOT" => ::core::option::Option::Some(&[
+            "alternative_ids",
             "excludes",
             "includes",
+            "is_closed",
+            "is_deprecated",
             "node_id",
             "occurrences",
+            "parent",
             "rm_type_name",
+            "sibling_order",
+            "soc_parent",
         ]),
-        "ARCHETYPE_TERM" => ::core::option::Option::Some(&["code", "items"]),
+        "ARCHETYPE_TERM" => {
+            ::core::option::Option::Some(&["code", "description", "other_items", "text"])
+        }
         "ARCHETYPE_TERMINOLOGY" => ::core::option::Option::Some(&[
             "concept_code",
             "is_differential",
@@ -1019,6 +1397,7 @@ pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static st
             "properties",
             "source_schema_id",
         ]),
+        "BMM_CONDITIONAL_ACTION" => ::core::option::Option::Some(&["condition", "statement"]),
         "BMM_CONSTANT" => ::core::option::Option::Some(&[
             "documentation",
             "extensions",
@@ -1252,6 +1631,7 @@ pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static st
             "name",
             "type",
         ]),
+        "BMM_ROUTINE_EXTERNAL" => ::core::option::Option::Some(&["argument_mapping", "meta_data"]),
         "BMM_ROUTINE_TYPE" => ::core::option::Option::Some(&["argument_types", "result_type"]),
         "BMM_SCHEMA" => ::core::option::Option::Some(&[
             "bmm_model",
@@ -1362,6 +1742,19 @@ pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static st
             "uid",
         ]),
         "CARDINALITY" => ::core::option::Option::Some(&["interval", "is_ordered", "is_unique"]),
+        "CITATION" => ::core::option::Option::Some(&[
+            "archetype_details",
+            "archetype_node_id",
+            "feeder_audit",
+            "links",
+            "meta_data",
+            "name",
+            "resolved",
+            "source_parent_ref",
+            "source_ref",
+            "source_type",
+            "uid",
+        ]),
         "CLUSTER" => ::core::option::Option::Some(&[
             "archetype_details",
             "archetype_node_id",
@@ -1401,6 +1794,7 @@ pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static st
         "CONSTRAINT_REF" => {
             ::core::option::Option::Some(&["node_id", "occurrences", "reference", "rm_type_name"])
         }
+        "CONSUMABLE_USE" => ::core::option::Option::Some(&["amount", "cost_data"]),
         "CONTACT" => ::core::option::Option::Some(&[
             "addresses",
             "archetype_details",
@@ -1437,9 +1831,20 @@ pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static st
             "soc_parent",
         ]),
         "C_ATTRIBUTE_TUPLE" => ::core::option::Option::Some(&["members", "tuples"]),
-        "C_BOOLEAN" => {
-            ::core::option::Option::Some(&["assumed_value", "false_valid", "true_valid"])
-        }
+        "C_BOOLEAN" => ::core::option::Option::Some(&[
+            "alternative_ids",
+            "assumed_value",
+            "constraint",
+            "default_value",
+            "is_deprecated",
+            "is_enumerated_type_constraint",
+            "node_id",
+            "occurrences",
+            "parent",
+            "rm_type_name",
+            "sibling_order",
+            "soc_parent",
+        ]),
         "C_CODED_TEXT" => ::core::option::Option::Some(&[
             "assumed_value",
             "code_list",
@@ -1450,11 +1855,17 @@ pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static st
             "terminology",
         ]),
         "C_COMPLEX_OBJECT" => ::core::option::Option::Some(&[
-            "assumed_value",
+            "alternative_ids",
+            "attribute_tuples",
             "attributes",
+            "default_value",
+            "is_deprecated",
             "node_id",
             "occurrences",
+            "parent",
             "rm_type_name",
+            "sibling_order",
+            "soc_parent",
         ]),
         "C_COMPLEX_OBJECT_PROXY" => ::core::option::Option::Some(&[
             "alternative_ids",
@@ -1468,35 +1879,64 @@ pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static st
             "target_path",
         ]),
         "C_DATE" => ::core::option::Option::Some(&[
+            "alternative_ids",
             "assumed_value",
-            "day_validity",
-            "month_validity",
-            "range",
+            "constraint",
+            "default_value",
+            "is_deprecated",
+            "is_enumerated_type_constraint",
+            "node_id",
+            "occurrences",
+            "parent",
+            "pattern_constraint",
+            "rm_type_name",
+            "sibling_order",
+            "soc_parent",
         ]),
         "C_DATE_TIME" => ::core::option::Option::Some(&[
+            "alternative_ids",
             "assumed_value",
-            "day_validity",
-            "hour_validity",
-            "millisecond_validity",
-            "minute_validity",
-            "month_validity",
-            "range",
-            "second_validity",
-            "timezone_validity",
+            "constraint",
+            "default_value",
+            "is_deprecated",
+            "is_enumerated_type_constraint",
+            "node_id",
+            "occurrences",
+            "parent",
+            "pattern_constraint",
+            "rm_type_name",
+            "sibling_order",
+            "soc_parent",
         ]),
         "C_DURATION" => ::core::option::Option::Some(&[
+            "alternative_ids",
             "assumed_value",
-            "days_allowed",
-            "fractional_seconds_allowed",
-            "hours_allowed",
-            "minutes_allowed",
-            "months_allowed",
-            "range",
-            "seconds_allowed",
-            "weeks_allowed",
-            "years_allowed",
+            "constraint",
+            "default_value",
+            "is_deprecated",
+            "is_enumerated_type_constraint",
+            "node_id",
+            "occurrences",
+            "parent",
+            "pattern_constraint",
+            "rm_type_name",
+            "sibling_order",
+            "soc_parent",
         ]),
-        "C_INTEGER" => ::core::option::Option::Some(&["assumed_value", "list", "range"]),
+        "C_INTEGER" => ::core::option::Option::Some(&[
+            "alternative_ids",
+            "assumed_value",
+            "constraint",
+            "default_value",
+            "is_deprecated",
+            "is_enumerated_type_constraint",
+            "node_id",
+            "occurrences",
+            "parent",
+            "rm_type_name",
+            "sibling_order",
+            "soc_parent",
+        ]),
         "C_MULTIPLE_ATTRIBUTE" => ::core::option::Option::Some(&[
             "cardinality",
             "children",
@@ -1527,13 +1967,37 @@ pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static st
             "rm_type_name",
         ]),
         "C_QUANTITY_ITEM" => ::core::option::Option::Some(&["magnitude", "units"]),
-        "C_REAL" => ::core::option::Option::Some(&["assumed_value", "list", "range"]),
+        "C_REAL" => ::core::option::Option::Some(&[
+            "alternative_ids",
+            "assumed_value",
+            "constraint",
+            "default_value",
+            "is_deprecated",
+            "is_enumerated_type_constraint",
+            "node_id",
+            "occurrences",
+            "parent",
+            "rm_type_name",
+            "sibling_order",
+            "soc_parent",
+        ]),
         "C_SINGLE_ATTRIBUTE" => {
             ::core::option::Option::Some(&["children", "existence", "rm_attribute_name"])
         }
-        "C_STRING" => {
-            ::core::option::Option::Some(&["assumed_value", "list", "list_open", "pattern"])
-        }
+        "C_STRING" => ::core::option::Option::Some(&[
+            "alternative_ids",
+            "assumed_value",
+            "constraint",
+            "default_value",
+            "is_deprecated",
+            "is_enumerated_type_constraint",
+            "node_id",
+            "occurrences",
+            "parent",
+            "rm_type_name",
+            "sibling_order",
+            "soc_parent",
+        ]),
         "C_TEMPORAL_DEFINITIONS" => ::core::option::Option::Some(&[
             "valid_date_constraint_patterns",
             "valid_date_constraint_replacements",
@@ -1558,12 +2022,19 @@ pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static st
             "soc_parent",
         ]),
         "C_TIME" => ::core::option::Option::Some(&[
+            "alternative_ids",
             "assumed_value",
-            "millisecond_validity",
-            "minute_validity",
-            "range",
-            "second_validity",
-            "timezone_validity",
+            "constraint",
+            "default_value",
+            "is_deprecated",
+            "is_enumerated_type_constraint",
+            "node_id",
+            "occurrences",
+            "parent",
+            "pattern_constraint",
+            "rm_type_name",
+            "sibling_order",
+            "soc_parent",
         ]),
         "Cardinality" => ::core::option::Option::Some(&["interval", "is_ordered", "is_unique"]),
         "DV_BOOLEAN" => ::core::option::Option::Some(&["value"]),
@@ -1765,6 +2236,7 @@ pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static st
         "EL_FUNCTION_CALL" => {
             ::core::option::Option::Some(&["agent", "is_writable", "name", "scoper"])
         }
+        "EL_INSTANTIABLE_REF" => ::core::option::Option::Some(&["definition", "scope"]),
         "EL_LITERAL" => ::core::option::Option::Some(&["value"]),
         "EL_PROCEDURE_AGENT" => ::core::option::Option::Some(&[
             "closed_args",
@@ -1780,6 +2252,7 @@ pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static st
         "EL_READONLY_VARIABLE" => {
             ::core::option::Option::Some(&["definition", "is_writable", "name"])
         }
+        "EL_SELF_REF" => ::core::option::Option::Some(&["type"]),
         "EL_STATIC_REF" => {
             ::core::option::Option::Some(&["definition", "is_writable", "name", "scoper"])
         }
@@ -1973,6 +2446,7 @@ pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static st
             "name",
             "uid",
         ]),
+        "FUNCTION_DEF_EXAMPLE" => ::core::option::Option::Some(&["evaluation_agent", "identifier"]),
         "GENERIC_CONTENT_ITEM" => ::core::option::Option::Some(&[
             "archetype_details",
             "archetype_node_id",
@@ -2194,6 +2668,16 @@ pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static st
             "translations",
             "uid",
         ]),
+        "OP_DEF_AND" => {
+            ::core::option::Option::Some(&["evaluation_agent", "identifier", "symbols"])
+        }
+        "OP_DEF_EXAMPLE" => {
+            ::core::option::Option::Some(&["evaluation_agent", "identifier", "symbols"])
+        }
+        "OP_DEF_EXISTS" => {
+            ::core::option::Option::Some(&["evaluation_agent", "identifier", "symbols"])
+        }
+        "OP_DEF_PLUS" => ::core::option::Option::Some(&["name", "symbols"]),
         "ORDINAL" => ::core::option::Option::Some(&["symbol", "value"]),
         "ORGANISATION" => ::core::option::Option::Some(&[
             "archetype_details",
@@ -2699,6 +3183,13 @@ pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static st
             "purpose",
             "use",
         ]),
+        "RESOURCE_USAGE" => ::core::option::Option::Some(&[
+            "actual",
+            "description",
+            "prospective",
+            "reference",
+            "type",
+        ]),
         "REVISION_HISTORY" => ::core::option::Option::Some(&["items"]),
         "REVISION_HISTORY_ITEM" => ::core::option::Option::Some(&["audits", "version_id"]),
         "RM_ATTRIBUTE_VISIBILITY" => ::core::option::Option::Some(&["alias", "visibility"]),
@@ -2734,6 +3225,9 @@ pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static st
             "name",
             "uid",
         ]),
+        "SERVICE_USE" => {
+            ::core::option::Option::Some(&["cost_data", "duration", "identifier", "start_time"])
+        }
         "SIBLING_ORDER" => ::core::option::Option::Some(&["is_before", "sibling_node_id"]),
         "STATEMENT_SET" => ::core::option::Option::Some(&["name", "statement"]),
         "SYNC_EXTRACT" => ::core::option::Option::Some(&["items", "specification"]),
@@ -2828,6 +3322,16 @@ pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static st
         "VERSIONED_OBJECT" => ::core::option::Option::Some(&["owner_id", "time_created", "uid"]),
         "VERSIONED_PARTY" => ::core::option::Option::Some(&["owner_id", "time_created", "uid"]),
         "VERSION_TREE_ID" => ::core::option::Option::Some(&["value"]),
+        "VIEW_SECTION" => ::core::option::Option::Some(&[
+            "archetype_details",
+            "archetype_node_id",
+            "feeder_audit",
+            "items",
+            "links",
+            "meta_data",
+            "name",
+            "uid",
+        ]),
         "X_CONTRIBUTION" => ::core::option::Option::Some(&["audit", "uid", "versions"]),
         "X_VERSIONED_COMPOSITION" => ::core::option::Option::Some(&[
             "extract_version_count",

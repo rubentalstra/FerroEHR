@@ -4,7 +4,7 @@
 //! meta-model.
 
 use crate::v2_4::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
-use openehr_lang::v3::bmm3::core::entity::bmm_status_type::BmmStatusType;
+use openehr_lang::v1_1::bmm3::core::entity::bmm_status_type::BmmStatusType;
 
 /// Form of routine specific to procedure object signatures, with  `_result_type_` being the special Status meta-type
 #[doc(alias = "BMM_PROCEDURE_TYPE")]

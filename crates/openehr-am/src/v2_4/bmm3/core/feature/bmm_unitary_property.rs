@@ -9,7 +9,7 @@
 )]
 use crate::v2_4::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType;
 use crate::v2_4::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup;
-use openehr_lang::v3::bmm3::core::feature::bmm_feature_extension::BmmFeatureExtension;
+use openehr_lang::v1_1::bmm3::core::feature::bmm_feature_extension::BmmFeatureExtension;
 
 /// Meta-type of for properties of unitary type.
 #[doc(alias = "BMM_UNITARY_PROPERTY")]

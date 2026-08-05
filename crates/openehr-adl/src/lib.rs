@@ -20,12 +20,12 @@
 //! validation catalogue), [`flatten`] + [`opt`] (specialisation flattening +
 //! OPT2), the ADL2 serializer [`mod@print`], and [`adl14`] (ADL 1.4→2 conversion — our own
 //! design, no openEHR spec). ODIN sections are parsed by the
-//! `openehr_lang::odin` reader (ODIN is a LANG-component spec). **This crate
+//! `openehr_lang::v1_1::odin` reader (ODIN is a LANG-component spec). **This crate
 //! has no lexer of its own**: the cADL token stream is the shared workspace
 //! lexical layer read under its ADL reading
-//! ([`openehr_lang::lexer::lex_adl`]). The `rules` body and the slot
+//! ([`openehr_lang::v1_1::lexer::lex_adl`]). The `rules` body and the slot
 //! include/exclude assertions are full BEL/beom expression trees
-//! ([`rules`], over `openehr_lang::bel`); their string form is rendered back
+//! ([`rules`], over `openehr_lang::v1_1::bel`); their string form is rendered back
 //! from the tree ([`print::assertion_text`]), never parsed out of it.
 
 // Doctests are copy-paste templates: they must use `?`, never unwrap

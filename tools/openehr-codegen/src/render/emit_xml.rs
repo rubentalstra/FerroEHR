@@ -27,6 +27,39 @@ pub(crate) struct XmlSchema<'a> {
     /// ident plus generation module, e.g. `openehr_rm::v1_2`. Impls name each
     /// type by its full defining-module path (never a prelude).
     pub root: &'a str,
+    /// The generation's cross-crate index — resolves a `@SPEC` construction
+    /// door parameter to the PAIRED dependency generation's defining module.
+    pub external: &'a crate::analyze::External,
+}
+
+/// Resolves one construction-door parameter type for an [`XmlSchema`]: a
+/// `@SPEC` marker becomes the generation-correct full type path (this
+/// generation's own module when it declares the class, else the paired
+/// dependency generation's); any other string passes through as a literal
+/// Rust type.
+///
+/// # Panics
+/// Panics when a marker names a class neither this generation nor its paired
+/// dependencies emit — a construction-table bug.
+fn door_param(s: &XmlSchema<'_>, ty: &str) -> String {
+    let Some(spec) = ty.strip_prefix('@') else {
+        return ty.to_owned();
+    };
+    let ident = crate::render::naming::type_name(spec);
+    if s.schema.classes.contains_key(spec) {
+        return format!(
+            "{}::{}::{ident}",
+            s.root,
+            crate::render::emit::type_module_path(s.schema, spec)
+        );
+    }
+    let module = s.external.module_of(spec).unwrap_or_else(|| {
+        panic!(
+            "construction door parameter @{spec}: neither the declaring generation nor its \
+             paired dependency generations emit this class (a plan::construction table bug)"
+        )
+    });
+    format!("{module}::{ident}")
 }
 
 /// The spec class an [`XmlType`] realizes — the key its Rust path is resolved
@@ -98,7 +131,7 @@ pub(crate) fn emit_file(
                 crate::render::emit::type_module_path(s.schema, xml_type_spec(&ty))
             );
             emit_to_xml(&mut b, &ty, &path, xsd, unmatched);
-            emit_from_xml(&mut b, &ty, &path, xsd);
+            emit_from_xml(&mut b, &ty, &path, xsd, Some(s));
         }
     }
     if !appended.is_empty() {
@@ -451,7 +484,13 @@ fn emit_write_field(b: &mut String, f: &XmlField, validated: bool) {
 
 /// Emit `impl FromXml` for one [`XmlType`]. Public so the OPT emitter
 /// (`emit_opt`) can reuse it over XSD-derived [`XmlType`]s.
-pub(crate) fn emit_from_xml(b: &mut String, ty: &XmlType, path: &str, xsd: &XsdModel) {
+pub(crate) fn emit_from_xml(
+    b: &mut String,
+    ty: &XmlType,
+    path: &str,
+    xsd: &XsdModel,
+    door_env: Option<&XmlSchema<'_>>,
+) {
     match ty {
         XmlType::Struct {
             spec,
@@ -599,11 +638,32 @@ pub(crate) fn emit_from_xml(b: &mut String, ty: &XmlType, path: &str, xsd: &XsdM
                         params.len(),
                         values.len()
                     );
-                    // Bind each read to a local of the constructor's DECLARED
-                    // parameter type, so an `impl Into<String>` parameter has no
-                    // inference ambiguity.
+                    // Bind each read BY FIELD NAME to a local of the
+                    // constructor's DECLARED parameter type (no inference
+                    // ambiguity), calling in the table's declared order — one
+                    // canonical door signature across generations whose BMMs
+                    // declare the fields in different orders.
                     let mut names = Vec::new();
-                    for (i, (ty, (_, expr))) in params.iter().zip(&values).enumerate() {
+                    for (i, (param, ty)) in params.iter().enumerate() {
+                        let Some((_, expr)) = values.iter().find(|(fname, _)| fname == param)
+                        else {
+                            panic!(
+                                "construction map parameter {param:?} of {spec} names no \
+                                 XML field (fields: {:?})",
+                                values.iter().map(|(f, _)| f).collect::<Vec<_>>()
+                            )
+                        };
+                        let ty = if let Some(env) = door_env {
+                            door_param(env, ty)
+                        } else {
+                            assert!(
+                                !ty.starts_with('@'),
+                                "door class {spec} with a @-typed parameter emitted without \
+                                 a door environment (an emit-opt closure generating a door \
+                                 class is a table/closure bug)"
+                            );
+                            (*ty).to_owned()
+                        };
                         let _ = writeln!(b, "let __a{i}: {ty} = {expr};");
                         names.push(format!("__a{i}"));
                     }

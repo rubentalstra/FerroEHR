@@ -4,7 +4,7 @@
 //! meta-model.
 
 use crate::v2_4::bmm3::core::entity::bmm_simple_class::BmmSimpleClass;
-use openehr_lang::v3::bmm3::core::entity::range_constrained::bmm_value_set_spec::BmmValueSetSpec;
+use openehr_lang::v1_1::bmm3::core::entity::range_constrained::bmm_value_set_spec::BmmValueSetSpec;
 
 /// Type reference to a single type i.e. not generic or container type.
 #[doc(alias = "BMM_SIMPLE_TYPE")]

@@ -23,35 +23,25 @@ pub mod prelude;
 pub mod v1_4;
 pub mod v2_4;
 
-/// The openEHR specification version this crate implements.
-///
-/// The pin is emitted by `openehr-codegen` from the vendored inputs and is
-/// deliberately independent of the crates.io package version, which is the
-/// crate's own `SemVer` line and moves only with this implementation's code.
-pub const SPEC_VERSION: &str = "2.4.0";
-
 /// The BMM generations this crate emits, one variant per version module,
 /// oldest first.
 ///
 /// Generated from the openehr-codegen composition table — the single
 /// authority for which generations exist. [`std::fmt::Display`] and
-/// [`std::str::FromStr`] round-trip the generation-module name (`"v1_4"`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+/// [`std::str::FromStr`] round-trip the generation-module name (`"v1_4"`). `Generation::default()` is the crate's CURRENT generation — the
+/// one `crate::prelude` re-exports (the composition table's `current`
+/// marker, via the std `#[default]` variant attribute).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Generation {
     /// The `v1_4` generation — openEHR specification version 1.4.0.
     V1_4,
     /// The `v2_4` generation — openEHR specification version 2.4.0.
+    #[default]
     V2_4,
 }
 
 impl Generation {
-    /// The crate's CURRENT generation — the one `crate::prelude` re-exports.
-    pub const CURRENT: Self = Self::V2_4;
-
-    /// Every generation this crate emits, oldest first.
-    pub const ALL: &'static [Self] = &[Self::V1_4, Self::V2_4];
-
-    /// The openEHR specification version this generation implements.
+    /// Returns the openEHR specification version this generation implements.
     #[must_use]
     pub const fn spec_version(self) -> &'static str {
         match self {
@@ -60,10 +50,11 @@ impl Generation {
         }
     }
 
-    /// The generation-module name (`"v1_2"`) — the
-    /// [`std::fmt::Display`]/[`std::str::FromStr`] token.
+    /// Returns the generation token — the version-module name
+    /// (`"v1_2"`), which is also the [`std::fmt::Display`] and
+    /// [`std::str::FromStr`] form.
     #[must_use]
-    pub const fn module(self) -> &'static str {
+    pub const fn as_str(self) -> &'static str {
         match self {
             Self::V1_4 => "v1_4",
             Self::V2_4 => "v2_4",
@@ -73,7 +64,7 @@ impl Generation {
 
 impl std::fmt::Display for Generation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.module())
+        f.write_str(self.as_str())
     }
 }
 

@@ -118,36 +118,50 @@ fn lang_emits_both_bmm_generations_at_their_own_paths() {
     // ch.6–ch.8 chapter audits pinned as materially different).
     for (v2, bmm3) in [
         (
-            "v2/bmm/core/bmm_class.rs",
-            "v3/bmm3/core/entity/bmm_class.rs",
-        ),
-        ("v2/bmm/core/bmm_type.rs", "v3/bmm3/core/entity/bmm_type.rs"),
-        (
-            "v2/bmm/core/bmm_container_type.rs",
-            "v3/bmm3/core/entity/bmm_container_type.rs",
+            "v1_1/bmm/core/bmm_class.rs",
+            "v1_1/bmm3/core/entity/bmm_class.rs",
         ),
         (
-            "v2/bmm/core/bmm_property.rs",
-            "v3/bmm3/core/feature/bmm_property.rs",
+            "v1_1/bmm/core/bmm_type.rs",
+            "v1_1/bmm3/core/entity/bmm_type.rs",
         ),
         (
-            "v2/bmm/core/bmm_model.rs",
-            "v3/bmm3/core/model/bmm_model.rs",
+            "v1_1/bmm/core/bmm_container_type.rs",
+            "v1_1/bmm3/core/entity/bmm_container_type.rs",
         ),
         (
-            "v2/bmm/core/bmm_model_element.rs",
-            "v3/bmm3/core/bmm_model_element.rs",
+            "v1_1/bmm/core/bmm_property.rs",
+            "v1_1/bmm3/core/feature/bmm_property.rs",
+        ),
+        (
+            "v1_1/bmm/core/bmm_model.rs",
+            "v1_1/bmm3/core/model/bmm_model.rs",
+        ),
+        (
+            "v1_1/bmm/core/bmm_model_element.rs",
+            "v1_1/bmm3/core/bmm_model_element.rs",
         ),
     ] {
-        assert!(has(v2), "LANG did not emit the v2 generation's {v2}");
-        assert!(has(bmm3), "LANG did not emit the v3 generation's {bmm3}");
+        assert!(has(v2), "LANG did not emit the BMM v2.x unit's {v2}");
+        assert!(has(bmm3), "LANG did not emit the BMM3 unit's {bmm3}");
     }
     // The two classes the merge left descendant-less and therefore unemitted.
     for bmm3_only in [
-        "v3/bmm3/core/entity/bmm_model_type.rs",
-        "v3/bmm3/core/entity/bmm_module.rs",
+        "v1_1/bmm3/core/entity/bmm_model_type.rs",
+        "v1_1/bmm3/core/entity/bmm_module.rs",
     ] {
         assert!(has(bmm3_only), "LANG did not emit {bmm3_only}");
+    }
+    // The released 1.0.0 generation emits beside the 1.1.0 line (faithful
+    // emission, #1942 — incl. the sanitised `obsolete_elom` package name).
+    for v1_0 in [
+        "v1_0/bmm/core/entity/bmm_class.rs",
+        "v1_0/obsolete_elom/types/type_def_date.rs",
+    ] {
+        assert!(
+            has(v1_0),
+            "LANG did not emit the released 1.0.0 generation's {v1_0}"
+        );
     }
 }
 
@@ -485,12 +499,12 @@ fn composition_table_integrity() {
             }
         }
         // Resolving the composition loads every member/dependency BMM file, one
-        // completeness row per generation.
+        // completeness row per specification UNIT.
+        let unit_n: usize = info.generations.iter().map(|g| g.units.len()).sum();
         let rows = testsupport::completeness(&info.key);
         assert!(
-            rows.as_ref()
-                .is_ok_and(|r| r.len() == info.generations.len()),
-            "composition {:?} failed to resolve one generation per table row",
+            rows.as_ref().is_ok_and(|r| r.len() == unit_n),
+            "composition {:?} failed to resolve one row per specification unit",
             info.key,
         );
     }
@@ -507,29 +521,38 @@ fn composition_table_integrity() {
 #[test]
 fn invariant_classification_is_a_total_tripartition() {
     let rows = testsupport::classify_invariants("rm").unwrap();
-    let total = rows.len();
-    let emitted = rows.iter().filter(|r| r.bucket == "emitted").count();
-    let hook = rows
-        .iter()
-        .filter(|r| r.bucket == "runtime-hook-missing")
-        .count();
-    let complex = rows.iter().filter(|r| r.bucket == "complex").count();
+    // Pinned per-generation tripartitions (design doc §4 R5): a change here is
+    // deliberate. ITEM_TAG.Inv_key_valid is COMPLEX, not EMITTED:
+    // `key.is_justified` is a boolean-returning BMM function (a method call),
+    // which the assertion-dialect emitter cannot project from a field — so
+    // 90 emitted / 31 complex for RM 1.2.0 (R5b). RM 1.1.0 (the released
+    // generation, #1942) carries its own pinned split.
+    for (generation, p_total, p_emitted, p_hook, p_complex) in
+        [("v1_1", 155, 90, 34, 31), ("v1_2", 155, 90, 34, 31)]
+    {
+        let rows: Vec<_> = rows.iter().filter(|r| r.generation == generation).collect();
+        let total = rows.len();
+        let emitted = rows.iter().filter(|r| r.bucket == "emitted").count();
+        let hook = rows
+            .iter()
+            .filter(|r| r.bucket == "runtime-hook-missing")
+            .count();
+        let complex = rows.iter().filter(|r| r.bucket == "complex").count();
 
-    // Every row lands in one of the three known buckets (no unexpected label).
-    assert_eq!(
-        emitted + hook + complex,
-        total,
-        "some invariant carries an unknown bucket label",
-    );
-    // The RM 1.2.0 BMM carries exactly 155 class invariants.
-    assert_eq!(total, 155, "RM 1.2.0 invariant count changed");
-    // Pinned tripartition (design doc §4 R5): a change here is deliberate.
-    // ITEM_TAG.Inv_key_valid is COMPLEX, not EMITTED: `key.is_justified` is a
-    // boolean-returning BMM function (a method call), which the assertion-dialect
-    // emitter cannot project from a field — so 90 emitted / 31 complex (R5b).
-    assert_eq!(emitted, 90, "EMITTED count drifted");
-    assert_eq!(hook, 34, "RUNTIME-HOOK-MISSING count drifted");
-    assert_eq!(complex, 31, "COMPLEX count drifted");
+        // Every row lands in one of the three known buckets (no unexpected label).
+        assert_eq!(
+            emitted + hook + complex,
+            total,
+            "{generation}: some invariant carries an unknown bucket label",
+        );
+        assert_eq!(total, p_total, "{generation}: RM invariant count changed");
+        assert_eq!(emitted, p_emitted, "{generation}: EMITTED count drifted");
+        assert_eq!(
+            hook, p_hook,
+            "{generation}: RUNTIME-HOOK-MISSING count drifted"
+        );
+        assert_eq!(complex, p_complex, "{generation}: COMPLEX count drifted");
+    }
 
     // A non-emitted row always names its reason; an emitted row never does.
     for r in &rows {
@@ -828,56 +851,69 @@ fn emitted_classes_render_their_bmm_constants() {
 #[test]
 fn register_records_terminology_invariants_as_enforced() {
     let files = testsupport::render_all_to_memory().unwrap();
-    let gen_file = files
-        .get("openehr-rm/v1_2/validate/generated.rs")
-        .expect("emit-validate did not produce v1_2/validate/generated.rs");
-
-    assert!(
-        gen_file.contains("# Terminology-backed invariants (enforced in `validate::terminology`"),
-        "the terminology-enforcement register heading is missing",
-    );
-
-    // Every runtime-hook-missing invariant is adjudicated as either enforced in
-    // `validate::terminology` (terminology/code-set) or a versioned-object
-    // aggregate.
     let rows = testsupport::classify_invariants("rm").unwrap();
-    let hook: Vec<_> = rows
-        .iter()
-        .filter(|r| r.bucket == "runtime-hook-missing")
-        .collect();
-    let mut enforced = 0usize;
-    let mut aggregate = 0usize;
-    let mut unadjudicated: Vec<String> = Vec::new();
-    for r in &hook {
-        let enforced_line = format!(
-            "`{}.{}` — enforced in `validate::terminology`",
-            r.class, r.name
+    // Every RM generation carries its own cores file with the same adjudicated
+    // register split: 30 terminology/code-set invariants wired to the binding
+    // table, the 4 `VERSIONED_OBJECT` aggregate invariants pending — per
+    // generation (#1942: a selectable generation is a complete peer).
+    for generation in ["v1_1", "v1_2"] {
+        let gen_path = format!("openehr-rm/{generation}/validate/generated.rs");
+        let gen_file = files
+            .get(&gen_path)
+            .unwrap_or_else(|| panic!("emit-validate did not produce {gen_path}"));
+
+        assert!(
+            gen_file
+                .contains("# Terminology-backed invariants (enforced in `validate::terminology`"),
+            "{generation}: the terminology-enforcement register heading is missing",
         );
-        let aggregate_line = format!(
-            "`{}.{}` — versioned-object aggregate model",
-            r.class, r.name
-        );
-        if gen_file.contains(&enforced_line) {
-            enforced += 1;
-        } else if gen_file.contains(&aggregate_line) {
-            aggregate += 1;
-        } else {
-            unadjudicated.push(format!("{}::{}", r.class, r.name));
+
+        // Every runtime-hook-missing invariant is adjudicated as either
+        // enforced in `validate::terminology` (terminology/code-set) or a
+        // versioned-object aggregate.
+        let hook: Vec<_> = rows
+            .iter()
+            .filter(|r| r.generation == generation && r.bucket == "runtime-hook-missing")
+            .collect();
+        let mut enforced = 0usize;
+        let mut aggregate = 0usize;
+        let mut unadjudicated: Vec<String> = Vec::new();
+        for r in &hook {
+            let enforced_line = format!(
+                "`{}.{}` — enforced in `validate::terminology`",
+                r.class, r.name
+            );
+            let aggregate_line = format!(
+                "`{}.{}` — versioned-object aggregate model",
+                r.class, r.name
+            );
+            if gen_file.contains(&enforced_line) {
+                enforced += 1;
+            } else if gen_file.contains(&aggregate_line) {
+                aggregate += 1;
+            } else {
+                unadjudicated.push(format!("{}::{}", r.class, r.name));
+            }
         }
+        assert!(
+            unadjudicated.is_empty(),
+            "{generation}: invariant(s) carry no adjudication verdict in the register: \
+             {unadjudicated:?}",
+        );
+        assert_eq!(
+            enforced, 30,
+            "{generation}: terminology-enforced count drifted"
+        );
+        assert_eq!(
+            aggregate, 4,
+            "{generation}: versioned-aggregate pending count drifted"
+        );
+        assert_eq!(
+            enforced + aggregate,
+            hook.len(),
+            "{generation}: register split is not total"
+        );
     }
-    assert!(
-        unadjudicated.is_empty(),
-        "invariant(s) carry no adjudication verdict in the register: {unadjudicated:?}",
-    );
-    // 30 terminology/code-set invariants wired to the binding table; the 4
-    // `VERSIONED_OBJECT` aggregate invariants stay pending.
-    assert_eq!(enforced, 30, "terminology-enforced count drifted");
-    assert_eq!(aggregate, 4, "versioned-aggregate pending count drifted");
-    assert_eq!(
-        enforced + aggregate,
-        hook.len(),
-        "register split is not total"
-    );
 }
 
 // ── ITS-REST OAS monomorphizations ──────────────────────────────────────────

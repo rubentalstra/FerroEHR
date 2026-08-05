@@ -4,7 +4,7 @@
 //! meta-model.
 
 use crate::v2_4::beom::core::expr_value::ExprValue;
-use openehr_lang::v2::beom::core::variable_declaration::VariableDeclaration;
+use openehr_lang::v1_1::beom::core::variable_declaration::VariableDeclaration;
 
 /// Meta-type representing the assignment statement, which associates a named variable with an expression, and produces no value.
 #[doc(alias = "ASSIGNMENT")]

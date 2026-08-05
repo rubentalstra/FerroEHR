@@ -10,7 +10,7 @@
 use crate::v2_4::bmm::core::bmm_type::BmmType;
 use crate::v2_4::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup;
 use crate::v2_4::bmm3::core::feature::bmm_routine_definition::BmmRoutineDefinition;
-use openehr_lang::v3::bmm3::core::feature::bmm_feature_extension::BmmFeatureExtension;
+use openehr_lang::v1_1::bmm3::core::feature::bmm_feature_extension::BmmFeatureExtension;
 
 /// Meta-type for static value properties computed once by a function invocation.
 #[doc(alias = "BMM_SINGLETON")]

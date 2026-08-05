@@ -9,19 +9,75 @@ DELETED in the PR that closes the last child issue.
 ## Settled decisions (do not re-litigate)
 
 - **One coupled profile**: `spec_profile = "stable" | "development"` selects
-  RM+BASE together. `development` = RM 1.2.0 + BASE 1.3.0 (current pins);
-  `stable` = RM 1.1.0 + BASE 1.2.0 (latest RELEASED). Per-component free
-  choice rejected — incoherent RM×BASE combinations stay unrepresentable.
+  the generation SET together — owner HARD RULE (2026-08-05, extended the
+  same day to LANG): `development` = RM 1.2.0 + BASE 1.3.0 + LANG 1.1.0
+  (current pins); `stable` = RM 1.1.0 + BASE 1.2.0 + LANG 1.0.0 (the
+  released generations). Per-component free choice rejected — incoherent
+  combinations stay unrepresentable.
 - **One uniform structure for every generated crate** (no package is
   special): version-named generation modules, the codegen composition table
   as the single authority for which generations exist, an emitted per-crate
-  `Generation` enum (`CURRENT`, per-variant `spec_version()`,
-  `FromStr`/`Display`), prelude re-exporting the current generation only,
+  `Generation` enum (derived `Default` marking the current generation,
+  per-variant `spec_version()`/`as_str()`, `FromStr`/`Display`), prelude re-exporting the current generation only,
   runtime dispatch in the APPLICATION (generated crates stay dispatch-free).
 - **Migration order**: (a) uniform-structure rename, zero behaviour change →
   (b) emit released RM 1.1.0 / BASE 1.2.0 side by side → (c) the application
   profile seam. Each step is a child issue; (b) blocked-by (a), (c)
   blocked-by (b). All milestoned v3.17.4.
+
+## The Rust best-practice bar (owner directive 2026-08-05 — applies to every
+## remaining child and to ALL emitted API surface)
+
+The program ships PUBLISHED crate API; every new or emitted item is held to
+the official conventions — the Rust API Guidelines checklist
+(<https://rust-lang.github.io/api-guidelines/checklist.html>), the Rust Book,
+and RFC 505/1574 (already binding via `.claude/rules/comments.md`) — with the
+emitter producing that quality BY CONSTRUCTION, never via suppressions:
+
+- **Standard names, never bespoke ones (C-CASE, C-GETTER, C-CONV):** the
+  canonical string form of an enum is `as_str()` (the std spelling — `str`,
+  `ParseError` families), never an invented accessor (`module()` was removed
+  for exactly this, 2026-08-05); conversions follow `as_`/`to_`/`into_` cost
+  semantics; no `get_` prefixes.
+- **`Display`/`FromStr` are a round-tripping pair (C-STR):** `Display`
+  forwards to `as_str()`; `FromStr::Err` is a dedicated `…ParseError` type
+  shaped like std's `ParseIntError` — a struct with private fields, `Display`
+  naming the valid tokens, implementing `std::error::Error` (C-GOOD-ERR:
+  errors are types, not strings).
+- **Common traits derived eagerly (C-COMMON-TRAITS):** small closed enums
+  (`Generation`, the profile enum) derive
+  `Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord`; ordering =
+  declaration order = oldest generation first, which is the meaningful order.
+- **Built-in std mechanisms over bespoke items, and no speculative API:**
+  the current generation is the derived-`Default` `#[default]` variant (std
+  1.62 mechanism), never a bespoke `CURRENT` const (removed 2026-08-05); the
+  unconsumed `ALL` variant-list const was removed the same day (the official
+  guidelines prescribe NO variant-enumeration shape — verified first-hand
+  2026-08-05 — so shipping one before a consumer exists is speculative
+  surface; when one is needed it arrives as the ecosystem-standard shape,
+  a deliberate minor-version addition); pure accessors are `const fn` +
+  `#[must_use]`.
+- **Deliberately exhaustive enums:** the `Generation` and profile enums are
+  NOT `#[non_exhaustive]` — the set comes from the composition table and a
+  new generation is a deliberate, semver-visible API event; consumers should
+  be forced to handle it (recorded decision, not an omission).
+- **Doc comments per RFC 1574:** method summaries in third person
+  ("Returns…"), one sentence, blank line, then detail — the same bar
+  `comments.md` enforces.
+- **Emitted code passes the full workspace clippy bar by construction**
+  (pedantic included): a lint finding in generated output is an emitter bug,
+  fixed structurally (e.g. an 8-argument emitter fn becomes a context
+  struct; identical match arms fold into or-patterns), never `#[allow]`ed
+  away beyond the adjudicated verbatim-spec-prose exceptions in the
+  generated `lib.rs` header.
+- **No fixed crate-level pins that contradict selection:** removed
+  (owner ruling 2026-08-05) — a multi-generation crate exposes its pins ONLY
+  through the `Generation` enum and per-generation-module `SPEC_VERSION`s;
+  any future "one value for the whole crate" convenience is the same legacy
+  class and gets refused.
+- **Legacy residue discovered en route is never carried** (owner directive
+  2026-08-05): remove it properly in-scope, or file it as a sub-issue of
+  #1936 so it queues inside the program.
 
 ## Ground facts (verified 2026-08-05)
 
@@ -71,7 +127,7 @@ Design (in-session, critical path):
    collapse into a single generation-list renderer. Every generated crate —
    including single-generation `base`/`rm`/`term` — gains its version module
    now (`openehr_base::v1_3`, `openehr_rm::v1_2`, `openehr_term::v3_1`,
-   `openehr_am::v1_4`/`v2_4`, `openehr_lang::v2`/`v3`), so child (b) is
+   `openehr_am::v1_4`/`v2_4`, `openehr_lang::v1_1`), so child (b) is
    purely additive (no second workspace sweep).
 3. **Emitted `Generation` enum** per crate (from the same table): variants
    per generation (`V1_2`, …), `Generation::CURRENT`, `spec_version()`,
@@ -130,26 +186,71 @@ Design (in-session, critical path):
 
 ## Child (c) — feat(app): the `spec_profile` seam
 
-1. Config: `spec_profile` in the `ferroehr` config tree (+ `FERROEHR_*`
-   env), a two-variant profile enum mapping to the per-crate `Generation`
-   selectors — coherent pairs only, unrepresentable otherwise.
-2. Thread the profile through the generation-sensitive seams: canonical
-   JSON/XML codec selection, the RM attribute model the AQL planner reads,
-   validation/invariant passes, WebTemplate/FLAT conversion. Dispatch lives
-   in `ferroehr`/`ferroehr-rest`; generated crates stay dispatch-free; no
-   shadow models.
-3. Wire honesty: active generation visible on the served surface (native
-   OpenAPI metadata + conformance statement). Mixed-generation storage
-   position adjudicated and recorded (within-major supersets: newer reader
-   accepts older instances; the reverse direction is the design question —
-   spec-cited adjudication on the issue).
-4. `docs/VERSIONS.md` §Spec version policy REWRITTEN to the two-generation
+**Settled design (2026-08-05, from the measured seam survey below).** The
+key measured fact: `openehr_its::json::{to/from_canonical_*}` are GENERIC
+over `T` — the generation binding lives in the CALLER's type choice, and the
+emitted `_type` structural dispatch already covers every generation
+(current-first priority). So the seam is NOT a codec swap; it is (i) an
+acceptance-boundary judgement and (ii) a handful of explicit dispatch
+points:
+
+1. **Config**: `spec_profile = "development" | "stable"` (top-level key,
+   default `development` — today's behaviour). One `SpecProfile` enum in
+   `ferroehr::config`, two variants, each mapping to the coherent generation
+   triple (owner hard rule 2026-08-05): `development` → RM `V1_2` + BASE
+   `V1_3` + LANG `V1_1`; `stable` → RM `V1_1` + BASE `V1_2` + LANG `V1_0`.
+   Methods `rm()/base()/lang()` return the crates' own `Generation` values.
+2. **The typed INTERNAL model stays the current generation for both
+   profiles** — adjudicated, not a shortcut: openEHR's release strategy
+   makes every 1.1.0-valid instance 1.2.0-valid (within-major compatible
+   superset), so processing stable-profile data with the newer typed model
+   loses nothing and forks nothing. What the profile changes is the
+   ACCEPTANCE BOUNDARY: under `stable`, an incoming payload must ALSO be a
+   valid instance of the SELECTED generation's model — decoded through the
+   v1_1/v1_2 generation's own strict reader (its `json_serde` + validate
+   tree, emitted in (b)) BEFORE the current-generation processing path runs.
+   A construct the released generation does not admit is a 400-class
+   refusal naming the active profile (never-lax in both directions: the
+   stable profile must not silently accept development-only constructs).
+3. **AQL planner model**: the planner's `openehr_rm::v1_2::model` reads go
+   through a profile-selected model handle (`v1_1::model` vs `v1_2::model` —
+   both emitted); rejection messages name the active generation.
+4. **Identity surfaces**: `telemetry::provenance` RM/BASE/LANG pins become
+   profile-aware reads (the `TODO(#1943)` markers are the splice points);
+   banner, `/status`, OPTIONS conformance manifest and the served OpenAPI
+   carry the ACTIVE generation's `spec_version()`.
+5. **Storage position (adjudicated)**: stored canonical fragments are
+   generation-agnostic bytes; the newer-generation reader accepts every
+   older-minor instance (release strategy), so `development` reads
+   everything. The REVERSE direction is governed by the acceptance boundary
+   in (2): under `stable` the server never PRODUCES a beyond-1.1.0
+   construct because it never accepted one. Flipping a deployment from
+   development→stable with beyond-stable data already stored is surfaced,
+   not hidden: reads that fail the stable-generation re-judgement report
+   the profile conflict. Recorded on the issue with citations.
+6. `docs/VERSIONS.md` §Spec version policy REWRITTEN to the two-generation
    policy with the owner ruling (2026-08-05) recorded; website
    (`website/book/src`) configuration page for `spec_profile` in the same
    PR; CHANGELOG.
-5. Acceptance instrument: `bash scripts/conformance.sh` green on BOTH
+7. Acceptance instrument: `bash scripts/conformance.sh` green on BOTH
    profile selections; zero drift; full gate battery. This PR deletes this
    plan file.
+
+### Seam survey (measured 2026-08-05)
+
+- `openehr_its::json` entry points generic over `T` (json.rs:177/211/241);
+  callers: 24 ferroehr + 6 rest files. Binding = the caller's type.
+- `_type` structural dispatch covers all generations already (469 `v1_1`
+  references in the emitted `structural.rs`), current-first priority.
+- Current-generation type consumers (no churn — stay on the typed current
+  model per (2)): `openehr_rm::prelude` 24 ferroehr + 15 rest files;
+  `openehr_rm::v1_2` 18 + 2; `openehr_base::prelude` 26 + 5.
+- Planner/model reads to parameterize: `openehr_rm::v1_2::model` in 8
+  ferroehr files (aql/, storage/structure.rs, validation/opt) + 9 its;
+  `openehr_rm::v1_2::validate` in 3 ferroehr + 4 its.
+- Identity splice points: `provenance::` consumed by banner.rs,
+  config/server.rs, build_info.rs, rest config.rs + extensions/openapi.rs.
+- Storage carries no per-row generation column; none needed under (5).
 
 ## Blast-radius survey (measured 2026-08-05, grounds the (a) fan-out)
 

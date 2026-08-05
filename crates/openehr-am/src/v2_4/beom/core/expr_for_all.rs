@@ -5,7 +5,7 @@
 
 use crate::v2_4::beom::core::assertion::Assertion;
 use crate::v2_4::beom::core::expr_value_ref::ExprValueRef;
-use openehr_lang::v2::beom::core::operator_kind::OperatorKind;
+use openehr_lang::v1_1::beom::core::operator_kind::OperatorKind;
 
 /// Universal quantification operator, usually known as `for_all`, whose operand is a collection of items referenced by an `EXPR_VALUE_REF`.
 ///

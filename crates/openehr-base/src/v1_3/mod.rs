@@ -6,6 +6,3 @@ pub mod base_types;
 pub mod foundation_types;
 pub mod prelude;
 pub mod resource;
-
-/// The openEHR specification version this generation implements.
-pub const SPEC_VERSION: &str = "1.3.0";

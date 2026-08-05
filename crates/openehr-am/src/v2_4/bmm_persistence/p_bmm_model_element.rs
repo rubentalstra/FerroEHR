@@ -13,9 +13,9 @@ use crate::v2_4::bmm_persistence::p_bmm_generic_property::PBmmGenericProperty;
 use crate::v2_4::bmm_persistence::p_bmm_package::PBmmPackage;
 use crate::v2_4::bmm_persistence::p_bmm_single_property::PBmmSingleProperty;
 use crate::v2_4::bmm_persistence::p_bmm_single_property_open::PBmmSinglePropertyOpen;
-use openehr_lang::v2::bmm_persistence::p_bmm_constant::PBmmConstant;
-use openehr_lang::v2::bmm_persistence::p_bmm_single_function_parameter::PBmmSingleFunctionParameter;
-use openehr_lang::v2::bmm_persistence::p_bmm_single_function_parameter_open::PBmmSingleFunctionParameterOpen;
+use openehr_lang::v1_1::bmm_persistence::p_bmm_constant::PBmmConstant;
+use openehr_lang::v1_1::bmm_persistence::p_bmm_single_function_parameter::PBmmSingleFunctionParameter;
+use openehr_lang::v1_1::bmm_persistence::p_bmm_single_function_parameter_open::PBmmSingleFunctionParameterOpen;
 
 /// Closed subtype set of `P_BMM_MODEL_ELEMENT`, dispatched on each payload's `_type`.
 ///

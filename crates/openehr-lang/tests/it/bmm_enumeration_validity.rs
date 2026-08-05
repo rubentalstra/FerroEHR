@@ -19,10 +19,10 @@
     reason = "the Book ch11 test shape: `?` propagates the read/model plumbing while the assertions ARE the test — an assertion panic is how these tests fail"
 )]
 
-use openehr_lang::v2::bmm_persistence::create_model::create_bmm_model;
-use openehr_lang::v2::bmm_persistence::error::PBmmReadError;
-use openehr_lang::v2::bmm_persistence::p_bmm_schema::PBmmSchema;
-use openehr_lang::v2::bmm_persistence::reader::read_schema;
+use openehr_lang::v1_1::bmm_persistence::create_model::create_bmm_model;
+use openehr_lang::v1_1::bmm_persistence::error::PBmmReadError;
+use openehr_lang::v1_1::bmm_persistence::p_bmm_schema::PBmmSchema;
+use openehr_lang::v1_1::bmm_persistence::reader::read_schema;
 
 /// `master04-syntax.adoc` §Header Items — the four mandatory header items.
 const HEADER: &str = r#"

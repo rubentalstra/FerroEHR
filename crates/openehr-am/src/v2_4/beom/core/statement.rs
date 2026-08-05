@@ -5,7 +5,7 @@
 
 use crate::v2_4::beom::core::assertion::Assertion;
 use crate::v2_4::beom::core::assignment::Assignment;
-use openehr_lang::v2::beom::core::variable_declaration::VariableDeclaration;
+use openehr_lang::v1_1::beom::core::variable_declaration::VariableDeclaration;
 
 /// Closed subtype set of `STATEMENT`, dispatched on each payload's `_type`.
 ///

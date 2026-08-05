@@ -637,7 +637,7 @@ impl<'a> OptModel<'a> {
         for spec in &self.generate {
             if let Some(ty) = self.xml_type(spec) {
                 emit_to_xml(&mut b, &ty, self.target.prelude, self.xsd, unmatched);
-                emit_from_xml(&mut b, &ty, self.target.prelude, self.xsd);
+                emit_from_xml(&mut b, &ty, self.target.prelude, self.xsd, None);
             }
         }
         b

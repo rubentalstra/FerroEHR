@@ -4,7 +4,7 @@
 //! meta-model.
 
 use crate::v2_4::beom::core::expression::Expression;
-use openehr_lang::v2::beom::core::operator_kind::OperatorKind;
+use openehr_lang::v1_1::beom::core::operator_kind::OperatorKind;
 
 /// Binary operator expression node.
 #[doc(alias = "EXPR_BINARY_OPERATOR")]
