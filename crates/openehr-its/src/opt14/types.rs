@@ -24,7 +24,7 @@ pub struct Annotation {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Archetype {
     /// The `original_language` attribute/element of the OPT `ARCHETYPE` XSD type.
-    pub original_language: openehr_base::prelude::CodePhrase,
+    pub original_language: openehr_base::v1_3::base_types::terminology::code_phrase::CodePhrase,
     /// The `is_controlled` attribute/element of the OPT `ARCHETYPE` XSD type.
     pub is_controlled: Option<bool>,
     /// The `description` attribute/element of the OPT `ARCHETYPE` XSD type.
@@ -32,17 +32,19 @@ pub struct Archetype {
     /// The `translations` attribute/element of the OPT `ARCHETYPE` XSD type.
     pub translations: Vec<TranslationDetails>,
     /// The `revision_history` attribute/element of the OPT `ARCHETYPE` XSD type.
-    pub revision_history: Option<openehr_rm::prelude::RevisionHistory>,
+    pub revision_history:
+        Option<openehr_rm::v1_2::common::generic::revision_history::RevisionHistory>,
     /// The `uid` attribute/element of the OPT `ARCHETYPE` XSD type.
-    pub uid: Option<openehr_base::prelude::HierObjectId>,
+    pub uid: Option<openehr_base::v1_3::base_types::identification::hier_object_id::HierObjectId>,
     /// The `archetype_id` attribute/element of the OPT `ARCHETYPE` XSD type.
-    pub archetype_id: openehr_base::prelude::ArchetypeId,
+    pub archetype_id: openehr_base::v1_3::base_types::identification::archetype_id::ArchetypeId,
     /// The `adl_version` attribute/element of the OPT `ARCHETYPE` XSD type.
     pub adl_version: Option<String>,
     /// The `concept` attribute/element of the OPT `ARCHETYPE` XSD type.
     pub concept: String,
     /// The `parent_archetype_id` attribute/element of the OPT `ARCHETYPE` XSD type.
-    pub parent_archetype_id: Option<openehr_base::prelude::ArchetypeId>,
+    pub parent_archetype_id:
+        Option<openehr_base::v1_3::base_types::identification::archetype_id::ArchetypeId>,
     /// The `definition` attribute/element of the OPT `ARCHETYPE` XSD type.
     pub definition: CComplexObject,
     /// The `invariants` attribute/element of the OPT `ARCHETYPE` XSD type.
@@ -210,9 +212,10 @@ pub struct CArchetypeRoot {
     /// The `attributes` attribute/element of the OPT `C_ARCHETYPE_ROOT` XSD type.
     pub attributes: Vec<CAttribute>,
     /// The `archetype_id` attribute/element of the OPT `C_ARCHETYPE_ROOT` XSD type.
-    pub archetype_id: openehr_base::prelude::ArchetypeId,
+    pub archetype_id: openehr_base::v1_3::base_types::identification::archetype_id::ArchetypeId,
     /// The `template_id` attribute/element of the OPT `C_ARCHETYPE_ROOT` XSD type.
-    pub template_id: Option<openehr_base::prelude::TemplateId>,
+    pub template_id:
+        Option<openehr_base::v1_3::base_types::identification::template_id::TemplateId>,
     /// The `term_definitions` attribute/element of the OPT `C_ARCHETYPE_ROOT` XSD type.
     pub term_definitions: Vec<ArchetypeTerm>,
     /// The `term_bindings` attribute/element of the OPT `C_ARCHETYPE_ROOT` XSD type.
@@ -249,9 +252,10 @@ pub struct CCodePhrase {
     /// The `node_id` attribute/element of the OPT `C_CODE_PHRASE` XSD type.
     pub node_id: String,
     /// The `assumed_value` attribute/element of the OPT `C_CODE_PHRASE` XSD type.
-    pub assumed_value: Option<openehr_base::prelude::CodePhrase>,
+    pub assumed_value: Option<openehr_base::v1_3::base_types::terminology::code_phrase::CodePhrase>,
     /// The `terminology_id` attribute/element of the OPT `C_CODE_PHRASE` XSD type.
-    pub terminology_id: Option<openehr_base::prelude::TerminologyId>,
+    pub terminology_id:
+        Option<openehr_base::v1_3::base_types::identification::terminology_id::TerminologyId>,
     /// The `code_list` attribute/element of the OPT `C_CODE_PHRASE` XSD type.
     pub code_list: Vec<String>,
 }
@@ -266,9 +270,10 @@ pub struct CCodeReference {
     /// The `node_id` attribute/element of the OPT `C_CODE_REFERENCE` XSD type.
     pub node_id: String,
     /// The `assumed_value` attribute/element of the OPT `C_CODE_REFERENCE` XSD type.
-    pub assumed_value: Option<openehr_base::prelude::CodePhrase>,
+    pub assumed_value: Option<openehr_base::v1_3::base_types::terminology::code_phrase::CodePhrase>,
     /// The `terminology_id` attribute/element of the OPT `C_CODE_REFERENCE` XSD type.
-    pub terminology_id: Option<openehr_base::prelude::TerminologyId>,
+    pub terminology_id:
+        Option<openehr_base::v1_3::base_types::identification::terminology_id::TerminologyId>,
     /// The `code_list` attribute/element of the OPT `C_CODE_REFERENCE` XSD type.
     pub code_list: Vec<String>,
     /// The `referenceSetUri` attribute/element of the OPT `C_CODE_REFERENCE` XSD type.
@@ -361,9 +366,9 @@ pub struct CDvOrdinal {
     /// The `node_id` attribute/element of the OPT `C_DV_ORDINAL` XSD type.
     pub node_id: String,
     /// The `assumed_value` attribute/element of the OPT `C_DV_ORDINAL` XSD type.
-    pub assumed_value: Option<openehr_rm::prelude::DvOrdinal>,
+    pub assumed_value: Option<openehr_rm::v1_2::data_types::quantity::dv_ordinal::DvOrdinal>,
     /// The `list` attribute/element of the OPT `C_DV_ORDINAL` XSD type.
-    pub list: Vec<openehr_rm::prelude::DvOrdinal>,
+    pub list: Vec<openehr_rm::v1_2::data_types::quantity::dv_ordinal::DvOrdinal>,
 }
 
 /// openEHR AOM/OPT `C_DV_QUANTITY`.
@@ -376,9 +381,9 @@ pub struct CDvQuantity {
     /// The `node_id` attribute/element of the OPT `C_DV_QUANTITY` XSD type.
     pub node_id: String,
     /// The `assumed_value` attribute/element of the OPT `C_DV_QUANTITY` XSD type.
-    pub assumed_value: Option<openehr_rm::prelude::DvQuantity>,
+    pub assumed_value: Option<openehr_rm::v1_2::data_types::quantity::dv_quantity::DvQuantity>,
     /// The `property` attribute/element of the OPT `C_DV_QUANTITY` XSD type.
-    pub property: Option<openehr_base::prelude::CodePhrase>,
+    pub property: Option<openehr_base::v1_3::base_types::terminology::code_phrase::CodePhrase>,
     /// The `list` attribute/element of the OPT `C_DV_QUANTITY` XSD type.
     pub list: Vec<CQuantityItem>,
 }
@@ -393,7 +398,7 @@ pub struct CDvState {
     /// The `node_id` attribute/element of the OPT `C_DV_STATE` XSD type.
     pub node_id: String,
     /// The `assumed_value` attribute/element of the OPT `C_DV_STATE` XSD type.
-    pub assumed_value: Option<openehr_rm::prelude::DvState>,
+    pub assumed_value: Option<openehr_rm::v1_2::data_types::basic::dv_state::DvState>,
     /// The `value` attribute/element of the OPT `C_DV_STATE` XSD type.
     pub value: StateMachine,
 }
@@ -753,17 +758,18 @@ pub struct NonTerminalState {
 #[derive(Debug, Clone, PartialEq)]
 pub struct OperationalTemplate {
     /// The `language` attribute/element of the OPT `OPERATIONAL_TEMPLATE` XSD type.
-    pub language: openehr_base::prelude::CodePhrase,
+    pub language: openehr_base::v1_3::base_types::terminology::code_phrase::CodePhrase,
     /// The `is_controlled` attribute/element of the OPT `OPERATIONAL_TEMPLATE` XSD type.
     pub is_controlled: Option<bool>,
     /// The `description` attribute/element of the OPT `OPERATIONAL_TEMPLATE` XSD type.
     pub description: Option<ResourceDescription>,
     /// The `revision_history` attribute/element of the OPT `OPERATIONAL_TEMPLATE` XSD type.
-    pub revision_history: Option<openehr_rm::prelude::RevisionHistory>,
+    pub revision_history:
+        Option<openehr_rm::v1_2::common::generic::revision_history::RevisionHistory>,
     /// The `uid` attribute/element of the OPT `OPERATIONAL_TEMPLATE` XSD type.
-    pub uid: Option<openehr_base::prelude::HierObjectId>,
+    pub uid: Option<openehr_base::v1_3::base_types::identification::hier_object_id::HierObjectId>,
     /// The `template_id` attribute/element of the OPT `OPERATIONAL_TEMPLATE` XSD type.
-    pub template_id: openehr_base::prelude::TemplateId,
+    pub template_id: openehr_base::v1_3::base_types::identification::template_id::TemplateId,
     /// The `concept` attribute/element of the OPT `OPERATIONAL_TEMPLATE` XSD type.
     pub concept: String,
     /// The `definition` attribute/element of the OPT `OPERATIONAL_TEMPLATE` XSD type.
@@ -803,7 +809,7 @@ pub struct ResourceDescription {
 #[derive(Debug, Clone, PartialEq)]
 pub struct ResourceDescriptionItem {
     /// The `language` attribute/element of the OPT `RESOURCE_DESCRIPTION_ITEM` XSD type.
-    pub language: openehr_base::prelude::CodePhrase,
+    pub language: openehr_base::v1_3::base_types::terminology::code_phrase::CodePhrase,
     /// The `purpose` attribute/element of the OPT `RESOURCE_DESCRIPTION_ITEM` XSD type.
     pub purpose: String,
     /// The `keywords` attribute/element of the OPT `RESOURCE_DESCRIPTION_ITEM` XSD type.
@@ -849,7 +855,7 @@ pub struct TermBindingItem {
     /// The `code` attribute/element of the OPT `TERM_BINDING_ITEM` XSD type.
     pub code: String,
     /// The `value` attribute/element of the OPT `TERM_BINDING_ITEM` XSD type.
-    pub value: openehr_base::prelude::CodePhrase,
+    pub value: openehr_base::v1_3::base_types::terminology::code_phrase::CodePhrase,
 }
 
 /// openEHR AOM/OPT `TRANSITION`.
@@ -869,7 +875,7 @@ pub struct Transition {
 #[derive(Debug, Clone, PartialEq)]
 pub struct TranslationDetails {
     /// The `language` attribute/element of the OPT `TRANSLATION_DETAILS` XSD type.
-    pub language: openehr_base::prelude::CodePhrase,
+    pub language: openehr_base::v1_3::base_types::terminology::code_phrase::CodePhrase,
     /// The `author` attribute/element of the OPT `TRANSLATION_DETAILS` XSD type.
     pub author: indexmap::IndexMap<String, String>,
     /// The `accreditation` attribute/element of the OPT `TRANSLATION_DETAILS` XSD type.
@@ -901,7 +907,7 @@ pub struct TComplexObject {
     /// The `attributes` attribute/element of the OPT `T_COMPLEX_OBJECT` XSD type.
     pub attributes: Vec<CAttribute>,
     /// The `default_value` attribute/element of the OPT `T_COMPLEX_OBJECT` XSD type.
-    pub default_value: Option<openehr_rm::prelude::DataValue>,
+    pub default_value: Option<openehr_rm::v1_2::data_types::basic::data_value::DataValue>,
 }
 
 /// openEHR AOM/OPT `T_CONSTRAINT`.

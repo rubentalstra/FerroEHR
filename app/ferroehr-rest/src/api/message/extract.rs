@@ -43,8 +43,8 @@ use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 
 use openehr_its::rest::runtime::ApiError;
-use openehr_rm::ehr_extract::common::extract::Extract;
-use openehr_rm::ehr_extract::common::extract_spec::ExtractSpec;
+use openehr_rm::v1_2::ehr_extract::common::extract::Extract;
+use openehr_rm::v1_2::ehr_extract::common::extract_spec::ExtractSpec;
 
 use ferroehr::ids::EhrId;
 

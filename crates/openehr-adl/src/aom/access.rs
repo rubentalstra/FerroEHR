@@ -9,10 +9,10 @@
 //! and every consumer calls it — a new subtype then breaks one place, not a
 //! dozen.
 
-use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
-use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-use openehr_am::am24::aom2::constraint_model::sibling_order::SiblingOrder;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute::CAttribute;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::constraint_model::sibling_order::SiblingOrder;
 use openehr_base::prelude::MultiplicityInterval;
 
 /// The AOM meta-type (node class) of a [`CObject`], for the VSONT meta-type

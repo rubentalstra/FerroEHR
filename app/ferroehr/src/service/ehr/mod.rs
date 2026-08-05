@@ -63,8 +63,8 @@ pub(crate) mod validation;
 pub mod access_types;
 pub mod handle;
 
-use openehr_base::base_types::identification::lexical::composite_ids_equal;
 use openehr_base::prelude::{GenericId, ObjectId, PartyRef};
+use openehr_base::v1_3::base_types::identification::lexical::composite_ids_equal;
 use openehr_rm::prelude::{PartyProxy, PartySelf};
 use serde_json::Value;
 

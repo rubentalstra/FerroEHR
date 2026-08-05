@@ -36,7 +36,7 @@ use openehr_adl::meta::regression_tag;
 use openehr_adl::parse::Dialect;
 use openehr_adl::validate::catalogue::{Severity, ValidationCode};
 use openehr_adl::validate::slots::validate_fillers;
-use openehr_am::am24::aom2::archetype::archetype::Archetype;
+use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
 
 const TEMPLATES: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),

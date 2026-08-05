@@ -212,7 +212,7 @@ struct Occurrence<'a> {
 fn occurrences_of<'a>(
     child: &WebTemplateNode,
     rm: &'a Value,
-    rel: &[openehr_rm::paths::PathSegment],
+    rel: &[openehr_rm::v1_2::paths::PathSegment],
     in_choice: bool,
 ) -> Vec<Occurrence<'a>> {
     let Some(wrappers) = value_step_owners(child, rm, rel) else {
@@ -262,7 +262,7 @@ fn occurrences_of<'a>(
 fn value_step_owners<'a>(
     child: &WebTemplateNode,
     rm: &'a Value,
-    rel: &[openehr_rm::paths::PathSegment],
+    rel: &[openehr_rm::v1_2::paths::PathSegment],
 ) -> Option<Vec<&'a Value>> {
     if !child.has_input() {
         return None;

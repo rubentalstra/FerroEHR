@@ -45,9 +45,9 @@ use std::sync::Arc;
 
 use serde_json::{Value, json};
 
-use openehr_rm::ehr_extract::common::extract::Extract;
-use openehr_rm::ehr_extract::common::extract_spec::ExtractSpec;
 use openehr_rm::prelude::PartyProxy;
+use openehr_rm::v1_2::ehr_extract::common::extract::Extract;
+use openehr_rm::v1_2::ehr_extract::common::extract_spec::ExtractSpec;
 
 use ferroehr::service::FerroEhrService;
 use ferroehr::service::ehr_index::types::SubjectRef;

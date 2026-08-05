@@ -30,8 +30,8 @@ use openehr_adl::artefact::ArchetypeRepository;
 use openehr_adl::assemble::parse_artefact;
 use openehr_adl::opt::create_opt;
 use openehr_adl::parse::Dialect;
-use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
 use openehr_its::flat::example::{DetailLevel, ExampleType, example_composition};
 use openehr_its::flat::validation::validate_archetype_conformance;
 use openehr_its::flat::webtemplate::{

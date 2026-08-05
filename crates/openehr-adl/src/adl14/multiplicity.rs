@@ -9,9 +9,9 @@
 //! our own design (see the [`crate::adl14`] flag); the two default rules
 //! reconciled here are the spec-cited ones named below.
 
-use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
-use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute::CAttribute;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
 
 use crate::adl14::walk::cco_data_mut;
 

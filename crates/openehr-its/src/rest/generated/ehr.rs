@@ -29,9 +29,9 @@ pub struct VersionOfComposition {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub signature: Option<String>,
     /// The `commit_audit` property of `VersionOfComposition`.
-    pub commit_audit: openehr_rm::prelude::AuditDetails,
+    pub commit_audit: openehr_rm::v1_2::common::generic::audit_details::AuditDetails,
     /// The `data` property of `VersionOfComposition`.
-    pub data: openehr_rm::prelude::Composition,
+    pub data: openehr_rm::v1_2::composition::composition::Composition,
 }
 
 /// The `VersionOfEhrStatus` transport DTO of this API group (an ITS-REST OAS
@@ -47,9 +47,9 @@ pub struct VersionOfEhrStatus {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub signature: Option<String>,
     /// The `commit_audit` property of `VersionOfEhrStatus`.
-    pub commit_audit: openehr_rm::prelude::AuditDetails,
+    pub commit_audit: openehr_rm::v1_2::common::generic::audit_details::AuditDetails,
     /// The `data` property of `VersionOfEhrStatus`.
-    pub data: openehr_rm::prelude::EhrStatus,
+    pub data: openehr_rm::v1_2::ehr::ehr_status::EhrStatus,
 }
 
 /// The `Versionable` ITS-REST OAS component schema: `_type`-discriminated
@@ -57,11 +57,11 @@ pub struct VersionOfEhrStatus {
 #[derive(Debug, Clone)]
 pub enum Versionable {
     /// `_type: "COMPOSITION"`
-    Composition(openehr_rm::prelude::Composition),
+    Composition(openehr_rm::v1_2::composition::composition::Composition),
     /// `_type: "EHR_STATUS"`
-    EhrStatus(openehr_rm::prelude::EhrStatus),
+    EhrStatus(openehr_rm::v1_2::ehr::ehr_status::EhrStatus),
     /// `_type: "FOLDER"`
-    Folder(openehr_rm::prelude::Folder),
+    Folder(openehr_rm::v1_2::common::directory::folder::Folder),
 }
 
 impl ::serde::Serialize for Versionable {
@@ -150,7 +150,7 @@ pub type UpdateVersion = super::common::UpdateVersion<Versionable>;
 pub struct NewContribution {
     /// The `uid` property of `NewContribution`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub uid: Option<openehr_base::prelude::HierObjectId>,
+    pub uid: Option<openehr_base::v1_3::base_types::identification::hier_object_id::HierObjectId>,
     /// The `versions` property of `NewContribution`.
     pub versions: Vec<UpdateVersion>,
     /// The `audit` property of `NewContribution`.
@@ -159,11 +159,11 @@ pub struct NewContribution {
 
 /// The `ItemTagOfComposition` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ItemTagOfComposition = openehr_rm::prelude::ItemTag;
+pub type ItemTagOfComposition = openehr_rm::v1_2::common::tags::item_tag::ItemTag;
 
 /// The `ItemTagOfEhrStatus` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ItemTagOfEhrStatus = openehr_rm::prelude::ItemTag;
+pub type ItemTagOfEhrStatus = openehr_rm::v1_2::common::tags::item_tag::ItemTag;
 
 /// Parameters for `ehr_get_by_subject` (path/query/header).
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -740,14 +740,14 @@ pub trait EhrApi {
     async fn ehr_get_by_subject(
         &self,
         params: EhrGetBySubjectParams,
-    ) -> Result<openehr_rm::prelude::Ehr, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::v1_2::ehr::ehr::Ehr, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `POST /ehr`
     async fn ehr_create(
         &self,
         params: EhrCreateParams,
-        body: Option<openehr_rm::prelude::EhrStatus>,
+        body: Option<openehr_rm::v1_2::ehr::ehr_status::EhrStatus>,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -755,14 +755,14 @@ pub trait EhrApi {
     async fn ehr_get_by_id(
         &self,
         params: EhrGetByIdParams,
-    ) -> Result<openehr_rm::prelude::Ehr, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::v1_2::ehr::ehr::Ehr, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /ehr/{ehr_id}`
     async fn ehr_create_with_id(
         &self,
         params: EhrCreateWithIdParams,
-        body: Option<openehr_rm::prelude::EhrStatus>,
+        body: Option<openehr_rm::v1_2::ehr::ehr_status::EhrStatus>,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -770,21 +770,21 @@ pub trait EhrApi {
     async fn ehr_status_get_by_version_id(
         &self,
         params: EhrStatusGetByVersionIdParams,
-    ) -> Result<openehr_rm::prelude::EhrStatus, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::v1_2::ehr::ehr_status::EhrStatus, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /ehr/{ehr_id}/ehr_status`
     async fn ehr_status_get_at_time(
         &self,
         params: EhrStatusGetAtTimeParams,
-    ) -> Result<openehr_rm::prelude::EhrStatus, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::v1_2::ehr::ehr_status::EhrStatus, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /ehr/{ehr_id}/ehr_status`
     async fn ehr_status_update(
         &self,
         params: EhrStatusUpdateParams,
-        body: openehr_rm::prelude::EhrStatus,
+        body: openehr_rm::v1_2::ehr::ehr_status::EhrStatus,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -792,14 +792,20 @@ pub trait EhrApi {
     async fn versioned_ehr_status_get(
         &self,
         params: VersionedEhrStatusGetParams,
-    ) -> Result<openehr_rm::prelude::VersionedEhrStatus, crate::rest::runtime::ApiError> {
+    ) -> Result<
+        openehr_rm::v1_2::ehr::versioned_ehr_status::VersionedEhrStatus,
+        crate::rest::runtime::ApiError,
+    > {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /ehr/{ehr_id}/versioned_ehr_status/revision_history`
     async fn versioned_ehr_status_revision_history(
         &self,
         params: VersionedEhrStatusRevisionHistoryParams,
-    ) -> Result<openehr_rm::prelude::RevisionHistory, crate::rest::runtime::ApiError> {
+    ) -> Result<
+        openehr_rm::v1_2::common::generic::revision_history::RevisionHistory,
+        crate::rest::runtime::ApiError,
+    > {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /ehr/{ehr_id}/versioned_ehr_status/version`
@@ -820,7 +826,7 @@ pub trait EhrApi {
     async fn composition_create(
         &self,
         params: CompositionCreateParams,
-        body: openehr_rm::prelude::Composition,
+        body: openehr_rm::v1_2::composition::composition::Composition,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -828,14 +834,17 @@ pub trait EhrApi {
     async fn composition_get(
         &self,
         params: CompositionGetParams,
-    ) -> Result<openehr_rm::prelude::Composition, crate::rest::runtime::ApiError> {
+    ) -> Result<
+        openehr_rm::v1_2::composition::composition::Composition,
+        crate::rest::runtime::ApiError,
+    > {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /ehr/{ehr_id}/composition/{uid_based_id}`
     async fn composition_update(
         &self,
         params: CompositionUpdateParams,
-        body: openehr_rm::prelude::Composition,
+        body: openehr_rm::v1_2::composition::composition::Composition,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -850,14 +859,20 @@ pub trait EhrApi {
     async fn versioned_composition_get(
         &self,
         params: VersionedCompositionGetParams,
-    ) -> Result<openehr_rm::prelude::VersionedComposition, crate::rest::runtime::ApiError> {
+    ) -> Result<
+        openehr_rm::v1_2::ehr::versioned_composition::VersionedComposition,
+        crate::rest::runtime::ApiError,
+    > {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/revision_history`
     async fn versioned_composition_revision_history(
         &self,
         params: VersionedCompositionRevisionHistoryParams,
-    ) -> Result<openehr_rm::prelude::RevisionHistory, crate::rest::runtime::ApiError> {
+    ) -> Result<
+        openehr_rm::v1_2::common::generic::revision_history::RevisionHistory,
+        crate::rest::runtime::ApiError,
+    > {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version`
@@ -878,14 +893,15 @@ pub trait EhrApi {
     async fn directory_get_at_time(
         &self,
         params: DirectoryGetAtTimeParams,
-    ) -> Result<openehr_rm::prelude::Folder, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::v1_2::common::directory::folder::Folder, crate::rest::runtime::ApiError>
+    {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /ehr/{ehr_id}/directory`
     async fn directory_update(
         &self,
         params: DirectoryUpdateParams,
-        body: openehr_rm::prelude::Folder,
+        body: openehr_rm::v1_2::common::directory::folder::Folder,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -893,7 +909,7 @@ pub trait EhrApi {
     async fn directory_create(
         &self,
         params: DirectoryCreateParams,
-        body: openehr_rm::prelude::Folder,
+        body: openehr_rm::v1_2::common::directory::folder::Folder,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -908,7 +924,8 @@ pub trait EhrApi {
     async fn directory_get_by_version_id(
         &self,
         params: DirectoryGetByVersionIdParams,
-    ) -> Result<openehr_rm::prelude::Folder, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::v1_2::common::directory::folder::Folder, crate::rest::runtime::ApiError>
+    {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `POST /ehr/{ehr_id}/contribution`
@@ -923,7 +940,10 @@ pub trait EhrApi {
     async fn contribution_get(
         &self,
         params: ContributionGetParams,
-    ) -> Result<openehr_rm::prelude::Contribution, crate::rest::runtime::ApiError> {
+    ) -> Result<
+        openehr_rm::v1_2::common::change_control::contribution::Contribution,
+        crate::rest::runtime::ApiError,
+    > {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /ehr/{ehr_id}/tags`

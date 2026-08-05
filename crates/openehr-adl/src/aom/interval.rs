@@ -13,7 +13,7 @@
 //! renderers (`display_bounds` vs `display_bounds_always_range`). Their doc
 //! comments state the divergence.
 
-use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute::CAttribute;
 use openehr_base::prelude::{Interval, MultiplicityInterval, ProperInterval};
 
 /// A multiplicity bound, extracted from an RM attribute or a cADL constraint.

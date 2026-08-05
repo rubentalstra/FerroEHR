@@ -18,7 +18,7 @@
 //!   (`Existence_set`, `Members_valid`, `Target_path_valid`, VARID/VARDT, VACDF,
 //!   VDFAI, STCDC);
 //! - `rm_conformance` — VCORM/VCARM/VCAEX/VCACA/VCAM + VACMCO over
-//!   `openehr_rm::model`;
+//!   `openehr_rm::v1_2::model`;
 //! - `primitive` — `C_PRIMITIVE` + temporal/duration patterns + the
 //!   `C_DOMAIN_TYPE` assumed-value rules;
 //! - `terminology` — VATID/VTTBK/VTCBK/VTLC + code collection;

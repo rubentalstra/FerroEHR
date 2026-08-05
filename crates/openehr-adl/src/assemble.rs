@@ -2,7 +2,7 @@
 //!
 //! The ODIN sections, the cADL `definition`, and the `rules` of a
 //! [`crate::source::SourceArtefact`] fold into the **generated**
-//! `openehr_am::am24::aom2` object model, producing a complete [`Archetype`].
+//! `openehr_am::v2_4::aom2` object model, producing a complete [`Archetype`].
 //!
 //! The lower-level entry points ([`crate::source::parse_source`],
 //! [`crate::parse::parse_definition_body`], [`crate::rules::parse_rules_body`])
@@ -25,22 +25,22 @@
 
 use std::collections::BTreeMap;
 
-use openehr_am::am24::aom2::archetype::archetype::Archetype;
-use openehr_am::am24::aom2::archetype::authored_archetype::{
+use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
+use openehr_am::v2_4::aom2::archetype::authored_archetype::{
     AuthoredArchetype, AuthoredArchetypeData,
 };
-use openehr_am::am24::aom2::archetype::operational_template::OperationalTemplate;
-use openehr_am::am24::aom2::archetype::template::Template;
-use openehr_am::am24::aom2::archetype::template_overlay::TemplateOverlay;
-use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
-use openehr_am::am24::aom2::rm_overlay::rm_attribute_visibility::RmAttributeVisibility;
-use openehr_am::am24::aom2::rm_overlay::rm_overlay::RmOverlay;
-use openehr_am::am24::aom2::rm_overlay::visibility_type::VisibilityType;
-use openehr_am::am24::aom2::terminology::archetype_term::ArchetypeTerm;
-use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
-use openehr_am::am24::aom2::terminology::value_set::ValueSet;
-use openehr_am::am24::beom::core::statement_set::StatementSet;
-use openehr_am::am24::resource::resource_description::ResourceDescription;
+use openehr_am::v2_4::aom2::archetype::operational_template::OperationalTemplate;
+use openehr_am::v2_4::aom2::archetype::template::Template;
+use openehr_am::v2_4::aom2::archetype::template_overlay::TemplateOverlay;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::v2_4::aom2::rm_overlay::rm_attribute_visibility::RmAttributeVisibility;
+use openehr_am::v2_4::aom2::rm_overlay::rm_overlay::RmOverlay;
+use openehr_am::v2_4::aom2::rm_overlay::visibility_type::VisibilityType;
+use openehr_am::v2_4::aom2::terminology::archetype_term::ArchetypeTerm;
+use openehr_am::v2_4::aom2::terminology::archetype_terminology::ArchetypeTerminology;
+use openehr_am::v2_4::aom2::terminology::value_set::ValueSet;
+use openehr_am::v2_4::beom::core::statement_set::StatementSet;
+use openehr_am::v2_4::resource::resource_description::ResourceDescription;
 use openehr_base::prelude::{
     ResourceAnnotations, ResourceDescriptionItem, TerminologyCode, TranslationDetails, Uuid,
 };
@@ -62,7 +62,7 @@ use crate::source::{ArtefactKind, ArtefactMeta, SourceArtefact, parse_source};
 /// This is the high-level entry point of the front end: it outer-parses
 /// (`crate::source`), cADL-parses the `definition` (`crate::parse`), parses the
 /// `rules` (`crate::rules`), and maps every ODIN section into the generated
-/// `openehr_am::am24::aom2` model, returning the artefact-kind-appropriate
+/// `openehr_am::v2_4::aom2` model, returning the artefact-kind-appropriate
 /// `Archetype` enum variant.
 ///
 /// Under [`Dialect::Adl14`] the outer structure is read with the 1.4 rules

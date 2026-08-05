@@ -8,7 +8,7 @@
 //! opt14 ↔ am14 constraint-model divergence sentinel.
 //!
 //! The AOM 1.4 constraint model exists twice by design: BMM-generated
-//! `openehr_am::am14` (the canonical logical model, canonical-JSON codec) and
+//! `openehr_am::v1_4` (the canonical logical model, canonical-JSON codec) and
 //! XSD-generated `openehr_its::opt14` (the Ocean OPT-XML wire adapter). The
 //! divergences between the two are *deliberate and documented* by the
 //! respective vendored inputs — the AOM 1.4 BMM
@@ -88,7 +88,7 @@ mod opt14_inventory {
     reason = "the inventory fns exist for their exhaustive wildcard-free matches, which are the compile-time drift guard; nothing calls them"
 )]
 mod am14_inventory {
-    use openehr_am::am14::prelude as am;
+    use openehr_am::v1_4::prelude as am;
 
     fn c_object_variants(v: &am::CObject) -> &'static str {
         match v {

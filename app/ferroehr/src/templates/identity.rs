@@ -30,10 +30,10 @@
 /// The §Composite Identifiers and Case *comparison* form of an identifier, for
 /// use as a map/cache KEY: surrounding whitespace trimmed off the wire token,
 /// then the shared composite-identifier fold
-/// ([`composite_id_key`](openehr_base::base_types::identification::lexical::composite_id_key)).
+/// ([`composite_id_key`](openehr_base::v1_3::base_types::identification::lexical::composite_id_key)).
 /// Two ids are the same identifier iff their canonical keys are equal — the
 /// keyed form of the same rule
-/// [`composite_ids_equal`](openehr_base::base_types::identification::lexical::composite_ids_equal)
+/// [`composite_ids_equal`](openehr_base::v1_3::base_types::identification::lexical::composite_ids_equal)
 /// decides pairwise, so a cache hit can never disagree with a comparison.
 ///
 /// Case-**preserving**: this is only the comparison/keying form — the original
@@ -42,7 +42,7 @@
 /// matches `PostgreSQL` `lower()` on the same values.
 #[must_use]
 pub(crate) fn canonical_key(id: &str) -> String {
-    openehr_base::base_types::identification::lexical::composite_id_key(id.trim())
+    openehr_base::v1_3::base_types::identification::lexical::composite_id_key(id.trim())
 }
 
 /// The version axis of a `TEMPLATE_ID`, i.e. the numeric-dotted tail of a

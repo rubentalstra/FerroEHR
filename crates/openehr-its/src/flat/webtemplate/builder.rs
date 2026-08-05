@@ -21,7 +21,7 @@
 //! * **RM-mandatory attributes the OPT leaves unconstrained** are not injected as
 //!   web-template nodes. The FLAT/TDD composition builders fill the RM-mandatory
 //!   structural fields on `RM ← FLAT/TDD` (`flat::graph::fill_structural_mandatory`,
-//!   driven by the same `openehr_rm::model` attribute model), and composition
+//!   driven by the same `openehr_rm::v1_2::model` attribute model), and composition
 //!   validation enforces existence/occurrences (`crate::flat::validation`) — so the
 //!   produced COMPOSITION is RM-valid without the builder duplicating that
 //!   structure. Governing cardinalities: openEHR RM `common`/`composition`/

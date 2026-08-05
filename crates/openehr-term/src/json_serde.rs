@@ -18,7 +18,7 @@
     reason = "mechanically generated codec text: every item is named by its full path and every branch shape is emitted uniformly, so style and unused-binding lints do not apply — the hand-written runtime carries the lint bar"
 )]
 
-impl ::serde::Serialize for crate::prelude::Code {
+impl ::serde::Serialize for crate::v3_1::terminology::code::Code {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -43,7 +43,7 @@ impl ::serde::Serialize for crate::prelude::Code {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::Code {
+impl<'de> ::serde::Deserialize<'de> for crate::v3_1::terminology::code::Code {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -87,7 +87,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Code {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::Code;
+            type Value = crate::v3_1::terminology::code::Code;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `CODE` object")
             }
@@ -139,7 +139,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Code {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::Code {
+                ::core::result::Result::Ok(crate::v3_1::terminology::code::Code {
                     value: __s0
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
@@ -152,7 +152,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Code {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::CodeSet {
+impl ::serde::Serialize for crate::v3_1::terminology::code_set::CodeSet {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -187,7 +187,7 @@ impl ::serde::Serialize for crate::prelude::CodeSet {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::CodeSet {
+impl<'de> ::serde::Deserialize<'de> for crate::v3_1::terminology::code_set::CodeSet {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -246,7 +246,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::CodeSet {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::CodeSet;
+            type Value = crate::v3_1::terminology::code_set::CodeSet;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `CODE_SET` object")
             }
@@ -325,7 +325,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::CodeSet {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::CodeSet {
+                ::core::result::Result::Ok(crate::v3_1::terminology::code_set::CodeSet {
                     name: __s0
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
@@ -345,7 +345,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::CodeSet {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::Terminology {
+impl ::serde::Serialize for crate::v3_1::terminology::terminology::Terminology {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -391,7 +391,7 @@ impl ::serde::Serialize for crate::prelude::Terminology {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::Terminology {
+impl<'de> ::serde::Deserialize<'de> for crate::v3_1::terminology::terminology::Terminology {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -452,7 +452,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Terminology {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::Terminology;
+            type Value = crate::v3_1::terminology::terminology::Terminology;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `TERMINOLOGY` object")
             }
@@ -531,7 +531,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Terminology {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::Terminology {
+                ::core::result::Result::Ok(crate::v3_1::terminology::terminology::Terminology {
                     name: __s0
                         .flatten()
                         .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
@@ -554,7 +554,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Terminology {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::TerminologyConcept {
+impl ::serde::Serialize for crate::v3_1::terminology::terminology_concept::TerminologyConcept {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -575,7 +575,9 @@ impl ::serde::Serialize for crate::prelude::TerminologyConcept {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::TerminologyConcept {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3_1::terminology::terminology_concept::TerminologyConcept
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -623,7 +625,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TerminologyConcept {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::TerminologyConcept;
+            type Value = crate::v3_1::terminology::terminology_concept::TerminologyConcept;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `TERMINOLOGY_CONCEPT` object")
             }
@@ -675,15 +677,17 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TerminologyConcept {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::TerminologyConcept {
-                    id: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("id"))?,
-                    rubric: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("rubric"))?,
-                    status: __s2.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v3_1::terminology::terminology_concept::TerminologyConcept {
+                        id: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("id"))?,
+                        rubric: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("rubric"))?,
+                        status: __s2.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -695,7 +699,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TerminologyConcept {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::TerminologyGroup {
+impl ::serde::Serialize for crate::v3_1::terminology::terminology_group::TerminologyGroup {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -724,7 +728,9 @@ impl ::serde::Serialize for crate::prelude::TerminologyGroup {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::TerminologyGroup {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3_1::terminology::terminology_group::TerminologyGroup
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -774,7 +780,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TerminologyGroup {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::TerminologyGroup;
+            type Value = crate::v3_1::terminology::terminology_group::TerminologyGroup;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `TERMINOLOGY_GROUP` object")
             }
@@ -835,16 +841,18 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TerminologyGroup {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::TerminologyGroup {
-                    name: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
-                    concepts: __s1,
-                    openehr_id: __s2
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("openehr_id"))?,
-                    status: __s3.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v3_1::terminology::terminology_group::TerminologyGroup {
+                        name: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("name"))?,
+                        concepts: __s1,
+                        openehr_id: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("openehr_id"))?,
+                        status: __s3.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -856,7 +864,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TerminologyGroup {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::TerminologyStatus {
+impl ::serde::Serialize for crate::v3_1::terminology::terminology_status::TerminologyStatus {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -865,13 +873,15 @@ impl ::serde::Serialize for crate::prelude::TerminologyStatus {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::TerminologyStatus {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v3_1::terminology::terminology_status::TerminologyStatus
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         struct __V;
         impl<'de> ::serde::de::Visitor<'de> for __V {
-            type Value = crate::prelude::TerminologyStatus;
+            type Value = crate::v3_1::terminology::terminology_status::TerminologyStatus;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("a `TerminologyStatus` token")
             }
@@ -879,7 +889,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TerminologyStatus {
                 self,
                 __v: &str,
             ) -> ::core::result::Result<Self::Value, __E> {
-                ::core::result::Result::Ok(crate::prelude::TerminologyStatus::from_wire(__v))
+                ::core::result::Result::Ok(
+                    crate::v3_1::terminology::terminology_status::TerminologyStatus::from_wire(__v),
+                )
             }
         }
         ::serde::Deserializer::deserialize_str(__deserializer, __V)

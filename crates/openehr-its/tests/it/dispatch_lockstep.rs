@@ -9,8 +9,8 @@
 //! The fast-path ↔ typed-dispatch **lockstep** gate.
 //!
 //! Two dispatch tables decide which tier judges an RM node: the allocation-free
-//! fast path (`openehr_rm::validate::fast::try_validate`) and the authoritative
-//! typed dispatch (`openehr_rm::validate::typed_dispatch::dispatch_typed`). A
+//! fast path (`openehr_rm::v1_2::validate::fast::try_validate`) and the authoritative
+//! typed dispatch (`openehr_rm::v1_2::validate::typed_dispatch::dispatch_typed`). A
 //! class present in one and absent from the other silently changes which tier
 //! judges it, and a class whose DEPTH disagrees (`run` vs `run_shallow`) changes
 //! which of its children are decoded — both are wire-visible. Until now the only
@@ -36,9 +36,9 @@ use std::collections::BTreeMap;
 /// The typed dispatch source (`dispatch_typed`'s `match ty` block). It lives in
 /// `openehr-rm` beside the fast path; this crate keeps only the generated
 /// five-crate structural fallthrough and the thin wire entry points.
-const TYPED_SRC: &str = include_str!("../../../openehr-rm/src/validate/typed_dispatch.rs");
+const TYPED_SRC: &str = include_str!("../../../openehr-rm/src/v1_2/validate/typed_dispatch.rs");
 /// The fast-path dispatch source (`try_validate`'s `let shallow = match ty`).
-const FAST_SRC: &str = include_str!("../../../openehr-rm/src/validate/fast.rs");
+const FAST_SRC: &str = include_str!("../../../openehr-rm/src/v1_2/validate/fast.rs");
 
 /// How deeply a tier decodes a node before judging it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

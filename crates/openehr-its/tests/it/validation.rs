@@ -343,7 +343,7 @@ fn inflate_rec(v: &mut Value, mutated: &mut bool) {
 // ── RM invariant routing through the updated dispatcher (EVENT/HISTORY/interval) ─
 //
 // These prove the composition validator's RM-invariant pass routes real
-// composition content through `openehr_rm::validate::validate_rm_value`, so the
+// composition content through `openehr_rm::v1_2::validate::validate_rm_value`, so the
 // richer invariant layer (HISTORY Period_consistency, DV_INTERVAL
 // Limits_consistent) fires on actual instances — not just in openehr-rm's own
 // unit tests. They use `validate_rm_and_terminology` (the template-independent

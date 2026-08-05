@@ -1,7 +1,7 @@
 //! openEHR ADL 2.4.0 — the hand-written ADL2 engine: ADL2/cADL/ODIN source
 //! parser, the AOM2 validation catalogue, specialisation flattening, OPT2
 //! generation, and ADL 1.4→2 conversion, built over the generated
-//! `openehr_am::am24` object model.
+//! `openehr_am::v2_4` object model.
 //!
 //! Spec oracle: `docs/specs/openehr/AM/docs/{ADL2,AOM2,OPT2}/` (+ the ODIN
 //! spec at `docs/specs/openehr/LANG/docs/odin/`). The normative ANTLR4
@@ -10,7 +10,7 @@
 //!
 //! Components: the outer artefact parser ([`source`]), the
 //! shared typed [`error`] catalogue, and the cADL definition-section parser
-//! ([`parse`]) that builds the generated `openehr_am::am24::aom2` constraint
+//! ([`parse`]) that builds the generated `openehr_am::v2_4::aom2` constraint
 //! model. Under all of it sits the shared substrate every component reads
 //! through: [`aom`] (AOM2 field accessors, constructors, interval arithmetic),
 //! [`artefact`] (artefact views + the parent/supplier repository), [`hrid`]

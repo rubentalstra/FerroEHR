@@ -108,7 +108,7 @@ impl FerroEhrConfig {
         // `base_types/master05-identification_package.adoc` §Syntaxes), so it is
         // judged here by the SAME validating `UID` constructor the reader uses.
         if let Err(source) =
-            openehr_base::base_types::identification::uid::Uid::new(&self.server.system_id)
+            openehr_base::v1_3::base_types::identification::uid::Uid::new(&self.server.system_id)
         {
             errors.push(ConfigError::semantic(format!(
                 "server.system_id {:?} is not a legal openEHR `uid` \

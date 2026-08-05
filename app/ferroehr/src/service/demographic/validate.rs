@@ -22,9 +22,9 @@
               fragment the seam produced once; stored-content serving"
 )]
 
-use openehr_base::base_types::identification::lexical::composite_ids_equal;
-use openehr_base::base_types::identification::object_version_id::ObjectVersionId;
 use openehr_base::prelude::PartyRef;
+use openehr_base::v1_3::base_types::identification::lexical::composite_ids_equal;
+use openehr_base::v1_3::base_types::identification::object_version_id::ObjectVersionId;
 use openehr_base::validate::Validate;
 use serde_json::Value;
 
@@ -340,7 +340,7 @@ mod tests {
         assert_eq!(msg.path(), Some("PERSON.archetype_details"));
 
         // The root-identity half is the whole-instance pass's
-        // (`openehr_rm::validate::check_archetyped_valid`), so it
+        // (`openehr_rm::v1_2::validate::check_archetyped_valid`), so it
         // surfaces as the structured `ValidationFailed` report.
         let mut mismatched = person(&json!([identity()]));
         mismatched["archetype_node_id"] = json!("openEHR-DEMOGRAPHIC-PERSON.other.v1");

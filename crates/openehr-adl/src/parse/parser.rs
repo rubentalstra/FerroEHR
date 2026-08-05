@@ -19,13 +19,13 @@
               spec) (#1694)"
 )]
 
-use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
-use openehr_am::am24::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
-use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
-use openehr_am::am24::aom2::constraint_model::c_primitive_tuple::CPrimitiveTuple;
-use openehr_am::am24::aom2::constraint_model::sibling_order::SiblingOrder;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute::CAttribute;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
+use openehr_am::v2_4::aom2::constraint_model::c_primitive_tuple::CPrimitiveTuple;
+use openehr_am::v2_4::aom2::constraint_model::sibling_order::SiblingOrder;
 use openehr_base::prelude::{Cardinality, MultiplicityInterval};
 
 use crate::aom::access::common_mut;
@@ -954,12 +954,12 @@ fn split_diff_path(p: &str) -> (String, String) {
 
 #[cfg(test)]
 mod tests {
-    use openehr_am::am24::aom2::constraint_model::c_complex_object::{
+    use openehr_am::v2_4::aom2::constraint_model::c_complex_object::{
         CComplexObject, CComplexObjectData,
     };
-    use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-    use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
-    use openehr_am::am24::aom2::constraint_model::sibling_order::SiblingOrder;
+    use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+    use openehr_am::v2_4::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
+    use openehr_am::v2_4::aom2::constraint_model::sibling_order::SiblingOrder;
     use openehr_base::prelude::MultiplicityInterval;
 
     use crate::aom::access::common_mut;

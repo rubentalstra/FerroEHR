@@ -2,7 +2,7 @@
 //! composition validator.
 //!
 //! This is a thin, FLAT-local layer over the canonical single implementation in
-//! [`openehr_rm::paths`] (the BASE `master11-paths` parser + `PATHABLE`
+//! [`openehr_rm::v1_2::paths`] (the BASE `master11-paths` parser + `PATHABLE`
 //! navigation over canonical-JSON RM trees). It adds only the two conveniences
 //! the SDT pipeline needs and the RM primitive does not carry: taking the
 //! *relative* path between a parent and child [`WebTemplateNode`](crate::flat::webtemplate::WebTemplateNode)
@@ -25,7 +25,7 @@
               (#1694)"
 )]
 
-use openehr_rm::paths::{PathSegment, RmPath, select_children};
+use openehr_rm::v1_2::paths::{PathSegment, RmPath, select_children};
 use serde_json::Value;
 
 /// Parse a relative RM path (`/attr[pred]/attr2/…`) into its segments.
@@ -48,7 +48,7 @@ pub(crate) fn relative(parent_aql: &str, child_aql: &str) -> Vec<PathSegment> {
 }
 
 /// Follow `segs` from each of `roots`, returning the reached nodes in document
-/// order. Each step is [`openehr_rm::paths::select_children`], so array
+/// order. Each step is [`openehr_rm::v1_2::paths::select_children`], so array
 /// attributes branch (filtered by the segment predicate) and single-valued
 /// attributes descend (predicate re-checked, per BASE `master11-paths`).
 ///

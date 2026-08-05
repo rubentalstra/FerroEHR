@@ -19,16 +19,16 @@ use openehr_adl::assemble::parse_artefact;
 use openehr_adl::meta::regression_tag;
 use openehr_adl::parse::Dialect;
 use openehr_adl::print::print;
-use openehr_am::am24::aom2::archetype::archetype::Archetype;
-use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
-use openehr_am::am24::aom2::rm_overlay::visibility_type::VisibilityType;
-use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
-use openehr_am::am24::resource::resource_description::ResourceDescription;
+use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
+use openehr_am::v2_4::aom2::archetype::authored_archetype::AuthoredArchetype;
+use openehr_am::v2_4::aom2::rm_overlay::visibility_type::VisibilityType;
+use openehr_am::v2_4::aom2::terminology::archetype_terminology::ArchetypeTerminology;
+use openehr_am::v2_4::resource::resource_description::ResourceDescription;
 
 /// The `AUTHORED_ARCHETYPE` data of an assembled source archetype.
 fn authored(
     src: &str,
-) -> openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetypeData {
+) -> openehr_am::v2_4::aom2::archetype::authored_archetype::AuthoredArchetypeData {
     match parse_artefact(src, Dialect::Adl2).unwrap_or_else(|e| panic!("assemble failed: {e:?}")) {
         Archetype::AuthoredArchetype(a) => match *a {
             AuthoredArchetype::AuthoredArchetype(d) => d,

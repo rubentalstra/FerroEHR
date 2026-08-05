@@ -231,12 +231,12 @@ fn breadth_fixture_unbounded_intervals() {
 fn cast_section_values_assemble_transparently() {
     let src = read("openEHR-EHR-OBSERVATION.dadl_breadth.v1.adl");
     let archetype = parse_artefact(&src, Dialect::Adl14).expect("breadth fixture parses");
-    let openehr_am::am24::aom2::archetype::archetype::Archetype::AuthoredArchetype(authored) =
+    let openehr_am::v2_4::aom2::archetype::archetype::Archetype::AuthoredArchetype(authored) =
         &archetype
     else {
         panic!("expected an authored archetype");
     };
-    let openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype::AuthoredArchetype(
+    let openehr_am::v2_4::aom2::archetype::authored_archetype::AuthoredArchetype::AuthoredArchetype(
         data,
     ) = authored.as_ref()
     else {

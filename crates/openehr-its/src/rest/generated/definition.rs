@@ -562,25 +562,25 @@ pub struct TemplateIdentifier {
 #[derive(Debug, Clone)]
 pub enum Versionable {
     /// `_type: "ACTOR"`
-    Actor(openehr_rm::prelude::Actor),
+    Actor(openehr_rm::v1_2::demographic::actor::Actor),
     /// `_type: "AGENT"`
-    Agent(openehr_rm::prelude::Agent),
+    Agent(openehr_rm::v1_2::demographic::agent::Agent),
     /// `_type: "COMPOSITION"`
-    Composition(openehr_rm::prelude::Composition),
+    Composition(openehr_rm::v1_2::composition::composition::Composition),
     /// `_type: "EHR_STATUS"`
-    EhrStatus(openehr_rm::prelude::EhrStatus),
+    EhrStatus(openehr_rm::v1_2::ehr::ehr_status::EhrStatus),
     /// `_type: "FOLDER"`
-    Folder(openehr_rm::prelude::Folder),
+    Folder(openehr_rm::v1_2::common::directory::folder::Folder),
     /// `_type: "GROUP"`
-    Group(openehr_rm::prelude::Group),
+    Group(openehr_rm::v1_2::demographic::group::Group),
     /// `_type: "ORGANISATION"`
-    Organisation(openehr_rm::prelude::Organisation),
+    Organisation(openehr_rm::v1_2::demographic::organisation::Organisation),
     /// `_type: "PARTY"`
-    Party(openehr_rm::prelude::Party),
+    Party(openehr_rm::v1_2::demographic::party::Party),
     /// `_type: "PERSON"`
-    Person(openehr_rm::prelude::Person),
+    Person(openehr_rm::v1_2::demographic::person::Person),
     /// `_type: "ROLE"`
-    Role(openehr_rm::prelude::Role),
+    Role(openehr_rm::v1_2::demographic::role::Role),
 }
 
 impl ::serde::Serialize for Versionable {

@@ -29,12 +29,12 @@ use std::sync::{Arc, LazyLock};
 use openehr_base::containers::present;
 use openehr_base::prelude::Iso8601Date;
 
-use crate::terminology::code::Code;
-use crate::terminology::code_set::CodeSet;
-use crate::terminology::terminology::Terminology;
-use crate::terminology::terminology_concept::TerminologyConcept;
-use crate::terminology::terminology_group::TerminologyGroup;
-use crate::terminology::terminology_status::TerminologyStatus;
+use crate::v3_1::terminology::code::Code;
+use crate::v3_1::terminology::code_set::CodeSet;
+use crate::v3_1::terminology::terminology::Terminology;
+use crate::v3_1::terminology::terminology_concept::TerminologyConcept;
+use crate::v3_1::terminology::terminology_group::TerminologyGroup;
+use crate::v3_1::terminology::terminology_status::TerminologyStatus;
 
 // Vendored openEHR terminology assets, embedded at compile time (no runtime I/O).
 const EN_XML: &str = include_str!("../assets/en/openehr_terminology.xml");

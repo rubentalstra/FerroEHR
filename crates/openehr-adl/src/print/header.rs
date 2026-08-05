@@ -6,9 +6,9 @@
 use std::collections::BTreeMap;
 use std::fmt::Write;
 
-use openehr_am::am24::aom2::rm_overlay::rm_overlay::RmOverlay;
-use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
-use openehr_am::am24::resource::resource_description::ResourceDescription;
+use openehr_am::v2_4::aom2::rm_overlay::rm_overlay::RmOverlay;
+use openehr_am::v2_4::aom2::terminology::archetype_terminology::ArchetypeTerminology;
+use openehr_am::v2_4::resource::resource_description::ResourceDescription;
 use openehr_base::prelude::{
     ResourceAnnotations, ResourceDescriptionItem, TerminologyCode, TranslationDetails, Uuid,
 };

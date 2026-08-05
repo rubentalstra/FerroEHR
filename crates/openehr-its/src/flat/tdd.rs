@@ -78,7 +78,7 @@
 use std::collections::HashSet;
 use std::sync::LazyLock;
 
-use openehr_rm::paths::{PathSegment, is_archetype_root_node_id};
+use openehr_rm::v1_2::paths::{PathSegment, is_archetype_root_node_id};
 use serde_json::{Map, Value, json};
 
 use crate::flat::error::FlatError;
@@ -635,7 +635,7 @@ fn is_multiple(attr: &str) -> bool {
 
 /// The set of RM attribute names whose value is a multi-valued *structural*
 /// container reachable from a versioned-object root, computed once from the
-/// generated BMM RM attribute model ([`openehr_rm::model`]) instead of a
+/// generated BMM RM attribute model ([`openehr_rm::v1_2::model`]) instead of a
 /// hard-coded list.
 ///
 /// "Structural" means the attribute's container is a `List`/`Set`/`Hash` **and**
@@ -656,19 +656,19 @@ static MULTIVALUED_ATTRS: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
         if !seen.insert(cls) {
             continue;
         }
-        for attr in openehr_rm::model::attributes(cls) {
+        for attr in openehr_rm::v1_2::model::attributes(cls) {
             // Only follow (and count) attributes whose value is itself an RM
             // class; a primitive/foundation element type (e.g. `Octet`) is not a
             // structural wrapper.
-            if openehr_rm::model::class(attr.declared_type).is_none() {
+            if openehr_rm::v1_2::model::class(attr.declared_type).is_none() {
                 continue;
             }
-            if attr.container != openehr_rm::model::Container::None {
+            if attr.container != openehr_rm::v1_2::model::Container::None {
                 set.insert(attr.name);
             }
             queue.push(attr.declared_type);
             queue.extend(
-                openehr_rm::model::descendants(attr.declared_type)
+                openehr_rm::v1_2::model::descendants(attr.declared_type)
                     .iter()
                     .copied(),
             );

@@ -2,7 +2,7 @@
 //! pass.
 //!
 //! The slot → vocabulary binding table and the membership decisions live in
-//! [`openehr_rm::validate::terminology`] (this crate does not re-derive them):
+//! [`openehr_rm::v1_2::validate::terminology`] (this crate does not re-derive them):
 //! the same table the wire-boundary dispatcher
 //! ([`crate::wire_validate::validate_rm_value`]) enforces. This pass keeps only
 //! the *presentation* — a [`ValidationKind::Terminology`] message carrying the
@@ -13,7 +13,7 @@
 //! instance (independent of the archetype / `WebTemplate`): openEHR terminology
 //! *group* codes (`has_code_for_group_id`, guarded by `terminology_id = "openehr"`)
 //! and openEHR / ISO / IANA code-set codes (`code_set (id).has_code`, unguarded).
-//! See [`openehr_rm::validate::terminology`] for the per-slot spec citations
+//! See [`openehr_rm::v1_2::validate::terminology`] for the per-slot spec citations
 //! (`docs/specs/openehr/RM/docs/UML/classes/`) resolved against the terminology
 //! bundle in [`openehr_term::bundle`] (TERM 3.1.0).
 
@@ -24,8 +24,8 @@
               (#1694)"
 )]
 
-use openehr_rm::model::declared_concrete_type;
-use openehr_rm::validate::terminology::{Slot, slot_is_violated, slots_for};
+use openehr_rm::v1_2::model::declared_concrete_type;
+use openehr_rm::v1_2::validate::terminology::{Slot, slot_is_violated, slots_for};
 use serde_json::Value;
 
 use super::{ValidationKind, ValidationMessage, norm_path, push};
@@ -42,7 +42,7 @@ use super::{ValidationKind, ValidationMessage, norm_path, push};
 /// effective type of a node whose wire `_type` is legitimately absent
 /// (canonical JSON requires `_type` only on polymorphic slots), so untagged
 /// nodes like `COMPOSITION.context` still get their coded slots checked
-/// ([`openehr_rm::model::declared_concrete_type`]).
+/// ([`openehr_rm::v1_2::model::declared_concrete_type`]).
 pub(crate) fn terminology_pass(
     out: &mut Vec<ValidationMessage>,
     v: &Value,

@@ -10,12 +10,12 @@
 
 use openehr_adl::parse::Dialect;
 use openehr_adl::rules::{parse_rules_body, parse_slot_assertions};
-use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
-use openehr_am::am24::aom2::rules::expr_constraint::ExprConstraint;
-use openehr_am::am24::beom::core::expr_value_ref::ExprValueRef;
-use openehr_am::am24::beom::core::expression::Expression;
-use openehr_am::am24::beom::core::statement::Statement;
-use openehr_lang::beom::types::expr_type_def::ExprTypeDef;
+use openehr_am::v2_4::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
+use openehr_am::v2_4::aom2::rules::expr_constraint::ExprConstraint;
+use openehr_am::v2_4::beom::core::expr_value_ref::ExprValueRef;
+use openehr_am::v2_4::beom::core::expression::Expression;
+use openehr_am::v2_4::beom::core::statement::Statement;
+use openehr_lang::v2::beom::types::expr_type_def::ExprTypeDef;
 
 fn only_assertion(body: &str) -> Expression {
     let set = parse_rules_body(body).unwrap_or_else(|e| panic!("parse {body:?}: {e:?}"));
@@ -301,10 +301,10 @@ fn archetype_ref_item_resolves_to_target_node() {
     // to the definition node its path addresses (not the empty parse-time
     // placeholder) — `openehr_adl::rules::resolve_archetype_refs`, run in assembly.
     use openehr_adl::assemble::parse_artefact;
-    use openehr_am::am24::aom2::archetype::archetype::Archetype;
-    use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
-    use openehr_am::am24::aom2::constraint_model::archetype_constraint::ArchetypeConstraint;
-    use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
+    use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
+    use openehr_am::v2_4::aom2::archetype::authored_archetype::AuthoredArchetype;
+    use openehr_am::v2_4::aom2::constraint_model::archetype_constraint::ArchetypeConstraint;
+    use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
 
     let src = "archetype (adl_version=2.0.5; rm_release=1.0.2)\n\
         \topenEHR-EHR-CLUSTER.rule_ref.v1.0.0\n\n\
@@ -363,12 +363,12 @@ fn external_query_assignment_is_refused_by_the_printer() {
     // production, so the printer refuses it rather than invent syntax.
     use openehr_adl::assemble::parse_artefact;
     use openehr_adl::print::{PrintError, print};
-    use openehr_am::am24::aom2::archetype::archetype::Archetype;
-    use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
-    use openehr_am::am24::beom::core::assignment::Assignment;
-    use openehr_am::am24::beom::core::expr_value::ExprValue;
-    use openehr_am::am24::beom::core::statement_set::StatementSet;
-    use openehr_lang::beom::core::external_query::ExternalQuery;
+    use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
+    use openehr_am::v2_4::aom2::archetype::authored_archetype::AuthoredArchetype;
+    use openehr_am::v2_4::beom::core::assignment::Assignment;
+    use openehr_am::v2_4::beom::core::expr_value::ExprValue;
+    use openehr_am::v2_4::beom::core::statement_set::StatementSet;
+    use openehr_lang::v2::beom::core::external_query::ExternalQuery;
 
     let src = "archetype (adl_version=2.0.5; rm_release=1.0.2)\n\
         \topenEHR-EHR-CLUSTER.external_query.v1.0.0\n\n\
@@ -420,9 +420,9 @@ fn nameless_function_call_is_refused_by_the_printer() {
     // (`LANG/docs/BEL/masterAppA-syntax.adoc`); a leaf `item` (`Any`, beom
     // `EXPR_LEAF`) with no string name has no spelling, so the printer refuses.
     use openehr_adl::print::{PrintError, assertion_text};
-    use openehr_am::am24::beom::core::assertion::Assertion;
-    use openehr_am::am24::beom::core::expr_function_call::ExprFunctionCall;
-    use openehr_am::am24::beom::core::expression::Expression;
+    use openehr_am::v2_4::beom::core::assertion::Assertion;
+    use openehr_am::v2_4::beom::core::expr_function_call::ExprFunctionCall;
+    use openehr_am::v2_4::beom::core::expression::Expression;
 
     let assertion = Assertion {
         tag: None,
@@ -444,9 +444,9 @@ fn pathless_value_ref_is_refused_by_the_printer() {
     // (`LANG/docs/BEL/masterAppA-syntax.adoc`); a leaf `item` (`Any`, beom
     // `EXPR_LEAF`) with no string path has no spelling, so the printer refuses.
     use openehr_adl::print::{PrintError, assertion_text};
-    use openehr_am::am24::beom::core::assertion::Assertion;
-    use openehr_am::am24::beom::core::expr_value_ref::{ExprValueRef, ExprValueRefData};
-    use openehr_am::am24::beom::core::expression::Expression;
+    use openehr_am::v2_4::beom::core::assertion::Assertion;
+    use openehr_am::v2_4::beom::core::expr_value_ref::{ExprValueRef, ExprValueRefData};
+    use openehr_am::v2_4::beom::core::expression::Expression;
 
     let assertion = Assertion {
         tag: None,

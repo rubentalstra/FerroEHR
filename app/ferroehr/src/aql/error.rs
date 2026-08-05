@@ -175,7 +175,7 @@ pub enum AqlFeatureError {
 }
 
 /// A path-analysis / typing failure against the generated RM model
-/// (`openehr_rm::model`).
+/// (`openehr_rm::v1_2::model`).
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum AnalysisError {
     /// A FROM class name absent from the RM model.

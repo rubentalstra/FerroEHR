@@ -6,12 +6,12 @@
 //! §Archetype Slots + §Internal References. One `impl` block over the
 //! `Parser` state of [`crate::parse`].
 
-use openehr_am::am24::aom2::constraint_model::archetype_slot::ArchetypeSlot;
-use openehr_am::am24::aom2::constraint_model::c_archetype_root::CArchetypeRoot;
-use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
-use openehr_am::am24::aom2::constraint_model::c_complex_object_proxy::CComplexObjectProxy;
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-use openehr_am::am24::beom::core::assertion::Assertion;
+use openehr_am::v2_4::aom2::constraint_model::archetype_slot::ArchetypeSlot;
+use openehr_am::v2_4::aom2::constraint_model::c_archetype_root::CArchetypeRoot;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object_proxy::CComplexObjectProxy;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::beom::core::assertion::Assertion;
 
 use crate::error::{SyntaxError, SyntaxErrorCode};
 use crate::parse::{Dialect, PResult, Parser};
@@ -287,10 +287,10 @@ impl Parser<'_> {
 
 #[cfg(test)]
 mod tests {
-    use openehr_am::am24::aom2::constraint_model::c_complex_object::{
+    use openehr_am::v2_4::aom2::constraint_model::c_complex_object::{
         CComplexObject, CComplexObjectData,
     };
-    use openehr_am::am24::aom2::constraint_model::c_object::CObject;
+    use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
 
     use crate::parse::{Dialect, parse_definition_body};
 

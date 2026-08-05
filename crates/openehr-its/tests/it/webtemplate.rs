@@ -631,7 +631,8 @@ fn unenforceable_constraints_are_reported_not_dropped() {
     // actually declares — that would be a real constraint wrongly skipped.
     for attr in &seen {
         assert!(
-            !openehr_rm::model::classes().any(|c| c.attributes.iter().any(|a| a.name == attr)),
+            !openehr_rm::v1_2::model::classes()
+                .any(|c| c.attributes.iter().any(|a| a.name == attr)),
             "'{attr}' IS declared by the RM: skipping it would drop an enforceable constraint"
         );
     }

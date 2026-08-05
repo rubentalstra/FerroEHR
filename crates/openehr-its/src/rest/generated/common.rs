@@ -30,17 +30,17 @@ pub struct Error {
 #[derive(Debug, Clone)]
 pub enum AbstractEntry {
     /// `_type: "ACTION"`
-    Action(openehr_rm::prelude::Action),
+    Action(openehr_rm::v1_2::composition::content::entry::action::Action),
     /// `_type: "ADMIN_ENTRY"`
-    AdminEntry(openehr_rm::prelude::AdminEntry),
+    AdminEntry(openehr_rm::v1_2::composition::content::entry::admin_entry::AdminEntry),
     /// `_type: "CARE_ENTRY"`
-    CareEntry(openehr_rm::prelude::CareEntry),
+    CareEntry(openehr_rm::v1_2::composition::content::entry::care_entry::CareEntry),
     /// `_type: "EVALUATION"`
-    Evaluation(openehr_rm::prelude::Evaluation),
+    Evaluation(openehr_rm::v1_2::composition::content::entry::evaluation::Evaluation),
     /// `_type: "INSTRUCTION"`
-    Instruction(openehr_rm::prelude::Instruction),
+    Instruction(openehr_rm::v1_2::composition::content::entry::instruction::Instruction),
     /// `_type: "OBSERVATION"`
-    Observation(openehr_rm::prelude::Observation),
+    Observation(openehr_rm::v1_2::composition::content::entry::observation::Observation),
 }
 
 impl ::serde::Serialize for AbstractEntry {
@@ -144,19 +144,20 @@ impl<'de> ::serde::Deserialize<'de> for AbstractEntry {
 
 /// The `ListOfPartyIdentity` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ListOfPartyIdentity = Vec<openehr_rm::prelude::PartyIdentity>;
+pub type ListOfPartyIdentity = Vec<openehr_rm::v1_2::demographic::party_identity::PartyIdentity>;
 
 /// The `ListOfContact` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ListOfContact = Vec<openehr_rm::prelude::Contact>;
+pub type ListOfContact = Vec<openehr_rm::v1_2::demographic::contact::Contact>;
 
 /// The `ListOfPartyRelationship` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ListOfPartyRelationship = Vec<openehr_rm::prelude::PartyRelationship>;
+pub type ListOfPartyRelationship =
+    Vec<openehr_rm::v1_2::demographic::party_relationship::PartyRelationship>;
 
 /// The `ListOfCapability` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ListOfCapability = Vec<openehr_rm::prelude::Capability>;
+pub type ListOfCapability = Vec<openehr_rm::v1_2::demographic::capability::Capability>;
 
 /// The `QueryName` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
@@ -203,12 +204,12 @@ pub struct UpdateAuditData {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub system_id: Option<String>,
     /// The `change_type` property of `UpdateAudit`.
-    pub change_type: openehr_rm::prelude::DvCodedText,
+    pub change_type: openehr_rm::v1_2::data_types::text::dv_coded_text::DvCodedText,
     /// The `description` property of `UpdateAudit`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<openehr_rm::prelude::DvText>,
+    pub description: Option<openehr_rm::v1_2::data_types::text::dv_text::DvText>,
     /// The `committer` property of `UpdateAudit`.
-    pub committer: openehr_rm::prelude::PartyProxy,
+    pub committer: openehr_rm::v1_2::common::generic::party_proxy::PartyProxy,
 }
 
 /// The `UpdateAudit` ITS-REST OAS component schema: `_type`-discriminated
@@ -307,23 +308,24 @@ pub struct UpdateAttestation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub system_id: Option<String>,
     /// The `change_type` property of `UpdateAttestation`.
-    pub change_type: openehr_rm::prelude::DvCodedText,
+    pub change_type: openehr_rm::v1_2::data_types::text::dv_coded_text::DvCodedText,
     /// The `description` property of `UpdateAttestation`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<openehr_rm::prelude::DvText>,
+    pub description: Option<openehr_rm::v1_2::data_types::text::dv_text::DvText>,
     /// The `committer` property of `UpdateAttestation`.
-    pub committer: openehr_rm::prelude::PartyProxy,
+    pub committer: openehr_rm::v1_2::common::generic::party_proxy::PartyProxy,
     /// The `attested_view` property of `UpdateAttestation`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub attested_view: Option<openehr_rm::prelude::DvMultimedia>,
+    pub attested_view:
+        Option<openehr_rm::v1_2::data_types::encapsulated::dv_multimedia::DvMultimedia>,
     /// The `proof` property of `UpdateAttestation`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub proof: Option<String>,
     /// The `items` property of `UpdateAttestation`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<openehr_rm::prelude::DvEhrUri>>,
+    pub items: Option<Vec<openehr_rm::v1_2::data_types::uri::dv_ehr_uri::DvEhrUri>>,
     /// The `reason` property of `UpdateAttestation`.
-    pub reason: openehr_rm::prelude::DvText,
+    pub reason: openehr_rm::v1_2::data_types::text::dv_text::DvText,
     /// The `is_pending` property of `UpdateAttestation`.
     pub is_pending: bool,
 }
@@ -334,12 +336,13 @@ pub struct UpdateAttestation {
 pub struct UpdateVersion<T> {
     /// The `preceding_version_uid` property of `UpdateVersion`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub preceding_version_uid: Option<openehr_base::prelude::ObjectVersionId>,
+    pub preceding_version_uid:
+        Option<openehr_base::v1_3::base_types::identification::object_version_id::ObjectVersionId>,
     /// The `signature` property of `UpdateVersion`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub signature: Option<String>,
     /// The `lifecycle_state` property of `UpdateVersion`.
-    pub lifecycle_state: openehr_rm::prelude::DvCodedText,
+    pub lifecycle_state: openehr_rm::v1_2::data_types::text::dv_coded_text::DvCodedText,
     /// The `attestations` property of `UpdateVersion`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub attestations: Option<Vec<UpdateAttestation>>,

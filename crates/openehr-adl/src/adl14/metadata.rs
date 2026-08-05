@@ -15,7 +15,7 @@ use std::collections::BTreeMap;
 
 /// Apply the whole 1.4→2 `description` transform in place.
 pub(super) fn transform_description(
-    desc: &mut openehr_am::am24::resource::resource_description::ResourceDescription,
+    desc: &mut openehr_am::v2_4::resource::resource_description::ResourceDescription,
 ) {
     // NOTE: every 1.4 lifecycle state converts to `unmanaged`, matching the
     // vendored `upgrade_from_14` expected `.adls`; no openEHR spec governs
@@ -73,7 +73,7 @@ pub(super) fn transform_description(
 /// An AOM2 attribute already populated from elsewhere is never overwritten, and
 /// its `other_details` key is then left in place (nothing was consumed).
 fn convert_standardised_meta_data(
-    desc: &mut openehr_am::am24::resource::resource_description::ResourceDescription,
+    desc: &mut openehr_am::v2_4::resource::resource_description::ResourceDescription,
 ) {
     let Some(other) = desc.other_details.as_mut() else {
         return;
@@ -144,7 +144,7 @@ fn take_keyed_lines(
 
 /// Write a 1.4 `revision` string into the ADL2 HRID's version fields.
 pub(super) fn set_release_version(
-    hrid: &mut openehr_am::am24::aom2::archetype::archetype_hrid::ArchetypeHrid,
+    hrid: &mut openehr_am::v2_4::aom2::archetype::archetype_hrid::ArchetypeHrid,
     version: &str,
 ) {
     // `version` may be `1.1.0` or `0.0.1-alpha`; split a `-status.build` tail.

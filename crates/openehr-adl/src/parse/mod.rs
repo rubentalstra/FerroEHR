@@ -5,7 +5,7 @@
 //! transcribed 1:1 from the vendored normative grammars
 //! `crates/openehr-adl/vendor/grammar/{cadl2.g4, cadl2_primitives.g4}`. It
 //! builds the **generated** AOM2 constraint model
-//! (`openehr_am::am24::aom2::constraint_model`) directly — never a new model
+//! (`openehr_am::v2_4::aom2::constraint_model`) directly — never a new model
 //! type — producing a [`CComplexObject`] tree for a `definition` section body.
 //!
 //! Recursive descent (not `chumsky`) is the deliberate choice here: the cADL
@@ -42,10 +42,10 @@ pub mod primitives;
 pub mod refs;
 pub mod values;
 
-use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
-use openehr_am::am24::aom2::constraint_model::primitive::c_string::CString;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_string::CString;
 
 use crate::aom::build::{cobject_to_primitive, cstring_regex};
 use crate::error::{SyntaxError, SyntaxErrorCode};
@@ -430,12 +430,12 @@ pub(crate) fn parse_contained_regexp_text(raw: &str) -> Result<CString, Vec<Synt
 
 #[cfg(test)]
 mod tests {
-    use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
-    use openehr_am::am24::aom2::constraint_model::c_complex_object::{
+    use openehr_am::v2_4::aom2::constraint_model::c_attribute::CAttribute;
+    use openehr_am::v2_4::aom2::constraint_model::c_complex_object::{
         CComplexObject, CComplexObjectData,
     };
-    use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-    use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
+    use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+    use openehr_am::v2_4::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
     use openehr_base::prelude::{Interval, ProperInterval};
 
     use crate::error::SyntaxErrorCode;
