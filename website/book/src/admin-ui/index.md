@@ -33,6 +33,11 @@ schemes the CDR advertises (its `WWW-Authenticate` challenge). A Basic
 form is never shown against a bearer-only CDR, and vice versa. The page
 is served fully rendered and works with JavaScript disabled.
 
+When OIDC is configured but the identity provider is unreachable, the
+console still starts and serves username/password sign-in; the OIDC button
+reports the outage, and OIDC begins working on its own once the provider
+answers — no restart needed.
+
 The console ships a full dark theme (the toggle persists per browser),
 and the user menu opens the access drawer:
 

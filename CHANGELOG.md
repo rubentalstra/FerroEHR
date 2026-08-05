@@ -21,6 +21,10 @@ workflow refuses a tag that has no matching section here.
 
 - The `openehr-rm` and `openehr-base` crates now ALSO emit the latest RELEASED specification generations beside the development pins — `openehr_rm::v1_1` (RM 1.1.0, resolving against BASE 1.2.0 per its own BMM `includes`) and `openehr_base::v1_2` (BASE 1.2.0) — each a complete peer: full type model, canonical-JSON codecs, RM attribute model, invariant cores, and validation behaviour. The served wire is unchanged (the current generations stay `v1_2`/`v1_3`); runtime selection between generations arrives with the `spec_profile` configuration key.
 
+### Fixed
+
+- The admin console no longer refuses to start when OIDC is enabled but the identity provider is unreachable. It used to run discovery at startup and exit on failure, so in a composed deployment the console crash-looped until the identity provider finished importing its realm — even though its username/password sign-in needs nothing from that provider. The console now starts immediately and serves the sign-in page: username/password login works throughout the outage, the OIDC button reports "OIDC sign-in is unavailable: the identity provider at … could not be reached" instead of failing blankly, and the outage is named in the startup log. Discovery is retried on the next OIDC sign-in, so OIDC starts working by itself once the provider answers — no console restart needed. Genuinely broken OIDC *configuration* (a malformed issuer URL, redirect URL, or `resolve` override) still stops startup, as before.
+
 ### Removed
 
 - The generated `openehr-*` spec crates no longer carry a crate-level `SPEC_VERSION` constant: a multi-generation crate has no single implemented spec version, and a fixed crate-root pin would contradict a configured non-current generation. The ONLY pin authority is the emitted `Generation` enum (per-variant `const fn spec_version()`; the derived `Default` variant is the current generation) — the generation modules carry no version constant either; the hand-written single-spec crates (`openehr-its`, `openehr-query`, `openehr-adl`) keep their literal constant.

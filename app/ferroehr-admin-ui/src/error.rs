@@ -28,6 +28,17 @@ pub enum AdminUiError {
     /// The CDR was unreachable (connect/timeout/transport).
     #[error("CDR unreachable: {0}")]
     CdrUnreachable(String),
+    /// The OIDC identity provider could not be reached, so the OIDC sign-in
+    /// path is unavailable while Basic login keeps working. Distinct from
+    /// [`Self::CdrUnreachable`]: a different dependency is down, and the
+    /// console's answer is different (offer the other login mode).
+    #[error("identity provider at {issuer} unavailable: {message}")]
+    IdpUnavailable {
+        /// The configured `auth.oidc.issuer`.
+        issuer: String,
+        /// The discovery diagnostic (transport, status, or malformed document).
+        message: String,
+    },
     /// Bad user input (login form, AQL text, template upload) with the
     /// message to render inline.
     #[error("{0}")]

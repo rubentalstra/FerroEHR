@@ -78,6 +78,10 @@ pub fn write_failure_copy(object: &str, error: &AdminUiError) -> String {
             "The CDR is unreachable ({message}), so {object} was not saved. Check the CDR, then \
              retry."
         ),
+        AdminUiError::IdpUnavailable { issuer, message } => format!(
+            "The identity provider at {issuer} is unreachable ({message}), so {object} was not \
+             saved. Retry once it is back, or sign in with a username and password."
+        ),
         AdminUiError::Internal(message) => format!(
             "{object} could not be saved: {message}. Retry; if it persists, check the console \
              logs."

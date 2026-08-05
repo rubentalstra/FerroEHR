@@ -4,6 +4,11 @@
 
 mod common;
 
+// A real in-process boot test, not a browser journey: it serves the router
+// itself, so it needs the server build (`--features ssr`).
+#[cfg(feature = "ssr")]
+mod boot_oidc_outage;
+
 mod e2e_admin_ops;
 mod e2e_audit;
 mod e2e_browse;

@@ -1,13 +1,11 @@
-//! The admin-console server binary: config → CDR client → (optional) OIDC
-//! discovery → session layer → axum router (Leptos SSR + the two OIDC
-//! routes). Wiring only — logic lives in the lib.
+//! The admin-console server binary: config → CDR client → (optional, inert)
+//! OIDC client → the router from `ferroehr_admin_ui::server` → serve. Wiring
+//! only — logic lives in the lib.
 
 #[cfg(feature = "ssr")]
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    use axum::Extension;
     use leptos::prelude::LeptosOptions;
-    use leptos_axum::LeptosRoutes;
 
     // Console logs: env-filtered (RUST_LOG), stderr. Without a subscriber
     // every server-side error is invisible — an operational defect.
@@ -46,9 +44,13 @@ async fn main() -> anyhow::Result<()> {
         std::sync::Arc::new(ferroehr_admin_ui::config::load().map_err(|e| anyhow::anyhow!("{e}"))?);
     let cdr =
         ferroehr_admin_ui::cdr::CdrClient::new(&config.cdr).map_err(|e| anyhow::anyhow!("{e}"))?;
+    // OIDC construction is INERT — no discovery here. An unreachable issuer
+    // must not stop the console from booting and serving Basic login; the
+    // discovery document is fetched lazily (and retried) per sign-in.
     let oidc = if config.auth.oidc.enabled {
         Some(std::sync::Arc::new(
-            ferroehr_admin_ui::oidc::discover(&config.auth.oidc).await?,
+            ferroehr_admin_ui::oidc::OidcState::new(&config.auth.oidc)
+                .map_err(|e| anyhow::anyhow!("{e}"))?,
         ))
     } else {
         None
@@ -56,60 +58,19 @@ async fn main() -> anyhow::Result<()> {
     let app_state = ferroehr_admin_ui::state::AppState {
         config: std::sync::Arc::clone(&config),
         cdr,
-        oidc,
+        oidc: oidc.clone(),
     };
 
-    let session_layer =
-        tower_sessions::SessionManagerLayer::new(tower_sessions::MemoryStore::default())
-            .with_secure(config.session.cookie_secure)
-            // Lax, not the Strict default: the OIDC callback arrives as a
-            // top-level cross-site redirect from the identity provider, and
-            // Strict would withhold the session cookie holding the PKCE/state
-            // — the flow would always fail "no login in progress". CSRF on
-            // the callback is covered by the state + PKCE checks.
-            .with_same_site(tower_sessions::cookie::SameSite::Lax)
-            .with_expiry(tower_sessions::Expiry::OnInactivity(
-                tower_sessions::cookie::time::Duration::minutes(
-                    i64::try_from(config.session.idle_minutes).unwrap_or(60),
-                ),
-            ));
+    // One non-fatal warm-up, so an identity provider that is down at startup
+    // is named in the boot log rather than only on someone's first sign-in.
+    if let Some(oidc) = oidc {
+        ferroehr_admin_ui::oidc::prime_in_background(oidc);
+    }
 
     let conf = leptos::config::get_configuration(None)?;
     let leptos_options: LeptosOptions = conf.leptos_options;
     let addr = leptos_options.site_addr;
-    let routes = leptos_axum::generate_route_list(ferroehr_admin_ui::app::App);
-
-    let context_state = app_state.clone();
-    let service = axum::Router::new()
-        .route(
-            "/auth/oidc/login",
-            axum::routing::get(ferroehr_admin_ui::oidc::login),
-        )
-        .route(
-            "/auth/oidc/callback",
-            axum::routing::get(ferroehr_admin_ui::oidc::callback),
-        )
-        // Result export: a plain form-POST download (no WASM required); the
-        // handler enforces the console session itself like every server fn.
-        .route(
-            "/export/aql",
-            axum::routing::post(ferroehr_admin_ui::export::export_aql),
-        )
-        .leptos_routes_with_context(
-            &leptos_options,
-            routes,
-            move || leptos::context::provide_context(context_state.clone()),
-            {
-                let options = leptos_options.clone();
-                move || ferroehr_admin_ui::app::shell(options.clone())
-            },
-        )
-        .fallback(leptos_axum::file_and_error_handler(
-            ferroehr_admin_ui::app::shell,
-        ))
-        .layer(Extension(app_state))
-        .layer(session_layer)
-        .with_state(leptos_options);
+    let service = ferroehr_admin_ui::server::router(app_state, leptos_options);
 
     let listener = tokio::net::TcpListener::bind(&addr).await?;
     tracing::info!(%addr, "ferroehr-admin-ui listening");

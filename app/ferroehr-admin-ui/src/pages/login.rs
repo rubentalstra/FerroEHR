@@ -20,8 +20,10 @@ use crate::components::surface::CARD_PAD;
 ///
 /// Renders a centered auth card — the wordmark over the Basic credential form
 /// and/or the OIDC button, gated on the CDR's enabled auth modes (read once via
-/// a `Resource` under `<Suspense>`). The action's error value renders in a
-/// MessageBar; the submit button reflects the action's pending state.
+/// a `Resource` under `<Suspense>`). One MessageBar renders either the login
+/// action's error or a `?error=` message redirected here by a BFF route (an
+/// unreachable identity provider); the submit button reflects the action's
+/// pending state.
 #[expect(
     clippy::must_use_candidate,
     reason = "#[component] rewrites the fn; view!/mount always consumes the value"
@@ -46,15 +48,21 @@ pub fn LoginPage() -> impl IntoView {
             .unwrap_or_else(|| "/".to_owned())
     });
 
+    // `?error=…` carries a failure from a BFF axum route that has no action to
+    // report through — today the OIDC login/callback routes redirecting here
+    // when the identity provider cannot be reached. Deterministic from the
+    // URL, so hydration-safe; a live action error wins over a stale param.
     let error_bar = view! {
         {move || {
             value
                 .get()
                 .and_then(Result::err)
-                .map(|err| {
+                .map(|err| err.to_string())
+                .or_else(|| query.with(|q| q.get("error")))
+                .map(|message| {
                     view! {
                         <thaw::MessageBar intent=thaw::MessageBarIntent::Error>
-                            <thaw::MessageBarBody>{err.to_string()}</thaw::MessageBarBody>
+                            <thaw::MessageBarBody>{message}</thaw::MessageBarBody>
                         </thaw::MessageBar>
                     }
                 })
