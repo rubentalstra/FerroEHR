@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
   "label": "openEHR CNF CORE",
-  "message": "FAIL 8/9 capabilities",
+  "message": "FAIL 3/9 capabilities",
   "color": "red"
 }
