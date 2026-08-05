@@ -51,9 +51,9 @@ use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 
 use indexmap::IndexMap;
-use openehr_base::prelude::Interval;
-use openehr_base::prelude::ProperInterval;
-use openehr_base::prelude::ProperIntervalData;
+use openehr_base::v1_3::prelude::Interval;
+use openehr_base::v1_3::prelude::ProperInterval;
+use openehr_base::v1_3::prelude::ProperIntervalData;
 
 use crate::v1_1::bmm::core::bmm_include_spec::BmmIncludeSpec;
 use crate::v1_1::bmm_persistence::error::PBmmReadError;
@@ -1810,8 +1810,8 @@ mod tests {
     use crate::v1_1::bmm_persistence::p_bmm_property::PBmmProperty;
     use crate::v1_1::bmm_persistence::p_bmm_schema::PBmmSchema;
     use crate::v1_1::bmm_persistence::p_bmm_type::PBmmType;
-    use openehr_base::prelude::Interval;
-    use openehr_base::prelude::ProperInterval;
+    use openehr_base::v1_3::prelude::Interval;
+    use openehr_base::v1_3::prelude::ProperInterval;
 
     /// The four identifying header items every fixture below needs.
     const HEADER: &str = r#"
