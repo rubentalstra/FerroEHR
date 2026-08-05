@@ -14,8 +14,10 @@
 //!
 //! # The composition seam
 //!
-//! The parser is generic over an [`ElBuilder`], the same seam the BEL parser
-//! uses ([`crate::v1_0::bel::BelBuilder`]): the grammar lives here once and the tree
+//! The parser is generic over an [`ElBuilder`], the same seam the 1.1.0
+//! line's BEL parser uses ([`crate::v1_1::bel::BelBuilder`] — BEL has no
+//! 1.0.0 specification, so this generation carries no `bel` module): the
+//! grammar lives here once and the tree
 //! is supplied by the builder. EL is NOT a BEL extension — `ElParser.g4`
 //! imports `Cadl2Parser`, not `base_expressions.g4`, renames every production,
 //! adds scoped feature references, tuples and decision tables, and takes its
