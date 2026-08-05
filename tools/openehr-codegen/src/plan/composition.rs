@@ -99,13 +99,13 @@ pub(crate) const LANG_BMM3: &str = "components/LANG/json/openehr_lang_1.1.0-bmm3
 const BASE_DOC: &str = "openEHR BASE (foundation + base types), generated from the BMM meta-model.";
 const RM_DOC: &str = "openEHR RM (Reference Model), generated from the BMM meta-model.";
 const LANG_DOC: &str = "openEHR LANG: the BMM object model in BOTH its extant generations, \
-    generated from the BMM meta-model — the stable v2.x model (`v2`: the `bmm` object model, \
-    its `bmm_persistence` P_BMM form and the `beom` expression model) and the v3 development \
-    line (`v3`: `bmm3`, with the `EL_*` expression and `BMM_STATEMENT*` families). Each \
-    generation is emitted completely under its own version module; the crate prelude re-exports \
-    the current generation (`v3`) only. The generator's own BMM reader lives in openehr-codegen \
-    (tooling, not spec); the hand-written ODIN reader and BEL parser live beside this generated \
-    tree.";
+    generated from the BMM meta-model — the STABLE, tool-implemented v2.x model (`v2`: the \
+    `bmm` object model, its `bmm_persistence` P_BMM form and the `beom` expression model) and \
+    the PAUSED v3 line (`v3`: `bmm3`, with the `EL_*` expression and `BMM_STATEMENT*` \
+    families). Each generation is emitted completely under its own version module; the crate \
+    prelude re-exports the current generation (`v2`) only. The generator's own BMM reader \
+    lives in openehr-codegen (tooling, not spec); the hand-written ODIN reader and BEL parser \
+    live beside this generated tree.";
 const AM_DOC: &str = "openEHR AM (Archetype Model): `v1_4` (AM 1.4.0, for ADL 1.4) and `v2_4` \
     (AM 2.4.0, for ADL 2) — both generated from BMM. Both ADL versions are in use.";
 const TERM_DOC: &str = "openEHR TERM (Terminology) data model, generated from the BMM \
@@ -244,7 +244,7 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
                 module: "v2",
                 spec_version: "1.1.0",
                 file: LANG_BMM,
-                current: false,
+                current: true,
                 model_deps: &[DepGeneration {
                     key: "base",
                     generation: "v1_3",
@@ -258,7 +258,7 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
                 module: "v3",
                 spec_version: "1.1.0",
                 file: LANG_BMM3,
-                current: true,
+                current: false,
                 model_deps: &[DepGeneration {
                     key: "base",
                     generation: "v1_3",
@@ -279,8 +279,13 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
                    master00-amendment_record.adoc SPECLANG-14 \"Formalise the BMM v2/v3 \
                    split\") as `v3`. The module names are the BMM meta-model majors: both \
                    files carry the same LANG release, so a spec-version-derived name cannot \
-                   distinguish them. `v3` is current (the crate prelude), preserving the \
-                   pre-table prelude semantics where the v3 twin won every colliding name.",
+                   distinguish them. `v2` is CURRENT (the crate prelude + `#[default]`): the \
+                   published LANG component index marks BMM v2.x STABLE (\"the v2.x form in \
+                   use by current tooling\") and BMM3 PAUSED (\"Development is paused; the \
+                   v2.x BMM remains the form implemented by current tooling\"), and \
+                   LANG/docs/bmm/master01-preface.adoc \u{a7}History calls v2.x \"the \
+                   normative, tool-implemented version\". The earlier v3 default carried the \
+                   retired collision-prelude winner, not a decision.",
         reason: "The BMM/P_BMM object model, both extant generations; depends on BASE.",
     },
     CrateComposition {

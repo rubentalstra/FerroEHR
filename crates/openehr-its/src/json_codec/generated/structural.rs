@@ -200,48 +200,48 @@
 //   Terminology_term: openehr_base::v1_3::foundation_types::terminology::terminology_term::TerminologyTerm wins over openehr_base::v1_2::foundation_types::terminology::terminology_term::TerminologyTerm
 //   UUID: openehr_base::v1_3::base_types::identification::uuid::Uuid wins over openehr_base::v1_2::base_types::identification::uuid::Uuid
 //   VERSION_TREE_ID: openehr_base::v1_3::base_types::identification::version_tree_id::VersionTreeId wins over openehr_base::v1_2::base_types::identification::version_tree_id::VersionTreeId
-//   BMM_CONTAINER_PROPERTY: openehr_lang::v3::bmm3::core::feature::bmm_container_property::BmmContainerPropertyData wins over openehr_lang::v2::bmm::core::bmm_container_property::BmmContainerProperty
-//   BMM_CONTAINER_TYPE: openehr_lang::v3::bmm3::core::entity::bmm_container_type::BmmContainerTypeData wins over openehr_lang::v2::bmm::core::bmm_container_type::BmmContainerTypeData
-//   BMM_DEFINITIONS: openehr_lang::v3::bmm3::bmm_definitions::BmmDefinitions wins over openehr_lang::v2::bmm::core::bmm_definitions::BmmDefinitionsData
-//   BMM_ENUMERATION: openehr_lang::v3::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumerationData wins over openehr_lang::v2::bmm::core::bmm_enumeration::BmmEnumerationData
-//   BMM_ENUMERATION_INTEGER: openehr_lang::v3::bmm3::core::entity::range_constrained::bmm_enumeration_integer::BmmEnumerationInteger wins over openehr_lang::v2::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger
-//   BMM_ENUMERATION_STRING: openehr_lang::v3::bmm3::core::entity::range_constrained::bmm_enumeration_string::BmmEnumerationString wins over openehr_lang::v2::bmm::core::bmm_enumeration_string::BmmEnumerationString
-//   BMM_GENERIC_CLASS: openehr_lang::v3::bmm3::core::entity::bmm_generic_class::BmmGenericClass wins over openehr_lang::v2::bmm::core::bmm_generic_class::BmmGenericClass
-//   BMM_GENERIC_TYPE: openehr_lang::v3::bmm3::core::entity::bmm_generic_type::BmmGenericType wins over openehr_lang::v2::bmm::core::bmm_generic_type::BmmGenericType
-//   BMM_INCLUDE_SPEC: openehr_lang::v3::bmm3::model_access::bmm_include_spec::BmmIncludeSpec wins over openehr_lang::v2::bmm::core::bmm_include_spec::BmmIncludeSpec
-//   BMM_INDEXED_CONTAINER_TYPE: openehr_lang::v3::bmm3::core::entity::bmm_indexed_container_type::BmmIndexedContainerType wins over openehr_lang::v2::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType
-//   BMM_MODEL: openehr_lang::v3::bmm3::core::model::bmm_model::BmmModel wins over openehr_lang::v2::bmm::core::bmm_model::BmmModel
-//   BMM_PACKAGE: openehr_lang::v3::bmm3::core::model::bmm_package::BmmPackage wins over openehr_lang::v2::bmm::core::bmm_package::BmmPackage
-//   BMM_SIMPLE_TYPE: openehr_lang::v3::bmm3::core::entity::bmm_simple_type::BmmSimpleType wins over openehr_lang::v2::bmm::core::bmm_simple_type::BmmSimpleType
+//   BMM_CONTAINER_PROPERTY: openehr_lang::v2::bmm::core::bmm_container_property::BmmContainerProperty wins over openehr_lang::v3::bmm3::core::feature::bmm_container_property::BmmContainerPropertyData
+//   BMM_CONTAINER_TYPE: openehr_lang::v2::bmm::core::bmm_container_type::BmmContainerTypeData wins over openehr_lang::v3::bmm3::core::entity::bmm_container_type::BmmContainerTypeData
+//   BMM_DEFINITIONS: openehr_lang::v2::bmm::core::bmm_definitions::BmmDefinitionsData wins over openehr_lang::v3::bmm3::bmm_definitions::BmmDefinitions
+//   BMM_ENUMERATION: openehr_lang::v2::bmm::core::bmm_enumeration::BmmEnumerationData wins over openehr_lang::v3::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumerationData
+//   BMM_ENUMERATION_INTEGER: openehr_lang::v2::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger wins over openehr_lang::v3::bmm3::core::entity::range_constrained::bmm_enumeration_integer::BmmEnumerationInteger
+//   BMM_ENUMERATION_STRING: openehr_lang::v2::bmm::core::bmm_enumeration_string::BmmEnumerationString wins over openehr_lang::v3::bmm3::core::entity::range_constrained::bmm_enumeration_string::BmmEnumerationString
+//   BMM_GENERIC_CLASS: openehr_lang::v2::bmm::core::bmm_generic_class::BmmGenericClass wins over openehr_lang::v3::bmm3::core::entity::bmm_generic_class::BmmGenericClass
+//   BMM_GENERIC_TYPE: openehr_lang::v2::bmm::core::bmm_generic_type::BmmGenericType wins over openehr_lang::v3::bmm3::core::entity::bmm_generic_type::BmmGenericType
+//   BMM_INCLUDE_SPEC: openehr_lang::v2::bmm::core::bmm_include_spec::BmmIncludeSpec wins over openehr_lang::v3::bmm3::model_access::bmm_include_spec::BmmIncludeSpec
+//   BMM_INDEXED_CONTAINER_TYPE: openehr_lang::v2::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType wins over openehr_lang::v3::bmm3::core::entity::bmm_indexed_container_type::BmmIndexedContainerType
+//   BMM_MODEL: openehr_lang::v2::bmm::core::bmm_model::BmmModel wins over openehr_lang::v3::bmm3::core::model::bmm_model::BmmModel
+//   BMM_PACKAGE: openehr_lang::v2::bmm::core::bmm_package::BmmPackage wins over openehr_lang::v3::bmm3::core::model::bmm_package::BmmPackage
+//   BMM_SIMPLE_TYPE: openehr_lang::v2::bmm::core::bmm_simple_type::BmmSimpleType wins over openehr_lang::v3::bmm3::core::entity::bmm_simple_type::BmmSimpleType
 //   ASSERTION: openehr_lang::v2::beom::core::assertion::Assertion wins over openehr_am::v2_4::beom::core::assertion::Assertion
 //   ASSIGNMENT: openehr_lang::v2::beom::core::assignment::Assignment wins over openehr_am::v2_4::beom::core::assignment::Assignment
 //   BMM_ASSERTION: openehr_lang::v3::bmm3::statement::bmm_assertion::BmmAssertion wins over openehr_am::v2_4::bmm3::statement::bmm_assertion::BmmAssertion
 //   BMM_ASSIGNMENT: openehr_lang::v3::bmm3::statement::bmm_assignment::BmmAssignment wins over openehr_am::v2_4::bmm3::statement::bmm_assignment::BmmAssignment
 //   BMM_BOOLEAN_VALUE: openehr_lang::v3::bmm3::core::literal_value::bmm_boolean_value::BmmBooleanValue wins over openehr_am::v2_4::bmm3::core::literal_value::bmm_boolean_value::BmmBooleanValue
 //   BMM_CONSTANT: openehr_lang::v3::bmm3::core::feature::bmm_constant::BmmConstant wins over openehr_am::v2_4::bmm3::core::feature::bmm_constant::BmmConstant
-//   BMM_CONTAINER_PROPERTY: openehr_lang::v3::bmm3::core::feature::bmm_container_property::BmmContainerPropertyData wins over openehr_am::v2_4::bmm::core::bmm_container_property::BmmContainerPropertyData
-//   BMM_CONTAINER_TYPE: openehr_lang::v3::bmm3::core::entity::bmm_container_type::BmmContainerTypeData wins over openehr_am::v2_4::bmm::core::bmm_container_type::BmmContainerTypeData
+//   BMM_CONTAINER_PROPERTY: openehr_lang::v2::bmm::core::bmm_container_property::BmmContainerProperty wins over openehr_am::v2_4::bmm::core::bmm_container_property::BmmContainerPropertyData
+//   BMM_CONTAINER_TYPE: openehr_lang::v2::bmm::core::bmm_container_type::BmmContainerTypeData wins over openehr_am::v2_4::bmm::core::bmm_container_type::BmmContainerTypeData
 //   BMM_DECLARATION: openehr_lang::v3::bmm3::statement::bmm_declaration::BmmDeclaration wins over openehr_am::v2_4::bmm3::statement::bmm_declaration::BmmDeclaration
-//   BMM_DEFINITIONS: openehr_lang::v3::bmm3::bmm_definitions::BmmDefinitions wins over openehr_am::v2_4::bmm::core::bmm_definitions::BmmDefinitionsData
-//   BMM_ENUMERATION: openehr_lang::v3::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumerationData wins over openehr_am::v2_4::bmm::core::bmm_enumeration::BmmEnumerationData
-//   BMM_ENUMERATION_INTEGER: openehr_lang::v3::bmm3::core::entity::range_constrained::bmm_enumeration_integer::BmmEnumerationInteger wins over openehr_am::v2_4::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger
-//   BMM_ENUMERATION_STRING: openehr_lang::v3::bmm3::core::entity::range_constrained::bmm_enumeration_string::BmmEnumerationString wins over openehr_am::v2_4::bmm::core::bmm_enumeration_string::BmmEnumerationString
+//   BMM_DEFINITIONS: openehr_lang::v2::bmm::core::bmm_definitions::BmmDefinitionsData wins over openehr_am::v2_4::bmm::core::bmm_definitions::BmmDefinitionsData
+//   BMM_ENUMERATION: openehr_lang::v2::bmm::core::bmm_enumeration::BmmEnumerationData wins over openehr_am::v2_4::bmm::core::bmm_enumeration::BmmEnumerationData
+//   BMM_ENUMERATION_INTEGER: openehr_lang::v2::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger wins over openehr_am::v2_4::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger
+//   BMM_ENUMERATION_STRING: openehr_lang::v2::bmm::core::bmm_enumeration_string::BmmEnumerationString wins over openehr_am::v2_4::bmm::core::bmm_enumeration_string::BmmEnumerationString
 //   BMM_FEATURE_GROUP: openehr_lang::v3::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup wins over openehr_am::v2_4::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup
 //   BMM_FUNCTION: openehr_lang::v3::bmm3::core::feature::bmm_function::BmmFunction wins over openehr_am::v2_4::bmm3::core::feature::bmm_function::BmmFunction
 //   BMM_FUNCTION_TYPE: openehr_lang::v3::bmm3::core::entity::bmm_function_type::BmmFunctionType wins over openehr_am::v2_4::bmm3::core::entity::bmm_function_type::BmmFunctionType
-//   BMM_GENERIC_CLASS: openehr_lang::v3::bmm3::core::entity::bmm_generic_class::BmmGenericClass wins over openehr_am::v2_4::bmm::core::bmm_generic_class::BmmGenericClass
+//   BMM_GENERIC_CLASS: openehr_lang::v2::bmm::core::bmm_generic_class::BmmGenericClass wins over openehr_am::v2_4::bmm::core::bmm_generic_class::BmmGenericClass
 //   BMM_GENERIC_PARAMETER: openehr_lang::v2::bmm::core::bmm_generic_parameter::BmmGenericParameter wins over openehr_am::v2_4::bmm::core::bmm_generic_parameter::BmmGenericParameter
-//   BMM_GENERIC_TYPE: openehr_lang::v3::bmm3::core::entity::bmm_generic_type::BmmGenericType wins over openehr_am::v2_4::bmm::core::bmm_generic_type::BmmGenericType
+//   BMM_GENERIC_TYPE: openehr_lang::v2::bmm::core::bmm_generic_type::BmmGenericType wins over openehr_am::v2_4::bmm::core::bmm_generic_type::BmmGenericType
 //   BMM_INDEXED_CONTAINER_PROPERTY: openehr_lang::v3::bmm3::core::feature::bmm_indexed_container_property::BmmIndexedContainerProperty wins over openehr_am::v2_4::bmm3::core::feature::bmm_indexed_container_property::BmmIndexedContainerProperty
-//   BMM_INDEXED_CONTAINER_TYPE: openehr_lang::v3::bmm3::core::entity::bmm_indexed_container_type::BmmIndexedContainerType wins over openehr_am::v2_4::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType
+//   BMM_INDEXED_CONTAINER_TYPE: openehr_lang::v2::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType wins over openehr_am::v2_4::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType
 //   BMM_INTEGER_VALUE: openehr_lang::v3::bmm3::core::literal_value::bmm_integer_value::BmmIntegerValue wins over openehr_am::v2_4::bmm3::core::literal_value::bmm_integer_value::BmmIntegerValue
 //   BMM_LOCAL: openehr_lang::v3::bmm3::core::feature::bmm_local::BmmLocal wins over openehr_am::v2_4::bmm3::core::feature::bmm_local::BmmLocal
 //   BMM_LOCAL_ROUTINE: openehr_lang::v3::bmm3::core::feature::bmm_local_routine::BmmLocalRoutine wins over openehr_am::v2_4::bmm3::core::feature::bmm_local_routine::BmmLocalRoutine
-//   BMM_MODEL: openehr_lang::v3::bmm3::core::model::bmm_model::BmmModel wins over openehr_am::v2_4::bmm::core::bmm_model::BmmModel
+//   BMM_MODEL: openehr_lang::v2::bmm::core::bmm_model::BmmModel wins over openehr_am::v2_4::bmm::core::bmm_model::BmmModel
 //   BMM_MODEL_ACCESS: openehr_lang::v3::bmm3::model_access::bmm_model_access::BmmModelAccess wins over openehr_am::v2_4::bmm3::model_access::bmm_model_access::BmmModelAccess
 //   BMM_MODEL_METADATA: openehr_lang::v3::bmm3::core::model::bmm_model_metadata::BmmModelMetadataData wins over openehr_am::v2_4::bmm3::core::model::bmm_model_metadata::BmmModelMetadataData
 //   BMM_OPEN_TYPE: openehr_lang::v2::bmm::core::bmm_open_type::BmmOpenType wins over openehr_am::v2_4::bmm::core::bmm_open_type::BmmOpenType
-//   BMM_PACKAGE: openehr_lang::v3::bmm3::core::model::bmm_package::BmmPackage wins over openehr_am::v2_4::bmm::core::bmm_package::BmmPackage
+//   BMM_PACKAGE: openehr_lang::v2::bmm::core::bmm_package::BmmPackage wins over openehr_am::v2_4::bmm::core::bmm_package::BmmPackage
 //   BMM_PARAMETER: openehr_lang::v3::bmm3::core::feature::bmm_parameter::BmmParameter wins over openehr_am::v2_4::bmm3::core::feature::bmm_parameter::BmmParameter
 //   BMM_PARAMETER_TYPE: openehr_lang::v3::bmm3::core::entity::bmm_parameter_type::BmmParameterType wins over openehr_am::v2_4::bmm3::core::entity::bmm_parameter_type::BmmParameterType
 //   BMM_PRIMITIVE_VALUE: openehr_lang::v3::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValueData wins over openehr_am::v2_4::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValueData
@@ -257,7 +257,7 @@
 //   BMM_SELF: openehr_lang::v3::bmm3::core::feature::bmm_self::BmmSelf wins over openehr_am::v2_4::bmm3::core::feature::bmm_self::BmmSelf
 //   BMM_SIGNATURE: openehr_lang::v3::bmm3::core::entity::bmm_signature::BmmSignatureData wins over openehr_am::v2_4::bmm3::core::entity::bmm_signature::BmmSignatureData
 //   BMM_SIMPLE_CLASS: openehr_lang::v3::bmm3::core::entity::bmm_simple_class::BmmSimpleClassData wins over openehr_am::v2_4::bmm3::core::entity::bmm_simple_class::BmmSimpleClassData
-//   BMM_SIMPLE_TYPE: openehr_lang::v3::bmm3::core::entity::bmm_simple_type::BmmSimpleType wins over openehr_am::v2_4::bmm::core::bmm_simple_type::BmmSimpleType
+//   BMM_SIMPLE_TYPE: openehr_lang::v2::bmm::core::bmm_simple_type::BmmSimpleType wins over openehr_am::v2_4::bmm::core::bmm_simple_type::BmmSimpleType
 //   BMM_SINGLETON: openehr_lang::v3::bmm3::core::feature::bmm_singleton::BmmSingleton wins over openehr_am::v2_4::bmm3::core::feature::bmm_singleton::BmmSingleton
 //   BMM_STATEMENT_BLOCK: openehr_lang::v3::bmm3::statement::bmm_statement_block::BmmStatementBlock wins over openehr_am::v2_4::bmm3::statement::bmm_statement_block::BmmStatementBlock
 //   BMM_STRING_VALUE: openehr_lang::v3::bmm3::core::literal_value::bmm_string_value::BmmStringValue wins over openehr_am::v2_4::bmm3::core::literal_value::bmm_string_value::BmmStringValue
@@ -433,6 +433,35 @@
 //   UidBasedId: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   ValidityKind: BMM enumeration: a literal token/integer on the wire, never `_type`-tagged
 //   VersionStatus: BMM enumeration: a literal token/integer on the wire, never `_type`-tagged
+//   BmmClass: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmClassifier: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmContainerType: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmDefinitions: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmEnumeration: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmModelElement: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmPackageContainer: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmProperty: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmSchemaCore: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmType: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   BmmTypeElement: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   Expression: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ExprLeaf: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ExprOperator: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ExprTypeDef: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   ExprValue: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   OperatorKind: BMM enumeration: a literal token/integer on the wire, never `_type`-tagged
+//   PBmmBaseType: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   PBmmClass: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   PBmmContainerProperty: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   PBmmContainerType: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   PBmmEnumeration: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   PBmmFunctionParameter: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   PBmmModelElement: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   PBmmPackageContainer: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   PBmmProperty: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   PBmmType: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   SchemaDescriptor: untagged enum: the wire `_type` is the active variant's, which has its own arm
+//   Statement: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   BmmBuiltinType: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   BmmClass: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   BmmContainerProperty: untagged enum: the wire `_type` is the active variant's, which has its own arm
@@ -483,35 +512,6 @@
 //   ElTerminal: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   ElValueGenerator: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   ElVariable: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   BmmClass: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   BmmClassifier: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   BmmContainerType: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   BmmDefinitions: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   BmmEnumeration: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   BmmModelElement: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   BmmPackageContainer: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   BmmProperty: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   BmmSchemaCore: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   BmmType: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   BmmTypeElement: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   Expression: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   ExprLeaf: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   ExprOperator: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   ExprTypeDef: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   ExprValue: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   OperatorKind: BMM enumeration: a literal token/integer on the wire, never `_type`-tagged
-//   PBmmBaseType: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   PBmmClass: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   PBmmContainerProperty: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   PBmmContainerType: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   PBmmEnumeration: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   PBmmFunctionParameter: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   PBmmModelElement: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   PBmmPackageContainer: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   PBmmProperty: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   PBmmType: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   SchemaDescriptor: untagged enum: the wire `_type` is the active variant's, which has its own arm
-//   Statement: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   AdlCodeDefinitions: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   Archetype: untagged enum: the wire `_type` is the active variant's, which has its own arm
 //   ArchetypeConstraint: untagged enum: the wire `_type` is the active variant's, which has its own arm
@@ -669,36 +669,36 @@ pub fn structural_check(
 "BMM_BOOLEAN_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::literal_value::bmm_boolean_value::BmmBooleanValue>(node).map(|_| ())),
 "BMM_CLASS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_class::BmmClassData>(node).map(|_| ())),
 "BMM_CONSTANT" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_constant::BmmConstant>(node).map(|_| ())),
-"BMM_CONTAINER_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_container_property::BmmContainerPropertyData>(node).map(|_| ())),
-"BMM_CONTAINER_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::entity::bmm_container_type::BmmContainerTypeData>(node).map(|_| ())),
+"BMM_CONTAINER_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_container_property::BmmContainerProperty>(node).map(|_| ())),
+"BMM_CONTAINER_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_container_type::BmmContainerTypeData>(node).map(|_| ())),
 "BMM_CONTAINER_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::literal_value::bmm_container_value::BmmContainerValue>(node).map(|_| ())),
 "BMM_DECLARATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::statement::bmm_declaration::BmmDeclaration>(node).map(|_| ())),
-"BMM_DEFINITIONS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::bmm_definitions::BmmDefinitions>(node).map(|_| ())),
-"BMM_ENUMERATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumerationData>(node).map(|_| ())),
-"BMM_ENUMERATION_INTEGER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::entity::range_constrained::bmm_enumeration_integer::BmmEnumerationInteger>(node).map(|_| ())),
-"BMM_ENUMERATION_STRING" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::entity::range_constrained::bmm_enumeration_string::BmmEnumerationString>(node).map(|_| ())),
+"BMM_DEFINITIONS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_definitions::BmmDefinitionsData>(node).map(|_| ())),
+"BMM_ENUMERATION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_enumeration::BmmEnumerationData>(node).map(|_| ())),
+"BMM_ENUMERATION_INTEGER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_enumeration_integer::BmmEnumerationInteger>(node).map(|_| ())),
+"BMM_ENUMERATION_STRING" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_enumeration_string::BmmEnumerationString>(node).map(|_| ())),
 "BMM_EXTERNAL_ROUTINE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_external_routine::BmmExternalRoutine>(node).map(|_| ())),
 "BMM_FEATURE_EXTENSION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_feature_extension::BmmFeatureExtension>(node).map(|_| ())),
 "BMM_FEATURE_GROUP" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup>(node).map(|_| ())),
 "BMM_FUNCTION" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_function::BmmFunction>(node).map(|_| ())),
 "BMM_FUNCTION_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::entity::bmm_function_type::BmmFunctionType>(node).map(|_| ())),
-"BMM_GENERIC_CLASS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::entity::bmm_generic_class::BmmGenericClass>(node).map(|_| ())),
+"BMM_GENERIC_CLASS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_generic_class::BmmGenericClass>(node).map(|_| ())),
 "BMM_GENERIC_PARAMETER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_generic_parameter::BmmGenericParameter>(node).map(|_| ())),
-"BMM_GENERIC_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::entity::bmm_generic_type::BmmGenericType>(node).map(|_| ())),
-"BMM_INCLUDE_SPEC" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::model_access::bmm_include_spec::BmmIncludeSpec>(node).map(|_| ())),
+"BMM_GENERIC_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_generic_type::BmmGenericType>(node).map(|_| ())),
+"BMM_INCLUDE_SPEC" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_include_spec::BmmIncludeSpec>(node).map(|_| ())),
 "BMM_INDEXED_CONTAINER_PROPERTY" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_indexed_container_property::BmmIndexedContainerProperty>(node).map(|_| ())),
-"BMM_INDEXED_CONTAINER_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::entity::bmm_indexed_container_type::BmmIndexedContainerType>(node).map(|_| ())),
+"BMM_INDEXED_CONTAINER_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_indexed_container_type::BmmIndexedContainerType>(node).map(|_| ())),
 "BMM_INDEXED_CONTAINER_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::literal_value::bmm_indexed_container_value::BmmIndexedContainerValue>(node).map(|_| ())),
 "BMM_INTEGER_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::literal_value::bmm_integer_value::BmmIntegerValue>(node).map(|_| ())),
 "BMM_INTERVAL_VALUE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::literal_value::bmm_interval_value::BmmIntervalValue>(node).map(|_| ())),
 "BMM_LOCAL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_local::BmmLocal>(node).map(|_| ())),
 "BMM_LOCAL_ROUTINE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_local_routine::BmmLocalRoutine>(node).map(|_| ())),
-"BMM_MODEL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::model::bmm_model::BmmModel>(node).map(|_| ())),
+"BMM_MODEL" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_model::BmmModel>(node).map(|_| ())),
 "BMM_MODEL_ACCESS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::model_access::bmm_model_access::BmmModelAccess>(node).map(|_| ())),
 "BMM_MODEL_METADATA" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::model::bmm_model_metadata::BmmModelMetadataData>(node).map(|_| ())),
 "BMM_OPEN_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_open_type::BmmOpenType>(node).map(|_| ())),
 "BMM_OPERATOR" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_operator::BmmOperator>(node).map(|_| ())),
-"BMM_PACKAGE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::model::bmm_package::BmmPackage>(node).map(|_| ())),
+"BMM_PACKAGE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_package::BmmPackage>(node).map(|_| ())),
 "BMM_PACKAGE_CONTAINER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_package_container::BmmPackageContainerData>(node).map(|_| ())),
 "BMM_PARAMETER" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_parameter::BmmParameter>(node).map(|_| ())),
 "BMM_PARAMETER_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::entity::bmm_parameter_type::BmmParameterType>(node).map(|_| ())),
@@ -716,7 +716,7 @@ pub fn structural_check(
 "BMM_SELF" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_self::BmmSelf>(node).map(|_| ())),
 "BMM_SIGNATURE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::entity::bmm_signature::BmmSignatureData>(node).map(|_| ())),
 "BMM_SIMPLE_CLASS" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::entity::bmm_simple_class::BmmSimpleClassData>(node).map(|_| ())),
-"BMM_SIMPLE_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::entity::bmm_simple_type::BmmSimpleType>(node).map(|_| ())),
+"BMM_SIMPLE_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v2::bmm::core::bmm_simple_type::BmmSimpleType>(node).map(|_| ())),
 "BMM_SINGLETON" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::feature::bmm_singleton::BmmSingleton>(node).map(|_| ())),
 "BMM_STATEMENT_BLOCK" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::statement::bmm_statement_block::BmmStatementBlock>(node).map(|_| ())),
 "BMM_STATUS_TYPE" => ::core::option::Option::Some(crate::json::from_canonical_value::<openehr_lang::v3::bmm3::core::entity::bmm_status_type::BmmStatusType>(node).map(|_| ())),
@@ -1252,23 +1252,16 @@ pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static st
         "BMM_CONTAINER_PROPERTY" => ::core::option::Option::Some(&[
             "cardinality",
             "documentation",
-            "extensions",
-            "feature_extensions",
-            "group",
-            "is_composition",
+            "is_computed",
             "is_im_infrastructure",
             "is_im_runtime",
-            "is_nullable",
-            "is_synthesised_generic",
+            "is_mandatory",
             "name",
             "type",
         ]),
-        "BMM_CONTAINER_TYPE" => ::core::option::Option::Some(&[
-            "container_class",
-            "is_ordered",
-            "is_unique",
-            "item_type",
-        ]),
+        "BMM_CONTAINER_TYPE" => {
+            ::core::option::Option::Some(&["base_type", "container_type", "documentation"])
+        }
         "BMM_CONTAINER_VALUE" => {
             ::core::option::Option::Some(&["syntax", "type", "value", "value_literal"])
         }
@@ -1276,72 +1269,48 @@ pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static st
         "BMM_DEFINITIONS" => ::core::option::Option::Some(&[]),
         "BMM_ENUMERATION" => ::core::option::Option::Some(&[
             "ancestors",
-            "converters",
-            "creators",
             "documentation",
-            "extensions",
-            "feature_groups",
-            "features",
-            "functions",
             "immediate_descendants",
-            "invariants",
             "is_abstract",
             "is_override",
-            "is_primitive",
+            "is_primitive_type",
             "item_names",
             "item_values",
             "name",
             "package",
-            "procedures",
             "properties",
             "source_schema_id",
-            "static_properties",
+            "underlying_type_name",
         ]),
         "BMM_ENUMERATION_INTEGER" => ::core::option::Option::Some(&[
             "ancestors",
-            "converters",
-            "creators",
             "documentation",
-            "extensions",
-            "feature_groups",
-            "features",
-            "functions",
             "immediate_descendants",
-            "invariants",
             "is_abstract",
             "is_override",
-            "is_primitive",
+            "is_primitive_type",
             "item_names",
             "item_values",
             "name",
             "package",
-            "procedures",
             "properties",
             "source_schema_id",
-            "static_properties",
+            "underlying_type_name",
         ]),
         "BMM_ENUMERATION_STRING" => ::core::option::Option::Some(&[
             "ancestors",
-            "converters",
-            "creators",
             "documentation",
-            "extensions",
-            "feature_groups",
-            "features",
-            "functions",
             "immediate_descendants",
-            "invariants",
             "is_abstract",
             "is_override",
-            "is_primitive",
+            "is_primitive_type",
             "item_names",
             "item_values",
             "name",
             "package",
-            "procedures",
             "properties",
             "source_schema_id",
-            "static_properties",
+            "underlying_type_name",
         ]),
         "BMM_EXTERNAL_ROUTINE" => ::core::option::Option::Some(&["argument_mapping", "meta_data"]),
         "BMM_FEATURE_EXTENSION" => ::core::option::Option::Some(&[]),
@@ -1367,25 +1336,16 @@ pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static st
         "BMM_FUNCTION_TYPE" => ::core::option::Option::Some(&["argument_types", "result_type"]),
         "BMM_GENERIC_CLASS" => ::core::option::Option::Some(&[
             "ancestors",
-            "converters",
-            "creators",
             "documentation",
-            "extensions",
-            "feature_groups",
-            "features",
-            "functions",
             "generic_parameters",
             "immediate_descendants",
-            "invariants",
             "is_abstract",
             "is_override",
-            "is_primitive",
+            "is_primitive_type",
             "name",
             "package",
-            "procedures",
             "properties",
             "source_schema_id",
-            "static_properties",
         ]),
         "BMM_GENERIC_PARAMETER" => ::core::option::Option::Some(&[
             "conforms_to_type",
@@ -1394,7 +1354,7 @@ pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static st
             "name",
         ]),
         "BMM_GENERIC_TYPE" => {
-            ::core::option::Option::Some(&["base_class", "generic_parameters", "value_constraint"])
+            ::core::option::Option::Some(&["base_class", "documentation", "generic_parameters"])
         }
         "BMM_INCLUDE_SPEC" => ::core::option::Option::Some(&["id"]),
         "BMM_INDEXED_CONTAINER_PROPERTY" => ::core::option::Option::Some(&[
@@ -1412,11 +1372,10 @@ pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static st
             "type",
         ]),
         "BMM_INDEXED_CONTAINER_TYPE" => ::core::option::Option::Some(&[
-            "container_class",
+            "base_type",
+            "container_type",
+            "documentation",
             "index_type",
-            "is_ordered",
-            "is_unique",
-            "item_type",
         ]),
         "BMM_INDEXED_CONTAINER_VALUE" => {
             ::core::option::Option::Some(&["syntax", "type", "value", "value_literal"])
@@ -1436,15 +1395,21 @@ pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static st
         ]),
         "BMM_LOCAL_ROUTINE" => ::core::option::Option::Some(&["body", "locals"]),
         "BMM_MODEL" => ::core::option::Option::Some(&[
+            "archetype_data_value_parent_class",
+            "archetype_parent_class",
+            "archetype_rm_closure_packages",
+            "archetype_visualise_descendants_of",
             "class_definitions",
             "documentation",
-            "extensions",
-            "modules",
-            "name",
             "packages",
             "rm_publisher",
             "rm_release",
-            "used_models",
+            "schema_author",
+            "schema_contributors",
+            "schema_description",
+            "schema_lifecycle_state",
+            "schema_name",
+            "schema_revision",
         ]),
         "BMM_MODEL_ACCESS" => ::core::option::Option::Some(&[
             "all_schemas",
@@ -1455,13 +1420,9 @@ pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static st
         "BMM_MODEL_METADATA" => ::core::option::Option::Some(&["rm_publisher", "rm_release"]),
         "BMM_OPEN_TYPE" => ::core::option::Option::Some(&["documentation", "generic_constraint"]),
         "BMM_OPERATOR" => ::core::option::Option::Some(&["name", "position", "symbols"]),
-        "BMM_PACKAGE" => ::core::option::Option::Some(&[
-            "documentation",
-            "extensions",
-            "members",
-            "name",
-            "packages",
-        ]),
+        "BMM_PACKAGE" => {
+            ::core::option::Option::Some(&["classes", "documentation", "name", "packages"])
+        }
         "BMM_PACKAGE_CONTAINER" => ::core::option::Option::Some(&["documentation", "packages"]),
         "BMM_PARAMETER" => ::core::option::Option::Some(&[
             "direction",
@@ -1576,7 +1537,7 @@ pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static st
             "source_schema_id",
             "static_properties",
         ]),
-        "BMM_SIMPLE_TYPE" => ::core::option::Option::Some(&["base_class", "value_constraint"]),
+        "BMM_SIMPLE_TYPE" => ::core::option::Option::Some(&["base_class", "documentation"]),
         "BMM_SINGLETON" => ::core::option::Option::Some(&[
             "documentation",
             "extensions",

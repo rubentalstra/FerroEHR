@@ -22,9 +22,10 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
   18 class names occur in both files with materially different shapes
   (`BMM_CLASS`, `BMM_TYPE`, `BMM_PROPERTY`, `BMM_MODEL`, …), so each name
   yields TWO Rust types at two paths, each with its own intra-generation
-  cross-references. The crate **prelude carries one entry per Rust name** —
-  the v3 twin for a colliding name; the v2.x twin is reachable by its full
-  module path only, which is how the hand-written v2 surface below imports it.
+  cross-references. The crate **prelude re-exports the CURRENT generation
+  (`v2`, the `#[default]`) only** — the STABLE tool-implemented form per the
+  published LANG index (BMM3 is PAUSED upstream; hold record #1920); v3
+  types are reachable by their full `v3::` module paths only.
   Never "unify" the two, never reach across generations in a type position,
   and never add a shadow/adapter type: a shape gap is a
   `tools/openehr-codegen` fix + regeneration.
@@ -231,7 +232,7 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
   the literal's span. Never re-implement escape decoding anywhere.
 - Spec authority: `docs/specs/openehr/LANG/docs/` (bmm, odin). Parser
   behaviour divergences are spec-citable, never silent.
-- Versioned LANG 1.0.0 (spec pin).
+- Spec pins are per generation (`Generation` enum + generation-module `SPEC_VERSION`s; both vendored files are 1.1.0-line snapshots). The released 1.0.0 machine-readable BMM is an adjudicated refusal as a codegen input (#1942; defect class in upstream-report #1927).
 - Gates: `cargo clippy -p openehr-lang --all-targets` +
   `cargo nextest run -p openehr-lang`, plus a drift check when the model
   changed.

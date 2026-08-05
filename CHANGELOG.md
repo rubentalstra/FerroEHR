@@ -25,6 +25,7 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- `openehr-lang`'s current (default) generation is now `v2` — the STABLE, tool-implemented BMM per the published LANG component index (BMM3 is PAUSED upstream) — so the crate prelude re-exports the v2 model; the v3 types stay fully emitted under `openehr_lang::v3`. The released LANG 1.0.0 machine-readable BMM is recorded as unusable for code generation (no `includes`, unnamed `BMM_CLASS`/`BMM_PACKAGE`, an explicitly obsolete package) and no generation is emitted from it.
 - The published `openehr-*` spec crates now expose every BMM generation under a version-named top module — `openehr_base::v1_3`, `openehr_rm::v1_2`, `openehr_lang::v2`/`v3` (replacing `bmm`/`bmm_persistence`/`beom` and `bmm3` at the crate root), `openehr_am::v1_4`/`v2_4` (replacing `am14`/`am24`), `openehr_term::v3_1` — with a new per-crate `Generation` enum (derived `Default` marking the current generation, `spec_version()`/`as_str()`, `FromStr`/`Display`) and the crate prelude re-exporting the current generation only. Import paths into these crates change accordingly; the served wire formats are unchanged.
 
 ## [3.17.3] - 2026-08-05
