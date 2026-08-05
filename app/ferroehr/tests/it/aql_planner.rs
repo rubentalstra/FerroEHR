@@ -1543,11 +1543,11 @@ fn stable_profile_gate_matches_the_released_model() {
     ] {
         let ast = parse_str(q).expect("parses");
         assert!(
-            ferroehr::aql::plan(&ast, &Params::new(), SpecProfile::Stable).is_ok(),
+            plan(&ast, &Params::new(), SpecProfile::Stable).is_ok(),
             "stable must not refuse RM 1.1.0 surface: {q}"
         );
         assert!(
-            ferroehr::aql::plan(&ast, &Params::new(), SpecProfile::Development).is_ok(),
+            plan(&ast, &Params::new(), SpecProfile::Development).is_ok(),
             "development baseline: {q}"
         );
     }
