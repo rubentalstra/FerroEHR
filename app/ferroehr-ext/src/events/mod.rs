@@ -5,7 +5,8 @@
 //! (`GENERIC_ENTRY` with `FEEDER_AUDIT`), not message brokers, topic routing,
 //! or outbound emission;
 //! master13 is informative deployment guidance and prescribes no eventing.
-//! Gate: [`config::EventsConfig::enabled`] (`events.enabled`, default off) — with it
+//! Gate: `EventsConfig::enabled` (`events.enabled`, default off; the section
+//! struct lives in the consuming crate) — with it
 //! off the publisher is never spawned and the commit path is byte-identical
 //! (the zero-drift gate).
 //!
@@ -32,10 +33,10 @@
 //!   (default 7 days).
 //!
 //! ## Module map
-//! - [`config`] — the [`config::EventsConfig`] section struct.
 //! - `amqp` — the lapin [`amqp::AmqpPublisher`].
-//! - `publisher` — the drainer task + retention pruner + [`publisher::EventsHandle`].
-//! - `subscription` — the `event_subscription` CRUD on `FerroEhrService`.
+//! - The `config` section struct (`EventsConfig`), the drainer task +
+//!   retention pruner (`EventsHandle`), and the `event_subscription` CRUD
+//!   live in the consuming crate's `extensions::events`.
 
 #![expect(
     clippy::disallowed_types,
