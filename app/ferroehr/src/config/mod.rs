@@ -711,8 +711,11 @@ mod tests {
         for section in alias::SECTIONS {
             let header = format!("[{section}]");
             let dotted = format!("[{section}."); // sub-tables count too
+            let scalar = format!("\n{section} = "); // top-level scalar keys
             assert!(
-                DEFAULT_TEMPLATE.contains(&header) || DEFAULT_TEMPLATE.contains(&dotted),
+                DEFAULT_TEMPLATE.contains(&header)
+                    || DEFAULT_TEMPLATE.contains(&dotted)
+                    || DEFAULT_TEMPLATE.contains(&scalar),
                 "template missing section {section}"
             );
         }
