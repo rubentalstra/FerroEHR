@@ -67,6 +67,12 @@ pub(crate) enum Door {
         /// no inference ambiguity, and a BMM change that adds a field fails
         /// loudly (an arity mismatch) instead of silently emitting a call the
         /// constructor cannot answer.
+        ///
+        /// A parameter that is itself a spec type is written as the marker
+        /// `@<SPEC_CLASS>` (`@UID_BASED_ID`), never a literal Rust path: the
+        /// emitter resolves it per GENERATION (the declaring generation's own
+        /// module, or the paired dependency generation's), so one table row
+        /// serves every generation of the declaring crate.
         params: &'static [&'static str],
         /// `true` when `new` returns `Result` (the normal case: the constructor
         /// runs a grammar or an invariant over the incoming values). `false`
@@ -200,9 +206,9 @@ pub(crate) static CONSTRUCTION: &[Construction] = &[
             params: &[
                 "String",
                 "Option<String>",
-                "openehr_base::prelude::UidBasedId",
+                "@UID_BASED_ID",
                 "Option<String>",
-                "openehr_base::prelude::ObjectRef",
+                "@OBJECT_REF",
             ],
             fallible: true,
             citation: "docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.item_tag.adoc \

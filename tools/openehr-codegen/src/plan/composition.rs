@@ -69,7 +69,13 @@ use std::path::Path;
 const VENDOR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/bmm");
 
 pub(crate) const BASE_BMM: &str = "components/BASE/json/openehr_base_1.3.0.bmm.json";
+/// BASE's latest RELEASED generation (1.2.0, 09-Apr-2021) — the `stable`
+/// profile's BASE pairing (#1936: RM 1.1.0 is modelled against BASE 1.2.0).
+pub(crate) const BASE12_BMM: &str = "components/BASE/json/openehr_base_1.2.0.bmm.json";
 pub(crate) const RM_BMM: &str = "components/RM/json/openehr_rm_1.2.0.bmm.json";
+/// RM's latest RELEASED generation (1.1.0, 29-Sep-2020); its BMM `includes`
+/// names `openehr_base_1.2.0` — the released pairing, first-hand.
+pub(crate) const RM11_BMM: &str = "components/RM/json/openehr_rm_1.1.0.bmm.json";
 pub(crate) const TERM_BMM: &str = "components/TERM/json/openehr_term_3.1.0.bmm.json";
 pub(crate) const AM14_BMM: &str = "components/AM/json/openehr_am_1.4.0.bmm.json";
 pub(crate) const AM24_BMM: &str = "components/AM/json/openehr_am_2.4.0.bmm.json";
@@ -171,42 +177,72 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
         key: "base",
         crate_name: "openehr-base",
         spec_version: "1.3.0",
-        generations: &[GenerationSpec {
-            module: "v1_3",
-            spec_version: "1.3.0",
-            file: BASE_BMM,
-            current: true,
-            model_deps: &[],
-            prelude_deps: &[],
-        }],
+        generations: &[
+            GenerationSpec {
+                module: "v1_2",
+                spec_version: "1.2.0",
+                file: BASE12_BMM,
+                current: false,
+                model_deps: &[],
+                prelude_deps: &[],
+            },
+            GenerationSpec {
+                module: "v1_3",
+                spec_version: "1.3.0",
+                file: BASE_BMM,
+                current: true,
+                model_deps: &[],
+                prelude_deps: &[],
+            },
+        ],
         doc: BASE_DOC,
-        citation: "BASE 1.3.0 BMM (openehr_base_1.3.0) — no includes; the foundation crate.",
+        citation: "BASE BMMs (openehr_base_1.2.0 released + openehr_base_1.3.0 development) — no \
+                   includes; the foundation crate. Both generations emitted side by side \
+                   (#1936: the released generation stays selectable).",
         reason: "Foundation types; nothing below it.",
     },
     CrateComposition {
         key: "rm",
         crate_name: "openehr-rm",
         spec_version: "1.2.0",
-        generations: &[GenerationSpec {
-            module: "v1_2",
-            spec_version: "1.2.0",
-            file: RM_BMM,
-            current: true,
-            model_deps: &[DepGeneration {
-                key: "base",
-                generation: "v1_3",
-            }],
-            prelude_deps: &[DepGeneration {
-                key: "base",
-                generation: "v1_3",
-            }],
-        }],
+        generations: &[
+            GenerationSpec {
+                module: "v1_1",
+                spec_version: "1.1.0",
+                file: RM11_BMM,
+                current: false,
+                model_deps: &[DepGeneration {
+                    key: "base",
+                    generation: "v1_2",
+                }],
+                prelude_deps: &[DepGeneration {
+                    key: "base",
+                    generation: "v1_2",
+                }],
+            },
+            GenerationSpec {
+                module: "v1_2",
+                spec_version: "1.2.0",
+                file: RM_BMM,
+                current: true,
+                model_deps: &[DepGeneration {
+                    key: "base",
+                    generation: "v1_3",
+                }],
+                prelude_deps: &[DepGeneration {
+                    key: "base",
+                    generation: "v1_3",
+                }],
+            },
+        ],
         doc: RM_DOC,
-        citation: "RM 1.2.0 BMM includes openehr_base_1.3.0 (ancestors resolve to BASE). Five \
-                   class names are declared by BOTH files and the RM declaration wins the merge, \
-                   which is correct in every case — see the module NOTE on the RM/BASE \
-                   twin classes.",
-        reason: "The domain model; RM 1.2.0 pairs with BASE 1.3.0.",
+        citation: "RM 1.2.0 BMM includes openehr_base_1.3.0; RM 1.1.0 BMM includes \
+                   openehr_base_1.2.0 — each generation resolves against its OWN released \
+                   pairing, first-hand from the files' `includes`. Five class names are \
+                   declared by both an RM and its paired BASE file and the RM declaration \
+                   wins the merge, which is correct in every case — see the module NOTE on \
+                   the RM/BASE twin classes.",
+        reason: "The domain model; RM 1.2.0 pairs with BASE 1.3.0, RM 1.1.0 with BASE 1.2.0.",
     },
     CrateComposition {
         key: "lang",

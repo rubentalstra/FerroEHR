@@ -117,6 +117,3 @@ pub mod escape;
 pub mod lexer;
 pub mod odin;
 pub mod position;
-
-// canonical-JSON `serde` impls (openehr-codegen -- emit-json), auto-declared:
-mod json_serde;

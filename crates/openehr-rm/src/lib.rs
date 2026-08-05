@@ -20,6 +20,7 @@
 #![recursion_limit = "512"]
 
 pub mod prelude;
+pub mod v1_1;
 pub mod v1_2;
 
 /// The openEHR specification version this crate implements.
@@ -34,9 +35,11 @@ pub const SPEC_VERSION: &str = "1.2.0";
 ///
 /// Generated from the openehr-codegen composition table — the single
 /// authority for which generations exist. [`std::fmt::Display`] and
-/// [`std::str::FromStr`] round-trip the generation-module name (`"v1_2"`).
+/// [`std::str::FromStr`] round-trip the generation-module name (`"v1_1"`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Generation {
+    /// The `v1_1` generation — openEHR specification version 1.1.0.
+    V1_1,
     /// The `v1_2` generation — openEHR specification version 1.2.0.
     V1_2,
 }
@@ -46,12 +49,13 @@ impl Generation {
     pub const CURRENT: Self = Self::V1_2;
 
     /// Every generation this crate emits, oldest first.
-    pub const ALL: &'static [Self] = &[Self::V1_2];
+    pub const ALL: &'static [Self] = &[Self::V1_1, Self::V1_2];
 
     /// The openEHR specification version this generation implements.
     #[must_use]
     pub const fn spec_version(self) -> &'static str {
         match self {
+            Self::V1_1 => "1.1.0",
             Self::V1_2 => "1.2.0",
         }
     }
@@ -61,6 +65,7 @@ impl Generation {
     #[must_use]
     pub const fn module(self) -> &'static str {
         match self {
+            Self::V1_1 => "v1_1",
             Self::V1_2 => "v1_2",
         }
     }
@@ -74,7 +79,7 @@ impl std::fmt::Display for Generation {
 
 /// Error returned when parsing a [`Generation`] from an unknown token.
 ///
-/// The valid tokens are the generation-module names (`v1_2`).
+/// The valid tokens are the generation-module names (`v1_1`, `v1_2`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GenerationParseError {
     unrecognized: String,
@@ -84,7 +89,7 @@ impl std::fmt::Display for GenerationParseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "unknown generation {:?} (valid: `v1_2`)",
+            "unknown generation {:?} (valid: `v1_1`, `v1_2`)",
             self.unrecognized
         )
     }
@@ -97,6 +102,7 @@ impl std::str::FromStr for Generation {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
+            "v1_1" => Ok(Self::V1_1),
             "v1_2" => Ok(Self::V1_2),
             other => Err(GenerationParseError {
                 unrecognized: other.to_owned(),
@@ -104,6 +110,3 @@ impl std::str::FromStr for Generation {
         }
     }
 }
-
-// canonical-JSON `serde` impls (openehr-codegen -- emit-json), auto-declared:
-mod json_serde;
