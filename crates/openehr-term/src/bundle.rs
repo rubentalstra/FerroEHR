@@ -27,7 +27,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::{Arc, LazyLock};
 
 use openehr_base::containers::present;
-use openehr_base::prelude::Iso8601Date;
+use openehr_base::v1_3::prelude::Iso8601Date;
 
 use crate::v3_1::terminology::code::Code;
 use crate::v3_1::terminology::code_set::CodeSet;

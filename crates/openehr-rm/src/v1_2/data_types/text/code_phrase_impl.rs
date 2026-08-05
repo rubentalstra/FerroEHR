@@ -15,7 +15,7 @@ impl Validate for CodePhrase {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use openehr_base::prelude::TerminologyId;
+    use openehr_base::v1_3::prelude::TerminologyId;
 
     fn code_phrase(code: &str) -> CodePhrase {
         CodePhrase {

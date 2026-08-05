@@ -15,7 +15,7 @@ impl Validate for Archetyped {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use openehr_base::prelude::ArchetypeId;
+    use openehr_base::v1_3::prelude::ArchetypeId;
 
     fn archetyped(rm_version: &str) -> Archetyped {
         Archetyped {

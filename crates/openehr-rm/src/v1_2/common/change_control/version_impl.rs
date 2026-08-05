@@ -44,7 +44,7 @@
 use serde_json::Value;
 
 use crate::v1_2::common::change_control::version::Version;
-use openehr_base::prelude::{HierObjectId, ObjectVersionId};
+use openehr_base::v1_3::prelude::{HierObjectId, ObjectVersionId};
 
 impl<T> Version<T> {
     /// `VERSION.uid`: the version's own three-part identifier.
@@ -132,7 +132,7 @@ mod tests {
     use crate::v1_2::data_types::quantity::date_time::dv_date_time::DvDateTime;
     use crate::v1_2::data_types::text::code_phrase::CodePhrase;
     use crate::v1_2::data_types::text::dv_coded_text::DvCodedText;
-    use openehr_base::prelude::{ObjectId, ObjectRef, ObjectRefData, TerminologyId};
+    use openehr_base::v1_3::prelude::{ObjectId, ObjectRef, ObjectRefData, TerminologyId};
 
     /// A representative `ORIGINAL_VERSION` JSON whose `data` is a real corpus
     /// COMPOSITION (`openehr-its` vendored `minimal_persistent.json`), with fixed

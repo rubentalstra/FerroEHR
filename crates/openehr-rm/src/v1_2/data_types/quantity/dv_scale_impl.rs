@@ -42,7 +42,7 @@ mod tests {
     use super::*;
     use crate::v1_2::data_types::text::code_phrase::CodePhrase;
     use crate::v1_2::data_types::text::dv_coded_text::DvCodedText;
-    use openehr_base::prelude::TerminologyId;
+    use openehr_base::v1_3::prelude::TerminologyId;
 
     fn scale(value: f64) -> DvScale {
         DvScale {
