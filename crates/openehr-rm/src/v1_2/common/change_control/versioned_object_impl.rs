@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/common/change_control/versioned_object_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Where the `VERSIONED_OBJECT` spec functions are realized — and why none of
 //! them is realized HERE (hand-written spec behaviour; documentation only, by
 //! design).

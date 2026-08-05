@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/data_types/text/term_mapping_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariant for `TERM_MAPPING`.
 //!
 //! `Match_valid` (archie `TermMapping.VALID_MATCH_CODES`): `match` must be one

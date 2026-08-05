@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-base/base_types/identification/uuid_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written construction door for `UUID`.
 //!
 //! Spec: BASE 1.3.0

@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-base/base_types/identification/lexical.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written lexical-form parsing shared by the BASE identification types
 //! (hand-written spec behaviour; auto-declared beside the `// @generated` files).
 //!

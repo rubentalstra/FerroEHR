@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-base/foundation_types/interval/interval_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written BASE `Interval<T>` constraint-evaluation primitives.
 //!
 //! Implements the spec functions of the abstract `Interval<T>` class —

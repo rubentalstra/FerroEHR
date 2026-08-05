@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/data_structures/history/point_event_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariants for `POINT_EVENT`.
 //!
 //! Spec: RM 1.2.0

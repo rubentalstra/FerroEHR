@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/composition/composition_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariants for `COMPOSITION`.
 //!
 //! Mirrors archie `Composition` (non-terminology) + inherited LOCATABLE:

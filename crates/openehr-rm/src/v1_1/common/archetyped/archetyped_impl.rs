@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/common/archetyped/archetyped_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariant for `ARCHETYPED`.
 //!
 //! `Rm_version_valid` (archie `Archetyped`, `nullOrNotEmpty`): `rm_version` must

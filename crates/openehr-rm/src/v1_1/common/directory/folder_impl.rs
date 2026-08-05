@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/common/directory/folder_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariants for `FOLDER`.
 //!
 //! `FOLDER` declares NO invariants of its own in RM 1.2.0: its class table

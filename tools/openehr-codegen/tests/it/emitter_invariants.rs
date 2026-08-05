@@ -1232,3 +1232,23 @@ fn profile_generation_delta_is_pinned() {
     assert_eq!(base.classes_removed, Vec::<String>::new());
     assert_eq!(base.attributes_removed, Vec::<String>::new());
 }
+
+/// Generation-twin discipline (#1964): a hand-written file that is
+/// byte-identical across a crate's generations modulo generation tokens MUST
+/// be a template (`tools/openehr-codegen/templates/<crate>/…`) — one source,
+/// per-generation copies stamped by `emit` — so twins can never silently
+/// diverge. A non-empty list here names the families to convert.
+#[test]
+fn hand_written_twins_are_templates() {
+    for key in ["base", "rm", "am", "term", "lang"] {
+        let identical =
+            testsupport::identical_hand_written_twins(key).expect("crate tree readable");
+        assert_eq!(
+            identical,
+            Vec::<String>::new(),
+            "{key}: hand-written generation twins identical modulo generation tokens — \
+             convert each to a template (or a per-generation override) under \
+             tools/openehr-codegen/templates/",
+        );
+    }
+}

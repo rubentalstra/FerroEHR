@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/data_types/encapsulated/dv_parsable_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariants + functions for `DV_PARSABLE`.
 //!
 //! Spec: RM 1.2.0

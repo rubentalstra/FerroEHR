@@ -1,6 +1,7 @@
+// @generated-from-template templates/openehr-rm/overrides/v1_1/common/tags/item_tag_impl.rs (per-generation override) — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written validating construction + RM class invariants for `ITEM_TAG`.
 //!
-//! Spec: RM 1.2.0
+//! Spec: RM 1.1.0
 //! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.item_tag.adoc`:
 //! - `Inv_key_valid`: `not key.is_empty and key.is_justified` (no leading or
 //!   trailing whitespace).
@@ -19,6 +20,9 @@
 //! object and whether `target_path` resolves inside it. Those read state the
 //! instance does not carry, so they remain service-layer checks.
 
+// NOTE: per-generation override — RM 1.1.0's BMM declares ITEM_TAG's fields
+// in a different order, the construction door binds them in struct order, so
+// this generation's constructor literal cannot be stamped from the template.
 use crate::v1_1::common::tags::item_tag::ItemTag;
 use openehr_base::v1_2::prelude::{ObjectRef, UidBasedId};
 use openehr_base::validate::{InvariantViolation, Validate};

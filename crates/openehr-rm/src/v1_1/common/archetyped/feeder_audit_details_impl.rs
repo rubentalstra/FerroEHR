@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/common/archetyped/feeder_audit_details_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariant for `FEEDER_AUDIT_DETAILS`.
 //!
 //! `System_id_valid` (archie `FeederAuditDetails`, `nullOrNotEmpty`):

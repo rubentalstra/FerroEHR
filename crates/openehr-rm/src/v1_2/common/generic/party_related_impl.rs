@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/common/generic/party_related_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariants for `PARTY_RELATED`.
 //!
 //! Spec: RM `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.party_related.adoc`

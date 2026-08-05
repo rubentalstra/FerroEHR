@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/data_types/uri/dv_uri_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariant + functions for `DV_URI`.
 //!
 //! Spec: RM 1.2.0
