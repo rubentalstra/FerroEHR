@@ -337,9 +337,11 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
                    both are emitted completely, and cross-crate resolution takes the LAST \
                    unit's declaration (the retired merged-view semantics AM 2.4's LANG \
                    closure was built against). The released LANG 1.0.0 machine-readable BMM \
-                   is an ADJUDICATED REFUSAL as a codegen input (no `includes`, unnamed \
-                   BMM_CLASS/BMM_PACKAGE, an obsolete-elom package; BMM is TRIAL in that \
-                   release) — no generation is emitted from it.",
+                   emits the `v1_0` generation FAITHFULLY, its published defects carried \
+                   verbatim (no `includes`, so BASE references stay open slots; unnamed \
+                   BMM_CLASS/BMM_PACKAGE; an obsolete-elom package; BMM is TRIAL in that \
+                   release) — the defect class is reported upstream, never worked around \
+                   here.",
         reason: "The BMM/P_BMM object model, both extant generations; depends on BASE.",
     },
     CrateComposition {
