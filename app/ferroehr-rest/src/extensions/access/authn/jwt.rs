@@ -43,7 +43,7 @@ pub(super) struct JwtValidator {
 
 // The role model (default claim paths + extraction algorithm) lives in the leaf
 // `access::authz` module so the REST layer and the RBAC gate share one
-// implementation (§5.1).
+// implementation.
 use crate::extensions::access::authz::roles::extract_roles;
 
 enum KeySource {
@@ -56,7 +56,7 @@ enum KeySource {
 }
 
 impl JwtValidator {
-    /// Build a validator with explicit RBAC role-claim paths (§5.1 —
+    /// Build a validator with explicit RBAC role-claim paths (from
     /// `authz.rbac.role_claims`).
     ///
     /// # Errors
@@ -132,10 +132,21 @@ impl JwtValidator {
             .map_err(|e| AuthError::InvalidToken(e.to_string()))?;
         let claims = data.claims;
 
+        // RFC 7519 §4.1.2 makes `sub` optional, but this principal is stamped
+        // into the ATNA audit trail — an unattributable caller is refused, never
+        // recorded under a fabricated identity.
         let subject = claims
             .get("sub")
             .and_then(serde_json::Value::as_str)
-            .unwrap_or("unknown")
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| {
+                AuthError::InvalidToken(
+                    "token carries no usable `sub` claim; an audit-attributable subject is \
+                     required"
+                        .to_owned(),
+                )
+            })?
             .to_owned();
 
         // Scopes: the space-delimited `scope` string plus the `scp` array,
@@ -150,7 +161,7 @@ impl JwtValidator {
         }
 
         // Roles from the configured claim paths (default `realm_access.roles` +
-        // `scope`), normalized to upper-case (§5.1 / v1 authority converter).
+        // `scope`), normalized to upper-case (mirrors EHRbase v1's authority converter).
         let roles = extract_roles(&claims, &self.role_claims);
 
         Ok(Principal {
@@ -339,8 +350,33 @@ mod tests {
         assert_eq!(p.subject, "alice");
         assert_eq!(p.method, AuthMethod::Bearer);
         assert!(p.scopes.contains(&"openid".to_owned()));
-        // The validated claim set is retained on the Principal (§5.1).
+        // The validated claim set is retained on the Principal.
         assert_eq!(p.claims.get("sub").and_then(Value::as_str), Some("alice"));
+    }
+
+    #[tokio::test]
+    async fn token_without_sub_rejected() {
+        let mut c = base_claims();
+        c.as_object_mut().expect("object").remove("sub");
+        let err = validator(&[])
+            .validate(&token(&c))
+            .await
+            .expect_err("reject");
+        assert!(
+            matches!(&err, AuthError::InvalidToken(m) if m.contains("sub")),
+            "got {err:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn token_with_blank_sub_rejected() {
+        let mut c = base_claims();
+        c["sub"] = json!("   ");
+        let err = validator(&[])
+            .validate(&token(&c))
+            .await
+            .expect_err("reject");
+        assert!(matches!(err, AuthError::InvalidToken(_)), "got {err:?}");
     }
 
     #[tokio::test]
@@ -405,7 +441,7 @@ mod tests {
     #[tokio::test]
     async fn keycloak_realm_access_roles_extracted() {
         // Keycloak-shaped token: roles live under `realm_access.roles` and are
-        // upper-cased; the `scope` claim also contributes roles (§5.1 / §9.2).
+        // upper-cased; the `scope` claim also contributes roles.
         let mut c = base_claims();
         c["realm_access"] = json!({ "roles": ["user", "ferroehr-admin"] });
         c["scope"] = json!("openid EHR_READ");

@@ -17,7 +17,7 @@ use crate::extensions::access::authz::classify::OperationClass;
 use ferroehr::config::authz::{ManagementAccess, RbacConfig};
 
 /// The default RBAC role-claim paths (Keycloak `realm_access.roles` + the
-/// `OAuth2` `scope` claim), matching the v1 authorities converter (§2.4).
+/// `OAuth2` `scope` claim), matching the EHRbase v1 authorities converter.
 #[must_use]
 pub fn default_role_claims() -> Vec<String> {
     vec!["realm_access.roles".to_owned(), "scope".to_owned()]
@@ -62,7 +62,7 @@ pub fn extract_roles(claims: &Map<String, Value>, paths: &[String]) -> Vec<Strin
 }
 
 /// Resolve a dotted claim path to a string value (the ABAC `organization` /
-/// `patient` attribute lookup, §6). Returns `None` when the path is absent or
+/// `patient` attribute lookup). Returns `None` when the path is absent or
 /// the value is not a (non-empty) string.
 #[must_use]
 pub fn claim_string(claims: &Map<String, Value>, path: &str) -> Option<String> {
@@ -93,8 +93,8 @@ pub enum RbacDecision {
     Deny(String),
 }
 
-/// Gate an operation class against the caller's roles and the RBAC config
-/// (§5.2). When `rbac.enabled` is `false` every class is allowed (auth-only
+/// Gate an operation class against the caller's roles and the RBAC config.
+/// When `rbac.enabled` is `false` every class is allowed (auth-only
 /// behaviour). Role matching is ASCII-case-insensitive.
 #[must_use]
 pub fn authorize(class: OperationClass, roles: &[String], rbac: &RbacConfig) -> RbacDecision {

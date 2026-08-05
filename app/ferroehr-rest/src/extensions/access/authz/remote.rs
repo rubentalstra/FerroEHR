@@ -6,8 +6,8 @@
 //! status = deny; the response body is ignored. Connection/IO failure is
 //! fail-closed ([`AuthzError::Unreachable`] → 500 at the PEP). Multi-valued
 //! attributes fan out as the full cartesian product with all-must-permit and
-//! short-circuit deny (§5.4). Unlike v1, the client has explicit connect/request
-//! timeouts (v1 defect #4).
+//! short-circuit deny. The client has explicit connect/request timeouts
+//! (EHRbase v1 had none, so a blackholed PDP parked the request).
 
 #![expect(
     clippy::disallowed_types,
@@ -65,7 +65,7 @@ impl RemotePdp {
     }
 
     /// Build the flat request body for one combination: only the configured
-    /// parameters that have a resolved value (§2.1).
+    /// parameters that have a resolved value.
     fn body(rule: &PolicyRule, combo: &Combination<'_>) -> Value {
         let mut map = Map::new();
         for param in &rule.parameters {
@@ -103,7 +103,7 @@ impl RemotePdp {
 #[async_trait]
 impl PolicyEngine for RemotePdp {
     async fn decide(&self, req: &AuthzRequest<'_>) -> Result<Decision, AuthzError> {
-        // An unconfigured kind is unchecked (v1 parity for `directory`, §2.3).
+        // An unconfigured kind is unchecked (EHRbase v1 parity for `directory`).
         let Some(rule) = self.policies.get(req.kind.config_key()) else {
             return Ok(Decision::Permit);
         };

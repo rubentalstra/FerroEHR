@@ -2,7 +2,7 @@
 //! §"Digital Signature")
 //! against a real `PostgreSQL` 18 (shared testkit harness).
 //!
-//! The strongest assertion (§6.3): the digest recomputes from the **served**
+//! The strongest assertion: the digest recomputes from the **served**
 //! `ORIGINAL_VERSION`'s `canonical_form` — proving commit-time and read-time
 //! object identity. Also: `EHR_STATUS` / FOLDER / contribution versions are all
 //! signed; client-supplied signatures are stored verbatim; `verify_on_read =
@@ -157,7 +157,7 @@ fn change_type(code: &str, value: &str) -> Value {
 }
 
 /// Assert a served `ORIGINAL_VERSION` carries a server digest signature that
-/// recomputes from its own `canonical_form` — the strongest test (§6.3).
+/// recomputes from its own `canonical_form` — the strongest test.
 fn assert_digest_recomputes(ov: &Value) {
     assert_eq!(
         ov["_type"], "ORIGINAL_VERSION",
@@ -262,7 +262,7 @@ async fn ehr_status_versions_are_signed_and_every_vo_version_carries_a_digest() 
         .expect("create_directory");
 
     // Sweep: EHR_STATUS (x2), EHR_ACCESS, FOLDER — every stored version is signed
-    // with a digest (design §3.4: signing on by default).
+    // with a digest (signing is on by default).
     let rows = sqlx::query("SELECT kind, signature FROM vo_version ORDER BY kind, sys_version")
         .fetch_all(&pool)
         .await
@@ -363,7 +363,7 @@ async fn strict_verify_on_read_rejects_a_tampered_row() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();
     // A strict-verify service: a signature that does not match the served
-    // canonical form is a 5xx integrity failure (design §3.5).
+    // canonical form is a 5xx integrity failure.
     let config = SigningConfig {
         enabled: true,
         mode: Mode::Digest,
@@ -511,7 +511,7 @@ async fn warn_and_off_verify_on_read_serve_a_tampered_row() {
 #[tokio::test]
 async fn canonical_xml_carries_the_signature() {
     // The generated canonical-XML serialization (the same `to_canonical_xml` the
-    // REST negotiate path uses) emits the `signature` element (design §4.4/§6.4).
+    // REST negotiate path uses) emits the `signature` element.
     use openehr_rm::v1_2::common::change_control::original_version::OriginalVersion;
     use openehr_rm::v1_2::composition::composition::Composition;
 

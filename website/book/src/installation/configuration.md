@@ -321,10 +321,18 @@ algorithms = ["RS256"]
 | `audiences` | list of string | `[]` | Accepted `aud` (empty = not checked). |
 | `algorithms` | list of string | `["RS256"]` | Accepted signature algorithms. |
 | `hmac_secret` / `hmac_secret_file` | secret / path | unset | Symmetric HS256 secret (dev/test). At most one of the pair. |
-| `jwks_json` / `jwks_json_file` | string / path | unset | Static JWKS document; preferred over discovery when present. |
+| `jwks_json` / `jwks_json_file` | string / path | unset | Static JWKS document. At most one of the pair. |
 | `connect_timeout_ms` | int | `3000` | TCP connect timeout for the discovery + JWKS fetches. |
 | `request_timeout_ms` | int | `5000` | Whole-request timeout for the discovery + JWKS fetches (connect, TLS, body read). |
 | `negative_cache_ttl_seconds` | int | `10` | How long a *failed* discovery/JWKS fetch is remembered (`0` disables). |
+
+The signing-key source is exactly one of: the symmetric secret, the static
+JWKS, or (when neither is set) the issuer's OIDC discovery document.
+Configuring both `hmac_secret` and `jwks_json` (in either direct or `_file`
+form) is a boot-time configuration error — never resolved by silent
+precedence. A validated token must also carry a non-blank `sub` claim: the
+authenticated subject is stamped into the audit trail, so a token without one
+is refused with `401` rather than recorded under a placeholder identity.
 
 The last three keys apply only when keys come from the issuer's OIDC discovery
 document — that is, when neither `hmac_secret` nor `jwks_json` is set. The

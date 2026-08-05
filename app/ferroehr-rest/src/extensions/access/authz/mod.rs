@@ -24,7 +24,7 @@
 //! [`AppState`](crate::state::AppState) (the RBAC + ABAC gates), built by the binary
 //! from `ferroehr::config::authz::AuthzConfig`.
 //!
-//! ## Module map (§4.1)
+//! ## Module map
 //! - `config` — the `ferroehr::config::authz::AuthzConfig` serde struct (the `[authz]`
 //!   section of the one server config tree) + boot validation.
 //! - [`roles`] — the role model, JWT-claim role extraction, and the RBAC gate
@@ -58,8 +58,8 @@ use http::Method;
 use self::cedar::CedarEngine;
 use self::remote::RemotePdp;
 
-/// An attribute-resolution failure (a DB lookup error). Fail-closed at the PEP
-/// (§5.7): a resolution failure denies (→ 403/500), never silently permits.
+/// An attribute-resolution failure (a DB lookup error). Fail-closed at the
+/// PEP: a resolution failure denies (→ 403/500), never silently permits.
 #[derive(Debug, thiserror::Error)]
 #[error("attribute resolution failed: {0}")]
 pub struct ResolveError(pub String);
@@ -81,7 +81,7 @@ pub type SubjectFn = Arc<dyn Fn(String) -> ResolverFuture<Option<String>> + Send
 pub type TemplateOfVersionFn =
     Arc<dyn Fn(String, Option<String>) -> ResolverFuture<Option<String>> + Send + Sync>;
 
-/// The DB-backed attribute resolvers the ABAC PEP calls (§6).
+/// The DB-backed attribute resolvers the ABAC PEP calls.
 ///
 /// Defined here so the REST layer can hold them; the closures are built in
 /// the binary (which owns the pool + service), the audit-`SubjectResolver`
@@ -100,7 +100,7 @@ impl std::fmt::Debug for AuthzResolvers {
     }
 }
 
-/// Build the configured ABAC [`PolicyEngine`] (§5.5/§5.6), or `None` when ABAC
+/// Build the configured ABAC [`PolicyEngine`], or `None` when ABAC
 /// is disabled. Called by the binary at boot after [`AuthzConfig::validate`].
 ///
 /// # Errors
@@ -207,7 +207,7 @@ pub(crate) struct AbacGate {
     /// The JWT claim carrying the caller's organization (blank → unused).
     pub(crate) organization_claim: Option<String>,
     /// The JWT claim carrying the patient id; its presence enables the subject
-    /// gate (§5.7).
+    /// gate.
     pub(crate) patient_claim: Option<String>,
     /// Whether a `directory` policy is configured (v1 parity: DIRECTORY is
     /// unchecked unless opted in).

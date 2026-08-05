@@ -18,8 +18,8 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
-/// Management-surface access level — the `rbac.management_access` tri-state
-/// (§5.2). `admin_only` is the default.
+/// Management-surface access level — the `rbac.management_access` tri-state.
+/// `admin_only` is the default.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum ManagementAccess {
@@ -32,7 +32,7 @@ pub enum ManagementAccess {
     Public,
 }
 
-/// The coarse role-based access-control settings (§5.2, §8).
+/// The coarse role-based access-control settings.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct RbacConfig {
@@ -74,7 +74,7 @@ impl Default for RbacConfig {
     }
 }
 
-/// The ABAC policy engine selector (`abac.engine`, §5.6/§5.5). `cedar` is the
+/// The ABAC policy engine selector (`abac.engine`). `cedar` is the
 /// embedded default; `remote` is the v1-compatible external PDP.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
@@ -86,7 +86,7 @@ pub enum AbacEngineKind {
     Remote,
 }
 
-/// One flat parameter a remote PDP body may carry (§5.5): the resolved
+/// One flat parameter a remote PDP body may carry: the resolved
 /// attribute keys, exactly `organization` / `patient` / `template` on the wire.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -100,7 +100,7 @@ pub enum AbacParam {
 }
 
 impl AbacParam {
-    /// The exact wire key v1 uses in the flat PDP request body (§2.1).
+    /// The exact wire key EHRbase v1 uses in the flat PDP request body.
     #[must_use]
     pub const fn wire_key(self) -> &'static str {
         match self {
@@ -111,7 +111,7 @@ impl AbacParam {
     }
 }
 
-/// A per-resource-kind policy binding (§5.5): the policy name appended to the
+/// A per-resource-kind policy binding: the policy name appended to the
 /// remote PDP base URL, and which resolved parameters its request body carries.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -123,7 +123,7 @@ pub struct PolicyRule {
     pub parameters: Vec<AbacParam>,
 }
 
-/// The embedded-Cedar engine settings (§5.6).
+/// The embedded-Cedar engine settings.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct CedarConfig {
@@ -135,7 +135,7 @@ pub struct CedarConfig {
     pub reload_secs: Option<u64>,
 }
 
-/// The v1-compatible remote-PDP client settings (§5.5).
+/// The v1-compatible remote-PDP client settings.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct RemoteConfig {
@@ -143,7 +143,8 @@ pub struct RemoteConfig {
     /// (required when `engine = remote`).
     #[serde(default)]
     pub server: Option<String>,
-    /// TCP connect timeout in milliseconds (v1 defect #4 fixed; default 2000).
+    /// TCP connect timeout in milliseconds (default 2000; EHRbase v1 had none,
+    /// so a blackholed PDP parked the request).
     #[serde(default = "defaults::connect_timeout_ms")]
     pub connect_timeout_ms: u64,
     /// Whole-request timeout in milliseconds (default 5000).
@@ -161,7 +162,7 @@ impl Default for RemoteConfig {
     }
 }
 
-/// The fine-grained attribute-based access-control settings (§5.3–5.7, §8).
+/// The fine-grained attribute-based access-control settings.
 ///
 /// Master switch `enabled` defaults to `false`, so an all-defaults config
 /// preserves today's authentication-plus-RBAC behaviour until an operator
@@ -180,7 +181,7 @@ pub struct AbacConfig {
     #[serde(default = "defaults::organization_claim")]
     pub organization_claim: String,
     /// The JWT claim carrying the patient id (default `patient_id`); its presence
-    /// enables the local subject gate (§5.7). Set to empty to disable the gate.
+    /// enables the local subject gate. Set to empty to disable the gate.
     #[serde(default = "defaults::patient_claim")]
     pub patient_claim: String,
     /// Embedded-Cedar settings.
@@ -226,7 +227,7 @@ impl AbacConfig {
     }
 }
 
-/// Authorization configuration (§8): the coarse RBAC gate plus the opt-in ABAC
+/// Authorization configuration: the coarse RBAC gate plus the opt-in ABAC
 /// policy layer.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
@@ -239,8 +240,8 @@ pub struct AuthzConfig {
     pub abac: AbacConfig,
 }
 
-/// A boot-time authorization-configuration error (§8 — hard errors that must
-/// abort startup rather than silently mis-gate).
+/// A boot-time authorization-configuration error — a hard error that must
+/// abort startup rather than silently mis-gate.
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
 pub enum AuthzConfigError {
     /// A required role name was blank.
@@ -256,7 +257,7 @@ pub enum AuthzConfigError {
     )]
     UnknownPolicyKind(String),
     /// A `template` parameter was configured for `ehr`/`ehr_status` — illegal
-    /// (v1 made this a runtime 500; §5.5 makes it a boot error).
+    /// (EHRbase v1 made this a runtime 500; here it is a boot error).
     #[error("authz.abac.policy.{0} must not take the `template` parameter")]
     TemplateParamIllegal(&'static str),
     /// `engine = remote` without a configured base URL.
@@ -271,7 +272,7 @@ pub enum AuthzConfigError {
 }
 
 impl AuthzConfig {
-    /// Validate the configuration at boot (§8). All defaults are valid.
+    /// Validate the configuration at boot. All defaults are valid.
     ///
     /// # Errors
     /// [`AuthzConfigError`] when a role name is blank or the role-claim path list
@@ -299,7 +300,7 @@ impl AuthzConfig {
 }
 
 /// The canonical resource-kind keys accepted in the `abac.policy` map, and the
-/// two on which a `template` parameter is illegal (§5.5).
+/// two on which a `template` parameter is illegal.
 const POLICY_KINDS: [&str; 6] = [
     "ehr",
     "ehr_status",
@@ -310,7 +311,7 @@ const POLICY_KINDS: [&str; 6] = [
 ];
 
 impl AbacConfig {
-    /// Validate the ABAC section at boot (§8 hard errors). Only called when
+    /// Validate the ABAC section at boot (hard errors). Only called when
     /// `enabled`.
     fn validate(&self) -> Result<(), AuthzConfigError> {
         for (kind, rule) in &self.policy {

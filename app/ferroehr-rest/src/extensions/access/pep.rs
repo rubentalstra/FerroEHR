@@ -38,7 +38,7 @@
 //! Every deny is a `403` and every engine failure a `500` (fail-closed, v1
 //! parity), each carrying the [`Principal`] on the response extensions so the
 //! ATNA audit layer records it for free. Query execution's ABAC scope + post-check
-//! live in the query path (§6.4, step 8). ABAC is inert unless an
+//! live in the query path. ABAC is inert unless an
 //! `crate::extensions::access::authz::AbacGate` is wired
 //! (`abac.enabled`); the SMART gate is inert until SMART is enabled (see
 //! `smart_config`). End-to-end coverage through the assembled router (pre-check
@@ -84,7 +84,7 @@ use openehr_its::rest::smart_scopes::SmartScope;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Mode {
     /// Not ABAC-checked (item tags, definition/demographic/admin — RBAC only —,
-    /// and query, whose scope + check live in the query path, §6.4).
+    /// and query, whose scope + check live in the query path).
     Skip,
     /// Checked before the backend call.
     Pre,
@@ -92,7 +92,7 @@ enum Mode {
     Post,
 }
 
-/// The §7 enforcement matrix, keyed by operation id.
+/// The enforcement matrix, keyed by operation id.
 #[expect(
     clippy::match_same_arms,
     reason = "the arms are grouped by resource family, so naming every operation \
@@ -114,12 +114,12 @@ fn mode_of(op: &str) -> Mode {
         _ if op.starts_with("versioned_composition_") => Mode::Post,
         _ if op.starts_with("ehr_status_") || op.starts_with("versioned_ehr_status_") => Mode::Pre,
         _ if op.starts_with("directory_") => Mode::Pre,
-        // Item tags, query (§6.4), definition/demographic/admin: not ABAC-checked.
+        // Item tags, query, definition/demographic/admin: not ABAC-checked.
         _ => Mode::Skip,
     }
 }
 
-/// The ABAC preparation for a query execution (§6.4): the patient subject scope
+/// The ABAC preparation for a query execution: the patient subject scope
 /// to thread into the SQL, and whether the executor should collect the touched
 /// EHR/template sets for the post-check. `Ok((None, false))` when ABAC is off.
 /// `Err(response)` is a ready 403 (a missing configured patient claim).
@@ -143,7 +143,7 @@ pub(crate) fn query_pre(
     Ok((patient, true))
 }
 
-/// The ABAC post-check for a query execution (§6.4): the PDP fan-out over the
+/// The ABAC post-check for a query execution: the PDP fan-out over the
 /// touched template set. An empty result permits (v1 parity). The patient gate
 /// is already enforced by the subject-scope pre-filter (rows outside the
 /// caller's patient are never fetched), so it is not re-run per EHR here.
@@ -161,7 +161,7 @@ pub(crate) async fn query_post(
     if kind_of(op) != Some(ResourceKind::Query) {
         return Ok(());
     }
-    // Empty result set → nothing touched → permit (§6.4).
+    // Empty result set → nothing touched → permit.
     if outcome.ehr_ids.is_empty() && outcome.template_ids.is_empty() {
         return Ok(());
     }
@@ -217,7 +217,7 @@ pub(crate) async fn pre_check(
     let patient = resolve_patient_claim(abac, &principal)?;
     let ehr_id = parts.path.get("ehr_id").cloned();
 
-    // The local patient gate (§5.7), before any engine call.
+    // The local patient gate, before any engine call.
     patient_gate(
         abac,
         &principal,
@@ -341,7 +341,7 @@ fn organization(abac: &AbacGate, principal: &Principal) -> Option<String> {
         .and_then(|c| crate::extensions::access::authz::roles::claim_string(&principal.claims, c))
 }
 
-/// The full pre-check patient gate (§5.7): the subject match for target-EHR ops,
+/// The full pre-check patient gate: the subject match for target-EHR ops,
 /// plus the by-subject special case (compare the claim to the request subject).
 async fn patient_gate(
     abac: &AbacGate,
@@ -367,7 +367,7 @@ async fn patient_gate(
 }
 
 /// The subject-match gate over a target EHR: the claim must equal the EHR's
-/// subject external ref (a subject-less EHR passes; §5.7).
+/// subject external ref (a subject-less EHR passes).
 async fn subject_gate(
     abac: &AbacGate,
     principal: &Principal,
@@ -459,7 +459,7 @@ fn composition_template(parts: &RequestParts) -> Option<String> {
 }
 
 /// The set of COMPOSITION template ids in a contribution payload. A COMPOSITION
-/// version without a template is unresolvable → fail-closed (403, §6.3).
+/// version without a template is unresolvable → fail-closed (403).
 fn contribution_templates(
     parts: &RequestParts,
     principal: &Principal,
@@ -805,7 +805,7 @@ mod tests {
 
     #[tokio::test]
     async fn null_subject_passes_gate() {
-        // A subject-less EHR is not patient-scoped (v1 parity, §5.7).
+        // A subject-less EHR is not patient-scoped (EHRbase v1 parity).
         let calls = Arc::new(AtomicUsize::new(0));
         let gate = gate_with_subject(None, calls);
         let principal = principal_with_patient("P1");

@@ -7,7 +7,7 @@ use ferroehr::telemetry::health::{Health, HealthIndicator, HealthStatus};
 use ferroehr::telemetry::prometheus::{MetricKind, catalog};
 
 /// The full metric catalog as a stable text table: `name kind [buckets]`. A
-/// snapshot pins it so any rename/bucket change is reviewed deliberately (§1.2).
+/// snapshot pins it so any rename/bucket change is reviewed deliberately.
 #[test]
 fn metric_catalog_snapshot() {
     let mut lines = Vec::new();

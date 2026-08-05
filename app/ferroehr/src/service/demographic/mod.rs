@@ -29,7 +29,7 @@
 //! status/`ETag`/`Location`/`Prefer`/`If-Match`/deleted-read semantics to the
 //! EHR group, by the spec's own design.
 //!
-//! Standing NOTEs (deliberate divergences, register §6):
+//! Standing NOTEs (deliberate divergences):
 //! - The `UV_PARTY`/`UV_PARTY_RELATIONSHIP` envelope (`uv_party.adoc`) is
 //!   realized server-side; the wire seam carries a **bare RM party** and
 //!   `lifecycle_state` defaults to `532|complete|` (a documented
