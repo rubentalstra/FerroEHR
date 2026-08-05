@@ -66,14 +66,24 @@ fn aql_front_half(c: &mut Criterion) {
     let params = Params::new();
     let ctx = bench_ctx();
     let ast = parser::parse_str(QUERY).expect("the fixture query must parse");
-    let ir = ferroehr::aql::plan(&ast, &params).expect("the fixture query must plan");
+    let ir = ferroehr::aql::plan(
+        &ast,
+        &params,
+        ferroehr::config::profile::SpecProfile::default(),
+    )
+    .expect("the fixture query must plan");
 
     c.bench_function("aql_parse", |b| {
         b.iter(|| parser::parse_str(black_box(QUERY)).expect("the fixture query must parse"));
     });
     c.bench_function("aql_plan", |b| {
         b.iter(|| {
-            ferroehr::aql::plan(black_box(&ast), &params).expect("the fixture query must plan")
+            ferroehr::aql::plan(
+                black_box(&ast),
+                &params,
+                ferroehr::config::profile::SpecProfile::default(),
+            )
+            .expect("the fixture query must plan")
         });
     });
     c.bench_function("aql_sql_build", |b| {
@@ -85,7 +95,12 @@ fn aql_front_half(c: &mut Criterion) {
     c.bench_function("aql_parse_plan_sql", |b| {
         b.iter(|| {
             let ast = parser::parse_str(black_box(QUERY)).expect("the fixture query must parse");
-            let ir = ferroehr::aql::plan(&ast, &params).expect("the fixture query must plan");
+            let ir = ferroehr::aql::plan(
+                &ast,
+                &params,
+                ferroehr::config::profile::SpecProfile::default(),
+            )
+            .expect("the fixture query must plan");
             ferroehr::aql::sql::build(&ir, &params, &ctx)
                 .expect("the fixture query must lower to SQL")
         });

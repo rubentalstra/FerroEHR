@@ -151,7 +151,10 @@ mod tests {
     /// Lower a parameterless query to an `Arc<QueryIr>` for the cache tests.
     fn ir(q: &str) -> Arc<QueryIr> {
         let ast = parse_str(q).expect("parse");
-        Arc::new(crate::aql::lower_query(&ast).expect("lower"))
+        Arc::new(
+            crate::aql::lower_query(&ast, crate::config::profile::SpecProfile::default())
+                .expect("lower"),
+        )
     }
 
     const Q1: &str = "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c";

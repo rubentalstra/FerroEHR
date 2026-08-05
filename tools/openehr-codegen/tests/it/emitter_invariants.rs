@@ -1167,3 +1167,35 @@ fn rm_base_twin_classes_keep_both_generations() {
         "the BASE RESOURCE_DESCRIPTION lost `copyright`",
     );
 }
+
+/// The acceptance-boundary ledger (#1943): the EXACT model delta between the
+/// stable profile's released generations and the development pins, pinned so
+/// a re-vendor that widens it FAILS here until the application's profile
+/// boundary is extended to cover the new surface.
+///
+/// Verified first-hand 2026-08-05 over the vendored BMMs. The wire
+/// consequence the pin protects: none of these deltas is client-postable
+/// (`EHR.tags` is server-managed — the item-tag API stores rows, the EHR
+/// wire never carries the attribute; `CODE_PHRASE`/`RESOURCE_DESCRIPTION`
+/// are BASE resource-metadata surface outside the REST ingress), so the
+/// stable profile's ingress needs no per-payload double-decode TODAY. A new
+/// delta entry invalidates that adjudication — extend the boundary in
+/// `ferroehr` first, then re-pin here.
+#[test]
+fn profile_generation_delta_is_pinned() {
+    // RM: 1.2.0 adds exactly `EHR.tags` over 1.1.0 (and no classes).
+    let rm =
+        testsupport::generation_attribute_delta("rm", "v1_1", "v1_2").expect("rm generations load");
+    assert_eq!(rm.classes_added, Vec::<String>::new());
+    assert_eq!(rm.attributes_added, vec!["EHR.tags".to_owned()]);
+
+    // BASE: 1.3.0 adds exactly the legacy CODE_PHRASE class (SPECAM-82) and
+    // RESOURCE_DESCRIPTION.title over 1.2.0.
+    let base = testsupport::generation_attribute_delta("base", "v1_2", "v1_3")
+        .expect("base generations load");
+    assert_eq!(base.classes_added, vec!["CODE_PHRASE".to_owned()]);
+    assert_eq!(
+        base.attributes_added,
+        vec!["RESOURCE_DESCRIPTION.title".to_owned()]
+    );
+}

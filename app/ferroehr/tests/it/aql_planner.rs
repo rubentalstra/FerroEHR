@@ -35,7 +35,12 @@ use ferroehr::aql::sql::SqlCtx;
 
 fn plan_ok(q: &str) -> QueryIr {
     let ast = parse_str(q).unwrap_or_else(|e| panic!("parse failed for {q:?}: {e}"));
-    plan(&ast, &Params::new()).unwrap_or_else(|e| panic!("plan failed for {q:?}: {e}"))
+    plan(
+        &ast,
+        &Params::new(),
+        ferroehr::config::profile::SpecProfile::default(),
+    )
+    .unwrap_or_else(|e| panic!("plan failed for {q:?}: {e}"))
 }
 
 /// Plan `q` (parameterless) and lower it to SQL, returning the generated SQL
@@ -66,12 +71,21 @@ fn build_sql(q: &str) -> String {
 )]
 fn plan_with(q: &str, params: &Params) -> Result<QueryIr, AqlError> {
     let ast = parse_str(q).unwrap_or_else(|e| panic!("parse failed for {q:?}: {e}"));
-    plan(&ast, params)
+    plan(
+        &ast,
+        params,
+        ferroehr::config::profile::SpecProfile::default(),
+    )
 }
 
 fn plan_err(q: &str) -> AqlError {
     let ast = parse_str(q).unwrap_or_else(|e| panic!("parse failed for {q:?}: {e}"));
-    plan(&ast, &Params::new()).expect_err(&format!("expected planning to fail for {q:?}"))
+    plan(
+        &ast,
+        &Params::new(),
+        ferroehr::config::profile::SpecProfile::default(),
+    )
+    .expect_err(&format!("expected planning to fail for {q:?}"))
 }
 
 fn data_leaf(value: &SelectValue) -> &LeafPath {
@@ -1497,4 +1511,44 @@ fn like_and_matches_lower_existentially_on_anchored_leaves() {
         !negated.contains("EXISTS(SELECT"),
         "negative polarity keeps the scalar lowering: {negated}"
     );
+}
+
+/// The stable-profile AQL gate: refusal machinery + the no-false-positive
+/// property.
+///
+/// The ENTIRE RM 1.1.0 → 1.2.0 model delta is `EHR.tags` (verified first-hand
+/// against the vendored BMMs, 2026-08-05: no 1.2.0-only classes, one
+/// 1.2.0-only attribute), and `EHR` paths resolve through the fixed
+/// [`EhrField`] set that does not include `tags` — so no CURRENTLY-plannable
+/// query diverges between the profiles. The gate is the safety net that
+/// makes that stay true by construction when the envelope grows: it is
+/// pinned here at the membership level, plus the property that stable
+/// planning refuses nothing development accepts today.
+#[test]
+fn stable_profile_gate_matches_the_released_model() {
+    use ferroehr::config::profile::SpecProfile;
+
+    // The one model-level delta, straight from the generated v1_1 model:
+    // EHR.tags exists in 1.2.0, not in 1.1.0.
+    assert!(openehr_rm::v1_2::model::attribute("EHR", "tags").is_some());
+    assert!(openehr_rm::v1_1::model::attribute("EHR", "tags").is_none());
+
+    // No false positives: every query in this suite's envelope plans the
+    // same under both profiles.
+    for q in [
+        "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c",
+        "SELECT f/details FROM EHR e CONTAINS FOLDER f",
+        "SELECT o/data/events/data/items/value/magnitude FROM EHR e \
+         CONTAINS COMPOSITION c CONTAINS OBSERVATION o",
+    ] {
+        let ast = parse_str(q).expect("parses");
+        assert!(
+            plan(&ast, &Params::new(), SpecProfile::Stable).is_ok(),
+            "stable must not refuse RM 1.1.0 surface: {q}"
+        );
+        assert!(
+            plan(&ast, &Params::new(), SpecProfile::Development).is_ok(),
+            "development baseline: {q}"
+        );
+    }
 }
