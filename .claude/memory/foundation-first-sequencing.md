@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: af8ec1a8-3953-4ae1-a5d1-355a712f597b
-  modified: 2026-08-03T01:17:54.654Z
+  modified: 2026-08-05T08:12:22.190Z
 ---
 
 Owner ruling 2026-08-02 (during the RM ch.6 audits): when an audit exposes a
@@ -37,4 +37,14 @@ validated `new() -> Result` (invariant cores + terminology), and strong types
 are used wherever the spec closes a set — so construction IS validation and
 no downstream re-check is needed. Canonical WIRE bytes stay
 proven-unchanged by the contract gates; everything internal may break freely.
+
+**Reaffirmed + extended 2026-08-05 (during #1935):** "parse, don't validate"
+is the standing doctrine — an invalid object must be UNCONSTRUCTIBLE, and a
+manual check that restates a construction fact is duplication to DELETE once
+the typed door covers its lane (keep only checks serving lanes the door
+skips, e.g. the master06 553|incomplete| relaxation, or raw-JSON-only rules).
+Where the spec deliberately OPENS a set (ACCESS_CONTROL_SETTINGS schemes),
+the answer is a validated open carrier emitted by the generator
+(`OpenSubtype`), never a raw-Value hole and never a closed-set refusal of
+legal instances.
 Related: [[owner-work-style]] (no quick fixes, big-bang convergence).

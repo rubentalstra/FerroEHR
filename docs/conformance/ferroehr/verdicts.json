@@ -15,7 +15,7 @@
     ],
     [
       "Adl2OptProvisioning",
-      "failed"
+      "passed"
     ],
     [
       "TemplateExamples",
@@ -27,47 +27,47 @@
     ],
     [
       "EhrOperations",
-      "inconclusive"
+      "passed"
     ],
     [
       "EhrStatus",
-      "failed"
+      "passed"
     ],
     [
       "CompositionOps",
-      "failed"
+      "passed"
     ],
     [
       "DirectoryOps",
-      "failed"
+      "passed"
     ],
     [
       "ChangeSets",
-      "failed"
+      "passed"
     ],
     [
       "Versioning",
-      "failed"
+      "passed"
     ],
     [
       "ArchetypeValidation",
-      "failed"
+      "passed"
     ],
     [
       "PartyOperations",
-      "failed"
+      "passed"
     ],
     [
       "PartyRelationshipOperations",
-      "failed"
+      "passed"
     ],
     [
       "DemographicArchetypeValidation",
-      "failed"
+      "passed"
     ],
     [
       "AqlBasic",
-      "failed"
+      "passed"
     ],
     [
       "AqlAdvanced",
@@ -91,7 +91,7 @@
     ],
     [
       "BulkEhrLoad",
-      "failed"
+      "passed"
     ],
     [
       "EhrArchive",
@@ -103,7 +103,7 @@
     ],
     [
       "EhrExtract",
-      "inconclusive"
+      "passed"
     ],
     [
       "Tds",
@@ -119,11 +119,11 @@
     ],
     [
       "DemographicApi",
-      "failed"
+      "passed"
     ],
     [
       "QueryApi",
-      "failed"
+      "passed"
     ],
     [
       "AdminApi",
@@ -139,15 +139,15 @@
     ],
     [
       "ItemTags",
-      "failed"
+      "passed"
     ],
     [
       "Signing",
-      "failed"
+      "passed"
     ],
     [
       "SimplifiedFormats",
-      "failed"
+      "passed"
     ],
     [
       "SmartAppLaunch",
@@ -171,7 +171,7 @@
     ],
     [
       "AnonymousEhrs",
-      "failed"
+      "passed"
     ]
   ],
   "capability_tallies": [
@@ -205,8 +205,8 @@
     [
       "Adl2OptProvisioning",
       {
-        "passed": 21,
-        "failed": 6,
+        "passed": 27,
+        "failed": 0,
         "inconclusive": 0,
         "unevidenced": 2
       }
@@ -232,17 +232,17 @@
     [
       "EhrOperations",
       {
-        "passed": 21,
+        "passed": 22,
         "failed": 0,
-        "inconclusive": 1,
+        "inconclusive": 0,
         "unevidenced": 2
       }
     ],
     [
       "EhrStatus",
       {
-        "passed": 38,
-        "failed": 4,
+        "passed": 44,
+        "failed": 0,
         "inconclusive": 0,
         "unevidenced": 5
       }
@@ -250,8 +250,8 @@
     [
       "CompositionOps",
       {
-        "passed": 26,
-        "failed": 26,
+        "passed": 59,
+        "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
       }
@@ -259,8 +259,8 @@
     [
       "DirectoryOps",
       {
-        "passed": 61,
-        "failed": 8,
+        "passed": 75,
+        "failed": 0,
         "inconclusive": 0,
         "unevidenced": 8
       }
@@ -268,8 +268,8 @@
     [
       "ChangeSets",
       {
-        "passed": 81,
-        "failed": 1,
+        "passed": 84,
+        "failed": 0,
         "inconclusive": 0,
         "unevidenced": 5
       }
@@ -277,8 +277,8 @@
     [
       "Versioning",
       {
-        "passed": 17,
-        "failed": 52,
+        "passed": 69,
+        "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
       }
@@ -286,8 +286,8 @@
     [
       "ArchetypeValidation",
       {
-        "passed": 2,
-        "failed": 123,
+        "passed": 125,
+        "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
       }
@@ -295,8 +295,8 @@
     [
       "PartyOperations",
       {
-        "passed": 16,
-        "failed": 38,
+        "passed": 86,
+        "failed": 0,
         "inconclusive": 0,
         "unevidenced": 4
       }
@@ -304,8 +304,8 @@
     [
       "PartyRelationshipOperations",
       {
-        "passed": 8,
-        "failed": 11,
+        "passed": 19,
+        "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
       }
@@ -313,8 +313,8 @@
     [
       "DemographicArchetypeValidation",
       {
-        "passed": 7,
-        "failed": 3,
+        "passed": 11,
+        "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
       }
@@ -322,8 +322,8 @@
     [
       "AqlBasic",
       {
-        "passed": 24,
-        "failed": 8,
+        "passed": 32,
+        "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
       }
@@ -376,8 +376,8 @@
     [
       "BulkEhrLoad",
       {
-        "passed": 0,
-        "failed": 2,
+        "passed": 2,
+        "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
       }
@@ -403,9 +403,9 @@
     [
       "EhrExtract",
       {
-        "passed": 28,
+        "passed": 32,
         "failed": 0,
-        "inconclusive": 1,
+        "inconclusive": 0,
         "unevidenced": 0
       }
     ],
@@ -439,8 +439,8 @@
     [
       "DemographicApi",
       {
-        "passed": 9,
-        "failed": 21,
+        "passed": 62,
+        "failed": 0,
         "inconclusive": 0,
         "unevidenced": 1
       }
@@ -448,8 +448,8 @@
     [
       "QueryApi",
       {
-        "passed": 17,
-        "failed": 3,
+        "passed": 20,
+        "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
       }
@@ -484,8 +484,8 @@
     [
       "ItemTags",
       {
-        "passed": 14,
-        "failed": 49,
+        "passed": 63,
+        "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
       }
@@ -493,8 +493,8 @@
     [
       "Signing",
       {
-        "passed": 5,
-        "failed": 6,
+        "passed": 11,
+        "failed": 0,
         "inconclusive": 0,
         "unevidenced": 2
       }
@@ -502,10 +502,10 @@
     [
       "SimplifiedFormats",
       {
-        "passed": 21,
-        "failed": 48,
+        "passed": 73,
+        "failed": 0,
         "inconclusive": 0,
-        "unevidenced": 1
+        "unevidenced": 2
       }
     ],
     [
@@ -556,8 +556,8 @@
     [
       "AnonymousEhrs",
       {
-        "passed": 0,
-        "failed": 1,
+        "passed": 1,
+        "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
       }
@@ -566,18 +566,18 @@
   "profiles": [
     [
       "CORE",
-      "fail"
+      "pass"
     ],
     [
       "STANDARD",
-      "fail"
+      "pass"
     ],
     [
       "OPTIONS",
       "pass"
     ]
   ],
-  "security": "fail",
+  "security": "pass",
   "performance": [
     {
       "case": "PERF-hospital_sim-class_POC",
@@ -588,10 +588,10 @@
     }
   ],
   "coverage": {
-    "selected": 991,
-    "driven": 954,
-    "passed": 565,
-    "failed": 387,
-    "inconclusive": 2
+    "selected": 1049,
+    "driven": 1011,
+    "passed": 1011,
+    "failed": 0,
+    "inconclusive": 0
   }
 }
