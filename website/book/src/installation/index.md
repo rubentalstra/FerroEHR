@@ -6,8 +6,9 @@ choose how to run the binary and where the database lives. This part covers the
 three supported paths and the full configuration surface.
 
 - **[Docker Compose](compose.md)** — the fastest way to run the server plus a
-  preconfigured PostgreSQL 18, for development and evaluation. Includes an
-  optional observability overlay.
+  preconfigured PostgreSQL 18, for development and evaluation: one downloadable
+  file that pulls the published images and needs no configuration. Optional
+  admin console, OIDC, and observability overlays.
 - **[Kubernetes & Helm](kubernetes.md)** — the production path: a hardened,
   non-root, default-deny workload that connects to an externally managed
   PostgreSQL 18.

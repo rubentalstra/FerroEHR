@@ -1,0 +1,135 @@
+# FerroEHR quickstart, OIDC variant — a STANDALONE overlay on docker-compose.yml
+# (the same pattern as docker-compose.observability.yml). Download BOTH files
+# into one directory and run:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.keycloak.yml up
+#
+# It adds a Keycloak identity provider with a ready-made demo realm (inline
+# below — no repo checkout needed) and points the CDR's bearer validation at
+# it. Basic auth from the base file keeps working; the server then advertises
+# `Basic, Bearer`. Get a bearer token and call the API:
+#
+#   TOKEN=$(curl -s -d client_id=ferroehr -d client_secret=ferroehr-quickstart-secret \
+#     -d username=ferroehr -d password=ferroehr -d grant_type=password \
+#     http://localhost:8081/auth/realms/ferroehr/protocol/openid-connect/token \
+#     | python3 -c 'import json,sys; print(json.load(sys.stdin)["access_token"])')
+#   curl -H "Authorization: Bearer $TOKEN" -X POST -i \
+#     http://localhost:8080/ferroehr/rest/openehr/v1/ehr
+#
+# QUICKSTART DEFAULTS — do NOT use in production: demo realm, demo secret,
+# demo password, HTTP (not TLS), Keycloak in start-dev mode. For a real
+# deployment configure your own issuer via FERROEHR__AUTH__OIDC__* (or the
+# [auth.oidc] config block) and remove this overlay.
+#
+# The repo's dev/e2e lanes use their OWN Keycloak (docker-compose.override.yml,
+# `keycloak` profile) with the full exported realm from docker/keycloak/import
+# — this overlay's minimal demo realm is deliberately independent of it.
+
+services:
+  ferroehr:
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    environment:
+      # The env layer beats the mounted config file, so these ADD bearer trust
+      # on top of the base quickstart posture without replacing it. The issuer
+      # is the canonical KC_HOSTNAME below: token `iss` claims match it no
+      # matter which host the token was requested from.
+      FERROEHR__AUTH__OIDC__ISSUER: http://keycloak:8081/auth/realms/ferroehr
+      FERROEHR__AUTH__OIDC__ALGORITHMS: RS256
+
+  keycloak:
+    # Digest-pinned quay.io/keycloak/keycloak:26.7.0 (current release), resolved
+    # 2026-07-24 (docs.docker.com/build/building/best-practices).
+    image: quay.io/keycloak/keycloak:26.7.0@sha256:0f198be292568439d700cdbfb893e69a6009bb43a94a06a945b1d3d506c76b13
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_HTTP_RELATIVE_PATH: /auth
+      # In-network port == default host port (8081): one issuer hostname:port
+      # (http://keycloak:8081) is then valid from BOTH the docker network and
+      # the host, so the CDR and a host browser can share one OIDC issuer.
+      KC_HTTP_PORT: 8081
+      # ONE canonical issuer regardless of which host the caller used — token
+      # `iss` claims stay stable, so the CDR validates bearer tokens against
+      # the single configured issuer above.
+      # NOTE: a URL-form KC_HOSTNAME replaces the whole base — Keycloak does
+      # NOT append KC_HTTP_RELATIVE_PATH to it, so /auth must be included.
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-http://keycloak:8081/auth}
+    configs:
+      - source: keycloak-realm
+        target: /opt/keycloak/data/import/ferroehr-realm.json
+    ports:
+      - "${KEYCLOAK_PORT:-8081}:8081"
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1G
+    # The Keycloak image ships bash (no curl/wget), so probe the imported
+    # realm's OIDC discovery doc over bash's /dev/tcp — this makes
+    # `depends_on: {keycloak: {condition: service_healthy}}` a valid gate
+    # (docs.docker.com/compose/how-tos/startup-order). Readiness here means
+    # the realm is imported AND the HTTP listener answers 200.
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "exec 3<>/dev/tcp/127.0.0.1/8081; printf 'GET /auth/realms/ferroehr/.well-known/openid-configuration HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nConnection: close\\r\\n\\r\\n' >&3; grep -q '^HTTP/1.1 200' <&3"
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+configs:
+  # A MINIMAL demo realm, inline so the downloaded overlay is self-sufficient
+  # (docs.docker.com/reference/compose-file/configs — the `content` attribute).
+  # One confidential client (`ferroehr` / ferroehr-quickstart-secret, password
+  # grant enabled for curl-friendly token fetching) and one user
+  # (ferroehr / ferroehr) carrying the ADMIN + USER realm roles — Keycloak's
+  # default client scopes put realm roles into the token's
+  # `realm_access.roles`, which is the CDR's default role claim.
+  keycloak-realm:
+    content: |
+      {
+        "realm": "ferroehr",
+        "enabled": true,
+        "displayName": "FerroEHR quickstart",
+        "sslRequired": "none",
+        "defaultSignatureAlgorithm": "RS256",
+        "roles": {
+          "realm": [
+            { "name": "ADMIN", "description": "FerroEHR admin-surface role" },
+            { "name": "USER", "description": "FerroEHR clinical-API role" }
+          ]
+        },
+        "users": [
+          {
+            "username": "ferroehr",
+            "enabled": true,
+            "email": "ferroehr@example.test",
+            "emailVerified": true,
+            "firstName": "Ferro",
+            "lastName": "EHR",
+            "credentials": [
+              { "type": "password", "value": "ferroehr", "temporary": false }
+            ],
+            "realmRoles": [ "ADMIN", "USER" ]
+          }
+        ],
+        "clients": [
+          {
+            "clientId": "ferroehr",
+            "name": "FerroEHR quickstart client",
+            "enabled": true,
+            "protocol": "openid-connect",
+            "publicClient": false,
+            "secret": "ferroehr-quickstart-secret",
+            "standardFlowEnabled": true,
+            "directAccessGrantsEnabled": true,
+            "serviceAccountsEnabled": true,
+            "redirectUris": [ "*" ],
+            "webOrigins": [ "*" ]
+          }
+        ]
+      }

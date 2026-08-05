@@ -31,8 +31,9 @@ use crate::perf::{ContainerResourceSeries, ContainerRole, ResourcePhase, Resourc
 pub const SAMPLE_INTERVAL: Duration = Duration::from_secs(10);
 
 /// The DB container path the disk anchors probe — the compose volume mount
-/// (`docker-compose.yml` mounts `ferroehr-pgdata` at `/var/lib/postgresql`;
-/// the stock postgres images keep PGDATA under the same prefix).
+/// (`docker/sut-ferroehr.yml` mounts `ferroehr-pgdata` at
+/// `/var/lib/postgresql`; the stock postgres images keep PGDATA under the
+/// same prefix).
 const DB_VOLUME_DIR: &str = "/var/lib/postgresql";
 
 /// How long one stats/probe subprocess may take before it counts as a

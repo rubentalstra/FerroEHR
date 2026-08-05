@@ -142,10 +142,13 @@ Conformance Statement and Certificate.
 
 ## Quick start
 
-Run the full stack (server + PostgreSQL 18) with Docker Compose:
+Run the full stack (server + PostgreSQL 18) with Docker Compose — one
+downloaded file, no configuration, no checkout (needs Compose 2.23.1+). Grab
+`docker-compose.yml` from the [latest release](https://github.com/rubentalstra/FerroEHR/releases/latest)
+and start it:
 
 ```shell
-docker compose up --build
+docker compose up
 ```
 
 ```shell
@@ -163,15 +166,34 @@ curl -u ferroehr:ferroehr -H 'Content-Type: application/json' \
 ```
 
 Interactive OpenAPI documentation is served at
-`http://localhost:8080/ferroehr/rest/swagger-ui`.
+`http://localhost:8080/ferroehr/rest/swagger-ui`. The admin console is opt-in —
+`docker compose --profile admin-ui up`, then `http://localhost:3000` with the
+same credentials.
 
-Published images: [`ghcr.io/rubentalstra/ferroehr`](https://github.com/rubentalstra/FerroEHR/pkgs/container/ferroehr)
-and [`ghcr.io/rubentalstra/ferroehr-postgres`](https://github.com/rubentalstra/FerroEHR/pkgs/container/ferroehr-postgres)
+To try OAuth2/OIDC instead of Basic auth, download the
+`docker-compose.keycloak.yml` overlay from the same release beside the base
+file: it adds a Keycloak with a ready-made demo realm and points the server's
+bearer validation at it (Basic keeps working).
+
+```shell
+docker compose -f docker-compose.yml -f docker-compose.keycloak.yml up
+# realm ferroehr on :8081 — client ferroehr / ferroehr-quickstart-secret,
+# user ferroehr / ferroehr (password grant enabled for curl)
+```
+
+Published images: [`ghcr.io/rubentalstra/ferroehr`](https://github.com/rubentalstra/FerroEHR/pkgs/container/ferroehr),
+[`ghcr.io/rubentalstra/ferroehr-postgres`](https://github.com/rubentalstra/FerroEHR/pkgs/container/ferroehr-postgres)
 (PostgreSQL 18 with roles, schemas, and extensions pre-created; the server
-runs its own migrations at boot). Configuration is environment-driven
-(`FERROEHR_*`); the development credentials come from
-[`docker/ferroehr.dev.toml`](docker/ferroehr.dev.toml) and must be replaced
-outside development.
+runs its own migrations at boot), and
+[`ghcr.io/rubentalstra/ferroehr-admin-ui`](https://github.com/rubentalstra/FerroEHR/pkgs/container/ferroehr-admin-ui)
+(the admin console). The Compose file pins the release's exact image versions.
+Configuration is environment-driven (`FERROEHR_*`) on top of the config the
+Compose file carries inline; that config ships **one** development user with
+role-based access control **disabled** — dev defaults that must be replaced
+outside development. In a checkout, `docker compose up --build` builds
+everything from source and uses the fuller development configuration in
+[`docker/ferroehr.dev.toml`](docker/ferroehr.dev.toml) instead (three users,
+RBAC on).
 
 <details>
 <summary><b>Optional: local observability stack (Grafana LGTM)</b></summary>
@@ -179,14 +201,18 @@ outside development.
 <br>
 
 One overlay adds an OTLP collector, Prometheus, Tempo, Loki, and Grafana with
-a provisioned service-overview dashboard:
+a provisioned service-overview dashboard (it provisions from files in this
+repository, so run it from a checkout):
 
 ```shell
-docker compose -f docker-compose.yml -f docker-compose.observability.yml up --build
+docker compose -f docker-compose.yml -f docker-compose.observability.yml up
 # Grafana → http://localhost:3000
 ```
 
-Dashboards and alert rules live in [`docker/observability/`](docker/observability/).
+The Grafana dashboard and Prometheus scrape config travel inline in the
+overlay itself (it works standalone, downloaded beside `docker-compose.yml`);
+a tunable alert-rule starter pack lives in
+[`docker/observability/`](docker/observability/).
 
 </details>
 

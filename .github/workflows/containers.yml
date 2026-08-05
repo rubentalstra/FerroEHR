@@ -73,6 +73,7 @@ jobs:
               - '.cargo/**'
               - 'docker/Dockerfile'
               - 'docker/smoke-test.sh'
+              - 'docker-compose.yml'
               - '.github/workflows/containers.yml'
             admin_ui:
               - 'crates/**'

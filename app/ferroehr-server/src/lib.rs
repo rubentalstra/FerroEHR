@@ -396,6 +396,13 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         events_admin_api: config.events.admin_api,
     };
 
+    if app_config.auth.enabled && !app_config.auth.has_mechanism() {
+        tracing::warn!(
+            "authentication is enabled but NO mechanism is configured — every API request \
+             will be refused with 401; add [[auth.basic.users]] entries or an [auth.oidc] \
+             issuer to the config, or set auth.enabled = false"
+        );
+    }
     tracing::info!(
         bind = %app_config.server.bind,
         base_path = %app_config.server.base_path,

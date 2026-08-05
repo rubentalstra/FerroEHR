@@ -11,8 +11,8 @@
 # one is running.
 #
 # Usage (the profile starts the server, this overlay points the CDR at it):
-#   docker compose --profile terminology \
-#     -f docker-compose.yml -f docker/sut-terminology.yml up -d --wait ferroehr
+#   docker compose --project-directory . --profile terminology \
+#     -f docker/sut-ferroehr.yml -f docker/sut-terminology.yml up -d --wait ferroehr
 #
 # The reference conformance pipeline composes it UNCONDITIONALLY for
 # ferroehr (scripts/conformance.sh), so the ONE committed record covers the
