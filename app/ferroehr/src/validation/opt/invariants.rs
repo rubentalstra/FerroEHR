@@ -219,7 +219,9 @@ fn slot_assertion_pattern(a: &Assertion) -> Option<String> {
                     .item
                     .child("pattern")
                     .map_or_else(|| l.item.text(), XmlAny::text);
-                Some(raw.trim_matches('/').to_owned())
+                // Document formatting, not payload: a pretty-printed OPT wraps
+                // the pattern text, and xs:string preserves that whitespace.
+                Some(raw.trim().trim_matches('/').to_owned())
                     .filter(|s| s.contains("openEHR") || s.contains('\\') || s.contains('.'))
             }
             ExprItem::ExprBinaryOperator(b) => {

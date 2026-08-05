@@ -118,9 +118,11 @@ else; each helper has exactly ONE home.
   `parse::parser` are the only coupling — keep it that way.
 - **The printer is `print/`, one module per artefact section.** Section
   modules are private; `print::print` (a whole artefact) and
-  `print::assertion_text` (one assertion) are the serializer seams. Printed
-  output is pinned byte-for-byte by the round-trip corpus — a layout change
-  is a behaviour change.
+  `print::assertion_text` (one assertion) are the serializer seams, both
+  fallible over `print::PrintError` — a modelled node no released grammar
+  spells (EXTERNAL_QUERY) is REFUSED, never rendered as invented or empty
+  text. Printed output is pinned byte-for-byte by the round-trip corpus — a
+  layout change is a behaviour change.
 - **An assertion's EXPRESSION TREE is the authority, never its string form.**
   `ASSERTION.expression` is the "Root of expression tree" and
   `string_expression` only its "String form of expression"

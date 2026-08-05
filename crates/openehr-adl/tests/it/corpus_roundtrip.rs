@@ -95,7 +95,7 @@ fn every_assembled_artefact_round_trips() {
             not_assembled += 1;
             continue;
         };
-        let printed = print(&first);
+        let printed = print(&first).expect("print the assembled artefact");
         match parse_artefact(&printed, Dialect::Adl2) {
             Ok(second) if first == second => round_tripped += 1,
             Ok(_) => mismatches.push(format!(

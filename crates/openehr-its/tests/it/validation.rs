@@ -915,3 +915,64 @@ fn data_structure_shapes_are_enforced() {
         "a HISTORY mixing event data types must be rejected, got {msgs:?}"
     );
 }
+
+// ── ARCHETYPE_SLOT filler admission against a real OPT ───────────────────────
+
+/// The `IDCR Problem List.v1.opt` corpus template, whose slot assertions carry
+/// no `string_expression`.
+fn idcr_problem_list() -> Result<WebTemplate, String> {
+    let path = manifest_dir()
+        .join("../../app/ferroehr/tests/resources/service/knowledge/IDCR Problem List.v1.opt");
+    let xml = std::fs::read_to_string(&path).map_err(|e| format!("read: {e}"))?;
+    let opt = opt14::from_xml(&xml).map_err(|e| format!("opt14 parse: {e}"))?;
+    build_web_template(&opt).map_err(|e| format!("build: {e}"))
+}
+
+/// A COMPOSITION whose single `content` child is an EVALUATION bearing
+/// `archetype_id`.
+fn problem_list_with_content(archetype_id: &str) -> Value {
+    json!({
+        "_type": "COMPOSITION", "archetype_node_id": "openEHR-EHR-COMPOSITION.problem_list.v1",
+        "name": {"_type": "DV_TEXT", "value": "Problem list"},
+        "content": [{
+            "_type": "EVALUATION", "archetype_node_id": archetype_id,
+            "name": {"_type": "DV_TEXT", "value": "Problem"}
+        }]
+    })
+}
+
+/// A slot admits exactly the archetypes its `include` assertions name: an
+/// archetype outside the regex is not a legal filler (ADL 1.4
+/// `master05-cadl.adoc` §Archetype Slots — "two lists of assertions statements
+/// defining which archetypes are allowed and/or which are excluded from filling
+/// that slot").
+///
+/// The commit seam is [`validate_composition`], which every write path (canonical
+/// JSON, FLAT, STRUCTURED, TDD) converges on after conversion to RM.
+#[test]
+fn slot_filler_outside_the_includes_regex_is_refused() {
+    let wt = match idcr_problem_list() {
+        Ok(wt) => wt,
+        Err(e) => panic!("the IDCR corpus template must build: {e}"),
+    };
+
+    let admitted = validate_composition(
+        &problem_list_with_content("openEHR-EHR-EVALUATION.problem_diagnosis.v1"),
+        &wt,
+    );
+    assert!(
+        !admitted
+            .iter()
+            .any(|m| m.kind == ValidationKind::Unexpected),
+        "the archetype the slot includes must be admitted, got {admitted:?}"
+    );
+
+    let refused = validate_composition(
+        &problem_list_with_content("openEHR-EHR-EVALUATION.medication_summary.v1"),
+        &wt,
+    );
+    assert!(
+        refused.iter().any(|m| m.kind == ValidationKind::Unexpected),
+        "an archetype no slot includes must be refused, got {refused:?}"
+    );
+}

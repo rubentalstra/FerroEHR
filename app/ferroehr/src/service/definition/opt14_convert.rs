@@ -86,6 +86,9 @@ pub(crate) enum OptConvertError {
     /// The converter core rejected a decomposed source.
     #[error("converting decomposed source {0:?}: {1}")]
     Convert(String, ConvertError),
+    /// The ADL2 serializer refused a converted source.
+    #[error("printing converted source {0:?}: {1}")]
+    Print(String, openehr_adl::print::PrintError),
 }
 
 /// A parent → child slot-fill edge recovered from the flattened OPT: the
@@ -126,17 +129,20 @@ pub(crate) struct OptConversion {
 /// # Errors
 /// - [`OptConvertError::Hrid`] if an embedded root's archetype id does not parse.
 /// - [`OptConvertError::Convert`] if the converter rejects a decomposed source.
+/// - [`OptConvertError::Print`] if a converted source carries a node the ADL2
+///   serializer has no syntax for.
 pub(crate) fn convert_opt_to_adl2(
     opt: &opt14::OperationalTemplate,
 ) -> Result<OptConversion, OptConvertError> {
     let (archetypes, structure) = convert_opt_to_archetypes(opt)?;
     let roots = archetypes
         .into_iter()
-        .map(|(archetype_id, art)| ConvertedRoot {
-            archetype_id,
-            adl2: openehr_adl::print::print(&art),
+        .map(|(archetype_id, art)| {
+            let adl2 = openehr_adl::print::print(&art)
+                .map_err(|e| OptConvertError::Print(archetype_id.clone(), e))?;
+            Ok(ConvertedRoot { archetype_id, adl2 })
         })
-        .collect();
+        .collect::<Result<Vec<ConvertedRoot>, OptConvertError>>()?;
     Ok(OptConversion { roots, structure })
 }
 
@@ -1955,7 +1961,8 @@ mod tests {
                 // depth-0 emission and reused 1.4 node codes re-mint
                 // archetype-wide-unique ids in the converter core.
                 assert!(errors.is_empty(), "{name}/{id}: phase-1 errors: {errors:?}");
-                let printed = openehr_adl::print::print(art);
+                let printed = openehr_adl::print::print(art)
+                    .unwrap_or_else(|e| panic!("{name}/{id}: printing refused: {e}"));
                 openehr_adl::assemble::parse_artefact(&printed, Dialect::Adl2).unwrap_or_else(
                     |e| panic!("{name}/{id}: printed ADL2 does not re-parse: {e:?}\n{printed}"),
                 );

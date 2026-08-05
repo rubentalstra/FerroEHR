@@ -453,7 +453,7 @@ ontology
     // node id/constraint (`[at0.32]`) or a terminology key (`["at0.32"]`).
     // The conversion_details provenance deliberately NAMES the original
     // dotted codes, so a bare-substring scan would false-positive there.
-    let printed = openehr_adl::print::print(&got);
+    let printed = openehr_adl::print::print(&got).expect("print the converted artefact");
     for token in [
         "[id1.", "[id3.", "[at0.", "[\"at0.", "[\"id1.", ".1]", ".1\"]",
     ] {
@@ -732,7 +732,7 @@ fn app_b_reference_lists_split_on_lf_into_keyed_entries() {
     );
 
     // The converted homes are visible in the printed ADL2, which re-parses.
-    let printed = openehr_adl::print::print(&converted);
+    let printed = openehr_adl::print::print(&converted).expect("print the converted artefact");
     for token in [
         "build_uid=3076af96-e1dd-4f9b-abf2-23913fcf52b1",
         "original_namespace = <\"au.gov.nehta\">",

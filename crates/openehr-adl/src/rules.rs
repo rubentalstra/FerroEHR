@@ -433,7 +433,8 @@ pub fn parse_artefact_rules(
 ///
 /// # Errors
 /// Returns the `S*` errors on a malformed slot assertion (regex compile `SCSRE`,
-/// or `SINVS`/`SEXPT` for the expression shape).
+/// or `SINVS`/`SEXPT` for the expression shape), and `SUNK` when the parsed
+/// tree carries a node the printer has no ADL syntax for.
 pub fn parse_slot_assertions(text: &str) -> Result<Vec<Assertion>, Vec<SyntaxError>> {
     let mut builder = AmBuilder::new(ConstraintMode::Slot);
     let stmts = match parse_statements_with(text, &mut builder) {
@@ -447,16 +448,21 @@ pub fn parse_slot_assertions(text: &str) -> Result<Vec<Assertion>, Vec<SyntaxErr
             });
         }
     };
-    let assertions: Vec<Assertion> = stmts
-        .into_iter()
-        .filter_map(|s| match s {
-            Statement::Assertion(mut a) => {
-                a.string_expression = Some(crate::print::assertion_text(&a));
-                Some(a)
-            }
-            _ => None,
-        })
-        .collect();
+    let mut assertions: Vec<Assertion> = Vec::new();
+    for stmt in stmts {
+        if let Statement::Assertion(mut a) = stmt {
+            let rendered = crate::print::assertion_text(&a).map_err(|e| {
+                vec![SyntaxError::at(
+                    SyntaxErrorCode::Sunk,
+                    e.to_string(),
+                    0..text.len(),
+                    text,
+                )]
+            })?;
+            a.string_expression = Some(rendered);
+            assertions.push(a);
+        }
+    }
     if assertions.is_empty() {
         return Err(vec![SyntaxError::at(
             SyntaxErrorCode::Sccog,

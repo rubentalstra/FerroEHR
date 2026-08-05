@@ -49,7 +49,8 @@ use std::collections::HashMap;
 
 use crate::opt14::{
     ArchetypeTerm, Assertion, CArchetypeRoot, CObject, CPrimitive, Cardinality,
-    Constraintbindingset, Intervalofinteger, OperationalTemplate, TermBindingItem, Termbindingset,
+    Constraintbindingset, ExprItem, Intervalofinteger, OperationalTemplate, TermBindingItem,
+    Termbindingset,
 };
 use indexmap::IndexMap;
 
@@ -1005,20 +1006,95 @@ fn archetype_slot(s: &crate::opt14::ArchetypeSlot) -> WebTemplateArchetypeSlot {
     }
 }
 
-/// The archetype-id regex of an OPT-1.4 slot `ASSERTION`, lifted from its
-/// `string_expression` (`archetype_id/value matches {/<regex>/}` — ADL 1.4
-/// `master05-cadl.adoc` §Archetype Slots; the OPT always emits this surface
-/// form). Archetype ids contain no `/`, so the last `/}` delimits the regex.
+/// The archetype-id regex of an OPT-1.4 slot `ASSERTION`, read from its
+/// EXPRESSION TREE, falling back to the string form.
 ///
-/// The string form is the whole datum this model carries: `Template.xsd` types
-/// `EXPR_LEAF.item` as `xs:anyType`, so the OPT-1.4 expression tree holds no
-/// readable constraint payload — unlike the am24 twin
-/// ([`super::builder_am24`]), which reads its tree.
+/// `ASSERTION.expression` is the "Root of expression tree" and carries the
+/// constraint; `string_expression` is only its optional "String form of
+/// expression" (`AM UML/classes/org.openehr.am.aom14.assertion.adoc`
+/// §ASSERTION Class), so the tree is both the authority and the only datum
+/// present in most templates. The slot form is
+/// `archetype_id/value matches {/<regex>/}` (ADL 1.4 `master05-cadl.adoc`
+/// §Defining Slots on the basis of Archetype Identifiers and Concepts), whose
+/// right operand carries the regex in `C_STRING.pattern`
+/// (`…aom14.c_string.adoc` §C_STRING Class). Any other assertion — a different
+/// reference, a literal-value list, the §Using Other Constraints in Slots form —
+/// yields `None` rather than an invented archetype-id regex.
 fn slot_pattern(a: &Assertion) -> Option<String> {
+    expression_pattern(a).or_else(|| string_expression_pattern(a))
+}
+
+/// The `OPERATOR_KIND` code for `op_matches` in the OPT-1.4 XML encoding
+/// (ITS-XML `ALL/Archetype.xsd` §`OPERATOR_KIND`:
+/// `<xs:enumeration value="2007" id="matches"/>`).
+const MATCHES_OPERATOR: &str = "2007";
+
+/// The archetype-id regex read from an assertion's expression tree.
+fn expression_pattern(a: &Assertion) -> Option<String> {
+    let ExprItem::ExprBinaryOperator(op) = a.expression.as_ref() else {
+        return None;
+    };
+    if op.operator != MATCHES_OPERATOR {
+        return None;
+    }
+    let (ExprItem::ExprLeaf(left), ExprItem::ExprLeaf(right)) =
+        (op.left_operand.as_ref(), op.right_operand.as_ref())
+    else {
+        return None;
+    };
+    if !is_archetype_id_reference(&left.item.text()) {
+        return None;
+    }
+    let pattern = c_string_constraint(&right.item)?.child("pattern")?.text();
+    let pattern = pattern.trim();
+    (!pattern.is_empty()).then(|| pattern.to_owned())
+}
+
+/// The archetype-id regex parsed out of an assertion's `string_expression`.
+///
+/// The surface form is `archetype_id/value matches {/<regex>/}` (ADL 1.4
+/// `master05-cadl.adoc` §Defining Slots on the basis of Archetype Identifiers
+/// and Concepts); archetype ids contain no `/`, so the last `/}` delimits the
+/// regex.
+fn string_expression_pattern(a: &Assertion) -> Option<String> {
     let s = a.string_expression.as_deref()?;
+    if !is_archetype_id_reference(s) {
+        return None;
+    }
     let (_, rest) = s.split_once("matches {/")?;
     let end = rest.rfind("/}")?;
     Some(rest.get(..end)?.to_owned())
+}
+
+/// Whether an assertion operand references the filler archetype's identifier
+/// rather than another `ARCHETYPE` property or an archetype path (ADL 1.4
+/// `master05-cadl.adoc` §Archetype Slots lists `archetype_id`,
+/// `parent_archetype_id`, `short_concept_name` and definition paths as the
+/// admissible references).
+fn is_archetype_id_reference(operand: &str) -> bool {
+    let operand = operand.trim();
+    operand == "archetype_id"
+        || operand
+            .strip_prefix("archetype_id")
+            .is_some_and(|rest| rest.starts_with('/'))
+}
+
+/// The `C_STRING` constraint of a `matches` right operand.
+///
+/// `EXPR_LEAF.item` is typed `Any` — "for the right-hand side of a 'matches'
+/// node, a constraint, often a `C_PRIMITIVE_OBJECT`"
+/// (`AM UML/classes/org.openehr.am.aom14.expr_leaf.adoc` §EXPR_LEAF Class), and
+/// `C_PRIMITIVE_OBJECT.item` is the `C_PRIMITIVE` "actually defining the
+/// constraint" (`…aom14.c_primitive_object.adoc` §C_PRIMITIVE_OBJECT Class), so
+/// both the direct and the wrapped spelling resolve here.
+fn c_string_constraint(item: &crate::xml::XmlAny) -> Option<&crate::xml::XmlAny> {
+    match item.xsi_type()? {
+        "C_STRING" => Some(item),
+        "C_PRIMITIVE_OBJECT" => item
+            .child("item")
+            .filter(|inner| inner.xsi_type() == Some("C_STRING")),
+        _ => None,
+    }
 }
 
 fn requires_cardinality(card: &Cardinality, children_count: usize) -> bool {

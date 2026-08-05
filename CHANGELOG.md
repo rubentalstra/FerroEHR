@@ -44,6 +44,16 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The `openehr-adl` serializer seam is fallible.**
+  `openehr_adl::print::print` and `openehr_adl::print::assertion_text` now
+  return `Result<String, openehr_adl::print::PrintError>`. An in-memory
+  archetype whose `rules` assign an `EXTERNAL_QUERY` is refused instead of
+  serialized with the assignment's right-hand side silently empty: no
+  released grammar spells `EXTERNAL_QUERY`, so no rendering of it could be
+  valid ADL. The same refusal now covers a function-call expression node
+  carrying no string name and a value-reference node carrying no string
+  path — the two remaining shapes the printer used to render as empty
+  text. Printed text for every other artefact is byte-identical.
 - Served OpenAPI descriptions no longer reference the internal conformance
   register ("register-documented …"); each affected description states its
   adjudicated handling with the released citation it already carried. Wire
@@ -110,6 +120,18 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Commits into an OPT 1.4 archetype slot are now checked against the slot's
+  allowed archetypes.** The slot's `include`/`exclude` archetype-id patterns
+  were read only from each assertion's optional `string_expression` string,
+  which most operational templates do not emit — so for those templates the
+  slot admitted any archetype of the right RM type, and a composition
+  carrying a filler the template never allowed was accepted. The patterns are
+  now read from the assertion's expression tree (the constraint itself), with
+  the string form used only as a fallback, so slot fillers are validated
+  against what the template actually constrains. Templates whose assertions
+  did carry the string form behave exactly as before, and a slot whose
+  assertion constrains something other than the archetype id stays open as
+  before rather than being narrowed by a pattern that does not apply to it.
 - **Uploaded OPT 1.4 templates no longer lose their archetype-slot
   constraints.** The XML codec discarded the content of every element the
   schemas declare as `xs:anyType`, which on an operational template is the
