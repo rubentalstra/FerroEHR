@@ -30,42 +30,6 @@ workflow refuses a tag that has no matching section here.
   delete clears both tiers, and an admin export still dumps archived
   content. Multi-tenant isolation is enforced on the new tier by the same
   row-level-security policy as the primary tables.
-
-### Removed
-
-- **BREAKING:** the deprecated `auth.admin_scope` configuration key is
-  retired. The management surface's `AdminOnly` access level now gates on
-  the RBAC admin role (`authz.rbac.admin_role`, default `ADMIN`) — the same
-  gate every Admin-class API operation already uses. Deployments that
-  disabled RBAC keep the previous behaviour (any authenticated caller
-  passes `AdminOnly`); deployments that set `admin_scope` should grant the
-  admin role instead (a JWT `scope` entry naming the role continues to
-  surface as that role via scope→role extraction).
-
-### Changed
-
-- **The `openehr-adl` serializer seam is fallible.**
-  `openehr_adl::print::print` and `openehr_adl::print::assertion_text` now
-  return `Result<String, openehr_adl::print::PrintError>`. An in-memory
-  archetype whose `rules` assign an `EXTERNAL_QUERY` is refused instead of
-  serialized with the assignment's right-hand side silently empty: no
-  released grammar spells `EXTERNAL_QUERY`, so no rendering of it could be
-  valid ADL. The same refusal now covers a function-call expression node
-  carrying no string name and a value-reference node carrying no string
-  path — the two remaining shapes the printer used to render as empty
-  text. Printed text for every other artefact is byte-identical.
-- Served OpenAPI descriptions no longer reference the internal conformance
-  register ("register-documented …"); each affected description states its
-  adjudicated handling with the released citation it already carried. Wire
-  behaviour is unchanged.
-- The documentation site's comparison chapter (and every page that echoed
-  it) no longer frames EHRbase as "upstream": FerroEHR and EHRbase are
-  presented as two independent open-source openEHR CDRs measured by the same
-  neutral instrument. The rendered comparison charts and generated tables
-  carry the new labeling; provenance and licensing statements are unchanged.
-
-### Added
-
 - **`ferroehr-ext` — the optional-integration crate.** The FHIR conversion
   core (mapping model + FLAT builder, outbound reverse-map, feeder-audit
   probe), the events transport (the `EventPublisher` seam, the AMQP
@@ -117,6 +81,39 @@ workflow refuses a tag that has no matching section here.
   their keyword once per list per the grammar, a symbolic `∈` prints as
   `matches` (one operator in the model), and an archetype-id constraint's
   `; "assumed"` value is no longer dropped.
+
+### Changed
+
+- **The `openehr-adl` serializer seam is fallible.**
+  `openehr_adl::print::print` and `openehr_adl::print::assertion_text` now
+  return `Result<String, openehr_adl::print::PrintError>`. An in-memory
+  archetype whose `rules` assign an `EXTERNAL_QUERY` is refused instead of
+  serialized with the assignment's right-hand side silently empty: no
+  released grammar spells `EXTERNAL_QUERY`, so no rendering of it could be
+  valid ADL. The same refusal now covers a function-call expression node
+  carrying no string name and a value-reference node carrying no string
+  path — the two remaining shapes the printer used to render as empty
+  text. Printed text for every other artefact is byte-identical.
+- Served OpenAPI descriptions no longer reference the internal conformance
+  register ("register-documented …"); each affected description states its
+  adjudicated handling with the released citation it already carried. Wire
+  behaviour is unchanged.
+- The documentation site's comparison chapter (and every page that echoed
+  it) no longer frames EHRbase as "upstream": FerroEHR and EHRbase are
+  presented as two independent open-source openEHR CDRs measured by the same
+  neutral instrument. The rendered comparison charts and generated tables
+  carry the new labeling; provenance and licensing statements are unchanged.
+
+### Removed
+
+- **BREAKING:** the deprecated `auth.admin_scope` configuration key is
+  retired. The management surface's `AdminOnly` access level now gates on
+  the RBAC admin role (`authz.rbac.admin_role`, default `ADMIN`) — the same
+  gate every Admin-class API operation already uses. Deployments that
+  disabled RBAC keep the previous behaviour (any authenticated caller
+  passes `AdminOnly`); deployments that set `admin_scope` should grant the
+  admin role instead (a JWT `scope` entry naming the role continues to
+  surface as that role via scope→role extraction).
 
 ### Fixed
 
