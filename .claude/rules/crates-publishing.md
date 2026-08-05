@@ -38,13 +38,17 @@ by the `crate-version-guard` CI job.
   says nothing about the implemented spec, and it NEVER adopts a spec
   version (owner correction 2026-08-04: tying the package to the spec
   version would freeze the crates' ability to keep improving while the
-  vendored spec stands still). The spec pin is each crate's `SPEC_VERSION`
-  constant (emitted from the codegen composition table's `spec_version`
-  field for the generated crates; a literal in the hand-written ones) and
-  never moves with the package version.
-- A spec-pin bump (new vendored generation) changes `SPEC_VERSION` via the
-  composition table + regeneration; the package still just takes its next
-  ordinary SemVer step.
+  vendored spec stands still). The spec pin is PER GENERATION (owner ruling
+  2026-08-05, #1942): the generated crates carry the emitted `Generation`
+  enum ONLY (derived `Default` marking the current generation, per-variant
+  `const fn spec_version()`, from the composition table) — no version
+  constant exists in them at any level (a constant is a second copy of the
+  enum's fact and can only drift); the hand-written single-spec crates keep
+  a literal crate-level `SPEC_VERSION`. None of these move with the package
+  version.
+- A spec-pin bump (new vendored generation) changes the composition table
+  + regeneration (the `Generation` enum follows); the package still just
+  takes its next ordinary SemVer step.
 - Graduating the line past `0.x` (declaring API stability) is an owner
   decision that re-opens the C-STABLE adjudication
   (`.claude/rules/reliability.md`) — the version chosen then is still ours,

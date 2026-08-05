@@ -44,7 +44,7 @@ use openehr_am::v2_4::resource::resource_description::ResourceDescription;
 use openehr_base::prelude::{
     ResourceAnnotations, ResourceDescriptionItem, TerminologyCode, TranslationDetails, Uuid,
 };
-use openehr_lang::odin::OdinValue;
+use openehr_lang::v1_1::odin::OdinValue;
 
 use crate::error::{SyntaxError, SyntaxErrorCode};
 use crate::odin::{

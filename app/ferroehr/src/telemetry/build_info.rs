@@ -11,7 +11,7 @@
 //! [`crate::telemetry::provenance`] source shared with the System
 //! Options manifest (`OPTIONS /`) and `/status`, so all three identity surfaces
 //! quote one fact — and provenance itself derives every pin from the owning
-//! `openehr-*` crate's `SPEC_VERSION`. See that module for the derivation.
+//! `openehr-*` crate's own pin authority. See that module for the derivation.
 
 use serde::Serialize;
 
@@ -100,16 +100,20 @@ mod tests {
     fn build_info_is_populated() {
         let info = BuildInfo::current();
         assert_eq!(info.name, "ferroehr");
-        // The pins are the owning crates' `SPEC_VERSION` constants — no
-        // re-typed literals in the chain, so a pin bump cannot silently diverge.
-        assert_eq!(info.spec.rm, openehr_rm::SPEC_VERSION);
+        // The pins are the owning crates' own authorities (the Generation
+        // enum / generation-module constants) — no re-typed literals in the
+        // chain, so a pin bump cannot silently diverge.
+        assert_eq!(
+            info.spec.rm,
+            openehr_rm::Generation::default().spec_version()
+        );
         assert_eq!(info.spec.its_rest, openehr_its::SPEC_VERSION);
         assert_eq!(
             info.spec.am,
             format!(
                 "{} + {}",
-                openehr_am::v1_4::SPEC_VERSION,
-                openehr_am::SPEC_VERSION
+                openehr_am::Generation::V1_4.spec_version(),
+                openehr_am::Generation::V2_4.spec_version()
             )
         );
         assert_eq!(info.postgres_target, "18.4+");

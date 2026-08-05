@@ -19,6 +19,5035 @@
 )]
 
 impl ::serde::Serialize
+    for crate::v1_2::base_types::identification::access_group_ref::AccessGroupRef
+{
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 4usize;
+        let mut __st =
+            ::serde::Serializer::serialize_struct(__serializer, "ACCESS_GROUP_REF", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "ACCESS_GROUP_REF")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "namespace", &self.namespace)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "type", &self.r#type)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "id", &self.id)?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::base_types::identification::access_group_ref::AccessGroupRef
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["id", "namespace", "type"];
+        enum __Field {
+            __Type,
+            __F0,
+            __F1,
+            __F2,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "namespace" => ::core::result::Result::Ok(__Field::__F0),
+                            "type" => ::core::result::Result::Ok(__Field::__F1),
+                            "id" => ::core::result::Result::Ok(__Field::__F2),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "ACCESS_GROUP_REF",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::base_types::identification::access_group_ref::AccessGroupRef;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `ACCESS_GROUP_REF` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s1: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s2: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("ACCESS_GROUP_REF"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("namespace"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F1 => {
+                            if __s1.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("type"),
+                                );
+                            }
+                            __s1 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F2 => {
+                            if __s2.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("id"),
+                                );
+                            }
+                            __s2 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(
+                    crate::v1_2::base_types::identification::access_group_ref::AccessGroupRef {
+                        namespace: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("namespace"))?,
+                        r#type: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+                        id: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("id"))?,
+                    },
+                )
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "ACCESS_GROUP_REF",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::base_types::identification::archetype_id::ArchetypeId {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 2usize;
+        let mut __st = ::serde::Serializer::serialize_struct(__serializer, "ARCHETYPE_ID", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "ARCHETYPE_ID")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "value", &self.value)?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::base_types::identification::archetype_id::ArchetypeId
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["value"];
+        enum __Field {
+            __Type,
+            __F0,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "value" => ::core::result::Result::Ok(__Field::__F0),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "ARCHETYPE_ID",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::base_types::identification::archetype_id::ArchetypeId;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `ARCHETYPE_ID` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("ARCHETYPE_ID"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("value"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(
+                    crate::v1_2::base_types::identification::archetype_id::ArchetypeId {
+                        value: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
+                    },
+                )
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "ARCHETYPE_ID",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::resource::authored_resource::AuthoredResource {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 2usize;
+        if self.uid.is_some() {
+            __n += 1;
+        }
+        if self.description.is_some() {
+            __n += 1;
+        }
+        if self.is_controlled.is_some() {
+            __n += 1;
+        }
+        if self.annotations.is_some() {
+            __n += 1;
+        }
+        if self.translations.is_some() {
+            __n += 1;
+        }
+        let mut __st =
+            ::serde::Serializer::serialize_struct(__serializer, "AUTHORED_RESOURCE", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "AUTHORED_RESOURCE")?;
+        if let Some(__v) = &self.uid {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "uid", __v)?;
+        }
+        ::serde::ser::SerializeStruct::serialize_field(
+            &mut __st,
+            "original_language",
+            &self.original_language,
+        )?;
+        if let Some(__v) = &self.description {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "description", __v)?;
+        }
+        if let Some(__v) = &self.is_controlled {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "is_controlled", __v)?;
+        }
+        if let Some(__v) = &self.annotations {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "annotations", __v)?;
+        }
+        if let Some(__v) = &self.translations {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "translations", __v)?;
+        }
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de> for crate::v1_2::resource::authored_resource::AuthoredResource {
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &[
+            "annotations",
+            "description",
+            "is_controlled",
+            "original_language",
+            "translations",
+            "uid",
+        ];
+        enum __Field {
+            __Type,
+            __F0,
+            __F1,
+            __F2,
+            __F3,
+            __F4,
+            __F5,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "uid" => ::core::result::Result::Ok(__Field::__F0),
+                            "original_language" => ::core::result::Result::Ok(__Field::__F1),
+                            "description" => ::core::result::Result::Ok(__Field::__F2),
+                            "is_controlled" => ::core::result::Result::Ok(__Field::__F3),
+                            "annotations" => ::core::result::Result::Ok(__Field::__F4),
+                            "translations" => ::core::result::Result::Ok(__Field::__F5),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "AUTHORED_RESOURCE",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::resource::authored_resource::AuthoredResource;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `AUTHORED_RESOURCE` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s1: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s2: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s3: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s4: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s5: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("AUTHORED_RESOURCE"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("uid"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F1 => {
+                            if __s1.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("original_language"),
+                                );
+                            }
+                            __s1 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F2 => {
+                            if __s2.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("description"),
+                                );
+                            }
+                            __s2 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F3 => {
+                            if __s3.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("is_controlled"),
+                                );
+                            }
+                            __s3 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F4 => {
+                            if __s4.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("annotations"),
+                                );
+                            }
+                            __s4 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F5 => {
+                            if __s5.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("translations"),
+                                );
+                            }
+                            __s5 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(
+                    crate::v1_2::resource::authored_resource::AuthoredResource {
+                        uid: __s0.flatten(),
+                        original_language: __s1.flatten().ok_or_else(|| {
+                            ::serde::de::Error::missing_field("original_language")
+                        })?,
+                        description: __s2.flatten(),
+                        is_controlled: __s3.flatten(),
+                        annotations: __s4.flatten(),
+                        translations: __s5.flatten(),
+                    },
+                )
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "AUTHORED_RESOURCE",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::foundation_types::interval::cardinality::Cardinality {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 4usize;
+        let mut __st = ::serde::Serializer::serialize_struct(__serializer, "Cardinality", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "Cardinality")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "interval", &self.interval)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "is_ordered", &self.is_ordered)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "is_unique", &self.is_unique)?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::foundation_types::interval::cardinality::Cardinality
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["interval", "is_ordered", "is_unique"];
+        enum __Field {
+            __Type,
+            __F0,
+            __F1,
+            __F2,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "interval" => ::core::result::Result::Ok(__Field::__F0),
+                            "is_ordered" => ::core::result::Result::Ok(__Field::__F1),
+                            "is_unique" => ::core::result::Result::Ok(__Field::__F2),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "Cardinality",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::foundation_types::interval::cardinality::Cardinality;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `Cardinality` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s1: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s2: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("Cardinality"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("interval"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F1 => {
+                            if __s1.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("is_ordered"),
+                                );
+                            }
+                            __s1 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F2 => {
+                            if __s2.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("is_unique"),
+                                );
+                            }
+                            __s2 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(
+                    crate::v1_2::foundation_types::interval::cardinality::Cardinality {
+                        interval: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("interval"))?,
+                        is_ordered: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("is_ordered"))?,
+                        is_unique: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("is_unique"))?,
+                    },
+                )
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "Cardinality",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::base_types::identification::generic_id::GenericId {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 3usize;
+        let mut __st = ::serde::Serializer::serialize_struct(__serializer, "GENERIC_ID", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "GENERIC_ID")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "value", &self.value)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "scheme", &self.scheme)?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::base_types::identification::generic_id::GenericId
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["scheme", "value"];
+        enum __Field {
+            __Type,
+            __F0,
+            __F1,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "value" => ::core::result::Result::Ok(__Field::__F0),
+                            "scheme" => ::core::result::Result::Ok(__Field::__F1),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "GENERIC_ID",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::base_types::identification::generic_id::GenericId;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `GENERIC_ID` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s1: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("GENERIC_ID"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("value"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F1 => {
+                            if __s1.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("scheme"),
+                                );
+                            }
+                            __s1 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(
+                    crate::v1_2::base_types::identification::generic_id::GenericId {
+                        value: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
+                        scheme: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("scheme"))?,
+                    },
+                )
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(__deserializer, "GENERIC_ID", __FIELDS, __Visitor)
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::base_types::identification::hier_object_id::HierObjectId {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 2usize;
+        let mut __st = ::serde::Serializer::serialize_struct(__serializer, "HIER_OBJECT_ID", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "HIER_OBJECT_ID")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "value", &self.value)?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::base_types::identification::hier_object_id::HierObjectId
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["value"];
+        enum __Field {
+            __Type,
+            __F0,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "value" => ::core::result::Result::Ok(__Field::__F0),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "HIER_OBJECT_ID",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::base_types::identification::hier_object_id::HierObjectId;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `HIER_OBJECT_ID` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("HIER_OBJECT_ID"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("value"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                let __a0: String = __s0
+                    .flatten()
+                    .ok_or_else(|| ::serde::de::Error::missing_field("value"))?;
+                let __built =
+                    crate::v1_2::base_types::identification::hier_object_id::HierObjectId::new(
+                        __a0,
+                    );
+                __built.map_err(|__e| {
+                    ::serde::de::Error::custom(::std::format!("HIER_OBJECT_ID: {__e}"))
+                })
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "HIER_OBJECT_ID",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::base_types::identification::internet_id::InternetId {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 2usize;
+        let mut __st = ::serde::Serializer::serialize_struct(__serializer, "INTERNET_ID", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "INTERNET_ID")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "value", &self.value)?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::base_types::identification::internet_id::InternetId
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["value"];
+        enum __Field {
+            __Type,
+            __F0,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "value" => ::core::result::Result::Ok(__Field::__F0),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "INTERNET_ID",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::base_types::identification::internet_id::InternetId;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `INTERNET_ID` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("INTERNET_ID"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("value"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                let __a0: String = __s0
+                    .flatten()
+                    .ok_or_else(|| ::serde::de::Error::missing_field("value"))?;
+                let __built =
+                    crate::v1_2::base_types::identification::internet_id::InternetId::new(__a0);
+                __built
+                    .map_err(|__e| ::serde::de::Error::custom(::std::format!("INTERNET_ID: {__e}")))
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "INTERNET_ID",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::base_types::identification::iso_oid::IsoOid {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 2usize;
+        let mut __st = ::serde::Serializer::serialize_struct(__serializer, "ISO_OID", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "ISO_OID")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "value", &self.value)?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de> for crate::v1_2::base_types::identification::iso_oid::IsoOid {
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["value"];
+        enum __Field {
+            __Type,
+            __F0,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "value" => ::core::result::Result::Ok(__Field::__F0),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v, "ISO_OID", __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::base_types::identification::iso_oid::IsoOid;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `ISO_OID` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("ISO_OID"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("value"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                let __a0: String = __s0
+                    .flatten()
+                    .ok_or_else(|| ::serde::de::Error::missing_field("value"))?;
+                let __built = crate::v1_2::base_types::identification::iso_oid::IsoOid::new(__a0);
+                __built.map_err(|__e| ::serde::de::Error::custom(::std::format!("ISO_OID: {__e}")))
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(__deserializer, "ISO_OID", __FIELDS, __Visitor)
+    }
+}
+
+impl<T: ::serde::Serialize> ::serde::Serialize
+    for crate::v1_2::foundation_types::interval::interval::Interval<T>
+{
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        match self {
+            crate::v1_2::foundation_types::interval::interval::Interval::PointInterval(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+            crate::v1_2::foundation_types::interval::interval::Interval::ProperInterval(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+        }
+    }
+}
+
+impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
+    for crate::v1_2::foundation_types::interval::interval::Interval<T>
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __TAGS: &[&str] = &["Multiplicity_interval", "Point_interval", "Proper_interval"];
+        struct __Visitor<T>(::core::marker::PhantomData<(T,)>);
+        impl<'de, T: ::serde::de::DeserializeOwned> ::serde::de::Visitor<'de> for __Visitor<T> {
+            type Value = crate::v1_2::foundation_types::interval::interval::Interval<T>;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `Interval` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let (__tag, __buffered) = crate::serde_support::read_slot_tag(&mut __map, __TAGS)?;
+                match __tag {
+                    Some(crate::serde_support::TagMatch::Known(__t)) => {
+                        let __rest =
+                            crate::serde_support::TaggedRest::new(Some(__t), __buffered, __map);
+                        match __t {
+"Multiplicity_interval" => ::core::result::Result::Ok(crate::v1_2::foundation_types::interval::interval::Interval::ProperInterval(::serde::Deserialize::deserialize(__rest)?)),
+"Point_interval" => ::core::result::Result::Ok(crate::v1_2::foundation_types::interval::interval::Interval::PointInterval(::serde::Deserialize::deserialize(__rest)?)),
+"Proper_interval" => ::core::result::Result::Ok(crate::v1_2::foundation_types::interval::interval::Interval::ProperInterval(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(crate::serde_support::unexpected_type("Interval", __other, "Multiplicity_interval, Point_interval, Proper_interval")),
+}
+                    }
+                    Some(crate::serde_support::TagMatch::Unknown(__other)) => {
+                        ::core::result::Result::Err(crate::serde_support::unexpected_type(
+                            "Interval",
+                            &__other,
+                            "Multiplicity_interval, Point_interval, Proper_interval",
+                        ))
+                    }
+                    None => ::core::result::Result::Err(crate::serde_support::missing_type(
+                        "Interval",
+                        "Multiplicity_interval, Point_interval, Proper_interval",
+                    )),
+                }
+            }
+        }
+        ::serde::Deserializer::deserialize_map(
+            __deserializer,
+            __Visitor(::core::marker::PhantomData),
+        )
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::foundation_types::time::iso8601_date::Iso8601Date {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 2usize;
+        let mut __st = ::serde::Serializer::serialize_struct(__serializer, "Iso8601_date", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "Iso8601_date")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "value", &self.value)?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::foundation_types::time::iso8601_date::Iso8601Date
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["value"];
+        enum __Field {
+            __Type,
+            __F0,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "value" => ::core::result::Result::Ok(__Field::__F0),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "Iso8601_date",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::foundation_types::time::iso8601_date::Iso8601Date;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `Iso8601_date` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("Iso8601_date"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("value"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(
+                    crate::v1_2::foundation_types::time::iso8601_date::Iso8601Date {
+                        value: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
+                    },
+                )
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "Iso8601_date",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize
+    for crate::v1_2::foundation_types::time::iso8601_date_time::Iso8601DateTime
+{
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 2usize;
+        let mut __st =
+            ::serde::Serializer::serialize_struct(__serializer, "Iso8601_date_time", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "Iso8601_date_time")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "value", &self.value)?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::foundation_types::time::iso8601_date_time::Iso8601DateTime
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["value"];
+        enum __Field {
+            __Type,
+            __F0,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "value" => ::core::result::Result::Ok(__Field::__F0),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "Iso8601_date_time",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::foundation_types::time::iso8601_date_time::Iso8601DateTime;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `Iso8601_date_time` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("Iso8601_date_time"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("value"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(
+                    crate::v1_2::foundation_types::time::iso8601_date_time::Iso8601DateTime {
+                        value: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
+                    },
+                )
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "Iso8601_date_time",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::foundation_types::time::iso8601_duration::Iso8601Duration {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 2usize;
+        let mut __st =
+            ::serde::Serializer::serialize_struct(__serializer, "Iso8601_duration", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "Iso8601_duration")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "value", &self.value)?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::foundation_types::time::iso8601_duration::Iso8601Duration
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["value"];
+        enum __Field {
+            __Type,
+            __F0,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "value" => ::core::result::Result::Ok(__Field::__F0),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "Iso8601_duration",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::foundation_types::time::iso8601_duration::Iso8601Duration;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `Iso8601_duration` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("Iso8601_duration"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("value"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(
+                    crate::v1_2::foundation_types::time::iso8601_duration::Iso8601Duration {
+                        value: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
+                    },
+                )
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "Iso8601_duration",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::foundation_types::time::iso8601_time::Iso8601Time {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 2usize;
+        let mut __st = ::serde::Serializer::serialize_struct(__serializer, "Iso8601_time", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "Iso8601_time")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "value", &self.value)?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::foundation_types::time::iso8601_time::Iso8601Time
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["value"];
+        enum __Field {
+            __Type,
+            __F0,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "value" => ::core::result::Result::Ok(__Field::__F0),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "Iso8601_time",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::foundation_types::time::iso8601_time::Iso8601Time;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `Iso8601_time` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("Iso8601_time"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("value"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(
+                    crate::v1_2::foundation_types::time::iso8601_time::Iso8601Time {
+                        value: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
+                    },
+                )
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "Iso8601_time",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::foundation_types::time::iso8601_timezone::Iso8601Timezone {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 2usize;
+        let mut __st =
+            ::serde::Serializer::serialize_struct(__serializer, "Iso8601_timezone", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "Iso8601_timezone")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "value", &self.value)?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::foundation_types::time::iso8601_timezone::Iso8601Timezone
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["value"];
+        enum __Field {
+            __Type,
+            __F0,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "value" => ::core::result::Result::Ok(__Field::__F0),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "Iso8601_timezone",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::foundation_types::time::iso8601_timezone::Iso8601Timezone;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `Iso8601_timezone` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("Iso8601_timezone"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("value"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(
+                    crate::v1_2::foundation_types::time::iso8601_timezone::Iso8601Timezone {
+                        value: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
+                    },
+                )
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "Iso8601_timezone",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::foundation_types::time::iso8601_type::Iso8601Type {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        match self {
+            crate::v1_2::foundation_types::time::iso8601_type::Iso8601Type::Iso8601Date(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+            crate::v1_2::foundation_types::time::iso8601_type::Iso8601Type::Iso8601DateTime(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
+            crate::v1_2::foundation_types::time::iso8601_type::Iso8601Type::Iso8601Duration(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
+            crate::v1_2::foundation_types::time::iso8601_type::Iso8601Type::Iso8601Time(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+            crate::v1_2::foundation_types::time::iso8601_type::Iso8601Type::Iso8601Timezone(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
+        }
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::foundation_types::time::iso8601_type::Iso8601Type
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __TAGS: &[&str] = &[
+            "Iso8601_date",
+            "Iso8601_date_time",
+            "Iso8601_duration",
+            "Iso8601_time",
+            "Iso8601_timezone",
+        ];
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::foundation_types::time::iso8601_type::Iso8601Type;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `Iso8601_type` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let (__tag, __buffered) = crate::serde_support::read_slot_tag(&mut __map, __TAGS)?;
+                match __tag {
+                    Some(crate::serde_support::TagMatch::Known(__t)) => {
+                        let __rest =
+                            crate::serde_support::TaggedRest::new(Some(__t), __buffered, __map);
+                        match __t {
+"Iso8601_date" => ::core::result::Result::Ok(crate::v1_2::foundation_types::time::iso8601_type::Iso8601Type::Iso8601Date(::serde::Deserialize::deserialize(__rest)?)),
+"Iso8601_date_time" => ::core::result::Result::Ok(crate::v1_2::foundation_types::time::iso8601_type::Iso8601Type::Iso8601DateTime(::serde::Deserialize::deserialize(__rest)?)),
+"Iso8601_duration" => ::core::result::Result::Ok(crate::v1_2::foundation_types::time::iso8601_type::Iso8601Type::Iso8601Duration(::serde::Deserialize::deserialize(__rest)?)),
+"Iso8601_time" => ::core::result::Result::Ok(crate::v1_2::foundation_types::time::iso8601_type::Iso8601Type::Iso8601Time(::serde::Deserialize::deserialize(__rest)?)),
+"Iso8601_timezone" => ::core::result::Result::Ok(crate::v1_2::foundation_types::time::iso8601_type::Iso8601Type::Iso8601Timezone(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(crate::serde_support::unexpected_type("Iso8601_type", __other, "Iso8601_date, Iso8601_date_time, Iso8601_duration, Iso8601_time, Iso8601_timezone")),
+}
+                    }
+                    Some(crate::serde_support::TagMatch::Unknown(__other)) => {
+                        ::core::result::Result::Err(crate::serde_support::unexpected_type(
+                            "Iso8601_type",
+                            &__other,
+                            "Iso8601_date, Iso8601_date_time, Iso8601_duration, Iso8601_time, Iso8601_timezone",
+                        ))
+                    }
+                    None => ::core::result::Result::Err(crate::serde_support::missing_type(
+                        "Iso8601_type",
+                        "Iso8601_date, Iso8601_date_time, Iso8601_duration, Iso8601_time, Iso8601_timezone",
+                    )),
+                }
+            }
+        }
+        ::serde::Deserializer::deserialize_map(__deserializer, __Visitor)
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::base_types::identification::locatable_ref::LocatableRef {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 4usize;
+        if self.path.is_some() {
+            __n += 1;
+        }
+        let mut __st = ::serde::Serializer::serialize_struct(__serializer, "LOCATABLE_REF", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "LOCATABLE_REF")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "namespace", &self.namespace)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "type", &self.r#type)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "id", &self.id)?;
+        if let Some(__v) = &self.path {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "path", __v)?;
+        }
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::base_types::identification::locatable_ref::LocatableRef
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["id", "namespace", "path", "type"];
+        enum __Field {
+            __Type,
+            __F0,
+            __F1,
+            __F2,
+            __F3,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "namespace" => ::core::result::Result::Ok(__Field::__F0),
+                            "type" => ::core::result::Result::Ok(__Field::__F1),
+                            "id" => ::core::result::Result::Ok(__Field::__F2),
+                            "path" => ::core::result::Result::Ok(__Field::__F3),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "LOCATABLE_REF",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::base_types::identification::locatable_ref::LocatableRef;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `LOCATABLE_REF` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s1: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s2: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s3: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("LOCATABLE_REF"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("namespace"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F1 => {
+                            if __s1.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("type"),
+                                );
+                            }
+                            __s1 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F2 => {
+                            if __s2.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("id"),
+                                );
+                            }
+                            __s2 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F3 => {
+                            if __s3.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("path"),
+                                );
+                            }
+                            __s3 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(
+                    crate::v1_2::base_types::identification::locatable_ref::LocatableRef {
+                        namespace: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("namespace"))?,
+                        r#type: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+                        id: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("id"))?,
+                        path: __s3.flatten(),
+                    },
+                )
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "LOCATABLE_REF",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize
+    for crate::v1_2::foundation_types::interval::multiplicity_interval::MultiplicityInterval
+{
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 5usize;
+        if self.lower.is_some() {
+            __n += 1;
+        }
+        if self.upper.is_some() {
+            __n += 1;
+        }
+        let mut __st =
+            ::serde::Serializer::serialize_struct(__serializer, "Multiplicity_interval", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(
+            &mut __st,
+            "_type",
+            "Multiplicity_interval",
+        )?;
+        if let Some(__v) = &self.lower {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "lower", __v)?;
+        }
+        if let Some(__v) = &self.upper {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "upper", __v)?;
+        }
+        ::serde::ser::SerializeStruct::serialize_field(
+            &mut __st,
+            "lower_unbounded",
+            &self.lower_unbounded,
+        )?;
+        ::serde::ser::SerializeStruct::serialize_field(
+            &mut __st,
+            "upper_unbounded",
+            &self.upper_unbounded,
+        )?;
+        ::serde::ser::SerializeStruct::serialize_field(
+            &mut __st,
+            "lower_included",
+            &self.lower_included,
+        )?;
+        ::serde::ser::SerializeStruct::serialize_field(
+            &mut __st,
+            "upper_included",
+            &self.upper_included,
+        )?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::foundation_types::interval::multiplicity_interval::MultiplicityInterval
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &[
+            "lower",
+            "lower_included",
+            "lower_unbounded",
+            "upper",
+            "upper_included",
+            "upper_unbounded",
+        ];
+        enum __Field {
+            __Type,
+            __F0,
+            __F1,
+            __F2,
+            __F3,
+            __F4,
+            __F5,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "lower" => ::core::result::Result::Ok(__Field::__F0),
+                            "upper" => ::core::result::Result::Ok(__Field::__F1),
+                            "lower_unbounded" => ::core::result::Result::Ok(__Field::__F2),
+                            "upper_unbounded" => ::core::result::Result::Ok(__Field::__F3),
+                            "lower_included" => ::core::result::Result::Ok(__Field::__F4),
+                            "upper_included" => ::core::result::Result::Ok(__Field::__F5),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "Multiplicity_interval",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::foundation_types::interval::multiplicity_interval::MultiplicityInterval;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `Multiplicity_interval` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s1: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s2: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s3: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s4: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s5: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("Multiplicity_interval"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("lower"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F1 => {
+                            if __s1.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("upper"),
+                                );
+                            }
+                            __s1 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F2 => {
+                            if __s2.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("lower_unbounded"),
+                                );
+                            }
+                            __s2 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F3 => {
+                            if __s3.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("upper_unbounded"),
+                                );
+                            }
+                            __s3 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F4 => {
+                            if __s4.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("lower_included"),
+                                );
+                            }
+                            __s4 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F5 => {
+                            if __s5.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("upper_included"),
+                                );
+                            }
+                            __s5 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(crate::v1_2::foundation_types::interval::multiplicity_interval::MultiplicityInterval {
+lower: __s0.flatten(),
+upper: __s1.flatten(),
+lower_unbounded: __s2.flatten().unwrap_or(false),
+upper_unbounded: __s3.flatten().unwrap_or(false),
+lower_included: __s4.flatten().unwrap_or(true),
+upper_included: __s5.flatten().unwrap_or(true),
+})
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "Multiplicity_interval",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::base_types::identification::object_id::ObjectId {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        match self {
+            crate::v1_2::base_types::identification::object_id::ObjectId::ArchetypeId(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+            crate::v1_2::base_types::identification::object_id::ObjectId::GenericId(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+            crate::v1_2::base_types::identification::object_id::ObjectId::HierObjectId(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+            crate::v1_2::base_types::identification::object_id::ObjectId::ObjectVersionId(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+            crate::v1_2::base_types::identification::object_id::ObjectId::TemplateId(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+            crate::v1_2::base_types::identification::object_id::ObjectId::TerminologyId(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+        }
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::base_types::identification::object_id::ObjectId
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __TAGS: &[&str] = &[
+            "ARCHETYPE_ID",
+            "GENERIC_ID",
+            "HIER_OBJECT_ID",
+            "OBJECT_VERSION_ID",
+            "TEMPLATE_ID",
+            "TERMINOLOGY_ID",
+        ];
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::base_types::identification::object_id::ObjectId;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `OBJECT_ID` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let (__tag, __buffered) = crate::serde_support::read_slot_tag(&mut __map, __TAGS)?;
+                match __tag {
+                    Some(crate::serde_support::TagMatch::Known(__t)) => {
+                        let __rest =
+                            crate::serde_support::TaggedRest::new(Some(__t), __buffered, __map);
+                        match __t {
+"ARCHETYPE_ID" => ::core::result::Result::Ok(crate::v1_2::base_types::identification::object_id::ObjectId::ArchetypeId(::serde::Deserialize::deserialize(__rest)?)),
+"GENERIC_ID" => ::core::result::Result::Ok(crate::v1_2::base_types::identification::object_id::ObjectId::GenericId(::serde::Deserialize::deserialize(__rest)?)),
+"HIER_OBJECT_ID" => ::core::result::Result::Ok(crate::v1_2::base_types::identification::object_id::ObjectId::HierObjectId(::serde::Deserialize::deserialize(__rest)?)),
+"OBJECT_VERSION_ID" => ::core::result::Result::Ok(crate::v1_2::base_types::identification::object_id::ObjectId::ObjectVersionId(::serde::Deserialize::deserialize(__rest)?)),
+"TEMPLATE_ID" => ::core::result::Result::Ok(crate::v1_2::base_types::identification::object_id::ObjectId::TemplateId(::serde::Deserialize::deserialize(__rest)?)),
+"TERMINOLOGY_ID" => ::core::result::Result::Ok(crate::v1_2::base_types::identification::object_id::ObjectId::TerminologyId(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(crate::serde_support::unexpected_type("OBJECT_ID", __other, "ARCHETYPE_ID, GENERIC_ID, HIER_OBJECT_ID, OBJECT_VERSION_ID, TEMPLATE_ID, TERMINOLOGY_ID")),
+}
+                    }
+                    Some(crate::serde_support::TagMatch::Unknown(__other)) => {
+                        ::core::result::Result::Err(crate::serde_support::unexpected_type(
+                            "OBJECT_ID",
+                            &__other,
+                            "ARCHETYPE_ID, GENERIC_ID, HIER_OBJECT_ID, OBJECT_VERSION_ID, TEMPLATE_ID, TERMINOLOGY_ID",
+                        ))
+                    }
+                    None => ::core::result::Result::Err(crate::serde_support::missing_type(
+                        "OBJECT_ID",
+                        "ARCHETYPE_ID, GENERIC_ID, HIER_OBJECT_ID, OBJECT_VERSION_ID, TEMPLATE_ID, TERMINOLOGY_ID",
+                    )),
+                }
+            }
+        }
+        ::serde::Deserializer::deserialize_map(__deserializer, __Visitor)
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::base_types::identification::object_ref::ObjectRefData {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 4usize;
+        let mut __st = ::serde::Serializer::serialize_struct(__serializer, "OBJECT_REF", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "OBJECT_REF")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "namespace", &self.namespace)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "type", &self.r#type)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "id", &self.id)?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::base_types::identification::object_ref::ObjectRefData
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["id", "namespace", "type"];
+        enum __Field {
+            __Type,
+            __F0,
+            __F1,
+            __F2,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "namespace" => ::core::result::Result::Ok(__Field::__F0),
+                            "type" => ::core::result::Result::Ok(__Field::__F1),
+                            "id" => ::core::result::Result::Ok(__Field::__F2),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "OBJECT_REF",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::base_types::identification::object_ref::ObjectRefData;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `OBJECT_REF` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s1: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s2: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("OBJECT_REF"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("namespace"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F1 => {
+                            if __s1.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("type"),
+                                );
+                            }
+                            __s1 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F2 => {
+                            if __s2.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("id"),
+                                );
+                            }
+                            __s2 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(
+                    crate::v1_2::base_types::identification::object_ref::ObjectRefData {
+                        namespace: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("namespace"))?,
+                        r#type: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+                        id: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("id"))?,
+                    },
+                )
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(__deserializer, "OBJECT_REF", __FIELDS, __Visitor)
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::base_types::identification::object_ref::ObjectRef {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        match self {
+            crate::v1_2::base_types::identification::object_ref::ObjectRef::AccessGroupRef(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+            crate::v1_2::base_types::identification::object_ref::ObjectRef::LocatableRef(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+            crate::v1_2::base_types::identification::object_ref::ObjectRef::PartyRef(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+            crate::v1_2::base_types::identification::object_ref::ObjectRef::ObjectRef(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+        }
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::base_types::identification::object_ref::ObjectRef
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __TAGS: &[&str] = &[
+            "ACCESS_GROUP_REF",
+            "LOCATABLE_REF",
+            "OBJECT_REF",
+            "PARTY_REF",
+        ];
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::base_types::identification::object_ref::ObjectRef;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `OBJECT_REF` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let (__tag, __buffered) = crate::serde_support::read_slot_tag(&mut __map, __TAGS)?;
+                match __tag {
+                    Some(crate::serde_support::TagMatch::Known(__t)) => {
+                        let __rest =
+                            crate::serde_support::TaggedRest::new(Some(__t), __buffered, __map);
+                        match __t {
+"ACCESS_GROUP_REF" => ::core::result::Result::Ok(crate::v1_2::base_types::identification::object_ref::ObjectRef::AccessGroupRef(::serde::Deserialize::deserialize(__rest)?)),
+"LOCATABLE_REF" => ::core::result::Result::Ok(crate::v1_2::base_types::identification::object_ref::ObjectRef::LocatableRef(::serde::Deserialize::deserialize(__rest)?)),
+"OBJECT_REF" => ::core::result::Result::Ok(crate::v1_2::base_types::identification::object_ref::ObjectRef::ObjectRef(::serde::Deserialize::deserialize(__rest)?)),
+"PARTY_REF" => ::core::result::Result::Ok(crate::v1_2::base_types::identification::object_ref::ObjectRef::PartyRef(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(crate::serde_support::unexpected_type("OBJECT_REF", __other, "ACCESS_GROUP_REF, LOCATABLE_REF, OBJECT_REF, PARTY_REF")),
+}
+                    }
+                    Some(crate::serde_support::TagMatch::Unknown(__other)) => {
+                        ::core::result::Result::Err(crate::serde_support::unexpected_type(
+                            "OBJECT_REF",
+                            &__other,
+                            "ACCESS_GROUP_REF, LOCATABLE_REF, OBJECT_REF, PARTY_REF",
+                        ))
+                    }
+                    None => {
+                        let __rest = crate::serde_support::TaggedRest::new(None, __buffered, __map);
+                        ::core::result::Result::Ok(crate::v1_2::base_types::identification::object_ref::ObjectRef::ObjectRef(::serde::Deserialize::deserialize(__rest)?))
+                    }
+                }
+            }
+        }
+        ::serde::Deserializer::deserialize_map(__deserializer, __Visitor)
+    }
+}
+
+impl ::serde::Serialize
+    for crate::v1_2::base_types::identification::object_version_id::ObjectVersionId
+{
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 2usize;
+        let mut __st =
+            ::serde::Serializer::serialize_struct(__serializer, "OBJECT_VERSION_ID", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "OBJECT_VERSION_ID")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "value", &self.value)?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::base_types::identification::object_version_id::ObjectVersionId
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["value"];
+        enum __Field {
+            __Type,
+            __F0,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "value" => ::core::result::Result::Ok(__Field::__F0),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "OBJECT_VERSION_ID",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value =
+                crate::v1_2::base_types::identification::object_version_id::ObjectVersionId;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `OBJECT_VERSION_ID` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("OBJECT_VERSION_ID"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("value"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                let __a0: String = __s0
+                    .flatten()
+                    .ok_or_else(|| ::serde::de::Error::missing_field("value"))?;
+                let __built = crate::v1_2::base_types::identification::object_version_id::ObjectVersionId::new(__a0);
+                __built.map_err(|__e| {
+                    ::serde::de::Error::custom(::std::format!("OBJECT_VERSION_ID: {__e}"))
+                })
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "OBJECT_VERSION_ID",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::base_types::identification::party_ref::PartyRef {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 4usize;
+        let mut __st = ::serde::Serializer::serialize_struct(__serializer, "PARTY_REF", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "PARTY_REF")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "namespace", &self.namespace)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "type", &self.r#type)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "id", &self.id)?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::base_types::identification::party_ref::PartyRef
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["id", "namespace", "type"];
+        enum __Field {
+            __Type,
+            __F0,
+            __F1,
+            __F2,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "namespace" => ::core::result::Result::Ok(__Field::__F0),
+                            "type" => ::core::result::Result::Ok(__Field::__F1),
+                            "id" => ::core::result::Result::Ok(__Field::__F2),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "PARTY_REF",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::base_types::identification::party_ref::PartyRef;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `PARTY_REF` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s1: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s2: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("PARTY_REF"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("namespace"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F1 => {
+                            if __s1.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("type"),
+                                );
+                            }
+                            __s1 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F2 => {
+                            if __s2.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("id"),
+                                );
+                            }
+                            __s2 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(
+                    crate::v1_2::base_types::identification::party_ref::PartyRef {
+                        namespace: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("namespace"))?,
+                        r#type: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+                        id: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("id"))?,
+                    },
+                )
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(__deserializer, "PARTY_REF", __FIELDS, __Visitor)
+    }
+}
+
+impl<T: ::serde::Serialize> ::serde::Serialize
+    for crate::v1_2::foundation_types::interval::point_interval::PointInterval<T>
+{
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 5usize;
+        if self.lower.is_some() {
+            __n += 1;
+        }
+        if self.upper.is_some() {
+            __n += 1;
+        }
+        let mut __st = ::serde::Serializer::serialize_struct(__serializer, "Point_interval", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "Point_interval")?;
+        if let Some(__v) = &self.lower {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "lower", __v)?;
+        }
+        if let Some(__v) = &self.upper {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "upper", __v)?;
+        }
+        ::serde::ser::SerializeStruct::serialize_field(
+            &mut __st,
+            "lower_unbounded",
+            &self.lower_unbounded,
+        )?;
+        ::serde::ser::SerializeStruct::serialize_field(
+            &mut __st,
+            "upper_unbounded",
+            &self.upper_unbounded,
+        )?;
+        ::serde::ser::SerializeStruct::serialize_field(
+            &mut __st,
+            "lower_included",
+            &self.lower_included,
+        )?;
+        ::serde::ser::SerializeStruct::serialize_field(
+            &mut __st,
+            "upper_included",
+            &self.upper_included,
+        )?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
+    for crate::v1_2::foundation_types::interval::point_interval::PointInterval<T>
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &[
+            "lower",
+            "lower_included",
+            "lower_unbounded",
+            "upper",
+            "upper_included",
+            "upper_unbounded",
+        ];
+        enum __Field {
+            __Type,
+            __F0,
+            __F1,
+            __F2,
+            __F3,
+            __F4,
+            __F5,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "lower" => ::core::result::Result::Ok(__Field::__F0),
+                            "upper" => ::core::result::Result::Ok(__Field::__F1),
+                            "lower_unbounded" => ::core::result::Result::Ok(__Field::__F2),
+                            "upper_unbounded" => ::core::result::Result::Ok(__Field::__F3),
+                            "lower_included" => ::core::result::Result::Ok(__Field::__F4),
+                            "upper_included" => ::core::result::Result::Ok(__Field::__F5),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "Point_interval",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor<T>(::core::marker::PhantomData<(T,)>);
+        impl<'de, T: ::serde::de::DeserializeOwned> ::serde::de::Visitor<'de> for __Visitor<T> {
+            type Value = crate::v1_2::foundation_types::interval::point_interval::PointInterval<T>;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `Point_interval` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s1: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s2: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s3: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s4: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s5: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("Point_interval"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("lower"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F1 => {
+                            if __s1.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("upper"),
+                                );
+                            }
+                            __s1 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F2 => {
+                            if __s2.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("lower_unbounded"),
+                                );
+                            }
+                            __s2 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F3 => {
+                            if __s3.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("upper_unbounded"),
+                                );
+                            }
+                            __s3 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F4 => {
+                            if __s4.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("lower_included"),
+                                );
+                            }
+                            __s4 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F5 => {
+                            if __s5.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("upper_included"),
+                                );
+                            }
+                            __s5 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(
+                    crate::v1_2::foundation_types::interval::point_interval::PointInterval {
+                        lower: __s0.flatten(),
+                        upper: __s1.flatten(),
+                        lower_unbounded: __s2.flatten().unwrap_or(false),
+                        upper_unbounded: __s3.flatten().unwrap_or(false),
+                        lower_included: __s4.flatten().unwrap_or(true),
+                        upper_included: __s5.flatten().unwrap_or(true),
+                    },
+                )
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "Point_interval",
+            __FIELDS,
+            __Visitor(::core::marker::PhantomData),
+        )
+    }
+}
+
+impl<T: ::serde::Serialize> ::serde::Serialize
+    for crate::v1_2::foundation_types::interval::proper_interval::ProperIntervalData<T>
+{
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 5usize;
+        if self.lower.is_some() {
+            __n += 1;
+        }
+        if self.upper.is_some() {
+            __n += 1;
+        }
+        let mut __st = ::serde::Serializer::serialize_struct(__serializer, "Proper_interval", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "Proper_interval")?;
+        if let Some(__v) = &self.lower {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "lower", __v)?;
+        }
+        if let Some(__v) = &self.upper {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "upper", __v)?;
+        }
+        ::serde::ser::SerializeStruct::serialize_field(
+            &mut __st,
+            "lower_unbounded",
+            &self.lower_unbounded,
+        )?;
+        ::serde::ser::SerializeStruct::serialize_field(
+            &mut __st,
+            "upper_unbounded",
+            &self.upper_unbounded,
+        )?;
+        ::serde::ser::SerializeStruct::serialize_field(
+            &mut __st,
+            "lower_included",
+            &self.lower_included,
+        )?;
+        ::serde::ser::SerializeStruct::serialize_field(
+            &mut __st,
+            "upper_included",
+            &self.upper_included,
+        )?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
+    for crate::v1_2::foundation_types::interval::proper_interval::ProperIntervalData<T>
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &[
+            "lower",
+            "lower_included",
+            "lower_unbounded",
+            "upper",
+            "upper_included",
+            "upper_unbounded",
+        ];
+        enum __Field {
+            __Type,
+            __F0,
+            __F1,
+            __F2,
+            __F3,
+            __F4,
+            __F5,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "lower" => ::core::result::Result::Ok(__Field::__F0),
+                            "upper" => ::core::result::Result::Ok(__Field::__F1),
+                            "lower_unbounded" => ::core::result::Result::Ok(__Field::__F2),
+                            "upper_unbounded" => ::core::result::Result::Ok(__Field::__F3),
+                            "lower_included" => ::core::result::Result::Ok(__Field::__F4),
+                            "upper_included" => ::core::result::Result::Ok(__Field::__F5),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "Proper_interval",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor<T>(::core::marker::PhantomData<(T,)>);
+        impl<'de, T: ::serde::de::DeserializeOwned> ::serde::de::Visitor<'de> for __Visitor<T> {
+            type Value =
+                crate::v1_2::foundation_types::interval::proper_interval::ProperIntervalData<T>;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `Proper_interval` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s1: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s2: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s3: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s4: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s5: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("Proper_interval"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("lower"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F1 => {
+                            if __s1.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("upper"),
+                                );
+                            }
+                            __s1 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F2 => {
+                            if __s2.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("lower_unbounded"),
+                                );
+                            }
+                            __s2 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F3 => {
+                            if __s3.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("upper_unbounded"),
+                                );
+                            }
+                            __s3 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F4 => {
+                            if __s4.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("lower_included"),
+                                );
+                            }
+                            __s4 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F5 => {
+                            if __s5.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("upper_included"),
+                                );
+                            }
+                            __s5 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(
+                    crate::v1_2::foundation_types::interval::proper_interval::ProperIntervalData {
+                        lower: __s0.flatten(),
+                        upper: __s1.flatten(),
+                        lower_unbounded: __s2.flatten().unwrap_or(false),
+                        upper_unbounded: __s3.flatten().unwrap_or(false),
+                        lower_included: __s4.flatten().unwrap_or(true),
+                        upper_included: __s5.flatten().unwrap_or(true),
+                    },
+                )
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "Proper_interval",
+            __FIELDS,
+            __Visitor(::core::marker::PhantomData),
+        )
+    }
+}
+
+impl<T: ::serde::Serialize> ::serde::Serialize
+    for crate::v1_2::foundation_types::interval::proper_interval::ProperInterval<T>
+{
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        match self {
+crate::v1_2::foundation_types::interval::proper_interval::ProperInterval::MultiplicityInterval(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v1_2::foundation_types::interval::proper_interval::ProperInterval::ProperInterval(__x) => ::serde::Serialize::serialize(__x, __serializer),
+}
+    }
+}
+
+impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
+    for crate::v1_2::foundation_types::interval::proper_interval::ProperInterval<T>
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __TAGS: &[&str] = &["Multiplicity_interval", "Proper_interval"];
+        struct __Visitor<T>(::core::marker::PhantomData<(T,)>);
+        impl<'de, T: ::serde::de::DeserializeOwned> ::serde::de::Visitor<'de> for __Visitor<T> {
+            type Value =
+                crate::v1_2::foundation_types::interval::proper_interval::ProperInterval<T>;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `Proper_interval` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let (__tag, __buffered) = crate::serde_support::read_slot_tag(&mut __map, __TAGS)?;
+                match __tag {
+                    Some(crate::serde_support::TagMatch::Known(__t)) => {
+                        let __rest =
+                            crate::serde_support::TaggedRest::new(Some(__t), __buffered, __map);
+                        match __t {
+"Multiplicity_interval" => ::core::result::Result::Ok(crate::v1_2::foundation_types::interval::proper_interval::ProperInterval::MultiplicityInterval(::serde::Deserialize::deserialize(__rest)?)),
+"Proper_interval" => ::core::result::Result::Ok(crate::v1_2::foundation_types::interval::proper_interval::ProperInterval::ProperInterval(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(crate::serde_support::unexpected_type("Proper_interval", __other, "Multiplicity_interval, Proper_interval")),
+}
+                    }
+                    Some(crate::serde_support::TagMatch::Unknown(__other)) => {
+                        ::core::result::Result::Err(crate::serde_support::unexpected_type(
+                            "Proper_interval",
+                            &__other,
+                            "Multiplicity_interval, Proper_interval",
+                        ))
+                    }
+                    None => {
+                        let __rest = crate::serde_support::TaggedRest::new(None, __buffered, __map);
+                        ::core::result::Result::Ok(crate::v1_2::foundation_types::interval::proper_interval::ProperInterval::ProperInterval(::serde::Deserialize::deserialize(__rest)?))
+                    }
+                }
+            }
+        }
+        ::serde::Deserializer::deserialize_map(
+            __deserializer,
+            __Visitor(::core::marker::PhantomData),
+        )
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::resource::resource_annotations::ResourceAnnotations {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 2usize;
+        let mut __st =
+            ::serde::Serializer::serialize_struct(__serializer, "RESOURCE_ANNOTATIONS", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "RESOURCE_ANNOTATIONS")?;
+        ::serde::ser::SerializeStruct::serialize_field(
+            &mut __st,
+            "documentation",
+            &self.documentation,
+        )?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::resource::resource_annotations::ResourceAnnotations
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["documentation"];
+        enum __Field {
+            __Type,
+            __F0,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "documentation" => ::core::result::Result::Ok(__Field::__F0),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "RESOURCE_ANNOTATIONS",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::resource::resource_annotations::ResourceAnnotations;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `RESOURCE_ANNOTATIONS` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("RESOURCE_ANNOTATIONS"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("documentation"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(
+                    crate::v1_2::resource::resource_annotations::ResourceAnnotations {
+                        documentation: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("documentation"))?,
+                    },
+                )
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "RESOURCE_ANNOTATIONS",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::resource::resource_description::ResourceDescription {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 3usize;
+        if self.original_namespace.is_some() {
+            __n += 1;
+        }
+        if self.original_publisher.is_some() {
+            __n += 1;
+        }
+        if self
+            .other_contributors
+            .as_ref()
+            .is_some_and(|__v| !__v.is_empty())
+        {
+            __n += 1;
+        }
+        if self.custodian_namespace.is_some() {
+            __n += 1;
+        }
+        if self.custodian_organisation.is_some() {
+            __n += 1;
+        }
+        if self.copyright.is_some() {
+            __n += 1;
+        }
+        if self.licence.is_some() {
+            __n += 1;
+        }
+        if self.ip_acknowledgements.is_some() {
+            __n += 1;
+        }
+        if self.references.is_some() {
+            __n += 1;
+        }
+        if self.resource_package_uri.is_some() {
+            __n += 1;
+        }
+        if self.conversion_details.is_some() {
+            __n += 1;
+        }
+        if self.other_details.is_some() {
+            __n += 1;
+        }
+        if self.details.is_some() {
+            __n += 1;
+        }
+        let mut __st =
+            ::serde::Serializer::serialize_struct(__serializer, "RESOURCE_DESCRIPTION", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "RESOURCE_DESCRIPTION")?;
+        ::serde::ser::SerializeStruct::serialize_field(
+            &mut __st,
+            "original_author",
+            &self.original_author,
+        )?;
+        if let Some(__v) = &self.original_namespace {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "original_namespace", __v)?;
+        }
+        if let Some(__v) = &self.original_publisher {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "original_publisher", __v)?;
+        }
+        if let Some(__v) = &self.other_contributors
+            && !__v.is_empty()
+        {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "other_contributors", __v)?;
+        }
+        ::serde::ser::SerializeStruct::serialize_field(
+            &mut __st,
+            "lifecycle_state",
+            &self.lifecycle_state,
+        )?;
+        if let Some(__v) = &self.custodian_namespace {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "custodian_namespace", __v)?;
+        }
+        if let Some(__v) = &self.custodian_organisation {
+            ::serde::ser::SerializeStruct::serialize_field(
+                &mut __st,
+                "custodian_organisation",
+                __v,
+            )?;
+        }
+        if let Some(__v) = &self.copyright {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "copyright", __v)?;
+        }
+        if let Some(__v) = &self.licence {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "licence", __v)?;
+        }
+        if let Some(__v) = &self.ip_acknowledgements {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "ip_acknowledgements", __v)?;
+        }
+        if let Some(__v) = &self.references {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "references", __v)?;
+        }
+        if let Some(__v) = &self.resource_package_uri {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "resource_package_uri", __v)?;
+        }
+        if let Some(__v) = &self.conversion_details {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "conversion_details", __v)?;
+        }
+        if let Some(__v) = &self.other_details {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "other_details", __v)?;
+        }
+        if let Some(__v) = &self.details {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "details", __v)?;
+        }
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::resource::resource_description::ResourceDescription
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &[
+            "conversion_details",
+            "copyright",
+            "custodian_namespace",
+            "custodian_organisation",
+            "details",
+            "ip_acknowledgements",
+            "licence",
+            "lifecycle_state",
+            "original_author",
+            "original_namespace",
+            "original_publisher",
+            "other_contributors",
+            "other_details",
+            "references",
+            "resource_package_uri",
+        ];
+        enum __Field {
+            __Type,
+            __F0,
+            __F1,
+            __F2,
+            __F3,
+            __F4,
+            __F5,
+            __F6,
+            __F7,
+            __F8,
+            __F9,
+            __F10,
+            __F11,
+            __F12,
+            __F13,
+            __F14,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "original_author" => ::core::result::Result::Ok(__Field::__F0),
+                            "original_namespace" => ::core::result::Result::Ok(__Field::__F1),
+                            "original_publisher" => ::core::result::Result::Ok(__Field::__F2),
+                            "other_contributors" => ::core::result::Result::Ok(__Field::__F3),
+                            "lifecycle_state" => ::core::result::Result::Ok(__Field::__F4),
+                            "custodian_namespace" => ::core::result::Result::Ok(__Field::__F5),
+                            "custodian_organisation" => ::core::result::Result::Ok(__Field::__F6),
+                            "copyright" => ::core::result::Result::Ok(__Field::__F7),
+                            "licence" => ::core::result::Result::Ok(__Field::__F8),
+                            "ip_acknowledgements" => ::core::result::Result::Ok(__Field::__F9),
+                            "references" => ::core::result::Result::Ok(__Field::__F10),
+                            "resource_package_uri" => ::core::result::Result::Ok(__Field::__F11),
+                            "conversion_details" => ::core::result::Result::Ok(__Field::__F12),
+                            "other_details" => ::core::result::Result::Ok(__Field::__F13),
+                            "details" => ::core::result::Result::Ok(__Field::__F14),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "RESOURCE_DESCRIPTION",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::resource::resource_description::ResourceDescription;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `RESOURCE_DESCRIPTION` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s1: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s2: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s3: ::core::option::Option<_> = None;
+                let mut __s4: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s5: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s6: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s7: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s8: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s9: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s10: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s11: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s12: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s13: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s14: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("RESOURCE_DESCRIPTION"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("original_author"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F1 => {
+                            if __s1.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("original_namespace"),
+                                );
+                            }
+                            __s1 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F2 => {
+                            if __s2.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("original_publisher"),
+                                );
+                            }
+                            __s2 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F3 => {
+                            if __s3.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("other_contributors"),
+                                );
+                            }
+                            __s3 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F4 => {
+                            if __s4.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("lifecycle_state"),
+                                );
+                            }
+                            __s4 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F5 => {
+                            if __s5.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("custodian_namespace"),
+                                );
+                            }
+                            __s5 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F6 => {
+                            if __s6.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("custodian_organisation"),
+                                );
+                            }
+                            __s6 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F7 => {
+                            if __s7.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("copyright"),
+                                );
+                            }
+                            __s7 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F8 => {
+                            if __s8.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("licence"),
+                                );
+                            }
+                            __s8 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F9 => {
+                            if __s9.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("ip_acknowledgements"),
+                                );
+                            }
+                            __s9 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F10 => {
+                            if __s10.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("references"),
+                                );
+                            }
+                            __s10 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F11 => {
+                            if __s11.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("resource_package_uri"),
+                                );
+                            }
+                            __s11 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F12 => {
+                            if __s12.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("conversion_details"),
+                                );
+                            }
+                            __s12 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F13 => {
+                            if __s13.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("other_details"),
+                                );
+                            }
+                            __s13 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F14 => {
+                            if __s14.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("details"),
+                                );
+                            }
+                            __s14 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(
+                    crate::v1_2::resource::resource_description::ResourceDescription {
+                        original_author: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("original_author"))?,
+                        original_namespace: __s1.flatten(),
+                        original_publisher: __s2.flatten(),
+                        other_contributors: __s3,
+                        lifecycle_state: __s4
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("lifecycle_state"))?,
+                        custodian_namespace: __s5.flatten(),
+                        custodian_organisation: __s6.flatten(),
+                        copyright: __s7.flatten(),
+                        licence: __s8.flatten(),
+                        ip_acknowledgements: __s9.flatten(),
+                        references: __s10.flatten(),
+                        resource_package_uri: __s11.flatten(),
+                        conversion_details: __s12.flatten(),
+                        other_details: __s13.flatten(),
+                        details: __s14.flatten(),
+                    },
+                )
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "RESOURCE_DESCRIPTION",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize
+    for crate::v1_2::resource::resource_description_item::ResourceDescriptionItem
+{
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 3usize;
+        if self.keywords.as_ref().is_some_and(|__v| !__v.is_empty()) {
+            __n += 1;
+        }
+        if self.use_.is_some() {
+            __n += 1;
+        }
+        if self.misuse.is_some() {
+            __n += 1;
+        }
+        if self.original_resource_uri.is_some() {
+            __n += 1;
+        }
+        if self.other_details.is_some() {
+            __n += 1;
+        }
+        let mut __st =
+            ::serde::Serializer::serialize_struct(__serializer, "RESOURCE_DESCRIPTION_ITEM", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(
+            &mut __st,
+            "_type",
+            "RESOURCE_DESCRIPTION_ITEM",
+        )?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "language", &self.language)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "purpose", &self.purpose)?;
+        if let Some(__v) = &self.keywords
+            && !__v.is_empty()
+        {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "keywords", __v)?;
+        }
+        if let Some(__v) = &self.use_ {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "use", __v)?;
+        }
+        if let Some(__v) = &self.misuse {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "misuse", __v)?;
+        }
+        if let Some(__v) = &self.original_resource_uri {
+            ::serde::ser::SerializeStruct::serialize_field(
+                &mut __st,
+                "original_resource_uri",
+                __v,
+            )?;
+        }
+        if let Some(__v) = &self.other_details {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "other_details", __v)?;
+        }
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::resource::resource_description_item::ResourceDescriptionItem
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &[
+            "keywords",
+            "language",
+            "misuse",
+            "original_resource_uri",
+            "other_details",
+            "purpose",
+            "use",
+        ];
+        enum __Field {
+            __Type,
+            __F0,
+            __F1,
+            __F2,
+            __F3,
+            __F4,
+            __F5,
+            __F6,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "language" => ::core::result::Result::Ok(__Field::__F0),
+                            "purpose" => ::core::result::Result::Ok(__Field::__F1),
+                            "keywords" => ::core::result::Result::Ok(__Field::__F2),
+                            "use" => ::core::result::Result::Ok(__Field::__F3),
+                            "misuse" => ::core::result::Result::Ok(__Field::__F4),
+                            "original_resource_uri" => ::core::result::Result::Ok(__Field::__F5),
+                            "other_details" => ::core::result::Result::Ok(__Field::__F6),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "RESOURCE_DESCRIPTION_ITEM",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::resource::resource_description_item::ResourceDescriptionItem;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `RESOURCE_DESCRIPTION_ITEM` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s1: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s2: ::core::option::Option<_> = None;
+                let mut __s3: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s4: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s5: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s6: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("RESOURCE_DESCRIPTION_ITEM"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("language"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F1 => {
+                            if __s1.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("purpose"),
+                                );
+                            }
+                            __s1 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F2 => {
+                            if __s2.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("keywords"),
+                                );
+                            }
+                            __s2 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F3 => {
+                            if __s3.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("use"),
+                                );
+                            }
+                            __s3 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F4 => {
+                            if __s4.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("misuse"),
+                                );
+                            }
+                            __s4 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F5 => {
+                            if __s5.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("original_resource_uri"),
+                                );
+                            }
+                            __s5 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F6 => {
+                            if __s6.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("other_details"),
+                                );
+                            }
+                            __s6 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(
+                    crate::v1_2::resource::resource_description_item::ResourceDescriptionItem {
+                        language: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("language"))?,
+                        purpose: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("purpose"))?,
+                        keywords: __s2,
+                        use_: __s3.flatten(),
+                        misuse: __s4.flatten(),
+                        original_resource_uri: __s5.flatten(),
+                        other_details: __s6.flatten(),
+                    },
+                )
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "RESOURCE_DESCRIPTION_ITEM",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::base_types::identification::template_id::TemplateId {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 2usize;
+        let mut __st = ::serde::Serializer::serialize_struct(__serializer, "TEMPLATE_ID", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "TEMPLATE_ID")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "value", &self.value)?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::base_types::identification::template_id::TemplateId
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["value"];
+        enum __Field {
+            __Type,
+            __F0,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "value" => ::core::result::Result::Ok(__Field::__F0),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "TEMPLATE_ID",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::base_types::identification::template_id::TemplateId;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `TEMPLATE_ID` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("TEMPLATE_ID"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("value"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(
+                    crate::v1_2::base_types::identification::template_id::TemplateId {
+                        value: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
+                    },
+                )
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "TEMPLATE_ID",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::base_types::identification::terminology_id::TerminologyId {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 2usize;
+        let mut __st = ::serde::Serializer::serialize_struct(__serializer, "TERMINOLOGY_ID", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "TERMINOLOGY_ID")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "value", &self.value)?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::base_types::identification::terminology_id::TerminologyId
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["value"];
+        enum __Field {
+            __Type,
+            __F0,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "value" => ::core::result::Result::Ok(__Field::__F0),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "TERMINOLOGY_ID",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::base_types::identification::terminology_id::TerminologyId;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `TERMINOLOGY_ID` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("TERMINOLOGY_ID"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("value"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(
+                    crate::v1_2::base_types::identification::terminology_id::TerminologyId {
+                        value: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
+                    },
+                )
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "TERMINOLOGY_ID",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::resource::translation_details::TranslationDetails {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 3usize;
+        if self.accreditation.is_some() {
+            __n += 1;
+        }
+        if self.other_details.is_some() {
+            __n += 1;
+        }
+        if self.version_last_translated.is_some() {
+            __n += 1;
+        }
+        if self
+            .other_contributors
+            .as_ref()
+            .is_some_and(|__v| !__v.is_empty())
+        {
+            __n += 1;
+        }
+        let mut __st =
+            ::serde::Serializer::serialize_struct(__serializer, "TRANSLATION_DETAILS", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "TRANSLATION_DETAILS")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "language", &self.language)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "author", &self.author)?;
+        if let Some(__v) = &self.accreditation {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "accreditation", __v)?;
+        }
+        if let Some(__v) = &self.other_details {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "other_details", __v)?;
+        }
+        if let Some(__v) = &self.version_last_translated {
+            ::serde::ser::SerializeStruct::serialize_field(
+                &mut __st,
+                "version_last_translated",
+                __v,
+            )?;
+        }
+        if let Some(__v) = &self.other_contributors
+            && !__v.is_empty()
+        {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "other_contributors", __v)?;
+        }
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::resource::translation_details::TranslationDetails
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &[
+            "accreditation",
+            "author",
+            "language",
+            "other_contributors",
+            "other_details",
+            "version_last_translated",
+        ];
+        enum __Field {
+            __Type,
+            __F0,
+            __F1,
+            __F2,
+            __F3,
+            __F4,
+            __F5,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "language" => ::core::result::Result::Ok(__Field::__F0),
+                            "author" => ::core::result::Result::Ok(__Field::__F1),
+                            "accreditation" => ::core::result::Result::Ok(__Field::__F2),
+                            "other_details" => ::core::result::Result::Ok(__Field::__F3),
+                            "version_last_translated" => ::core::result::Result::Ok(__Field::__F4),
+                            "other_contributors" => ::core::result::Result::Ok(__Field::__F5),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "TRANSLATION_DETAILS",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::resource::translation_details::TranslationDetails;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `TRANSLATION_DETAILS` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s1: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s2: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s3: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s4: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s5: ::core::option::Option<_> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("TRANSLATION_DETAILS"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("language"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F1 => {
+                            if __s1.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("author"),
+                                );
+                            }
+                            __s1 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F2 => {
+                            if __s2.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("accreditation"),
+                                );
+                            }
+                            __s2 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F3 => {
+                            if __s3.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("other_details"),
+                                );
+                            }
+                            __s3 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F4 => {
+                            if __s4.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("version_last_translated"),
+                                );
+                            }
+                            __s4 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F5 => {
+                            if __s5.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("other_contributors"),
+                                );
+                            }
+                            __s5 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(
+                    crate::v1_2::resource::translation_details::TranslationDetails {
+                        language: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("language"))?,
+                        author: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("author"))?,
+                        accreditation: __s2.flatten(),
+                        other_details: __s3.flatten(),
+                        version_last_translated: __s4.flatten(),
+                        other_contributors: __s5,
+                    },
+                )
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "TRANSLATION_DETAILS",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize
+    for crate::v1_2::foundation_types::terminology::terminology_code::TerminologyCode
+{
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 3usize;
+        if self.terminology_version.is_some() {
+            __n += 1;
+        }
+        if self.uri.is_some() {
+            __n += 1;
+        }
+        let mut __st =
+            ::serde::Serializer::serialize_struct(__serializer, "Terminology_code", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "Terminology_code")?;
+        ::serde::ser::SerializeStruct::serialize_field(
+            &mut __st,
+            "terminology_id",
+            &self.terminology_id,
+        )?;
+        if let Some(__v) = &self.terminology_version {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "terminology_version", __v)?;
+        }
+        ::serde::ser::SerializeStruct::serialize_field(
+            &mut __st,
+            "code_string",
+            &self.code_string,
+        )?;
+        if let Some(__v) = &self.uri {
+            ::serde::ser::SerializeStruct::serialize_field(&mut __st, "uri", __v)?;
+        }
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::foundation_types::terminology::terminology_code::TerminologyCode
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &[
+            "code_string",
+            "terminology_id",
+            "terminology_version",
+            "uri",
+        ];
+        enum __Field {
+            __Type,
+            __F0,
+            __F1,
+            __F2,
+            __F3,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "terminology_id" => ::core::result::Result::Ok(__Field::__F0),
+                            "terminology_version" => ::core::result::Result::Ok(__Field::__F1),
+                            "code_string" => ::core::result::Result::Ok(__Field::__F2),
+                            "uri" => ::core::result::Result::Ok(__Field::__F3),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "Terminology_code",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value =
+                crate::v1_2::foundation_types::terminology::terminology_code::TerminologyCode;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `Terminology_code` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s1: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s2: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s3: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("Terminology_code"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("terminology_id"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F1 => {
+                            if __s1.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("terminology_version"),
+                                );
+                            }
+                            __s1 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F2 => {
+                            if __s2.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("code_string"),
+                                );
+                            }
+                            __s2 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F3 => {
+                            if __s3.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("uri"),
+                                );
+                            }
+                            __s3 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(
+                    crate::v1_2::foundation_types::terminology::terminology_code::TerminologyCode {
+                        terminology_id: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("terminology_id"))?,
+                        terminology_version: __s1.flatten(),
+                        code_string: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("code_string"))?,
+                        uri: __s3.flatten(),
+                    },
+                )
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "Terminology_code",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize
+    for crate::v1_2::foundation_types::terminology::terminology_term::TerminologyTerm
+{
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 3usize;
+        let mut __st =
+            ::serde::Serializer::serialize_struct(__serializer, "Terminology_term", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "Terminology_term")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "concept", &self.concept)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "text", &self.text)?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::foundation_types::terminology::terminology_term::TerminologyTerm
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["concept", "text"];
+        enum __Field {
+            __Type,
+            __F0,
+            __F1,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "concept" => ::core::result::Result::Ok(__Field::__F0),
+                            "text" => ::core::result::Result::Ok(__Field::__F1),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "Terminology_term",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value =
+                crate::v1_2::foundation_types::terminology::terminology_term::TerminologyTerm;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `Terminology_term` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                let mut __s1: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("Terminology_term"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("concept"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                        __Field::__F1 => {
+                            if __s1.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("text"),
+                                );
+                            }
+                            __s1 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                ::core::result::Result::Ok(
+                    crate::v1_2::foundation_types::terminology::terminology_term::TerminologyTerm {
+                        concept: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("concept"))?,
+                        text: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("text"))?,
+                    },
+                )
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "Terminology_term",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::base_types::identification::uid::Uid {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        match self {
+            crate::v1_2::base_types::identification::uid::Uid::InternetId(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+            crate::v1_2::base_types::identification::uid::Uid::IsoOid(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+            crate::v1_2::base_types::identification::uid::Uid::Uuid(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+        }
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de> for crate::v1_2::base_types::identification::uid::Uid {
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __TAGS: &[&str] = &["INTERNET_ID", "ISO_OID", "UUID"];
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::base_types::identification::uid::Uid;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `UID` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let (__tag, __buffered) = crate::serde_support::read_slot_tag(&mut __map, __TAGS)?;
+                match __tag {
+                    Some(crate::serde_support::TagMatch::Known(__t)) => {
+                        let __rest =
+                            crate::serde_support::TaggedRest::new(Some(__t), __buffered, __map);
+                        match __t {
+                            "INTERNET_ID" => ::core::result::Result::Ok(
+                                crate::v1_2::base_types::identification::uid::Uid::InternetId(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ),
+                            ),
+                            "ISO_OID" => ::core::result::Result::Ok(
+                                crate::v1_2::base_types::identification::uid::Uid::IsoOid(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ),
+                            ),
+                            "UUID" => ::core::result::Result::Ok(
+                                crate::v1_2::base_types::identification::uid::Uid::Uuid(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ),
+                            ),
+                            __other => {
+                                ::core::result::Result::Err(crate::serde_support::unexpected_type(
+                                    "UID",
+                                    __other,
+                                    "INTERNET_ID, ISO_OID, UUID",
+                                ))
+                            }
+                        }
+                    }
+                    Some(crate::serde_support::TagMatch::Unknown(__other)) => {
+                        ::core::result::Result::Err(crate::serde_support::unexpected_type(
+                            "UID",
+                            &__other,
+                            "INTERNET_ID, ISO_OID, UUID",
+                        ))
+                    }
+                    None => ::core::result::Result::Err(crate::serde_support::missing_type(
+                        "UID",
+                        "INTERNET_ID, ISO_OID, UUID",
+                    )),
+                }
+            }
+        }
+        ::serde::Deserializer::deserialize_map(__deserializer, __Visitor)
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::base_types::identification::uid_based_id::UidBasedId {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        match self {
+            crate::v1_2::base_types::identification::uid_based_id::UidBasedId::HierObjectId(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
+            crate::v1_2::base_types::identification::uid_based_id::UidBasedId::ObjectVersionId(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
+        }
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::base_types::identification::uid_based_id::UidBasedId
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __TAGS: &[&str] = &["HIER_OBJECT_ID", "OBJECT_VERSION_ID"];
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::base_types::identification::uid_based_id::UidBasedId;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `UID_BASED_ID` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let (__tag, __buffered) = crate::serde_support::read_slot_tag(&mut __map, __TAGS)?;
+                match __tag {
+                    Some(crate::serde_support::TagMatch::Known(__t)) => {
+                        let __rest =
+                            crate::serde_support::TaggedRest::new(Some(__t), __buffered, __map);
+                        match __t {
+"HIER_OBJECT_ID" => ::core::result::Result::Ok(crate::v1_2::base_types::identification::uid_based_id::UidBasedId::HierObjectId(::serde::Deserialize::deserialize(__rest)?)),
+"OBJECT_VERSION_ID" => ::core::result::Result::Ok(crate::v1_2::base_types::identification::uid_based_id::UidBasedId::ObjectVersionId(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(crate::serde_support::unexpected_type("UID_BASED_ID", __other, "HIER_OBJECT_ID, OBJECT_VERSION_ID")),
+}
+                    }
+                    Some(crate::serde_support::TagMatch::Unknown(__other)) => {
+                        ::core::result::Result::Err(crate::serde_support::unexpected_type(
+                            "UID_BASED_ID",
+                            &__other,
+                            "HIER_OBJECT_ID, OBJECT_VERSION_ID",
+                        ))
+                    }
+                    None => ::core::result::Result::Err(crate::serde_support::missing_type(
+                        "UID_BASED_ID",
+                        "HIER_OBJECT_ID, OBJECT_VERSION_ID",
+                    )),
+                }
+            }
+        }
+        ::serde::Deserializer::deserialize_map(__deserializer, __Visitor)
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::base_types::identification::uuid::Uuid {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 2usize;
+        let mut __st = ::serde::Serializer::serialize_struct(__serializer, "UUID", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "UUID")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "value", &self.value)?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de> for crate::v1_2::base_types::identification::uuid::Uuid {
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["value"];
+        enum __Field {
+            __Type,
+            __F0,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "value" => ::core::result::Result::Ok(__Field::__F0),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v, "UUID", __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::base_types::identification::uuid::Uuid;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `UUID` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("UUID"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("value"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                let __a0: uuid::Uuid = __s0
+                    .flatten()
+                    .ok_or_else(|| ::serde::de::Error::missing_field("value"))?;
+                let __built = crate::v1_2::base_types::identification::uuid::Uuid::new(__a0);
+                ::core::result::Result::Ok(__built)
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(__deserializer, "UUID", __FIELDS, __Visitor)
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::base_types::definitions::validity_kind::ValidityKind {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        ::serde::Serializer::serialize_str(__serializer, self.as_str())
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::base_types::definitions::validity_kind::ValidityKind
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        struct __V;
+        impl<'de> ::serde::de::Visitor<'de> for __V {
+            type Value = crate::v1_2::base_types::definitions::validity_kind::ValidityKind;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("a `ValidityKind` token")
+            }
+            fn visit_str<__E: ::serde::de::Error>(
+                self,
+                __v: &str,
+            ) -> ::core::result::Result<Self::Value, __E> {
+                ::core::result::Result::Ok(
+                    crate::v1_2::base_types::definitions::validity_kind::ValidityKind::from_wire(
+                        __v,
+                    ),
+                )
+            }
+        }
+        ::serde::Deserializer::deserialize_str(__deserializer, __V)
+    }
+}
+
+impl ::serde::Serialize for crate::v1_2::base_types::definitions::version_status::VersionStatus {
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        ::serde::Serializer::serialize_str(__serializer, self.as_str())
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::base_types::definitions::version_status::VersionStatus
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        struct __V;
+        impl<'de> ::serde::de::Visitor<'de> for __V {
+            type Value = crate::v1_2::base_types::definitions::version_status::VersionStatus;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("a `VersionStatus` token")
+            }
+            fn visit_str<__E: ::serde::de::Error>(
+                self,
+                __v: &str,
+            ) -> ::core::result::Result<Self::Value, __E> {
+                ::core::result::Result::Ok(
+                    crate::v1_2::base_types::definitions::version_status::VersionStatus::from_wire(
+                        __v,
+                    ),
+                )
+            }
+        }
+        ::serde::Deserializer::deserialize_str(__deserializer, __V)
+    }
+}
+
+impl ::serde::Serialize
+    for crate::v1_2::base_types::identification::version_tree_id::VersionTreeId
+{
+    fn serialize<__S: ::serde::Serializer>(
+        &self,
+        __serializer: __S,
+    ) -> ::core::result::Result<__S::Ok, __S::Error> {
+        let mut __n = 2usize;
+        let mut __st = ::serde::Serializer::serialize_struct(__serializer, "VERSION_TREE_ID", __n)?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "_type", "VERSION_TREE_ID")?;
+        ::serde::ser::SerializeStruct::serialize_field(&mut __st, "value", &self.value)?;
+        ::serde::ser::SerializeStruct::end(__st)
+    }
+}
+
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_2::base_types::identification::version_tree_id::VersionTreeId
+{
+    fn deserialize<__D: ::serde::Deserializer<'de>>(
+        __deserializer: __D,
+    ) -> ::core::result::Result<Self, __D::Error> {
+        const __FIELDS: &[&str] = &["value"];
+        enum __Field {
+            __Type,
+            __F0,
+        }
+        impl<'de> ::serde::Deserialize<'de> for __Field {
+            fn deserialize<__D: ::serde::Deserializer<'de>>(
+                __deserializer: __D,
+            ) -> ::core::result::Result<Self, __D::Error> {
+                struct __KeyVisitor;
+                impl<'de> ::serde::de::Visitor<'de> for __KeyVisitor {
+                    type Value = __Field;
+                    fn expecting(
+                        &self,
+                        __f: &mut ::core::fmt::Formatter<'_>,
+                    ) -> ::core::fmt::Result {
+                        __f.write_str("an object member name")
+                    }
+                    fn visit_str<__E: ::serde::de::Error>(
+                        self,
+                        __v: &str,
+                    ) -> ::core::result::Result<__Field, __E> {
+                        match __v {
+                            "_type" => ::core::result::Result::Ok(__Field::__Type),
+                            "value" => ::core::result::Result::Ok(__Field::__F0),
+                            _ => ::core::result::Result::Err(crate::serde_support::unknown_field(
+                                __v,
+                                "VERSION_TREE_ID",
+                                __FIELDS,
+                            )),
+                        }
+                    }
+                }
+                ::serde::Deserializer::deserialize_identifier(__deserializer, __KeyVisitor)
+            }
+        }
+        struct __Visitor;
+        impl<'de> ::serde::de::Visitor<'de> for __Visitor {
+            type Value = crate::v1_2::base_types::identification::version_tree_id::VersionTreeId;
+            fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
+                __f.write_str("an openEHR `VERSION_TREE_ID` object")
+            }
+            fn visit_map<__A: ::serde::de::MapAccess<'de>>(
+                self,
+                mut __map: __A,
+            ) -> ::core::result::Result<Self::Value, __A::Error> {
+                let mut __seen_type = false;
+                let mut __s0: ::core::option::Option<::core::option::Option<_>> = None;
+                while let Some(__key) = ::serde::de::MapAccess::next_key::<__Field>(&mut __map)? {
+                    match __key {
+                        __Field::__Type => {
+                            if __seen_type {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("_type"),
+                                );
+                            }
+                            __seen_type = true;
+                            ::serde::de::MapAccess::next_value_seed(
+                                &mut __map,
+                                crate::serde_support::ExpectedType("VERSION_TREE_ID"),
+                            )?;
+                        }
+                        __Field::__F0 => {
+                            if __s0.is_some() {
+                                return ::core::result::Result::Err(
+                                    ::serde::de::Error::duplicate_field("value"),
+                                );
+                            }
+                            __s0 = Some(::serde::de::MapAccess::next_value(&mut __map)?);
+                        }
+                    }
+                }
+                let __a0: String = __s0
+                    .flatten()
+                    .ok_or_else(|| ::serde::de::Error::missing_field("value"))?;
+                let __built =
+                    crate::v1_2::base_types::identification::version_tree_id::VersionTreeId::new(
+                        __a0,
+                    );
+                __built.map_err(|__e| {
+                    ::serde::de::Error::custom(::std::format!("VERSION_TREE_ID: {__e}"))
+                })
+            }
+        }
+        ::serde::Deserializer::deserialize_struct(
+            __deserializer,
+            "VERSION_TREE_ID",
+            __FIELDS,
+            __Visitor,
+        )
+    }
+}
+
+impl ::serde::Serialize
     for crate::v1_3::base_types::identification::access_group_ref::AccessGroupRef
 {
     fn serialize<__S: ::serde::Serializer>(

@@ -9,12 +9,16 @@
 //! the [`External`] full-path index the render stage consumes, so `cli.rs`
 //! never hand-merges schemas — the membership is data, not control flow.
 //!
-//! **One generation = one vendored BMM file, emitted completely** at its own
+//! **One generation = one COMPONENT VERSION, emitted completely** at its own
 //! version-named top module (`v1_2`, `v2_4`, …) mirroring its source package
-//! structure. Generations are never merged into one class map — a merge
-//! silently picks one shape per colliding name and discards the other's
-//! attributes. The crate prelude re-exports the CURRENT generation only; an
-//! older generation's types are reached by full module path.
+//! structure. A component version can publish several machine-readable
+//! specification units (LANG 1.1.0: the BMM v2.x model beside the paused
+//! BMM3 model); each unit is emitted completely inside the one generation
+//! module, units are never merged into one class map — a merge silently
+//! picks one shape per colliding name and discards the other's attributes —
+//! and the prelude carries the version's stable units only. The crate
+//! prelude re-exports the CURRENT generation; an older generation's types
+//! are reached by full module path.
 //!
 //! # NOTE: the five RM/BASE twin classes are spec-mandated, not accidental
 //!
@@ -61,6 +65,7 @@
 
 use crate::analyze::{External, Model, emittable_specs};
 use crate::load::bmm::BmmSchema;
+use std::collections::BTreeMap;
 use std::path::Path;
 
 /// The vendored BMM root. Paths below mirror the upstream ITS-BMM layout
@@ -69,7 +74,13 @@ use std::path::Path;
 const VENDOR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/bmm");
 
 pub(crate) const BASE_BMM: &str = "components/BASE/json/openehr_base_1.3.0.bmm.json";
+/// BASE's latest RELEASED generation (1.2.0, 09-Apr-2021) — the `stable`
+/// profile's BASE pairing (#1936: RM 1.1.0 is modelled against BASE 1.2.0).
+pub(crate) const BASE12_BMM: &str = "components/BASE/json/openehr_base_1.2.0.bmm.json";
 pub(crate) const RM_BMM: &str = "components/RM/json/openehr_rm_1.2.0.bmm.json";
+/// RM's latest RELEASED generation (1.1.0, 29-Sep-2020); its BMM `includes`
+/// names `openehr_base_1.2.0` — the released pairing, first-hand.
+pub(crate) const RM11_BMM: &str = "components/RM/json/openehr_rm_1.1.0.bmm.json";
 pub(crate) const TERM_BMM: &str = "components/TERM/json/openehr_term_3.1.0.bmm.json";
 pub(crate) const AM14_BMM: &str = "components/AM/json/openehr_am_1.4.0.bmm.json";
 pub(crate) const AM24_BMM: &str = "components/AM/json/openehr_am_2.4.0.bmm.json";
@@ -78,6 +89,11 @@ pub(crate) const AM24_BMM: &str = "components/AM/json/openehr_am_2.4.0.bmm.json"
 /// (`…beom`, with `EXPR_*` and `STATEMENT_SET`/`ASSERTION`, which AM's rules/slots
 /// reference). `LANG/docs/bmm/master01-preface.adoc` §History calls this "the
 /// normative, tool-implemented version".
+/// LANG's released 1.0.0 machine-readable BMM (owner directive 2026-08-05:
+/// emitted FAITHFULLY despite its published defects — it declares no
+/// `includes`, so its BASE references stay open slots; BMM is TRIAL in that
+/// release; defect class reported upstream in #1927).
+pub(crate) const LANG10_BMM: &str = "components/LANG/json/openehr_lang_1.0.0.bmm.json";
 pub(crate) const LANG_BMM: &str = "components/LANG/json/openehr_lang_1.1.0.bmm.json";
 /// LANG's **v3 generation** (`org.openehr.lang.bmm3`): the evolved `BMM_*` object
 /// model with the `EL_*` expression language and the `BMM_STATEMENT*` family,
@@ -92,14 +108,14 @@ pub(crate) const LANG_BMM3: &str = "components/LANG/json/openehr_lang_1.1.0-bmm3
 
 const BASE_DOC: &str = "openEHR BASE (foundation + base types), generated from the BMM meta-model.";
 const RM_DOC: &str = "openEHR RM (Reference Model), generated from the BMM meta-model.";
-const LANG_DOC: &str = "openEHR LANG: the BMM object model in BOTH its extant generations, \
-    generated from the BMM meta-model — the stable v2.x model (`v2`: the `bmm` object model, \
-    its `bmm_persistence` P_BMM form and the `beom` expression model) and the v3 development \
-    line (`v3`: `bmm3`, with the `EL_*` expression and `BMM_STATEMENT*` families). Each \
-    generation is emitted completely under its own version module; the crate prelude re-exports \
-    the current generation (`v3`) only. The generator's own BMM reader lives in openehr-codegen \
-    (tooling, not spec); the hand-written ODIN reader and BEL parser live beside this generated \
-    tree.";
+const LANG_DOC: &str = "openEHR LANG, generated from the BMM meta-model: one generation per \
+    component version. `v1_1` (the 1.1.0 development line, the current generation) carries \
+    the version's published specification units side by side — the STABLE, tool-implemented \
+    BMM v2.x model (`bmm`, its `bmm_persistence` P_BMM form, the `beom` BEL expression model; \
+    on the prelude) and the PAUSED BMM3 model (`bmm3`, full-path only) — plus the hand-written \
+    ODIN/BEL/EL readers and the shared lexer for that version's notations. The generator's own \
+    BMM reader lives in openehr-codegen (tooling, not spec).";
+
 const AM_DOC: &str = "openEHR AM (Archetype Model): `v1_4` (AM 1.4.0, for ADL 1.4) and `v2_4` \
     (AM 2.4.0, for ADL 2) — both generated from BMM. Both ADL versions are in use.";
 const TERM_DOC: &str = "openEHR TERM (Terminology) data model, generated from the BMM \
@@ -115,22 +131,42 @@ pub(crate) struct DepGeneration {
     pub generation: &'static str,
 }
 
-/// One BMM generation of an emitted crate: exactly one vendored file, emitted
+/// One vendored spec file composing a generation — a COMPONENT VERSION can
+/// publish several machine-readable specifications side by side (LANG 1.1.0
+/// publishes the BMM v2.x model AND the paused BMM3 model), each emitted
+/// completely at its own package paths inside the one generation module.
+pub(crate) struct GenerationUnit {
+    /// The vendored BMM file (relative to the vendor root).
+    pub file: &'static str,
+    /// Whether the generation's prelude (and the crate prelude, when this
+    /// generation is current) re-exports this unit's types. The stable
+    /// specifications of a component version are on the prelude; a paused /
+    /// trial sibling specification (LANG's BMM3) is reachable by full module
+    /// path only, which also keeps the prelude collision-free where two
+    /// units of one version declare the same class names.
+    pub in_prelude: bool,
+}
+
+/// One openEHR COMPONENT-VERSION generation of an emitted crate, emitted
 /// completely under its own version-named top module.
 pub(crate) struct GenerationSpec {
-    /// The emitted generation-module name (`v1_2`, `v2_4`; LANG's `v2`/`v3`
-    /// are the BMM meta-model majors — both its files carry the same LANG
-    /// release, so the spec-version-derived name cannot distinguish them).
+    /// The emitted generation-module name (`v1_2`), derived from the
+    /// component version the generation's files self-identify as.
     pub module: &'static str,
     /// The openEHR specification version this generation implements (the
-    /// vendored file's pin) — emitted as the generation module's
+    /// vendored files' pin) — emitted as the generation module's
     /// `SPEC_VERSION` constant and the [`Generation`] enum's
     /// `spec_version()` value.
     pub spec_version: &'static str,
-    /// The vendored BMM file (relative to the vendor root).
-    pub file: &'static str,
+    /// The vendored spec files composing this component version, in
+    /// declaration order. Their emitted package paths must be disjoint
+    /// (the emitter asserts it); for cross-crate reference resolution the
+    /// LAST unit declaring a name wins (mirrors the retired merged-view
+    /// semantics AM 2.4's LANG closure was built against).
+    pub units: &'static [GenerationUnit],
     /// Whether this is the crate's CURRENT generation: the one the crate
-    /// prelude re-exports and the crate-level `Generation::CURRENT` names.
+    /// prelude re-exports and the emitted `Generation` enum's derived
+    /// `Default` variant marks.
     /// Exactly one generation per crate is current ([`compose`] asserts it).
     pub current: bool,
     /// Dependency generations merged (in order, before this generation's own
@@ -148,13 +184,6 @@ pub(crate) struct CrateComposition {
     pub key: &'static str,
     /// Emitted crate directory.
     pub crate_name: &'static str,
-    /// The crate-level implemented-spec pin, emitted as the crate's
-    /// `SPEC_VERSION` constant — deliberately independent of the crates.io
-    /// package version. Usually the current generation's version; LANG
-    /// deviates (its crate pin is the latest LANG release, 1.0.0, while both
-    /// vendored files are 1.1.0-line snapshots — `docs/VERSIONS.md` §openEHR
-    /// specification matrix).
-    pub spec_version: &'static str,
     /// The crate's BMM generations, oldest first. Exactly one is `current`.
     pub generations: &'static [GenerationSpec],
     /// Crate doc comment (emitted into `lib.rs`).
@@ -170,54 +199,69 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
     CrateComposition {
         key: "base",
         crate_name: "openehr-base",
-        spec_version: "1.3.0",
-        generations: &[GenerationSpec {
-            module: "v1_3",
-            spec_version: "1.3.0",
-            file: BASE_BMM,
-            current: true,
-            model_deps: &[],
-            prelude_deps: &[],
-        }],
+        generations: &[
+            GenerationSpec {
+                module: "v1_2",
+                spec_version: "1.2.0",
+                units: &[GenerationUnit {
+                    file: BASE12_BMM,
+
+                    in_prelude: true,
+                }],
+                current: false,
+                model_deps: &[],
+                prelude_deps: &[],
+            },
+            GenerationSpec {
+                module: "v1_3",
+                spec_version: "1.3.0",
+                units: &[GenerationUnit {
+                    file: BASE_BMM,
+
+                    in_prelude: true,
+                }],
+                current: true,
+                model_deps: &[],
+                prelude_deps: &[],
+            },
+        ],
         doc: BASE_DOC,
-        citation: "BASE 1.3.0 BMM (openehr_base_1.3.0) — no includes; the foundation crate.",
+        citation: "BASE BMMs (openehr_base_1.2.0 released + openehr_base_1.3.0 development) — no \
+                   includes; the foundation crate. Both generations emitted side by side \
+                   (#1936: the released generation stays selectable).",
         reason: "Foundation types; nothing below it.",
     },
     CrateComposition {
         key: "rm",
         crate_name: "openehr-rm",
-        spec_version: "1.2.0",
-        generations: &[GenerationSpec {
-            module: "v1_2",
-            spec_version: "1.2.0",
-            file: RM_BMM,
-            current: true,
-            model_deps: &[DepGeneration {
-                key: "base",
-                generation: "v1_3",
-            }],
-            prelude_deps: &[DepGeneration {
-                key: "base",
-                generation: "v1_3",
-            }],
-        }],
-        doc: RM_DOC,
-        citation: "RM 1.2.0 BMM includes openehr_base_1.3.0 (ancestors resolve to BASE). Five \
-                   class names are declared by BOTH files and the RM declaration wins the merge, \
-                   which is correct in every case — see the module NOTE on the RM/BASE \
-                   twin classes.",
-        reason: "The domain model; RM 1.2.0 pairs with BASE 1.3.0.",
-    },
-    CrateComposition {
-        key: "lang",
-        crate_name: "openehr-lang",
-        spec_version: "1.0.0",
         generations: &[
             GenerationSpec {
-                module: "v2",
+                module: "v1_1",
                 spec_version: "1.1.0",
-                file: LANG_BMM,
+                units: &[GenerationUnit {
+                    file: RM11_BMM,
+
+                    in_prelude: true,
+                }],
                 current: false,
+                model_deps: &[DepGeneration {
+                    key: "base",
+                    generation: "v1_2",
+                }],
+                prelude_deps: &[DepGeneration {
+                    key: "base",
+                    generation: "v1_2",
+                }],
+            },
+            GenerationSpec {
+                module: "v1_2",
+                spec_version: "1.2.0",
+                units: &[GenerationUnit {
+                    file: RM_BMM,
+
+                    in_prelude: true,
+                }],
+                current: true,
                 model_deps: &[DepGeneration {
                     key: "base",
                     generation: "v1_3",
@@ -227,10 +271,47 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
                     generation: "v1_3",
                 }],
             },
+        ],
+        doc: RM_DOC,
+        citation: "RM 1.2.0 BMM includes openehr_base_1.3.0; RM 1.1.0 BMM includes \
+                   openehr_base_1.2.0 — each generation resolves against its OWN released \
+                   pairing, first-hand from the files' `includes`. Five class names are \
+                   declared by both an RM and its paired BASE file and the RM declaration \
+                   wins the merge, which is correct in every case — see the module NOTE on \
+                   the RM/BASE twin classes.",
+        reason: "The domain model; RM 1.2.0 pairs with BASE 1.3.0, RM 1.1.0 with BASE 1.2.0.",
+    },
+    CrateComposition {
+        key: "lang",
+        crate_name: "openehr-lang",
+        generations: &[
             GenerationSpec {
-                module: "v3",
+                module: "v1_0",
+                spec_version: "1.0.0",
+                units: &[GenerationUnit {
+                    file: LANG10_BMM,
+                    in_prelude: true,
+                }],
+                current: false,
+                // The released file declares NO includes (its BASE references
+                // stay open slots) — emitted verbatim, owner directive
+                // 2026-08-05; upstream defect class in #1927.
+                model_deps: &[],
+                prelude_deps: &[],
+            },
+            GenerationSpec {
+                module: "v1_1",
                 spec_version: "1.1.0",
-                file: LANG_BMM3,
+                units: &[
+                    GenerationUnit {
+                        file: LANG_BMM,
+                        in_prelude: true,
+                    },
+                    GenerationUnit {
+                        file: LANG_BMM3,
+                        in_prelude: false,
+                    },
+                ],
                 current: true,
                 model_deps: &[DepGeneration {
                     key: "base",
@@ -243,28 +324,36 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
             },
         ],
         doc: LANG_DOC,
-        citation: "LANG 1.1.0 BMM includes openehr_base_1.3.0. Two GENERATIONS of the same \
-                   meta-model compose the crate and both are emitted completely, each under its \
-                   own version module: the stable v2.x BMM + P_BMM + beom \
-                   (LANG/docs/bmm/master01-preface.adoc §History — \"the normative, \
-                   tool-implemented version\") as `v2`, and the v3 development line \
-                   (LANG/docs/bmm3/master01-preface.adoc §Previous Versions; \
-                   master00-amendment_record.adoc SPECLANG-14 \"Formalise the BMM v2/v3 \
-                   split\") as `v3`. The module names are the BMM meta-model majors: both \
-                   files carry the same LANG release, so a spec-version-derived name cannot \
-                   distinguish them. `v3` is current (the crate prelude), preserving the \
-                   pre-table prelude semantics where the v3 twin won every colliding name.",
+        citation: "LANG 1.1.0 BMM includes openehr_base_1.3.0. ONE component-version \
+                   generation (`v1_1`) composed of TWO published specification units, per the \
+                   component's own index (LANG development 1.1.0 lists BMM — STABLE, \"the \
+                   v2.x form in use by current tooling\" — and BMM3 — PAUSED — as sibling \
+                   specifications of one version; SPECLANG-14, \
+                   LANG/docs/bmm3/master00-amendment_record.adoc, formalised the split): the \
+                   v2.x model file (bmm + bmm_persistence + beom packages, on the prelude) \
+                   and the BMM3 file (the bmm3 package, full-path only — paused upstream, \
+                   in-repo hold record #1920). 18 class names occur in both units with \
+                   materially different shapes; the units' package paths are disjoint so \
+                   both are emitted completely, and cross-crate resolution takes the LAST \
+                   unit's declaration (the retired merged-view semantics AM 2.4's LANG \
+                   closure was built against). The released LANG 1.0.0 machine-readable BMM \
+                   is an ADJUDICATED REFUSAL as a codegen input (no `includes`, unnamed \
+                   BMM_CLASS/BMM_PACKAGE, an obsolete-elom package; BMM is TRIAL in that \
+                   release) — no generation is emitted from it.",
         reason: "The BMM/P_BMM object model, both extant generations; depends on BASE.",
     },
     CrateComposition {
         key: "am",
         crate_name: "openehr-am",
-        spec_version: "2.4.0",
         generations: &[
             GenerationSpec {
                 module: "v1_4",
                 spec_version: "1.4.0",
-                file: AM14_BMM,
+                units: &[GenerationUnit {
+                    file: AM14_BMM,
+
+                    in_prelude: true,
+                }],
                 current: false,
                 model_deps: &[DepGeneration {
                     key: "base",
@@ -277,18 +366,18 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
                     },
                     DepGeneration {
                         key: "lang",
-                        generation: "v3",
-                    },
-                    DepGeneration {
-                        key: "lang",
-                        generation: "v2",
+                        generation: "v1_1",
                     },
                 ],
             },
             GenerationSpec {
                 module: "v2_4",
                 spec_version: "2.4.0",
-                file: AM24_BMM,
+                units: &[GenerationUnit {
+                    file: AM24_BMM,
+
+                    in_prelude: true,
+                }],
                 current: true,
                 model_deps: &[
                     DepGeneration {
@@ -297,11 +386,7 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
                     },
                     DepGeneration {
                         key: "lang",
-                        generation: "v2",
-                    },
-                    DepGeneration {
-                        key: "lang",
-                        generation: "v3",
+                        generation: "v1_1",
                     },
                 ],
                 prelude_deps: &[
@@ -311,11 +396,7 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
                     },
                     DepGeneration {
                         key: "lang",
-                        generation: "v3",
-                    },
-                    DepGeneration {
-                        key: "lang",
-                        generation: "v2",
+                        generation: "v1_1",
                     },
                 ],
             },
@@ -337,11 +418,14 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
     CrateComposition {
         key: "term",
         crate_name: "openehr-term",
-        spec_version: "3.1.0",
         generations: &[GenerationSpec {
             module: "v3_1",
             spec_version: "3.1.0",
-            file: TERM_BMM,
+            units: &[GenerationUnit {
+                file: TERM_BMM,
+
+                in_prelude: true,
+            }],
             current: true,
             model_deps: &[DepGeneration {
                 key: "base",
@@ -378,21 +462,30 @@ pub(crate) fn load_bmm(file: &str) -> Result<BmmSchema, Box<dyn std::error::Erro
     Ok(BmmSchema::parse_json(&src)?)
 }
 
-/// One resolved BMM generation of a composed crate: its loaded schema, the
-/// resolution model (paired dependency generations below, this generation on
-/// top), and the [`External`] index resolving its cross-crate references to
-/// full generation-module paths.
+/// One resolved specification unit of a composed generation: its loaded
+/// schema and its resolution model (paired dependency generations below,
+/// this unit's own schema on top).
+pub(crate) struct ComposedUnit {
+    /// The table row this unit was resolved from.
+    pub spec: &'static GenerationUnit,
+    /// This unit's own schema — one vendored file, verbatim.
+    pub schema: BmmSchema,
+    /// The merged resolution model (the generation's dependency schemas,
+    /// then this unit alone) — a class of one unit never resolves an
+    /// ancestor, field type or subtype against a sibling unit's definitions
+    /// (LANG's BMM and BMM3 units declare 18 colliding names with different
+    /// shapes).
+    pub model: Model,
+}
+
+/// One resolved COMPONENT-VERSION generation of a composed crate.
 pub(crate) struct ComposedGeneration {
     /// The table row this generation was resolved from.
     pub spec: &'static GenerationSpec,
-    /// This generation's own schema — one vendored file, verbatim.
-    pub schema: BmmSchema,
+    /// The generation's specification units, in table order.
+    pub units: Vec<ComposedUnit>,
     /// The paired dependency generations' schemas (`model_deps`, in order).
     pub dep_schemas: Vec<BmmSchema>,
-    /// The merged resolution model (`dep_schemas` then [`Self::schema`]) — a
-    /// class of this generation never resolves an ancestor, field type or
-    /// subtype against another generation's definitions.
-    pub model: Model,
     /// The full-path index resolving `prelude_deps` cross-crate references.
     pub external: External,
 }
@@ -423,6 +516,30 @@ impl Composed {
             .iter()
             .find(|g| g.spec.current)
             .expect("a composed crate should carry exactly one current generation")
+    }
+}
+
+impl ComposedGeneration {
+    /// Returns the generation's single specification unit.
+    ///
+    /// Most component versions publish exactly one machine-readable unit;
+    /// a caller that can only consume one (the XML/REST/OPT emits over the
+    /// current RM/BASE) uses this and fails loudly on a multi-unit
+    /// generation instead of silently picking a unit.
+    ///
+    /// # Errors
+    /// Returns an error when the generation carries several units (LANG).
+    pub(crate) fn unit(&self) -> Result<&ComposedUnit, Box<dyn std::error::Error>> {
+        match self.units.as_slice() {
+            [unit] => Ok(unit),
+            units => Err(format!(
+                "generation {:?} carries {} specification units — iterate `units` instead of \
+                 assuming one",
+                self.spec.module,
+                units.len()
+            )
+            .into()),
+        }
     }
 }
 
@@ -464,26 +581,39 @@ fn generation_spec(
         })
 }
 
-/// Load one generation's schema plus its merged resolution model (paired
-/// dependency generations below, the generation's own schema on top).
+/// Load one generation's units plus each unit's merged resolution model
+/// (paired dependency generations below, the unit's own schema on top).
 ///
 /// # Errors
-/// Returns an error if any involved BMM file cannot be loaded or a dependency
-/// reference names a missing key/generation.
-fn generation_model(
+/// Returns an error if any involved BMM file cannot be loaded, a dependency
+/// reference names a missing key/generation, or the generation lists no unit.
+fn generation_units(
     spec: &'static GenerationSpec,
-) -> Result<(BmmSchema, Vec<BmmSchema>, Model), Box<dyn std::error::Error>> {
-    let schema = load_bmm(spec.file)?;
+) -> Result<(Vec<ComposedUnit>, Vec<BmmSchema>), Box<dyn std::error::Error>> {
+    if spec.units.is_empty() {
+        return Err(format!("generation {:?} lists no specification unit", spec.module).into());
+    }
     let mut dep_schemas = Vec::with_capacity(spec.model_deps.len());
     for dep in spec.model_deps {
         let dep_comp = lookup(dep.key)?;
         let dep_spec = generation_spec(dep_comp, dep.generation)?;
-        dep_schemas.push(load_bmm(dep_spec.file)?);
+        for unit in dep_spec.units {
+            dep_schemas.push(load_bmm(unit.file)?);
+        }
     }
-    let mut refs: Vec<&BmmSchema> = dep_schemas.iter().collect();
-    refs.push(&schema);
-    let model = Model::merged(&refs);
-    Ok((schema, dep_schemas, model))
+    let mut units = Vec::with_capacity(spec.units.len());
+    for unit in spec.units {
+        let schema = load_bmm(unit.file)?;
+        let mut refs: Vec<&BmmSchema> = dep_schemas.iter().collect();
+        refs.push(&schema);
+        let model = Model::merged(&refs);
+        units.push(ComposedUnit {
+            spec: unit,
+            schema,
+            model,
+        });
+    }
+    Ok((units, dep_schemas))
 }
 
 /// Resolve a composition entry into its per-generation schemas, models, and
@@ -514,31 +644,34 @@ pub(crate) fn compose(key: &str) -> Result<Composed, Box<dyn std::error::Error>>
 
     let mut generations = Vec::with_capacity(comp.generations.len());
     for spec in comp.generations {
-        let (schema, dep_schemas, model) = generation_model(spec)?;
+        let (units, dep_schemas) = generation_units(spec)?;
 
         // The External index over prelude_deps: each dependency generation's
         // emittable specs mapped to full generation-module paths, consulted
-        // first-wins in table order.
+        // first-wins across dependencies in table order. Within one
+        // dependency generation the units fold LAST-wins (a later unit's
+        // twin shadows an earlier one's — the retired merged-view semantics
+        // AM 2.4's LANG closure was built against), realized here by one
+        // folded map per dependency generation.
         let mut external = External::default().in_crate(comp.crate_name);
         for dep in spec.prelude_deps {
             let dep_comp = lookup(dep.key)?;
             let dep_spec = generation_spec(dep_comp, dep.generation)?;
-            let (dep_schema, _, dep_model) = generation_model(dep_spec)?;
-            let modules = emittable_specs(&dep_model, &dep_schema)
-                .into_iter()
-                .map(|s| {
-                    let path = generation_module_path(dep_comp, dep.generation, &dep_schema, &s);
-                    (s, path)
-                })
-                .collect();
+            let (dep_units, _) = generation_units(dep_spec)?;
+            let mut modules = BTreeMap::new();
+            for unit in &dep_units {
+                for s in emittable_specs(&unit.model, &unit.schema) {
+                    let path = generation_module_path(dep_comp, dep.generation, &unit.schema, &s);
+                    modules.insert(s, path);
+                }
+            }
             external = external.with(modules);
         }
 
         generations.push(ComposedGeneration {
             spec,
-            schema,
+            units,
             dep_schemas,
-            model,
             external,
         });
     }

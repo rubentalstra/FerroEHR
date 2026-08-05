@@ -27,7 +27,7 @@ use crate::error::SyntaxErrorCode;
 use crate::odin::{decode_character, decode_string, escape_regex_delimiter, regex_inner};
 use crate::parse::values::PrimKind;
 use crate::parse::{Dialect, PResult, Parser};
-use openehr_lang::lexer::Token;
+use openehr_lang::v1_1::lexer::Token;
 
 // ── inline primitives (`cadl2_primitives.g4`) ─────────────────────────────
 impl Parser<'_> {
@@ -637,7 +637,7 @@ impl Parser<'_> {
         // is.
         let assumed = match quoted_assumed {
             Some(text) => {
-                let decoded = openehr_lang::escape::decode(text);
+                let decoded = openehr_lang::v1_1::escape::decode(text);
                 Some(self.decoded_literal(decoded, span.clone())?)
             }
             None => None,

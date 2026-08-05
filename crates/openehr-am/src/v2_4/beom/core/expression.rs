@@ -9,8 +9,8 @@ use crate::v2_4::beom::core::expr_for_all::ExprForAll;
 use crate::v2_4::beom::core::expr_function_call::ExprFunctionCall;
 use crate::v2_4::beom::core::expr_unary_operator::ExprUnaryOperator;
 use crate::v2_4::beom::core::expr_value_ref::ExprValueRef;
-use openehr_lang::v2::beom::core::expr_literal::ExprLiteral;
-use openehr_lang::v2::beom::core::expr_variable_ref::ExprVariableRef;
+use openehr_lang::v1_1::beom::core::expr_literal::ExprLiteral;
+use openehr_lang::v1_1::beom::core::expr_variable_ref::ExprVariableRef;
 
 /// Closed subtype set of `EXPRESSION`, dispatched on each payload's `_type`.
 ///

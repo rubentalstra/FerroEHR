@@ -70,8 +70,13 @@ ENV REVISION=${REVISION}
 # The binary is pure-Rust (rustls, no OpenSSL); the slim base needs no extra
 # system libraries. Deps are already compiled by `chef cook`, so this step only
 # builds the workspace's own crates.
+# --jobs 2: the generated spec crates carry every emitted generation
+# (#1936/#1942), and two of those rustc invocations in parallel with the app
+# crates exceed a default Docker VM's memory at opt-level 3 (observed: SIGKILL
+# compiling openehr-its in a 7.7 GB VM, 2026-08-05). Capping build parallelism
+# changes no shipped byte — it only serializes compilation.
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
-    cargo build --release --locked -p ferroehr-server \
+    cargo build --release --locked --jobs 2 -p ferroehr-server \
     && cp target/release/ferroehr /usr/local/bin/ferroehr \
     && strip /usr/local/bin/ferroehr
 

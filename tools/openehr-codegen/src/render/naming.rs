@@ -41,6 +41,18 @@ pub(crate) fn field_ident(spec: &str) -> String {
     }
 }
 
+/// The Rust module identifier for a BMM package segment.
+///
+/// Package names come verbatim from the vendored schemas and may carry
+/// characters Rust cannot express in a module path — LANG 1.0.0 publishes
+/// `org.openehr.lang.obsolete-elom` — so a hyphen maps to an underscore (the
+/// standard crate-name mangling) and keywords escape exactly like
+/// [`field_ident`].
+#[must_use]
+pub(crate) fn module_ident(segment: &str) -> String {
+    field_ident(&segment.replace('-', "_"))
+}
+
 /// The `SCREAMING_SNAKE_CASE` associated-constant identifier for a BMM constant
 /// name (`Terminology_id_openehr` → `TERMINOLOGY_ID_OPENEHR`). BMM constant
 /// names are `[A-Za-z0-9_]`, so upper-casing yields a valid Rust identifier.

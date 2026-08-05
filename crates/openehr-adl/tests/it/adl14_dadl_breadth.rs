@@ -10,7 +10,7 @@
 //! convention (`tests/corpus/INVENTORY.md`), and the accepting ones repeat it
 //! in the `regression` tag. Expectations here are derived from the spec text
 //! first-hand — the citation for each construct is in the fixture beside it,
-//! and in the reader that implements it (`openehr_lang::odin`).
+//! and in the reader that implements it (`openehr_lang::v1_1::odin`).
 //!
 //! Both twins are kept for every refusal (`.claude/rules/testing.md`): a form
 //! the reader must ACCEPT lives in the breadth fixture, and a form it must
@@ -32,7 +32,7 @@ use openehr_adl::parse::Dialect;
 use openehr_adl::source::parse_source;
 use openehr_adl::validate::catalogue::Severity;
 use openehr_adl::validate::validate_source_integrity;
-use openehr_lang::odin::{OdinKey, OdinValue};
+use openehr_lang::v1_1::odin::{OdinKey, OdinValue};
 
 /// What a fixture must do.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -206,8 +206,9 @@ fn breadth_fixture_unbounded_intervals() {
             .iter()
             .find(|(k, _)| matches!(k, OdinKey::String(s) if s == key))
             .map_or_else(|| panic!("other_details[{key:?}] missing"), |(_, v)| v);
-        let OdinValue::Interval(openehr_lang::odin::OdinInterval::Range { lower, upper, .. }) =
-            value
+        let OdinValue::Interval(openehr_lang::v1_1::odin::OdinInterval::Range {
+            lower, upper, ..
+        }) = value
         else {
             panic!("{key}: expected a range interval, got {value:?}");
         };
@@ -286,7 +287,7 @@ fn revision_history_section_is_read_and_preserved() {
     );
     // The spec's own example writes the timestamp with a space instead of the
     // ISO `T` designator its own §Complete Date/Times mandates; it is accepted
-    // and normalised (see the `openehr_lang::odin` lexer NOTE).
+    // and normalised (see the `openehr_lang::v1_1::odin` lexer NOTE).
     assert_eq!(
         first.get("time_committed"),
         Some(&OdinValue::DateTime("2004-11-02T09:31:04+1000".to_owned()))

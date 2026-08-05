@@ -214,9 +214,9 @@ fn literal_str(v: &serde_json::Value) -> String {
 }
 
 /// The declared type name of a variable declaration (`Any` when untyped).
-fn type_def_name(t: &openehr_lang::v2::beom::types::expr_type_def::ExprTypeDef) -> String {
+fn type_def_name(t: &openehr_lang::v1_1::beom::types::expr_type_def::ExprTypeDef) -> String {
     match t {
-        openehr_lang::v2::beom::types::expr_type_def::ExprTypeDef::TypeDefObjectRef(r) => {
+        openehr_lang::v1_1::beom::types::expr_type_def::ExprTypeDef::TypeDefObjectRef(r) => {
             r.type_name.clone()
         }
         _ => "Any".to_owned(),

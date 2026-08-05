@@ -6,8 +6,8 @@ use crate::analyze::{augment_with_reemit, cross_schema_reemit, emittable_specs};
 use crate::load::bmm::BmmSchema;
 use crate::load::impls::SiblingImpls;
 use crate::load::{oas, xsd};
-use crate::plan::composition::{self, ComposedGeneration, compose};
-use crate::render::emit::{CrateGeneration, GenFile, emit_composed, type_module_path};
+use crate::plan::composition::{self, ComposedGeneration, ComposedUnit, compose};
+use crate::render::emit::{CrateGeneration, GenFile, RenderUnit, emit_composed, type_module_path};
 use crate::render::{
     emit, emit_json, emit_opt, emit_rest, emit_rm_model, emit_validate, emit_xml, model_query,
     naming,
@@ -72,24 +72,36 @@ pub(crate) fn run() -> std::process::ExitCode {
 }
 
 fn cmd_check() -> Result<(), Box<dyn std::error::Error>> {
-    for file in [
-        composition::BASE_BMM,
-        composition::RM_BMM,
-        composition::TERM_BMM,
-    ] {
-        let s = composition::load_bmm(file)?;
-        let abstract_n = s.classes.values().filter(|c| c.is_abstract).count();
-        let generic_n = s
-            .classes
-            .values()
-            .filter(|c| !c.generic_params.is_empty())
-            .count();
-        println!(
-            "✓ {file}: schema={} release={} classes={} (abstract={abstract_n}, generic={generic_n})",
-            s.schema_name,
-            s.rm_release,
-            s.classes.len(),
-        );
+    // Every generation of every composition entry: load + parse each vendored
+    // file, resolve its paired dependency generations, and prove the model
+    // constructible — the full input-validation pass, not a summary of three
+    // files. A candidate file for a NEW generation is checked by adding its
+    // table row first (the table is the single authority; there is no
+    // side-channel file list).
+    for comp in composition::COMPOSITIONS {
+        let c = compose(comp.key)?;
+        for g in &c.generations {
+            for u in &g.units {
+                let abstract_n = u.schema.classes.values().filter(|c| c.is_abstract).count();
+                let generic_n = u
+                    .schema
+                    .classes
+                    .values()
+                    .filter(|c| !c.generic_params.is_empty())
+                    .count();
+                u.model.assert_constructible(&u.schema);
+                println!(
+                    "✓ {}::{} {}: schema={} release={} classes={} (abstract={abstract_n}, \
+                     generic={generic_n}, constructible)",
+                    comp.key,
+                    g.spec.module,
+                    u.spec.file,
+                    u.schema.schema_name,
+                    u.schema.rm_release,
+                    u.schema.classes.len(),
+                );
+            }
+        }
     }
     Ok(())
 }
@@ -262,7 +274,9 @@ fn cmd_emit_xml() -> Result<(), Box<dyn std::error::Error>> {
     let rm = compose("rm")?;
     let base_root = format!("openehr_base::{}", base.current().spec.module);
     let rm_root = format!("openehr_rm::{}", rm.current().spec.module);
-    let rm_aug = augmented_schema(rm.current());
+    let base_unit = base.current().unit()?;
+    let rm_unit = rm.current().unit()?;
+    let rm_aug = augmented_schema(rm.current(), rm_unit);
 
     // The RM-instance wire shape (element names, order, xsi:type, attributes) is
     // identical across the two ITS-XML lineages; they differ only by the root
@@ -288,18 +302,20 @@ fn cmd_emit_xml() -> Result<(), Box<dyn std::error::Error>> {
 
     let schemas = [
         emit_xml::XmlSchema {
-            model: &base.current().model,
-            schema: &base.current().schema,
+            model: &base_unit.model,
+            schema: &base_unit.schema,
             root: &base_root,
+            external: &base.current().external,
         },
         emit_xml::XmlSchema {
-            model: &rm.current().model,
+            model: &rm_unit.model,
             // The XML codec covers the crate's re-emitted closure twins too
             // (#1699: the BASE Interval/Iso8601 family re-emitted into
             // openehr-rm) — the impls must exist for every type a field of
             // the augmented schema names.
             schema: &rm_aug,
             root: &rm_root,
+            external: &rm.current().external,
         },
     ];
     let mut unmatched = Vec::new();
@@ -339,7 +355,7 @@ fn cmd_emit_json() -> Result<(), Box<dyn std::error::Error>> {
     // (see `JsonSchema::root` for the adjudication).
     // Every generation's emission schema is the augmented one (`emit` renders
     // the re-emission closure, so the codec must cover it too — #1699).
-    struct PreparedGen {
+    struct PreparedUnit {
         root: String,
         aug: BmmSchema,
     }
@@ -348,15 +364,18 @@ fn cmd_emit_json() -> Result<(), Box<dyn std::error::Error>> {
     for k in keys {
         composed.push(compose(k)?);
     }
-    let prepared: Vec<Vec<PreparedGen>> = composed
+    // One prepared entry per (generation, unit), flattened in table order.
+    let prepared: Vec<Vec<PreparedUnit>> = composed
         .iter()
         .map(|c| {
             let krate = c.comp.crate_name.replace('-', "_");
             c.generations
                 .iter()
-                .map(|g| PreparedGen {
-                    root: format!("{krate}::{}", g.spec.module),
-                    aug: augmented_schema(g),
+                .flat_map(|g| {
+                    g.units.iter().map(|u| PreparedUnit {
+                        root: format!("{krate}::{}", g.spec.module),
+                        aug: augmented_schema(g, u),
+                    })
                 })
                 .collect()
         })
@@ -364,14 +383,16 @@ fn cmd_emit_json() -> Result<(), Box<dyn std::error::Error>> {
     let schemas_by_crate: Vec<Vec<emit_json::JsonSchema<'_>>> = composed
         .iter()
         .zip(&prepared)
-        .map(|(c, gens)| {
+        .map(|(c, units)| {
             c.generations
                 .iter()
-                .zip(gens)
-                .map(|(g, p)| emit_json::JsonSchema {
-                    model: &g.model,
+                .flat_map(|g| g.units.iter().map(move |u| (g, u)))
+                .zip(units)
+                .map(|((g, u), p)| emit_json::JsonSchema {
+                    model: &u.model,
                     schema: &p.aug,
                     root: &p.root,
+                    external: &g.external,
                 })
                 .collect()
         })
@@ -408,12 +429,34 @@ fn cmd_emit_json() -> Result<(), Box<dyn std::error::Error>> {
     // governs a cross-component `_type` namespace — our own design.
     let mut structural_schemas: Vec<emit_json::JsonSchema<'_>> = Vec::new();
     for key in ["rm", "base", "lang", "am", "term"] {
-        let schemas = keys
+        let i = keys
             .iter()
             .position(|k| *k == key)
-            .and_then(|i| schemas_by_crate.get(i))
             .ok_or("structural priority names an unknown composition key")?;
-        structural_schemas.extend(schemas.iter().copied());
+        let schemas = schemas_by_crate
+            .get(i)
+            .ok_or("structural priority names an unknown composition key")?;
+        // Within a crate the CURRENT generation resolves first: the dispatch's
+        // caller is the wire validator for the SERVED wire, so an older
+        // generation's twin shape must never shadow the current one.
+        let comp = composed
+            .get(i)
+            .ok_or("structural priority names an unknown composition key")?;
+        let flags: Vec<bool> = comp
+            .generations
+            .iter()
+            .flat_map(|g| g.units.iter().map(|_| g.spec.current))
+            .collect();
+        for (current, schema) in flags.iter().zip(schemas) {
+            if *current {
+                structural_schemas.push(*schema);
+            }
+        }
+        for (current, schema) in flags.iter().zip(schemas) {
+            if !*current {
+                structural_schemas.push(*schema);
+            }
+        }
     }
 
     let gen_dir = Path::new(ITS_ROOT).join("src/json_codec/generated");
@@ -586,38 +629,37 @@ fn cmd_emit_aom2() -> Result<(), Box<dyn std::error::Error>> {
 /// absent, so it is correct run standalone; `emit` produces the identical output.
 fn cmd_emit_rm_model() -> Result<(), Box<dyn std::error::Error>> {
     let rm = compose("rm")?;
-    let current = rm.current();
-    let module = current.spec.module;
-    let files = prefix_gen_files(emit_rm_model::emit_files(&current.model), module);
-
     let src = crates_root().join("openehr-rm").join("src");
     let mut written = Vec::new();
-    for f in &files {
-        let full = src.join(&f.path);
-        if let Some(parent) = full.parent() {
-            std::fs::create_dir_all(parent)?;
+    let mut n = 0_usize;
+    for g in &rm.generations {
+        let module = g.spec.module;
+        let unit = g.unit()?;
+        let files = prefix_gen_files(emit_rm_model::emit_files(&unit.model), module);
+        for f in &files {
+            let full = src.join(&f.path);
+            if let Some(parent) = full.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+            std::fs::write(&full, emit::guard_value_carriers(&f.body))?;
+            written.push(full);
         }
-        std::fs::write(&full, emit::guard_value_carriers(&f.body))?;
-        written.push(full);
-    }
-    // `emit` is the usual authority for the generation `mod.rs`; ensure the
-    // module is declared so the standalone target is correct + byte-identical
-    // to `emit`'s output.
-    let gen_mod = src.join(module).join("mod.rs");
-    if gen_mod.exists() {
-        let mut body = std::fs::read_to_string(&gen_mod)?;
-        if !body.contains("pub mod model;") {
-            body.push_str("pub mod model;\n");
-            std::fs::write(&gen_mod, &body)?;
-            written.push(gen_mod);
+        n += files.len();
+        // `emit` is the usual authority for the generation `mod.rs`; ensure
+        // the module is declared so the standalone target is correct +
+        // byte-identical to `emit`'s output.
+        let gen_mod = src.join(module).join("mod.rs");
+        if gen_mod.exists() {
+            let mut body = std::fs::read_to_string(&gen_mod)?;
+            if !body.contains("pub mod model;") {
+                body.push_str("pub mod model;\n");
+                std::fs::write(&gen_mod, &body)?;
+                written.push(gen_mod);
+            }
         }
     }
     rustfmt(&written)?;
-    println!(
-        "emitted {} files into {}",
-        files.len(),
-        src.join(module).join("model").display()
-    );
+    println!("emitted {n} files into {}", src.display());
     Ok(())
 }
 
@@ -629,27 +671,26 @@ fn cmd_emit_rm_model() -> Result<(), Box<dyn std::error::Error>> {
 /// produces the identical output (via `inject_validate`).
 fn cmd_emit_validate() -> Result<(), Box<dyn std::error::Error>> {
     let rm = compose("rm")?;
-    let current = rm.current();
-    let module = current.spec.module;
-    let rm_aug = augmented_schema(current);
-    let files = prefix_gen_files(emit_validate::emit_files(&current.model, &rm_aug), module);
-
     let src = crates_root().join("openehr-rm").join("src");
     let mut written = Vec::new();
-    for f in &files {
-        let full = src.join(&f.path);
-        if let Some(parent) = full.parent() {
-            std::fs::create_dir_all(parent)?;
+    let mut n = 0_usize;
+    for g in &rm.generations {
+        let module = g.spec.module;
+        let unit = g.unit()?;
+        let rm_aug = augmented_schema(g, unit);
+        let files = prefix_gen_files(emit_validate::emit_files(&unit.model, &rm_aug), module);
+        for f in &files {
+            let full = src.join(&f.path);
+            if let Some(parent) = full.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+            std::fs::write(&full, emit::guard_value_carriers(&f.body))?;
+            written.push(full);
         }
-        std::fs::write(&full, emit::guard_value_carriers(&f.body))?;
-        written.push(full);
+        n += files.len();
     }
     rustfmt(&written)?;
-    println!(
-        "emitted {} file(s) into {}",
-        files.len(),
-        src.join(module).join("validate").display()
-    );
+    println!("emitted {n} file(s) into {}", src.display());
     Ok(())
 }
 
@@ -738,37 +779,39 @@ fn cmd_check_xsd() -> Result<(), Box<dyn std::error::Error>> {
 /// `Interval`/`Iso8601_type` family; AM 1.4 re-emits `AUTHORED_RESOURCE` +
 /// `RESOURCE_DESCRIPTION`). A generation with an empty closure comes back
 /// unchanged, so applying this unconditionally is safe by construction.
-fn augmented_schema(g: &ComposedGeneration) -> BmmSchema {
-    let reemit = cross_schema_reemit(&g.model, &g.schema);
+fn augmented_schema(g: &ComposedGeneration, u: &ComposedUnit) -> BmmSchema {
+    let reemit = cross_schema_reemit(&u.model, &u.schema);
     let dep_refs: Vec<&BmmSchema> = g.dep_schemas.iter().collect();
-    augment_with_reemit(&g.schema, &g.model, &reemit, &dep_refs)
+    augment_with_reemit(&u.schema, &u.model, &reemit, &dep_refs)
 }
 
 /// Spec class name → the full generation-module path of its defining module
 /// (`openehr_rm::v1_2::…`), over one generation's emittable specs — the map
 /// shape the XSD/OAS emitters resolve shared types against.
 fn generation_spec_paths(g: &ComposedGeneration, root: &str) -> BTreeMap<String, String> {
-    emittable_specs(&g.model, &g.schema)
-        .into_iter()
-        .map(|s| {
-            let path = format!("{root}::{}", type_module_path(&g.schema, &s));
-            (s, path)
-        })
-        .collect()
+    let mut out = BTreeMap::new();
+    for u in &g.units {
+        for s in emittable_specs(&u.model, &u.schema) {
+            let path = format!("{root}::{}", type_module_path(&u.schema, &s));
+            out.insert(s, path);
+        }
+    }
+    out
 }
 
 /// `PascalCase` Rust type name → full generation-module TYPE path
 /// (`openehr_rm::v1_2::…::EhrStatus`), over one generation's emittable specs —
 /// the map shape `emit-rest` resolves OAS `$ref` names against.
 fn generation_type_paths(g: &ComposedGeneration, root: &str) -> BTreeMap<String, String> {
-    emittable_specs(&g.model, &g.schema)
-        .into_iter()
-        .map(|s| {
+    let mut out = BTreeMap::new();
+    for u in &g.units {
+        for s in emittable_specs(&u.model, &u.schema) {
             let ident = naming::type_name(&s);
-            let path = format!("{root}::{}::{ident}", type_module_path(&g.schema, &s));
-            (ident, path)
-        })
-        .collect()
+            let path = format!("{root}::{}::{ident}", type_module_path(&u.schema, &s));
+            out.insert(ident, path);
+        }
+    }
+    out
 }
 
 /// The hand-written `*_impl.rs` siblings a generated crate already carries — an
@@ -808,40 +851,54 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
     for comp in composition::COMPOSITIONS {
         let c = compose(comp.key)?;
         let impls = sibling_impls(comp.crate_name);
-        let augmented: Vec<BmmSchema> = c.generations.iter().map(augmented_schema).collect();
+        // One augmented schema per (generation, unit), flattened in table
+        // order — the same shape the render loop consumes.
+        let augmented: Vec<Vec<BmmSchema>> = c
+            .generations
+            .iter()
+            .map(|g| g.units.iter().map(|u| augmented_schema(g, u)).collect())
+            .collect();
         let gens: Vec<CrateGeneration<'_>> = c
             .generations
             .iter()
             .zip(&augmented)
-            .map(|(g, aug)| CrateGeneration {
+            .map(|(g, augs)| CrateGeneration {
                 spec: g.spec,
-                model: &g.model,
-                schema: aug,
+                units: g
+                    .units
+                    .iter()
+                    .zip(augs)
+                    .map(|(u, aug)| RenderUnit {
+                        spec: u.spec,
+                        model: &u.model,
+                        schema: aug,
+                    })
+                    .collect(),
                 external: &g.external,
             })
             .collect();
         let mut files = emit_composed(comp, &gens, &impls);
         if comp.key == "rm" {
-            let current = c.current();
-            let module = current.spec.module;
-            let current_aug = augmented
-                .iter()
-                .zip(&c.generations)
-                .find(|(_, g)| g.spec.current)
-                .map(|(aug, _)| aug)
-                .ok_or("rm composition has no current generation")?;
-            inject_rm_model(
-                &mut files,
-                prefix_gen_files(emit_rm_model::emit_files(&current.model), module),
-                module,
-            );
-            inject_validate(
-                &mut files,
-                prefix_gen_files(
-                    emit_validate::emit_files(&current.model, current_aug),
+            // EVERY RM generation carries its own attribute model + invariant
+            // cores (the same uniform rule as the per-generation codecs): a
+            // selectable generation is a complete peer, not a types-only
+            // shell (#1942).
+            for (g, augs) in c.generations.iter().zip(&augmented) {
+                let module = g.spec.module;
+                let unit = g.unit()?;
+                let aug = augs
+                    .first()
+                    .ok_or("an RM generation carries no specification unit")?;
+                inject_rm_model(
+                    &mut files,
+                    prefix_gen_files(emit_rm_model::emit_files(&unit.model), module),
                     module,
-                ),
-            );
+                );
+                inject_validate(
+                    &mut files,
+                    prefix_gen_files(emit_validate::emit_files(&unit.model, aug), module),
+                );
+            }
         }
         write_crate(comp.crate_name, &files)?;
     }

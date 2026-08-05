@@ -5,7 +5,7 @@
 
 use crate::v2_4::bmm3::core::entity::bmm_signature::BmmSignature;
 use crate::v2_4::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
-use openehr_lang::v3::bmm3::core::entity::bmm_status_type::BmmStatusType;
+use openehr_lang::v1_1::bmm3::core::entity::bmm_status_type::BmmStatusType;
 
 /// Closed subtype set of `BMM_BUILTIN_TYPE`, dispatched on each payload's `_type`.
 ///

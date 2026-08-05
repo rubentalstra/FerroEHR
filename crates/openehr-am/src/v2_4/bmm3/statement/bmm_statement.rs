@@ -7,7 +7,7 @@ use crate::v2_4::bmm3::statement::bmm_assertion::BmmAssertion;
 use crate::v2_4::bmm3::statement::bmm_assignment::BmmAssignment;
 use crate::v2_4::bmm3::statement::bmm_declaration::BmmDeclaration;
 use crate::v2_4::bmm3::statement::bmm_procedure_call::BmmProcedureCall;
-use openehr_lang::v3::bmm3::statement::bmm_action_table::BmmActionTable;
+use openehr_lang::v1_1::bmm3::statement::bmm_action_table::BmmActionTable;
 
 /// Closed subtype set of `BMM_STATEMENT`, dispatched on each payload's `_type`.
 ///

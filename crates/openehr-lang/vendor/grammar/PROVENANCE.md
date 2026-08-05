@@ -1,3 +1,13 @@
+<!-- Layout note (2026-08-05, #1942): grammars are VERSION-SCOPED — each LANG
+component version keeps its grammar set under its own `vX_Y/` directory,
+mirroring the crate's generation modules. `v1_1/` = the 1.1.0-line normative
+grammars pinned below; `v1_0/` = a STOPGAP copy of the v1_1 set (its
+STOPGAP.md carries the adjudication: LANG 1.0.0 publishes no machine-readable
+grammar — openEHR-antlr4 postdates the release — so the honest 1.0.0 set is
+extracted from the release docs text under tracker #1946). The ONE vendoring
+script is `scripts/vendor-lang-grammars.sh` (replacing vendor-el-grammar.sh);
+it writes every version directory — never hand-copy between them. -->
+
 # Provenance — the normative ODIN + BEL ANTLR4 grammars
 
 - Source: https://github.com/openEHR/adl-antlr (Apache-2.0; `LICENSE`
@@ -26,7 +36,7 @@ self-contained.
   `LICENSE-openEHR-antlr4` vendored alongside — the ONLY home of the EL
   grammars: `openEHR/adl-antlr` carries none, verified 2026-08-04).
 - Commit: `3494da942f3ed35963279837447b3039dd098e20` (2025-12-15), via
-  `scripts/vendor-el-grammar.sh`.
+  `scripts/vendor-lang-grammars.sh`.
 - Files: `reader_common/src/main/antlr/{ElLexer.g4, ElParser.g4}` plus their
   transitive grammar imports `{Cadl2Lexer, Cadl2Parser, SymbolsLexer,
   GeneralIdsLexer}.g4`, copied verbatim (the appendix includes only the two EL

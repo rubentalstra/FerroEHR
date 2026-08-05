@@ -15,9 +15,18 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- The `openehr-rm` and `openehr-base` crates now ALSO emit the latest RELEASED specification generations beside the development pins — `openehr_rm::v1_1` (RM 1.1.0, resolving against BASE 1.2.0 per its own BMM `includes`) and `openehr_base::v1_2` (BASE 1.2.0) — each a complete peer: full type model, canonical-JSON codecs, RM attribute model, invariant cores, and validation behaviour. The served wire is unchanged (the current generations stay `v1_2`/`v1_3`); runtime selection between generations arrives with the `spec_profile` configuration key.
+
+### Removed
+
+- The generated `openehr-*` spec crates no longer carry a crate-level `SPEC_VERSION` constant: a multi-generation crate has no single implemented spec version, and a fixed crate-root pin would contradict a configured non-current generation. The ONLY pin authority is the emitted `Generation` enum (per-variant `const fn spec_version()`; the derived `Default` variant is the current generation) — the generation modules carry no version constant either; the hand-written single-spec crates (`openehr-its`, `openehr-query`, `openehr-adl`) keep their literal constant.
+
 ### Changed
 
-- The published `openehr-*` spec crates now expose every BMM generation under a version-named top module — `openehr_base::v1_3`, `openehr_rm::v1_2`, `openehr_lang::v2`/`v3` (replacing `bmm`/`bmm_persistence`/`beom` and `bmm3` at the crate root), `openehr_am::v1_4`/`v2_4` (replacing `am14`/`am24`), `openehr_term::v3_1` — with a new per-crate `Generation` enum (`CURRENT`, `spec_version()`, `FromStr`/`Display`) and the crate prelude re-exporting the current generation only. Import paths into these crates change accordingly; the served wire formats are unchanged.
+- `openehr-lang` now models generations by COMPONENT VERSION like every other spec crate: one `openehr_lang::v1_1` generation holding the version's published specifications side by side — the STABLE, tool-implemented BMM v2.x model (`bmm`/`bmm_persistence`/`beom`, on the prelude) beside the PAUSED BMM3 model (`bmm3`, full-path only) — together with the hand-written ODIN/BEL/EL readers and the shared lexer for that version's notations (all previously crate-root modules). The released LANG 1.0.0 machine-readable BMM is recorded as unusable for code generation (no `includes`, unnamed `BMM_CLASS`/`BMM_PACKAGE`, an explicitly obsolete package; BMM is TRIAL in that release), so no 1.0.0 generation exists until upstream republishes usable artifacts.
+- The published `openehr-*` spec crates now expose every BMM generation under a version-named top module — `openehr_base::v1_3`, `openehr_rm::v1_2`, `openehr_lang::v2`/`v3` (replacing `bmm`/`bmm_persistence`/`beom` and `bmm3` at the crate root), `openehr_am::v1_4`/`v2_4` (replacing `am14`/`am24`), `openehr_term::v3_1` — with a new per-crate `Generation` enum (derived `Default` marking the current generation, `spec_version()`/`as_str()`, `FromStr`/`Display`) and the crate prelude re-exporting the current generation only. Import paths into these crates change accordingly; the served wire formats are unchanged.
 
 ## [3.17.3] - 2026-08-05
 

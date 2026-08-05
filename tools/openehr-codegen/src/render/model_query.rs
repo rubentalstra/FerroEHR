@@ -279,24 +279,26 @@ fn collect(component: Option<&str>, flattened: bool) -> Result<Scope, Error> {
     for key in select_keys(component)? {
         let composed = compose(key)?;
         for generation in &composed.generations {
-            // Project the schema the emitter actually RENDERS this generation
-            // from — its own schema, augmented with the cross-schema
-            // re-emission closure exactly as `cli::cmd_emit` augments every
-            // generation (a generation with an empty closure is unchanged).
-            // Projecting a differently-composed schema would attribute field
-            // shapes to a crate that emits no such class.
-            let deps: Vec<&BmmSchema> = generation.dep_schemas.iter().collect();
-            let reemit = cross_schema_reemit(&generation.model, &generation.schema);
-            let schema = augment_with_reemit(&generation.schema, &generation.model, &reemit, &deps);
-            collect_generation(
-                key,
-                generation.spec.file,
-                &generation.model,
-                &schema,
-                &generation.external,
-                flattened,
-                &mut out,
-            );
+            for unit in &generation.units {
+                // Project the schema the emitter actually RENDERS this unit
+                // from — its own schema, augmented with the cross-schema
+                // re-emission closure exactly as `cli::cmd_emit` augments
+                // every unit (a unit with an empty closure is unchanged).
+                // Projecting a differently-composed schema would attribute
+                // field shapes to a crate that emits no such class.
+                let deps: Vec<&BmmSchema> = generation.dep_schemas.iter().collect();
+                let reemit = cross_schema_reemit(&unit.model, &unit.schema);
+                let schema = augment_with_reemit(&unit.schema, &unit.model, &reemit, &deps);
+                collect_generation(
+                    key,
+                    unit.spec.file,
+                    &unit.model,
+                    &schema,
+                    &generation.external,
+                    flattened,
+                    &mut out,
+                );
+            }
         }
     }
     out.rows.sort_by(|a, b| {

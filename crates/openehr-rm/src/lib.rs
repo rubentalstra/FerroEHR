@@ -20,47 +20,43 @@
 #![recursion_limit = "512"]
 
 pub mod prelude;
+pub mod v1_1;
 pub mod v1_2;
-
-/// The openEHR specification version this crate implements.
-///
-/// The pin is emitted by `openehr-codegen` from the vendored inputs and is
-/// deliberately independent of the crates.io package version, which is the
-/// crate's own `SemVer` line and moves only with this implementation's code.
-pub const SPEC_VERSION: &str = "1.2.0";
 
 /// The BMM generations this crate emits, one variant per version module,
 /// oldest first.
 ///
 /// Generated from the openehr-codegen composition table — the single
 /// authority for which generations exist. [`std::fmt::Display`] and
-/// [`std::str::FromStr`] round-trip the generation-module name (`"v1_2"`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+/// [`std::str::FromStr`] round-trip the generation-module name (`"v1_1"`). `Generation::default()` is the crate's CURRENT generation — the
+/// one `crate::prelude` re-exports (the composition table's `current`
+/// marker, via the std `#[default]` variant attribute).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Generation {
+    /// The `v1_1` generation — openEHR specification version 1.1.0.
+    V1_1,
     /// The `v1_2` generation — openEHR specification version 1.2.0.
+    #[default]
     V1_2,
 }
 
 impl Generation {
-    /// The crate's CURRENT generation — the one `crate::prelude` re-exports.
-    pub const CURRENT: Self = Self::V1_2;
-
-    /// Every generation this crate emits, oldest first.
-    pub const ALL: &'static [Self] = &[Self::V1_2];
-
-    /// The openEHR specification version this generation implements.
+    /// Returns the openEHR specification version this generation implements.
     #[must_use]
     pub const fn spec_version(self) -> &'static str {
         match self {
+            Self::V1_1 => "1.1.0",
             Self::V1_2 => "1.2.0",
         }
     }
 
-    /// The generation-module name (`"v1_2"`) — the
-    /// [`std::fmt::Display`]/[`std::str::FromStr`] token.
+    /// Returns the generation token — the version-module name
+    /// (`"v1_2"`), which is also the [`std::fmt::Display`] and
+    /// [`std::str::FromStr`] form.
     #[must_use]
-    pub const fn module(self) -> &'static str {
+    pub const fn as_str(self) -> &'static str {
         match self {
+            Self::V1_1 => "v1_1",
             Self::V1_2 => "v1_2",
         }
     }
@@ -68,13 +64,13 @@ impl Generation {
 
 impl std::fmt::Display for Generation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.module())
+        f.write_str(self.as_str())
     }
 }
 
 /// Error returned when parsing a [`Generation`] from an unknown token.
 ///
-/// The valid tokens are the generation-module names (`v1_2`).
+/// The valid tokens are the generation-module names (`v1_1`, `v1_2`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GenerationParseError {
     unrecognized: String,
@@ -84,7 +80,7 @@ impl std::fmt::Display for GenerationParseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "unknown generation {:?} (valid: `v1_2`)",
+            "unknown generation {:?} (valid: `v1_1`, `v1_2`)",
             self.unrecognized
         )
     }
@@ -97,6 +93,7 @@ impl std::str::FromStr for Generation {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
+            "v1_1" => Ok(Self::V1_1),
             "v1_2" => Ok(Self::V1_2),
             other => Err(GenerationParseError {
                 unrecognized: other.to_owned(),

@@ -1,0 +1,86 @@
+//! Hand-written RM class invariant for `CLUSTER`.
+//!
+//! Only the inherited LOCATABLE `Archetype_node_id_valid`.
+//!
+//! NOTE: openEHR's CLUSTER spec has an "items not empty" invariant, but the
+//! reference implementation archie does **not** enforce it (no `@Invariant`), so
+//! we do not either — enforcing it would over-reject relative to the reference.
+
+use crate::v1_1::data_structures::representation::cluster::Cluster;
+use openehr_base::validate::{InvariantViolation, Validate};
+
+impl Validate for Cluster {
+    fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
+        crate::v1_1::validate::generated::archetype_node_id_core(
+            "CLUSTER",
+            &self.archetype_node_id,
+            out,
+        );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::v1_1::data_structures::representation::item::Item;
+    use crate::v1_1::data_types::text::dv_text::{DvText, DvTextData};
+
+    fn text(value: &str) -> DvText {
+        DvText::DvText(DvTextData {
+            value: value.to_owned(),
+            hyperlink: None,
+            formatting: None,
+            mappings: openehr_base::containers::present_nonempty(Vec::new()),
+            language: None,
+            encoding: None,
+        })
+    }
+
+    /// A minimal ELEMENT, the simplest legal `CLUSTER.items` member.
+    fn element() -> Item {
+        Item::Element(
+            crate::v1_1::data_structures::representation::element::Element {
+                name: text("element"),
+                archetype_node_id: "at0002".to_owned(),
+                uid: None,
+                links: None,
+                archetype_details: None,
+                feeder_audit: None,
+                null_flavour: None,
+                value: None,
+                null_reason: None,
+            },
+        )
+    }
+
+    fn cluster(node_id: &str) -> Cluster {
+        Cluster {
+            name: text("cluster"),
+            archetype_node_id: node_id.to_owned(),
+            uid: None,
+            links: openehr_base::containers::present_nonempty(Vec::new()),
+            archetype_details: None,
+            feeder_audit: None,
+            items: openehr_base::containers::NonEmptyVec::of(element()),
+        }
+    }
+
+    /// `CLUSTER.items` is `1..*`
+    /// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.cluster.adoc`
+    /// §Attributes), and the emission shape carries that bound, so an empty item
+    /// list is refused at CONSTRUCTION rather than reported by the invariant
+    /// layer. (This replaces the former `empty_items_still_valid`: the state it
+    /// asserted was benign is now unrepresentable, which is strictly stronger.)
+    #[test]
+    fn an_empty_item_list_is_unrepresentable() {
+        assert!(openehr_base::containers::NonEmptyVec::<Item>::new(Vec::new()).is_err());
+    }
+
+    #[test]
+    fn empty_node_id_invalid() {
+        assert_eq!(
+            cluster("").invariants()[0].message,
+            "Invariant Archetype_node_id_valid failed on type CLUSTER"
+        );
+    }
+}

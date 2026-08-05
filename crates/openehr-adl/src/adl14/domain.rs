@@ -10,7 +10,7 @@
 //! renumbering + `property` binding synthesis to [`crate::adl14::convert`].
 //!
 //! The block itself is read by [`crate::adl14::lower`] (which spans the
-//! `<…>` token run and hands the parsed `openehr_lang::odin` value here); the
+//! `<…>` token run and hands the parsed `openehr_lang::v1_1::odin` value here); the
 //! READ side of the encoding produced here is
 //! `crate::adl14::convert::convert_constraint`.
 
@@ -21,7 +21,7 @@ use openehr_am::v2_4::aom2::constraint_model::c_primitive_object::CPrimitiveObje
 use openehr_am::v2_4::aom2::constraint_model::c_primitive_tuple::CPrimitiveTuple;
 use openehr_am::v2_4::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
 use openehr_base::prelude::{Interval, ProperInterval, ProperIntervalData};
-use openehr_lang::odin::OdinValue;
+use openehr_lang::v1_1::odin::OdinValue;
 
 use crate::aom::build::{
     cattr_empty, cattr_single, cinteger_values, complex_object, creal_values, cstring_values,
@@ -742,12 +742,12 @@ fn merge_primitives(mut items: Vec<CPrimitiveObject>) -> Option<CPrimitiveObject
     })
 }
 
-fn odin_interval_to_real(iv: &openehr_lang::odin::OdinInterval) -> Interval<f64> {
+fn odin_interval_to_real(iv: &openehr_lang::v1_1::odin::OdinInterval) -> Interval<f64> {
     let (lower, li, upper, ui) = odin_range_bounds(iv, odin_as_real, |r| r);
     proper_or_point_real(lower, li, upper, ui)
 }
 
-fn odin_interval_to_int(iv: &openehr_lang::odin::OdinInterval) -> Interval<i32> {
+fn odin_interval_to_int(iv: &openehr_lang::v1_1::odin::OdinInterval) -> Interval<i32> {
     let (lower, li, upper, ui) =
         odin_range_bounds(iv, |v| odin_as_real(v).map(real_to_i32), real_to_i32);
     if lower == upper && lower.is_some() {
@@ -796,12 +796,12 @@ fn proper_or_point_real(
 /// reduced without type context) yields an unbounded interval rather than a
 /// fabricated endpoint.
 fn odin_range_bounds<T>(
-    iv: &openehr_lang::odin::OdinInterval,
+    iv: &openehr_lang::v1_1::odin::OdinInterval,
     conv: impl Fn(&OdinValue) -> Option<T>,
     from_real: impl Fn(f64) -> T,
 ) -> (Option<T>, bool, Option<T>, bool) {
     match iv {
-        openehr_lang::odin::OdinInterval::Range {
+        openehr_lang::v1_1::odin::OdinInterval::Range {
             lower,
             lower_included,
             upper,
@@ -812,7 +812,7 @@ fn odin_range_bounds<T>(
             upper.as_deref().and_then(&conv),
             *upper_included,
         ),
-        openehr_lang::odin::OdinInterval::PlusMinus { centre, delta } => {
+        openehr_lang::v1_1::odin::OdinInterval::PlusMinus { centre, delta } => {
             match (odin_as_real(centre), odin_as_real(delta)) {
                 (Some(c), Some(d)) => (Some(from_real(c - d)), true, Some(from_real(c + d)), true),
                 _ => (None, true, None, true),

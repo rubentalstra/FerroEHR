@@ -12,7 +12,7 @@ use crate::aom::build::{point_interval, proper_interval};
 use crate::error::SyntaxErrorCode;
 use crate::parse::patterns::iso_has_timezone;
 use crate::parse::{PResult, Parser};
-use openehr_lang::lexer::Token;
+use openehr_lang::v1_1::lexer::Token;
 
 // ── value lists, intervals, endpoints ─────────────────────────────────────
 impl Parser<'_> {
@@ -243,7 +243,7 @@ impl Parser<'_> {
     /// allowable endpoint values (`ADL1.4/master04-dadl.adoc` L628-643). The
     /// sign carried by `-infinity` is not recorded separately: the side of the
     /// interval the endpoint sits on already fixes the direction — the same
-    /// representation `openehr_lang::odin` uses for the identical markers.
+    /// representation `openehr_lang::v1_1::odin` uses for the identical markers.
     fn parse_endpoint<V: CadlValue>(&mut self) -> PResult<Option<V>> {
         if self.eat(|t| matches!(t, Token::SymStar)) {
             return Ok(None);

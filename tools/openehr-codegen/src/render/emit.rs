@@ -34,7 +34,9 @@ use crate::load::bmm::{
     BmmClass, BmmConstant, BmmEnumValue, BmmEnumeration, BmmPropKind, BmmSchema, BmmType,
 };
 use crate::load::impls::SiblingImpls;
-use crate::plan::composition::{CrateComposition, GenerationSpec, generation_variant};
+use crate::plan::composition::{
+    CrateComposition, GenerationSpec, GenerationUnit, generation_variant,
+};
 use crate::plan::construction;
 use crate::plan::overrides::{back_reference, class_binding, type_override, untyped_field};
 use crate::plan::{Emission, decide};
@@ -127,15 +129,23 @@ pub(crate) struct CrateGeneration<'a> {
     /// The table row this generation emits from (module name, spec version,
     /// current marker).
     pub spec: &'static GenerationSpec,
-    /// The resolution model this generation's classes resolve against.
-    pub model: &'a Model,
-    /// This generation's schema WITH its cross-schema re-emission closure
-    /// grafted in (`augmented_schema` — a generation with an empty closure is
-    /// unchanged).
-    pub schema: &'a BmmSchema,
+    /// The generation's specification units, in table order.
+    pub units: Vec<RenderUnit<'a>>,
     /// The full-path index resolving this generation's cross-crate references
     /// to its PAIRED dependency generations.
     pub external: &'a External,
+}
+
+/// One specification unit of a [`CrateGeneration`] as the render loop
+/// consumes it.
+pub(crate) struct RenderUnit<'a> {
+    /// The table row this unit emits from (`in_prelude`).
+    pub spec: &'static GenerationUnit,
+    /// The resolution model this unit's classes resolve against.
+    pub model: &'a Model,
+    /// This unit's schema WITH its cross-schema re-emission closure grafted
+    /// in (`augmented_schema` — a unit with an empty closure is unchanged).
+    pub schema: &'a BmmSchema,
 }
 
 /// The emission shapes that produce a file: [`Emission`] minus its `Skip`
@@ -169,15 +179,17 @@ impl<'a> Shape<'a> {
     }
 }
 
-/// Emit one BMM generation under its version-named top module. Produces the
-/// type files, the `mod.rs` tree, the generation's own `prelude.rs` and its
-/// `SPEC_VERSION` constant; the caller assembles the crate `lib.rs` and the
-/// crate prelude.
+/// Emit one specification unit under its generation's version-named top
+/// module. Produces the type files and the `mod.rs` tree; the caller
+/// assembles the generation prelude, the crate prelude and `lib.rs`. The
+/// generation's spec version lives ONLY on the [`Generation`] enum (owner
+/// ruling 2026-08-05: no version constants anywhere — a second copy of the
+/// same fact can only drift, and `spec_version()` is a `const fn`, so even
+/// const contexts need no constant).
 fn emit_version(
     model: &Model,
     schema: &BmmSchema,
     prefix: &str,
-    spec_version: &str,
     external: &External,
     impls: &SiblingImpls,
 ) -> Version {
@@ -219,7 +231,11 @@ fn emit_version(
         if !prefix.is_empty() {
             chain.push(prefix.to_string());
         }
-        chain.extend(pkg.split('/').filter(|s| !s.is_empty()).map(str::to_string));
+        chain.extend(
+            pkg.split('/')
+                .filter(|s| !s.is_empty())
+                .map(naming::module_ident),
+        );
         chain.push(naming::field_ident(&to_snake(name)));
         index.insert(naming::type_name(name), chain.clone());
         emitted.push(Emitted {
@@ -282,23 +298,11 @@ fn emit_version(
     let type_chains: Vec<Vec<String>> = planned.iter().map(|p| p.chain.clone()).collect();
 
     // Module tree, with the generation's own `<prefix>/prelude` registered so
-    // the generation `mod.rs` declares it.
+    // the generation `mod.rs` declares it (the caller assembles the prelude
+    // file itself, over the generation's prelude-carrying units).
     let mut tree_chains = type_chains.clone();
     tree_chains.push(vec![prefix.to_string(), "prelude".to_string()]);
     files.extend(emit_module_tree(&tree_chains));
-    // The generation module carries its own spec-version constant (the table's
-    // per-generation pin) and its own prelude; the caller assembles the crate
-    // prelude from the CURRENT generation's `emitted` set.
-    let mod_path = format!("{prefix}/mod.rs");
-    for f in &mut files {
-        if f.path == mod_path {
-            f.body.push_str(&format!(
-                "\n/// The openEHR specification version this generation implements.\n\
-                 pub const SPEC_VERSION: &str = \"{spec_version}\";\n",
-            ));
-        }
-    }
-    files.push(emit_prelude(&emitted, &format!("{prefix}/prelude.rs")));
 
     Version {
         files,
@@ -318,7 +322,7 @@ pub(crate) fn type_module_path(schema: &BmmSchema, class: &str) -> String {
     let mut chain: Vec<String> = pkg
         .split('/')
         .filter(|s| !s.is_empty())
-        .map(str::to_string)
+        .map(naming::module_ident)
         .collect();
     chain.push(naming::field_ident(&to_snake(class)));
     chain.join("::")
@@ -342,23 +346,63 @@ pub(crate) fn emit_composed(
     let mut top: BTreeSet<String> = BTreeSet::new();
     let mut current: Vec<Emitted> = Vec::new();
     for g in generations {
-        let v = emit_version(
-            g.model,
-            g.schema,
-            g.spec.module,
-            g.spec.spec_version,
-            g.external,
-            impls,
-        );
-        files.extend(v.files);
-        top.extend(v.top);
+        let mut paths: BTreeSet<String> = BTreeSet::new();
+        let mut gen_emitted: Vec<Emitted> = Vec::new();
+        for u in &g.units {
+            let v = emit_version(u.model, u.schema, g.spec.module, g.external, impls);
+            for f in &v.files {
+                assert!(
+                    // The module tree and the generation mod.rs are shared
+                    // between units; type files must be unit-unique.
+                    !f.path.ends_with("mod.rs")
+                        && !f.path.ends_with("prelude.rs")
+                        && paths.insert(f.path.clone())
+                        || f.path.ends_with("mod.rs")
+                        || f.path.ends_with("prelude.rs"),
+                    "openehr-codegen: two specification units of {:?} both emit {:?} — unit \
+                     package paths must be disjoint so each unit lands at its own path \
+                     (emitting one over the other silently picks a single shape for a \
+                     colliding class).",
+                    g.spec.module,
+                    f.path,
+                );
+            }
+            merge_files(&mut files, v.files);
+            top.extend(v.top);
+            if u.spec.in_prelude {
+                gen_emitted.extend(v.emitted);
+            }
+        }
+        files.push(emit_prelude(
+            &gen_emitted,
+            &format!("{}/prelude.rs", g.spec.module),
+        ));
         if g.spec.current {
-            current = v.emitted;
+            current = gen_emitted;
         }
     }
     files.push(emit_prelude(&current, "prelude.rs"));
     files.push(emit_lib(&top, comp));
     files
+}
+
+/// Merge one unit's rendered files into the crate set, unioning the shared
+/// `mod.rs` module declarations where both units contribute to one directory.
+fn merge_files(files: &mut Vec<GenFile>, new: Vec<GenFile>) {
+    for f in new {
+        if let Some(existing) = files.iter_mut().find(|e| e.path == f.path) {
+            // Only mod.rs trees legitimately collide (the disjoint-path
+            // assert upstream guarantees it); union their `pub mod` lines.
+            for line in f.body.lines() {
+                if line.starts_with("pub mod ") && !existing.body.contains(line) {
+                    existing.body.push_str(line);
+                    existing.body.push('\n');
+                }
+            }
+        } else {
+            files.push(f);
+        }
+    }
 }
 
 /// Build every `mod.rs` from the set of emitted module chains.
@@ -449,15 +493,12 @@ fn emit_lib(top: &BTreeSet<String>, comp: &CrateComposition) -> GenFile {
         b.push_str(&format!("pub mod {m};\n"));
     }
     b.push_str("pub mod prelude;\n");
-    b.push_str(&format!(
-        "\n/// The openEHR specification version this crate implements.\n\
-         ///\n\
-         /// The pin is emitted by `openehr-codegen` from the vendored inputs and is\n\
-         /// deliberately independent of the crates.io package version, which is the\n\
-         /// crate's own `SemVer` line and moves only with this implementation's code.\n\
-         pub const SPEC_VERSION: &str = \"{}\";\n",
-        comp.spec_version,
-    ));
+    // No crate-level SPEC_VERSION const (owner ruling 2026-08-05, #1942): a
+    // multi-generation crate has no single implemented spec version — the
+    // [`Generation`] enum is the authority (per-variant `spec_version()`,
+    // `CURRENT` for the default surface), and each generation module carries
+    // its own `SPEC_VERSION`. A fixed crate-root pin would contradict the
+    // selected generation the moment a consumer configures a non-current one.
     b.push_str(&emit_generation_enum(comp));
     GenFile {
         path: "lib.rs".to_string(),
@@ -473,11 +514,6 @@ fn emit_generation_enum(comp: &CrateComposition) -> String {
         .iter()
         .map(|g| (generation_variant(g.module), g))
         .collect();
-    let current = variants
-        .iter()
-        .find(|(_, g)| g.current)
-        .map(|(v, _)| v.clone())
-        .unwrap_or_default();
     let mut b = String::from(
         "\n/// The BMM generations this crate emits, one variant per version module,\n\
          /// oldest first.\n\
@@ -488,32 +524,22 @@ fn emit_generation_enum(comp: &CrateComposition) -> String {
     );
     b.push_str(comp.generations.first().map_or("", |g| g.module));
     b.push_str(
-        "\"`).\n\
-         #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]\n\
+        "\"`). `Generation::default()` is the crate's CURRENT generation — the\n\
+         /// one `crate::prelude` re-exports (the composition table's `current`\n\
+         /// marker, via the std `#[default]` variant attribute).\n\
+         #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]\n\
          pub enum Generation {\n",
     );
     for (variant, g) in &variants {
+        let default_attr = if g.current { "    #[default]\n" } else { "" };
         b.push_str(&format!(
-            "    /// The `{}` generation — openEHR specification version {}.\n    {variant},\n",
+            "    /// The `{}` generation — openEHR specification version {}.\n{default_attr}    {variant},\n",
             g.module, g.spec_version,
         ));
     }
     b.push_str("}\n\nimpl Generation {\n");
-    b.push_str(&format!(
-        "    /// The crate's CURRENT generation — the one `crate::prelude` re-exports.\n    \
-         pub const CURRENT: Self = Self::{current};\n\n",
-    ));
-    b.push_str("    /// Every generation this crate emits, oldest first.\n");
-    b.push_str(&format!(
-        "    pub const ALL: &'static [Self] = &[{}];\n\n",
-        variants
-            .iter()
-            .map(|(v, _)| format!("Self::{v}"))
-            .collect::<Vec<_>>()
-            .join(", "),
-    ));
     b.push_str(
-        "    /// The openEHR specification version this generation implements.\n    \
+        "    /// Returns the openEHR specification version this generation implements.\n    \
          #[must_use]\n    pub const fn spec_version(self) -> &'static str {\n        match self {\n",
     );
     // Variants sharing one spec version fold into a single or-pattern arm
@@ -534,9 +560,10 @@ fn emit_generation_enum(comp: &CrateComposition) -> String {
         ));
     }
     b.push_str(
-        "        }\n    }\n\n    /// The generation-module name (`\"v1_2\"`) — the\n    \
-         /// [`std::fmt::Display`]/[`std::str::FromStr`] token.\n    \
-         #[must_use]\n    pub const fn module(self) -> &'static str {\n        match self {\n",
+        "        }\n    }\n\n    /// Returns the generation token — the version-module name\n    \
+         /// (`\"v1_2\"`), which is also the [`std::fmt::Display`] and\n    \
+         /// [`std::str::FromStr`] form.\n    \
+         #[must_use]\n    pub const fn as_str(self) -> &'static str {\n        match self {\n",
     );
     for (variant, g) in &variants {
         b.push_str(&format!(
@@ -554,7 +581,7 @@ fn emit_generation_enum(comp: &CrateComposition) -> String {
         "        }}\n    }}\n}}\n\n\
          impl std::fmt::Display for Generation {{\n    \
          fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {{\n        \
-         f.write_str(self.module())\n    }}\n}}\n\n\
+         f.write_str(self.as_str())\n    }}\n}}\n\n\
          /// Error returned when parsing a [`Generation`] from an unknown token.\n\
          ///\n\
          /// The valid tokens are the generation-module names (`{tokens}`).\n\

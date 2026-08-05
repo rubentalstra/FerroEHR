@@ -5,7 +5,7 @@
 
 use crate::v2_4::bmm::core::bmm_generic_class::BmmGenericClass;
 use crate::v2_4::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType;
-use openehr_lang::v3::bmm3::core::entity::range_constrained::bmm_value_set_spec::BmmValueSetSpec;
+use openehr_lang::v1_1::bmm3::core::entity::range_constrained::bmm_value_set_spec::BmmValueSetSpec;
 
 /// Meta-type based on a non-container generic class, e.g. `Packet<Header>`.
 #[doc(alias = "BMM_GENERIC_TYPE")]
