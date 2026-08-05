@@ -660,20 +660,13 @@ impl Outer<'_> {
         }
         // template_overlay inherits language/description from its root
         // (`master07.07` / `master10`); every other kind requires a language
-        // section.
+        // section. A 1.4 source whose ontology carries `primary_language` is
+        // accepted here and upgraded in `crate::assemble`; with nothing to
+        // upgrade from, SALAN stands, and ADL2 keeps SALAN unconditionally.
         //
-        // NOTE: the ADL 1.4 grammar's `arch_language` carries an empty
-        // alternative (`master08` §Syntax Specification: "arch_language: //
-        // empty OK"), and §Language Section + §Ontology Header Statements both
-        // NOTE that "some non-conforming ADL tools in the past created
-        // archetypes without a `language` section, relying on the `ontology`
-        // section to provide the `original_language` (there called
-        // `primary_language`) and list of languages (`languages_available`) …
-        // tool builders should consider accepting archetypes of the old form
-        // and upgrading them when parsing to the correct form". So a 1.4 source
-        // whose ontology carries `primary_language` is accepted here and
-        // upgraded in `crate::assemble`; with nothing to upgrade from, SALAN
-        // stands. ADL2 has no old form and keeps SALAN unconditionally.
+        // NOTE: ADL 1.4's `arch_language` carries an empty alternative
+        // (`master08` §Syntax Specification), and §Language Section directs
+        // tools to accept the old `ontology`-only form and upgrade it.
         let old_form_language = self.dialect == Dialect::Adl14
             && art.terminology.as_ref().is_some_and(has_primary_language);
         if !overlay

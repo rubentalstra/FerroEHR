@@ -93,14 +93,11 @@ fn corpus_verdicts_agree_across_canonical_formats() {
     assert!(checked > 20, "expected a real corpus, checked {checked}");
     // The adjudicated typed-undecodable set, named EXACTLY rather than counted:
     // growth means a decode regression, shrinkage means a fixture started
-    // decoding and needs re-adjudication. Every entry is refused on BOTH
-    // routes (asserted above), which is what parity means here.
-    //
-    // The `feeder_audit` / placeholder-`OBJECT_VERSION_ID` / FHIR-reference /
-    // bare-UUID-`OBJECT_VERSION_ID` entries are the defective vendored halves
-    // of the fixture twins (`common::excluded` carries the per-file
-    // adjudication with its spec citation; the corrected halves live in
-    // `tests/fixtures/twins/` and decode on both routes).
+    // decoding and needs re-adjudication. Every entry is refused on BOTH routes
+    // (asserted above), which is what parity means here. The `feeder_audit` /
+    // placeholder-`OBJECT_VERSION_ID` / FHIR-reference / bare-UUID entries are
+    // the defective vendored halves of the fixture twins (`common::excluded`
+    // carries the per-file adjudication with its spec citation).
     inexpressible.sort();
     let expected: Vec<String> = [
         "openehr_sdk/composition/canonical_json/all_types_systematic_tests_feeder_audit.json",

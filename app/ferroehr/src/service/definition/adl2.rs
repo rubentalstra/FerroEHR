@@ -804,8 +804,12 @@ impl FerroEhrService {
         };
         let is_template = matches!(kind.as_str(), "template" | "operational_template");
         if is_template {
+            // Counted over BOTH storage tiers (see the ADL 1.4 twin): an
+            // archived composition's template reference is invisible to the
+            // `template_ref` foreign key, and deleting under it would make that
+            // object unrestorable.
             let refs: i64 = sqlx::query_scalar(
-                "SELECT count(*) FROM vo_version WHERE lower(template_id) = lower($1)",
+                "SELECT count(*) FROM vo_version_all WHERE lower(template_id) = lower($1)",
             )
             .bind(&hrid)
             .fetch_one(&mut *tx)

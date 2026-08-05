@@ -288,12 +288,10 @@ impl ServiceError {
             // No service-side `ServiceError::NotImplemented`; a not-implemented
             // status surfaces as a server fault (the service implements every
             // catalog call, so this row is unreachable in practice).
-            //
             // `ServiceOverloaded` originates only at the storage bridge and
             // flows *up* to the wire as an `SmError` (→ `503`); it never
-            // round-trips back into a `ServiceError`. `ServiceError` has no
-            // overload variant, so this defensive (unreachable) reverse
-            // mapping degrades to a server fault.
+            // round-trips back into a `ServiceError`, so this defensive reverse
+            // mapping degrades to a server fault too.
             S::NotImplemented | S::ServiceOverloaded => ServiceError::Internal(m),
         }
     }

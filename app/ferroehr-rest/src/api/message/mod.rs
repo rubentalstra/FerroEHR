@@ -8,7 +8,7 @@
 //! including `i_ehr_extract_service.adoc` (`export_ehrs`,
 //! `export_ehr_extracts`, `import_ehr`, `import_ehr_extract`) and
 //! `i_tdd_service.adoc` (`import_tdd`; `i_message_service.adoc` itself declares
-//! no functions). Register AMB-34 carries the SM↔ITS gap.
+//! no functions). No released ITS-REST operation covers these calls.
 //!
 //! These routes are the honest realization of that service basis, and are
 //! **excluded from ITS-REST wire conformance**: they gate the `EhrExtract` /

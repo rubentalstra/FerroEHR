@@ -110,6 +110,53 @@ struct Counts {
     non_specialised: usize,
 }
 
+/// The upstream tuple-narrowing pair under `features/specialisation` is
+/// PASS-tagged, so the second-order tuple conformance functions (`master04.5`
+/// §`C_SECOND_ORDER`) must accept both: dropping a tuple row and narrowing the
+/// surviving rows are the sanctioned redefinitions (`ADL2/master09.05` §Tuple
+/// Redefinition). The corpus carries no VTPNC/VTPIN fixture of its own
+/// (`tests/corpus/INVENTORY.md`); the refusals are pinned by the unit twins in
+/// `validate::specialisation`.
+#[test]
+fn corpus_tuple_narrowing_raises_no_tuple_code() {
+    let repo = build_repository();
+    for name in [
+        "features/specialisation/openEHR-EHR-OBSERVATION.tuple_redefine_to_single.v1.0.0.adls",
+        "features/specialisation/openEHR-EHR-OBSERVATION.tuple_redefine_to_narrower.v1.0.0.adls",
+    ] {
+        let src = std::fs::read_to_string(format!("{CORPUS}/{name}")).expect("fixture is readable");
+        let issues = validate_source(
+            &src,
+            Some(&repo),
+            &ProductionRmModel,
+            &NoTerminologyResolver,
+        )
+        .expect("fixture parses");
+        let raised: Vec<&str> = issues
+            .iter()
+            .map(|i| i.code.mnemonic())
+            .filter(|c| *c == "VTPNC" || *c == "VTPIN")
+            .collect();
+        assert!(raised.is_empty(), "{name}: raised {raised:?}");
+    }
+    // Non-vacuity: widening the units member of the narrowed row to one no
+    // parent row admits must be refused.
+    let widened = std::fs::read_to_string(format!(
+        "{CORPUS}/features/specialisation/openEHR-EHR-OBSERVATION.tuple_redefine_to_single.v1.0.0.adls"
+    ))
+    .expect("fixture is readable")
+    .replace("{\"cm[H20]\"}", "{\"kPa\"}");
+    let issues = validate_source(
+        &widened,
+        Some(&repo),
+        &ProductionRmModel,
+        &NoTerminologyResolver,
+    )
+    .expect("fixture parses");
+    let raised: Vec<&str> = issues.iter().map(|i| i.code.mnemonic()).collect();
+    assert!(raised.contains(&"VTPNC"), "widened row: raised {raised:?}");
+}
+
 #[test]
 fn corpus_parent_conformance_outcomes() {
     let repo = build_repository();

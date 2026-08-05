@@ -356,34 +356,13 @@ async fn next_version(
         // at the preceding version's trunk fork point (master06 §Distributed
         // Versioning); the copied version itself stays valid.
         //
-        // NOTE: this fork rule is the implemented side of a genuine
-        // contradiction inside master06's own §Semantics in Distributed
-        // Systems, and the choice is deliberate. §Copying §Subsequent Local
-        // Modifications states it outright — "When new versions are added
-        // locally to a copied object, the local system id is recorded in the
-        // `uid.creating_system_id()` attribute, while branching numbering is
-        // used in the `uid.version_tree_id()`" (reinforced by §Version
-        // Identification §Distributed Versioning: "to require branching version
-        // identifiers to be used when local modifications are made to versions
-        // copied from elsewhere") — while §Moving Version Containers requires
-        // the opposite for a MOVED container: "subsequent versions of the
-        // content created in a moved version container will now have the
-        // `uid.creating_system_id` set to the id of the new system … the
-        // `uid.creating_system_id` value can change in the trunk line". Both
-        // rules fire on the identical observable state — this branch's own
-        // condition, a tip whose creating system is not ours — and the spec
-        // supplies no marker, procedure or suspension clause distinguishing a
-        // moved container from a copied one, so no implementation can satisfy
-        // both. We follow §Copying, which is the rule with a procedure, a
-        // wire and a worked figure behind it; §Moving has none of the three
-        // (it defines no operation, and the release surfaces no move on the
-        // REST wire at all). The consequence is bounded and explicit: a trunk
-        // whose creating system changes mid-line is unrepresentable THROUGH
-        // THIS COMMIT ENGINE, while storage and the read paths tolerate one, so
-        // a container that arrives already carrying such a lineage (an archive
-        // load, an extract import) serves correctly. The contradiction is
-        // reported upstream (#1767) rather than silently resolved; register
-        // AMB-199.
+        // Consequence: a trunk whose creating system changes mid-line is
+        // unrepresentable THROUGH THIS COMMIT ENGINE, while storage and the read
+        // paths tolerate one, so a container that arrives already carrying such
+        // a lineage (an archive load, an extract import) serves correctly.
+        // NOTE: master06 §Copying §Subsequent Local Modifications and §Moving
+        // Version Containers contradict each other on the identical observable
+        // state; §Copying is followed — the rule with a procedure and a wire.
         let next_branch =
             crate::storage::version_repo::placement::next_branch_number(tx, vo_id, tip.tree.trunk)
                 .await?;
@@ -477,7 +456,7 @@ struct ResolvedWrite {
 /// `master03-archetyped_package.adoc` §Unique Node Identification; ITS-REST
 /// `Resources.md` §Identifier types: the enclosing VERSION's uid "should be
 /// copied"; the full three-part form is this server's fixed handling,
-/// register AMB-65). A client-supplied `uid` is overwritten — the version
+/// no released text fixes it). A client-supplied `uid` is overwritten — the version
 /// identity is server-assigned, and the previous behaviour (store verbatim,
 /// overwrite at bare read) served two shapes for one object. The EHR Extract
 /// import path does NOT run through here (foreign versions keep their
@@ -561,6 +540,7 @@ async fn apply_change(
         } => {
             // Externalize large inline DV_MULTIMEDIA before decompose/sign, so
             // the stored, served and signed form is the offloaded one.
+            #[cfg(feature = "multimedia")]
             if let Some(engine) = ctx.multimedia {
                 engine
                     .offload(&mut canonical)
@@ -611,6 +591,7 @@ async fn apply_change(
             lifecycle_state,
             attestations,
         } => {
+            #[cfg(feature = "multimedia")]
             if let Some(engine) = ctx.multimedia {
                 engine
                     .offload(&mut canonical)
@@ -740,9 +721,6 @@ async fn commit_resolved(
     // excluded), and reused verbatim for the insert below so the signed bytes
     // and the stored bytes are the same bytes. `r.time_committed` is the
     // transaction timestamp every row of this transaction stamps.
-    // Completed once, then serialized once: the SAME `Value`s are signed
-    // below and inserted further down, so the signed bytes and the stored
-    // bytes cannot drift.
     let at_committal_attestations: Vec<Value> = attestation::complete_accompanying(
         &r.attestations,
         &ctx.system_id,

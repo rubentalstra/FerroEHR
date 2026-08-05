@@ -10,17 +10,19 @@
 //!
 //! The functions take their context explicitly (owning attribute, grand-parent
 //! RM type) rather than through the generated model's `parent` back-references,
-//! which the assembler leaves unset (behavioural back-references are not owned
-//! references — see `docs/architecture.md` §Conventions).
+//! which the assembler leaves unset.
 
 use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
+use openehr_am::am24::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
 use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
 use openehr_am::am24::aom2::constraint_model::c_object::CObject;
+use openehr_am::am24::aom2::constraint_model::c_primitive_tuple::CPrimitiveTuple;
 use openehr_am::am24::aom2::constraint_model::primitive::constraint_status::ConstraintStatus;
 use openehr_base::prelude::{Cardinality, MultiplicityInterval};
 
 use super::rm::RmModel;
 use crate::aom::access::{AomType, aom_type, child_occurrences, object_node_id};
+use crate::aom::build::primitive_to_cobject;
 use crate::aom::interval::{Bounds, bounds};
 use crate::codes::codes_conformant;
 use crate::paths::locate;
@@ -522,6 +524,144 @@ fn terminology_conforms(
 /// §`C_TERMINOLOGY_NODE` L671-674.
 fn status_value(status: Option<&ConstraintStatus>) -> i32 {
     status.map_or(0, |s| s.value())
+}
+
+/// The verdict of the second-order tuple conformance functions (`master04.5`
+/// §`C_SECOND_ORDER`, L729-804).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum TupleConformance {
+    /// The child tuple conforms to its counterpart, has no counterpart in the
+    /// parent node (a new second-order constraint), or cannot be disproved.
+    Conforms,
+    /// The child tuple constrains a different member-attribute group than the
+    /// counterpart it overlaps, so no row of it can satisfy the
+    /// `count = other.count` precondition of `C_PRIMITIVE_TUPLE.c_conforms_to`.
+    GroupMismatch,
+    /// A child tuple row carries a member count other than the member-attribute
+    /// group's — the same precondition, at the row.
+    RowArityMismatch,
+    /// Comparable, but some child tuple row narrows no parent row —
+    /// `C_ATTRIBUTE_TUPLE.c_conforms_to` is False.
+    RowViolates,
+}
+
+/// The RM attribute names of a tuple's member attributes, in declaration order.
+///
+/// Each `C_PRIMITIVE_TUPLE` member corresponds positionally to one of these
+/// (`master04.5` §`C_PRIMITIVE_TUPLE`).
+#[must_use]
+pub(crate) fn tuple_member_names(tuple: &CAttributeTuple) -> Vec<&str> {
+    tuple
+        .members
+        .iter()
+        .flatten()
+        .map(|a| a.rm_attribute_name.as_str())
+        .collect()
+}
+
+/// `c_conforms_to` for a `C_ATTRIBUTE_TUPLE` against the tuple set of the
+/// corresponding flat-parent node (`master04.5` §`C_SECOND_ORDER`, L756-804).
+///
+/// The counterpart is the parent tuple constraining the same member-attribute
+/// group; declaration order may differ, so members are paired by attribute
+/// name. A child tuple sharing no attribute with any parent tuple is a new
+/// second-order constraint and conforms.
+///
+/// `C_ATTRIBUTE_TUPLE.c_conforms_to` requires every child row to conform to
+/// some parent row (the second `c_congruent_to` disjunct is subsumed: a
+/// congruent row conforms); `C_PRIMITIVE_TUPLE.c_conforms_to` requires equal
+/// member counts and, position-wise, `same_type` plus member value conformance.
+/// A member pair whose value conformance is undecidable
+/// ([`ValueConformance::Unknown`]) leaves the row unrefuted.
+#[must_use]
+pub(crate) fn tuple_conforms_to(
+    child: &CAttributeTuple,
+    parent_tuples: &[CAttributeTuple],
+) -> TupleConformance {
+    let names = tuple_member_names(child);
+    // The counterpart is the parent tuple over the same group; failing that,
+    // one that overlaps it (the group the child then fails to restate).
+    let Some(counterpart) = parent_tuples
+        .iter()
+        .find(|p| member_order(&names, &tuple_member_names(p)).is_some())
+        .or_else(|| {
+            parent_tuples
+                .iter()
+                .find(|p| tuple_member_names(p).iter().any(|n| names.contains(n)))
+        })
+    else {
+        return TupleConformance::Conforms;
+    };
+    let Some(order) = member_order(&names, &tuple_member_names(counterpart)) else {
+        return TupleConformance::GroupMismatch;
+    };
+    // Rows of the counterpart carrying one member per member attribute; a
+    // malformed parent tuple leaves the child unrefuted.
+    let parent_rows: Vec<&CPrimitiveTuple> = counterpart
+        .tuples
+        .iter()
+        .flatten()
+        .filter(|r| r.members.len() == order.len())
+        .collect();
+    if parent_rows.is_empty() {
+        return TupleConformance::Conforms;
+    }
+    let mut verdict = TupleConformance::Conforms;
+    for row in child.tuples.iter().flatten() {
+        if row.members.len() != order.len() {
+            return TupleConformance::RowArityMismatch;
+        }
+        let refuted = parent_rows
+            .iter()
+            .all(|p| row_conforms_to(row, p, &order) == ValueConformance::Violates);
+        if refuted {
+            verdict = TupleConformance::RowViolates;
+        }
+    }
+    verdict
+}
+
+/// The child→parent member position map of two tuple member-attribute lists, or
+/// `None` if the two do not constrain the same attribute group.
+fn member_order(names: &[&str], parent_names: &[&str]) -> Option<Vec<usize>> {
+    if names.len() != parent_names.len() {
+        return None;
+    }
+    names
+        .iter()
+        .map(|n| parent_names.iter().position(|p| p == n))
+        .collect()
+}
+
+/// `c_conforms_to` for one `C_PRIMITIVE_TUPLE` row against a parent row
+/// (`master04.5` §`C_SECOND_ORDER`, L783-792), with `order` mapping each child
+/// member position to the parent row position of the same attribute.
+fn row_conforms_to(
+    row: &CPrimitiveTuple,
+    parent_row: &CPrimitiveTuple,
+    order: &[usize],
+) -> ValueConformance {
+    let mut worst = ValueConformance::Conforms;
+    for (i, member) in row.members.iter().enumerate() {
+        let Some(other) = order.get(i).and_then(|j| parent_row.members.get(*j)) else {
+            return ValueConformance::Violates;
+        };
+        let (c, p) = (
+            primitive_to_cobject(member.clone()),
+            primitive_to_cobject(other.clone()),
+        );
+        // `same_type` (L785): a member of a different primitive type never
+        // conforms.
+        if aom_type(&c) != aom_type(&p) {
+            return ValueConformance::Violates;
+        }
+        match c_value_conforms_to(&c, &p) {
+            ValueConformance::Conforms => {}
+            ValueConformance::Violates => return ValueConformance::Violates,
+            ValueConformance::Unknown => worst = ValueConformance::Unknown,
+        }
+    }
+    worst
 }
 
 #[cfg(test)]

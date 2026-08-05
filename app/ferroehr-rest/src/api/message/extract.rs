@@ -1,6 +1,5 @@
 //! `I_EHR_EXTRACT_SERVICE` over the MESSAGE extension wire — **our own
-//! extension** (see [`super`] for the whole group's spec-silence flag and
-//! register citation, AMB-34).
+//! extension** (see [`super`] for the whole group's spec-silence flag).
 //!
 //! The four SM operations (`i_ehr_extract_service.adoc`) and the routes that
 //! realize them:
@@ -70,8 +69,8 @@ pub(crate) fn extract_routes() -> OpenApiRouter<AppState> {
 
 /// Export one whole EHR as EXTRACTs (`GET /message/export/{ehr_id}`).
 ///
-/// **Our own extension — no ITS-REST operation governs this** (module docs;
-/// register AMB-34). Realizes SM `I_EHR_EXTRACT_SERVICE.export_ehrs`.
+/// **Our own extension — no ITS-REST operation governs this** (module
+/// docs). Realizes SM `I_EHR_EXTRACT_SERVICE.export_ehrs`.
 #[utoipa::path(
     get, path = "/message/export/{ehr_id}", tag = "message",
     params(("ehr_id" = String, Path, description = "The EHR to export.")),
@@ -109,8 +108,8 @@ pub(crate) async fn message_export_ehrs(
 
 /// Export EXTRACTs by `EXTRACT_SPEC` (`POST /message/export`).
 ///
-/// **Our own extension — no ITS-REST operation governs this** (module docs;
-/// register AMB-34). Realizes SM
+/// **Our own extension — no ITS-REST operation governs this** (module
+/// docs). Realizes SM
 /// `I_EHR_EXTRACT_SERVICE.export_ehr_extracts`. A read modelled as `POST`
 /// because its selector is a whole `EXTRACT_SPEC` structure, exactly as the
 /// released ad-hoc AQL read is (`query_execute_post`).
@@ -191,8 +190,8 @@ pub(crate) async fn message_export_ehr_extracts(
 
 /// Import a whole EHR from an EXTRACT (`POST /message/import{?ehr_id}`).
 ///
-/// **Our own extension — no ITS-REST operation governs this** (module docs;
-/// register AMB-34). Realizes SM `I_EHR_EXTRACT_SERVICE.import_ehr`, whose
+/// **Our own extension — no ITS-REST operation governs this** (module
+/// docs). Realizes SM `I_EHR_EXTRACT_SERVICE.import_ehr`, whose
 /// `an_ehr_id` is `[0..1]` — hence a query parameter rather than a path
 /// segment: the resource being created is the EHR, and the caller MAY fix its
 /// identifier (RM common `master06` §Copying Case 1).
@@ -254,8 +253,8 @@ pub(crate) async fn message_import_ehr(
 /// Import an EXTRACT into an existing EHR
 /// (`POST /message/import/{ehr_id}`).
 ///
-/// **Our own extension — no ITS-REST operation governs this** (module docs;
-/// register AMB-34). Realizes SM
+/// **Our own extension — no ITS-REST operation governs this** (module
+/// docs). Realizes SM
 /// `I_EHR_EXTRACT_SERVICE.import_ehr_extract` (RM common `master06` §Copying
 /// Cases 2/3).
 #[utoipa::path(

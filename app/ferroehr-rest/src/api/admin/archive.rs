@@ -7,17 +7,19 @@
 //! `archive_ehrs` ("Move selected EHRs to archival storage") and
 //! `archive_parties` ("Move selected Parties and relationships to archival
 //! storage"), with `ehr_id_does_not_exist` / `party_id_does_not_exist` as their
-//! declared errors. Register AMB-33 carries the SM↔ITS gap.
+//! declared errors. No released ITS-REST operation covers either call.
 //!
 //! These routes are the honest realization of that service basis, and are
 //! **excluded from ITS-REST wire conformance**: they gate the `EhrArchive` /
 //! `DemographicArchive` CAPABILITY verdicts only.
 //!
 //! Both are all-or-nothing: every id in the list is existence-checked before
-//! any marker is written, so an unknown id leaves the repository untouched
+//! anything is written, so an unknown id leaves the repository untouched
 //! (the SM declares the not-found error on the operation, not per element).
-//! Archival is read-neutral — the archived objects remain retrievable — so no
-//! resource representation changes and the success is a bodyless `204`.
+//! Each call marks the objects archived AND physically moves their rows to the
+//! server's cold storage tier; archival stays read-neutral — the archived
+//! objects remain retrievable, served from that tier — so no resource
+//! representation changes and the success is a bodyless `204`.
 //!
 //! Gating: mounted under `/admin/`, so they inherit the group's RBAC Admin
 //! class (`401`/`403`, our own authorization design) and the
@@ -56,8 +58,8 @@ pub(crate) fn archive_routes() -> OpenApiRouter<AppState> {
 
 /// Move selected EHRs to archival storage (`POST /admin/archive/ehrs`).
 ///
-/// **Our own extension — no ITS-REST operation governs this** (module docs;
-/// register AMB-33). Realizes SM `I_ADMIN_ARCHIVE.archive_ehrs`.
+/// **Our own extension — no ITS-REST operation governs this** (module
+/// docs). Realizes SM `I_ADMIN_ARCHIVE.archive_ehrs`.
 #[utoipa::path(
     post, path = "/admin/archive/ehrs", tag = "admin-archive",
     request_body(content = serde_json::Value,
@@ -112,8 +114,8 @@ pub(crate) async fn admin_archive_ehrs(
 
 /// Move selected parties to archival storage (`POST /admin/archive/parties`).
 ///
-/// **Our own extension — no ITS-REST operation governs this** (module docs;
-/// register AMB-33). Realizes SM `I_ADMIN_ARCHIVE.archive_parties`.
+/// **Our own extension — no ITS-REST operation governs this** (module
+/// docs). Realizes SM `I_ADMIN_ARCHIVE.archive_parties`.
 #[utoipa::path(
     post, path = "/admin/archive/parties", tag = "admin-archive",
     request_body(content = serde_json::Value,

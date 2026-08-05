@@ -387,7 +387,8 @@ fn opt_round_trips_through_printer_and_parser() {
     let opt1 = build_opt();
     let printed1 = openehr_adl::print::print(&Archetype::AuthoredArchetype(Box::new(
         AuthoredArchetype::OperationalTemplate(Box::new(opt1.clone())),
-    )));
+    )))
+    .expect("print the built OPT");
 
     // The printed OPT re-parses (the operational_template + inline
     // C_ARCHETYPE_ROOT-with-body forms both round-trip through the parser).
@@ -400,7 +401,7 @@ fn opt_round_trips_through_printer_and_parser() {
     };
 
     // Textual idempotence: printing the re-parsed OPT is byte-identical.
-    let printed2 = openehr_adl::print::print(&reparsed);
+    let printed2 = openehr_adl::print::print(&reparsed).expect("print the re-parsed OPT");
     assert_eq!(
         printed1, printed2,
         "OPT print is stable across a round-trip"

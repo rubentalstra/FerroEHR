@@ -79,7 +79,7 @@ impl<T: OrderedLimit> Validate for DvInterval<T> {
             ));
         }
         // NOTE: BASE `foundation_types.interval.adoc` §Invariants requires no
-        // bound VALUE when its `*_unbounded` flag is false (AMB-43), so an
+        // bound VALUE when its `*_unbounded` flag is false, so an
         // absent bound is accepted and the guarded implications are skipped.
         if !self.lower_unbounded
             && !self.upper_unbounded
@@ -156,7 +156,7 @@ mod tests {
         // BASE Interval: `lower`/`upper` are 0..1 and the closed invariant
         // set has no bound-presence rule — an absent bound with a false
         // `*_unbounded` flag violates nothing (the guarded Limits_consistent
-        // implication is unevaluable and skipped; AMB-43, ACCEPTED).
+        // implication is unevaluable and skipped).
         let half_open = DvInterval::<DvQuantity> {
             lower: None,
             upper: Some(quantity(1.0, "s")),

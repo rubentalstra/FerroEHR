@@ -24,9 +24,11 @@
 //! - **`crate::storage`** — `dump_load` reassembles/decomposes version bodies
 //!   through the storage codec (`node_repo::read_version_canonical` /
 //!   `decompose` + `write_nodes`).
-//! - **`archive`** marks EHR/party versioned objects archived; the physical
-//!   cold-tier storage movement is a spec-silent `TODO(perf)` carried at the
-//!   top of that module.
+//! - **`archive`** marks EHR/party versioned objects archived and physically
+//!   moves their rows into the spec-silent cold tier
+//!   ([`crate::storage::version_repo::tier`]), reversibly; `delete` and
+//!   `dump_load` reach both tiers because a physical delete and a repository
+//!   export are whole-repository operations by definition.
 
 mod archive;
 mod delete;

@@ -194,7 +194,7 @@ fn rm_overlay_maps_visibility_and_alias() {
     }
     // and it round-trips.
     let first = Archetype::AuthoredArchetype(Box::new(AuthoredArchetype::AuthoredArchetype(a)));
-    let second = parse_artefact(&print(&first), Dialect::Adl2).expect("re-parse");
+    let second = parse_artefact(&print(&first).expect("print"), Dialect::Adl2).expect("re-parse");
     assert_eq!(first, second);
 }
 
@@ -227,7 +227,7 @@ fn template_with_overlay_assembles_and_round_trips() {
         "ov"
     );
     // round-trips through the printer.
-    let second = parse_artefact(&print(&first), Dialect::Adl2).expect("re-parse");
+    let second = parse_artefact(&print(&first).expect("print"), Dialect::Adl2).expect("re-parse");
     assert_eq!(first, second);
 }
 
@@ -271,7 +271,7 @@ fn operational_template_component_terminologies_round_trip() {
         Some("Device")
     );
     // round-trips.
-    let second = parse_artefact(&print(&first), Dialect::Adl2).expect("re-parse");
+    let second = parse_artefact(&print(&first).expect("print"), Dialect::Adl2).expect("re-parse");
     assert_eq!(first, second);
 }
 

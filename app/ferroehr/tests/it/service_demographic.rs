@@ -713,7 +713,7 @@ async fn party_update_if_match_is_case_insensitive_and_quote_tolerant() {
 /// `I_PARTY_RELATIONSHIP` operations key on `a_versioned_party_rel_id`), which
 /// this server realizes on its `versioned_party_relationship` surface. The two
 /// representations are DISJOINT — committing this party mints no relationship
-/// container, and no container write edits this list. Register AMB-187.
+/// container, and no container write edits this list.
 #[tokio::test]
 async fn inline_relationships_are_stored_and_served_verbatim() {
     let db = testkit::db().await.expect("testkit database");
@@ -765,7 +765,7 @@ async fn inline_relationships_are_stored_and_served_verbatim() {
             })
         ),
         "an inline by-value relationship must not create a relationship \
-         container (register AMB-187), got {not_a_relationship:?}"
+         container, got {not_a_relationship:?}"
     );
 }
 
@@ -880,8 +880,8 @@ async fn inline_relationship_source_matches_the_version_container_not_the_versio
 /// released shape is the `VersionedParty` example in the vendored ITS-REST OAS
 /// (`crates/openehr-its/vendor/rest-oas/demographic-codegen.openapi.yaml`,
 /// `components.schemas.VersionedParty.example`): an `OBJECT_REF` with
-/// `namespace: local`, `type: SYSTEM` over a `HIER_OBJECT_ID`. Register AMB-69
-/// carries the fixed handling; the `id` is the configured system identifier,
+/// `namespace: local`, `type: SYSTEM` over a `HIER_OBJECT_ID`; the docs text
+/// fixes nothing here, so the `id` is the configured system identifier,
 /// cross-checked here against the value the commit audits carry.
 #[tokio::test]
 async fn versioned_party_owner_id_names_the_serving_system() {

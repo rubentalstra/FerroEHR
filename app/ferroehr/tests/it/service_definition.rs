@@ -150,10 +150,8 @@ async fn archetype_errors() {
 
     // Invalid ADL → 422 invalid_archetype.
     // NOTE: the SM-specific Definition statuses (invalid_archetype,
-    // artefact_does_not_exist, invalid_id_pattern, …) are flattened through the
-    // service's `ServiceError::sm()` → `From<ServiceError> for SmError` round-trip
-    // to the generic `content_invalid` (422) / `versioned_object_does_not_exist`
-    // (404) / `precondition_violation` (400) — the wire HTTP codes are unchanged.
+    // artefact_does_not_exist, …) flatten through `ServiceError::sm()` to the
+    // generic `content_invalid` (422) / `precondition_violation` (400).
     let bad = svc
         .upload_archetype("this is not an archetype".to_owned())
         .await

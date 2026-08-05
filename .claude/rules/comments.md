@@ -83,7 +83,7 @@ history carries it. A comment describes the code as it IS.
 - `scripts/check-comment-style.sh` — block comments, TODO(#N) form, banned
   marker vocabulary, NOTE ≤ 3 lines, `//` runs ≤ 8 lines. Runs per-edit (the
   `rust_fmt_clippy.sh` PostToolUse hook) and on PRs (the `comment-style` CI
-  job, diff-scoped until the legacy essay sweep (#1870) closes, then `--all`).
+  job, running `--all` over the whole tree — the legacy sweep (#1870) is done).
 - `clippy::too_long_first_doc_paragraph` (nursery cherry-pick, CI
   `-D warnings`) — the RFC 1574 summary line.
 - Already-active doc lints: `doc_markdown`, `missing_errors_doc`,

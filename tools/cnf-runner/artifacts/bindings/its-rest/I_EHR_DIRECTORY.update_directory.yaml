@@ -5,7 +5,7 @@
 # header (ITS-REST overview §If-Match); it is omitted only for the empty-EHR / bad-EHR cases where no
 # directory version exists to match.
 # Sources: specifications/operations/directory_update.yaml (200/204/400/404/412),
-# responses/200_directory_updated.yaml, 204_version_updated.yaml,
+# responses/200_directory_updated.yaml, 204_version_updated.yaml, 400.yaml,
 # 404_unknown_ehr_id.yaml, 412_directory.yaml; header If-Match.yaml,
 # ETag_FOLDER.yaml.
 sm_operation: I_EHR_DIRECTORY.update_directory
@@ -28,36 +28,30 @@ formats: [canonical-json, canonical-xml]
 # because the same section makes the source a choice ("usually taken from e.g.
 # VERSIONED_OBJECT.uid.value, VERSION.uid.value, EHR.ehr_id.value, etc.").
 outcomes:
+  bad_request:
+    # The PARSE class: a body missing a member the release's own request-body
+    # schema declares `required` (e.g. `schemas/common/Locatable.yaml`
+    # `required: [name, archetype_node_id]`) is invalid CONTENT.
+    # `responses/400.yaml` scopes 400 to "syntactically invalid header,
+    # parameter or content"; `responses/422.yaml` scopes 422 to content that
+    # "could be converted to a resource". Such a body never converts.
+    # Same wire code as `precondition_missing` below; kind distinguished by
+    # fixture (an absent If-Match vs an unconvertible body).
+    status: 400                           # operations/directory_update.yaml '400' -> responses/400.yaml
+    body: error_loose
   updated:
     status: 200                           # 204 when Prefer minimal (204_version_updated.yaml)
     headers: { ETag: { match: 'pattern:W/"[^"]+"', applies: { its_rest: ">=1.1.0" } } }   # ETag_FOLDER.yaml
     body: prefer_conditional
   validation_failed:
-    # An RM-invalid FOLDER is well-formed JSON that breaks an RM rule, so the
-    # SEMANTIC row of the released status table describes it and the syntactic
-    # one does not — ITS-REST overview Requests_and_responses.md §HTTP status
-    # codes: "422 | Unprocessable Entity | The request was well-formed but was
-    # unable to be followed due to semantic errors" versus "400 | Bad Request |
-    # … (e.g., malformed request syntax, syntactically invalid content)".
-    # The SM ground is the same on this seam as on create: i_ehr_directory.adoc
-    # §update_directory carries `Pre_content_valid: valid_content(a_dir_struct)`
-    # and declares the error `content_invalid`, so the refusal is required, not
-    # merely permitted.
-    # WHY 422 AND NOT THE OAS 400 that `directory_update.yaml` declares: that
-    # response file scopes ITSELF to input that does not parse ("the request
-    # could not be parsed or is invalid (e.g. malformed request URL syntax,
-    # missing required header or parameter, or syntactically invalid header,
-    # parameter or content)" — `responses/400.yaml`), and an RM-invalid FOLDER
-    # parses fine, so the OAS never grounds this branch even as a tier-2
-    # source. The docs-text 422 row does describe it, and §HTTP status codes
-    # permits "Additional status codes … as long as they do not conflict with
-    # the predefined codes". This mirrors the identical correction already
-    # carried on I_EHR_DIRECTORY.create_directory, and the same mapping the
-    # rest of the catalogue uses for this defect class
-    # (I_EHR_SERVICE.create_ehr, I_EHR_COMPOSITION.create_composition,
-    # I_EHR_STATUS.*-invalid_body). The 400 that REMAINS correct on this
-    # binding is `precondition_missing` below — a MISSING required header,
-    # which the 400 row does describe.
+    # The SEMANTIC class: a FOLDER that DOES convert to the resource and then
+    # fails validation. `responses/422.yaml` scopes 422 to content that "could
+    # be converted to a resource, but there are semantic validation errors";
+    # `responses/400.yaml` owns the unconvertible half (`bad_request` above).
+    # The SM ground for the refusal itself is the same on this seam as on
+    # create: i_ehr_directory.adoc §update_directory carries
+    # `Pre_content_valid: valid_content(a_dir_struct)` and declares the error
+    # `content_invalid`, so the refusal is required, not merely permitted.
     status: 422
     body: error_loose                     # ITS-REST overview §HTTP status codes — for 4xx/5xx, services MAY return additional error details if Prefer: return=representation
   precondition_failed:

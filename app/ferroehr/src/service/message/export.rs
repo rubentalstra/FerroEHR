@@ -403,7 +403,7 @@ impl FerroEhrService {
         ehr_id: EhrId,
     ) -> Result<Vec<(VoId, String)>, ServiceError> {
         let rows = sqlx::query(
-            "SELECT vo_id, kind FROM vo_version \
+            "SELECT vo_id, kind FROM vo_version_all \
              WHERE ehr_id = $1 AND upper_inf(sys_period) AND branch_number = 0 \
              ORDER BY vo_id",
         )
@@ -425,7 +425,7 @@ impl FerroEhrService {
         vo_id: VoId,
     ) -> Result<Option<String>, ServiceError> {
         Ok(sqlx::query_scalar(
-            "SELECT kind FROM vo_version \
+            "SELECT kind FROM vo_version_all \
              WHERE vo_id = $1 AND ehr_id = $2 AND upper_inf(sys_period) \
              AND branch_number = 0",
         )
@@ -440,7 +440,7 @@ impl FerroEhrService {
     async fn vo_version_numbers(&self, vo_id: VoId) -> Result<Vec<(i32, bool)>, ServiceError> {
         let rows = sqlx::query(
             "SELECT sys_version, (upper_inf(sys_period) AND branch_number = 0) AS is_current \
-             FROM vo_version WHERE vo_id = $1 ORDER BY sys_version",
+             FROM vo_version_all WHERE vo_id = $1 ORDER BY sys_version",
         )
         .bind(vo_id)
         .fetch_all(&self.pool)
@@ -506,14 +506,9 @@ impl FerroEhrService {
         // TODO(#1695): build the EXTRACT tree from the generated
         // `openehr_rm::ehr_extract` types (`Extract`, `ExtractChapter`,
         // `XVersionedObject`, `OpenehrContentItem`) instead of these JSON
-        // literals. Blocked on the composition shape, not on a missing type:
-        // every branch here splices ALREADY-CANONICAL opaque fragments — the
-        // `versioned_object` body reused field-by-field above, the
-        // `original_version` envelopes in `versions`, and the
-        // `revision_history` document — so a typed build would first have to
-        // decode each of them back into RM values. Doing that is a real change
-        // to the export path (and to what the signed version envelopes carry),
-        // not a mechanical substitution.
+        // literals. Blocked on the composition shape, not a missing type: every
+        // branch here splices ALREADY-CANONICAL opaque fragments, so a typed
+        // build would first have to decode each of them back into RM values.
         let mut x = json!({
             "_type": x_versioned_type(kind),
             "uid": field("uid"),
@@ -613,7 +608,7 @@ impl FerroEhrService {
                     // `{namespace: local, type: SYSTEM, id: HIER_OBJECT_ID}`
                     // (vendored ITS-REST OAS
                     // `crates/openehr-its/vendor/rest-oas/demographic-codegen.openapi.yaml`,
-                    // `components.schemas.VersionedParty.example`; register AMB-69).
+                    // `components.schemas.VersionedParty.example`).
                     "owner_id": {
                         "_type": "OBJECT_REF",
                         "namespace": "local",
@@ -768,10 +763,9 @@ fn version_selection(spec: &ExtractSpec) -> Result<VersionSelection, SmError> {
     let Some(vs) = spec.version_spec.as_ref() else {
         return Ok(VersionSelection::latest_only());
     };
-    // NOTE (`extract_version_spec.adoc`
-    // `EXTRACT_VERSION_SPEC.commit_time_interval`): commit-time-window version
-    // selection lands with the AQL export wave; a typed reject until then,
-    // never a silent full export.
+    // NOTE: commit-time-window version selection
+    // (`extract_version_spec.adoc` `EXTRACT_VERSION_SPEC.commit_time_interval`)
+    // is a typed reject, never a silent full export.
     if vs.commit_time_interval.is_some() {
         return Err(SmError::precondition(
             "EXTRACT_VERSION_SPEC.commit_time_interval is not supported in this stage",

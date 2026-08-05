@@ -275,10 +275,8 @@ pub(in crate::service) fn committer() -> PartyProxy {
                 // authority and takes this deployment's product name.
                 //
                 // NOTE: no openEHR spec governs which string names the issuing
-                // authority — our own design/extension. The RM says only that
-                // an AUDIT_DETAILS committer's identifying information may be
-                // "in the form of a system login identifier" (RM common
-                // master04-generic_package.adoc §Audit Details).
+                // authority — our own design (RM common master04 §Audit Details
+                // says only "in the form of a system login identifier").
                 issuer: Some(identity.issuer.unwrap_or_else(|| LOCAL_ISSUER.to_owned())),
                 assigner: None,
                 id: identity.subject,

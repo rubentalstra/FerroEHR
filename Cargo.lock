@@ -2676,9 +2676,9 @@ dependencies = [
  "axum",
  "backon",
  "base64 0.22.1",
- "bytes",
  "config",
  "criterion",
+ "ferroehr-ext",
  "futures",
  "http",
  "http-body-util",
@@ -2778,6 +2778,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "ferroehr-ext"
+version = "3.17.2"
+dependencies = [
+ "async-trait",
+ "base64 0.22.1",
+ "bytes",
+ "fhir-model",
+ "indexmap 2.14.0",
+ "jiff",
+ "lapin",
+ "object_store",
+ "openehr-base",
+ "openehr-its",
+ "openehr-rm",
+ "secrecy",
+ "serde",
+ "serde_json",
+ "sha2 0.11.0",
+ "thiserror 2.0.19",
+ "tokio",
+]
+
+[[package]]
 name = "ferroehr-rest"
 version = "3.17.2"
 dependencies = [
@@ -2867,6 +2890,18 @@ dependencies = [
  "bitvec",
  "rand_core 0.6.4",
  "subtle",
+]
+
+[[package]]
+name = "fhir-model"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7fcb3e6576cb1b797b2e33b08f22fe284b6660f1407718042ecd73bd62293449"
+dependencies = [
+ "base64 0.22.1",
+ "derive_builder",
+ "serde",
+ "time",
 ]
 
 [[package]]
@@ -5471,7 +5506,7 @@ checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
 
 [[package]]
 name = "openehr-adl"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "indexmap 2.14.0",
  "openehr-am",
@@ -5486,7 +5521,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-am"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "openehr-base",
  "openehr-lang",
@@ -5496,7 +5531,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-base"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "serde",
  "serde_json",
@@ -5515,7 +5550,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-its"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "async-trait",
  "axum",
@@ -5544,7 +5579,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-lang"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "assert_fs",
  "chumsky",
@@ -5558,7 +5593,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-query"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "chumsky",
  "logos",
@@ -5567,7 +5602,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-rm"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "insta",
  "jsonschema",
@@ -5584,7 +5619,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-term"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "openehr-base",
  "roxmltree",

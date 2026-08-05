@@ -555,14 +555,11 @@ async fn sevenz_compressed_export_round_trips_through_the_detected_container() {
 
 // ── EXPORT_FORMAT.openehr_canonical_xml ──────────────────────────────────────
 //
-// The battery below replaces the former
-// `unrealized_format_members_are_not_implemented_and_write_nothing` test,
-// whose premise is gone: the member is no longer unrealized, so a well-formed
-// request for it is fulfilled and the behaviour under test is the round trip,
-// not the refusal. The refusal branches that DO survive are unrelated to the
-// member set and keep their own tests — a value outside the enumeration never
-// reaches this layer (the REST edge refuses it, `admin_extension_http.rs`) and
-// a non-positive `segment_split_size` is proved below.
+// The battery below covers the round trip for this member. The refusal branches
+// are unrelated to the member set and keep their own tests — a value outside the
+// enumeration never reaches this layer (the REST edge refuses it,
+// `admin_extension_http.rs`) and a non-positive `segment_split_size` is proved
+// below.
 
 /// A minimal *valid* RM COMPOSITION: `language`, `territory`, `category` and
 /// `composer` are all `1..1` (RM ehr, COMPOSITION class), so typed RM

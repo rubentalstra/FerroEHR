@@ -32,8 +32,7 @@ use super::verify::{self, Verdict};
 /// the hashing step is done, the digest acts as a data integrity check") but
 /// leaves without a wire spelling of its own — a bare radix-64 hash names
 /// neither its algorithm nor its encoding. The `sha256:` prefix is OUR OWN
-/// extension: no released openEHR text licenses this token. Register entry
-/// AMB-188.
+/// extension: no released openEHR text licenses this token.
 pub(crate) const DIGEST_PREFIX: &str = "sha256:";
 
 /// A failure constructing a [`Signer`] at boot.

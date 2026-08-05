@@ -14,6 +14,7 @@ use openehr_am::am24::aom2::constraint_model::c_complex_object_proxy::CComplexOb
 use openehr_am::am24::aom2::constraint_model::c_object::CObject;
 use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
 use openehr_am::am24::aom2::constraint_model::c_primitive_tuple::CPrimitiveTuple;
+use openehr_am::am24::aom2::constraint_model::primitive::c_string::CString;
 use openehr_am::am24::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
 use openehr_am::am24::aom2::constraint_model::primitive::constraint_status::ConstraintStatus;
 use openehr_am::am24::aom2::constraint_model::sibling_order::SiblingOrder;
@@ -23,20 +24,20 @@ use openehr_base::prelude::{
 
 use crate::aom::build::cobject_to_primitive;
 use crate::odin::regex_of;
-use crate::print::Printer;
 use crate::print::odin::quoted;
 use crate::print::rules::assertion_str;
+use crate::print::{PrintError, Printer};
 
 impl Printer {
     // ── definition (cADL) ──────────────────────────────────────────────────
-    pub(super) fn definition(&mut self, def: &CComplexObject) {
+    pub(super) fn definition(&mut self, def: &CComplexObject) -> Result<(), PrintError> {
         // The definition root is a `C_COMPLEX_OBJECT` (plain or `C_ARCHETYPE_ROOT`),
         // both dispatched by `object`.
         let obj = CObject::CComplexObject(def.clone());
-        self.object(&obj, 1);
+        self.object(&obj, 1)
     }
 
-    fn object(&mut self, obj: &CObject, depth: usize) {
+    fn object(&mut self, obj: &CObject, depth: usize) -> Result<(), PrintError> {
         let mut head = String::new();
         if let Some(so) = crate::aom::access::sibling_order(obj) {
             head.push_str(&sibling_str(so));
@@ -52,7 +53,7 @@ impl Printer {
                 if has_body {
                     self.line(depth, &format!("{head} matches {{"));
                     for a in d.attributes.iter().flatten() {
-                        self.attribute(a, depth + 1);
+                        self.attribute(a, depth + 1)?;
                     }
                     for t in d.attribute_tuples.iter().flatten() {
                         self.attribute_tuple(t, depth + 1);
@@ -66,10 +67,10 @@ impl Printer {
                 }
             }
             CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => {
-                self.archetype_root(&head, r, depth);
+                self.archetype_root(&head, r, depth)?;
             }
             CObject::CComplexObjectProxy(pr) => self.proxy(&head, pr, depth),
-            CObject::ArchetypeSlot(s) => self.slot(&head, s, depth),
+            CObject::ArchetypeSlot(s) => self.slot(&head, s, depth)?,
             // Primitives with a real node id are regular primitive objects.
             other => {
                 if let Some(prim) = cobject_to_primitive(other) {
@@ -94,9 +95,10 @@ impl Printer {
                 }
             }
         }
+        Ok(())
     }
 
-    fn attribute(&mut self, a: &CAttribute, depth: usize) {
+    fn attribute(&mut self, a: &CAttribute, depth: usize) -> Result<(), PrintError> {
         let name = match &a.differential_path {
             Some(path) => format!("{path}/{}", a.rm_attribute_name),
             None => a.rm_attribute_name.clone(),
@@ -110,7 +112,7 @@ impl Printer {
         }
         if a.children.as_ref().is_none_or(Vec::is_empty) {
             self.line(depth, &head);
-            return;
+            return Ok(());
         }
         // A single C_STRING regex child came from the `attr matches {/re/}`
         // contained-regexp shortcut (`cadl2.g4`); re-emit that form.
@@ -122,7 +124,7 @@ impl Printer {
                 let _ = write!(body, "; {}", quoted(assumed));
             }
             self.line(depth, &format!("{head} matches {{{body}}}"));
-            return;
+            return Ok(());
         }
         // A single inline primitive child prints inline; regular objects nest.
         if let [child] = a.children.as_deref().unwrap_or_default()
@@ -133,13 +135,14 @@ impl Printer {
                 depth,
                 &format!("{head} matches {{{}}}", primitive_inline(&prim)),
             );
-            return;
+            return Ok(());
         }
         self.line(depth, &format!("{head} matches {{"));
         for child in a.children.iter().flatten() {
-            self.object(child, depth + 1);
+            self.object(child, depth + 1)?;
         }
         self.line(depth, "}");
+        Ok(())
     }
 
     fn attribute_tuple(&mut self, t: &CAttributeTuple, depth: usize) {
@@ -171,7 +174,12 @@ impl Printer {
         self.line(depth, &format!("[{items}]{sep}"));
     }
 
-    fn archetype_root(&mut self, head: &str, r: &CArchetypeRoot, depth: usize) {
+    fn archetype_root(
+        &mut self,
+        head: &str,
+        r: &CArchetypeRoot,
+        depth: usize,
+    ) -> Result<(), PrintError> {
         let node = if r.node_id.is_empty() {
             format!("[{}]", r.archetype_ref)
         } else {
@@ -192,19 +200,20 @@ impl Printer {
                 depth,
                 &format!("{head}use_archetype {}{node}{occ}", r.rm_type_name),
             );
-            return;
+            return Ok(());
         }
         self.line(
             depth,
             &format!("{head}{}{node}{occ} matches {{", r.rm_type_name),
         );
         for a in r.attributes.iter().flatten() {
-            self.attribute(a, depth + 1);
+            self.attribute(a, depth + 1)?;
         }
         for t in r.attribute_tuples.iter().flatten() {
             self.attribute_tuple(t, depth + 1);
         }
         self.line(depth, "}");
+        Ok(())
     }
 
     fn proxy(&mut self, head: &str, pr: &CComplexObjectProxy, depth: usize) {
@@ -220,7 +229,7 @@ impl Printer {
         );
     }
 
-    fn slot(&mut self, head: &str, s: &ArchetypeSlot, depth: usize) {
+    fn slot(&mut self, head: &str, s: &ArchetypeSlot, depth: usize) -> Result<(), PrintError> {
         let base = format!(
             "{head}allow_archetype {}{}",
             s.rm_type_name,
@@ -228,25 +237,32 @@ impl Printer {
         );
         if s.is_closed {
             self.line(depth, &format!("{base} closed"));
-            return;
+            return Ok(());
         }
         let occ = occ_suffix(s.occurrences.as_ref());
         if s.includes.as_ref().is_none_or(Vec::is_empty)
             && s.excludes.as_ref().is_none_or(Vec::is_empty)
         {
             self.line(depth, &format!("{base}{occ}"));
-            return;
+            return Ok(());
         }
         self.line(depth, &format!("{base}{occ} matches {{"));
-        for inc in s.includes.iter().flatten() {
+        // `c_includes : SYM_INCLUDE assertion+` (`cadl2.g4`): one keyword
+        // introduces the whole assertion list.
+        if !s.includes.as_ref().is_none_or(Vec::is_empty) {
             self.line(depth + 1, "include");
-            self.line(depth + 2, &assertion_str(inc));
+            for inc in s.includes.iter().flatten() {
+                self.line(depth + 2, &assertion_str(inc)?);
+            }
         }
-        for exc in s.excludes.iter().flatten() {
+        if !s.excludes.as_ref().is_none_or(Vec::is_empty) {
             self.line(depth + 1, "exclude");
-            self.line(depth + 2, &assertion_str(exc));
+            for exc in s.excludes.iter().flatten() {
+                self.line(depth + 2, &assertion_str(exc)?);
+            }
         }
         self.line(depth, "}");
+        Ok(())
     }
 }
 
@@ -331,6 +347,26 @@ fn prim_type_and_node(obj: &CObject) -> (String, String) {
     }
 }
 
+/// The inline value text of a `C_STRING` constraint: the single delimited
+/// regex (`/re/`, `^re^`) or the quoted literal list, with the `; "assumed"`
+/// suffix when one is carried (`AOM2/master04.5` §`C_STRING`).
+pub(super) fn cstring_inline(c: &CString) -> String {
+    let mut s = match regex_of(c.constraint.as_deref().unwrap_or_default()) {
+        Some(regex) => regex.to_owned(),
+        None => c
+            .constraint
+            .iter()
+            .flatten()
+            .map(|v| quoted(v))
+            .collect::<Vec<_>>()
+            .join(", "),
+    };
+    if let Some(a) = &c.assumed_value {
+        let _ = write!(s, "; {}", quoted(a));
+    }
+    s
+}
+
 /// The inline value text of a primitive constraint (`55`, `|0..100|`,
 /// `"x", "y"; "z"`, `yyyy-mm-??`, `[ac1]`, …) — the body a `matches { … }`
 /// wraps. Mirrors `cadl2_primitives.g4`.
@@ -349,26 +385,7 @@ pub(super) fn primitive_inline(prim: &CPrimitiveObject) -> String {
             }
             s
         }
-        CPrimitiveObject::CString(c) => {
-            if let Some(regex) = regex_of(c.constraint.as_deref().unwrap_or_default()) {
-                let mut s = regex.to_owned();
-                if let Some(a) = &c.assumed_value {
-                    let _ = write!(s, "; {}", quoted(a));
-                }
-                return s;
-            }
-            let mut s = c
-                .constraint
-                .iter()
-                .flatten()
-                .map(|v| quoted(v))
-                .collect::<Vec<_>>()
-                .join(", ");
-            if let Some(a) = &c.assumed_value {
-                let _ = write!(s, "; {}", quoted(a));
-            }
-            s
-        }
+        CPrimitiveObject::CString(c) => cstring_inline(c),
         CPrimitiveObject::CInteger(c) => {
             let mut s = int_list(c.constraint.as_deref().unwrap_or_default());
             if let Some(a) = c.assumed_value {

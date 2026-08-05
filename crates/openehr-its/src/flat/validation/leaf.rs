@@ -121,7 +121,7 @@ fn check_code_lists(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
 
 /// Whether an instance code's terminology matches the constraint's terminology
 /// (`None` on the constraint side means the archetype-`local` terminology).
-fn terminology_matches(constraint: Option<&str>, instance: Option<&str>) -> bool {
+pub(super) fn terminology_matches(constraint: Option<&str>, instance: Option<&str>) -> bool {
     match constraint {
         None | Some(LOCAL_TERMINOLOGY_ID | "") => {
             matches!(instance, None | Some(LOCAL_TERMINOLOGY_ID | ""))
@@ -326,21 +326,14 @@ fn check_quantity(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
         );
     }
 
-    // C_QUANTITY.property membership: when the constraint carries a `property`
-    // but no enumerated unit list, the instance's units are constrained by that
-    // physical property. AOM 1.4 defines `property` only as "Name of physical
-    // property for Quantities being constrained"
+    // C_QUANTITY.property membership: AOM 1.4 defines `property` only as
+    // "Name of physical property for Quantities being constrained"
     // (`AM/docs/UML/classes/org.openehr.am.aom14.c_quantity.adoc` §C_QUANTITY)
-    // and gives no formal valid_value — the normative constraint semantics live
-    // in the openEHR Archetype Profile, which is not vendored. We ground the
-    // check on the openEHR-published property↔unit table (`PropertyUnitData.xml`
-    // via `openehr_term::bundle`), biasing toward CONFIDENT violations: a unit
-    // is rejected only when it belongs to a DIFFERENT property's unit set (e.g.
-    // `mg` is a Mass unit committed against a `length` constraint) — a confident
-    // dimensional mismatch. A unit that is not in the table at all is tolerated
-    // (the curated table is not exhaustive, and the formal property→units
-    // semantics are spec-silent). NOTE: this is our own design/extension on the
-    // openEHR terminology asset — AOM 1.4 defines no property→units mapping.
+    // with no formal valid_value (the constraint semantics live in the
+    // non-vendored Archetype Profile), so this check is our own extension on
+    // the openEHR property↔unit asset (`PropertyUnitData.xml` via
+    // `openehr_term::bundle`): a unit is rejected only on a confident
+    // dimensional mismatch; a unit absent from the table is tolerated.
     if let (Some(property), Some(u)) = (&wt.quantity_property, unit)
         && !has_unit_list
     {
@@ -934,12 +927,9 @@ fn as_f64(v: &Value) -> Option<f64> {
 
 /// Whether `value` satisfies a `WebTemplate` numeric range (honoring the
 /// inclusive/exclusive `minOp`/`maxOp`; missing bounds are unbounded).
-// NOTE (BASE primitives): `WebTemplateRange` preserves the OPT interval's
-// boundary openness as `minOp`/`maxOp` (`>`/`<` = excluded bound), so this
-// check realizes BASE `Interval.has(v)` semantics
-// (org.openehr.base.foundation_types.interval.adoc) over the WebTemplate range
-// representation; the spec-cited reference semantics + tests live in
-// `openehr-base` `interval_impl.rs`.
+// NOTE: realizes BASE `Interval.has(v)` semantics over `WebTemplateRange`'s
+// `minOp`/`maxOp` boundary openness (foundation_types interval.adoc); the
+// reference semantics + tests live in `openehr-base` `interval_impl.rs`.
 fn in_range(value: f64, range: &WebTemplateRange) -> bool {
     if let Some(min) = range.min.as_ref().and_then(as_f64) {
         let ok = match range.min_op.as_deref() {

@@ -200,9 +200,8 @@ pub(super) fn check_dv_quantity(c: &CDvQuantity, node_id: &str) -> Result<(), Ru
     if let Some(property) = &c.property
         && property.terminology_id.value.eq_ignore_ascii_case("openehr")
         // NOTE (prior-art OPT tolerance): Ocean Template Designer emits the
-        // placeholder property code "0" for an unconstrained property (the
-        // vendored `action test` corpus template) — a placeholder is "no
-        // constraint", not a foreign code.
+        // placeholder property code "0" for an unconstrained property — a
+        // placeholder is "no constraint", not a foreign code.
         && !property.code_string.is_empty()
         && property.code_string != "0"
         && !openehr_term::bundle::openehr().is_valid_property(&property.code_string)

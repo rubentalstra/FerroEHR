@@ -121,20 +121,14 @@ impl Parser<'_> {
             let mut codes: Vec<String> = Vec::new();
             let mut assumed: Option<String> = None;
             // An EMPTY code list — `[local::]`, `[openEHR::]` — names the
-            // terminology and constrains the code to nothing further.
-            //
-            // NOTE: `ADL1.4/master09-customising_adl.adoc` §Custom Syntax
-            // introduces this compact spelling only with a non-empty set
-            // ("specify the terminology, and then a set of code_strings"), so
-            // the empty set is docs-text SILENT. The vendored normative
-            // grammar resolves the silence: `cadl14_primitives.g4`
-            // `c_qualified_term_code : '[' terminology_id '::' ( … )? ']'`
-            // makes the whole code-list group optional. Real CKM content
-            // relies on it in both directions of 13 years of export
-            // (`media_type matches {[openEHR::]}`), so refusing it would
-            // reject conformant real-world archetypes over a silence.
-            // The verbatim form (`terminology::`) is preserved for the
+            // terminology and constrains the code to nothing further. Real CKM
+            // content relies on it (`media_type matches {[openEHR::]}`), and
+            // the verbatim form (`terminology::`) is preserved for the
             // converter exactly as the non-empty spelling is.
+            //
+            // NOTE: the compact empty spelling is docs-text SILENT; the
+            // normative `cadl14_primitives.g4` `c_qualified_term_code` makes
+            // the code-list group optional (`ADL1.4/master09` §Custom Syntax).
             while !matches!(self.peek(), Some(Token::RBracket)) {
                 match self.peek().cloned() {
                     // External codes may be bare integers (`[openehr:: 253, …]`)
@@ -444,14 +438,9 @@ impl Parser<'_> {
     /// type which represents a constraint on a reference model type"), and each
     /// one targets a DIFFERENT RM type, so guessing is a silent wrong answer.
     //
-    // NOTE: `C_DV_STATE` — the one further openEHR Archetype Profile domain
-    // constrainer met in the wild — stays refused: no vendored openEHR spec text
-    // defines C_DV_STATE — the oAP custom type is not vendored, and neither
-    // `ADL1.4/master09-customising_adl.adoc` nor
-    // `AOM1.4/masterAppA-domain_extension.adoc` (whose worked domain classes are
-    // `C_ORDINAL`/`C_QUANTITY`/`C_CODED_TEXT`) gives its attributes or its RM
-    // target — so the typed refusal is the honest boundary; inventing a shape
-    // would be a silent wrong answer.
+    // NOTE: `C_DV_STATE` stays refused — no vendored openEHR spec text defines
+    // its attributes or RM target, so a typed refusal is the honest boundary
+    // and inventing a shape would be a silent wrong answer.
     #[expect(
         clippy::too_many_lines,
         reason = "one linear parse: the type name, the ODIN block's token span, then one dispatch per lowered domain type"
@@ -477,17 +466,13 @@ impl Parser<'_> {
                 "expecting ')' after the domain type",
             )?;
         }
-        // The ODIN block spans from the opening '<' to its matching '>'.
-        //
-        // The `<`/`>` nesting depth is counted OUTSIDE `|…|` intervals only: a
+        // The ODIN block spans from the opening '<' to its matching '>'. The
+        // `<`/`>` nesting depth is counted OUTSIDE `|…|` intervals only: a
         // one-sided interval endpoint carries its own `<`/`>` relational
         // operator (`magnitude = <|>0.0|>`), which would otherwise close the
-        // block early and hand `openehr_lang::odin` a truncated text. The 1.4
-        // chapter flags exactly this hazard in its own scanner specification —
-        // `ADL1.4/master05-cadl.adoc` §Symbols L1448-1453,
-        // `V_C_DOMAIN_TYPE`: "this is an attempt to match a dADL section inside
-        // cADL. It will probably never work 100% properly since there can be
-        // '>' inside '||' ranges" — so the interval delimiter is tracked
+        // block early. The 1.4 chapter flags exactly this hazard
+        // (`ADL1.4/master05-cadl.adoc` §Symbols, `V_C_DOMAIN_TYPE`: "there can
+        // be '>' inside '||' ranges"), so the interval delimiter is tracked
         // instead of scanning raw characters.
         let open = self.pos;
         if !matches!(self.peek(), Some(Token::SymLt)) {

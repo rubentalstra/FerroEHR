@@ -2,7 +2,7 @@
 //! two-schema migration sequence.
 //!
 //! No openEHR spec governs the persistence mechanism — the storage substrate
-//! is our own PG18-native design (`docs/architecture.md` §Storage). This
+//! is our own PG18-native design. This
 //! module is the single place the rest of the crate obtains a database
 //! handle: [`DbConfig`] (the `[db]` config section, a field of
 //! [`crate::config::FerroEhrConfig`]) feeds [`connect`] /

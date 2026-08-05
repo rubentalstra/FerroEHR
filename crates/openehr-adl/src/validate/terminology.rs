@@ -61,12 +61,9 @@ pub(super) fn check_terminology(
     // VATID: the root concept code must be defined in the terminology (master08
     // §Code Validation; NOTE-flagged, no full vendored text).
     //
-    // NOTE: the per-node id-code definedness half is a reference-model check —
-    // whether an interior node id-code must be defined depends on the RM
-    // multiplicity of its owning attribute (master07 §Overview: "for nodes that
-    // are children of single-valued attribute, a term definition is optional");
-    // it runs in [`super::rm`]. Phase-1 checks only the always-local root
-    // concept code.
+    // NOTE: the per-node id-code definedness half is a reference-model check
+    // (master07 §Overview: a term definition is optional for children of a
+    // single-valued attribute), so it runs in [`super::rm`].
     let root_id = complex_node_id(v.definition);
     if !root_id.is_empty()
         && (is_id_code(root_id) || is_at_code(root_id))
@@ -81,13 +78,11 @@ pub(super) fn check_terminology(
     // VATDF (ADL 1.4, node-id half): in ADL 1.4 EVERY at-code used as a node
     // identifier in the definition must be defined in the ontology's
     // term_definitions (ADL1.4 master08 §Validity Rules VATDF; AOM1.4
-    // `ARCHETYPE.node_ids_valid`). ADL2 defers the interior-node-id definedness
-    // to the RM phase (the master07 single-valued-attribute optionality above),
-    // but the 1.4 formalism has no such optionality for a code that IS present —
-    // "each archetype term used as a node identifier … must be defined". The
-    // 1.4 phase-1 subset runs phase 1 only, so this closes VATDF's interior half
-    // for a 1.4 upload (`used ⇒ defined`; a non-specialised 1.4 archetype is its
-    // own flat form).
+    // `ARCHETYPE.node_ids_valid`). ADL2 defers interior-node-id definedness to
+    // the RM phase, but the 1.4 formalism has no such optionality for a code
+    // that IS present — "each archetype term used as a node identifier … must
+    // be defined". A non-specialised 1.4 archetype is its own flat form, so the
+    // phase-1 subset closes VATDF's interior half for a 1.4 upload.
     if dialect == Dialect::Adl14 && !v.is_specialised() {
         for code in &usage.node_codes {
             if is_at_code(code) && !defined.contains(code.as_str()) {

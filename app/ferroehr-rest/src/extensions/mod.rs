@@ -33,7 +33,9 @@
 //! component and lives at [`crate::system_log`].
 
 pub mod access;
+#[cfg(feature = "events")]
 pub mod event_subscription;
+#[cfg(feature = "fhir")]
 pub mod fhir;
 pub mod health;
 pub mod management;
@@ -42,34 +44,10 @@ pub mod tenant_routes;
 pub mod terminology;
 
 // The **single spec-version provenance source** every server *identity*
-// surface reads, so the openEHR pins are stated once and cannot drift between
-// endpoints.
-//
-// No openEHR spec governs an endpoint that reports the server's own spec/build
-// provenance — this is our own operational surface. What such endpoints
-// *report* must nonetheless be one fact: management `/info`
-// ([`management::info`]), the System Options manifest (`OPTIONS /`,
-// `crate::api::system::options`), and `/status` (`crate::overview::status`)
-// must all quote the same versions. Before this consolidation the pins were
-// copied into all three; they now read the constants below.
-//
-// The ITS-REST identity is the released `Release-1.1.0` (19-Jul-2026): the
-// server implements the contract generated (`emit-rest`) from the vendored
-// `-codegen` OAS pinned in `crates/openehr-its/vendor/rest-oas/PROVENANCE.md`
-// — openEHR `specifications-ITS-REST` tag `Release-1.1.0`
-// @ `24058992d5fa96e8dfbd855d9c133f328387fc09` (byte-identical to the earlier
-// pre-release snapshot the contract was first generated against). This is the
-// same tree the codegen consumes, so the reported version equals the
-// vendored contract's identity. The ITS-REST spec *text*
-// (`docs/specs/openehr/ITS-REST/`) is vendored at the same release tag and is
-// the source of per-section citations.
-//
-// All three identity surfaces now read these constants — the former
-// per-endpoint copies are retired: management `/info` ([`management::info`]),
-// the System Options manifest (`OPTIONS /`,
-// [`crate::api::system::options::SystemOptionsConfig`], whose
-// `restapi_specs_version` / `conformance_profile` defaults quote
-// [`provenance::ITS_REST`] / [`provenance::CONFORMANCE_PROFILE`]), and
-// `/status` ([`crate::overview::status`]) all quote [`provenance::ITS_REST`]
-// for the tested-contract identity. Spec pins are `docs/VERSIONS.md` (the
-// single source of truth for the pin values themselves).
+// surface reads: management `/info` ([`management::info`]), the System Options
+// manifest (`OPTIONS /`) and `/status` all quote [`provenance::ITS_REST`], so
+// the openEHR pins are stated once and cannot drift between endpoints. No
+// openEHR spec governs an endpoint reporting the server's own spec/build
+// provenance — our own operational surface. The ITS-REST identity is the
+// released `Release-1.1.0`, the same tree the codegen consumes
+// (`crates/openehr-its/vendor/rest-oas/PROVENANCE.md`).

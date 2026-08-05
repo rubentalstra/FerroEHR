@@ -4,8 +4,11 @@
 //! This is the modern half of the dual ATNA rendering (the classic half is
 //! the DICOM PS3.15 §A.5 XML in [`super::message`]): the same resolved
 //! [`super::event::AuditEvent`] renders to one FHIR R4B (4.3.0)
-//! `AuditEvent` JSON document. The BALP profiles pin the codings this module
-//! emits (IHE BALP v1.1.4, `IHE.BasicAudit.*` StructureDefinitions):
+//! `AuditEvent` JSON document. This module decides the BALP content; the
+//! resource itself is built and serialized by
+//! [`ferroehr_ext::fhir::audit`], over the typed `fhir-model` R4B model.
+//! The BALP profiles pin the codings this module emits (IHE BALP v1.1.4,
+//! `IHE.BasicAudit.*` StructureDefinitions):
 //!
 //! - `RESTful` operations: `type` = `rest`, `subtype` = the FHIR
 //!   restful-interaction class + the concrete ITS-REST operation id.
@@ -28,12 +31,13 @@
 //! `meta.profile` claims the matching BALP profile only when the record
 //! actually satisfies it (the BALP `RESTful` profiles fix `outcome` = `0`, so
 //! failures carry no claim; the `Patient*` variants additionally require the
-//! resolved patient entity). Plain typed serde structs — no FHIR crate; the
-//! subset below is exactly what the BALP patterns need.
+//! resolved patient entity).
 
-use base64::Engine;
-use serde::{Deserialize, Serialize};
+use ferroehr_ext::fhir::audit::{
+    AuditAction, AuditAgent, AuditCoding, AuditEntityRef, AuditOutcome, AuditRecord, AuditSourceRef,
+};
 
+use crate::system_log::AuditError;
 use crate::system_log::event::{AuditEvent, EventActionCode, EventOutcome, EventType, ObjectClass};
 use crate::system_log::message::AuditContext;
 
@@ -65,255 +69,99 @@ pub const SYS_OPENEHR_ITS_REST: &str = "urn:openehr:its-rest:operation";
 /// The canonical-URL prefix of the IHE BALP profiles (v1.1.4).
 pub const BALP_PROFILE_BASE: &str = "https://profiles.ihe.net/ITI/BALP/StructureDefinition";
 
-// ── The FHIR AuditEvent subset (R4B 4.3.0) ────────────────────────────────────
-
-/// A FHIR `Coding`.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Coding {
-    /// The code system URI.
-    pub system: String,
-    /// The code.
-    pub code: String,
-    /// The display text.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub display: Option<String>,
-}
-
-impl Coding {
-    fn new(system: &str, code: &str, display: &str) -> Self {
-        Coding {
-            system: system.to_owned(),
-            code: code.to_owned(),
-            display: Some(display.to_owned()),
-        }
+/// A BALP coding with display text.
+fn coding(system: &str, code: &str, display: &str) -> AuditCoding {
+    AuditCoding {
+        system: system.to_owned(),
+        code: code.to_owned(),
+        display: Some(display.to_owned()),
     }
 }
 
-/// A FHIR `CodeableConcept` (codings only).
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct CodeableConcept {
-    /// The codings.
-    pub coding: Vec<Coding>,
-}
-
-/// A FHIR `Identifier` (value only — the identities here are plain ids).
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Identifier {
-    /// The identifier value.
-    pub value: String,
-}
-
-/// A FHIR `Reference` carried as a logical identifier (no server-local
-/// resource ids exist for the identities the audit trail records).
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Reference {
-    /// The logical identifier.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub identifier: Option<Identifier>,
-    /// The display text.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub display: Option<String>,
-}
-
-impl Reference {
-    fn identifier(value: &str) -> Self {
-        Reference {
-            identifier: Some(Identifier {
-                value: value.to_owned(),
-            }),
-            display: None,
-        }
-    }
-}
-
-/// `AuditEvent.agent.network`.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct AgentNetwork {
-    /// The network address (IP).
-    pub address: String,
-    /// The network address type: `2` = IP address (FHIR `network-type`).
-    #[serde(rename = "type")]
-    pub type_code: String,
-}
-
-/// `AuditEvent.agent`.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Agent {
-    /// The participation type of the agent.
-    #[serde(rename = "type")]
-    pub type_concept: CodeableConcept,
-    /// Who the agent is (identifier-only reference).
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub who: Option<Reference>,
-    /// Whether this agent initiated the event.
-    pub requestor: bool,
-    /// Applicable policies — the BALP OAuth minimal pattern records the
-    /// token `jti` here (`IHE.BasicAudit.OAUTHaccessTokenUse.Minimal`).
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub policy: Option<Vec<String>>,
-    /// The agent's network access point.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub network: Option<AgentNetwork>,
-}
-
-/// `AuditEvent.source`.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Source {
-    /// The logical site (the ATNA enterprise site id).
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub site: Option<String>,
-    /// The reporting node (identifier-only reference; 1..1 in every BALP
-    /// profile).
-    pub observer: Reference,
-    /// The audit source type — `4` application server
-    /// (`security-source-type`).
-    #[serde(rename = "type")]
-    pub type_codings: Vec<Coding>,
-}
-
-/// `AuditEvent.entity`.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Entity {
-    /// What the entity is (identifier-only reference).
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub what: Option<Reference>,
-    /// The entity type (`audit-entity-type`).
-    #[serde(rename = "type", skip_serializing_if = "Option::is_none")]
-    pub type_coding: Option<Coding>,
-    /// The entity role (`object-role`).
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub role: Option<Coding>,
-    /// The base64-encoded query/search expression
-    /// (`IHE.BasicAudit.Query`/`PatientQuery` `entity:query.query`, 1..1).
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub query: Option<String>,
-}
-
-/// `Resource.meta` (profile claims only).
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Meta {
-    /// The claimed profiles (canonical URLs).
-    pub profile: Vec<String>,
-}
-
-/// A FHIR R4B `AuditEvent` — the BALP subset.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FhirAuditEvent {
-    /// Always `"AuditEvent"`.
-    pub resource_type: String,
-    /// Claimed BALP profiles (present only when the record satisfies one).
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub meta: Option<Meta>,
-    /// The event family (`rest`, or the DICOM event id for non-REST events).
-    #[serde(rename = "type")]
-    pub type_coding: Coding,
-    /// The concrete event kind(s): the restful-interaction class and/or the
-    /// ITS-REST operation id / DCM login code.
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub subtype: Vec<Coding>,
-    /// The DICOM-style action code (`C`/`R`/`U`/`D`/`E`).
-    pub action: String,
-    /// The event time (FHIR `instant`).
-    pub recorded: String,
-    /// The outcome indicator (`0`/`4`/`8`/`12`, as in DICOM).
-    pub outcome: String,
-    /// Human description of a failure outcome.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub outcome_desc: Option<String>,
-    /// The participating agents (client, server, optional token agent).
-    pub agent: Vec<Agent>,
-    /// The reporting source.
-    pub source: Source,
-    /// The touched entities (patient / data object / query).
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub entity: Vec<Entity>,
-}
-
-/// Render a resolved [`AuditEvent`] to a FHIR R4B `AuditEvent` following the
-/// IHE BALP patterns, with the server identity from the [`AuditContext`] and
-/// the optionally-resolved patient subject id.
-#[must_use]
-pub fn to_fhir(event: &AuditEvent, ctx: &AuditContext, subject: Option<&str>) -> FhirAuditEvent {
+/// Renders a resolved [`AuditEvent`] as a FHIR R4B `AuditEvent` document.
+///
+/// The content follows the IHE BALP patterns, with the server identity from
+/// the [`AuditContext`] and the optionally-resolved patient subject id.
+///
+/// # Errors
+///
+/// [`AuditError::Render`] when the typed FHIR resource cannot be built or
+/// serialized (an unrepresentable instant, or a serializer fault).
+pub fn to_fhir(
+    event: &AuditEvent,
+    ctx: &AuditContext,
+    subject: Option<&str>,
+) -> Result<serde_json::Value, AuditError> {
     let missing = ctx.value_if_missing.as_str();
 
-    let (type_coding, interaction) = type_and_interaction(event);
+    let (event_type, interaction) = type_and_interaction(event);
 
-    let mut subtype = Vec::new();
+    let mut subtypes = Vec::new();
     if let Some(i) = interaction {
-        subtype.push(i);
+        subtypes.push(i);
     }
     match event.event_type {
-        Some(EventType::Login) => subtype.push(Coding::new(SYS_DCM, "110122", "Login")),
-        Some(EventType::Logout) => subtype.push(Coding::new(SYS_DCM, "110123", "Logout")),
+        Some(EventType::Login) => subtypes.push(coding(SYS_DCM, "110122", "Login")),
+        Some(EventType::Logout) => subtypes.push(coding(SYS_DCM, "110123", "Logout")),
         Some(EventType::RestOperation(op)) => {
-            subtype.push(Coding::new(SYS_OPENEHR_ITS_REST, op, op));
+            subtypes.push(coding(SYS_OPENEHR_ITS_REST, op, op));
         }
         None => {}
     }
 
-    let agent = build_agents(event, ctx, missing);
-    let entity = build_entities(event, subject, missing);
-    let profile = claimed_profiles(event, subject);
-
-    FhirAuditEvent {
-        resource_type: "AuditEvent".to_owned(),
-        meta: (!profile.is_empty()).then_some(Meta { profile }),
-        type_coding,
-        subtype,
-        action: action_char(event.action).to_string(),
-        recorded: event.timestamp.to_string(),
-        outcome: outcome_code(event.outcome).to_owned(),
+    let record = AuditRecord {
+        profiles: claimed_profiles(event, subject),
+        event_type,
+        subtypes,
+        action: action_code(event.action),
+        recorded: event.timestamp,
+        outcome: outcome_code(event.outcome),
         outcome_desc: match event.outcome {
             EventOutcome::Success => None,
             _ => Some("Operation failed".to_owned()),
         },
-        agent,
-        source: Source {
+        agents: build_agents(event, ctx, missing),
+        source: AuditSourceRef {
             site: nonempty_opt(&ctx.enterprise_site_id),
-            observer: Reference::identifier(&nonempty(&ctx.source_id, missing)),
-            type_codings: vec![Coding::new(
-                SYS_SECURITY_SOURCE_TYPE,
-                "4",
-                "Application Server",
-            )],
+            observer: nonempty(&ctx.source_id, missing),
+            types: vec![coding(SYS_SECURITY_SOURCE_TYPE, "4", "Application Server")],
         },
-        entity,
-    }
+        entities: build_entities(event, subject, missing),
+    };
+
+    ferroehr_ext::fhir::audit::render(&record).map_err(|e| AuditError::Render(e.to_string()))
 }
 
 /// The `type` coding + the restful-interaction `subtype` for the event.
 /// REST-dispatched resource operations are `rest`; the service-level events
 /// keep their DICOM event id as the `type` (extract export/import, user
 /// authentication) — the BALP `RESTful` patterns do not cover them.
-fn type_and_interaction(event: &AuditEvent) -> (Coding, Option<Coding>) {
+fn type_and_interaction(event: &AuditEvent) -> (AuditCoding, Option<AuditCoding>) {
     match event.object {
-        ObjectClass::Authentication => {
-            (Coding::new(SYS_DCM, "110114", "User Authentication"), None)
-        }
+        ObjectClass::Authentication => (coding(SYS_DCM, "110114", "User Authentication"), None),
         ObjectClass::Extract => match event.action {
             EventActionCode::Create | EventActionCode::Update => {
-                (Coding::new(SYS_DCM, "110107", "Import"), None)
+                (coding(SYS_DCM, "110107", "Import"), None)
             }
-            _ => (Coding::new(SYS_DCM, "110106", "Export"), None),
+            _ => (coding(SYS_DCM, "110106", "Export"), None),
         },
         ObjectClass::Query => (
-            Coding::new(SYS_AUDIT_EVENT_TYPE, "rest", "RESTful Operation"),
-            Some(Coding::new(
+            coding(SYS_AUDIT_EVENT_TYPE, "rest", "RESTful Operation"),
+            Some(coding(
                 SYS_RESTFUL_INTERACTION,
                 "search-type",
                 "search-type",
             )),
         ),
         _ => (
-            Coding::new(SYS_AUDIT_EVENT_TYPE, "rest", "RESTful Operation"),
+            coding(SYS_AUDIT_EVENT_TYPE, "rest", "RESTful Operation"),
             Some(match event.action {
-                EventActionCode::Create => Coding::new(SYS_RESTFUL_INTERACTION, "create", "create"),
-                EventActionCode::Read => Coding::new(SYS_RESTFUL_INTERACTION, "read", "read"),
-                EventActionCode::Update => Coding::new(SYS_RESTFUL_INTERACTION, "update", "update"),
-                EventActionCode::Delete => Coding::new(SYS_RESTFUL_INTERACTION, "delete", "delete"),
+                EventActionCode::Create => coding(SYS_RESTFUL_INTERACTION, "create", "create"),
+                EventActionCode::Read => coding(SYS_RESTFUL_INTERACTION, "read", "read"),
+                EventActionCode::Update => coding(SYS_RESTFUL_INTERACTION, "update", "update"),
+                EventActionCode::Delete => coding(SYS_RESTFUL_INTERACTION, "delete", "delete"),
                 EventActionCode::Execute => {
-                    Coding::new(SYS_RESTFUL_INTERACTION, "operation", "operation")
+                    coding(SYS_RESTFUL_INTERACTION, "operation", "operation")
                 }
             }),
         ),
@@ -326,17 +174,17 @@ fn type_and_interaction(event: &AuditEvent) -> (Coding, Option<Coding>) {
 /// source of the data (DCM 110153 "Source Role ID") and the client the
 /// destination (110152); on every other action the initiating client is the
 /// source (`IHE.BasicAudit.PatientRead` vs `PatientQuery` agent slices).
-fn build_agents(event: &AuditEvent, ctx: &AuditContext, missing: &str) -> Vec<Agent> {
+fn build_agents(event: &AuditEvent, ctx: &AuditContext, missing: &str) -> Vec<AuditAgent> {
     let read = matches!(event.action, EventActionCode::Read);
     let (client_role, server_role) = if read {
         (
-            Coding::new(SYS_DCM, "110152", "Destination Role ID"),
-            Coding::new(SYS_DCM, "110153", "Source Role ID"),
+            coding(SYS_DCM, "110152", "Destination Role ID"),
+            coding(SYS_DCM, "110153", "Source Role ID"),
         )
     } else {
         (
-            Coding::new(SYS_DCM, "110153", "Source Role ID"),
-            Coding::new(SYS_DCM, "110152", "Destination Role ID"),
+            coding(SYS_DCM, "110153", "Source Role ID"),
+            coding(SYS_DCM, "110152", "Destination Role ID"),
         )
     };
 
@@ -349,48 +197,36 @@ fn build_agents(event: &AuditEvent, ctx: &AuditContext, missing: &str) -> Vec<Ag
     let mut agents = vec![
         // The requesting client, carrying the authenticated user identity
         // (the FHIR twin of the DICOM source ActiveParticipant).
-        Agent {
-            type_concept: CodeableConcept {
-                coding: vec![client_role],
-            },
-            who: Some(Reference::identifier(&user)),
+        AuditAgent {
+            role: client_role,
+            who: Some(user),
             requestor: true,
-            policy: None,
-            network: Some(AgentNetwork {
-                address: client_ip,
-                type_code: "2".to_owned(),
-            }),
+            policy: Vec::new(),
+            network_address: Some(client_ip),
         },
         // This server.
-        Agent {
-            type_concept: CodeableConcept {
-                coding: vec![server_role],
-            },
-            who: Some(Reference::identifier(&nonempty(&ctx.source_id, missing))),
+        AuditAgent {
+            role: server_role,
+            who: Some(nonempty(&ctx.source_id, missing)),
             requestor: false,
-            policy: None,
-            network: Some(AgentNetwork {
-                address: nonempty(&ctx.server_ip, missing),
-                type_code: "2".to_owned(),
-            }),
+            policy: Vec::new(),
+            network_address: Some(nonempty(&ctx.server_ip, missing)),
         },
     ];
 
     if let Some(jti) = event.token_id.as_deref().filter(|s| !s.is_empty()) {
         // IHE.BasicAudit.OAUTHaccessTokenUse.Minimal: the token identity is
         // ONLY the jti, carried in agent.policy — never the token contents.
-        agents.push(Agent {
-            type_concept: CodeableConcept {
-                coding: vec![Coding::new(
-                    SYS_BALP_USER_AGENT_TYPES,
-                    "UserOauthAgent",
-                    "User OAuth Agent participant",
-                )],
-            },
+        agents.push(AuditAgent {
+            role: coding(
+                SYS_BALP_USER_AGENT_TYPES,
+                "UserOauthAgent",
+                "User OAuth Agent participant",
+            ),
             who: None,
             requestor: true,
-            policy: Some(vec![jti.to_owned()]),
-            network: None,
+            policy: vec![jti.to_owned()],
+            network_address: None,
         });
     }
 
@@ -399,7 +235,7 @@ fn build_agents(event: &AuditEvent, ctx: &AuditContext, missing: &str) -> Vec<Ag
 
 /// The entity list: the patient (when resolved), the touched data object,
 /// and/or the query expression.
-fn build_entities(event: &AuditEvent, subject: Option<&str>, missing: &str) -> Vec<Entity> {
+fn build_entities(event: &AuditEvent, subject: Option<&str>, missing: &str) -> Vec<AuditEntityRef> {
     use crate::system_log::codes::AtnaObject;
 
     let mut entities = Vec::new();
@@ -412,11 +248,11 @@ fn build_entities(event: &AuditEvent, subject: Option<&str>, missing: &str) -> V
             .object_id
             .clone()
             .unwrap_or_else(|| missing.to_owned());
-        entities.push(Entity {
+        entities.push(AuditEntityRef {
             what: None,
-            type_coding: Some(Coding::new(SYS_AUDIT_ENTITY_TYPE, "2", "System Object")),
-            role: Some(Coding::new(SYS_OBJECT_ROLE, "24", "Query")),
-            query: Some(base64::engine::general_purpose::STANDARD.encode(expression.as_bytes())),
+            entity_type: Some(coding(SYS_AUDIT_ENTITY_TYPE, "2", "System Object")),
+            role: Some(coding(SYS_OBJECT_ROLE, "24", "Query")),
+            query: Some(expression),
         });
         return entities;
     }
@@ -424,18 +260,18 @@ fn build_entities(event: &AuditEvent, subject: Option<&str>, missing: &str) -> V
     if event.object.is_patient_centric()
         && let Some(subject) = subject
     {
-        entities.push(Entity {
-            what: Some(Reference::identifier(subject)),
-            type_coding: Some(Coding::new(SYS_AUDIT_ENTITY_TYPE, "1", "Person")),
-            role: Some(Coding::new(SYS_OBJECT_ROLE, "1", "Patient")),
+        entities.push(AuditEntityRef {
+            what: Some(subject.to_owned()),
+            entity_type: Some(coding(SYS_AUDIT_ENTITY_TYPE, "1", "Person")),
+            role: Some(coding(SYS_OBJECT_ROLE, "1", "Patient")),
             query: None,
         });
     }
 
     if let Some(id) = event.object_id.as_deref().filter(|s| !s.is_empty()) {
-        entities.push(Entity {
-            what: Some(Reference::identifier(id)),
-            type_coding: Some(Coding::new(SYS_AUDIT_ENTITY_TYPE, "2", "System Object")),
+        entities.push(AuditEntityRef {
+            what: Some(id.to_owned()),
+            entity_type: Some(coding(SYS_AUDIT_ENTITY_TYPE, "2", "System Object")),
             role: None,
             query: None,
         });
@@ -474,22 +310,24 @@ fn claimed_profiles(event: &AuditEvent, subject: Option<&str>) -> Vec<String> {
     profiles
 }
 
-const fn action_char(action: EventActionCode) -> char {
+/// The FHIR action code for an audited action.
+const fn action_code(action: EventActionCode) -> AuditAction {
     match action {
-        EventActionCode::Create => 'C',
-        EventActionCode::Read => 'R',
-        EventActionCode::Update => 'U',
-        EventActionCode::Delete => 'D',
-        EventActionCode::Execute => 'E',
+        EventActionCode::Create => AuditAction::Create,
+        EventActionCode::Read => AuditAction::Read,
+        EventActionCode::Update => AuditAction::Update,
+        EventActionCode::Delete => AuditAction::Delete,
+        EventActionCode::Execute => AuditAction::Execute,
     }
 }
 
-const fn outcome_code(outcome: EventOutcome) -> &'static str {
+/// The FHIR outcome indicator for an audited outcome.
+const fn outcome_code(outcome: EventOutcome) -> AuditOutcome {
     match outcome {
-        EventOutcome::Success => "0",
-        EventOutcome::MinorFailure => "4",
-        EventOutcome::SeriousFailure => "8",
-        EventOutcome::MajorFailure => "12",
+        EventOutcome::Success => AuditOutcome::Success,
+        EventOutcome::MinorFailure => AuditOutcome::MinorFailure,
+        EventOutcome::SeriousFailure => AuditOutcome::SeriousFailure,
+        EventOutcome::MajorFailure => AuditOutcome::MajorFailure,
     }
 }
 
@@ -508,6 +346,7 @@ fn nonempty_opt(value: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use base64::Engine;
     use jiff::Timestamp;
 
     fn ctx() -> AuditContext {
@@ -528,7 +367,7 @@ mod tests {
     }
 
     fn json(event: &AuditEvent, subject: Option<&str>) -> serde_json::Value {
-        serde_json::to_value(to_fhir(event, &ctx(), subject)).expect("serialize")
+        to_fhir(event, &ctx(), subject).expect("render")
     }
 
     #[test]
@@ -699,17 +538,19 @@ mod tests {
     }
 
     #[test]
-    fn round_trips_through_serde() {
+    fn subsecond_timestamps_keep_their_precision() {
+        // The rendered `recorded` is the record's own instant, trailing
+        // zeros trimmed — the FHIR `instant` form of the stored timestamp.
         let mut e = event(
             EventActionCode::Read,
             ObjectClass::Composition,
             EventOutcome::Success,
         );
-        e.object_id = Some("8fa1::ferroehr::1".to_owned());
-        e.token_id = Some("jti-1".to_owned());
-        let rendered = to_fhir(&e, &ctx(), Some("patient-42"));
-        let text = serde_json::to_string(&rendered).expect("serialize");
-        let parsed: FhirAuditEvent = serde_json::from_str(&text).expect("parse");
-        assert_eq!(parsed, rendered);
+        e.timestamp = "2026-07-06T12:00:00.123456789Z"
+            .parse::<Timestamp>()
+            .unwrap();
+        assert_eq!(json(&e, None)["recorded"], "2026-07-06T12:00:00.123456789Z");
+        e.timestamp = "2026-07-06T12:00:00.5Z".parse::<Timestamp>().unwrap();
+        assert_eq!(json(&e, None)["recorded"], "2026-07-06T12:00:00.5Z");
     }
 }

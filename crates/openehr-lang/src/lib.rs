@@ -34,6 +34,7 @@ pub const SPEC_VERSION: &str = "1.0.0";
 
 // hand-written modules (spec behaviour), auto-declared:
 pub mod bel;
+pub mod el;
 pub mod escape;
 pub mod lexer;
 pub mod odin;

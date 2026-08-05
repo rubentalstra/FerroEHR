@@ -124,12 +124,9 @@ impl FerroEhrService {
         // `ehr_create_fail_duplicate_id`. The EHR is created locally, so its
         // immutable `system_id` is ours (master06 §Distributed Versioning — the
         // committing system is the local one).
-        // NOTE (clone-target EHR-row creation; no openEHR spec governs the
-        // storage SQL — our own design): the row insert is inlined here as the
-        // master06 §Copying Case-1 clone step rather than routed through the EHR
-        // service's `create_ehr`, because a clone must reuse the source EHR id
-        // (or a caller-fixed id) and skip the fresh-`EHR_STATUS` creation that
-        // `create_ehr` performs — the status arrives inside the extract.
+        // NOTE: no openEHR spec governs the storage SQL — our own design: the
+        // clone-target EHR row is inserted here (master06 §Copying Case-1)
+        // rather than via `create_ehr`, which would mint a fresh EHR_STATUS.
         let inserted =
             sqlx::query("INSERT INTO ehr (id, system_id) VALUES ($1, $2) ON CONFLICT DO NOTHING")
                 .bind(ehr_id)
@@ -353,11 +350,9 @@ fn parse_import_containers(
         {
             match item.get("_type").and_then(Value::as_str) {
                 Some("OPENEHR_CONTENT_ITEM") => {}
-                // NOTE (keep — `master06-generic_extract_package.adoc`
-                // `GENERIC_CONTENT_ITEM`): ISO 13606 / CDA generic content is
-                // out of this CDR's openEHR-only import scope; a typed reject,
-                // tied to the deferred integration-IM behaviour (BASE
-                // arch-overview `master14-integration.adoc`).
+                // NOTE: ISO 13606 / CDA generic content
+                // (`master06-generic_extract_package.adoc`
+                // `GENERIC_CONTENT_ITEM`) is outside this CDR's import scope.
                 Some("GENERIC_CONTENT_ITEM") => {
                     return Err(SmError::precondition(
                         "generic (ISO 13606 / CDA) content import is not supported",
@@ -538,22 +533,13 @@ fn parse_wrapped_commit_audit(ov: &Value) -> Result<Value, SmError> {
 /// `X_VERSIONED_OBJECT.versions: List<ORIGINAL_VERSION>`).
 fn parse_imported_version(ov: &Value) -> Result<(VoId, ImportVersion), SmError> {
     // A member typed anything other than ORIGINAL_VERSION (e.g. an
-    // already-wrapped IMPORTED_VERSION) is invalid on TWO independent grounds,
-    // and there is therefore no such thing as a nested wrapper here:
-    //   * `X_VERSIONED_OBJECT.versions` is declared
-    //     `List<ORIGINAL_VERSION<T>>` (RM ehr_extract
-    //     `UML/classes/org.openehr.rm.ehr_extract.x_versioned_object.adoc`
-    //     §Attributes), so an IMPORTED_VERSION is not an admissible member;
-    //   * master06 §Copying makes the ORIGINAL_VERSION the unit of copying
-    //     ("In openEHR, the smallest unit of copying of content between
-    //     systems that satisfies traceability requirements is the
-    //     `ORIGINAL_VERSION`") and has each receiving system create its OWN
-    //     wrapper — "Original versions can be copied any number of times; in
-    //     each system into which they are imported, an `IMPORTED_VERSION` is
-    //     created as a wrapper" (§Committal and Audits). A re-export of an
-    //     imported version therefore ships the WRAPPED original, not our
-    //     wrapper ([`crate::versioning::wire::original_version`]), and a
-    //     re-import wraps that original afresh. Wrappers never nest.
+    // already-wrapped IMPORTED_VERSION) is invalid on TWO independent grounds:
+    // `X_VERSIONED_OBJECT.versions` is declared `List<ORIGINAL_VERSION<T>>` (RM
+    // ehr_extract `x_versioned_object.adoc` §Attributes), and master06 §Copying
+    // makes the ORIGINAL_VERSION the unit of copying, with each receiving system
+    // creating its OWN wrapper (§Committal and Audits). So a re-export ships the
+    // WRAPPED original, a re-import wraps that original afresh, and wrappers
+    // never nest.
     match ov.get("_type").and_then(Value::as_str) {
         None | Some("ORIGINAL_VERSION") => {}
         Some(other) => {

@@ -4,12 +4,19 @@
 # where the WT input type is DECIMAL) violates the template's data-type
 # constraint and is rejected. Simplified Formats is OPTIONS, so this never gates
 # CORE/STANDARD.
+#
+# WHICH BRANCH: no released text assigns the reject a status — register
+# AMB-208 adjudicates 422 for the template-MEDIATED half, since master04
+# §Validation states the check against the Operational Template and
+# `responses/422.yaml` names exactly that trigger ("the underlying template
+# … is not validating the supplied resource").
 id: SF-FLAT-reject_datatype_mismatch
 kind: functional
 component: SIMPLIFIED_FORMATS
 sm_operation: I_EHR_COMPOSITION.create_composition
 capabilities: [SimplifiedFormats]
 profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
+ambiguities: [AMB-208]
 test_purpose: >-
   A FLAT commit whose DV_QUANTITY |magnitude carries a non-numeric string is
   rejected: the value does not match the DECIMAL data type from the OPT.
@@ -17,6 +24,8 @@ description: "FLAT commit with a datatype mismatch on |magnitude is rejected"
 spec_refs:
   - "ITS-REST simplified_formats master04 §Validation"
   - "ITS-REST simplified_formats master05 §DV_QUANTITY"
+  - "ITS-REST OAS responses/422.yaml"
+  - "ITS-REST overview Resources §Simplified Formats"
   - "ITS-REST overview Requests_and_responses §HTTP status codes"
   - "RM data_types §DV_QUANTITY"
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }   # Simplified-Format media types on the resource endpoints arrived in Release-1.1.0 — ITS-REST overview Amendment_record.md §Release-1.1.0 (SPECITS-61; SPECITS-84 for CONTRIBUTION)

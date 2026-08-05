@@ -96,18 +96,9 @@ fn missing_template_id() -> RestError {
 /// — well-formed-but-semantically-invalid client content → `422`
 /// (`Requests_and_responses.md §HTTP status codes`, row `422`).
 fn flat_input_err(e: &openehr_its::flat::error::FlatError) -> RestError {
-    // The FLAT input split (owner adjudication 2026-08-03): a
-    // TEMPLATE-INDEPENDENT format violation — a key breaking master04's FLAT
-    // syntax rules, a `ctx/` key outside the master06 vocabulary, or the
-    // master04-forbidden `|other` + `|code`/`|value`/`|terminology`
-    // combination — means the document is not readable AS FLAT, the 400 row
-    // of ITS-REST overview `Requests_and_responses.md` §HTTP status codes
-    // ("malformed request syntax … could not be parsed"). Everything
-    // TEMPLATE- or RM-MEDIATED (a path the Web Template does not declare, a
-    // suffix undefined for the resolved RM type, a closed value set, a
-    // missing mandatory) is the composition endpoints' own 422 sentence —
-    // `responses/422_COMPOSITION.yaml`: "the underlying template is not
-    // known or is not validating the supplied COMPOSITION".
+    // NOTE: TEMPLATE-INDEPENDENT FLAT violations are the 400 row, everything
+    // template-/RM-mediated the 422 row ("could be converted to a resource",
+    // `responses/{400,422}.yaml`) — no released text splits the two.
     use openehr_its::flat::error::FlatError;
     let syntactic = matches!(
         e,
@@ -149,7 +140,7 @@ pub(crate) async fn composition_from_flat(
         .web_template(&template_id)
         .await
         .map_err(RestError::from)?;
-    openehr_its::flat::convert::composition_from_flat(&flat, &wt, &now())
+    openehr_its::flat::convert::submitted_composition_from_flat(&flat, &wt, &now())
         .map_err(|e| flat_input_err(&e))
 }
 
@@ -170,7 +161,7 @@ pub(crate) async fn composition_from_structured(
         .web_template(&template_id)
         .await
         .map_err(RestError::from)?;
-    openehr_its::flat::convert::composition_from_structured(&structured, &wt, &now())
+    openehr_its::flat::convert::submitted_composition_from_structured(&structured, &wt, &now())
         .map_err(|e| flat_input_err(&e))
 }
 
@@ -246,16 +237,9 @@ pub(crate) fn composition_structured_response_with(
 
 // ── CONTRIBUTION: envelope canonical, inner payload simplified ─────────────
 
-// NOTE (`ITS-REST/docs/simplified_formats/master05-rm_mapping.adoc`
-// §scope): the mapping chapter covers COMPOSITION and every class reachable
-// from it, and nothing else. `contribution_create.yaml` §Simplified Formats
-// permits `versions[i].data` to be a COMPOSITION, EHR_STATUS, or FOLDER in
-// simplified form, but master05 defines no mapping for EHR_STATUS/FOLDER
-// (their field identifiers would come from an OPT they do not have, master02
-// §Relationship to Other Specifications). Decision: only COMPOSITION inner
-// payloads are simplifiable — a non-COMPOSITION inner payload is rejected
-// (create: the conversion cannot produce it → `422`; get: `406` naming
-// COMPOSITION).
+// NOTE: master05-rm_mapping §scope maps only COMPOSITION (master02
+// §Relationship to Other Specifications), so only COMPOSITION inner payloads
+// are simplifiable — others refuse (create `422`; get `406` naming COMPOSITION).
 
 /// Convert a simplified CONTRIBUTION request into a canonical envelope: the
 /// envelope stays canonical JSON; each present `versions[i].data` is rebuilt
@@ -296,10 +280,10 @@ pub(crate) async fn contribution_from_simplified(
                         "a FLAT CONTRIBUTION versions[].data must be a JSON object".to_owned(),
                     ))
                 })?;
-                openehr_its::flat::convert::composition_from_flat(map, &wt, &now)
+                openehr_its::flat::convert::submitted_composition_from_flat(map, &wt, &now)
             }
             WireFormat::Structured => {
-                openehr_its::flat::convert::composition_from_structured(data, &wt, &now)
+                openehr_its::flat::convert::submitted_composition_from_structured(data, &wt, &now)
             }
             _ => {
                 return Err(internal(

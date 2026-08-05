@@ -152,14 +152,12 @@ impl FerroEhrService {
         party_invariants(kind.rm_type(), &body, false)?;
 
         // The caller's UPDATE_VERSION attributes merge with the server rules —
-        // BOTH halves the committal headers carry: the `UPDATE_AUDIT`
-        // attributes and the VERSION `lifecycle_state` ("whatever is provided
-        // it MUST be merged with the default VERSION and
-        // `VERSION.audit_details` attributes on commit runtime", ITS-REST
-        // overview `Requests_and_responses.md` §"openehr-version and
-        // openehr-audit-details" — the sentence names the VERSION attributes
-        // first). The wire party seam passes them when the request carried
-        // committal headers.
+        // BOTH halves the committal headers carry: the `UPDATE_AUDIT` attributes
+        // and the VERSION `lifecycle_state` ("whatever is provided it MUST be
+        // merged with the default VERSION and `VERSION.audit_details` attributes
+        // on commit runtime", ITS-REST overview `Requests_and_responses.md`
+        // §"openehr-version and openehr-audit-details" — the sentence names the
+        // VERSION attributes first).
         let audit = self.demographic_audit(
             committal.map(|c| &c.audit),
             change_type::CREATION,
@@ -168,7 +166,10 @@ impl FerroEhrService {
         let ctx = CommitEnv::signing_ctx(self);
         // Keep the served bytes for the in-memory representation, unless media
         // externalization is on (then the fresh read reflects the offloaded form).
+        #[cfg(feature = "multimedia")]
         let repr_body = self.multimedia.is_none().then(|| body.clone());
+        #[cfg(not(feature = "multimedia"))]
+        let repr_body = Some(body.clone());
         let mut tx = self.pool.begin().await?;
         let committed = create(
             &mut tx,
@@ -292,7 +293,10 @@ impl FerroEhrService {
             "PARTY update",
         )?;
         let ctx = CommitEnv::signing_ctx(self);
+        #[cfg(feature = "multimedia")]
         let repr_body = self.multimedia.is_none().then(|| body.clone());
+        #[cfg(not(feature = "multimedia"))]
+        let repr_body = Some(body.clone());
         let mut tx = self.pool.begin().await?;
         let committed = update(
             &mut tx,

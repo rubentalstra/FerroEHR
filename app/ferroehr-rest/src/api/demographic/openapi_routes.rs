@@ -6249,36 +6249,16 @@ pub(crate) async fn contribution_get(
     guarded_dispatch(state, "contribution_get", parts, super::dispatch::dispatch).await
 }
 // ── ITEM_TAG sub-resources ───────────────────────────────────────────────────
-//
 // Sixteen released operations: five byte-identical typed quintets
-// (`{person,agent,group,organisation,role}_tags_{get,update,delete}.yaml`,
-// differing only in the RM type name and in their own
-// `responses/200_<RM>_ItemTagList_{retrieved,updated}.yaml` +
-// `schemas/demographic/ItemTagOf<Kind>.yaml`) plus the space-wide
-// `demographic_tags_get.yaml`. The fifteen typed ones mirror the EHR-side tag
-// family minus `ehr_id`; the space-wide one is a genuine delta (see it).
-//
-// Every tag route is canonical-JSON only. The canonical XML ITS defines no
-// ITEM_TAG type at all, so the released `Accept_canonical` enum's
-// `application/xml` member is stalled shape here: an XML `Accept` is `406`, and
-// an XML `Content-Type` on the five PUTs is `415` (`Resources.md` §"XML
-// Format"/§"JSON Format"). The five DELETEs declare no `Accept` and answer
-// `204` with no body, so they negotiate nothing and carry no `406`.
-//
-// Tags are not change-controlled: none of the sixteen commits a CONTRIBUTION,
-// mints a version, takes an `If-Match`, or serves an `ETag`, `Last-Modified` or
-// `Location`. The only response header on the whole family is
-// `Preference-Applied`, on the five PUTs.
-//
-// `target` is the bare RM `UID_BASED_ID` (`item_tag.adoc`: `target:
-// UID_BASED_ID`, "which may be a `VERSIONED_OBJECT<T>` or a `VERSION<T>`") — a
-// `HIER_OBJECT_ID` for a container target, an `OBJECT_VERSION_ID` for a
-// VERSION target; the RELEASED RM wins the real conflict with the released OAS
-// `ItemTag`/`UObjectRefOfUidBasedId` envelope. `owner_id` follows the five
-// released `ItemTagOf*` examples' unanimous `{namespace: local, type: SYSTEM}`
-// shape carrying the server's system identifier — no demographic RM class
-// declares a `tags` containment, so nothing released fixes the owner of an
-// EHR-less tag; the position is register-documented (AMB-137).
+// (`{person,agent,group,organisation,role}_tags_{get,update,delete}.yaml`) plus
+// the space-wide `demographic_tags_get.yaml`. Canonical-JSON only — the
+// canonical XML ITS defines no ITEM_TAG type (`Resources.md` §"XML Format"), so
+// an XML `Accept` is `406` and an XML `Content-Type` on the five PUTs `415`.
+// Tags are not change-controlled: no CONTRIBUTION, version, `If-Match`, `ETag`
+// or `Location`; the only response header is `Preference-Applied` on the PUTs.
+// NOTE: `target` is the bare RM `UID_BASED_ID` (`item_tag.adoc`), which wins
+// over the released OAS `UObjectRefOfUidBasedId` envelope; no released text
+// fixes an EHR-less tag's `owner_id`, so it follows the `ItemTagOf*` examples.
 
 /// List `ITEM_TAG`s across the whole Demographic space
 /// (`GET /demographic/tags`).
@@ -6292,7 +6272,7 @@ pub(crate) async fn contribution_get(
 /// released operation declares no scoping parameter, no `offset`/`fetch`, no
 /// ordering and no limit, and no released sentence bounds who may read the
 /// space — it is served whole under the deployment's authorization layer, a
-/// position register-documented in the conformance catalogue (distinct from the
+/// position adjudicated (distinct from the
 /// filter semantics, which are their own entry).
 #[utoipa::path(
     get, path = "/demographic/tags", tag = "ITEM_TAG",
@@ -6311,14 +6291,14 @@ pub(crate) async fn contribution_get(
                         (`demographic_tags_get.yaml`). None of exactness, case \
                         sensitivity or the combination rule is fixed by the \
                         released text, so those semantics are OURS, \
-                        register-documented in the conformance catalogue. The \
+                        adjudicated. The \
                         parameter is SCALAR: the released description says the \
                         list \"can be filtered by the given one or more \
                         `tag_key`, `tag_value`, `tag_target_path` query \
                         parameters\" while each released parameter schema is a \
                         plain `type: string` — the plural reads as one or more \
                         OF THE THREE parameters (the mismatch is a \
-                        released-text defect, register-documented), and a \
+                        released-text defect, adjudicated), and a \
                         repeated parameter has no defined meaning.",
          example = "flag"),
         ("tag_value" = Option<String>, Query,
@@ -6367,8 +6347,7 @@ pub(crate) async fn contribution_get(
                                          EHR-scoped twin onto a route that has \
                                          no EHR at all; it is read as the \
                                          Demographic space and the defect is \
-                                         register-documented in the \
-                                         conformance catalogue. A no-match \
+                                         adjudicated. A no-match \
                                          result is `200 []`, never `404`. \
                                          Every row carries the SERVER-ASSIGNED \
                                          `target` and `owner_id`; neither is \
@@ -6390,15 +6369,14 @@ pub(crate) async fn contribution_get(
                                          examples show `{namespace: local, \
                                          type: SYSTEM}` instead, which nothing \
                                          requires. The position is \
-                                         register-documented in the \
-                                         conformance catalogue. `target_path` \
+                                         adjudicated. `target_path` \
                                          is present only on tags that carry \
                                          one — it is 0..1 in the RM — and the \
                                          empty string normalizes to ABSENT, so \
                                          a stored tag never echoes the \
                                          `target_path: \"\"` the released \
                                          `ItemTagOf*` examples all show; that \
-                                         reconciliation is register-documented \
+                                         reconciliation is adjudicated \
                                          too. The released operation reuses \
                                          `responses/200_PERSON_ItemTagList_retrieved.yaml` \
                                          (items typed \
@@ -6571,15 +6549,14 @@ pub(crate) async fn demographic_tags_get(
                                          examples show `{namespace: local, \
                                          type: SYSTEM}` instead, which nothing \
                                          requires. The position is \
-                                         register-documented in the \
-                                         conformance catalogue. `target_path` \
+                                         adjudicated. `target_path` \
                                          is present only on tags that carry \
                                          one — it is 0..1 in the RM — and the \
                                          empty string normalizes to ABSENT, so \
                                          a stored tag never echoes the \
                                          `target_path: \"\"` the released \
                                          `ItemTagOf*` examples all show; that \
-                                         reconciliation is register-documented \
+                                         reconciliation is adjudicated \
                                          too. No `ETag`, `Last-Modified` or \
                                          `Location` accompanies the list: a \
                                          tag collection is not \
@@ -6639,8 +6616,7 @@ pub(crate) async fn demographic_tags_get(
                                       naming the target's class — a \
                                       VERSIONED_OBJECT has one type (RM \
                                       `common/master06` §Change Control); it \
-                                      is register-documented in the \
-                                      conformance catalogue. An EXISTING \
+                                      is adjudicated. An EXISTING \
                                       target with no tags is `200 []`, never \
                                       `404`.",
          body = serde_json::Value),
@@ -6704,7 +6680,7 @@ pub(crate) async fn agent_tags_get(
                         family source it from VERSIONED_PARTY, and all three \
                         end on \"the target VERSIONED_PARTY container\" — an \
                         editorial split inside one operation family, \
-                        register-documented in the conformance catalogue; both \
+                        adjudicated; both \
                         name the same container. The two forms address \
                         DISJOINT collections: an ITEM_TAG carries exactly one \
                         `target` (RM `item_tag.adoc`: `target: UID_BASED_ID`, \
@@ -6734,8 +6710,7 @@ pub(crate) async fn agent_tags_get(
                         (e.g., the `uid`) of the affected resource\" and an \
                         ITEM_TAG has no uid, so the server applies — and \
                         declares — the default `return=minimal`; that \
-                        resolution is OURS, register-documented in the \
-                        conformance catalogue. Whichever branch runs, the \
+                        resolution is OURS, adjudicated. Whichever branch runs, the \
                         response states it in `Preference-Applied` (ITS-REST \
                         `specifications/parameters/header/Prefer.yaml`).",
          example = "return=representation"),
@@ -6796,7 +6771,7 @@ pub(crate) async fn agent_tags_get(
                                 `key` when their `target_path` differs; a \
                                 DUPLICATE pair inside one body is resolved \
                                 last-wins (no released rule and no \
-                                `uniqueItems` — ours, register-documented). A \
+                                `uniqueItems` — ours, adjudicated). A \
                                 `target_path` of `\"\"` normalizes to ABSENT, \
                                 the same identity as an entry with no \
                                 `target_path` at all: the RM models \
@@ -6804,7 +6779,7 @@ pub(crate) async fn agent_tags_get(
                                 while all five released `ItemTagOf*` examples \
                                 carry `target_path: \"\"` — reconciling the \
                                 two on one identity is ours, \
-                                register-documented. Canonical JSON only: an \
+                                adjudicated. Canonical JSON only: an \
                                 XML (or Simplified-Format) `Content-Type` is \
                                 `415`.",
                  example = json!([
@@ -6849,15 +6824,14 @@ pub(crate) async fn agent_tags_get(
                                          examples show `{namespace: local, \
                                          type: SYSTEM}` instead, which nothing \
                                          requires. The position is \
-                                         register-documented in the \
-                                         conformance catalogue. `target_path` \
+                                         adjudicated. `target_path` \
                                          is present only on tags that carry \
                                          one — it is 0..1 in the RM — and the \
                                          empty string normalizes to ABSENT, so \
                                          a stored tag never echoes the \
                                          `target_path: \"\"` the released \
                                          `ItemTagOf*` examples all show; that \
-                                         reconciliation is register-documented \
+                                         reconciliation is adjudicated \
                                          too. The only response header is \
                                          `Preference-Applied`: a tag \
                                          collection is not change-controlled, \
@@ -6938,8 +6912,7 @@ pub(crate) async fn agent_tags_get(
                                       (another PARTY kind, or a uid from the \
                                       EHR space) are all this `404` — the \
                                       kind-checked reading being OURS, \
-                                      register-documented in the conformance \
-                                      catalogue.",
+                                      adjudicated.",
          body = serde_json::Value),
         (status = 406, description = "A `return=representation` request whose \
                                       `Accept` cannot be satisfied: the \
@@ -6990,8 +6963,7 @@ pub(crate) async fn agent_tags_get(
                                       status codes\", the `422` row (\"The \
                                       request was well-formed but was unable \
                                       to be followed due to semantic errors\") \
-                                      and is OURS, register-documented in the \
-                                      conformance catalogue.",
+                                      and is OURS, adjudicated.",
          body = serde_json::Value)
     )
 )]
@@ -7063,8 +7035,7 @@ pub(crate) async fn agent_tags_update(
                         `tag_key`\" (`agent_tags_delete.yaml`). (That \
                         description calls the parameter `tag_key` in prose \
                         while the path parameter is `key` — a released-text \
-                        inconsistency, register-documented in the conformance \
-                        catalogue; the wire name is `key`.)",
+                        inconsistency, adjudicated; the wire name is `key`.)",
          example = "flag")
     ),
     responses(
@@ -7127,8 +7098,7 @@ pub(crate) async fn agent_tags_update(
                                       is NOT an AGENT (another PARTY kind, or \
                                       a uid from the EHR space) — the \
                                       kind-checked reading being OURS, \
-                                      register-documented in the conformance \
-                                      catalogue.",
+                                      adjudicated.",
          body = serde_json::Value)
     )
 )]
@@ -7233,15 +7203,14 @@ pub(crate) async fn agent_tags_delete(
                                          examples show `{namespace: local, \
                                          type: SYSTEM}` instead, which nothing \
                                          requires. The position is \
-                                         register-documented in the \
-                                         conformance catalogue. `target_path` \
+                                         adjudicated. `target_path` \
                                          is present only on tags that carry \
                                          one — it is 0..1 in the RM — and the \
                                          empty string normalizes to ABSENT, so \
                                          a stored tag never echoes the \
                                          `target_path: \"\"` the released \
                                          `ItemTagOf*` examples all show; that \
-                                         reconciliation is register-documented \
+                                         reconciliation is adjudicated \
                                          too. No `ETag`, `Last-Modified` or \
                                          `Location` accompanies the list: a \
                                          tag collection is not \
@@ -7301,8 +7270,7 @@ pub(crate) async fn agent_tags_delete(
                                       naming the target's class — a \
                                       VERSIONED_OBJECT has one type (RM \
                                       `common/master06` §Change Control); it \
-                                      is register-documented in the \
-                                      conformance catalogue. An EXISTING \
+                                      is adjudicated. An EXISTING \
                                       target with no tags is `200 []`, never \
                                       `404`.",
          body = serde_json::Value),
@@ -7366,7 +7334,7 @@ pub(crate) async fn group_tags_get(
                         family source it from VERSIONED_PARTY, and all three \
                         end on \"the target VERSIONED_PARTY container\" — an \
                         editorial split inside one operation family, \
-                        register-documented in the conformance catalogue; both \
+                        adjudicated; both \
                         name the same container. The two forms address \
                         DISJOINT collections: an ITEM_TAG carries exactly one \
                         `target` (RM `item_tag.adoc`: `target: UID_BASED_ID`, \
@@ -7396,8 +7364,7 @@ pub(crate) async fn group_tags_get(
                         (e.g., the `uid`) of the affected resource\" and an \
                         ITEM_TAG has no uid, so the server applies — and \
                         declares — the default `return=minimal`; that \
-                        resolution is OURS, register-documented in the \
-                        conformance catalogue. Whichever branch runs, the \
+                        resolution is OURS, adjudicated. Whichever branch runs, the \
                         response states it in `Preference-Applied` (ITS-REST \
                         `specifications/parameters/header/Prefer.yaml`).",
          example = "return=representation"),
@@ -7458,7 +7425,7 @@ pub(crate) async fn group_tags_get(
                                 `key` when their `target_path` differs; a \
                                 DUPLICATE pair inside one body is resolved \
                                 last-wins (no released rule and no \
-                                `uniqueItems` — ours, register-documented). A \
+                                `uniqueItems` — ours, adjudicated). A \
                                 `target_path` of `\"\"` normalizes to ABSENT, \
                                 the same identity as an entry with no \
                                 `target_path` at all: the RM models \
@@ -7466,7 +7433,7 @@ pub(crate) async fn group_tags_get(
                                 while all five released `ItemTagOf*` examples \
                                 carry `target_path: \"\"` — reconciling the \
                                 two on one identity is ours, \
-                                register-documented. Canonical JSON only: an \
+                                adjudicated. Canonical JSON only: an \
                                 XML (or Simplified-Format) `Content-Type` is \
                                 `415`.",
                  example = json!([
@@ -7511,15 +7478,14 @@ pub(crate) async fn group_tags_get(
                                          examples show `{namespace: local, \
                                          type: SYSTEM}` instead, which nothing \
                                          requires. The position is \
-                                         register-documented in the \
-                                         conformance catalogue. `target_path` \
+                                         adjudicated. `target_path` \
                                          is present only on tags that carry \
                                          one — it is 0..1 in the RM — and the \
                                          empty string normalizes to ABSENT, so \
                                          a stored tag never echoes the \
                                          `target_path: \"\"` the released \
                                          `ItemTagOf*` examples all show; that \
-                                         reconciliation is register-documented \
+                                         reconciliation is adjudicated \
                                          too. The only response header is \
                                          `Preference-Applied`: a tag \
                                          collection is not change-controlled, \
@@ -7599,8 +7565,7 @@ pub(crate) async fn group_tags_get(
                                       stored container is NOT a GROUP (another \
                                       PARTY kind, or a uid from the EHR space) \
                                       are all this `404` — the kind-checked \
-                                      reading being OURS, register-documented \
-                                      in the conformance catalogue.",
+                                      reading being OURS, adjudicated.",
          body = serde_json::Value),
         (status = 406, description = "A `return=representation` request whose \
                                       `Accept` cannot be satisfied: the \
@@ -7651,8 +7616,7 @@ pub(crate) async fn group_tags_get(
                                       status codes\", the `422` row (\"The \
                                       request was well-formed but was unable \
                                       to be followed due to semantic errors\") \
-                                      and is OURS, register-documented in the \
-                                      conformance catalogue.",
+                                      and is OURS, adjudicated.",
          body = serde_json::Value)
     )
 )]
@@ -7724,8 +7688,7 @@ pub(crate) async fn group_tags_update(
                         `tag_key`\" (`group_tags_delete.yaml`). (That \
                         description calls the parameter `tag_key` in prose \
                         while the path parameter is `key` — a released-text \
-                        inconsistency, register-documented in the conformance \
-                        catalogue; the wire name is `key`.)",
+                        inconsistency, adjudicated; the wire name is `key`.)",
          example = "flag")
     ),
     responses(
@@ -7788,8 +7751,7 @@ pub(crate) async fn group_tags_update(
                                       is NOT a GROUP (another PARTY kind, or a \
                                       uid from the EHR space) — the \
                                       kind-checked reading being OURS, \
-                                      register-documented in the conformance \
-                                      catalogue.",
+                                      adjudicated.",
          body = serde_json::Value)
     )
 )]
@@ -7894,15 +7856,14 @@ pub(crate) async fn group_tags_delete(
                                          examples show `{namespace: local, \
                                          type: SYSTEM}` instead, which nothing \
                                          requires. The position is \
-                                         register-documented in the \
-                                         conformance catalogue. `target_path` \
+                                         adjudicated. `target_path` \
                                          is present only on tags that carry \
                                          one — it is 0..1 in the RM — and the \
                                          empty string normalizes to ABSENT, so \
                                          a stored tag never echoes the \
                                          `target_path: \"\"` the released \
                                          `ItemTagOf*` examples all show; that \
-                                         reconciliation is register-documented \
+                                         reconciliation is adjudicated \
                                          too. No `ETag`, `Last-Modified` or \
                                          `Location` accompanies the list: a \
                                          tag collection is not \
@@ -7962,8 +7923,7 @@ pub(crate) async fn group_tags_delete(
                                       naming the target's class — a \
                                       VERSIONED_OBJECT has one type (RM \
                                       `common/master06` §Change Control); it \
-                                      is register-documented in the \
-                                      conformance catalogue. An EXISTING \
+                                      is adjudicated. An EXISTING \
                                       target with no tags is `200 []`, never \
                                       `404`.",
          body = serde_json::Value),
@@ -8033,7 +7993,7 @@ pub(crate) async fn organisation_tags_get(
                         family source it from VERSIONED_PARTY, and all three \
                         end on \"the target VERSIONED_PARTY container\" — an \
                         editorial split inside one operation family, \
-                        register-documented in the conformance catalogue; both \
+                        adjudicated; both \
                         name the same container. The two forms address \
                         DISJOINT collections: an ITEM_TAG carries exactly one \
                         `target` (RM `item_tag.adoc`: `target: UID_BASED_ID`, \
@@ -8063,8 +8023,7 @@ pub(crate) async fn organisation_tags_get(
                         (e.g., the `uid`) of the affected resource\" and an \
                         ITEM_TAG has no uid, so the server applies — and \
                         declares — the default `return=minimal`; that \
-                        resolution is OURS, register-documented in the \
-                        conformance catalogue. Whichever branch runs, the \
+                        resolution is OURS, adjudicated. Whichever branch runs, the \
                         response states it in `Preference-Applied` (ITS-REST \
                         `specifications/parameters/header/Prefer.yaml`).",
          example = "return=representation"),
@@ -8125,7 +8084,7 @@ pub(crate) async fn organisation_tags_get(
                                 `key` when their `target_path` differs; a \
                                 DUPLICATE pair inside one body is resolved \
                                 last-wins (no released rule and no \
-                                `uniqueItems` — ours, register-documented). A \
+                                `uniqueItems` — ours, adjudicated). A \
                                 `target_path` of `\"\"` normalizes to ABSENT, \
                                 the same identity as an entry with no \
                                 `target_path` at all: the RM models \
@@ -8133,7 +8092,7 @@ pub(crate) async fn organisation_tags_get(
                                 while all five released `ItemTagOf*` examples \
                                 carry `target_path: \"\"` — reconciling the \
                                 two on one identity is ours, \
-                                register-documented. Canonical JSON only: an \
+                                adjudicated. Canonical JSON only: an \
                                 XML (or Simplified-Format) `Content-Type` is \
                                 `415`.",
                  example = json!([
@@ -8178,15 +8137,14 @@ pub(crate) async fn organisation_tags_get(
                                          examples show `{namespace: local, \
                                          type: SYSTEM}` instead, which nothing \
                                          requires. The position is \
-                                         register-documented in the \
-                                         conformance catalogue. `target_path` \
+                                         adjudicated. `target_path` \
                                          is present only on tags that carry \
                                          one — it is 0..1 in the RM — and the \
                                          empty string normalizes to ABSENT, so \
                                          a stored tag never echoes the \
                                          `target_path: \"\"` the released \
                                          `ItemTagOf*` examples all show; that \
-                                         reconciliation is register-documented \
+                                         reconciliation is adjudicated \
                                          too. The only response header is \
                                          `Preference-Applied`: a tag \
                                          collection is not change-controlled, \
@@ -8267,8 +8225,7 @@ pub(crate) async fn organisation_tags_get(
                                       (another PARTY kind, or a uid from the \
                                       EHR space) are all this `404` — the \
                                       kind-checked reading being OURS, \
-                                      register-documented in the conformance \
-                                      catalogue.",
+                                      adjudicated.",
          body = serde_json::Value),
         (status = 406, description = "A `return=representation` request whose \
                                       `Accept` cannot be satisfied: the \
@@ -8319,8 +8276,7 @@ pub(crate) async fn organisation_tags_get(
                                       status codes\", the `422` row (\"The \
                                       request was well-formed but was unable \
                                       to be followed due to semantic errors\") \
-                                      and is OURS, register-documented in the \
-                                      conformance catalogue.",
+                                      and is OURS, adjudicated.",
          body = serde_json::Value)
     )
 )]
@@ -8399,8 +8355,7 @@ pub(crate) async fn organisation_tags_update(
                         `tag_key`\" (`organisation_tags_delete.yaml`). (That \
                         description calls the parameter `tag_key` in prose \
                         while the path parameter is `key` — a released-text \
-                        inconsistency, register-documented in the conformance \
-                        catalogue; the wire name is `key`.)",
+                        inconsistency, adjudicated; the wire name is `key`.)",
          example = "flag")
     ),
     responses(
@@ -8463,8 +8418,7 @@ pub(crate) async fn organisation_tags_update(
                                       is NOT an ORGANISATION (another PARTY \
                                       kind, or a uid from the EHR space) — the \
                                       kind-checked reading being OURS, \
-                                      register-documented in the conformance \
-                                      catalogue.",
+                                      adjudicated.",
          body = serde_json::Value)
     )
 )]
@@ -8575,15 +8529,14 @@ pub(crate) async fn organisation_tags_delete(
                                          examples show `{namespace: local, \
                                          type: SYSTEM}` instead, which nothing \
                                          requires. The position is \
-                                         register-documented in the \
-                                         conformance catalogue. `target_path` \
+                                         adjudicated. `target_path` \
                                          is present only on tags that carry \
                                          one — it is 0..1 in the RM — and the \
                                          empty string normalizes to ABSENT, so \
                                          a stored tag never echoes the \
                                          `target_path: \"\"` the released \
                                          `ItemTagOf*` examples all show; that \
-                                         reconciliation is register-documented \
+                                         reconciliation is adjudicated \
                                          too. No `ETag`, `Last-Modified` or \
                                          `Location` accompanies the list: a \
                                          tag collection is not \
@@ -8643,8 +8596,7 @@ pub(crate) async fn organisation_tags_delete(
                                       naming the target's class — a \
                                       VERSIONED_OBJECT has one type (RM \
                                       `common/master06` §Change Control); it \
-                                      is register-documented in the \
-                                      conformance catalogue. An EXISTING \
+                                      is adjudicated. An EXISTING \
                                       target with no tags is `200 []`, never \
                                       `404`.",
          body = serde_json::Value),
@@ -8708,7 +8660,7 @@ pub(crate) async fn person_tags_get(
                         family source it from VERSIONED_PARTY, and all three \
                         end on \"the target VERSIONED_PARTY container\" — an \
                         editorial split inside one operation family, \
-                        register-documented in the conformance catalogue; both \
+                        adjudicated; both \
                         name the same container. The two forms address \
                         DISJOINT collections: an ITEM_TAG carries exactly one \
                         `target` (RM `item_tag.adoc`: `target: UID_BASED_ID`, \
@@ -8738,8 +8690,7 @@ pub(crate) async fn person_tags_get(
                         (e.g., the `uid`) of the affected resource\" and an \
                         ITEM_TAG has no uid, so the server applies — and \
                         declares — the default `return=minimal`; that \
-                        resolution is OURS, register-documented in the \
-                        conformance catalogue. Whichever branch runs, the \
+                        resolution is OURS, adjudicated. Whichever branch runs, the \
                         response states it in `Preference-Applied` (ITS-REST \
                         `specifications/parameters/header/Prefer.yaml`).",
          example = "return=representation"),
@@ -8800,7 +8751,7 @@ pub(crate) async fn person_tags_get(
                                 `key` when their `target_path` differs; a \
                                 DUPLICATE pair inside one body is resolved \
                                 last-wins (no released rule and no \
-                                `uniqueItems` — ours, register-documented). A \
+                                `uniqueItems` — ours, adjudicated). A \
                                 `target_path` of `\"\"` normalizes to ABSENT, \
                                 the same identity as an entry with no \
                                 `target_path` at all: the RM models \
@@ -8808,7 +8759,7 @@ pub(crate) async fn person_tags_get(
                                 while all five released `ItemTagOf*` examples \
                                 carry `target_path: \"\"` — reconciling the \
                                 two on one identity is ours, \
-                                register-documented. Canonical JSON only: an \
+                                adjudicated. Canonical JSON only: an \
                                 XML (or Simplified-Format) `Content-Type` is \
                                 `415`.",
                  example = json!([
@@ -8853,15 +8804,14 @@ pub(crate) async fn person_tags_get(
                                          examples show `{namespace: local, \
                                          type: SYSTEM}` instead, which nothing \
                                          requires. The position is \
-                                         register-documented in the \
-                                         conformance catalogue. `target_path` \
+                                         adjudicated. `target_path` \
                                          is present only on tags that carry \
                                          one — it is 0..1 in the RM — and the \
                                          empty string normalizes to ABSENT, so \
                                          a stored tag never echoes the \
                                          `target_path: \"\"` the released \
                                          `ItemTagOf*` examples all show; that \
-                                         reconciliation is register-documented \
+                                         reconciliation is adjudicated \
                                          too. The only response header is \
                                          `Preference-Applied`: a tag \
                                          collection is not change-controlled, \
@@ -8942,8 +8892,7 @@ pub(crate) async fn person_tags_get(
                                       (another PARTY kind, or a uid from the \
                                       EHR space) are all this `404` — the \
                                       kind-checked reading being OURS, \
-                                      register-documented in the conformance \
-                                      catalogue.",
+                                      adjudicated.",
          body = serde_json::Value),
         (status = 406, description = "A `return=representation` request whose \
                                       `Accept` cannot be satisfied: the \
@@ -8994,8 +8943,7 @@ pub(crate) async fn person_tags_get(
                                       status codes\", the `422` row (\"The \
                                       request was well-formed but was unable \
                                       to be followed due to semantic errors\") \
-                                      and is OURS, register-documented in the \
-                                      conformance catalogue.",
+                                      and is OURS, adjudicated.",
          body = serde_json::Value)
     )
 )]
@@ -9073,8 +9021,7 @@ pub(crate) async fn person_tags_update(
                         `tag_key`\" (`person_tags_delete.yaml`). (That \
                         description calls the parameter `tag_key` in prose \
                         while the path parameter is `key` — a released-text \
-                        inconsistency, register-documented in the conformance \
-                        catalogue; the wire name is `key`.)",
+                        inconsistency, adjudicated; the wire name is `key`.)",
          example = "flag")
     ),
     responses(
@@ -9137,8 +9084,7 @@ pub(crate) async fn person_tags_update(
                                       is NOT a PERSON (another PARTY kind, or \
                                       a uid from the EHR space) — the \
                                       kind-checked reading being OURS, \
-                                      register-documented in the conformance \
-                                      catalogue.",
+                                      adjudicated.",
          body = serde_json::Value)
     )
 )]
@@ -9249,15 +9195,14 @@ pub(crate) async fn person_tags_delete(
                                          examples show `{namespace: local, \
                                          type: SYSTEM}` instead, which nothing \
                                          requires. The position is \
-                                         register-documented in the \
-                                         conformance catalogue. `target_path` \
+                                         adjudicated. `target_path` \
                                          is present only on tags that carry \
                                          one — it is 0..1 in the RM — and the \
                                          empty string normalizes to ABSENT, so \
                                          a stored tag never echoes the \
                                          `target_path: \"\"` the released \
                                          `ItemTagOf*` examples all show; that \
-                                         reconciliation is register-documented \
+                                         reconciliation is adjudicated \
                                          too. No `ETag`, `Last-Modified` or \
                                          `Location` accompanies the list: a \
                                          tag collection is not \
@@ -9317,8 +9262,7 @@ pub(crate) async fn person_tags_delete(
                                       naming the target's class — a \
                                       VERSIONED_OBJECT has one type (RM \
                                       `common/master06` §Change Control); it \
-                                      is register-documented in the \
-                                      conformance catalogue. An EXISTING \
+                                      is adjudicated. An EXISTING \
                                       target with no tags is `200 []`, never \
                                       `404`.",
          body = serde_json::Value),
@@ -9382,7 +9326,7 @@ pub(crate) async fn role_tags_get(
                         family source it from VERSIONED_PARTY, and all three \
                         end on \"the target VERSIONED_PARTY container\" — an \
                         editorial split inside one operation family, \
-                        register-documented in the conformance catalogue; both \
+                        adjudicated; both \
                         name the same container. The two forms address \
                         DISJOINT collections: an ITEM_TAG carries exactly one \
                         `target` (RM `item_tag.adoc`: `target: UID_BASED_ID`, \
@@ -9412,8 +9356,7 @@ pub(crate) async fn role_tags_get(
                         (e.g., the `uid`) of the affected resource\" and an \
                         ITEM_TAG has no uid, so the server applies — and \
                         declares — the default `return=minimal`; that \
-                        resolution is OURS, register-documented in the \
-                        conformance catalogue. Whichever branch runs, the \
+                        resolution is OURS, adjudicated. Whichever branch runs, the \
                         response states it in `Preference-Applied` (ITS-REST \
                         `specifications/parameters/header/Prefer.yaml`).",
          example = "return=representation"),
@@ -9474,7 +9417,7 @@ pub(crate) async fn role_tags_get(
                                 `key` when their `target_path` differs; a \
                                 DUPLICATE pair inside one body is resolved \
                                 last-wins (no released rule and no \
-                                `uniqueItems` — ours, register-documented). A \
+                                `uniqueItems` — ours, adjudicated). A \
                                 `target_path` of `\"\"` normalizes to ABSENT, \
                                 the same identity as an entry with no \
                                 `target_path` at all: the RM models \
@@ -9482,7 +9425,7 @@ pub(crate) async fn role_tags_get(
                                 while all five released `ItemTagOf*` examples \
                                 carry `target_path: \"\"` — reconciling the \
                                 two on one identity is ours, \
-                                register-documented. Canonical JSON only: an \
+                                adjudicated. Canonical JSON only: an \
                                 XML (or Simplified-Format) `Content-Type` is \
                                 `415`.",
                  example = json!([
@@ -9527,15 +9470,14 @@ pub(crate) async fn role_tags_get(
                                          examples show `{namespace: local, \
                                          type: SYSTEM}` instead, which nothing \
                                          requires. The position is \
-                                         register-documented in the \
-                                         conformance catalogue. `target_path` \
+                                         adjudicated. `target_path` \
                                          is present only on tags that carry \
                                          one — it is 0..1 in the RM — and the \
                                          empty string normalizes to ABSENT, so \
                                          a stored tag never echoes the \
                                          `target_path: \"\"` the released \
                                          `ItemTagOf*` examples all show; that \
-                                         reconciliation is register-documented \
+                                         reconciliation is adjudicated \
                                          too. The only response header is \
                                          `Preference-Applied`: a tag \
                                          collection is not change-controlled, \
@@ -9615,8 +9557,7 @@ pub(crate) async fn role_tags_get(
                                       stored container is NOT a ROLE (another \
                                       PARTY kind, or a uid from the EHR space) \
                                       are all this `404` — the kind-checked \
-                                      reading being OURS, register-documented \
-                                      in the conformance catalogue.",
+                                      reading being OURS, adjudicated.",
          body = serde_json::Value),
         (status = 406, description = "A `return=representation` request whose \
                                       `Accept` cannot be satisfied: the \
@@ -9667,8 +9608,7 @@ pub(crate) async fn role_tags_get(
                                       status codes\", the `422` row (\"The \
                                       request was well-formed but was unable \
                                       to be followed due to semantic errors\") \
-                                      and is OURS, register-documented in the \
-                                      conformance catalogue.",
+                                      and is OURS, adjudicated.",
          body = serde_json::Value)
     )
 )]
@@ -9740,8 +9680,7 @@ pub(crate) async fn role_tags_update(
                         `tag_key`\" (`role_tags_delete.yaml`). (That \
                         description calls the parameter `tag_key` in prose \
                         while the path parameter is `key` — a released-text \
-                        inconsistency, register-documented in the conformance \
-                        catalogue; the wire name is `key`.)",
+                        inconsistency, adjudicated; the wire name is `key`.)",
          example = "flag")
     ),
     responses(
@@ -9804,8 +9743,7 @@ pub(crate) async fn role_tags_update(
                                       is NOT a ROLE (another PARTY kind, or a \
                                       uid from the EHR space) — the \
                                       kind-checked reading being OURS, \
-                                      register-documented in the conformance \
-                                      catalogue.",
+                                      adjudicated.",
          body = serde_json::Value)
     )
 )]

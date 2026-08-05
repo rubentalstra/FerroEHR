@@ -91,7 +91,7 @@ fn round_trip(src: &str) -> Result<(), String> {
     let mut log = ConversionLog::default();
     let converted = parse_and_convert(src, &ConvertConfig::default(), &mut log)
         .map_err(|e| format!("convert failed: {e:?}"))?;
-    let printed = print(&converted);
+    let printed = print(&converted).map_err(|e| format!("print refused: {e}"))?;
     parse_artefact(&printed, Dialect::Adl2)
         .map(|_| ())
         .map_err(|errors| {
@@ -200,7 +200,7 @@ fn heterogeneous_rows_partition_into_alternatives() {
     let mut log = ConversionLog::new();
     let converted = parse_and_convert(&src, &ConvertConfig::default(), &mut log)
         .expect("the heterogeneous-rows fixture converts");
-    let printed = print(&converted);
+    let printed = print(&converted).expect("print the converted artefact");
     assert!(
         !printed.contains("{}"),
         "no empty tuple member may be printed:\n{printed}"

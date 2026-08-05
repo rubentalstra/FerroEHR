@@ -22,7 +22,9 @@ use serde_json::Value;
 use crate::ids::{EhrId, VoId};
 use crate::service::FerroEhrService;
 use crate::service::datetime::parse_at_time;
-use crate::service::error::{ServiceError, Violation, internal_fault};
+#[cfg(feature = "multimedia")]
+use crate::service::error::internal_fault;
+use crate::service::error::{ServiceError, Violation};
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::{CallStatusType, SmError};
 use crate::versioning::Kind;
@@ -864,17 +866,12 @@ impl FerroEhrService {
 
 // ── ITS-REST read-response adapter (adapter-support extension) ────────────────
 //
-// The SM `I_EHR_COMPOSITION` reads above return the bare COMPOSITION the
-// service model defines. A bare COMPOSITION carries no commit audit, so the
-// wire cannot derive `Last-Modified` from the served body — yet ITS-REST
-// requires it: `Requests_and_responses.md` §"`ETag` and Last-Modified" says
-// "this value should be derived from `VERSION.commit_audit.time_committed.value`"
-// and "Both `ETag` and `Last-Modified` SHOULD be included in responses for
-// VERSION, VERSIONED_OBJECT, or other resources that have versioning or unique
-// state identifiers". These siblings therefore hand the protocol adapter the
-// same read PLUS its [`ResourceMeta`] (version uid + commit instant), which the
-// version row already carries — no second read, and no re-derivation in the
-// adapter. No openEHR spec governs this envelope — our own design.
+// The SM `I_EHR_COMPOSITION` reads above return the bare COMPOSITION, which
+// carries no commit audit — yet ITS-REST requires `Last-Modified` "derived from
+// `VERSION.commit_audit.time_committed.value`" (`Requests_and_responses.md`
+// §"`ETag` and Last-Modified"). These siblings therefore hand the adapter the
+// same read PLUS its [`ResourceMeta`] (version uid + commit instant). No
+// openEHR spec governs this envelope — our own design.
 
 impl FerroEhrService {
     /// [`Self::get_composition_latest`] with the version metadata the wire's
@@ -950,8 +947,9 @@ impl FerroEhrService {
     /// # Errors
     /// [`SmError`] when the configured multimedia engine fails to expand a
     /// reference (e.g. the external object store is unreachable).
+    #[cfg(feature = "multimedia")]
     pub async fn expand_multimedia(&self, body: Value) -> Result<Value, SmError> {
-        // Off by default: no engine ⇒ serve the stored form unchanged.
+        // Off by default: no engine serves the stored form unchanged.
         let Some(engine) = &self.multimedia else {
             return Ok(body);
         };
@@ -960,6 +958,21 @@ impl FerroEhrService {
             .expand(&mut body)
             .await
             .map_err(|e| internal_fault("expand a multimedia reference", &e))?;
+        Ok(body)
+    }
+
+    /// The slim twin: externalization is compiled out, so the stored canonical
+    /// form is always served unchanged.
+    ///
+    /// # Errors
+    /// Infallible in this configuration; the `Result` mirrors the multimedia
+    /// twin so callers are configuration-independent.
+    #[cfg(not(feature = "multimedia"))]
+    #[expect(
+        clippy::unused_async,
+        reason = "the multimedia twin awaits; callers await unconditionally"
+    )]
+    pub async fn expand_multimedia(&self, body: Value) -> Result<Value, SmError> {
         Ok(body)
     }
 }

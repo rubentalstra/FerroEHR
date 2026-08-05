@@ -507,8 +507,8 @@ pub(crate) async fn admin_ehr_delete(
 ///
 /// SM relation: it is the wire ANALOGUE of `I_DEFINITION_ADL14.delete_opt`
 /// (`docs/specs/openehr/SM/docs/UML/classes/i_definition_adl14.adoc`), not a
-/// realization of it — that SM operation has no released wire at all (register
-/// AMB-17), and it is keyed by the OPT's internal id whereas this route is
+/// realization of it — that SM operation has no released wire at all — and it
+/// is keyed by the OPT's internal id whereas this route is
 /// addressed by the wire `template_id` (matched case-insensitively, overview
 /// §"Composite Identifiers and Case").
 ///
@@ -625,7 +625,7 @@ pub(crate) async fn admin_template_delete(
 /// `Post_query_deleted: not has_query (a_query_name)` — so it removes every
 /// version of the query, whereas this route removes exactly one
 /// `(name, version)` row and leaves the query's other versions in place. The
-/// SM operation therefore stays unrealized on this server (register AMB-127);
+/// SM operation therefore stays unrealized on this server;
 /// naming it here would be a false claim.
 #[utoipa::path(
     delete, path = "/admin/query/{qualified_query_name}/{version}", tag = "ADMIN",

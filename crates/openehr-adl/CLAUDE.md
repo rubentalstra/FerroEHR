@@ -34,7 +34,7 @@ else; each helper has exactly ONE home.
 | `parse/primitives` | the inline `C_PRIMITIVE` family |
 | `parse/values` | value lists, `\|…\|` intervals, endpoints, the `CadlValue` kind trait |
 | `parse/patterns` | the date/time constraint-pattern validators |
-| `rules` | the `rules` section + slot assertions (BEL over `openehr_lang`) |
+| `rules` | the `rules` section + slot assertions (BEL over `openehr_lang`) — full beom trees, plus the `slot_assertion_path`/`slot_assertion_regex` tree accessors every consumer reads through |
 | `assemble` | fold the ODIN sections + `definition` + `rules` into a complete `Archetype` (`parse_artefact(src, dialect)`) |
 | `meta` | the read-only artefact summary accessors (`ArtefactSummary`/`summarize`, `regression_tag`) |
 
@@ -57,7 +57,7 @@ else; each helper has exactly ONE home.
 | `validate/flat` | the flat-form walk (`FlatScan`: `validate_flat_form_structure` + the 1.4 VDFPT twin) + the deferred flat-form halves (`validate_flat_form`) |
 | `flatten` | specialisation flattening (`flatten`, `flat_form`) |
 | `opt` | OPT2 generation — raw via `create_opt`, profiled via `profile_opt` |
-| `print/mod` | the printer state, the artefact-kind projection, the top-level section driver, `print` |
+| `print/mod` | the printer state, the artefact-kind projection, the top-level section driver, `print` + `assertion_text` |
 | `print/header` | identification / `language` / `description` / `annotations` / `rm_overlay` / `component_terminologies` |
 | `print/terminology` | the `terminology` section body (shared with `component_terminologies`) |
 | `print/definition` | the cADL `definition` section + every primitive / interval / temporal rendering |
@@ -117,9 +117,21 @@ else; each helper has exactly ONE home.
   `adl14/domain.rs`, and the three dialect-gated dispatch points in
   `parse::parser` are the only coupling — keep it that way.
 - **The printer is `print/`, one module per artefact section.** Section
-  modules are private; `print::print` is the whole serializer seam. Printed
-  output is pinned byte-for-byte by the round-trip corpus — a layout change
-  is a behaviour change.
+  modules are private; `print::print` (a whole artefact) and
+  `print::assertion_text` (one assertion) are the serializer seams, both
+  fallible over `print::PrintError` — a modelled node no released grammar
+  spells (EXTERNAL_QUERY) is REFUSED, never rendered as invented or empty
+  text. Printed output is pinned byte-for-byte by the round-trip corpus — a
+  layout change is a behaviour change.
+- **An assertion's EXPRESSION TREE is the authority, never its string form.**
+  `ASSERTION.expression` is the "Root of expression tree" and
+  `string_expression` only its "String form of expression"
+  (`LANG/docs/BEL/master04-expression_object_model.adoc` §Core Package): the
+  printer renders from the tree, `rules::parse_slot_assertions` fills each
+  assertion's string form FROM that rendering (which is what makes
+  parse → print → parse a fixed point), and validators read the tree through
+  the `rules::slot_assertion_*` accessors. Never scan the string form for a
+  path, a regex or an operator.
 - **No file over ~1,000 non-test LOC.** When a module crosses it, split by
   subject (production family, artefact section, validation topic), never by
   phase number or arbitrary line count.

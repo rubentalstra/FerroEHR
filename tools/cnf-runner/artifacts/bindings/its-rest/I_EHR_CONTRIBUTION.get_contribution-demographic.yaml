@@ -24,7 +24,13 @@
 # ETag + Last-Modified on this read are SPEC-SILENT in the same way as on the
 # EHR sibling and are adjudicated identically by register AMB-87 — the
 # CONTRIBUTION is immutable and uniquely identified, so the entity tag is that
-# identifier and Last-Modified its one committal instant.
+# identifier and Last-Modified its one committal instant. The ETag payload is
+# asserted against the `contribution_uid` capture — taken from the COMMIT's
+# body `uid.value`, a different response on a different channel, so this is a
+# real cross-response identity assertion. `contribution_uid` is NOT a
+# structural grammar token, so it must resolve to a case variable; a
+# placeholder that resolves to neither FAILS LOUD (#1865) and never degrades
+# to a `.*` wildcard. See bindings/README.md.
 # NOTE: header matchers are EXECUTED assertions (#403, exec/headers.rs).
 sm_operation: I_EHR_CONTRIBUTION.get_contribution
 its: its-rest

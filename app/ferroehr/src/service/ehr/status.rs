@@ -835,17 +835,12 @@ impl FerroEhrService {
 
 // ── ITS-REST read/write-response adapter (adapter-support extension) ──────────
 //
-// The SM `I_EHR_STATUS` calls above return the bare `EHR_STATUS` (or its new
-// version uid) the service model defines — neither carries the commit instant
-// ITS-REST wants on the wire: `Requests_and_responses.md` §"`ETag` and
-// Last-Modified" says the `Last-Modified` value "should be derived from
-// `VERSION.commit_audit.time_committed.value`" and that "Both `ETag` and
-// `Last-Modified` SHOULD be included in responses for VERSION,
-// VERSIONED_OBJECT, or other resources that have versioning or unique state
-// identifiers". These siblings hand the protocol adapter the same result PLUS
-// its [`ResourceMeta`] (version uid + commit instant), which the version row /
-// commit result already holds — no second read. No openEHR spec governs this
-// envelope — our own design.
+// The SM `I_EHR_STATUS` calls return the bare `EHR_STATUS` (or its new version
+// uid), neither of which carries the commit instant ITS-REST wants:
+// `Requests_and_responses.md` §"`ETag` and Last-Modified" derives it from
+// `VERSION.commit_audit.time_committed.value`. These siblings hand the adapter
+// the same result PLUS its [`ResourceMeta`] — no second read. No openEHR spec
+// governs this envelope — our own design.
 
 impl FerroEhrService {
     /// [`Self::get_ehr_status_at_time`] with the version metadata the wire's
@@ -926,16 +921,12 @@ impl FerroEhrService {
         an_ehr_id: EhrId,
         a_status: UpdateVersion<EhrStatus>,
     ) -> Result<ResourceMeta, SmError> {
-        // NOTE: the ITS-REST wire replaces the whole EHR_STATUS in one PUT
-        // — the aggregate of the five discrete SM mutators (formal
-        // equivalence, `master02-overview.adoc` §Interface Calls). The
-        // optimistic `preceding_version_uid` rides in UpdateVersion; a mismatch
-        // → 412.
-        //
         // The `If-Match` meta pre-read also yields the `vo_id`, threaded into
         // the write so the versioned object is resolved once (no second
-        // `current_vo`). No current EHR_STATUS ⇒ NotFound (404), the same
-        // outcome the prior `current_vo`-inside-the-write path produced.
+        // `current_vo`). No current EHR_STATUS ⇒ NotFound (404).
+        // NOTE: the ITS-REST wire replaces the whole EHR_STATUS in one PUT — the
+        // aggregate of the five discrete SM mutators (formal equivalence,
+        // `master02-overview.adoc` §Interface Calls); a mismatch → 412.
         let Some((vo_id, latest)) = self.ehr_status_meta_with_vo(an_ehr_id).await? else {
             return Err(ServiceError::sm(
                 CallStatusType::EhrIdDoesNotExist,

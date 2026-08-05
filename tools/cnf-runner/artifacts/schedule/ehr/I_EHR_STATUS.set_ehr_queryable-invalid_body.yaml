@@ -4,12 +4,14 @@
 # validates only on create would let an EHR be updated into an RM-invalid
 # state.
 #
-# Decisive docs-text sentence for the outcome (ITS-REST overview
-# Requests_and_responses.md §HTTP status codes): "422 | Unprocessable Entity |
-# The request was well-formed but was unable to be followed due to semantic
-# errors". Every payload below is well-formed JSON that breaks an RM rule, so
-# the 400 row of the same table — "malformed request syntax, syntactically
-# invalid content" — does not describe it. The RM rules broken, per fixture:
+# WHICH BRANCH EACH ROW TAKES: the docs-text status table does not say where
+# "invalid content" ends and "semantic error" begins; the released OAS does.
+# `responses/400.yaml` scopes 400 to "syntactically invalid ... content" and
+# `responses/422.yaml` scopes 422 to content that "could be converted to a
+# resource" and then fails validation — so a body missing a `required` member,
+# or one whose abstract slot carries no `_type` to decode, is the 400 row, and
+# one that converts and then breaks an invariant is the 422 row. The RM rules
+# broken, per fixture:
 #   * subject / is_queryable / is_modifiable absent — RM ehr §EHR_STATUS
 #     §Attributes types all three 1..1 (subject as PARTY_SELF, so an EHR_STATUS
 #     whose subject is missing or is not a PARTY_SELF is not a valid one);

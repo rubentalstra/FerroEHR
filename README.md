@@ -301,7 +301,7 @@ lives; telemetry is measured context only and never influences a verdict:
 
 ![Disk growth across the measured run's four anchors](website/book/src/perf-assets/perf-disk-growth.svg)
 
-## Measured against EHRbase (Java)
+## Measured against EHRbase
 
 One instrument, two servers, byte-identical requests: both systems run the
 **same committed CNF catalogue** for conformance and the **same step-load
@@ -314,7 +314,7 @@ The stress ladder climbs geometrically until the system leaves the envelope
 (p99 over budget or errors past tolerance), then bisects to the **maximum
 sustainable throughput** — every load step embeds its own re-checkable
 histograms and per-container resource telemetry, and a breached step is
-reported with the exact violation. Where upstream sustains a higher rate,
+reported with the exact violation. Where EHRbase sustains a higher rate,
 its curve is drawn exactly like one where it doesn't:
 
 ![Both systems' latency-throughput curves](website/book/src/perf-assets/perf-stress-compare.svg)
@@ -325,13 +325,13 @@ glyph):
 
 ![FerroEHR capability conformance](website/book/src/conformance-assets/conformance-heat-grid.svg)
 
-![Upstream EHRbase capability conformance](website/book/src/comparison-assets/conformance-heat-grid-java.svg)
+![EHRbase capability conformance](website/book/src/comparison-assets/conformance-heat-grid-java.svg)
 
 And the per-chapter outcomes side by side:
 
 ![FerroEHR outcomes by chapter](website/book/src/conformance-assets/conformance-chapter-bars.svg)
 
-![Upstream EHRbase outcomes by chapter](website/book/src/comparison-assets/conformance-chapter-bars-java.svg)
+![EHRbase outcomes by chapter](website/book/src/comparison-assets/conformance-chapter-bars-java.svg)
 
 The full, generated comparison — profile verdicts, capability-by-capability
 evidence, failures in both directions, and the stress overlay once both
@@ -341,7 +341,7 @@ on the website and [`docs/conformance/COMPARISON.md`](docs/conformance/COMPARISO
 in the repo, with each system's committed measurement records under
 [`docs/conformance/`](docs/conformance/). Reproduce either side with the
 built-in instruments: `bash scripts/conformance.sh` (`CONF_SUT=ehrbase-java`
-for upstream) and `cnf-runner stress` / `cnf-runner aql-probe`
+for EHRbase) and `cnf-runner stress` / `cnf-runner aql-probe`
 (`tools/cnf-runner/`).
 
 ## Deployment
@@ -385,7 +385,7 @@ test. See [CONTRIBUTING.md](CONTRIBUTING.md) for the developer workflow.
 
 For the openEHR standard itself, see the
 [openEHR specifications](https://specifications.openehr.org/); for the
-upstream Java implementation, the
+EHRbase, the
 [EHRbase documentation](https://docs.ehrbase.org).
 
 ## Contributing and security
@@ -404,7 +404,7 @@ public issues.
   [vitasystems GmbH](https://www.vitagroup.ag/) and the
   [Peter L. Reichertz Institute](https://www.plri.de/), and keeps that
   lineage in its git history. It is not affiliated with or endorsed by the
-  upstream project; upstream EHRbase remains Apache-2.0, and no code from it
+  EHRbase project; EHRbase itself remains Apache-2.0, and no code from it
   is present in this tree.
 - **[openEHR Foundation](https://www.openehr.org/)** — publishes the openEHR
   specifications and the machine-readable models this project generates

@@ -25,7 +25,7 @@ specification text used as the conformance oracle, and real-world clinical
 models and fixtures used as test corpora. Each family keeps its upstream
 license:
 
-| Material | Upstream | License |
+| Material | Source | License |
 |---|---|---|
 | openEHR machine-readable artifacts (BMM meta-models, XML Schemas, OpenAPI, JSON Schemas) | the openEHR `specifications-ITS-*` repositories | [Apache-2.0](https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSE-APACHE-2.0) |
 | openEHR specification text (the conformance reference) | the openEHR `specifications-*` repositories | [CC-BY-SA 3.0](https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSE-CC-BY-SA-3.0) |
@@ -57,9 +57,9 @@ admitted by that gate.
 - FerroEHR began as a fork of **EHRbase**, developed by
   [vitasystems GmbH](https://www.vitagroup.ag/) and the
   [Peter L. Reichertz Institute](https://www.plri.de/), and keeps that
-  lineage in its git history. Upstream EHRbase remains Apache-2.0; no code
+  lineage in its git history. EHRbase itself remains Apache-2.0; no code
   from it is present in this tree. FerroEHR is not affiliated with or
-  endorsed by the upstream project.
+  endorsed by the EHRbase project.
 
 ## Questions
 

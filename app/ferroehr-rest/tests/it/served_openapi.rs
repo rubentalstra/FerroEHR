@@ -671,7 +671,7 @@ async fn demographic_operations_are_fully_documented() {
     // `ObjectRefOfHierObjectId` schema titles, `namespace: local`,
     // `type: SYSTEM` (vendored ITS-REST OAS
     // `crates/openehr-its/vendor/rest-oas/demographic-codegen.openapi.yaml`,
-    // `components.schemas.VersionedParty.example`; register AMB-69), not a
+    // `components.schemas.VersionedParty.example`), not a
     // PARTY_REF and not a demographic-namespaced self-reference.
     let container_200 = &doc["paths"][&versioned[0]]["get"]["responses"]["200"];
     // The example sits in the media-typed `content` block, or bare on the
@@ -888,7 +888,7 @@ async fn demographic_item_tag_operations_are_fully_documented() {
         assert_eq!(
             first["owner_id"]["type"], "SYSTEM",
             "GET {path} 200 example's owner_id follows the released \
-             local/SYSTEM shape (register AMB-137)"
+             local/SYSTEM shape"
         );
         let retrieved = op["responses"]["200"]["description"]
             .as_str()

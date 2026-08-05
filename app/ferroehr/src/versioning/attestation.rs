@@ -146,9 +146,7 @@ pub(crate) async fn attest(
         // A 666 attestation adds no new version; it is announced in the
         // contribution's outbox envelope as a change to the existing version.
         // The code lives on the ATTESTATION's OWN inherited `change_type`, not
-        // on a `commit_audit` it does not have (register AMB-190 — the
-        // §Contributions row's `ATTESTATION._commit_audit_._change_type_` path
-        // names no attribute of the class).
+        // on a `commit_audit` it does not have.
         change_type: change_type::ATTESTATION.to_owned(),
         template_id: None,
         // The contribution's commit-act time — a 666 attestation adds no new
@@ -279,29 +277,15 @@ impl AttestationParts {
             })?;
         // items (0..1); Items_valid: non-empty when present.
         //
-        // NOTE: the spec's two statements of `items` SCOPE conflict, and this
-        // decoder deliberately enforces the class-model one. RM common
-        // master04-generic_package.adoc §Attestation requires every member to
-        // resolve inside the attested object ("otherwise the list must contain
-        // a set of paths to items within the item to which the attestation is
-        // attached"), while the class table for the same attribute admits the
-        // opposite ("Although not recommended, these may include fine-grained
-        // items which have been attested in some other system" —
-        // UML/classes/org.openehr.rm.common.attestation.adoc §Attributes), and
-        // master04 itself later calls fine granularity unrecommended rather
-        // than invalid ("there is nothing stopping it including fine-grained
-        // items"). The class model is the machine-readable reading and the only
-        // one either source gives a checkable predicate for, so we enforce
-        // exactly that: `List<DV_EHR_URI>` typing plus `Items_valid`, and NO
-        // containment check — a cross-system path is accepted verbatim.
-        // Register entry AMB-180.
-        //
         // A JSON `null` is the ABSENT encoding of an optional attribute, not a
-        // present-but-invalid list — the same reading `attested_view` and
-        // `proof` below already apply, and the one the native `UPDATE_VERSION`
-        // DTO emits for `Option::None`. So it is filtered out before
-        // `Items_valid` is evaluated; a present-but-EMPTY list (`[]`) still
-        // fails, which is what the invariant actually forbids.
+        // present-but-invalid list — the same reading `attested_view` and `proof`
+        // below apply, and the one the native `UPDATE_VERSION` DTO emits for
+        // `Option::None`. So it is filtered out before `Items_valid` is
+        // evaluated; a present-but-EMPTY list (`[]`) still fails, which is what
+        // the invariant actually forbids.
+        // NOTE: the released text's two statements of `items` SCOPE conflict
+        // (master04 §Attestation vs the class table on `attestation.adoc`); the
+        // class model is enforced — `Items_valid`, and NO containment check.
         let items = partial.get("items").filter(|v| !v.is_null());
         if let Some(items) = items
             && items.as_array().is_none_or(Vec::is_empty)
@@ -314,22 +298,13 @@ impl AttestationParts {
                 .filter(|v| !v.is_null())
                 .map(|v| decode(v, "ATTESTATION.attested_view", "DV_MULTIMEDIA"))
                 .transpose()?,
-            // NOTE: `proof` is an OPAQUE CLIENT FACT — accepted as the `String`
-            // its class table declares, stored and served byte-for-byte, never
-            // parsed and never verified server-side. RM common
-            // master04-generic_package.adoc §Attestation defines the openPGP
-            // process over "the entire Attestation object (note that the proof
-            // attribute will be Void at this point)" and then withdraws the
-            // definition — "[.tbd] *To Be Determined*: The exact serialisation
-            // is not yet defined by openEHR" — so there is no canonical form to
-            // recompute against; and the inherited `AUDIT_DETAILS` attributes
-            // are re-minted here at completion (`system_id`, `time_committed`,
-            // `change_type` are the server's), so the stored object is not the
-            // object the client signed in any case. This is NOT the VERSION
-            // `signature` mechanism, which this server does generate and verify
-            // for its own signatures (master06 §Digital Signature —
-            // `crate::versioning::integrity`); there the server owns both the
-            // canonicalisation and the key. Register entry AMB-181.
+            // This is NOT the VERSION `signature` mechanism, which this server
+            // does generate and verify for its own signatures (master06 §Digital
+            // Signature — `crate::versioning::integrity`); there the server owns
+            // both the canonicalisation and the key.
+            // NOTE: `proof` is an OPAQUE CLIENT FACT — no released text defines a
+            // canonical form to recompute against ("The exact serialisation is
+            // not yet defined by openEHR", master04 §Attestation).
             proof: partial
                 .get("proof")
                 .filter(|v| !v.is_null())
@@ -426,16 +401,12 @@ impl AttestationInput {
     pub(crate) fn decode(partial: &Value) -> Result<Self, ServiceError> {
         // description: the inherited AUDIT_DETAILS.description (0..1). ITS-REST
         // types it `UDvText` — `oneOf` [`DV_TEXT`, `DV_CODED_TEXT`]
-        // (`specifications/schemas/data_types/UDvText.yaml`, an object, never a
-        // bare string) — while SM `UPDATE_AUDIT.description` is `String [0..1]`
-        // (`SM/docs/UML/classes/update_audit.adoc` §Attributes), which grounds
-        // the plain-string branch. Both spellings are read, and the object
-        // spelling is decoded WHOLE: `description` is typed `DV_TEXT` at 0..1
-        // (RM common `UML/classes/org.openehr.rm.common.audit_details.adoc`
-        // §Attributes, inherited by `…org.openehr.rm.common.attestation.adoc`),
-        // and `DV_CODED_TEXT` is a substitutable subtype — reducing it to its
-        // `value` would drop the `defining_code` of a committed attestation
-        // permanently.
+        // (`schemas/data_types/UDvText.yaml`) — while SM
+        // `UPDATE_AUDIT.description` is `String [0..1]` (`update_audit.adoc`),
+        // which grounds the plain-string branch. Both spellings are read, and
+        // the object spelling is decoded WHOLE: reducing a `DV_CODED_TEXT` to
+        // its `value` would permanently drop the `defining_code` of a committed
+        // attestation (RM common `audit_details.adoc` §Attributes).
         let description = partial
             .get("description")
             .filter(|d| !d.is_null())

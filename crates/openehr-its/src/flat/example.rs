@@ -468,13 +468,11 @@ fn emit_leaf(node: &WebTemplateNode, base: &str, out: &mut Map<String, Value>) -
         }
         // A slot NARROWED to a concrete non-default party subtype must
         // materialize: the builder's unset-subject default is PARTY_SELF
-        // (master05 §OBSERVATION `/subject` row Note), which the template's
-        // own constraint then refuses — so the example emits the minimal
-        // members the narrowed subtype mandates. PARTY_RELATED additionally
-        // carries `relationship` 1..1 (RM common
-        // `UML/classes/org.openehr.rm.common.generic.party_related.adoc`),
-        // whose example code comes from the node's own relationship child
-        // when the template constrains one.
+        // (master05 §OBSERVATION `/subject` row Note), which the template's own
+        // constraint then refuses — so the example emits the minimal members
+        // the narrowed subtype mandates. PARTY_RELATED additionally carries
+        // `relationship` 1..1 (RM common `party_related.adoc`), whose example
+        // code comes from the node's own relationship child.
         "PARTY_IDENTIFIED" => put(out, base, "name", json!("Example party")),
         "PARTY_RELATED" => {
             put(out, base, "name", json!("Example party"));
@@ -724,16 +722,14 @@ fn emit_quantity(node: &WebTemplateNode, base: &str, out: &mut Map<String, Value
 }
 
 fn emit_proportion(node: &WebTemplateNode, base: &str, out: &mut Map<String, Value>) {
-    // Choose values satisfying the DV_PROPORTION invariants for the first allowed
-    // kind AND the archetype's numerator/denominator ranges (RM data_types
-    // `UML/classes/org.openehr.rm.data_types.dv_proportion.adoc`: `Unitary_validity`
-    // denominator = 1, `Percent_validity` denominator = 100,
-    // `Fraction_validity` fraction/integer_fraction ⇒ integral,
-    // `Valid_denominator` denominator ≠ 0). `type` codes (PROPORTION_KIND): ratio 0,
-    // unitary 1, percent 2, fraction 3, integer_fraction 4. The numerator (and, for
-    // ratio/fraction, the denominator) ranges are carried on the `numerator`/
-    // `denominator` inputs (master05 §DV_PROPORTION), which the leaf validator
-    // range-checks — so the picked values must land inside them.
+    // Choose values satisfying the DV_PROPORTION invariants for the first
+    // allowed kind AND the archetype's numerator/denominator ranges (RM
+    // data_types `dv_proportion.adoc`: `Unitary_validity` denominator = 1,
+    // `Percent_validity` 100, `Fraction_validity` integral, `Valid_denominator`
+    // ≠ 0). `type` codes (PROPORTION_KIND): ratio 0, unitary 1, percent 2,
+    // fraction 3, integer_fraction 4. The ranges ride on the
+    // `numerator`/`denominator` inputs (master05 §DV_PROPORTION), which the leaf
+    // validator range-checks, so the picked values must land inside them.
     let type_code = match node.proportion_types.first().map(String::as_str) {
         Some("unitary") => 1,
         Some("percent") => 2,

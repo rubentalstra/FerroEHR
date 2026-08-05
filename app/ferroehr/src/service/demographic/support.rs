@@ -189,15 +189,9 @@ fn revision_history_item(
     meta: &version_repo::meta::VersionMeta,
 ) -> Result<RevisionHistoryItem, ServiceError> {
     let tree = TreeId::from_columns(meta.trunk_version, meta.branch_number, meta.branch_version);
-    // NOTE: the single-element `audits` vector is by construction, not a
-    // narrowing. `REVISION_HISTORY_ITEM.audits` holds "the audits for this
-    // revision; there will always be at least one commit audit …, there may
-    // also be further attestations" (RM
-    // `UML/classes/org.openehr.rm.common.revision_history_item.adoc`
-    // §Attributes) — and the demographic API exposes no attestation route, so
-    // a demographic version never acquires a further audit. (The EHR builder,
-    // whose `666|attestation|` members do, joins `read_attestations_all` after
-    // the commit audit — `crate::versioning::wire::revision_history`.)
+    // NOTE: `REVISION_HISTORY_ITEM.audits` holds the commit audit plus any
+    // attestations (RM `revision_history_item.adoc` §Attributes); the
+    // demographic API exposes no attestation route, so the vector is singular.
     Ok(RevisionHistoryItem {
         version_id: version_id(vo_id, &meta.creating_system_id, tree)?,
         // `REVISION_HISTORY_ITEM.audits` is `1..*`
@@ -264,7 +258,7 @@ impl FerroEhrService {
     /// `{namespace: local, type: SYSTEM, id: HIER_OBJECT_ID}` — the "other
     /// relevant owning entity" limb read as the serving system. This server
     /// emits exactly that, with the configured system identifier as the `id`,
-    /// for every ehr-less demographic container (register AMB-69).
+    /// for every ehr-less demographic container.
     ///
     /// The body is constructed as the generated [`VersionedObject`] subtype and
     /// serialized through the native codec, so it carries `_type` first and the

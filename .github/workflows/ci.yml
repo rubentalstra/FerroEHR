@@ -173,7 +173,7 @@ jobs:
           echo "OK: no attribution found."
 
   # Comment-style guard (.claude/rules/comments.md, RFC 505/1574): block
-  # comments, TODO(#N) form, NOTE/essay line budgets — on the PR's changed
+  # comments, TODO(#N) form, NOTE/essay line budgets — over the WHOLE tree
   # hand-written .rs files. Diff-scoped until the legacy essay sweep (#1870)
   # closes, then flips to --all.
   comment-style:
@@ -186,10 +186,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Comment style on changed Rust files
-        env:
-          BASE: ${{ github.event.pull_request.base.sha }}
-          HEAD: ${{ github.event.pull_request.head.sha }}
-        run: bash scripts/check-comment-style.sh --diff "$BASE" "$HEAD"
+        run: bash scripts/check-comment-style.sh --all
 
   # ── Always required: supply-chain policy ────────────────────────────────────
   # cargo-deny alone: `cargo deny check` reads the SAME RustSec advisory DB as
@@ -381,7 +378,15 @@ jobs:
       # The CNF artifact validation (catalogue/fixture/register gates over
       # tools/cnf-runner/artifacts) — the binary is already linked by the
       # build step above, so this is seconds of pure execution.
-      - run: cargo run --locked -q -p cnf-runner --bin cnf-runner -- validate --root tools/cnf-runner/artifacts --specs docs/specs/openehr
+      # `--write-report` refreshes the committed wire-surface coverage report
+      # in place; the diff gate below is what makes it a guard. The flag is
+      # off by default so a local `validate` never mutates the tree.
+      - run: cargo run --locked -q -p cnf-runner --bin cnf-runner -- validate --root tools/cnf-runner/artifacts --specs docs/specs/openehr --write-report
+      # Coverage-report drift gate: the regenerated report must match the
+      # committed one. Without this the file rots silently — it is generated
+      # output that only ever refreshed when someone remembered (#1851).
+      - name: Coverage-report drift gate (regenerated report matches the committed artifact)
+        run: git diff --exit-code docs/conformance/coverage-report.md
 
   # ── Coverage: develop pushes only ────────────────────────────────────────────
   # An instrumented build can NEVER reuse the test job's artifacts —
@@ -914,7 +919,7 @@ jobs:
               exit 1
             fi
           done
-          reqs=$(git grep -hoE 'path = "\.\./openehr-[a-z]+", version = "[0-9.]+"' "$HEAD" -- 'crates/*/Cargo.toml' | grep -oE '[0-9.]+' | sort -u)
+          reqs=$(git grep -hoE 'path = "\.\./openehr-[a-z]+", version = "[0-9.]+"' "$HEAD" -- 'crates/*/Cargo.toml' | grep -oE 'version = "[0-9.]+"' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | sort -u)
           if [ "$reqs" != "$ver" ]; then
             echo "::error::internal openehr-* version requirements ($reqs) do not all match the lockstep version $ver — update every 'version =' on the path dependencies too." >&2
             exit 1

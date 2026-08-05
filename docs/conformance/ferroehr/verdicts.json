@@ -241,7 +241,7 @@
     [
       "EhrStatus",
       {
-        "passed": 42,
+        "passed": 44,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 5
@@ -250,7 +250,7 @@
     [
       "CompositionOps",
       {
-        "passed": 50,
+        "passed": 59,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -259,7 +259,7 @@
     [
       "DirectoryOps",
       {
-        "passed": 69,
+        "passed": 75,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 8
@@ -268,7 +268,7 @@
     [
       "ChangeSets",
       {
-        "passed": 79,
+        "passed": 84,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 5
@@ -295,7 +295,7 @@
     [
       "PartyOperations",
       {
-        "passed": 49,
+        "passed": 86,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 4
@@ -304,7 +304,7 @@
     [
       "PartyRelationshipOperations",
       {
-        "passed": 17,
+        "passed": 19,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -313,7 +313,7 @@
     [
       "DemographicArchetypeValidation",
       {
-        "passed": 8,
+        "passed": 11,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -403,7 +403,7 @@
     [
       "EhrExtract",
       {
-        "passed": 25,
+        "passed": 32,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -439,7 +439,7 @@
     [
       "DemographicApi",
       {
-        "passed": 27,
+        "passed": 62,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 1
@@ -502,10 +502,10 @@
     [
       "SimplifiedFormats",
       {
-        "passed": 68,
+        "passed": 73,
         "failed": 0,
         "inconclusive": 0,
-        "unevidenced": 1
+        "unevidenced": 2
       }
     ],
     [
@@ -588,9 +588,9 @@
     }
   ],
   "coverage": {
-    "selected": 973,
-    "driven": 936,
-    "passed": 936,
+    "selected": 1049,
+    "driven": 1011,
+    "passed": 1011,
     "failed": 0,
     "inconclusive": 0
   }

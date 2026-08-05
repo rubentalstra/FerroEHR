@@ -7,13 +7,17 @@
 //! the cross-schema re-emission closure. These are analysis results computed
 //! from the model — the text producers live in [`crate::render`], the shape
 //! decisions in [`crate::plan`].
+//!
+//! The split runs through [`Model`]'s type resolution: the graph facts are here
+//! (which bounds fill a bare generic reference, which spec names a rendered type
+//! embeds), while the Rust type *text* they feed is a second `impl` block in
+//! [`crate::render::model_types`].
 
 use crate::load::bmm::{BmmClass, BmmPropKind, BmmSchema, BmmType};
 use crate::plan::overrides::{
     back_reference, is_mapped_class, primitive, subtype_extension_parents,
 };
 use crate::plan::{Emission, decide};
-use crate::render::naming;
 use std::collections::{BTreeMap, BTreeSet};
 
 pub(crate) mod invariants;
@@ -74,7 +78,8 @@ impl External {
             .map(|(_, path)| path.as_str())
     }
 
-    fn contains(&self, spec: &str) -> bool {
+    /// Whether a dependency crate exports `spec`.
+    pub(crate) fn contains(&self, spec: &str) -> bool {
         self.prelude_of(spec).is_some()
     }
 }
@@ -305,117 +310,7 @@ impl Model {
         }
     }
 
-    // ── type rendering ──────────────────────────────────────────────────────
-    // TODO(#1452): `render_type` (and the type-resolution cluster it anchors —
-    // `effective_roots`, `referenced_specs`, `generic_param_bounds`,
-    // `scope_content_types`) produces a Rust type *string*, which is a stage-4
-    // RENDER concern; it is kept here in ANALYZE because it is fused with
-    // Model's type-graph analysis (cycle detection + import edges) and splitting
-    // the single `impl Model` across stages risked behaviour change. Move the
-    // pure string production to `crate::render` once the graph facts it computes
-    // are separated from the text it emits.
-
-    /// Render a BMM type to Rust. `local` is the set of spec class names emitted
-    /// in the current crate; `external` maps types provided by dependency
-    /// crates. `subst` binds a generic parameter name to a concrete spec type
-    /// (an ancestor-generic binding the BMM drops, e.g. `Multiplicity_interval`'s
-    /// `T` → `Integer`). A referenced class in neither `local` nor `external`
-    /// (or a malformed container) degrades to `serde_json::Value`. Local and
-    /// external class types render as the bare ident (the import machinery adds
-    /// the right `use`).
-    pub(crate) fn render_type(
-        &self,
-        t: &BmmType,
-        generics: &[String],
-        subst: &BTreeMap<String, String>,
-        local: &BTreeSet<String>,
-        external: &External,
-    ) -> String {
-        match t {
-            BmmType::Simple(n) => {
-                if let Some(concrete) = subst.get(n) {
-                    // A bound ancestor-generic parameter: render the concrete.
-                    self.render_type(
-                        &BmmType::Simple(concrete.clone()),
-                        generics,
-                        subst,
-                        local,
-                        external,
-                    )
-                } else if let Some(p) = primitive(n) {
-                    p.to_string()
-                } else if generics.iter().any(|g| g == n) {
-                    n.clone()
-                } else if n == "Any" {
-                    "serde_json::Value".to_string()
-                } else if local.contains(n) || external.contains(n) {
-                    // A bare reference to a *generic* class (BMM omits the args,
-                    // e.g. `normal_range: DV_INTERVAL`) is filled with each type
-                    // parameter's bound (`DV_INTERVAL` → `DvInterval<DvOrdered>`).
-                    // An *unbounded* parameter (the versioned-content `T` of the
-                    // VERSION family) is threaded from the enclosing scope's type
-                    // params (`generics`, then bound `subst` values), so it stays
-                    // strongly typed instead of degrading to `serde_json::Value`.
-                    match self.generic_param_bounds(n) {
-                        Some(bounds) => {
-                            let mut content = Self::scope_content_types(generics, subst);
-                            let args: Vec<String> = bounds
-                                .iter()
-                                .map(|b| match b {
-                                    Some(bound) => self.render_type(
-                                        &BmmType::Simple(bound.clone()),
-                                        generics,
-                                        subst,
-                                        local,
-                                        external,
-                                    ),
-                                    None => content
-                                        .next()
-                                        .unwrap_or_else(|| "serde_json::Value".to_string()),
-                                })
-                                .collect();
-                            format!("{}<{}>", naming::type_name(n), args.join(", "))
-                        }
-                        None => naming::type_name(n),
-                    }
-                } else {
-                    "serde_json::Value".to_string()
-                }
-            }
-            BmmType::Generic { root, params } => {
-                let ps: Vec<String> = params
-                    .iter()
-                    .map(|p| self.render_type(p, generics, subst, local, external))
-                    .collect();
-                // Foundation container generics map to Rust collections; a
-                // container with the wrong arity (e.g. the deeply-nested
-                // free-form `Hash` in RESOURCE_ANNOTATIONS) is free-form JSON.
-                // Arity is matched structurally (slice patterns), never by index.
-                match (root.as_str(), ps.as_slice()) {
-                    ("Hash", [key, value]) => {
-                        format!("std::collections::BTreeMap<{key}, {value}>")
-                    }
-                    ("List" | "Array", [item]) => format!("Vec<{item}>"),
-                    ("Set", [item]) => format!("std::collections::BTreeSet<{item}>"),
-                    // A container of the wrong arity (e.g. the deeply-nested
-                    // free-form `Hash` in RESOURCE_ANNOTATIONS) or a type neither
-                    // emitted here nor by a dependency → free-form JSON.
-                    ("Hash" | "List" | "Array" | "Set", _) => "serde_json::Value".to_string(),
-                    (r, _) if !local.contains(r) && !external.contains(r) => {
-                        "serde_json::Value".to_string()
-                    }
-                    // Respect the class's *effective* arity: a class whose only
-                    // param was unused is monomorphized (emitted non-generic), so
-                    // a reference must drop the explicit args (`REFERENCE_RANGE<X>`
-                    // → `ReferenceRange`).
-                    (r, _) => match self.generic_param_bounds(r) {
-                        None => naming::type_name(r),
-                        Some(_) => format!("{}<{}>", naming::type_name(r), ps.join(", ")),
-                    },
-                }
-            }
-        }
-    }
+    // ── generic-parameter + type-graph resolution ───────────────────────────
 
     /// The generic params a class *actually uses* in its (flattened) fields —
     /// those referenced explicitly as the bare param type. A declared param
@@ -502,26 +397,10 @@ impl Model {
             .find_map(|anc| self.resolved_param_bound(anc, param))
     }
 
-    /// The concrete content types available in the current emission scope, in
-    /// priority order, for threading into an *unbounded* generic slot: the free
-    /// generic-parameter names first (a generic class threads its own `T`), then
-    /// the rendered values of any ancestor-generic `subst` bindings (a
-    /// monomorphized class threads its bound content type).
-    fn scope_content_types(
-        generics: &[String],
-        subst: &BTreeMap<String, String>,
-    ) -> std::vec::IntoIter<String> {
-        let mut v: Vec<String> = generics.to_vec();
-        for val in subst.values() {
-            v.push(primitive(val).map_or_else(|| naming::type_name(val), str::to_string));
-        }
-        v.into_iter()
-    }
-
     /// The bounds to auto-fill for a bare reference to a generic class, or
     /// `None` if the class has no *used* generic params (so a bare reference
     /// stays bare). Consistent with [`Self::used_generic_params`].
-    fn generic_param_bounds(&self, name: &str) -> Option<Vec<Option<String>>> {
+    pub(crate) fn generic_param_bounds(&self, name: &str) -> Option<Vec<Option<String>>> {
         let used = self.used_generic_params(name);
         if used.is_empty() {
             None
@@ -560,37 +439,6 @@ impl Model {
                 }
             }
         }
-    }
-
-    /// The emittable spec class names a class refers to in its (flattened)
-    /// fields — for computing precise `use` imports. Excludes primitives,
-    /// generic params, mapped/skip types, and `Any`.
-    pub(crate) fn referenced_specs(
-        &self,
-        class: &BmmClass,
-        generics: &[String],
-        subst: &BTreeMap<String, String>,
-    ) -> BTreeSet<String> {
-        let mut roots = BTreeSet::new();
-        for rp in self.flattened_props(class) {
-            // A back-reference field is omitted from the emitted struct
-            // (see `back_reference` / `render_struct_def`), so it contributes no
-            // import — including its target here would emit an unused `use`.
-            if back_reference(&rp.owner, &rp.prop.name).is_some() {
-                continue;
-            }
-            match &rp.prop.kind {
-                BmmPropKind::Single(t) => self.effective_roots(t, &mut roots),
-                BmmPropKind::Container { item, .. } => self.effective_roots(item, &mut roots),
-            }
-        }
-        roots
-            .into_iter()
-            // Substitute a bound generic parameter (`T` → `COMPOSITION`) so the
-            // concrete content type is imported, not the parameter name.
-            .map(|n| subst.get(&n).cloned().unwrap_or(n))
-            .filter(|n| !Self::is_mapped(n) && n != "Any" && !generics.iter().any(|g| g == n))
-            .collect()
     }
 
     /// The set of class names that are **constructible** — a finite value
@@ -888,24 +736,35 @@ pub(crate) fn class_paths(schema: &BmmSchema) -> BTreeMap<String, String> {
     out
 }
 
-/// The attribute named by a `x /= Void implies not x.is_empty` assertion, when
-/// the expression has exactly that shape (both operands the same attribute).
-/// `Void` is matched case-insensitively — the RM BMM spells it both ways
-/// (`DV_TEXT.Mappings_valid` uses lowercase `void`).
+/// The attribute named by a `x /= Void implies not x.is_empty` assertion,
+/// including the BMM's variant spellings of the same predicate.
+///
+/// `Void` is matched case-insensitively (`DV_TEXT.Mappings_valid` uses
+/// lowercase `void`), `.empty` is accepted beside `.is_empty`
+/// (`ROLE.Capabilities_valid` uses the Eiffel spelling), and a parenthesized
+/// conjunction whose FIRST conjunct is the non-empty predicate matches too
+/// (`PARTY.Relationships_validity`) — the remaining conjuncts stay the
+/// responsibility of their classified venue.
 pub(crate) fn nonempty_list_attribute(expression: &str) -> Option<String> {
     let normalized = expression.split_whitespace().collect::<Vec<_>>().join(" ");
     let (lhs, rhs) = normalized.split_once(" implies ")?;
     let attribute = lhs
         .strip_suffix(" /= Void")
         .or_else(|| lhs.strip_suffix(" /= void"))?;
-    if rhs != format!("not {attribute}.is_empty") {
-        return None;
-    }
     if attribute.is_empty()
         || !attribute
             .chars()
             .all(|c| c.is_ascii_lowercase() || c == '_')
     {
+        return None;
+    }
+    let is_empty = format!("not {attribute}.is_empty");
+    let empty = format!("not {attribute}.empty");
+    let matches_predicate = rhs == is_empty
+        || rhs == empty
+        || rhs.starts_with(&format!("({is_empty} and "))
+        || rhs.starts_with(&format!("({empty} and "));
+    if !matches_predicate {
         return None;
     }
     Some(attribute.to_owned())

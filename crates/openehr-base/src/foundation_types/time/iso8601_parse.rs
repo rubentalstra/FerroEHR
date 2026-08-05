@@ -69,17 +69,14 @@ pub(crate) const SECONDS_IN_HOUR: f64 = MINUTES_IN_HOUR * SECONDS_IN_MINUTE;
 pub(crate) const SECONDS_IN_DAY: f64 = HOURS_IN_DAY * SECONDS_IN_HOUR;
 
 // ── Integer-second forms of the same constants ───────────────────────────────
-// NOTE: the definite computational functions (§Computational Functions) reduce a
-// duration to seconds and shift a date/time by it. Doing that on `f64` would
-// corrupt sub-second precision, because an absolute-seconds coordinate is
-// ~1e11 and an `f64` mantissa cannot carry a nanosecond fraction that far out.
-// The arithmetic therefore runs on `i64` whole seconds plus a separate
-// fractional part ([`ExactSeconds`]), which is exact — and it stays faithful to
-// the spec constants because both average lengths are a whole number of
-// seconds: `Average_days_in_year × 86400 = 365.24 × 86400 = 31_556_736` and
-// `Average_days_in_month × 86400 = 30.42 × 86400 = 2_628_288` (pinned by the
-// `average_constants_are_whole_seconds` test below). No openEHR spec governs
-// the arithmetic's internal representation — our own design/extension.
+// No openEHR spec governs the arithmetic's internal representation — our own
+// design. Both average lengths are a whole number of seconds (`365.24 × 86400 =
+// 31_556_736`, `30.42 × 86400 = 2_628_288`, pinned by the
+// `average_constants_are_whole_seconds` test below), so the `i64`-seconds plus
+// separate fractional part stays faithful to the spec constants.
+// NOTE: the definite computational functions (§Computational Functions) reduce
+// a duration to seconds; doing that on `f64` would corrupt sub-second
+// precision, so the arithmetic runs on exact whole seconds ([`ExactSeconds`]).
 
 /// `Time_Definitions.Seconds_in_minute` as exact seconds.
 pub(crate) const EXACT_SECONDS_IN_MINUTE: i64 = 60;
@@ -258,9 +255,8 @@ pub(crate) fn parse_date(s: &str) -> Option<ParsedDate> {
     validate_date(year, month, day)?;
     // `Iso8601_date.is_extended`: "True if this date uses '-' separators".
     // NOTE: the spec does not say what a form with NO separator position
-    // (`YYYY`, identical in both forms) reports. We report it extended, which
-    // keeps the invariant `as_string() == value` exactly when `is_extended` —
-    // no openEHR spec governs this case — our own design/extension.
+    // (`YYYY`) reports; we report it extended, keeping `as_string() == value`
+    // exactly when `is_extended` — our own design, no spec governs it.
     let extended = s.contains('-') || s.len() == 4;
     Some(ParsedDate {
         year,
@@ -1060,12 +1056,9 @@ pub(crate) fn hms_from_seconds_of_day(seconds: i64) -> Option<(u32, u32, u32)> {
 }
 
 // ── Rendering (extended form) ────────────────────────────────────────────────
-// NOTE: every computed result is rendered in the EXTENDED form, because
-// `master06` §Primitive Time Types states it is "strongly recommended that the
-// 'extended' form of date and time strings be used when writing and displaying
-// data". The spec does not otherwise prescribe the output spelling of a
-// computational function, so the remaining choices below (which designators a
-// computed duration uses, the timezone spelling) are our own design/extension.
+// NOTE: every computed result is rendered in the EXTENDED form, `master06`
+// §Primitive Time Types calling it "strongly recommended"; the spec prescribes
+// no output spelling otherwise, so the remaining choices are our own design.
 
 /// Render a date in extended form, omitting the components the value does not
 /// have (`YYYY-MM-DD`, `YYYY-MM`, `YYYY`).

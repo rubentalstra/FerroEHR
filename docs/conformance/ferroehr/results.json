@@ -1,11 +1,11 @@
 {
   "sut": {
     "name": "ferroehr",
-    "version": "3.17.1"
+    "version": "3.17.2"
   },
   "runner": {
     "name": "cnf-runner",
-    "version": "3.17.1",
+    "version": "3.17.2",
     "verification_pack_status": "passed"
   },
   "schedule_release": "cnf-2.0-w2",
@@ -415,6 +415,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.create_composition-composer_identifiers_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.create_composition-context_location_empty",
       "status": "passed",
       "rows_driven": 1,
@@ -434,6 +440,12 @@
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-deprecated_template_id",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-duplicate_member",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -469,6 +481,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.create_composition-foreign_type_in_content",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.create_composition-invalid_event",
       "status": "passed",
       "rows_driven": 1,
@@ -482,6 +500,12 @@
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-item_node_id_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-item_tree_empty",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -518,6 +542,12 @@
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-null_empty_absent",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-paragraph_no_items",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -593,6 +623,12 @@
     {
       "case": "I_EHR_COMPOSITION.create_composition-setting_invalid_xml",
       "format": "canonical-xml",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-single_member",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -836,6 +872,13 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.get_composition_latest-xml_namespace_v1",
+      "format": "canonical-xml",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.get_composition_latest-xml_namespace_v2",
       "format": "canonical-xml",
       "status": "passed",
@@ -1046,6 +1089,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.update_composition-cluster_no_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.update_composition-deleted_lifecycle_header",
       "status": "passed",
       "rows_driven": 1,
@@ -1083,6 +1132,12 @@
     },
     {
       "case": "I_EHR_COMPOSITION.update_composition-non_existent",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.update_composition-paragraph_no_items",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -1966,6 +2021,27 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-audit_change_type_omitted",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-audit_change_type_out_of_group",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-audit_conformant",
+      "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-audit_description_coded",
       "format": "canonical-json",
       "status": "passed",
@@ -1974,6 +2050,12 @@
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-client_uid_in_use",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-cluster_no_items",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -2247,6 +2329,12 @@
       "status": "passed",
       "rows_driven": 3,
       "rows_total": 3
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-paragraph_no_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-persistent_composition",
@@ -3039,6 +3127,18 @@
       "rows_total": 1
     },
     {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-agent_contact_addresses_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-agent_identities_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-archetype_node_id_mismatch",
       "status": "passed",
       "rows_driven": 1,
@@ -3075,7 +3175,25 @@
       "rows_total": 1
     },
     {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-cluster_no_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-contacts_present_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-group_contact_addresses_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-group_identities_empty",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -3130,6 +3248,36 @@
       "rows_total": 1
     },
     {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-organisation_contact_addresses_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-organisation_identities_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-paragraph_no_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-person_contact_addresses_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-person_identities_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-prefer_minimal",
       "format": "canonical-json",
       "status": "passed",
@@ -3137,7 +3285,43 @@
       "rows_total": 1
     },
     {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-relationship_source_foreign_container",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-relationship_source_is_the_container",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-relationships_present_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-return_identifier",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-role_contact_addresses_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-role_identities_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-role_root_identity_mismatch",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -3150,6 +3334,12 @@
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-simplified_content_type",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-version_lifecycle",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -3181,6 +3371,12 @@
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party_relationship-readonly_forbidden",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party_relationship-root_identity_mismatch",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -3352,6 +3548,30 @@
       "rows_total": 1
     },
     {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-agent_cluster_no_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-agent_contact_addresses_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-agent_identities_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-agent_valid",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-bbbb",
       "status": "passed",
       "rows_driven": 1,
@@ -3359,6 +3579,54 @@
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-case_variant_if_match",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-cluster_no_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-contact_addresses_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-contacts_present_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-group_cluster_no_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-group_contact_addresses_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-group_identities_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-group_valid",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-identities_empty",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -3376,8 +3644,68 @@
       "rows_total": 1
     },
     {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-organisation_cluster_no_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-organisation_contact_addresses_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-organisation_identities_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-organisation_valid",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-paragraph_no_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-prefer_minimal",
       "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-role_cluster_no_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-role_contact_addresses_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-role_identities_empty",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-role_valid",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-root_identity_mismatch",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -3433,6 +3761,12 @@
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party_relationship-missing_if_match",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party_relationship-root_identity_mismatch",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -3751,6 +4085,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_DIRECTORY.create_directory-cluster_no_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_DIRECTORY.create_directory-details_not_item_structure",
       "status": "passed",
       "rows_driven": 1,
@@ -3813,8 +4153,20 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_DIRECTORY.create_directory-paragraph_no_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_DIRECTORY.create_directory-prefer_minimal",
       "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.create_directory-root_archetype_id_mismatch",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -4179,6 +4531,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_DIRECTORY.update_directory-cluster_no_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_DIRECTORY.update_directory-ehr_with_directory",
       "status": "passed",
       "rows_driven": 1,
@@ -4203,8 +4561,20 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_DIRECTORY.update_directory-paragraph_no_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_DIRECTORY.update_directory-prefer_minimal",
       "format": "canonical-json",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.update_directory-root_archetype_id_mismatch",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -4651,6 +5021,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_STATUS.set_ehr_queryable-cluster_no_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_STATUS.set_ehr_queryable-existing_ehr",
       "status": "passed",
       "rows_driven": 1,
@@ -4664,6 +5040,12 @@
     },
     {
       "case": "I_EHR_STATUS.set_ehr_queryable-missing_if_match",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_STATUS.set_ehr_queryable-paragraph_no_items",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -4915,7 +5297,31 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-criteria_foreign_formalism",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-criteria_selects_primary_set",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-empty_manifest",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-latest_across_lineages",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-readonly_allowed",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -5023,6 +5429,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-cluster_no_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-into_branched_lineage",
       "status": "passed",
       "rows_driven": 1,
@@ -5036,6 +5448,18 @@
     },
     {
       "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-invalid",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-manifest_no_entities",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-paragraph_no_items",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -5687,6 +6111,18 @@
       "rows_total": 1
     },
     {
+      "case": "SF-DEPRECATED-structured_accept_unsupported",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "SF-DEPRECATED-structured_media_unsupported",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "SF-EXAMPLE-accept_forms",
       "status": "passed",
       "rows_driven": 1,
@@ -5724,6 +6160,12 @@
     },
     {
       "case": "SF-FLAT-commit_roundtrip_ctx_defaults",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "SF-FLAT-malformed_path",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -5783,6 +6225,19 @@
       "rows_total": 1
     },
     {
+      "case": "SF-LEGACY-nc_flat_accept_unsupported",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "SF-LEGACY-nc_flat_media_supported",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "option legacy-alt-formats-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    },
+    {
       "case": "SF-LEGACY-nc_flat_media_unsupported",
       "status": "passed",
       "rows_driven": 1,
@@ -5790,6 +6245,12 @@
     },
     {
       "case": "SF-LEGACY-tds2_accept_unsupported",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "SF-LEGACY-tds2_media_unsupported",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1

@@ -23,7 +23,8 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 
 /// The vendored ITS-JSON RM all-schema (draft-07), used to validate output in
-/// the fidelity-gate tests. Pinned commit recorded in `docs/VERSIONS.md`.
+/// the fidelity-gate tests, vendored at a pinned upstream commit (see the
+/// bundled schema's provenance record).
 pub const RM_SCHEMA_JSON: &str = include_str!("../schemas/json/openehr_rm_1.1.0_all.json");
 
 /// A canonical-JSON deserialization failure: the message, the JSON path to the

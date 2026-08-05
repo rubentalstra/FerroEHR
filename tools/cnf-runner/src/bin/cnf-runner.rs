@@ -1635,9 +1635,31 @@ fn run_command(
     // wants fresh evidence or an unchanged-surface attestation).
     let carried_measurements: Vec<cnf_runner::perf::Measurement> = {
         let prior_path = out.join("results.json");
-        std::fs::read_to_string(&prior_path)
-            .ok()
-            .and_then(|text| serde_json::from_str::<Results>(&text).ok())
+        // NOTE: no prior file is ABSENCE (the first run at this path); a file
+        // that exists but will not read or parse is a DEFECT — carrying zero
+        // measurements past it would silently drop the §8.10 evidence.
+        let prior = match std::fs::read_to_string(&prior_path) {
+            Ok(text) => match serde_json::from_str::<Results>(&text) {
+                Ok(prior) => Some(prior),
+                Err(e) => {
+                    eprintln!(
+                        "runner defect: {} exists but does not parse as results.json ({e}) — \
+                         its measurement records cannot be carried forward",
+                        prior_path.display()
+                    );
+                    return ExitCode::from(2);
+                }
+            },
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
+            Err(e) => {
+                eprintln!(
+                    "runner defect: {} is unreadable ({e})",
+                    prior_path.display()
+                );
+                return ExitCode::from(2);
+            }
+        };
+        prior
             .filter(|prior| prior.sut.name == sut_name)
             .map(|prior| {
                 if prior.sut.version != sut_version && !prior.measurements.is_empty() {

@@ -4,7 +4,7 @@
 //! part of the versioned-object spine ([`crate::storage::version_repo`]).
 //!
 //! No openEHR spec governs the `ehr` / `ehr_folder` schema — it is our own
-//! PG18-native design (`docs/architecture.md` §Storage). The EHR concepts these
+//! PG18-native design. The EHR concepts these
 //! rows realize are arch-overview `master06-design_of_the_ehr.adoc` §The EHR
 //! (root, `system_id`, `time_created`) and RM ehr `master04-ehr_package.adoc`
 //! §EHR Creation / §Folders / §EHR Status. All *semantics* (subject sync
@@ -14,7 +14,7 @@
 #![expect(
     clippy::disallowed_types,
     reason = "owner-approved 2026-08-03 (#1694 family 1): stored canonical fragments — a typed \
-              round-trip drops forward-compatible keys (docs/VERSIONS.md §Spec version policy)"
+              round-trip drops forward-compatible keys (the openEHR release strategy: minors are compatible supersets)"
 )]
 
 use serde_json::Value;
@@ -122,8 +122,8 @@ pub async fn current_status_root(
     ehr_id: EhrId,
 ) -> Result<Option<Value>, StorageError> {
     Ok(sqlx::query_scalar(
-        "SELECT n.data FROM vo_version v \
-         JOIN node n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version AND n.num = 0 \
+        "SELECT n.data FROM vo_version_all v \
+         JOIN node_all n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version AND n.num = 0 \
          WHERE v.ehr_id = $1 AND v.kind = 'EHR_STATUS' \
            AND upper_inf(v.sys_period) AND v.branch_number = 0",
     )
@@ -207,17 +207,17 @@ pub async fn ehr_summary_read(
          LEFT JOIN LATERAL ( \
              SELECT vo_id, trunk_version, branch_number, branch_version, \
                     creating_system_id \
-             FROM vo_version WHERE ehr_id = e.id AND kind = 'EHR_STATUS' \
+             FROM vo_version_all WHERE ehr_id = e.id AND kind = 'EHR_STATUS' \
                AND upper_inf(sys_period) AND branch_number = 0 \
          ) s ON true \
          LEFT JOIN LATERAL ( \
-             SELECT vo_id FROM vo_version WHERE ehr_id = e.id AND kind = 'EHR_ACCESS' \
+             SELECT vo_id FROM vo_version_all WHERE ehr_id = e.id AND kind = 'EHR_ACCESS' \
                AND upper_inf(sys_period) AND branch_number = 0 \
          ) a ON true \
          LEFT JOIN LATERAL ( \
              SELECT array_agg(f.vo_id ORDER BY f.rank) AS folders \
              FROM ehr_folder f \
-             JOIN vo_version v ON v.vo_id = f.vo_id \
+             JOIN vo_version_all v ON v.vo_id = f.vo_id \
                AND upper_inf(v.sys_period) AND v.branch_number = 0 \
              WHERE f.ehr_id = e.id AND v.lifecycle_state <> '523' \
          ) f ON true \

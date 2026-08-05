@@ -1,18 +1,18 @@
 # Conformance Report
 
-SUT: ferroehr 3.17.1 · schedule cnf-2.0-w2 · ITS its-rest
-Runner: cnf-runner 3.17.1 · verification pack: passed
+SUT: ferroehr 3.17.2 · schedule cnf-2.0-w2 · ITS its-rest
+Runner: cnf-runner 3.17.2 · verification pack: passed
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| passed | 936 |
+| passed | 1011 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
-| not_applicable | 37 |
-| total | 973 |
+| not_applicable | 38 |
+| total | 1049 |
 
 ## By chapter
 
@@ -20,12 +20,12 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 
 | Chapter / band | passed | failed | errored | cited n/a |
 | --- | --- | --- | --- | --- |
-| **EHR** | 416 | 0 | 0 | 18 |
+| **EHR** | 438 | 0 | 0 | 18 |
 | — EHR resource | 25 | 0 | 0 | 2 |
-| — EHR_STATUS | 44 | 0 | 0 | 5 |
-| — COMPOSITION | 125 | 0 | 0 | 0 |
-| — DIRECTORY | 71 | 0 | 0 | 6 |
-| — CONTRIBUTION | 86 | 0 | 0 | 5 |
+| — EHR_STATUS | 46 | 0 | 0 | 5 |
+| — COMPOSITION | 134 | 0 | 0 | 0 |
+| — DIRECTORY | 77 | 0 | 0 | 6 |
+| — CONTRIBUTION | 91 | 0 | 0 | 5 |
 | — Item tags | 59 | 0 | 0 | 0 |
 | — Revision history | 6 | 0 | 0 | 0 |
 | **Definitions** | 92 | 0 | 0 | 10 |
@@ -35,12 +35,12 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 | **Query** | 56 | 0 | 0 | 0 |
 | — Ad-hoc AQL | 45 | 0 | 0 | 0 |
 | — Stored query execution | 11 | 0 | 0 | 0 |
-| **Demographic** | 69 | 0 | 0 | 4 |
-| — Parties | 46 | 0 | 0 | 3 |
-| — Party relationships | 17 | 0 | 0 | 0 |
+| **Demographic** | 110 | 0 | 0 | 4 |
+| — Parties | 85 | 0 | 0 | 3 |
+| — Party relationships | 19 | 0 | 0 | 0 |
 | — Versioned party | 6 | 0 | 0 | 1 |
-| **Messaging** | 41 | 0 | 0 | 0 |
-| — EHR Extract | 25 | 0 | 0 | 0 |
+| **Messaging** | 48 | 0 | 0 | 0 |
+| — EHR Extract | 32 | 0 | 0 | 0 |
 | — TDD | 16 | 0 | 0 | 0 |
 | **Admin** | 54 | 0 | 0 | 2 |
 | — Admin service | 24 | 0 | 0 | 2 |
@@ -52,11 +52,11 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 | — Data types | 52 | 0 | 0 | 0 |
 | — Interval data types | 30 | 0 | 0 | 0 |
 | — Structure & cardinality | 41 | 0 | 0 | 0 |
-| **Simplified formats** | 64 | 0 | 0 | 1 |
-| — FLAT & STRUCTURED | 21 | 0 | 0 | 0 |
+| **Simplified formats** | 69 | 0 | 0 | 2 |
+| — FLAT & STRUCTURED | 22 | 0 | 0 | 0 |
 | — Web Template | 5 | 0 | 0 | 0 |
 | — Path mapping | 31 | 0 | 0 | 0 |
-| — Scope & legacy media | 7 | 0 | 0 | 1 |
+| — Scope & legacy media | 11 | 0 | 0 | 2 |
 | **Security & privacy** | 6 | 0 | 0 | 0 |
 | — Authenticated access | 2 | 0 | 0 | 0 |
 | — Authorization separation | 1 | 0 | 0 | 0 |
@@ -83,15 +83,15 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | TemplateExamples | pass | 3 | 0 | 0 | 0 |
 | QueryProvisioning | pass | 27 | 0 | 0 | 0 |
 | EhrOperations | pass | 22 | 0 | 0 | 2 |
-| EhrStatus | pass | 42 | 0 | 0 | 5 |
-| CompositionOps | pass | 50 | 0 | 0 | 0 |
-| DirectoryOps | pass | 69 | 0 | 0 | 8 |
-| ChangeSets | pass | 79 | 0 | 0 | 5 |
+| EhrStatus | pass | 44 | 0 | 0 | 5 |
+| CompositionOps | pass | 59 | 0 | 0 | 0 |
+| DirectoryOps | pass | 75 | 0 | 0 | 8 |
+| ChangeSets | pass | 84 | 0 | 0 | 5 |
 | Versioning | pass | 69 | 0 | 0 | 0 |
 | ArchetypeValidation | pass | 125 | 0 | 0 | 0 |
-| PartyOperations | pass | 49 | 0 | 0 | 4 |
-| PartyRelationshipOperations | pass | 17 | 0 | 0 | 0 |
-| DemographicArchetypeValidation | pass | 8 | 0 | 0 | 0 |
+| PartyOperations | pass | 86 | 0 | 0 | 4 |
+| PartyRelationshipOperations | pass | 19 | 0 | 0 | 0 |
+| DemographicArchetypeValidation | pass | 11 | 0 | 0 | 0 |
 | AqlBasic | pass | 32 | 0 | 0 | 0 |
 | AqlAdvanced | pass | 3 | 0 | 0 | 0 |
 | AqlTerminology | pass | 6 | 0 | 0 | 0 |
@@ -101,18 +101,18 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 | BulkEhrLoad | pass | 2 | 0 | 0 | 0 |
 | EhrArchive | pass | 7 | 0 | 0 | 0 |
 | DemographicArchive | pass | 8 | 0 | 0 | 0 |
-| EhrExtract | pass | 25 | 0 | 0 | 0 |
+| EhrExtract | pass | 32 | 0 | 0 | 0 |
 | Tds | pass | 16 | 0 | 0 | 0 |
 | DefinitionApi | pass | 1 | 0 | 0 | 0 |
 | EhrApi | pass | 2 | 0 | 0 | 0 |
-| DemographicApi | pass | 27 | 0 | 0 | 1 |
+| DemographicApi | pass | 62 | 0 | 0 | 1 |
 | QueryApi | pass | 20 | 0 | 0 | 0 |
 | AdminApi | pass | 8 | 0 | 0 | 0 |
 | MessageApi | pass | 4 | 0 | 0 | 0 |
 | SystemApi | pass | 1 | 0 | 0 | 0 |
 | ItemTags | pass | 63 | 0 | 0 | 0 |
 | Signing | pass | 11 | 0 | 0 | 2 |
-| SimplifiedFormats | pass | 68 | 0 | 0 | 1 |
+| SimplifiedFormats | pass | 73 | 0 | 0 | 2 |
 | SmartAppLaunch | pass | 3 | 0 | 0 | 0 |
 | EhrDemographicSeparation | pass | 1 | 0 | 0 | 0 |
 | AuthenticatedAccess | pass | 2 | 0 | 0 | 0 |
@@ -175,7 +175,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 936 of 973 selected cases driven.
+Coverage: 1011 of 1049 selected cases driven.
 
 Not-executed verdicts (each cited):
 
@@ -216,5 +216,6 @@ Not-executed verdicts (each cited):
 | I_EHR_STATUS.set_ehr_queryable-xml_body | option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_ITS_REST_VERSIONED_PARTY.versioned_party_get-xml | option versioned-party-xml-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | SF-DEPRECATED-media_supported | option sf-deprecated-types-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| SF-LEGACY-nc_flat_media_supported | option legacy-alt-formats-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | SIG-VERSION-directory_signature_present | I_EHR_DIRECTORY.get_versioned_directory: AMB-24 |
 | SIG-VERSION-directory_verifiable | I_EHR_DIRECTORY.get_versioned_directory: AMB-24 |

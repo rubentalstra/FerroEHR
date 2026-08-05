@@ -75,7 +75,6 @@ fn config() -> AppConfig {
             enabled: false,
             basic: None,
             oidc: None,
-            admin_scope: None,
             ..AuthConfig::default()
         },
         ..Default::default()
@@ -1054,7 +1053,7 @@ async fn ehr_status_update_identifier_is_never_204() {
 /// contribution audit's commit instant — overview §"`ETag` and Last-Modified"
 /// (both SHOULD accompany resources with "versioning or unique state
 /// identifiers"); the released `200_CONTRIBUTION` declares neither, so the
-/// reach of the SHOULD is the register-documented reading.
+/// reach of the SHOULD is the adjudicated reading.
 #[tokio::test]
 async fn contribution_get_carries_etag_and_last_modified() {
     let (_pg, app) = app().await;
@@ -1203,7 +1202,7 @@ async fn stored_commit_instant(app: &Router, ehr_id: &str, contribution_uid: &st
 /// versioning or unique state identifiers", the value "derived from
 /// `VERSION.commit_audit.time_committed.value`". The released
 /// `201_CONTRIBUTION` declares neither header, so the reach of the SHOULD is
-/// the same register-documented reading the CONTRIBUTION GET applies.
+/// the same adjudicated reading the CONTRIBUTION GET applies.
 #[tokio::test]
 async fn contribution_commit_carries_last_modified_on_both_prefer_branches() {
     let (_pg, app) = app().await;
@@ -1258,7 +1257,7 @@ async fn contribution_commit_carries_last_modified_on_both_prefer_branches() {
 /// The tag target guard runs on GET and DELETE too: the released 404 trigger
 /// ("…or when the `uid_based_id` does not exist") covers a nonexistent
 /// target, a foreign EHR's target, and a wrong-kind target on a typed route
-/// (route-kind discipline, register-documented) — while an EXISTING target
+/// (route-kind discipline, adjudicated) — while an EXISTING target
 /// with no tags stays an empty `200 []`.
 #[tokio::test]
 async fn tag_get_and_delete_guard_the_target() {
@@ -1341,7 +1340,7 @@ async fn tag_get_and_delete_guard_the_target() {
 
 /// `target_path: ""` on a PUT normalizes to ABSENT (RM models `target_path`
 /// 0..1 with no non-empty invariant while the released `EHR_STATUS` example
-/// writes "" — one identity, register-documented): a "" tag and an absent-path
+/// writes "" — one identity, adjudicated): a "" tag and an absent-path
 /// tag with the same key are ONE tag, last-wins.
 #[tokio::test]
 async fn tag_empty_target_path_normalizes_to_absent() {
@@ -1421,10 +1420,10 @@ async fn ehr_wide_tag_listing_guards_the_ehr() {
 
 /// The remaining group-8 tag disciplines in one battery: `[]` clear-all (the
 /// released sentence), `Prefer: return=identifier` resolving to the applied
-/// minimal default (an `ITEM_TAG` has no uid — AMB-92), delete-by-key as a
+/// minimal default (an `ITEM_TAG` has no uid), delete-by-key as a
 /// SET delete (the released "resource(s)" plural — every `target_path` under
 /// the key goes, and the second delete is the released non-idempotent 404),
-/// and the `ehr_tags_get` filters (AND-combined, exact — AMB-94).
+/// and the `ehr_tags_get` filters (AND-combined, exact — our own handling).
 #[tokio::test]
 async fn tag_collection_disciplines() {
     let (_pg, app) = app().await;
@@ -1450,7 +1449,7 @@ async fn tag_collection_disciplines() {
         { "key": "workflow", "value": "open" }
     ]);
     let (status, h, _b) = send(&app, put(seed, Some("return=identifier"))).await;
-    // return=identifier resolves to the APPLIED minimal default (AMB-92).
+    // return=identifier resolves to the APPLIED minimal default.
     assert_eq!(status, StatusCode::NO_CONTENT);
     assert_eq!(
         h.get("preference-applied").and_then(|v| v.to_str().ok()),

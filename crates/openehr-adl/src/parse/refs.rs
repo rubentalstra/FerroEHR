@@ -238,8 +238,8 @@ impl Parser<'_> {
     /// `exclude`/`}` at brace-depth 0) and handed to
     /// [`crate::rules::parse_slot_assertions`], which parses it via the BEL
     /// composition into one or more AOM [`Assertion`] trees
-    /// (`EXPR_ARCHETYPE_REF matches EXPR_ARCHETYPE_ID_CONSTRAINT`, `master05`);
-    /// the verbatim source is preserved in each `string_expression` and the
+    /// (`EXPR_ARCHETYPE_REF matches EXPR_ARCHETYPE_ID_CONSTRAINT`, `master05`),
+    /// each carrying its own rendered `string_expression`; the
     /// `archetype_id/value matches {/regex/}` regex is compile-checked (`SCSRE`).
     /// A block may carry more than one assertion (grammar `assertion+`), so every
     /// parsed assertion is returned.
@@ -265,9 +265,9 @@ impl Parser<'_> {
             );
         }
         let text = self.src.get(start_byte..end_byte).unwrap_or_default();
-        // Parse the real assertion tree(s) (`EXPR_ARCHETYPE_REF matches
+        // Parse the assertion tree(s) (`EXPR_ARCHETYPE_REF matches
         // EXPR_ARCHETYPE_ID_CONSTRAINT`, `master05` / `master04.3`) via the BEL
-        // AOM composition; `string_expression` keeps the verbatim source.
+        // AOM composition.
         match crate::rules::parse_slot_assertions(text) {
             Ok(assertions) => Ok(assertions),
             Err(errs) => {

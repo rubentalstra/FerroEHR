@@ -90,7 +90,7 @@ use crate::flat::webtemplate::{WebTemplate, WebTemplateNode};
 pub const TDD_TEMPLATE_NS: &str = "http://schemas.oceanehr.com/templates";
 
 /// openEHR reference-model release stamped into a rebuilt `ARCHETYPED.rm_version`
-/// (workspace RM pin, `docs/VERSIONS.md`). Shared meaning with the FLAT
+/// (the workspace RM pin). Shared meaning with the FLAT
 /// converter's `RM_VERSION`.
 const RM_VERSION: &str = "1.2.0";
 
@@ -575,16 +575,14 @@ fn build_node(
         if rel.is_empty() {
             continue;
         }
-        // A node the WebTemplate now synthesizes for a *simple* RM in-context
+        // A node the WebTemplate synthesizes for a *simple* RM in-context
         // attribute (COMPOSITION context/language/territory/composer, ENTRY
-        // language/encoding/subject — `ITS-REST simplified_formats master04
-        // §"Web Template Metadata"`, the `inContext` marker; the `context`
-        // wrapper is itself unmarked but is EVENT_CONTEXT) is already built above
-        // from the TDD element by `simple_attr`; walking it again here would
+        // language/encoding/subject — `ITS-REST simplified_formats master04`
+        // §"Web Template Metadata", the `inContext` marker) is already built
+        // above from the TDD element by `simple_attr`; walking it again would
         // rebuild it partially (e.g. an EVENT_CONTEXT without its mandatory
         // `start_time`) and overwrite the faithful value. `category` and the
-        // per-EVENT `time` are real tree data (`simple_attr` returns `None` for
-        // them) and still build through the walk.
+        // per-EVENT `time` are real tree data and still build through the walk.
         if (wc.in_context == Some(true) || wc.rm_type == "EVENT_CONTEXT")
             && rel
                 .last()

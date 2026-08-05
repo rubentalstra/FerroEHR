@@ -517,14 +517,10 @@ mod tests {
     fn a_second_double_colon_normalizes_to_the_last_segment_pair() {
         // `a::b::c` is NOT a spec-valid qualified name — the bare name would
         // have to contain `::`, which the `query-name` charset excludes — so it
-        // cannot round-trip through two fields, and no requirement says it
-        // should. Split reads the FIRST `::` (namespace `a`), and re-composing
-        // applies the documented typed-prefix rule, which yields `b::c`.
-        //
-        // This is deliberately NOT silent: the save screens render the composed
-        // name ("Saves as …") before the click, so an operator who opened such a
-        // malformed name sees exactly what a save would write. Preserving it
-        // instead would mean composing another invalid identifier.
+        // cannot round-trip through two fields. Split reads the FIRST `::`
+        // (namespace `a`), and re-composing applies the documented
+        // typed-prefix rule, which yields `b::c`. Not silent: the save screens
+        // render the composed name ("Saves as …") before the click.
         let (namespace, bare) = split_qualified("a::b::c");
         assert_eq!(namespace, "a");
         assert_eq!(bare, "b::c");

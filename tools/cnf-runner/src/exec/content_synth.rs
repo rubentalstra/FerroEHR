@@ -85,12 +85,12 @@ pub fn unrealizable_row(
             .and_then(|i| cells.get(i))
     };
     // Only rejected-expected rows can be unrealizable this way. The loader
-    // (`run::synthesize_content_case`) normalizes the authored
-    // `rejected` token to the `validation_failed` outcome kind before the
-    // driver sees the matrix — accept both spellings.
+    // (`run::synthesize_content_case`) normalizes the authored `rejected`
+    // token to the refusal outcome kind the row's `violates` list implies
+    // before the driver sees the matrix — accept every spelling.
     match cell("expected") {
         Some(MatrixCell::Literal(serde_json::Value::String(s)))
-            if s == "rejected" || s == "validation_failed" => {}
+            if s == "rejected" || s == "validation_failed" || s == "bad_request" => {}
         _ => return None,
     }
     let Some(MatrixCell::Literal(serde_json::Value::Array(violations))) = cell("violates") else {

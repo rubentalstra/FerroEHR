@@ -8,15 +8,6 @@ use super::{
 
 pub(super) static CLASSES: &[RmClass] = &[
     RmClass {
-        name: "ACCESS_CONTROL_SETTINGS",
-        is_abstract: true,
-        ancestors: &[],
-        descendants: &[],
-        attributes: &[],
-        is_structure_root: false,
-        generic_params: &[],
-    },
-    RmClass {
         name: "ACCESS_GROUP_REF",
         is_abstract: false,
         ancestors: &["OBJECT_REF"],
@@ -437,7 +428,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
-                nonempty: false,
+                nonempty: true,
             },
             RmAttribute {
                 name: "languages",
@@ -840,7 +831,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
-                nonempty: false,
+                nonempty: true,
             },
             RmAttribute {
                 name: "languages",
@@ -6233,7 +6224,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
-                nonempty: false,
+                nonempty: true,
             },
             RmAttribute {
                 name: "languages",
@@ -8375,7 +8366,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
-                nonempty: false,
+                nonempty: true,
             },
             RmAttribute {
                 name: "languages",
@@ -8660,7 +8651,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
-                nonempty: false,
+                nonempty: true,
             },
         ],
         is_structure_root: false,
@@ -9166,7 +9157,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
-                nonempty: false,
+                nonempty: true,
             },
             RmAttribute {
                 name: "languages",
@@ -9874,7 +9865,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
-                nonempty: false,
+                nonempty: true,
             },
             RmAttribute {
                 name: "time_validity",
@@ -9907,7 +9898,7 @@ pub(super) static CLASSES: &[RmClass] = &[
                     lower: 0,
                     upper: None,
                 }),
-                nonempty: false,
+                nonempty: true,
             },
         ],
         is_structure_root: false,

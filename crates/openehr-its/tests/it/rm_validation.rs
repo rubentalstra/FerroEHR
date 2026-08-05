@@ -616,12 +616,10 @@ fn ips_nodes_ride_the_fast_path() {
 //
 // The terminology binding table
 // (`openehr_rm::validate::terminology::validate_rm_terminology`, run by
-// `validate_rm_value` as a post-core check). Two properties: the
-// corpus-audit safety property (no valid corpus document is newly rejected) and
-// the per-vocabulary enforcement property (an out-of-vocabulary code IS
-// rejected). Spec: the RM class invariants under
-// `docs/specs/openehr/RM/docs/UML/classes/` resolved against the openEHR
-// terminology bundle (TERM 3.1.0).
+// `validate_rm_value` as a post-core check). Two properties: the corpus-audit
+// safety property (no valid corpus document is newly rejected) and the
+// per-vocabulary enforcement property (an out-of-vocabulary code IS rejected).
+// Spec: the RM class invariants resolved against the TERM 3.1.0 bundle.
 
 /// A bare `CODE_PHRASE` for an external (ISO/IANA) code-set slot.
 fn code_phrase(terminology: &str, code: &str) -> Value {
@@ -849,7 +847,7 @@ fn terminology_uncoded_and_absent_slots_are_skipped() {
 /// as 0..1 with a CLOSED four-invariant set (`Limits_consistent`,
 /// `Limits_comparable`, `Lower/Upper_included_valid`) — no invariant requires
 /// a bound value when its `*_unbounded` flag is false; the guarded
-/// implications are unevaluable then and skip (AMB-43 disposition, ACCEPTED).
+/// implications are unevaluable then and skip.
 /// The tolerant read defaults missing flags to `false`, which violates
 /// nothing.
 #[test]

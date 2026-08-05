@@ -1,7 +1,7 @@
 //! `GET /management/info` — the server's build + spec provenance.
 //!
 //! No openEHR spec governs this endpoint — it is our own operational surface
-//! (the register verdict for `management/`: pure ops, spec-silent by design).
+//! (management/ is pure ops — spec-silent by design, a settled adjudication).
 //! It reports the git commit, build timestamp, `rustc` version, the pinned
 //! openEHR specification versions, and the `PostgreSQL` target. The same
 //! [`BuildInfo`] feeds the `ferroehr_build_info` gauge and the `OTel` resource

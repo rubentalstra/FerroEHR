@@ -60,9 +60,12 @@ use openehr_am::am24::aom2::constraint_model::primitive::c_integer::CInteger;
 use openehr_am::am24::aom2::constraint_model::primitive::c_real::CReal;
 use openehr_am::am24::aom2::constraint_model::primitive::c_string::CString;
 use openehr_am::am24::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
+use openehr_am::am24::aom2::rules::expr_constraint::ExprConstraint;
 use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
 use openehr_am::am24::beom::core::assertion::Assertion;
+use openehr_am::am24::beom::core::expression::Expression;
 use openehr_base::prelude::{Cardinality, Interval, MultiplicityInterval, ProperInterval};
+use openehr_lang::prelude::OperatorKind;
 
 use super::model::{
     WebTemplate, WebTemplateArchetypeSlot, WebTemplateBindingCodedValue, WebTemplateCardinality,
@@ -105,7 +108,14 @@ pub fn build_web_template_am24(
     // terminology (constituents' terminologies live in `component_terminologies`
     // and are switched in as `C_ARCHETYPE_ROOT`s are entered).
     let root_co = CObject::CComplexObject(opt.definition.clone());
-    let mut tree = build_node(&ctx, &opt.terminology, None, &root_co, "");
+    let mut tree = build_node(
+        &ctx,
+        &opt.terminology,
+        None,
+        &root_co,
+        "",
+        shape::Identity::Archetyped,
+    );
     // master04 §"Web Template Metadata": the root `nodeId` is the archetype id
     // (interface form), not the internal concept code.
     tree.node_id = Some(interface_id_of_hrid(&opt.archetype_id));
@@ -248,9 +258,10 @@ fn term_bindings_of(
 fn build_node(
     ctx: &Ctx,
     term: &ArchetypeTerminology,
-    attr_name: Option<&str>,
+    owner: Option<&CAttribute>,
     co: &CObject,
     parent_path: &str,
+    identity: shape::Identity,
 ) -> WebTemplateNode {
     // A `C_ARCHETYPE_ROOT` switches the terminology scope to its constituent's
     // for its CHILDREN (OPT2 master03 §Terminology). The root node's OWN rubric
@@ -265,7 +276,7 @@ fn build_node(
         }
         _ => term,
     };
-    let mut node = create_node(ctx, term, child_term, attr_name, co, parent_path);
+    let mut node = create_node(ctx, term, child_term, owner, co, parent_path, identity);
     build_children(ctx, child_term, co, &mut node);
     node
 }
@@ -274,13 +285,21 @@ fn create_node(
     ctx: &Ctx,
     name_term: &ArchetypeTerminology,
     parent_term: &ArchetypeTerminology,
-    attr_name: Option<&str>,
+    owner: Option<&CAttribute>,
     co: &CObject,
     parent_path: &str,
+    identity: shape::Identity,
 ) -> WebTemplateNode {
+    let attr_name = owner.map(|a| a.rm_attribute_name.as_str());
+    let archetyped = identity == shape::Identity::Archetyped;
     let rm_type = object_rm_type(co).to_owned();
-    let arch_node_id = object_archetype_node_id(co);
-    let (min, max) = occurrences(object_occurrences(co));
+    let arch_node_id = if archetyped {
+        object_archetype_node_id(co)
+    } else {
+        String::new()
+    };
+    let (occ_min, max) = occurrences(object_occurrences(co));
+    let min = meet_single_existence(occ_min, owner);
 
     let path = build_path(parent_path, attr_name, &arch_node_id);
     let mut node = WebTemplateNode::new(rm_type, path);
@@ -292,7 +311,7 @@ fn create_node(
     node.min = min;
     node.max = max;
 
-    let code = object_node_id(co);
+    let code = if archetyped { object_node_id(co) } else { "" };
     if !code.is_empty() {
         // Resolve the rubric in the introducing artefact's scope first (for a
         // filler root that is the OUTER template terminology, which ADL2
@@ -331,17 +350,43 @@ fn build_children(
             if attr.rm_attribute_name == "name" {
                 continue; // The name attribute names the node (master04 §"Field Identifiers").
             }
+            // The careflow-state alternatives of `ism_transition` collapse into
+            // the one transition node master05 §ISM_TRANSITION maps, so they are
+            // built without their at-code identity (see
+            // [`shape::MERGED_ATTRIBUTE`]).
+            let merged = attr.rm_attribute_name == shape::MERGED_ATTRIBUTE;
+            let identity = if merged {
+                shape::Identity::AttributeOnly
+            } else {
+                shape::Identity::Archetyped
+            };
+            let mut built = Vec::new();
             for child_co in attr.children.iter().flatten() {
                 if is_leaf_ignored(child_co) {
                     continue; // Unfilled slot / proxy: no node.
                 }
-                children.push(build_node(
+                built.push(build_node(
                     ctx,
                     term,
-                    Some(&attr.rm_attribute_name),
+                    Some(attr),
                     child_co,
                     &node.aql_path,
+                    identity,
                 ));
+            }
+            if merged {
+                if let Some(mut transition) = shape::merge_alternatives(built) {
+                    // The merged node's occurrences are the ATTRIBUTE's — one
+                    // required transition per ACTION instance, not one per
+                    // careflow state. AOM2 leaves `existence` unset unless it
+                    // overrides the RM, where `ACTION.ism_transition` is 1..1.
+                    let (min, max) = attr.existence.as_ref().map_or((Some(1), 1), occ);
+                    transition.min = min;
+                    transition.max = max;
+                    children.push(transition);
+                }
+            } else {
+                children.extend(built);
             }
         }
     }
@@ -865,15 +910,12 @@ fn requires_cardinality(card: &Cardinality, children_count: usize) -> bool {
 
 // ── archetype-conformance constraint capture (validation-only fields) ─────────
 //
-// The am24 front end fills the same validation-only constraint fields the OPT-1.4
-// front end does ([`super::builder`]), so
-// [`crate::flat::validation::validate_archetype_conformance`] runs identically
-// for both dialects. AOM2 expresses these as `C_ATTRIBUTE.existence` /
-// `C_ATTRIBUTE.cardinality` / node-identified `C_OBJECT` alternatives /
-// `ARCHETYPE_SLOT` (AOM2 `AM/docs/AOM2/master02-archetype_definition.adoc`
-// §C_ATTRIBUTE, §ARCHETYPE_SLOT). Captured from the raw `co` (before the shared
-// [`super::shape`] compaction hoists wrappers and re-homes these — by absolute
-// archetype path — onto the surviving parent), so no constraint is lost.
+// The am24 front end fills the same validation-only constraint fields the
+// OPT-1.4 one does, so the archetype-conformance walk runs identically for both
+// dialects. AOM2 expresses them as `C_ATTRIBUTE.existence`/`.cardinality`,
+// node-identified `C_OBJECT` alternatives, and `ARCHETYPE_SLOT` (AOM2
+// `AM/docs/AOM2/master02-archetype_definition.adoc` §C_ATTRIBUTE,
+// §ARCHETYPE_SLOT), captured before compaction hoists wrappers.
 
 /// Capture EVERY constraining `C_ATTRIBUTE.cardinality` (AOM2 §C_ATTRIBUTE:
 /// "Cardinality constraint of attribute, if a container attribute") for the
@@ -1035,15 +1077,51 @@ fn archetype_slot(s: &ArchetypeSlot) -> WebTemplateArchetypeSlot {
     }
 }
 
-/// The archetype-id regex of a slot `ASSERTION`, lifted from its
-/// `string_expression` (`… matches {/<regex>/}`; AOM2 §ARCHETYPE_SLOT — the
-/// serialised assertion form). Archetype ids contain no `/`, so the last `/}`
-/// delimits the regex.
+/// The archetype-id regex of a slot `ASSERTION`, read from its EXPRESSION TREE.
+///
+/// `ASSERTION.expression` is the "Root of expression tree" and
+/// `string_expression` only its "String form of expression"
+/// (`LANG/docs/BEL/master04-expression_object_model.adoc` §Core Package), so the
+/// tree is the authority: the slot constraint's core expression is
+/// `<reference> matches {/<regex>/}` (`ADL2/master04.3` §Slots based on Lexical
+/// Archetype Identifiers), whose right operand carries one delimited regex in a
+/// `C_STRING.constraint` (`AOM2/master04.5` §`C_STRING`). Any other assertion
+/// shape (the §Slots based on other Constraints form, a literal-value list)
+/// yields `None`.
 fn slot_pattern(a: &Assertion) -> Option<String> {
-    let s = a.string_expression.as_deref()?;
-    let (_, rest) = s.split_once("matches {/")?;
-    let end = rest.rfind("/}")?;
-    Some(rest.get(..end)?.to_owned())
+    let Expression::ExprBinaryOperator(op) = a.expression.as_ref() else {
+        return None;
+    };
+    if op.operator != OperatorKind::Matches {
+        return None;
+    }
+    let cstring = match op.right_operand.as_ref() {
+        Expression::ExprConstraint(ExprConstraint::ExprArchetypeIdConstraint(c)) => &c.item,
+        Expression::ExprConstraint(ExprConstraint::ExprConstraint(c)) => match &c.item {
+            CPrimitiveObject::CString(s) => s,
+            _ => return None,
+        },
+        _ => return None,
+    };
+    match cstring.constraint.as_deref() {
+        Some([one]) => delimited_regex_body(one).map(str::to_owned),
+        _ => None,
+    }
+}
+
+/// The body of a `/re/` or `^re^` delimited regex, or `None` for a literal
+/// string.
+///
+/// `AOM2/master04.5` §`C_STRING` types `constraint` as literal strings and/or
+/// regular expressions delimited by `/`; `ADL2/master04.5` §Regular Expression
+/// admits `^…^` as the lexical alternative when the body contains `/`.
+fn delimited_regex_body(entry: &str) -> Option<&str> {
+    let trimmed = entry.trim();
+    ['/', '^'].into_iter().find_map(|delimiter| {
+        trimmed
+            .strip_prefix(delimiter)
+            .and_then(|rest| rest.strip_suffix(delimiter))
+    })
 }
 
 /// The RM-mandatory structural attributes of an ENTRY whose value the FLAT/TDD
@@ -1260,6 +1338,35 @@ fn object_occurrences(co: &CObject) -> Option<&MultiplicityInterval> {
         CObject::CDateTime(c) => c.occurrences.as_ref(),
         CObject::CDuration(c) => c.occurrences.as_ref(),
     }
+}
+
+/// The node's effective `min`: its own occurrences lower bound met with the
+/// owning SINGLE attribute's `C_ATTRIBUTE.existence` lower bound.
+///
+/// ADL 2 `AM/docs/ADL2/master04.3-cadl_complex_types.adoc` §Occurrences: "the
+/// occurrences of an object that is the value of a single-valued attribute can
+/// only be `0..1` or `1..1`, and this is already defined by the attribute's
+/// `existence`" — it is used there only "to exclude a possibility defined in a
+/// parent archetype". So an optional single attribute never yields a mandatory
+/// child, whatever occurrences the constraint carries, and a `0..0` exclusion
+/// still lands at `0`.
+///
+/// AOM2 keeps `existence` optional "since [it is] only needed to override the
+/// settings from the reference model"
+/// (`AM/docs/AOM2/master04.2-constraint_model-semantics.adoc` §"Attribute
+/// Nodes"), so an unset existence leaves occurrences untouched — the RM's own
+/// bound is not knowable here. A container attribute is left alone for the same
+/// reason as in the OPT-1.4 front end: there occurrences is the significant
+/// constraint.
+fn meet_single_existence(occurrences_min: Option<i32>, owner: Option<&CAttribute>) -> Option<i32> {
+    let Some(existence) = owner
+        .filter(|a| !a.is_multiple)
+        .and_then(|a| a.existence.as_ref())
+    else {
+        return occurrences_min;
+    };
+    let existence_min = occ(existence).0.unwrap_or(0);
+    occurrences_min.map(|m| m.min(existence_min))
 }
 
 /// `(min, max)` from an object's occurrences; an unset occurrences defaults to

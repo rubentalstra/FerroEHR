@@ -2,7 +2,8 @@
 //!
 //! The generated `openehr_am::am24::aom2` structs are plain records with every
 //! field spelled out (including the `parent`/`soc_parent` back-references the
-//! emitter leaves unset — `docs/architecture.md` §Conventions). Building one by
+//! emitter leaves unset; back-references are hand-wired, never emitted owning
+//! fields). Building one by
 //! hand at each call site is noise, so the shapes the parser, the flattener, the
 //! ADL 1.4 lowering, and the OPT generator all need live here once.
 //!

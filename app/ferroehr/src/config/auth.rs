@@ -36,15 +36,6 @@ pub struct AuthConfig {
     pub verified_cache_ttl_seconds: u64,
     /// OAuth2/OIDC bearer validation. Absent → bearer disabled.
     pub oidc: Option<OidcConfig>,
-    /// **Deprecated back-compat alias**: a configured scope name surfaces as the
-    /// identically-named (upper-cased) role via scope→role extraction, so the
-    /// RBAC `admin_role` gate subsumes it. Still consulted by the management
-    /// surface's `AdminOnly` access level. Unset by default.
-    // TODO(#1879): rewire the management AdminOnly gate to the RBAC admin
-    // role and delete this alias.
-    // NOTE: no openEHR spec governs authorization — the SM places it out of
-    // band — so this deprecated alias is our own design/extension.
-    pub admin_scope: Option<String>,
 }
 
 impl Default for AuthConfig {
@@ -53,7 +44,6 @@ impl Default for AuthConfig {
             enabled: true,
             basic: None,
             oidc: None,
-            admin_scope: None,
             verified_cache_ttl_seconds: default_verified_cache_ttl(),
         }
     }

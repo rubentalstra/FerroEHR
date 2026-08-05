@@ -12,14 +12,16 @@
 //!   `BmmOdinParser.convert(...)` the `org/openehr/bmm/v2/persistence/validation/*.bmm`
 //!   fixtures **successfully** and then assert BMM *semantic* validation errors
 //!   (duplicate class, missing ancestor, unresolved include, …). Those defects
-//!   are **above the ODIN layer**: the ODIN parse succeeds; only the P_BMM
-//!   semantic validator rejects them. This crate has no P_BMM semantic
-//!   validation layer yet, so those semantic assertions are marked `// TODO(#1444):`.
+//!   are **above the ODIN layer**: the ODIN parse succeeds; only the BMM
+//!   semantic layer rejects them.
 //!
-//! Accordingly every fixture here must parse as ODIN and yield a schema object;
-//! the semantic distinction (valid vs semantically-malformed BMM) is recorded
-//! in the per-fixture comments and left as a `// TODO(#1444):` for the future P_BMM
-//! validator.
+//! Accordingly every fixture here must parse as ODIN and yield a schema object.
+//! Where a fixture's BMM-semantic verdict is worth pinning beside its ODIN
+//! reading, the test states it in this crate's own terms — a typed
+//! [`PBmmReadError`] refusal, or a collecting-pass
+//! [`openehr_lang::bmm_persistence::validate::PBmmValidityFinding`]; archie's
+//! `EC_*` codes are named only as the fixtures' provenance, never as an
+//! expectation. `vendor_bmm_schema.rs` carries the full outcome tables.
 
 #![allow(
     clippy::unwrap_used,
@@ -32,7 +34,14 @@
     reason = "the module docs name archie Java classes (BmmOdinParser, BmmSchemaConverter, …) and BMM error codes (EC_…) as prose, not code refs"
 )]
 
+use openehr_lang::bmm_persistence::create_model::create_bmm_model;
+use openehr_lang::bmm_persistence::error::PBmmReadError;
+use openehr_lang::bmm_persistence::include_resolution::resolve_includes;
+use openehr_lang::bmm_persistence::reader::read_schema;
+use openehr_lang::bmm_persistence::validate::PBmmValidityFinding;
+use openehr_lang::bmm_persistence::validate::validate_schema;
 use openehr_lang::odin::{OdinKey, OdinValue, parse};
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 
 fn read(rel: &str) -> String {
@@ -120,7 +129,7 @@ const BMM_FIXTURES: &[&str] = &[
 /// Every BMM fixture parses as an ODIN schema object carrying at least the
 /// `rm_publisher` + `schema_name` string headers of the BMM persistence format.
 /// (Semantically-malformed fixtures still parse at the ODIN layer — see the
-/// module docs; the BMM-semantic verdict is a `// TODO(#1444):`.)
+/// module docs; the BMM-semantic verdict is pinned above this one.)
 #[test]
 fn every_bmm_file_parses_as_odin_schema() {
     for rel in BMM_FIXTURES {
@@ -187,27 +196,55 @@ fn cimi_top_level_rm_schema() {
 // ---------------------------------------------------------------------------
 
 #[test]
-fn duplicate_class_parses_at_odin_layer() {
-    // archie BasicSchemaValidationsTest.duplicateClass: the ODIN parse
-    // succeeds; the BMM validator then reports EC_DUPLICATE_CLASS_IN_PACKAGES
-    // (a class listed in two packages). That is a BMM-semantic defect, above
-    // ODIN, so our ODIN reader accepts the document.
-    let v = parse_ok("bmm/org/openehr/bmm/v2/persistence/validation/duplicate_class.bmm");
+fn duplicate_class_parses_at_odin_layer_and_is_reported_by_the_validity_pass() {
+    // Fixture provenance: archie BasicSchemaValidationsTest.duplicateClass
+    // (its own code is EC_DUPLICATE_CLASS_IN_PACKAGES). Our expectation comes
+    // from the spec, not that code: master05-core-model.adoc §Packages — "A
+    // model validity checker ensures that every class is contained within
+    // exactly one package".
+    let rel = "bmm/org/openehr/bmm/v2/persistence/validation/duplicate_class.bmm";
+    let v = parse_ok(rel);
     assert_eq!(as_str(field(&v, "schema_name")), "duplicate_class");
     assert!(!keyed(field(&v, "packages")).is_empty());
-    // TODO(#1444): assert the EC_DUPLICATE_CLASS_IN_PACKAGES BMM-semantic error once a
-    // P_BMM semantic validation layer exists in openehr-lang.
+
+    // Above the ODIN layer: the schema reads and materialises — a duplicate
+    // package listing breaks no BMM_* construction — and the collecting
+    // validity pass is what reports it.
+    let src = read(rel);
+    let schema = read_schema(&src).expect("the fixture reads as a P_BMM schema");
+    let model = create_bmm_model(&schema).expect("the fixture materialises a model");
+    assert_eq!(
+        validate_schema(&schema, &model),
+        [PBmmValidityFinding::ClassNotInExactlyOnePackage {
+            class: "ParentType1".to_owned(),
+            packages: ["ParentPackage".to_owned(), "ParentPackage".to_owned()].to_vec(),
+        }]
+    );
 }
 
 #[test]
-fn include_not_found_parses_at_odin_layer() {
-    // archie IncludesValidatorTest.includeNotFound: ODIN parse succeeds, then
-    // the validator reports EC_INCLUDE_NOT_FOUND (an `includes` entry names a
-    // schema absent from the repository) — a BMM-semantic defect above ODIN.
-    let v = parse_ok("bmm/org/openehr/bmm/v2/persistence/validation/include_not_found.bmm");
+fn include_not_found_parses_at_odin_layer_and_is_refused_by_inclusion_resolution() {
+    // Fixture provenance: archie IncludesValidatorTest.includeNotFound (its
+    // own code is EC_INCLUDE_NOT_FOUND). Our expectation is the existing typed
+    // refusal, not a validity finding: `P_BMM_SCHEMA.merge` has precondition
+    // `includes_to_process.has (included_schema.schema_id)`
+    // (…p_bmm_schema.adoc §Functions), so an unlocatable include leaves
+    // nothing to construct and inclusion resolution refuses fail-fast.
+    let rel = "bmm/org/openehr/bmm/v2/persistence/validation/include_not_found.bmm";
+    let v = parse_ok(rel);
     assert!(!keyed(field(&v, "includes")).is_empty());
-    // TODO(#1444): assert the EC_INCLUDE_NOT_FOUND BMM-semantic error once a P_BMM
-    // semantic validation layer exists in openehr-lang.
+
+    let schema = read_schema(&read(rel)).expect("the fixture reads as a P_BMM schema");
+    let requester = schema.schema_id();
+    let error =
+        resolve_includes(schema, &BTreeMap::new()).expect_err("the included schema is absent");
+    assert_eq!(
+        error,
+        PBmmReadError::MissingInclude {
+            requester,
+            id: "my_include.2.1.12".to_owned(),
+        }
+    );
 }
 
 #[test]

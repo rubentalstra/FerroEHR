@@ -86,6 +86,7 @@ const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 /// `tower-http` middleware stack.
 pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
     let cfg = state.config().clone();
+    let mgmt_rbac = management_rbac(&state);
     let observability = state.observability().clone();
     let rest_root = cfg
         .server
@@ -95,33 +96,16 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
         .to_owned();
 
     // ── The generated ITS-REST surface, gated by authentication ──────────────
-    // A known resource path called with a method it does not serve renders
-    // `405` with the openEHR `{ error, message }` body (overview §HTTP
-    // Methods), not axum's bare text `405`. The mandatory `Allow` header
-    // (RFC 9110 §15.5.6) is added by axum itself from the matched route's
-    // registered method set — precisely because
-    // `crate::overview::error::method_not_allowed_handler` does not set one of
-    // its own (axum only fills `Allow` in when the fallback response leaves it
-    // absent). A `405` raised from a *matched* handler skips that machinery
-    // entirely and states its own `Allow`
-    // (`crate::overview::error::method_not_allowed_response`, used by the
-    // config-gated admin group).
-    //
-    // NOTE (settled deviation, registered as `AMB-60` in
-    // `tools/cnf-runner/artifacts/registers/ambiguities.yaml`): the overview's
-    // paired SHOULD — "A server receiving an unrecognized or unimplemented
-    // method SHOULD respond with the `501 Not Implemented` status code"
-    // (`Requests_and_responses.md` §HTTP Methods) — is answered `405` here as
-    // well. axum routes by path+method and exposes no "unrecognized method"
-    // seam, so the only way to reach a blanket `501` would be a catch-all
-    // fallback, which would also swallow every genuinely unknown *path* and
-    // report it `501` instead of `404`. `405` is a predefined code in the
-    // spec's own status table and so cannot conflict with it
-    // (`Requests_and_responses.md` §HTTP status codes: "Additional status codes
-    // MAY be used as long as they do not conflict with the predefined codes").
-    // `501` is still emitted where the spec's other half applies — a
-    // recognised but unimplemented *operation* — through
-    // `ApiError::NotImplemented`.
+    // A known path called with a method it does not serve renders `405` with
+    // the openEHR `{ error, message }` body (overview §HTTP Methods); axum
+    // supplies the mandatory `Allow` (RFC 9110 §15.5.6) from the matched route's
+    // method set, because `crate::overview::error::method_not_allowed_handler`
+    // sets none of its own. An unrecognized method is answered `405` too: axum
+    // exposes no such seam, and a catch-all fallback would report every unknown
+    // *path* `501` instead of `404`.
+    // NOTE: the overview's SHOULD-`501` (`Requests_and_responses.md` §HTTP
+    // Methods) is honoured for a recognised but unimplemented *operation* via
+    // `ApiError::NotImplemented`; `405` is a predefined code in its own table.
     let api =
         crate::api::api_router().method_not_allowed_fallback(error::method_not_allowed_handler);
     // Tenant resolution sits inside the auth layer so it runs *after*
@@ -181,14 +165,9 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
     //
     // The stack is applied in two halves with [`align_transport_error_body`]
     // between them: `TimeoutLayer` and `RequestBodyLimitLayer` render their own
-    // responses without ever reaching [`crate::overview::error`], so the
-    // mapping must sit OUTSIDE both to observe and re-render them. Splitting the
-    // application is also what makes the mapping expressible — `Router::layer`
-    // normalizes the response body back to `axum::body::Body` at each
-    // application, so the mapper takes a plain [`Response`] rather than the
-    // layer stack's nested body type. The relative order of the layers
-    // themselves is unchanged (outermost → innermost: request-id, tracing,
-    // catch-panic, CORS, body limit, timeout, compression).
+    // responses without ever reaching [`crate::overview::error`], so the mapping
+    // must sit OUTSIDE both. Order (outermost → innermost): request-id, tracing,
+    // catch-panic, CORS, body limit, timeout, compression.
     let inner: Router = inner
         .layer(
             ServiceBuilder::new()
@@ -214,32 +193,16 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
         .with_state(state);
 
     // ── System Options and Conformance — `OPTIONS`, above the CORS layer ─────
-    // The manifest advertises the **live** mounted-group set (System API):
-    // the four always-on standardised groups plus `/admin` when its group is
-    // enabled. Its identity/conformance fields come from `cfg.server.identity`
-    //.
-    //
-    // NOTE (settled decision, registered as `AMB-158` in
-    // `tools/cnf-runner/artifacts/registers/ambiguities.yaml`): the list
-    // carries ONLY the standardised ITS-REST groups —
-    // the extension families this server also serves (terminology, tenancy,
-    // event subscriptions, the FHIR connector, management, …) are deliberately
-    // absent. No released sentence says what `endpoints` must contain: the
-    // System API chapter is a stub with no field semantics
-    // (`docs/specs/openehr/ITS-REST/specifications/docs/system/Description.md`
-    // — Purpose, Related Documents and Status only), and the member itself is
-    // grounded only by the released OAS (`schemas/others/Options.yaml`:
-    // `array of string`, no description, one example listing exactly the
-    // released groups) — a docs-text-silent ground that prescribes no
-    // particular content. Two reasons
-    // for the omission: the operation's stated job is "exposing service
-    // capabilities for a conformance manifest", so a non-openEHR path listed
-    // there would sit inside a conformance claim; and the extension surface has
-    // its own honest declaration layers — the served OpenAPI document (every
-    // extension operation flagged our-own-extension) and the published
-    // Conformance Statement's "Additional non-openEHR surface" section. The
-    // list still tracks what is actually mounted, so it never advertises a
-    // group that answers 404.
+    // The manifest advertises the **live** mounted-group set (System API): the
+    // four always-on standardised groups plus `/admin` when its group is
+    // enabled, so it never advertises a group that answers 404. Its
+    // identity/conformance fields come from `cfg.server.identity`. Extension
+    // families are deliberately absent — the operation's job is "exposing
+    // service capabilities for a conformance manifest", and they declare
+    // themselves through the served OpenAPI document instead.
+    // NOTE: no released text says what `endpoints` must contain — the System
+    // API chapter is a stub and the OAS `schemas/others/Options.yaml` gives only
+    // `array of string` — so the content is adjudicated as above.
     let mut endpoints = vec![
         "/ehr".to_owned(),
         "/definition".to_owned(),
@@ -272,6 +235,7 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
         let mgmt = management::router(ManagementState::from_observability(
             observability,
             authenticator,
+            mgmt_rbac,
         ));
         app.merge(mgmt)
     } else {
@@ -383,12 +347,27 @@ fn mount_public_surface(
     inner
 }
 
+/// The RBAC rules the management `AdminOnly` gate applies: the live handle's
+/// rule set, or a disabled rule set when no RBAC gate is wired (auth-only
+/// deployments — authenticated is then enough, issue #1879).
+fn management_rbac(state: &AppState) -> ferroehr::config::authz::RbacConfig {
+    state
+        .authz()
+        .as_deref()
+        .and_then(|h| h.rbac_rules().cloned())
+        .unwrap_or_else(|| ferroehr::config::authz::RbacConfig {
+            enabled: false,
+            ..ferroehr::config::authz::RbacConfig::default()
+        })
+}
+
 /// Build the standalone management router (separate-port mode). The binary
 /// serves this on the management listener when `management.port` is set.
 pub fn management_router(state: &AppState, authenticator: Arc<Authenticator>) -> Router {
     management::router(ManagementState::from_observability(
         state.observability().clone(),
         authenticator,
+        management_rbac(state),
     ))
 }
 

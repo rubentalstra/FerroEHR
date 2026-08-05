@@ -621,10 +621,8 @@ async fn smart_gate(
         // stays with the ABAC query subject-scope pre-filter.
         //
         // NOTE: the context value prefers the `ehrId` claim then the SMART
-        // `patient` claim (master07 token-response table); it is matched against
-        // the EHR *subject* external ref, so an operator binds SMART patient
-        // compartments by configuring the launch-context claim to carry the
-        // subject id the EHR is keyed by.
+        // `patient` claim (master07 token-response table), matched against the
+        // EHR *subject* external ref.
         Ok(Some(ctx)) => subject_gate(abac, principal, Some(ctx.as_str()), ehr_id).await,
     }
 }
@@ -686,7 +684,7 @@ fn smart_decide(
 ///
 /// A `patient/` compartment permit needs no per-request EHR binding here:
 /// templates are unscoped and queries are cross-EHR — per-row patient scoping
-/// stays with the ABAC query subject-scope pre-filter (register-documented),
+/// stays with the ABAC query subject-scope pre-filter (adjudicated),
 /// exactly as the ABAC-integrated gate treats target-less operations.
 fn smart_skip_family_gate(
     state: &AppState,

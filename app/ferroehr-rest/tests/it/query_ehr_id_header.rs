@@ -12,7 +12,7 @@
 //! pair. None of them distinguishes HTTP methods or ad-hoc from stored
 //! execution, so **every** execution operation must honour the header.
 //!
-//! Both-supplied precedence is spec-silent (ambiguity register `AMB-59`):
+//! Both-supplied precedence is spec-silent, so the handling is our own:
 //! agreeing forms execute, conflicting forms are a `400`
 //! (`docs/overview/Requests_and_responses.md` §"HTTP status codes", row `400`).
 //!
@@ -91,7 +91,6 @@ fn config() -> AppConfig {
             enabled: false,
             basic: None,
             oidc: None,
-            admin_scope: None,
             ..AuthConfig::default()
         },
         ..Default::default()
@@ -364,7 +363,7 @@ async fn post_stored_query_is_scoped_by_the_header_alone() {
     assert_eq!(uids(&out), vec![w.uid_b.clone()]);
 }
 
-// ── both forms supplied (spec-silent; register AMB-59) ───────────────────────
+// ── both forms supplied (spec-silent — our own handling) ─────────────────────
 
 #[tokio::test]
 async fn matching_parameter_and_header_execute_normally() {
@@ -389,7 +388,7 @@ async fn conflicting_parameter_and_header_are_bad_request() {
     // A request naming two DIFFERENT EHRs is self-contradictory and no released
     // rule picks a winner → 400 (Requests_and_responses.md §HTTP status codes,
     // row 400: "the service cannot or will not process the request due to
-    // something that is perceived to be a client error"). Register AMB-59.
+    // something that is perceived to be a client error").
     // Every execution operation, both methods.
     let w = world().await;
     let version = store_query(&w.app).await;

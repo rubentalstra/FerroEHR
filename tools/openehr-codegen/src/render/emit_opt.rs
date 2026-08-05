@@ -141,14 +141,14 @@ const FORCE_GENERATE: &[&str] = &[
 /// (vs `emit-xml`'s `Hash`) selects this shape without affecting the RM codec.
 const STRING_DICT_ITEM: &str = "StringDictionaryItem";
 
-/// OPT-envelope sections captured as opaque `serde_json::Value` (parsed by
-/// skipping their subtree).
+/// OPT-envelope sections carried as the verbatim XML subtree
+/// (`crate::xml::XmlAny`) rather than a generated struct.
 ///
 /// `T_VIEW` (the `<view>` presentation block) holds an **anonymous inline
 /// complexType** (`T_VIEW.constraints` → nested `items` with an `id` attribute
 /// and an `anySimpleType` value) that the XSD reader cannot flatten into a named
 /// type; it carries only presentation hints (`pass_through` markers), never the
-/// operational definition, so it is skipped.
+/// operational definition, so it is kept as read instead of modelled.
 ///
 /// `T_CONSTRAINT` (the top-level `<constraints>` block) is **no longer opaque**
 ///: it is a named `T_ATTRIBUTE` → `T_COMPLEX_OBJECT` tree carrying
@@ -200,9 +200,14 @@ fn lenient_default(field_name: &str, type_name: &str, prelude: &str) -> Option<S
 enum Resolved {
     /// A Rust primitive (`String`/`bool`/`i32`/`i64`/`f64`).
     Primitive(&'static str),
-    /// `xs:anyType`/`xs:anySimpleType`/anonymous-inline → `serde_json::Value`
-    /// (parsed by skipping the subtree — lossy but never errors).
-    Value,
+    /// `xs:anyType`/`xs:anySimpleType`/anonymous-inline → the verbatim XML
+    /// subtree carrier `crate::xml::XmlAny` (attributes, text and children in
+    /// document order, re-emitted as read).
+    ///
+    /// NOTE: `AM aom14 §EXPR_LEAF Class` types `item: Any`, so the payload
+    /// domain of the schema's open slots is open too and no closed set of
+    /// generated types can be dispatched to.
+    Any,
     /// A repeated `StringDictionaryItem` element group → order-preserving
     /// `IndexMap<String,String>` (target `OrderedDict`).
     Hash,
@@ -302,13 +307,13 @@ impl<'a> OptModel<'a> {
     /// Resolve an XSD type name (element/attribute `type`) to a Rust binding.
     fn resolve(&self, type_name: &str) -> Resolved {
         if type_name.is_empty() {
-            return Resolved::Value; // anonymous inline complexType
+            return Resolved::Any; // anonymous inline complexType
         }
         if type_name == STRING_DICT_ITEM {
             return Resolved::Hash;
         }
         if OPAQUE_TYPES.contains(&type_name) {
-            return Resolved::Value; // skip the differential/presentation envelope
+            return Resolved::Any; // the differential/presentation envelope, carried verbatim
         }
         // XSD-namespace primitive (`xs:` / `xsd:`).
         if let Some(local) = type_name
@@ -348,7 +353,7 @@ impl<'a> OptModel<'a> {
     /// Map an `xs:`-local primitive to a Rust type.
     fn xs_primitive(local: &str) -> Resolved {
         match local {
-            "anyType" | "anySimpleType" => Resolved::Value,
+            "anyType" | "anySimpleType" => Resolved::Any,
             "boolean" => Resolved::Primitive("bool"),
             "int" | "integer" | "nonNegativeInteger" | "positiveInteger" | "short" => {
                 Resolved::Primitive("i32")
@@ -365,7 +370,7 @@ impl<'a> OptModel<'a> {
     fn base_decl(res: &Resolved, raw_spec: &str) -> (String, String) {
         match res {
             Resolved::Primitive(p) => ((*p).to_string(), String::new()),
-            Resolved::Value => ("serde_json::Value".to_string(), String::new()),
+            Resolved::Any => ("crate::xml::XmlAny".to_string(), String::new()),
             Resolved::Hash => (
                 "indexmap::IndexMap<String, String>".to_string(),
                 String::new(),

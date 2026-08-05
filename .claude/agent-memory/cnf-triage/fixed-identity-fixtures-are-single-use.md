@@ -26,6 +26,15 @@ For `provision_import` a 409 means the opposite, so an unestablished
 precondition is driven anyway and surfaces as a false SUT failure instead of an
 inconclusive row.
 
+Recurred 2026-08-04 with `cnf.messaging.ehr_extract.branch_lineage_v1` (uid
+`8b52e0c9-6d31-4f74-a09e-2c47b1d5836f`), newly shared by the added
+`export_ehr_extracts-latest_across_lineages` (ran first, passed) and
+`import_ehr_extract-into_branched_lineage` (errored). The refusal now surfaces
+honestly as `provisioning … refused: status 409` rather than a false SUT failure,
+so the 409 tolerance has been narrowed for imports — the FIXTURE-SHARING half of
+the rule is what keeps biting, and a NEW case reusing an existing import fixture
+is the thing to grep for.
+
 **How to apply:** every `requires.import` case needs its OWN identity-disjoint
 fixture (the corpus MANIFEST provenance strings already use "identity-disjoint"
 as the convention). When a `requires.import` case reads `not_found`, check

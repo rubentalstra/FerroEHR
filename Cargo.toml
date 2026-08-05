@@ -269,6 +269,14 @@ serde_norway = "0.9"                 # maintained serde_yaml fork — parse vend
 serde-saphyr = "1.0.0-rc.1"          # pure-Rust YAML 1.2 front-end (no RUSTSEC; alias-expansion Budget) — the CNF 2.0 schedule authoring surface (tools/cnf-runner)
 semver = "1.0.28"                    # Cargo/semver requirement syntax for the CNF case `applies` spec-version ranges
 base64 = "0.22"
+# Typed FHIR R4B resource model (fhir-sdk's model half) — the typed surface of
+# the FHIR integration extension (`app/ferroehr-ext`, `fhir` feature): the ATNA
+# BALP `AuditEvent` we author and the `Parameters`/`ValueSet` a terminology
+# server answers with. Verified live on crates.io 2026-08-04 (0.13.0, MSRV
+# 1.95). default-features off drops the r5 model; `r4b` is the declared FHIR
+# surface and `builders` supplies the derive_builder constructors. It is
+# consumed ONLY from ferroehr-ext — no other crate names a `fhir_model` type.
+fhir-model = { version = "0.13.0", default-features = false, features = ["r4b", "builders"] }
 # ZIP container writer/reader — the SM COMPRESSION_FORMAT member `zip`
 # (docs/specs/openehr/SM/docs/UML/classes/compression_format.adoc) for the admin
 # dump/load archive. default-features off keeps it to the DEFLATE method over

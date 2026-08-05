@@ -13,8 +13,8 @@
 //! - `stored_query` — `definition_query_{list,store,version_get,version_store}`.
 //!
 //! `archetype` sits beside them as **our own extension** — the ADL 1.4 /
-//! ADL 2 archetype + artefact routes the release never surfaced (registers
-//! AMB-41 / AMB-37); it is governed by no ITS-REST operation and carries its
+//! ADL 2 archetype + artefact routes the release never surfaced; it is
+//! governed by no ITS-REST operation and carries its
 //! own spec-silence flag.
 //!
 //! Each module implements the generated operation contract over the

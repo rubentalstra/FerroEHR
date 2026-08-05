@@ -120,14 +120,12 @@ pub(crate) async fn revision_history(
     let history = RevisionHistory { items };
     // The history resource's `Last-Modified` value (ITS-REST overview
     // `Requests_and_responses.md` §"`ETag` and Last-Modified": derived from
-    // `VERSION.commit_audit.time_committed.value`). On a `REVISION_HISTORY`
-    // that instant is exactly what the spec function
-    // `REVISION_HISTORY.most_recent_version_time_committed` returns
-    // (`UML/classes/org.openehr.rm.common.revision_history.adoc` §Functions,
-    // `Post: Result.is_equal (items.last.audits.first.time_committed.value)`),
-    // so the header is read off the built history through that function rather
-    // than re-derived from the rows — two expressions of one rule can drift
-    // apart, one cannot.
+    // `VERSION.commit_audit.time_committed.value`). On a `REVISION_HISTORY` that
+    // instant is what `REVISION_HISTORY.most_recent_version_time_committed`
+    // returns (`revision_history.adoc` §Functions, `Post: Result.is_equal
+    // (items.last.audits.first.time_committed.value)`), so the header is read
+    // off the built history through that function rather than re-derived from
+    // the rows — two expressions of one rule can drift apart, one cannot.
     let last_modified = history
         .most_recent_version_time_committed()
         .ok_or_else(|| {
@@ -241,22 +239,12 @@ pub(crate) async fn versioned_object(
             owner_id,
             time_created,
         }),
-        // NOTE: there is deliberately NO `VERSIONED_PARTY` arm here. This
-        // builder is EHR-scoped by signature — it takes an `EhrId` and stamps
-        // `owner_id` as the containing EHR, which is what
-        // `VERSIONED_OBJECT.owner_id` means ("Reference to object to which this
-        // version container belongs, e.g. the id of the containing EHR or other
-        // relevant owning entity", RM common
-        // `UML/classes/org.openehr.rm.common.versioned_object.adoc`
-        // §Attributes). A demographic party has no owning EHR: RM demographic
-        // content stands alone, and its container is built by
-        // `crate::service::demographic::support` with the system-scoped
-        // `owner_id` the released `VersionedParty` example carries (register
-        // AMB-69). Adding a party arm here could only produce a container that
-        // names an EHR as the owner of a party.
         // The generic container of RM common master06 §Versioned Objects, for a
         // kind with no dedicated `VERSIONED_*` binding (the EHR-extract export's
         // own fallback).
+        // NOTE: there is deliberately NO `VERSIONED_PARTY` arm — this builder is
+        // EHR-scoped by signature and stamps `owner_id` as the containing EHR
+        // (RM common `versioned_object.adoc` §Attributes); a party has none.
         _ => VersionedObject::VersionedObject(VersionedObjectData {
             uid,
             owner_id,
@@ -365,18 +353,14 @@ pub(crate) fn original_version(read: &VersionRead, signer: &Signer) -> Result<Va
         read.signature.as_deref(),
         read.signature_client_supplied,
     )?;
-    // NOTE (the attestation/signature split, RM common master06). §Digital
-    // Signature signs "the entire Version object (note that the signature
-    // attribute will be Void at this point)" — `signature` is the ONLY excluded
-    // attribute, so the `attestations` a version carried at committal
-    // (§Attestation, "Signing content at committal"; SM
-    // `UML/classes/update_version.adoc` `UPDATE_VERSION.attestations`) are
-    // inside the signed form and were built into `ov` above, before
-    // verification. §Attestation equally says an attestation "can be added at
-    // any time after committal of the content being attested", and
-    // §Contributions makes that a change to "an EXISTING `ORIGINAL_VERSION`";
-    // such an attestation necessarily post-dates the signature, so it is
-    // appended HERE, after verification, and never enters the canonical form.
+    // §Attestation equally says an attestation "can be added at any time after
+    // committal of the content being attested", and §Contributions makes that a
+    // change to "an EXISTING `ORIGINAL_VERSION`"; such an attestation necessarily
+    // post-dates the signature, so it is appended HERE, after verification, and
+    // never enters the canonical form.
+    // NOTE: RM common master06 §Digital Signature signs "the entire Version
+    // object", `signature` alone excluded, so at-committal attestations are
+    // inside the signed form and were built into `ov` above.
     append_after_committal_attestations(&mut ov, &read.attestations_after_committal);
     Ok(ov)
 }
@@ -462,12 +446,9 @@ pub(crate) fn build_imported_version(
     item: &Value,
     signature: Option<&str>,
 ) -> Value {
-    // NOTE: a JSON-literal envelope over VERBATIM fragments, for the same
-    // reason as `build_original_version` — `contribution`, `commit_audit` and
-    // the wrapped `item` are already-canonical stored bytes (the item is a
-    // FOREIGN system's `ORIGINAL_VERSION`, kept exactly as received), and this
-    // serialization is what gets signed. Nothing here is synthesized beyond
-    // the `_type` discriminator and the optional `signature` string.
+    // NOTE: a JSON-literal envelope over VERBATIM fragments — `contribution`,
+    // `commit_audit` and the wrapped foreign `item` are already-canonical stored
+    // bytes, and this serialization is what gets signed.
     let mut iv = json!({
         "_type": "IMPORTED_VERSION",
         "contribution": contribution.clone(),
@@ -563,14 +544,9 @@ pub(crate) struct OriginalVersionParts<'a> {
 pub(crate) fn build_original_version(
     parts: &OriginalVersionParts<'_>,
 ) -> Result<Value, VersionIdError> {
-    // NOTE: the ENVELOPE stays a JSON literal on purpose. `contribution`,
-    // `commit_audit`, `data` and `attestations` arrive as already-canonical
-    // fragments — stored bytes, some of them client-authored — and
-    // `ORIGINAL_VERSION` is exactly the serialization master06 §Digital
-    // Signature signs ("the entire Version … serialised"). Decoding those
-    // fragments into typed RM values only to re-encode them would risk
-    // normalizing bytes a signature already covers. Every attribute this
-    // builder SYNTHESIZES is built from its generated type below.
+    // NOTE: the ENVELOPE stays a JSON literal — its fragments arrive as
+    // already-canonical stored bytes and `ORIGINAL_VERSION` is exactly the
+    // serialization master06 §Digital Signature signs; re-encoding could drift.
     let mut ov = json!({
         "_type": "ORIGINAL_VERSION",
         "uid": openehr_its::json::to_canonical_value(&version_id(
@@ -602,16 +578,12 @@ pub(crate) fn build_original_version(
         // preceding_version_uid: the STORED prior OBJECT_VERSION_ID (absent for
         // a first version). Stored — not synthesized — because under branching
         // and import the preceding version may carry a different
-        // creating_system_id (RM common master06 §Distributed Versioning).
+        // creating_system_id (RM common master06 §Distributed Versioning). A
+        // branch version always carries its real preceding uid here.
         //
-        // NOTE (register AMB-189): `VERSION.Preceding_version_uid_validity`
-        // (`uid.version_tree_id.is_first xor preceding_version_uid /= Void`) is
-        // enforced in its TRUNK-ONLY sense, because BASE defines `is_first` as
-        // "trunk_version is 1" alone (`VERSION_TREE_ID.Is_first_validity`),
-        // which makes the literal invariant unsatisfiable for every branch
-        // version off trunk node 1 — those necessarily name the trunk node they
-        // forked from. A branch version therefore always carries its real
-        // preceding uid here.
+        // NOTE: `VERSION.Preceding_version_uid_validity` is enforced in its
+        // TRUNK-ONLY sense — BASE's `is_first` is "trunk_version is 1" alone,
+        // making the literal invariant unsatisfiable for branches off trunk 1.
         if let Some(preceding) = parts.preceding_version_uid {
             map.insert(
                 "preceding_version_uid".to_owned(),

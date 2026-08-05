@@ -130,7 +130,8 @@ impl FerroEhrService {
     /// # Errors
     ///
     /// - No archetype with that id → `artefact_does_not_exist` (`404`).
-    /// - The stored source no longer converts (parse / unsupported kind) →
+    /// - The stored source no longer converts (parse / unsupported kind), or
+    ///   the conversion result carries a node with no ADL2 syntax →
     ///   `content_invalid` (`422`).
     /// - A database failure (`exception` → `500`).
     pub async fn adl14_convert_to_adl2(&self, an_id: String) -> Result<String, SmError> {
@@ -142,7 +143,11 @@ impl FerroEhrService {
                     "1.4 → 2 conversion failed: {e}"
                 )))
             })?;
-        Ok(openehr_adl::print::print(&converted))
+        openehr_adl::print::print(&converted).map_err(|e| {
+            SmError::from(ServiceError::Unprocessable(Violation::new(format!(
+                "1.4 → 2 conversion produced unprintable ADL2: {e}"
+            ))))
+        })
     }
 
     /// Convert a stored ADL 1.4 **operational template** (by `UUID`) to ADL2
@@ -595,8 +600,12 @@ impl FerroEhrService {
         // Physical deletes never orphan clinical data (no openEHR spec governs
         // the in-use refusal — our own integrity design; the SM operation
         // defines only `Pre_has_opt`/`invalid_template`).
+        // Counted over BOTH storage tiers: the cold archival mirror carries no
+        // `template_ref` foreign key, so an archived composition's reference is
+        // invisible to the constraint and deleting under it would make that
+        // object unrestorable.
         let refs: i64 =
-            sqlx::query_scalar("SELECT count(*) FROM vo_version WHERE template_id = $1")
+            sqlx::query_scalar("SELECT count(*) FROM vo_version_all WHERE template_id = $1")
                 .bind(&template_id)
                 .fetch_one(&mut *tx)
                 .await?;
@@ -624,14 +633,11 @@ impl FerroEhrService {
         .await?;
         tx.commit().await?;
         // Delete is the only mutation that ends a stored template's lifetime
-        // (uploads are create-only — `store_template`'s `ON CONFLICT DO NOTHING`
-        // never overwrites, and `web_template_for` never caches a negative
-        // result), so this is the single cache-invalidation point. Key on the
-        // identity-canonical form so a case variant of the id is evicted too
-        // (BASE master05 §Composite Identifiers and Case). No openEHR spec
-        // governs the cache; cross-instance eviction (a delete on node A does
-        // not evict node B's in-memory cache) is out of scope for this
-        // single-node optimisation — our own design.
+        // (uploads are create-only), so this is the single cache-invalidation
+        // point. Key on the identity-canonical form so a case variant of the id
+        // is evicted too (BASE master05 §Composite Identifiers and Case). No
+        // openEHR spec governs the cache; cross-instance eviction is out of
+        // scope for this single-node optimisation — our own design.
         self.web_templates
             .invalidate(&crate::templates::identity::canonical_key(&template_id))
             .await;

@@ -9,7 +9,7 @@
 //! format") and `load_ehrs` ("Populate EHR repository from export archive on
 //! file system. Repository need not be empty, but import EHRs with duplicate
 //! EHR ids will fail"), both declaring the single error `file_not_writable`.
-//! Register AMB-33 carries the SM↔ITS gap.
+//! No released ITS-REST operation covers either call.
 //!
 //! These routes are the honest realization of that service basis, and are
 //! **excluded from ITS-REST wire conformance**: they gate the `EhrDumpLoad`
@@ -80,8 +80,8 @@ pub(crate) fn dump_load_routes() -> OpenApiRouter<AppState> {
 
 /// Export every EHR to a file-system archive (`POST /admin/dump`).
 ///
-/// **Our own extension — no ITS-REST operation governs this** (module docs;
-/// register AMB-33). Realizes SM `I_ADMIN_DUMP_LOAD.export_ehrs`.
+/// **Our own extension — no ITS-REST operation governs this** (module
+/// docs). Realizes SM `I_ADMIN_DUMP_LOAD.export_ehrs`.
 #[utoipa::path(
     post, path = "/admin/dump", tag = "admin-dump-load",
     request_body(content = serde_json::Value,
@@ -157,8 +157,8 @@ pub(crate) async fn admin_dump(
 
 /// Populate the repository from a file-system archive (`POST /admin/load`).
 ///
-/// **Our own extension — no ITS-REST operation governs this** (module docs;
-/// register AMB-33). Realizes SM `I_ADMIN_DUMP_LOAD.load_ehrs`.
+/// **Our own extension — no ITS-REST operation governs this** (module
+/// docs). Realizes SM `I_ADMIN_DUMP_LOAD.load_ehrs`.
 #[utoipa::path(
     post, path = "/admin/load", tag = "admin-dump-load",
     request_body(content = serde_json::Value,

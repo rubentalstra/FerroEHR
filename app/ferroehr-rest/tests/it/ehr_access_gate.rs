@@ -85,7 +85,6 @@ fn rest_config(auth_enabled: bool) -> AppConfig {
                 ],
             }),
             oidc: None,
-            admin_scope: None,
             ..AuthConfig::default()
         },
         ..Default::default()

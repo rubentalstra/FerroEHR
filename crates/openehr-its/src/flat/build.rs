@@ -554,8 +554,27 @@ fn direct_rm_path(host: &str, seg: &str) -> Option<DirectPath> {
             attr: "time",
             rm_type: "DV_DATE_TIME",
         },
-        // master05 §ACTION: `/ism_transition`.
+        // master05 §ACTION: `/ism_transition`. Reached when the template
+        // constrains no transition at all; a constrained one is a merged web
+        // template child and its sub-paths take the three rows below.
         ("ACTION", "ism_transition") => Ism,
+        // master05 §ISM_TRANSITION: `/current_state`, `/transition`,
+        // `/careflow_step`. `current_state` and `transition` name an openEHR
+        // terminology group in their RM invariants (RM
+        // `UML/classes/org.openehr.rm.composition.ism_transition.adoc`
+        // §Invariants), so a bare `|code` resolves its rubric there.
+        ("ISM_TRANSITION", "current_state") => CodedGroup {
+            attr: "current_state",
+            group: "instruction_states",
+        },
+        ("ISM_TRANSITION", "transition") => CodedGroup {
+            attr: "transition",
+            group: "instruction_transitions",
+        },
+        ("ISM_TRANSITION", "careflow_step") => Leaf {
+            attr: "careflow_step",
+            rm_type: "DV_CODED_TEXT",
+        },
         // master05 §INSTRUCTION: `/narrative` (DV_TEXT).
         ("INSTRUCTION", "narrative") => Leaf {
             attr: "narrative",
@@ -1072,15 +1091,11 @@ fn new_struct(
     let node_id = seg.predicate.archetype_node_id.as_deref();
     let mut o = Map::new();
     o.insert("_type".into(), json!(rm_type));
-    // `name` is `LOCATABLE.name` — a structural node whose class does NOT
-    // inherit LOCATABLE has no such attribute, and stamping one authors a
-    // member the RM does not declare. `ISM_TRANSITION` is the live case: it
-    // inherits PATHABLE, not LOCATABLE
-    // (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.ism_transition.adoc`
-    // §Inherit), and the CKM careflow-state form `ism_transition[at0109,…]`
-    // reaches this builder through a path predicate. The generated RM model is
-    // the oracle rather than a hardcoded class list, so a future non-LOCATABLE
-    // structural type is handled by construction.
+    // `name` is `LOCATABLE.name`, so stamping it on a class that does not
+    // inherit LOCATABLE authors a member the RM does not declare — the live
+    // case is `ISM_TRANSITION`, which inherits PATHABLE (RM
+    // `UML/classes/org.openehr.rm.composition.ism_transition.adoc` §Inherit).
+    // The generated RM model is the oracle rather than a hardcoded class list.
     if is_locatable(rm_type) {
         let display = name.or(node_id).unwrap_or(rm_type);
         o.insert("name".into(), name_value(display, coded_name));
@@ -1212,32 +1227,21 @@ fn finish_identity(
     if rm_type == "EVENT_CONTEXT" {
         return; // PATHABLE, not LOCATABLE; fields come from ctx/
     }
-    // PARTY_PROXY subtypes are not LOCATABLE (RM common
-    // `UML/classes/org.openehr.rm.common.party_proxy.adoc` §Attributes — the
-    // class table declares no supertype row and `external_ref` as its only
-    // attribute): they carry NO locatable
-    // `name`/`archetype_node_id`/`archetype_details`. `PARTY_IDENTIFIED.name` is
-    // a plain `String` (RM common
-    // `UML/classes/org.openehr.rm.common.party_identified.adoc` §name — "Optional
-    // human-readable name (in String form)"), never a `DV_TEXT`; stamping the
-    // locatable coded/plain name object below would mis-type it. `Basic_validity`
-    // (same class) requires at least one of `name`/`identifiers`/`external_ref`,
-    // and `Name_valid` requires a present `name` to be non-empty — so synthesise a
-    // plain-String `name` when the built party carries none of the three.
-    // PARTICIPATION is not LOCATABLE either (RM common
-    // `UML/classes/org.openehr.rm.common.participation.adoc` §PARTICIPATION Class
-    // declares exactly `function`/`mode`/`performer`/`time`), so it carries no
-    // locatable `name`; and `performer: PARTY_PROXY [1..1]` is MANDATORY there, so
-    // a template that constrains only `function` (the common shape — an
-    // `other_participations` C_MULTIPLE_ATTRIBUTE with a bare PARTICIPATION child)
-    // still needs one, or the built composition is not committable. `PARTY_SELF` is
-    // the identity-free PARTY_PROXY — the same non-fabricating choice the unset
-    // `subject` default below makes — so no fictitious person is invented.
+    // PARTICIPATION is not LOCATABLE (RM common
+    // `UML/classes/org.openehr.rm.common.participation.adoc` declares exactly
+    // `function`/`mode`/`performer`/`time`), so it carries no locatable `name`;
+    // its `performer: PARTY_PROXY [1..1]` is mandatory, and the identity-free
+    // `PARTY_SELF` fills it without inventing a person.
     if rm_type == "PARTICIPATION" {
         obj.entry("performer".to_owned())
             .or_insert_with(|| json!({"_type": "PARTY_SELF"}));
         return;
     }
+    // PARTY_PROXY subtypes are not LOCATABLE either, and `PARTY_IDENTIFIED.name`
+    // is a plain String, never a `DV_TEXT` (RM common
+    // `UML/classes/org.openehr.rm.common.party_identified.adoc`). Its
+    // `Basic_validity` requires one of `name`/`identifiers`/`external_ref`, so a
+    // party built with none of the three gets a plain-String name.
     if matches!(rm_type, "PARTY_SELF" | "PARTY_IDENTIFIED" | "PARTY_RELATED") {
         if rm_type != "PARTY_SELF"
             && !obj.contains_key("name")
@@ -1510,13 +1514,9 @@ fn walk_entry_defaults(value: &mut Value, defaults: &ctx::CtxDefaults) {
                     obj.entry("workflow_id".to_owned())
                         .or_insert_with(|| wf.clone());
                 }
-                // NOTE: ctx participations land on the EVENT_CONTEXT only.
-                // master06 §Participation names ENTRY.other_participations as
-                // a second landing site, but the entry-level path form
-                // (`_other_participation:i`, master05 per-entry tables) is the
-                // explicit spelling for entry participations — defaulting the
-                // ctx list onto every entry would duplicate the data on
-                // round-trip, so the path form takes precedence.
+                // NOTE: master06 §Participation also names
+                // `ENTRY.other_participations`, but master05's explicit
+                // `_other_participation:i` path form wins, so ctx lands here only.
             }
             match rm_type.as_str() {
                 "OBSERVATION" => {

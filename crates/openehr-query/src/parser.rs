@@ -315,17 +315,14 @@ fn path_parsers<'a>() -> (
             NodePredicate::Or(Box::new(l), Box::new(r))
         });
 
-    // pathPredicate : '[' (standardPredicate | archetypePredicate | nodePredicate) ']'
+    // pathPredicate : '[' (standardPredicate | archetypePredicate |
+    // nodePredicate) ']'
     //
-    // The grammar's three-way classification is honoured here. A
-    // bare comparison (`[ehr_id/value='123']`) is *both* a standardPredicate
-    // and a nodePredicate in the grammar; ANTLR lists `standardPredicate`
-    // first, so a lone comparison classifies as `PathPredicate::Standard`. A
-    // comparison that is part of an `AND`/`OR` tree, or that sits beside
-    // node/archetype codes, stays a `nodePredicate`. We realise that split by
-    // parsing the node boolean tree and lifting a *top-level* bare
-    // `NodePredicate::Standard` back out to `PathPredicate::Standard`. The
-    // `archetype` alternative wins first for a plain `[ARCHETYPE_HRID]`.
+    // A bare comparison (`[ehr_id/value='123']`) is *both* a standardPredicate
+    // and a nodePredicate; ANTLR lists `standardPredicate` first, so a lone
+    // comparison classifies as `PathPredicate::Standard`. We realise that split
+    // by parsing the node boolean tree and lifting a *top-level* bare
+    // `NodePredicate::Standard` back out; `archetype` wins for a plain HRID.
     predicate.define(
         archetype
             .clone()

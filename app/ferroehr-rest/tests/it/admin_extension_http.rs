@@ -49,7 +49,6 @@ fn config(admin_enabled: bool) -> AppConfig {
             enabled: false,
             basic: None,
             oidc: None,
-            admin_scope: None,
             ..AuthConfig::default()
         },
         admin: AdminConfig {

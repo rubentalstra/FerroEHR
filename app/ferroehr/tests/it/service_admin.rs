@@ -834,19 +834,24 @@ async fn archive_marks_vos_idempotently_and_reads_stay_unchanged() {
     let ehr = seed_full_ehr(&svc).await;
     let person = make_person(&svc, "Archie").await;
 
-    // archive_ehrs marks every VO of the EHR.
-    svc.archive_ehrs(vec![ehr.to_string()])
-        .await
-        .expect("archive ehr");
+    // The live VO count BEFORE archiving: the marker set must match it, and
+    // reading it afterwards would be vacuous once the rows have moved tiers.
     let ehr_vo_count: i64 =
         sqlx::query_scalar("SELECT count(DISTINCT vo_id) FROM vo_version WHERE ehr_id = $1")
             .bind(ehr)
             .fetch_one(pool)
             .await
             .expect("ehr vo count");
+    assert!(ehr_vo_count > 0, "the seeded EHR holds versioned objects");
+
+    // archive_ehrs marks every VO of the EHR.
+    svc.archive_ehrs(vec![ehr.to_string()])
+        .await
+        .expect("archive ehr");
     let archived: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM vo_archive va \
-         WHERE EXISTS (SELECT 1 FROM vo_version v WHERE v.vo_id = va.vo_id AND v.ehr_id = $1)",
+         WHERE EXISTS (SELECT 1 FROM vo_version_all v \
+                       WHERE v.vo_id = va.vo_id AND v.ehr_id = $1)",
     )
     .bind(ehr)
     .fetch_one(pool)
@@ -924,4 +929,244 @@ async fn archive_marks_vos_idempotently_and_reads_stay_unchanged() {
             ..
         })
     ));
+}
+
+/// Row counts in one relation of one storage tier, for one versioned object.
+async fn vo_rows(pool: &PgPool, relation: &str, vo_id: &str) -> i64 {
+    let sql = format!("SELECT count(*) FROM {relation} WHERE vo_id = $1::uuid");
+    sqlx::query_scalar(AssertSqlSafe(sql))
+        .bind(vo_id)
+        .fetch_one(pool)
+        .await
+        .expect("vo row count")
+}
+
+/// Row counts in one relation of one storage tier, for an EHR.
+async fn tier_rows(pool: &PgPool, relation: &str, ehr: ferroehr::ids::EhrId) -> i64 {
+    let sql = format!("SELECT count(*) FROM {relation} WHERE ehr_id = $1");
+    sqlx::query_scalar(AssertSqlSafe(sql))
+        .bind(ehr)
+        .fetch_one(pool)
+        .await
+        .expect("tier row count")
+}
+
+/// SM `I_ADMIN_ARCHIVE` "Move … to archival storage" is a PHYSICAL move: the
+/// primary tier shrinks to zero rows for the archived EHR, the cold tier gains
+/// exactly those rows, reads keep serving them, and the move reverses.
+///
+/// No openEHR spec governs storage tiering — our own design/extension; what the
+/// SM does fix is the word "Move" and the archived objects' continued
+/// existence, which is what the read assertions below pin.
+#[tokio::test]
+async fn archive_physically_moves_rows_to_the_cold_tier_and_back() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = FerroEhrService::new(pool.clone());
+    let pool = &pool;
+
+    let ehr = seed_full_ehr(&svc).await;
+    let other = seed_full_ehr(&svc).await;
+
+    let hot_versions = tier_rows(pool, "vo_version", ehr).await;
+    let hot_nodes = tier_rows(pool, "node", ehr).await;
+    let other_versions = tier_rows(pool, "vo_version", other).await;
+    let other_nodes = tier_rows(pool, "node", other).await;
+    assert!(hot_versions > 0 && hot_nodes > 0, "the EHR has stored rows");
+
+    // The composition/EHR_STATUS content served before archiving, to compare
+    // against the post-archive read.
+    let status_before = svc
+        .get_ehr_status_at_time(ehr, None)
+        .await
+        .expect("status before archive");
+
+    svc.archive_ehrs(vec![ehr.to_string()])
+        .await
+        .expect("archive ehr");
+
+    // 1. The primary tier shrank to nothing for this EHR; the cold tier holds
+    //    exactly what left.
+    assert_eq!(tier_rows(pool, "vo_version", ehr).await, 0);
+    assert_eq!(tier_rows(pool, "node", ehr).await, 0);
+    assert_eq!(tier_rows(pool, "cold.vo_version", ehr).await, hot_versions);
+    assert_eq!(tier_rows(pool, "cold.node", ehr).await, hot_nodes);
+
+    // 2. An UNARCHIVED EHR is untouched in both directions.
+    assert_eq!(tier_rows(pool, "vo_version", other).await, other_versions);
+    assert_eq!(tier_rows(pool, "node", other).await, other_nodes);
+    assert_eq!(tier_rows(pool, "cold.vo_version", other).await, 0);
+    assert_eq!(tier_rows(pool, "cold.node", other).await, 0);
+    svc.get_ehr_status_at_time(other, None)
+        .await
+        .expect("the unarchived EHR still reads");
+
+    // 3. The archived EHR still serves the same content, now from the cold
+    //    tier (SM: archiving MOVES storage, it does not remove the object).
+    let status_after = svc
+        .get_ehr_status_at_time(ehr, None)
+        .await
+        .expect("status after archive");
+    assert_eq!(status_before, status_after, "archived read is unchanged");
+    let revisions = svc
+        .ehr_status_revision_history(ehr)
+        .await
+        .expect("revision history after archive");
+    assert_eq!(revisions["_type"], "REVISION_HISTORY");
+    assert!(
+        !revisions["items"]
+            .as_array()
+            .expect("items array")
+            .is_empty(),
+        "the archived EHR_STATUS keeps its revision history"
+    );
+
+    // 4. Re-archiving is still a no-op (nothing left to move).
+    svc.archive_ehrs(vec![ehr.to_string()])
+        .await
+        .expect("re-archive");
+    assert_eq!(tier_rows(pool, "cold.vo_version", ehr).await, hot_versions);
+
+    // 5. The move reverses exactly, markers included.
+    svc.restore_archived_ehrs(vec![ehr.to_string()])
+        .await
+        .expect("restore ehr");
+    assert_eq!(tier_rows(pool, "vo_version", ehr).await, hot_versions);
+    assert_eq!(tier_rows(pool, "node", ehr).await, hot_nodes);
+    assert_eq!(tier_rows(pool, "cold.vo_version", ehr).await, 0);
+    assert_eq!(tier_rows(pool, "cold.node", ehr).await, 0);
+    let markers: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM vo_archive va \
+         WHERE EXISTS (SELECT 1 FROM vo_version v WHERE v.vo_id = va.vo_id AND v.ehr_id = $1)",
+    )
+    .bind(ehr)
+    .fetch_one(pool)
+    .await
+    .expect("marker count");
+    assert_eq!(markers, 0, "restore drops the archive markers");
+    assert_eq!(
+        svc.get_ehr_status_at_time(ehr, None)
+            .await
+            .expect("status after restore"),
+        status_before
+    );
+}
+
+/// A physical EHR delete reaches the cold tier, which no foreign key cascade
+/// can touch (the mirrors are deliberately FK-free).
+#[tokio::test]
+async fn physical_delete_removes_archived_rows_from_the_cold_tier() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = FerroEhrService::new(pool.clone());
+    let pool = &pool;
+
+    let ehr = seed_full_ehr(&svc).await;
+    svc.archive_ehrs(vec![ehr.to_string()])
+        .await
+        .expect("archive ehr");
+    assert!(tier_rows(pool, "cold.vo_version", ehr).await > 0);
+
+    svc.admin_ehr_delete(ehr.to_string())
+        .await
+        .expect("delete archived ehr");
+
+    assert_eq!(tier_rows(pool, "cold.vo_version", ehr).await, 0);
+    assert_eq!(tier_rows(pool, "cold.node", ehr).await, 0);
+    let markers: i64 = sqlx::query_scalar("SELECT count(*) FROM vo_archive WHERE vo_id = $1")
+        .bind(Uuid::from(ehr))
+        .fetch_one(pool)
+        .await
+        .expect("marker count");
+    assert_eq!(markers, 0);
+}
+
+/// A write to an archived object thaws it first, so a versioned object is never
+/// split across the two storage tiers (its version history would otherwise be
+/// truncated on the next read).
+#[tokio::test]
+async fn writing_an_archived_object_thaws_it_back_to_the_primary_tier() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = FerroEhrService::new(pool.clone());
+    let pool = &pool;
+
+    let ehr = svc.create_ehr(None).await.expect("ehr");
+    let before = svc
+        .get_ehr_status_at_time(ehr, None)
+        .await
+        .expect("status get");
+    let preceding = uid(&before).to_owned();
+    let status_vo = preceding.split("::").next().expect("vo uuid").to_owned();
+
+    // Creation mints an EHR_STATUS and an EHR_ACCESS; archiving moves both.
+    svc.archive_ehrs(vec![ehr.to_string()])
+        .await
+        .expect("archive ehr");
+    assert_eq!(tier_rows(pool, "vo_version", ehr).await, 0);
+    assert_eq!(tier_rows(pool, "cold.vo_version", ehr).await, 2);
+
+    let mut updated = before.clone();
+    updated.as_object_mut().expect("status obj").remove("uid");
+    svc.replace_ehr_status(ehr, uv(&updated, "251", Some(&preceding)))
+        .await
+        .expect("update the archived EHR_STATUS");
+
+    // ONLY the written object thaws: the EHR_STATUS is whole in the primary
+    // tier (its archived version plus the new one), while the untouched
+    // EHR_ACCESS stays archived.
+    assert_eq!(vo_rows(pool, "vo_version", &status_vo).await, 2);
+    assert_eq!(vo_rows(pool, "cold.vo_version", &status_vo).await, 0);
+    assert_eq!(tier_rows(pool, "cold.vo_version", ehr).await, 1);
+    assert_eq!(tier_rows(pool, "vo_version", ehr).await, 2);
+    let revisions = svc
+        .ehr_status_revision_history(ehr)
+        .await
+        .expect("revision history");
+    assert_eq!(
+        revisions["items"].as_array().expect("items array").len(),
+        2,
+        "the thawed object keeps its whole version history"
+    );
+}
+
+/// The cold mirrors must stay column-for-column identical to their primary
+/// relations: every move is an `INSERT … SELECT *` in either direction, so a
+/// column added to `vo_version` / `node` / `vo_attestation` without a matching
+/// column on the mirror would silently break archiving. This test is that
+/// guard.
+#[tokio::test]
+async fn cold_mirrors_match_the_primary_relations_column_for_column() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+
+    for relation in ["vo_version", "node", "vo_attestation"] {
+        let columns: Vec<(String, String, String)> = sqlx::query_as(
+            "SELECT table_schema, column_name, data_type \
+             FROM information_schema.columns \
+             WHERE (table_schema = 'ehr' OR table_schema = 'cold') AND table_name = $1 \
+             ORDER BY table_schema, ordinal_position",
+        )
+        .bind(relation)
+        .fetch_all(&pool)
+        .await
+        .expect("column list");
+
+        let cold: Vec<(&str, &str)> = columns
+            .iter()
+            .filter(|(schema, _, _)| schema == "cold")
+            .map(|(_, name, ty)| (name.as_str(), ty.as_str()))
+            .collect();
+        let primary: Vec<(&str, &str)> = columns
+            .iter()
+            .filter(|(schema, _, _)| schema == "ehr")
+            .map(|(_, name, ty)| (name.as_str(), ty.as_str()))
+            .collect();
+
+        assert!(!primary.is_empty(), "{relation} exists in the primary tier");
+        assert_eq!(
+            cold, primary,
+            "cold.{relation} must mirror {relation} in column order, name and type"
+        );
+    }
 }

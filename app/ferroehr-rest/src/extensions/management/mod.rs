@@ -22,7 +22,7 @@
 //! layer (`AccessGuard`) is what yields the `401`/`403` documented on the
 //! gated operations: `401` when the level is Private/AdminOnly and auth is
 //! enabled but the caller is unauthenticated, `403` when the level is `AdminOnly`
-//! and the caller lacks the configured admin scope.
+//! and the caller lacks the RBAC `admin_role` (`authz.rbac.admin_role`).
 
 #![expect(
     clippy::disallowed_types,
@@ -37,6 +37,7 @@ mod info_routes;
 mod logger_routes;
 mod metrics;
 
+use ferroehr::config::authz::RbacConfig;
 use ferroehr::config::management::{AccessLevel, ManagementConfig};
 use ferroehr::telemetry::build_info::BuildInfo;
 use ferroehr::telemetry::health::HealthRegistry;
@@ -56,6 +57,8 @@ use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
 
 use crate::extensions::access::authn::Authenticator;
+use crate::extensions::access::authz::classify::OperationClass;
+use crate::extensions::access::authz::roles::RbacDecision;
 use crate::overview::error::RestError;
 use openehr_its::rest::runtime::ApiError;
 
@@ -68,6 +71,8 @@ pub struct ManagementState {
     pub config: ManagementConfig,
     /// The authentication layer, reused for access gating.
     pub authenticator: Arc<Authenticator>,
+    /// The RBAC configuration the `AdminOnly` access level gates on.
+    pub rbac: RbacConfig,
     /// The Prometheus render handle (present iff the recorder is installed).
     pub prometheus: Option<PrometheusHandle>,
     /// The runtime log-filter control (present iff the reloadable filter is set).
@@ -97,10 +102,15 @@ impl ManagementState {
     /// ([`crate::extensions::health`]), which reads the registry from
     /// [`AppState`](crate::state::AppState).
     #[must_use]
-    pub fn from_observability(obs: Observability, authenticator: Arc<Authenticator>) -> Self {
+    pub fn from_observability(
+        obs: Observability,
+        authenticator: Arc<Authenticator>,
+        rbac: RbacConfig,
+    ) -> Self {
         Self {
             config: obs.management,
             authenticator,
+            rbac,
             prometheus: obs.prometheus,
             log_reload: obs.log_reload,
             build_info: obs.build_info,
@@ -176,10 +186,12 @@ pub fn router(state: ManagementState) -> Router {
     // authenticator (so `router.with_state(state)` below can still move `state`)
     // wrapped with the required level for one route.
     let authenticator = Arc::clone(&state.authenticator);
+    let rbac = state.rbac.clone();
     let mk = |level: AccessLevel| {
         from_fn_with_state(
             AccessGuard {
                 authenticator: Arc::clone(&authenticator),
+                rbac: rbac.clone(),
                 level,
             },
             access_middleware,
@@ -531,6 +543,7 @@ fn recorder_unavailable() -> Response {
 #[derive(Clone)]
 struct AccessGuard {
     authenticator: Arc<Authenticator>,
+    rbac: RbacConfig,
     level: AccessLevel,
 }
 
@@ -572,10 +585,14 @@ impl AccessGuard {
                     .await
                     .map_err(|_| unauthorized(&self.authenticator))?;
                 if self.level == AccessLevel::AdminOnly
-                    && let Some(scope) = self.authenticator.admin_scope()
-                    && !authenticated.principal.scopes.iter().any(|s| s == scope)
+                    && let RbacDecision::Deny(reason) =
+                        crate::extensions::access::authz::roles::authorize(
+                            OperationClass::Admin,
+                            &authenticated.principal.roles,
+                            &self.rbac,
+                        )
                 {
-                    return Err(forbidden(scope));
+                    return Err(forbidden(&reason));
                 }
                 Ok(())
             }
@@ -591,9 +608,9 @@ fn unauthorized(authenticator: &Authenticator) -> Response {
     resp
 }
 
-fn forbidden(scope: &str) -> Response {
+fn forbidden(reason: &str) -> Response {
     RestError(ApiError::Forbidden(format!(
-        "management endpoint requires the '{scope}' scope"
+        "management endpoint: {reason}"
     )))
     .into_response()
 }

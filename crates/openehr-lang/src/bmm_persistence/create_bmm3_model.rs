@@ -26,36 +26,21 @@
 //!   `master04-syntax.adoc` §Value-set Constraints) belongs — the `::`-split of
 //!   `master07-core-classes.adoc` §Value-set Types.
 //!
+//! * **Generic-substituted properties.** Where a class binds an ancestor's
+//!   formal parameter, the ancestor's properties typed by that parameter
+//!   reappear in the descendant with the bound type and
+//!   `is_synthesised_generic` set (`synthesise_generic_properties`).
+//!
 //! Three boundaries are load-bearing and stated here rather than left implicit:
 //!
-//! TODO(#1877): synthesise generic-substituted properties and stamp
-//! `is_synthesised_generic`. `master13-model_semantics.adoc` §Generic Inheritance
-//! requires that where an ancestor's formal parameter is substituted, the
-//! properties whose type was that parameter "are synthesised within
-//! `DV_INTERVAL<T>` with their new concrete types. Their BMM meta-type objects
-//! (type `BMM_UNITARY_PROPERTY`) will both have the meta-attribute
-//! `_is_synthesised_generic_` set to `True`". Every materialised property
-//! therefore leaves the flag unset today. The substitution machinery this needs is
-//! now all present — the ancestor type carries its bindings (above), and
-//! `BmmClass::flat_features` walks the lineage — but doing it correctly means
-//! deciding how a synthesised property interacts with a redefinition of the same
-//! name, and how far a partially-closed chain propagates, which is a design step
-//! rather than plumbing.
-//!
-//! TODO(#1878): land class INVARIANTS and routine pre-/post-conditions. v3 requires them
-//! as `BMM_ASSERTION` ("Expressions as used in BMM models to express class
-//! invariants and routine pre- and post-conditions are always in the form of an
-//! `BMM_ASSERTION`", `LANG/docs/bmm3/master10-expressions.adoc` §Usage in BMM
-//! Models) and `BMM_ASSERTION.expression: EL_BOOLEAN_EXPRESSION` is `1..1`
-//! (`…bmm3.bmm_assertion.adoc` §Attributes), while P_BMM persists each assertion
-//! as an opaque expression STRING keyed by tag (`P_BMM_CLASS.invariants`:
-//! "Invariants defined on this class, as a Hash of assertion expressions keyed by
-//! tag", `…bmm_persistence.p_bmm_class.adoc` §Attributes). Turning that string
-//! into an `EL_BOOLEAN_EXPRESSION` needs an Expression Language parser: EL is
-//! DEVELOPMENT status and its grammar is not vendored
-//! (`LANG/docs/EL/masterAppA-syntax.adoc` points at an external ANTLR
-//! repository), so this transform SKIPS invariants and pre/post-conditions rather
-//! than inventing an expression tree. They stay readable in the P_BMM graph.
+//! * **Class invariants and routine pre-/post-conditions.** v3 requires them as
+//!   `BMM_ASSERTION` (`LANG/docs/bmm3/master10-expressions.adoc` §Usage in BMM
+//!   Models) where P_BMM persists an opaque expression string keyed by tag, so
+//!   they are parsed here by [`crate::bmm_persistence::create_bmm3_assertion`]
+//!   over the vendored EL grammar. A string that is not EL, or whose names do
+//!   not resolve, is COLLECTED as a
+//!   [`crate::bmm_persistence::validate::PBmmValidityFinding::AssertionNotMaterialised`]
+//!   and omitted, never a refusal of the schema.
 //!
 //! NOTE (embedding depth, the same adjudication as the v2.x transform): a v3
 //! `BMM_CLASS.ancestors` entry is a type whose `base_class` is a `BMM_CLASS`, so
@@ -74,6 +59,8 @@
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 
+use crate::bmm_persistence::create_bmm3_assertion::AssertionScope;
+use crate::bmm_persistence::create_bmm3_assertion::build_assertions;
 use crate::bmm_persistence::create_model::Builder;
 use crate::bmm_persistence::create_model::ClassEntry;
 use crate::bmm_persistence::create_model::check_enumeration_validity;
@@ -95,9 +82,12 @@ use crate::bmm_persistence::p_bmm_package::PBmmPackage;
 use crate::bmm_persistence::p_bmm_property::PBmmProperty;
 use crate::bmm_persistence::p_bmm_schema::PBmmSchema;
 use crate::bmm_persistence::p_bmm_type::PBmmType;
+use crate::bmm_persistence::validate::AssertionKind;
+use crate::bmm_persistence::validate::PBmmValidityFinding;
 use crate::bmm3::core::entity::bmm_class::BmmClass;
 use crate::bmm3::core::entity::bmm_container_type::BmmContainerType;
 use crate::bmm3::core::entity::bmm_container_type::BmmContainerTypeData;
+use crate::bmm3::core::entity::bmm_effective_type::BmmEffectiveType;
 use crate::bmm3::core::entity::bmm_generic_class::BmmGenericClass;
 use crate::bmm3::core::entity::bmm_generic_type::BmmGenericType;
 use crate::bmm3::core::entity::bmm_indexed_container_type::BmmIndexedContainerType;
@@ -130,6 +120,7 @@ use crate::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValue;
 use crate::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValueData;
 use crate::bmm3::core::model::bmm_model::BmmModel;
 use crate::bmm3::core::model::bmm_package::BmmPackage;
+use crate::bmm3::statement::bmm_assertion::BmmAssertion;
 use openehr_base::containers::present;
 
 /// The default feature-group name every feature is placed in.
@@ -163,6 +154,25 @@ const VALUE_SET_SEPARATOR: &str = "::";
 /// [`PBmmReadError::EnumerationItemListsNotOneToOne`] — the two transforms share
 /// one enumeration-validity check, so they refuse the same schemas.
 pub fn create_bmm3_model(schema: &PBmmSchema) -> Result<BmmModel, PBmmReadError> {
+    create_bmm3_model_reporting(schema).map(|(model, _)| model)
+}
+
+/// Materialises the v3 `BMM_MODEL` and returns the assertion findings alongside
+/// it.
+///
+/// Same transform as [`create_bmm3_model`]; the second element is every
+/// persisted invariant / pre-condition / post-condition string that could not
+/// become a `BMM_ASSERTION`
+/// ([`crate::bmm_persistence::validate::PBmmValidityFinding::AssertionNotMaterialised`]).
+/// The findings are COLLECTED rather than fatal, for the same reason
+/// [`crate::bmm_persistence::validate::validate_schema`]'s are: a validity
+/// report is only useful whole.
+///
+/// # Errors
+/// The same failures as [`create_bmm3_model`].
+pub fn create_bmm3_model_reporting(
+    schema: &PBmmSchema,
+) -> Result<(BmmModel, Vec<PBmmValidityFinding>), PBmmReadError> {
     let builder = Builder::new(schema)?;
     let mut class_definitions: BTreeMap<String, BmmClass> = BTreeMap::new();
     for entry in builder.classes.values() {
@@ -176,33 +186,37 @@ pub fn create_bmm3_model(schema: &PBmmSchema) -> Result<BmmModel, PBmmReadError>
         .map(|(name, class)| (name.clone(), as_module(class)))
         .collect();
     let packages = build_packages(&builder, &schema.packages, "")?;
-    Ok(BmmModel {
-        // `BMM_MODEL_ELEMENT.name` of the model is the schema's own name —
-        // `P_BMM_SCHEMA.schema_name` (`…bmm_persistence.p_bmm_schema.adoc`
-        // §Attributes).
-        name: schema.schema_name.clone(),
-        // P_BMM_SCHEMA declares neither a keyed `documentation` nor `extensions`
-        // (same §Attributes), so both inherited `BMM_MODEL_ELEMENT` attributes
-        // have no persisted source.
-        documentation: None,
-        extensions: None,
-        packages: (!packages.is_empty()).then_some(packages),
-        rm_publisher: schema.rm_publisher.clone(),
-        rm_release: schema.rm_release.clone(),
-        class_definitions: (!class_definitions.is_empty()).then_some(class_definitions),
-        // `BMM_MODEL.used_models` is v3's model-import list
-        // (`org.openehr.lang.bmm3.bmm_model.adoc` §Attributes). P_BMM composes
-        // models by INCLUSION instead, and inclusion is already resolved into
-        // this schema before the transform runs
-        // (`LANG/docs/bmm_persistence/master02-overview.adoc` §Conceptual
-        // Approach), so a materialised schema uses no separate model.
-        used_models: present(Vec::new()),
-        // `BMM_MODEL.modules` — "All classes in this model, keyed by type name"
-        // (same §Attributes): the same population as `class_definitions`, viewed
-        // under the module meta-type every v3 class is one of
-        // (`…bmm3.bmm_class.adoc` §Inherit — `BMM_CLASS : BMM_MODULE`).
-        modules: (!modules.is_empty()).then_some(modules),
-    })
+    let findings = builder.findings.take();
+    Ok((
+        BmmModel {
+            // `BMM_MODEL_ELEMENT.name` of the model is the schema's own name —
+            // `P_BMM_SCHEMA.schema_name` (`…bmm_persistence.p_bmm_schema.adoc`
+            // §Attributes).
+            name: schema.schema_name.clone(),
+            // P_BMM_SCHEMA declares neither a keyed `documentation` nor `extensions`
+            // (same §Attributes), so both inherited `BMM_MODEL_ELEMENT` attributes
+            // have no persisted source.
+            documentation: None,
+            extensions: None,
+            packages: (!packages.is_empty()).then_some(packages),
+            rm_publisher: schema.rm_publisher.clone(),
+            rm_release: schema.rm_release.clone(),
+            class_definitions: (!class_definitions.is_empty()).then_some(class_definitions),
+            // `BMM_MODEL.used_models` is v3's model-import list
+            // (`org.openehr.lang.bmm3.bmm_model.adoc` §Attributes). P_BMM composes
+            // models by INCLUSION instead, and inclusion is already resolved into
+            // this schema before the transform runs
+            // (`LANG/docs/bmm_persistence/master02-overview.adoc` §Conceptual
+            // Approach), so a materialised schema uses no separate model.
+            used_models: present(Vec::new()),
+            // `BMM_MODEL.modules` — "All classes in this model, keyed by type name"
+            // (same §Attributes): the same population as `class_definitions`, viewed
+            // under the module meta-type every v3 class is one of
+            // (`…bmm3.bmm_class.adoc` §Inherit — `BMM_CLASS : BMM_MODULE`).
+            modules: (!modules.is_empty()).then_some(modules),
+        },
+        findings,
+    ))
 }
 
 /// One class under the `BMM_MODULE` meta-type it inherits
@@ -265,6 +279,9 @@ struct ClassCore {
     is_primitive: Option<bool>,
     /// `BMM_CLASS.is_override`.
     is_override: bool,
+    /// `BMM_CLASS.invariants` — every persisted invariant string that
+    /// materialised (see the module docs).
+    invariants: Vec<BmmAssertion>,
 }
 
 /// The v3 keyed `documentation` form of a persisted scalar documentation string.
@@ -330,7 +347,27 @@ fn build_class(
     visiting: &mut BTreeSet<String>,
 ) -> Result<BmmClass, PBmmReadError> {
     let persisted = entry.class;
-    let core = build_core(builder, entry, depth, visiting)?;
+    let mut core = build_core(builder, entry, depth, visiting)?;
+    synthesise_generic_properties(builder, depth, visiting, &mut core)?;
+    if depth == Depth::Full {
+        let scope = AssertionScope {
+            builder,
+            owner: persisted,
+            properties: core.properties.as_ref(),
+            statics: core.static_properties.as_ref(),
+            functions: core.functions.as_ref(),
+            result_type: None,
+        };
+        let mut findings: Vec<PBmmValidityFinding> = Vec::new();
+        core.invariants = build_assertions(
+            &scope,
+            AssertionKind::Invariant,
+            None,
+            persisted.invariants(),
+            &mut findings,
+        );
+        builder.findings.borrow_mut().extend(findings);
+    }
     if let PBmmClass::PBmmEnumeration(enumeration) = persisted {
         check_enumeration_validity(core.name.as_str(), enumeration)?;
         return Ok(BmmClass::BmmSimpleClass(BmmSimpleClass::BmmEnumeration(
@@ -359,8 +396,7 @@ fn build_class(
             procedures: core.procedures,
             is_primitive: core.is_primitive,
             is_abstract: core.is_abstract,
-            // TODO(#1878): see the module docs' invariants entry.
-            invariants: present(Vec::new()),
+            invariants: present(core.invariants),
             // `creators`/`converters` are subsets of `procedures` a schema
             // designates (`…bmm3.bmm_class.adoc` §Attributes); P_BMM has no
             // attribute designating them, so no subset can be computed.
@@ -387,7 +423,7 @@ fn build_class(
             procedures: core.procedures,
             is_primitive: core.is_primitive,
             is_abstract: core.is_abstract,
-            invariants: present(Vec::new()),
+            invariants: present(core.invariants),
             creators: None,
             converters: None,
         },
@@ -449,6 +485,9 @@ fn build_core(
         is_abstract: Some(persisted.is_abstract()),
         is_primitive: Some(entry.is_primitive_type),
         is_override: persisted.is_override(),
+        // Filled by `build_class` once the feature maps a bare name resolves
+        // against are complete.
+        invariants: Vec::new(),
     })
 }
 
@@ -560,6 +599,239 @@ fn build_ancestors(
     Ok((!out.is_empty()).then_some(out))
 }
 
+/// Adds the generic-substituted properties a class inherits from a generic
+/// ancestor whose formal parameters it binds.
+///
+/// `master13-model_semantics.adoc` §Generic Inheritance: where `DV_INTERVAL
+/// <T:DV_ORDERED>` inherits `Interval<T:Ordered>`, "the resulting types of
+/// `lower` and `upper` are now `T:DV_ORDERED` rather than `T:Ordered` from the
+/// parent … these two properties are synthesised within `DV_INTERVAL<T>` with
+/// their new concrete types. Their BMM meta-type objects (type
+/// `BMM_UNITARY_PROPERTY`) will both have the meta-attribute
+/// `_is_synthesised_generic_` set to `True`". The closed case is the same
+/// operation with a concrete binding: `TIMER_WAIT` inheriting `WAIT<TIMER_
+/// EVENT>` gets `event: TIMER_EVENT` "synthesised new … with the meta-attribute
+/// `_is_synthesised_generic_` set `True`".
+///
+/// Both examples are ONE rule — replace the ancestor's formal parameter with
+/// whatever the descendant bound it to — because a binding to another formal
+/// parameter carries that parameter's own (narrowed) constraint in its type
+/// object. Three decisions the section leaves to the implementation:
+///
+/// * A property the descendant DECLARES wins: the section synthesises the
+///   ancestor's properties "within" the descendant, which cannot mean
+///   overwriting one the descendant defines for itself.
+/// * Propagation down a partially-closed chain is automatic rather than
+///   special-cased: an embedded ancestor has already had its own synthesis
+///   applied (this runs per class, before the class is embedded), so a
+///   re-substituted property is just the next step of the same rule.
+/// * Only a property whose type IS the parameter is synthesised. A parameter
+///   nested inside a generic argument (`List<T>` where the container type is
+///   the property's type) is substituted in place by the same walk.
+fn synthesise_generic_properties(
+    builder: &Builder<'_>,
+    depth: Depth,
+    visiting: &mut BTreeSet<String>,
+    core: &mut ClassCore,
+) -> Result<(), PBmmReadError> {
+    let generic_ancestors: Vec<BmmGenericType> = core
+        .ancestors
+        .iter()
+        .flat_map(|map| map.values())
+        .filter_map(|ancestor| match ancestor {
+            BmmModelType::BmmGenericType(generic) => Some(generic.clone()),
+            BmmModelType::BmmSimpleType(_) => None,
+        })
+        .collect();
+    let mut synthesised: BTreeMap<String, BmmProperty> = BTreeMap::new();
+    for generic in generic_ancestors {
+        let bindings = parameter_bindings(&generic);
+        if bindings.is_empty() {
+            continue;
+        }
+        // The embedded `base_class` is a STUB (no features — the
+        // embedding-depth adjudication in the module docs), so the ancestor's
+        // properties come from its own definition, rebuilt here. That build
+        // applies this same synthesis to the ancestor, which is what carries a
+        // substitution down a partially-closed chain.
+        let name = generic.base_class.name.clone();
+        let key = name.to_uppercase();
+        if visiting.contains(&key) {
+            continue;
+        }
+        let context = format!("generic ancestor `{name}`");
+        let entry = builder.entry(&context, &name)?;
+        visiting.insert(key.clone());
+        let ancestor = build_class(builder, entry, depth, visiting);
+        visiting.remove(&key);
+        for (property_name, property) in ancestor?.properties().iter().copied().flatten() {
+            if core
+                .properties
+                .as_ref()
+                .is_some_and(|own| own.contains_key(property_name))
+            {
+                continue;
+            }
+            if let Some(substituted) = substitute_property(property, &bindings) {
+                synthesised.insert(property_name.clone(), substituted);
+            }
+        }
+    }
+    if !synthesised.is_empty() {
+        core.properties
+            .get_or_insert_with(BTreeMap::new)
+            .extend(synthesised);
+    }
+    Ok(())
+}
+
+/// Pairs a generic ancestor's FORMAL parameter names with the types the
+/// descendant bound them to.
+///
+/// `BMM_GENERIC_TYPE.generic_parameters` is "the actual generic parameter
+/// types" as an ordered list while `BMM_GENERIC_CLASS.generic_parameters` is
+/// the formal declarations keyed by name
+/// (`org.openehr.lang.bmm3.bmm_generic_type.adoc` +
+/// `…bmm3.bmm_generic_class.adoc` §Attributes), so the two zip positionally.
+/// A binding that merely restates the formal parameter unchanged is dropped:
+/// substituting a parameter for itself synthesises nothing.
+fn parameter_bindings(generic: &BmmGenericType) -> BTreeMap<String, BmmUnitaryType> {
+    generic
+        .base_class
+        .generic_parameters
+        .iter()
+        .zip(generic.generic_parameters.iter())
+        .filter(|((name, formal), actual)| !is_unsubstituted(name, formal, actual))
+        .map(|((name, _), actual)| (name.clone(), actual.clone()))
+        .collect()
+}
+
+/// Whether `actual` restates the formal parameter unchanged — the same
+/// parameter name under the same conformance constraint.
+///
+/// A same-named parameter under a NARROWER constraint is a substitution, which
+/// is what makes `DV_INTERVAL<T:DV_ORDERED>` inheriting `Interval<T:Ordered>`
+/// synthesise (`master13-model_semantics.adoc` §Generic Inheritance: "the
+/// formal parameters of the inheriting class may further constrain any of the
+/// ancestor type's formal parameters"). The constraint is read through
+/// `BMM_PARAMETER_TYPE.flattened_conforms_to_type`
+/// (`org.openehr.lang.bmm3.bmm_parameter_type.adoc` §Functions), so an
+/// inherited precursor counts.
+fn is_unsubstituted(name: &str, formal: &BmmParameterType, actual: &BmmUnitaryType) -> bool {
+    let BmmUnitaryType::BmmParameterType(actual) = actual else {
+        return false;
+    };
+    actual.name.eq_ignore_ascii_case(name) && conformance_name(actual) == conformance_name(formal)
+}
+
+/// A formal parameter's flattened conformance-type name, if it declares one.
+fn conformance_name(parameter: &BmmParameterType) -> Option<String> {
+    parameter
+        .flattened_conforms_to_type()
+        .map(BmmEffectiveType::type_name)
+}
+
+/// One ancestor property re-typed under `bindings`, or `None` when its type
+/// mentions no bound parameter (nothing to synthesise).
+fn substitute_property(
+    property: &BmmProperty,
+    bindings: &BTreeMap<String, BmmUnitaryType>,
+) -> Option<BmmProperty> {
+    match property {
+        BmmProperty::BmmUnitaryProperty(unitary) => {
+            let substituted = substitute_unitary(&unitary.r#type, bindings)?;
+            let mut out = unitary.clone();
+            out.r#type = substituted;
+            out.is_synthesised_generic = Some(true);
+            Some(BmmProperty::BmmUnitaryProperty(out))
+        }
+        BmmProperty::BmmContainerProperty(BmmContainerProperty::BmmContainerProperty(data)) => {
+            let substituted = substitute_container(&data.r#type, bindings)?;
+            let mut out = data.clone();
+            out.r#type = substituted;
+            out.is_synthesised_generic = Some(true);
+            Some(BmmProperty::BmmContainerProperty(
+                BmmContainerProperty::BmmContainerProperty(out),
+            ))
+        }
+        BmmProperty::BmmContainerProperty(BmmContainerProperty::BmmIndexedContainerProperty(
+            indexed,
+        )) => {
+            let substituted = substitute_indexed_container(&indexed.r#type, bindings)?;
+            let mut out = indexed.clone();
+            out.r#type = substituted;
+            out.is_synthesised_generic = Some(true);
+            Some(BmmProperty::BmmContainerProperty(
+                BmmContainerProperty::BmmIndexedContainerProperty(out),
+            ))
+        }
+    }
+}
+
+/// A unitary type with every bound formal parameter replaced, or `None` when it
+/// mentions none. Recurses through a generic type's own arguments, so
+/// `List<T>`-shaped property types substitute in place.
+fn substitute_unitary(
+    r#type: &BmmUnitaryType,
+    bindings: &BTreeMap<String, BmmUnitaryType>,
+) -> Option<BmmUnitaryType> {
+    match r#type {
+        BmmUnitaryType::BmmParameterType(parameter) => bindings
+            .iter()
+            .find(|(formal, _)| formal.eq_ignore_ascii_case(&parameter.name))
+            .map(|(_, bound)| bound.clone()),
+        BmmUnitaryType::BmmGenericType(generic) => {
+            let mut arguments = generic.generic_parameters.clone();
+            let mut touched = false;
+            for argument in &mut arguments {
+                if let Some(substituted) = substitute_unitary(argument, bindings) {
+                    *argument = substituted;
+                    touched = true;
+                }
+            }
+            touched.then(|| {
+                let mut out = generic.clone();
+                out.generic_parameters = arguments;
+                BmmUnitaryType::BmmGenericType(out)
+            })
+        }
+        _ => None,
+    }
+}
+
+/// A container type whose ITEM type mentions a bound parameter, re-typed
+/// (`BMM_CONTAINER_TYPE.item_type`, `…bmm3.bmm_container_type.adoc`
+/// §Attributes).
+fn substitute_container(
+    r#type: &BmmContainerType,
+    bindings: &BTreeMap<String, BmmUnitaryType>,
+) -> Option<BmmContainerType> {
+    match r#type {
+        BmmContainerType::BmmContainerType(data) => {
+            let item = substitute_unitary(&data.item_type, bindings)?;
+            let mut out = data.clone();
+            out.item_type = Box::new(item);
+            Some(BmmContainerType::BmmContainerType(out))
+        }
+        BmmContainerType::BmmIndexedContainerType(indexed) => {
+            substitute_indexed_container(indexed, bindings)
+                .map(|out| BmmContainerType::BmmIndexedContainerType(Box::new(out)))
+        }
+    }
+}
+
+/// The indexed-container arm of [`substitute_container`], reached directly by
+/// a `BMM_INDEXED_CONTAINER_PROPERTY`, whose `type` is the indexed type itself.
+fn substitute_indexed_container(
+    r#type: &BmmIndexedContainerType,
+    bindings: &BTreeMap<String, BmmUnitaryType>,
+) -> Option<BmmIndexedContainerType> {
+    let item = substitute_unitary(&r#type.item_type, bindings)?;
+    let mut out = r#type.clone();
+    out.item_type = item;
+    Some(out)
+}
+
 /// The type a class generates — `BMM_CLASS.type` ("Generate a type object that
 /// represents the type for which this class is the definer",
 /// `org.openehr.lang.bmm3.bmm_class.adoc` §Functions), applied to a stub class.
@@ -632,11 +904,7 @@ fn build_parameter_type(
                     visiting,
                 )?;
                 visiting.remove(&edge);
-                Some(Box::new(
-                    crate::bmm3::core::entity::bmm_effective_type::BmmEffectiveType::from(
-                        class_as_type(stub),
-                    ),
-                ))
+                Some(Box::new(BmmEffectiveType::from(class_as_type(stub))))
             } else {
                 None
             }
@@ -944,7 +1212,7 @@ fn build_base_unitary_type(
 /// Builds the `BMM_UNITARY_TYPE` a bare type NAME denotes: a formal generic
 /// parameter of the owning class if it declares one, else the simple type of the
 /// named class.
-fn build_named_unitary_type(
+pub(super) fn build_named_unitary_type(
     builder: &Builder<'_>,
     context: &str,
     name: &str,
@@ -1251,8 +1519,20 @@ fn build_function(
         feature_extensions: present(Vec::new()),
         group: default_group(),
         parameters: present(build_parameters(builder, owner, function, visiting)?),
-        pre_conditions: present(Vec::new()),
-        post_conditions: present(Vec::new()),
+        pre_conditions: present(routine_conditions(
+            builder,
+            owner,
+            function,
+            AssertionKind::PreCondition,
+            Some(&result_type),
+        )),
+        post_conditions: present(routine_conditions(
+            builder,
+            owner,
+            function,
+            AssertionKind::PostCondition,
+            Some(&result_type),
+        )),
         // `BMM_ROUTINE.definition` is the routine BODY
         // (`org.openehr.lang.bmm3.bmm_routine.adoc` §Attributes); P_BMM persists
         // no bodies, only signatures.
@@ -1297,10 +1577,62 @@ fn build_procedure(
         feature_extensions: present(Vec::new()),
         group: default_group(),
         parameters: present(build_parameters(builder, owner, function, visiting)?),
-        pre_conditions: present(Vec::new()),
-        post_conditions: present(Vec::new()),
+        pre_conditions: present(routine_conditions(
+            builder,
+            owner,
+            function,
+            AssertionKind::PreCondition,
+            None,
+        )),
+        post_conditions: present(routine_conditions(
+            builder,
+            owner,
+            function,
+            AssertionKind::PostCondition,
+            None,
+        )),
         definition: None,
     })
+}
+
+/// Materialises one routine's persisted pre- or post-conditions, recording a
+/// finding for each string that does not become a `BMM_ASSERTION`.
+///
+/// The owning class's feature maps are still under construction at this point
+/// (a routine is built BY `build_core`), so a bare lower-case name here takes
+/// `elBareRef`'s `elFunctionCall` reading rather than resolving to a declared
+/// property — the class-invariant pass is where the declared features are
+/// available.
+fn routine_conditions(
+    builder: &Builder<'_>,
+    owner: &PBmmClass,
+    function: &PBmmFunction,
+    kind: AssertionKind,
+    result_type: Option<&BmmType>,
+) -> Vec<BmmAssertion> {
+    let source = match kind {
+        AssertionKind::PreCondition => function.pre_conditions.as_ref(),
+        AssertionKind::PostCondition => function.post_conditions.as_ref(),
+        AssertionKind::Invariant => None,
+    };
+    let scope = AssertionScope {
+        builder,
+        owner,
+        properties: None,
+        statics: None,
+        functions: None,
+        result_type,
+    };
+    let mut findings: Vec<PBmmValidityFinding> = Vec::new();
+    let built = build_assertions(
+        &scope,
+        kind,
+        Some(function.name.as_str()),
+        source,
+        &mut findings,
+    );
+    builder.findings.borrow_mut().extend(findings);
+    built
 }
 
 /// Builds a routine's ordered parameter list — "Formal parameters of the routine"
@@ -1524,7 +1856,7 @@ fn build_enumeration(
                 procedures: core.procedures,
                 is_primitive: core.is_primitive,
                 is_abstract: core.is_abstract,
-                invariants: present(Vec::new()),
+                invariants: present(core.invariants.clone()),
                 creators: None,
                 converters: None,
                 item_names: present(item_names),
@@ -1565,7 +1897,7 @@ fn build_enumeration(
                 procedures: core.procedures,
                 is_primitive: core.is_primitive,
                 is_abstract: core.is_abstract,
-                invariants: present(Vec::new()),
+                invariants: present(core.invariants.clone()),
                 creators: None,
                 converters: None,
                 item_names: present(item_names),
@@ -1605,7 +1937,7 @@ fn build_enumeration(
                 procedures: core.procedures,
                 is_primitive: core.is_primitive,
                 is_abstract: core.is_abstract,
-                invariants: present(Vec::new()),
+                invariants: present(core.invariants.clone()),
                 creators: None,
                 converters: None,
                 item_names: present(item_names),

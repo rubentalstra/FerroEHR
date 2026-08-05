@@ -194,11 +194,10 @@ mod tests {
     //
     // A Compose file that spells a reserved-namespace variable any other way
     // produces a container that CANNOT BOOT, and the failure surfaces only at
-    // `docker compose up` — which is how a single-`_` env block once shipped in
-    // the observability overlay. This guard walks the committed YAML and runs
-    // the real sweep over every variable the CDR service sets, so the drift
-    // fails in the test suite instead. No openEHR spec governs configuration or
-    // Compose — our own design.
+    // `docker compose up`. This guard walks the committed YAML and runs the real
+    // sweep over every variable the CDR service sets, so the drift fails in the
+    // test suite instead. No openEHR spec governs configuration or Compose —
+    // our own design.
 
     /// The compose service that runs the CDR binary this crate configures.
     /// Every other service (the database, the admin console with its own
