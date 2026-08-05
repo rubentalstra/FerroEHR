@@ -170,9 +170,9 @@ pub(super) fn check_concept_term_adl14(
 /// the block's own language key (e.g. a `["zh-cn"]` block whose inner
 /// `language` is `zh` is inconsistent).
 ///
-/// NOTE: no openEHR spec governs this — our own design/extension (archie
-/// `ErrorType.VRDLA` parity, adjudicated from `validity/basics`); it has no
-/// full vendored AOM2 text.
+/// NOTE: no openEHR spec governs this — our own design/extension; the code
+/// `VRDLA` appears nowhere in the vendored AOM2 text, and the rule was
+/// adjudicated from the `validity/basics` corpus cases.
 pub(super) fn check_resource_description_languages(
     v: &ArchetypeView<'_>,
     issues: &mut Vec<ValidationIssue>,

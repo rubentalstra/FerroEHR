@@ -1,10 +1,17 @@
 # openehr-base
 
-**openEHR BASE 1.3.0 — foundation and base types for Rust**, generated
+**openEHR BASE — foundation and base types for Rust**, generated
 deterministically from the official openEHR machine-readable BMM meta-model.
+Two BASE component versions ship side by side as generation modules: `v1_2`
+(BASE 1.2.0, the latest released) and `v1_3` (BASE 1.3.0, the development
+line).
 
 ## What it provides
 
+- Two generation modules, each emitting its component version completely.
+  `v1_3` is the **current** generation — the one the crate prelude
+  (`openehr_base::prelude`) re-exports; `v1_2` is reached by its full module
+  path (`openehr_base::v1_2::…`, or its own `v1_2::prelude`).
 - The complete BASE component type set: foundation types (intervals,
   ISO-8601 date/time types, `Uri`, terminology-neutral primitives) and base
   types (identification — `OBJECT_VERSION_ID`, `ARCHETYPE_ID`, `HIER_OBJECT_ID`
@@ -13,8 +20,14 @@ deterministically from the official openEHR machine-readable BMM meta-model.
   canonical-JSON `serde` implementations of every openEHR spec crate
   (`_type`-first self-tagging, strict reading: undeclared and duplicate keys
   are refused).
+- `containers` — the structural container bounds the RM relies on, notably
+  `NonEmptyVec<T>`, which makes a spec-mandated `1..*` list's emptiness
+  unrepresentable rather than merely rejected.
 - Validated constructors: types with BMM invariants construct through
   `new() -> Result`, so invalid spec values are unrepresentable.
+
+`serde_support`, `containers` and `validate` are cross-generation runtime and
+live at the crate root, outside the generation modules.
 
 Every other `openehr-*` crate builds on this one.
 
@@ -30,9 +43,14 @@ never rewrites. Changes belong in the emitter, never in the generated output.
 
 The package version is the crate's **own independent SemVer line** — it
 tracks this implementation's code and moves freely with fixes and
-improvements, never with the vendored openEHR specification (BASE 1.3.0). The implemented spec version is always
-available at runtime as `openehr_base::SPEC_VERSION` (`"1.3.0"`), independent of
-the package version.
+improvements, never with the vendored openEHR specification.
+
+The implemented spec version is a **per-generation** datum, carried by the
+emitted `Generation` enum — the crate's only pin authority (there is no
+crate-level or module-level spec-version constant). `Generation::default()`
+is the current generation (`V1_3`), `Generation::spec_version()` is a
+`const fn` returning that generation's openEHR version (`"1.2.0"` / `"1.3.0"`),
+and `Display`/`FromStr` round-trip the generation-module token (`"v1_3"`).
 
 ## Minimum supported Rust version
 

@@ -516,6 +516,12 @@ fn emit_generation_enum(comp: &CrateComposition) -> String {
         .iter()
         .map(|g| (generation_variant(g.module), g))
         .collect();
+    let current_module = comp
+        .generations
+        .iter()
+        .find(|g| g.current)
+        .or_else(|| comp.generations.first())
+        .map_or("", |g| g.module);
     let mut b = String::from(
         "\n/// The BMM generations this crate emits, one variant per version module,\n\
          /// oldest first.\n\
@@ -561,12 +567,15 @@ fn emit_generation_enum(comp: &CrateComposition) -> String {
             patterns.join(" | ")
         ));
     }
-    b.push_str(
-        "        }\n    }\n\n    /// Returns the generation token — the version-module name\n    \
-         /// (`\"v1_2\"`), which is also the [`std::fmt::Display`] and\n    \
+    // The doc's example token is THIS crate's current generation, not a
+    // hardcoded one: a fixed `"v1_2"` told openehr-term's readers its token
+    // was `v1_2` when the only token it has is `v3_1`.
+    b.push_str(&format!(
+        "        }}\n    }}\n\n    /// Returns the generation token — the version-module name\n    \
+         /// (`\"{current_module}\"`), which is also the [`std::fmt::Display`] and\n    \
          /// [`std::str::FromStr`] form.\n    \
-         #[must_use]\n    pub const fn as_str(self) -> &'static str {\n        match self {\n",
-    );
+         #[must_use]\n    pub const fn as_str(self) -> &'static str {{\n        match self {{\n",
+    ));
     for (variant, g) in &variants {
         b.push_str(&format!(
             "            Self::{variant} => \"{}\",\n",

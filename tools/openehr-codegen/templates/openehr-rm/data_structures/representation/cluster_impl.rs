@@ -1,10 +1,13 @@
 //! Hand-written RM class invariant for `CLUSTER`.
 //!
-//! Only the inherited LOCATABLE `Archetype_node_id_valid`.
+//! Only the inherited LOCATABLE `Archetype_node_id_valid`:
+//! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.cluster.adoc`
+//! declares no §Invariants section of its own.
 //!
-//! NOTE: openEHR's CLUSTER spec has an "items not empty" invariant, but the
-//! reference implementation archie does **not** enforce it (no `@Invariant`), so
-//! we do not either — enforcing it would over-reject relative to the reference.
+//! That page's §Attributes states `items` as a mandatory `List<ITEM>` (BMM
+//! cardinality `1..*`), which the generated field carries as
+//! `NonEmptyVec<Item>` — an empty `items` is unrepresentable
+//! (`openehr_base::containers`) rather than merely unchecked.
 
 use crate::v1_2::data_structures::representation::cluster::Cluster;
 use openehr_base::validate::{InvariantViolation, Validate};

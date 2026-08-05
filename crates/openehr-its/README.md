@@ -11,6 +11,10 @@ Simplified Data Formats (FLAT / STRUCTURED / Web Template).
   from_canonical_value}`: `_type`-first, BMM field order, a STRICT reader
   (undeclared/duplicate keys refused), refusal paths naming the offending
   JSON node, and validation against the embedded official ITS-JSON RM schema.
+  The `_type` → decode dispatch and declared-key table
+  (`json_codec::generated::structural`) span **every** emitted generation of
+  the spec crates at once; the XML, REST and OPT surfaces below are generated
+  over their current generations (RM 1.2.0 / BASE 1.3.0 / AM 2.4.0).
 - **Canonical XML** — generated `ToXml`/`FromXml` implementations over a
   `quick-xml` runtime, serving both published XSD lineages (the root
   namespace is a serialize-time choice).
@@ -26,19 +30,27 @@ Simplified Data Formats (FLAT / STRUCTURED / Web Template).
 
 ## Generated code — do not edit
 
-Every type file carries a `// @generated` header. The crate is emitted
+This crate is **half generated, half hand-written**, and every generated file
+carries a `// @generated` header. The generated halves are emitted
 deterministically by [`openehr-codegen`](https://github.com/rubentalstra/FerroEHR/tree/develop/tools/openehr-codegen)
-from the vendored openEHR BMM meta-model; hand-written spec behaviour
-(invariants, spec functions) lives in sibling `*_impl.rs` files the generator
-never rewrites. Changes belong in the emitter, never in the generated output.
+from the vendored openEHR artifacts: the XML codec from the ITS-XML XSDs plus
+the BMM field model, the REST contract from the ITS-REST OpenAPI documents,
+the `_type` dispatch table from the BMM, and the three archetype XML codecs
+(`opt14`, `aom2`, `aom2_model`) from their XSD closures. Changes to those
+belong in the emitter, never in the generated output. The hand-written halves
+— the `quick-xml` and REST runtimes, the canonical-JSON entry points, wire
+validation, `flat`, and `rest::smart_scopes` — are edited normally.
 
 ## Versioning
 
 The package version is the crate's **own independent SemVer line** — it
 tracks this implementation's code and moves freely with fixes and
-improvements, never with the vendored openEHR specification (ITS-REST 1.1.0 (with ITS-XML and ITS-JSON alongside)). The implemented spec version is always
-available at runtime as `openehr_its::SPEC_VERSION` (`"1.1.0"`), independent of
-the package version.
+improvements, never with the vendored openEHR specification. The implemented
+spec version is always available at runtime as the crate-level constant
+`openehr_its::SPEC_VERSION` (`"1.1.0"`, the ITS-REST release this crate
+implements — Simplified Formats is one of its sub-specifications, and the
+ITS-XML and ITS-JSON artifacts are pinned alongside), independent of the
+package version.
 
 ## Minimum supported Rust version
 

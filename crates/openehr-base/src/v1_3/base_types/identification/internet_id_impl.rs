@@ -2,7 +2,9 @@
 //! Hand-written RM/BASE class invariant + validating construction for
 //! `INTERNET_ID`.
 //!
-//! `UID.Value_valid`: the identifier string must be non-empty (archie `UID`).
+//! Inherited `UID.Value_valid` (`not value.empty`) — BASE
+//! `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.uid.adoc`
+//! §Invariants — surfaced under the concrete type name.
 //! Lexical form: `internet_id = subdomain` (BASE `base_types`
 //! `master05-identification_package.adoc` §Syntaxes).
 

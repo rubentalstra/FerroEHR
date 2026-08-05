@@ -1,8 +1,12 @@
 // @generated-from-template templates/openehr-rm/composition/content/navigation/section_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariant for `SECTION`.
 //!
-//! Only the inherited LOCATABLE `Archetype_node_id_valid`. archie's own
-//! `Section.Items_valid` is `ignored`.
+//! Only the inherited LOCATABLE `Archetype_node_id_valid` is checked.
+//! `SECTION`'s own `Items_valid` (`items /= Void implies not items.is_empty`,
+//! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.section.adoc`
+//! §Invariants) needs no runtime check: `items` is an
+//! `Option<NonEmptyVec<CONTENT_ITEM>>`, so present-but-empty is
+//! unrepresentable (`openehr_base::containers`).
 
 use crate::v1_1::composition::content::navigation::section::Section;
 use openehr_base::validate::{InvariantViolation, Validate};

@@ -1,14 +1,22 @@
 // @generated-from-template templates/openehr-rm/composition/event_context_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariant for `EVENT_CONTEXT`.
 //!
-//! `location_valid` (BMM `EVENT_CONTEXT.location_valid`,
-//! `location /= Void implies not location.is_empty`): if present, `location`
-//! must be non-empty.
+//! The class page
+//! (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.composition.event_context.adoc`
+//! §Invariants) declares three invariants; every one is enforced, each at the
+//! layer its inputs live at:
 //!
-//! NOTE: archie's `Setting_valid` is terminology-bound (deferred), and its
-//! `Participations_validity` is `ignored`. archie does **not** enforce
-//! "start_time present" (it is structurally guaranteed here — `start_time` is a
-//! required field).
+//! - `location_valid` (`location /= Void implies not location.is_empty`) —
+//!   here, via the generated `event_context_core`.
+//! - `Participations_validity` — by construction: the field emits
+//!   `Option<NonEmptyVec<PARTICIPATION>>`, so a present-but-empty list is
+//!   unrepresentable and the strict readers refuse `[]` at parse.
+//! - `Setting_valid` — terminology-bound, enforced in `validate::terminology`
+//!   against the `openehr-term` bundle (it needs the openEHR terminology
+//!   group, which this layer does not hold).
+//!
+//! `start_time` presence is structural: the attribute is `1..1`, so it emits
+//! a mandatory field.
 
 use crate::v1_2::composition::event_context::EventContext;
 use openehr_base::validate::{InvariantViolation, Validate};

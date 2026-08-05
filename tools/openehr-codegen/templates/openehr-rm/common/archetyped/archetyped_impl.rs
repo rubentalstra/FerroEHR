@@ -1,7 +1,8 @@
 //! Hand-written RM class invariant for `ARCHETYPED`.
 //!
-//! `Rm_version_valid` (archie `Archetyped`, `nullOrNotEmpty`): `rm_version` must
-//! be non-empty.
+//! `Rm_version_valid` (`not rm_version.is_empty`) —
+//! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.archetyped.adoc`
+//! §Invariants.
 
 use crate::v1_2::common::archetyped::archetyped::Archetyped;
 use openehr_base::validate::{InvariantViolation, Validate};

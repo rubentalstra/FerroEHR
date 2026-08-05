@@ -1,8 +1,10 @@
 //! ADL 1.4 inline dADL domain lowering (converter front end).
 //!
-//! NOTE: no openEHR spec governs 1.4→2 conversion — the whole `adl14` pipeline
-//! (including this lowering) is our own design (archie's converter is prior
-//! art). `C_DV_QUANTITY`/`C_DV_ORDINAL`/`C_CODE_PHRASE` are ADL 1.4-only inline
+//! NOTE: no openEHR spec governs the 1.4→2 conversion algorithm — the whole
+//! `adl14` pipeline (including this lowering) is our own design; see
+//! [`crate::adl14`] for the little the released text does fix.
+//!
+//! `C_DV_QUANTITY`/`C_DV_ORDINAL`/`C_CODE_PHRASE` are ADL 1.4-only inline
 //! dADL constrainers with no ADL2/AOM2 class; ADL2 expresses the first two as a
 //! `DV_QUANTITY`/`DV_ORDINAL` `C_COMPLEX_OBJECT` with an attribute tuple
 //! (`AOM2/master04.4` §Second-Order Constraints) and the third as a plain

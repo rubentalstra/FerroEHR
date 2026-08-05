@@ -10,7 +10,8 @@
 //! - [`json`] — **ITS-JSON**: canonical JSON. The named entry points
 //!   (`to_canonical_json`/`from_canonical_json`/`from_canonical_value`, over the
 //!   native [`json_codec`]) + the vendored ITS-JSON schema + the interop
-//!   fidelity gate (round-trip the EHRbase corpus, `tests/`).
+//!   fidelity gate (round-trip a vendored real-world canonical-JSON corpus,
+//!   `tests/`).
 //! - [`json_codec`] — **ITS-JSON**, native codec: emitted `ToJson`/`FromJson`
 //!   impls over a hand-written writer/reader runtime — the canonical-JSON
 //!   (de)serialization for every spec type (there is no serde derive on the spec

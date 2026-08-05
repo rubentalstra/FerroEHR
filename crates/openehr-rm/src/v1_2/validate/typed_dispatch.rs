@@ -24,10 +24,11 @@
 //! `LOCATABLE.Archetype_node_id_valid` rule
 //! ([`super::locatable_node_id_violation`]).
 //!
-//! # Fidelity to the reference implementation (archie)
+//! # Scope
 //!
-//! The RM class invariants (the `*_impl.rs` siblings) mirror openEHR's
-//! reference implementation archie; this module only routes a node to the right
+//! The invariants themselves are the released class tables' own
+//! (`docs/specs/openehr/RM/docs/UML/classes/*.adoc` §Invariants), realized in
+//! the `*_impl.rs` siblings; this module only routes a node to the right
 //! concrete type. A node that does not deserialize into its declared concrete
 //! RM type surfaces `does not conform to RM type …` (see
 //! [`record_type_mismatch`]).
