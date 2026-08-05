@@ -20,9 +20,22 @@ pub(super) const ALLOWLIST: &[&str] = &[
     "FERROEHR_RUSTC",
     "FERROEHR_IMAGE",
     "FERROEHR_POSTGRES_IMAGE",
+    "FERROEHR_ADMIN_UI_IMAGE",
+    "FERROEHR_JAVA_IMAGE",
     "FERROEHR_PORT",
     "FERROEHR_DB_PORT",
     "FERROEHR_S3_PORT",
+    "FERROEHR_ADMIN_UI_PORT",
+    "FERROEHR_TERMINOLOGY_PORT",
+    "FERROEHR_PGP_PORT",
+    "FERROEHR_PGP_DB_PORT",
+    "FERROEHR_JAVA_PORT",
+    "FERROEHR_CPUS",
+    "FERROEHR_MEM",
+    "FERROEHR_DB_CPUS",
+    "FERROEHR_DB_MEM",
+    "FERROEHR_TERMINOLOGY_CPUS",
+    "FERROEHR_TERMINOLOGY_MEM",
 ];
 
 /// The eighteen top-level section names — the did-you-mean candidate set for an

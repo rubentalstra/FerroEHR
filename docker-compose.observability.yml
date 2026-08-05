@@ -1,6 +1,10 @@
-# Observability overlay for the FerroEHR dev stack.
+# Observability overlay for the FerroEHR quickstart — STANDALONE, like
+# docker-compose.keycloak.yml: download it beside docker-compose.yml and run
 #
-#   docker compose -f docker-compose.yml -f docker-compose.observability.yml up --build
+#   docker compose -f docker-compose.yml -f docker-compose.observability.yml up
+#
+# (In a repo checkout, add -f docker-compose.override.yml before it to build
+# from source.)
 #
 # Adds a single-container LGTM stack (grafana/otel-lgtm = OTLP collector +
 # Prometheus + Tempo + Loki + Grafana) and points the app at it:
@@ -52,11 +56,218 @@ services:
     environment:
       # Keep collected data in the container's lifetime (dev).
       - ENABLE_LOGS_ALL=true
-    volumes:
-      # Extra Prometheus scrape config (scrapes the app's /management/prometheus).
-      - ./docker/observability/prometheus-scrape.yaml:/otel-lgtm/prometheus/scrape-configs/ferroehr.yaml:ro
-      # Provisioned Grafana dashboard.
-      - ./docker/observability/grafana-dashboard.json:/otel-lgtm/grafana/dashboards/ferroehr.json:ro
+    configs:
+      # Inline provisioning so the downloaded overlay is self-sufficient
+      # (docs.docker.com/reference/compose-file/configs — the `content`
+      # attribute); the blocks live at the bottom of this file.
+      - source: prometheus-scrape
+        target: /otel-lgtm/prometheus/scrape-configs/ferroehr.yaml
+      - source: grafana-dashboard
+        target: /otel-lgtm/grafana/dashboards/ferroehr.json
     ports:
       # Grafana UI only. OTLP (4317/4318) stays on the compose network.
       - "${GRAFANA_PORT:-3000}:3000"
+
+configs:
+  prometheus-scrape:
+    # Scrapes the app management Prometheus endpoint over the compose
+    # network; the management port (9464) is internal-only.
+    content: |
+      - job_name: ferroehr
+        metrics_path: /management/prometheus
+        scrape_interval: 15s
+        static_configs:
+          - targets:
+              - ferroehr:9464
+            labels:
+              service: ferroehr
+  # The provisioned Grafana dashboard — this inline block is its single home
+  # (the alert starter pack stays a separate file, docker/observability/alerts.yml).
+  grafana-dashboard:
+    content: |
+      {
+        "annotations": { "list": [] },
+        "editable": true,
+        "graphTooltip": 1,
+        "title": "ferroehr — service overview",
+        "uid": "ferroehr-overview",
+        "tags": ["ferroehr", "openehr"],
+        "schemaVersion": 39,
+        "time": { "from": "now-1h", "to": "now" },
+        "templating": { "list": [] },
+        "panels": [
+          {
+            "type": "row",
+            "title": "RED — requests, errors, duration",
+            "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }
+          },
+          {
+            "type": "timeseries",
+            "title": "Request rate by route (req/s)",
+            "datasource": { "type": "prometheus" },
+            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+            "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+            "targets": [
+              {
+                "expr": "sum by (http_route) (rate(http_server_request_duration_seconds_count[5m]))",
+                "legendFormat": "{{http_route}}"
+              }
+            ]
+          },
+          {
+            "type": "stat",
+            "title": "5xx error ratio",
+            "datasource": { "type": "prometheus" },
+            "gridPos": { "h": 8, "w": 6, "x": 12, "y": 1 },
+            "fieldConfig": {
+              "defaults": {
+                "unit": "percentunit",
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "green", "value": null },
+                    { "color": "red", "value": 0.01 }
+                  ]
+                }
+              },
+              "overrides": []
+            },
+            "targets": [
+              {
+                "expr": "sum(rate(http_server_request_duration_seconds_count{status_class=\"5xx\"}[5m])) / clamp_min(sum(rate(http_server_request_duration_seconds_count[5m])), 1)",
+                "legendFormat": "5xx ratio"
+              }
+            ]
+          },
+          {
+            "type": "stat",
+            "title": "In-flight requests",
+            "datasource": { "type": "prometheus" },
+            "gridPos": { "h": 8, "w": 6, "x": 18, "y": 1 },
+            "targets": [
+              { "expr": "sum(http_server_active_requests)", "legendFormat": "active" }
+            ]
+          },
+          {
+            "type": "timeseries",
+            "title": "Request duration p50/p95/p99 (s)",
+            "datasource": { "type": "prometheus" },
+            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 9 },
+            "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.50, sum by (le) (rate(http_server_request_duration_seconds_bucket[5m])))",
+                "legendFormat": "p50"
+              },
+              {
+                "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket[5m])))",
+                "legendFormat": "p95"
+              },
+              {
+                "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_request_duration_seconds_bucket[5m])))",
+                "legendFormat": "p99"
+              }
+            ]
+          },
+          {
+            "type": "timeseries",
+            "title": "Auth failures by mechanism/status (/s)",
+            "datasource": { "type": "prometheus" },
+            "gridPos": { "h": 8, "w": 12, "x": 12, "y": 9 },
+            "targets": [
+              {
+                "expr": "sum by (mechanism, status) (rate(auth_failures_total[5m]))",
+                "legendFormat": "{{mechanism}} {{status}}"
+              }
+            ]
+          },
+          {
+            "type": "row",
+            "title": "Persistence & AQL",
+            "gridPos": { "h": 1, "w": 24, "x": 0, "y": 17 }
+          },
+          {
+            "type": "timeseries",
+            "title": "DB pool connections",
+            "datasource": { "type": "prometheus" },
+            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 18 },
+            "targets": [
+              {
+                "expr": "db_pool_connections",
+                "legendFormat": "{{state}}"
+              },
+              {
+                "expr": "histogram_quantile(0.95, sum by (le) (rate(db_pool_acquire_duration_seconds_bucket[5m])))",
+                "legendFormat": "acquire p95 (s)"
+              }
+            ]
+          },
+          {
+            "type": "timeseries",
+            "title": "AQL query latency by phase (p95, s)",
+            "datasource": { "type": "prometheus" },
+            "gridPos": { "h": 8, "w": 12, "x": 12, "y": 18 },
+            "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, sum by (le, phase) (rate(aql_query_duration_seconds_bucket[5m])))",
+                "legendFormat": "{{phase}}"
+              },
+              {
+                "expr": "sum by (outcome) (rate(aql_queries_total[5m]))",
+                "legendFormat": "queries {{outcome}}"
+              }
+            ]
+          },
+          {
+            "type": "row",
+            "title": "Clinical writes, validation & audit",
+            "gridPos": { "h": 1, "w": 24, "x": 0, "y": 26 }
+          },
+          {
+            "type": "timeseries",
+            "title": "Compositions committed & validation failures (/s)",
+            "datasource": { "type": "prometheus" },
+            "gridPos": { "h": 8, "w": 12, "x": 0, "y": 27 },
+            "targets": [
+              {
+                "expr": "sum by (change_type) (rate(compositions_committed_total[5m]))",
+                "legendFormat": "committed {{change_type}}"
+              },
+              {
+                "expr": "sum by (pass) (rate(validation_failures_total[5m]))",
+                "legendFormat": "validation fail {{pass}}"
+              }
+            ]
+          },
+          {
+            "type": "timeseries",
+            "title": "ATNA audit pipeline (/s)",
+            "datasource": { "type": "prometheus" },
+            "gridPos": { "h": 8, "w": 12, "x": 12, "y": 27 },
+            "targets": [
+              {
+                "expr": "rate(atna_audit_sent_total[5m])",
+                "legendFormat": "sent"
+              },
+              {
+                "expr": "rate(atna_audit_dropped_total[5m])",
+                "legendFormat": "dropped"
+              },
+              {
+                "expr": "rate(atna_audit_send_failed_total[5m])",
+                "legendFormat": "send_failed"
+              }
+            ]
+          },
+          {
+            "type": "table",
+            "title": "Build info",
+            "datasource": { "type": "prometheus" },
+            "gridPos": { "h": 6, "w": 24, "x": 0, "y": 35 },
+            "targets": [
+              { "expr": "ferroehr_build_info", "format": "table", "instant": true }
+            ]
+          }
+        ]
+      }

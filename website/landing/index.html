@@ -152,14 +152,15 @@
         <div class="section-head">
           <span class="eyebrow">Quick start</span>
           <h2>Running in one command</h2>
-          <p>The full stack — server plus PostgreSQL 18 — with Docker Compose.</p>
+          <p>The full stack — server plus PostgreSQL 18 — from one Docker Compose file. No checkout, no configuration.</p>
         </div>
         <div class="code">
           <div class="code-head">
             <span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
             <span>shell</span>
           </div>
-          <pre><code><span class="prompt">$</span> docker compose up --build
+          <pre><code><span class="cmt"># With docker-compose.yml from the latest release in the current directory</span>
+<span class="prompt">$</span> docker compose up
 
 <span class="cmt"># Probe the status endpoint</span>
 <span class="prompt">$</span> curl http://localhost:8080/ferroehr/rest/status

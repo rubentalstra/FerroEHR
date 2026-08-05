@@ -13,7 +13,7 @@
 services:
   ehrbase-java-db:
     image: ${FERROEHR_JAVA_POSTGRES_IMAGE:-ehrbase/ehrbase-v2-postgres:16.2}
-    # The same /dev/shm floor as the rs stack (docker-compose.yml
+    # The same /dev/shm floor as the rs stack (docker/sut-ferroehr.yml
     # ferroehr-postgres) — Docker's default 64MB starves PostgreSQL's dynamic
     # shared memory (`could not resize shared memory segment … No space left
     # on device` during vacuumdb/parallel workers). The resource floor is

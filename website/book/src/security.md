@@ -158,13 +158,23 @@ or from a Basic user's configured roles. A clinical operation needs at least one
 role; an admin operation needs the admin role; the management surface follows
 its tri-state setting. Disabling RBAC restores authentication-only behaviour.
 
+> [!NOTE]
+> The downloadable Compose quickstart deliberately runs with RBAC **off** and a
+> single user, so every surface works out of the box (see
+> [Docker Compose](installation/compose.md)). Turn the role gate on with
+> `[authz.rbac] enabled = true` (or `FERROEHR__AUTHZ__RBAC__ENABLED=true`) and
+> give each principal an explicit `roles` list — a Basic user without one falls
+> back to the baseline `USER` role, which grants no admin operation.
+
 A principal carrying the `readonly_role` (default `READONLY`) is refused on
 every write operation — creating an EHR, committing a composition, uploading a
 template, and any update/delete — even when it also holds granting roles such
 as `ADMIN` (a restriction always overrides a grant). Reads and AQL queries stay
 permitted, so a `READONLY` account is an authenticated, view-only principal. The
-dev compose stack ships one such account (`ferroehr-readonly`, password
-`ferroehr`) for evaluation.
+repository's from-source development stack ships one such account
+(`ferroehr-readonly`, password `ferroehr`) alongside `ferroehr` and
+`ferroehr-admin`, with RBAC enabled, so the separation can be tried out; the
+downloadable quickstart file has neither (one user, no role gate).
 
 ### ABAC (attribute-based, fine-grained)
 

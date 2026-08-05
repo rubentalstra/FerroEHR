@@ -129,13 +129,13 @@ that does not exist fails at startup, never at request time.
 
 ### The `terminology` compose profile (development and CI)
 
-The repository's `docker-compose.yml` can start a real FHIR R4B terminology
-server (HAPI FHIR JPA) beside the CDR, seeded with a small set of synthetic
-test code systems and value sets:
+From a checkout of the repository, the conformance stack can start a real FHIR
+R4B terminology server (HAPI FHIR JPA) beside the CDR, seeded with a small set
+of synthetic test code systems and value sets. Run it from the repository root:
 
 ```bash
-docker compose --profile terminology \
-  -f docker-compose.yml -f docker/sut-terminology.yml up
+docker compose -p ferroehr-cnf --project-directory . --profile terminology \
+  -f docker/sut-ferroehr.yml -f docker/sut-terminology.yml up -d --wait ferroehr
 ```
 
 The profile starts the server (host port `8090` by default,
@@ -143,9 +143,9 @@ The profile starts the server (host port `8090` by default,
 fixtures over the server's own FHIR API and verifies `$validate-code` and
 `$expand` before exiting. The `docker/sut-terminology.yml` overlay is what
 points the CDR at it, by switching on the `[terminology.external]` providers
-that `docker/ferroehr.dev.toml` already carries in the disabled state. Without
-that overlay the CDR ignores the terminology server entirely, so the plain
-quickstart is unchanged.
+that `docker/ferroehr.dev.toml` already carries in the disabled state. None of
+this touches the downloadable quickstart Compose file, which has no terminology
+server and uses the in-process openEHR terminology only.
 
 The seeded content is synthetic and lives under the reserved `example.test`
 domain: one hierarchical, SNOMED-CT-*shaped* code system and one LOINC-*shaped*

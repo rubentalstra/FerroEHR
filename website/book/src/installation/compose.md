@@ -1,19 +1,43 @@
 # Docker Compose
 
 Docker Compose is the quickest way to run FerroEHR together with a
-preconfigured PostgreSQL 18, for local development and evaluation. This chapter
-describes the two published images, the Compose services, the environment
-variables that tune them, and the optional observability overlay. For a
+preconfigured PostgreSQL 18, for local development and evaluation. The
+quickstart is **one file and zero configuration**: download
+`docker-compose.yml`, run `docker compose up`, and the published images are
+pulled and started — no repository checkout, no bind mounts, no environment
+variables. This chapter describes the three published images, the Compose
+services, the authentication posture the quickstart ships with, the optional
+profiles and overlays, and the environment variables that tune them. For a
 step-by-step first run, see [Getting started](../getting-started.md).
 
-## The two images
+> [!NOTE]
+> The quickstart file carries the server configuration **inline** (a Compose
+> `configs` entry with `content:`), which requires **Docker Compose 2.23.1 or
+> newer**. Check with `docker compose version`.
 
-FerroEHR publishes two container images to GHCR:
+## The three images
+
+FerroEHR publishes three container images to GHCR:
 
 | Image | Contents |
 |---|---|
-| `ghcr.io/rubentalstra/ferroehr` | The `ferroehr` server binary. A distroless, non-root, shell-less multi-arch image (amd64 + arm64). Configured entirely via `FERROEHR_*` environment variables. |
+| `ghcr.io/rubentalstra/ferroehr` | The `ferroehr` server binary. A distroless, non-root, shell-less multi-arch image (amd64 + arm64). Configured via `FERROEHR_*` environment variables and/or a mounted TOML file. |
 | `ghcr.io/rubentalstra/ferroehr-postgres` | `postgres:18.4` with the application role, the layered group roles (`ferroehr_migrator`, `ferroehr_app`, `ferroehr_reader`), database, schemas (`ehr`, `ext`), and required extensions (`uuid-ossp`, `pgcrypto`, `pg_trgm`, `btree_gist`) pre-created, so the app role never needs superuser. |
+| `ghcr.io/rubentalstra/ferroehr-admin-ui` | The [admin console](../admin-ui/index.md) — a standalone web application that talks to the CDR strictly over ITS-REST. Optional; see the `admin-ui` profile below. |
+
+Each image is published under several tags:
+
+| Tag | Published from |
+|---|---|
+| `X.Y.Z`, `X.Y` | every release |
+| `latest` | the newest release |
+| `develop` | every push to the development branch |
+| `sha-<commit>` | every push, for exact pinning |
+
+The quickstart Compose file pins the **exact release version** it shipped with
+(currently `3.17.3`), so a downloaded file always runs one known-good,
+mutually-compatible set of images; the pins are bumped at every release cut.
+To run something else, set the image variables in the table below.
 
 The PostgreSQL image is **init-scripts only** — it creates roles, schemas, and
 extensions, but does not bake in migration state. The server owns the schema
@@ -31,11 +55,15 @@ database self-provisions and a restart is a no-op.
 
 ## Bringing up the stack
 
+Download `docker-compose.yml` — it is attached to every
+[release](https://github.com/rubentalstra/FerroEHR/releases/latest) — into an
+empty directory and start it:
+
 ```shell
-docker compose up --build
+docker compose up
 ```
 
-This starts the core services (no profile needed):
+This pulls and starts the two core services (no profile needed):
 
 - **`ferroehr-postgres`** — the database image, with a named data volume and a
   `pg_isready` healthcheck.
@@ -43,20 +71,15 @@ This starts the core services (no profile needed):
   (`depends_on: condition: service_healthy`), then boots, migrates, and serves
   on port 8080. Its healthcheck is the binary's own `healthcheck` subcommand
   (there is no shell in the image).
-- **`ferroehr-admin-ui`** — the admin console, which waits for the server to be
-  healthy and serves on port 3000.
+
+The API is then at `http://localhost:8080/ferroehr/rest/openehr/v1`, with
+Swagger UI at `http://localhost:8080/ferroehr/rest/swagger-ui`.
 
 > [!NOTE]
-> All base images are pinned by digest (`name:tag@sha256:…`), not by a mutable
-> tag, so a rebuild always resolves the exact same base. Each service also
-> declares a memory/CPU limit (`deploy.resources.limits`) mirroring the Helm
-> chart, so a local stack cannot exhaust the host.
-
-The server's development configuration is mounted read-only from
-`docker/ferroehr.dev.toml` to `/etc/ferroehr/ferroehr.toml`, where the server
-auto-discovers it. That file enables Basic auth with the throwaway users
-`ferroehr` / `ferroehr` and `ferroehr-admin` / `ferroehr`, and turns on permissive
-CORS — development only.
+> Third-party base images are pinned by digest (`name:tag@sha256:…`), not by a
+> mutable tag, so a pull always resolves the exact same image. Each service
+> also declares a memory/CPU limit (`deploy.resources.limits`) mirroring the
+> Helm chart, so a local stack cannot exhaust the host.
 
 > [!WARNING]
 > PostgreSQL 18's official image stores data in a major-version subdirectory,
@@ -64,34 +87,86 @@ CORS — development only.
 > pre-18 `/var/lib/postgresql/data`. The bundled Compose file already does this
 > correctly; keep the convention if you adapt it.
 
-## Environment variables
+## The quickstart's authentication posture
 
-The Compose file reads these host environment variables (with the defaults
-shown), so you can retune without editing it:
+The server configuration travels inside the Compose file and is written for
+evaluation, not for production:
 
-| Variable | Default | Effect |
-|---|---|---|
-| `FERROEHR_IMAGE` | `ghcr.io/rubentalstra/ferroehr:local` | Server image to run (set to a published tag to skip the build). |
-| `FERROEHR_POSTGRES_IMAGE` | `ghcr.io/rubentalstra/ferroehr-postgres:local` | Database image to run. |
-| `FERROEHR_PORT` | `8080` | Host port mapped to the server. |
-| `FERROEHR_DB_PORT` | `5432` | Host port mapped to PostgreSQL. |
-| `PG_INIT_USER` / `PG_INIT_PASSWORD` / `PG_INIT_DB` | `ferroehr` | App role, password, and database created by the DB image's init script. |
-| `POSTGRES_PASSWORD` | `postgres` | Bootstrap superuser password (init only). |
-| `FERROEHR__LOG__FORMAT` | `pretty` | Log rendering for `docker compose logs`. Set `json` for log collectors. |
+- **Basic auth with one user** — `ferroehr` / `ferroehr` (stored as an Argon2id
+  hash), carrying the `ADMIN` and `USER` roles.
+- **RBAC disabled** — any authenticated caller may use every enabled surface.
+  The `ADMIN` / `USER` / `READONLY` role separation is switched on by setting
+  `[authz.rbac] enabled = true` and giving each user an explicit `roles` list;
+  see [Security & multi-tenancy](../security.md).
+- **Admin API and management introspection enabled** — so the optional admin
+  console's panels work and `/management/*` can be poked with curl.
+- **Permissive CORS** — any origin may call the API from a browser.
+- **No TLS** — plain HTTP on port 8080.
 
-The server container itself is passed `FERROEHR__DB__URL` (assembled from the
-DB variables); its `ferroehr.toml` is the mounted `docker/ferroehr.dev.toml`,
-auto-discovered at `/etc/ferroehr/ferroehr.toml`. Any other `FERROEHR_*` setting
-from the [configuration reference](configuration.md) can be added under the
-`ferroehr` service's `environment:` block.
+> [!WARNING]
+> These are development credentials and development defaults. Before exposing
+> a server, replace the user store (or point it at an identity provider), turn
+> RBAC on, restrict CORS, and terminate TLS in front of the server. The
+> [configuration reference](configuration.md) and
+> [Security & multi-tenancy](../security.md) cover each of these.
+
+To change any of it without editing the Compose file, add `FERROEHR__*`
+variables to the `ferroehr` service's `environment:` block — the environment
+layer wins over the inline file. The Basic-auth user store is the one setting
+env cannot express (it is an array of tables), so replacing the users means
+editing the inline config or mounting your own TOML file.
+
+## The OIDC variant (Keycloak overlay)
+
+A second standalone file adds a ready-made identity provider, so you can
+exercise bearer-token authentication without registering a client anywhere.
+Download `docker-compose.keycloak.yml` from the same release, beside the base
+file, and stack the two:
+
+```shell
+docker compose -f docker-compose.yml -f docker-compose.keycloak.yml up
+```
+
+That starts **Keycloak** on port 8081 with a small demo realm (`ferroehr`)
+defined inline — one confidential client (`ferroehr` /
+`ferroehr-quickstart-secret`, with the password grant enabled so a token can be
+fetched by curl) and one user (`ferroehr` / `ferroehr`) carrying the `ADMIN` and
+`USER` realm roles — and points the server's bearer validation at it. Basic auth
+from the base file keeps working, so the server then advertises `Basic, Bearer`.
+
+Fetch a token and call the API with it:
+
+```shell
+TOKEN=$(curl -s -d client_id=ferroehr -d client_secret=ferroehr-quickstart-secret \
+  -d username=ferroehr -d password=ferroehr -d grant_type=password \
+  http://localhost:8081/auth/realms/ferroehr/protocol/openid-connect/token \
+  | python3 -c 'import json,sys; print(json.load(sys.stdin)["access_token"])')
+
+curl -H "Authorization: Bearer $TOKEN" -X POST -i \
+  http://localhost:8080/ferroehr/rest/openehr/v1/ehr
+```
+
+> [!WARNING]
+> The realm, the client secret, and the user password are demo values, served
+> over plain HTTP by a Keycloak in `start-dev` mode. For a real deployment,
+> drop this overlay and point `[auth.oidc]` (or `FERROEHR__AUTH__OIDC__*`) at
+> your own issuer.
 
 ## Optional services (Compose profiles)
 
-The Compose file also defines services the quickstart does **not** depend on —
-the server defaults to Basic auth, inline multimedia and the in-process
-openEHR terminology, so none of them is required. Each sits behind a [Compose
-profile](https://docs.docker.com/compose/how-tos/profiles/) and stays down
-until you enable it:
+The core services are profile-less and start on every `up`. Two further
+services sit behind a [Compose
+profile](https://docs.docker.com/compose/how-tos/profiles/) and stay down until
+you ask for them:
+
+- **`ferroehr-admin-ui`** (`--profile admin-ui`) — the
+  [admin console](../admin-ui/index.md) on port 3000, pointed at the server
+  inside the Compose network. Start the stack with it:
+
+  ```shell
+  docker compose --profile admin-ui up
+  # → http://localhost:3000  (log in with ferroehr / ferroehr)
+  ```
 
 - **`seaweedfs`** (`--profile s3`) — an S3 gateway for large `DV_MULTIMEDIA`
   externalization (development/test only). Start it with
@@ -100,48 +175,101 @@ until you enable it:
   `FERROEHR__MULTIMEDIA__BUCKET=openehr-multimedia`, and (dev only)
   `FERROEHR__MULTIMEDIA__ALLOW_HTTP=true`. In production, point the multimedia
   settings at a real, credentialed, HTTPS S3 endpoint instead.
-- **`keycloak`** (`--profile keycloak`) — an OIDC provider with a preloaded
-  `ferroehr` realm, on port 8081. Start it with
-  `docker compose --profile keycloak up`; to use bearer auth instead of Basic,
-  point the auth OIDC settings at `http://localhost:8081/auth/realms/ferroehr`.
-  Its healthcheck probes the realm's OIDC discovery document, so services can
-  gate their startup on it being fully ready.
-- **`terminology`** (`--profile terminology`) — a real FHIR R4B terminology
-  server (HAPI FHIR JPA) on port 8090, plus a one-shot container that seeds it
-  with synthetic test code systems and value sets over the server's own FHIR
-  API. The profile only starts the server; pointing the CDR at it is a small
-  overlay, so the plain quickstart is unaffected:
 
-  ```bash
-  docker compose --profile terminology \
-    -f docker-compose.yml -f docker/sut-terminology.yml up
-  ```
+Two things that used to be profiles of this file are not any more. Both have to
+*change* the server's configuration to be useful, which a profile cannot do — so
+each is a separate file instead:
 
-  The overlay switches on the `[terminology.external]` providers that
-  `docker/ferroehr.dev.toml` already carries in the disabled state. See
-  [Terminology servers](../beyond-core/terminology.md) for what is seeded, how
-  several servers are routed per terminology, and the fail-open/fail-closed
-  choice.
+- **OIDC / Keycloak** is the `docker-compose.keycloak.yml` overlay above (and,
+  in a repository checkout, a `keycloak` profile of the development override
+  described below).
+- **A real FHIR terminology server** now lives in the repository's
+  self-contained conformance stack; see
+  [Terminology servers](../beyond-core/terminology.md) for the invocation and
+  what is seeded.
+
+## Environment variables
+
+The Compose file reads these host environment variables (with the defaults
+shown), so you can retune without editing it:
+
+| Variable | Default | Effect |
+|---|---|---|
+| `FERROEHR_IMAGE` | `ghcr.io/rubentalstra/ferroehr:3.17.3` | Server image to run. |
+| `FERROEHR_POSTGRES_IMAGE` | `ghcr.io/rubentalstra/ferroehr-postgres:3.17.3` | Database image to run. |
+| `FERROEHR_ADMIN_UI_IMAGE` | `ghcr.io/rubentalstra/ferroehr-admin-ui:3.17.3` | Admin console image (the `admin-ui` profile). |
+| `FERROEHR_PORT` | `8080` | Host port mapped to the server. |
+| `FERROEHR_ADMIN_UI_PORT` | `3000` | Host port mapped to the admin console. |
+| `FERROEHR_DB_PORT` | `5432` | Host port mapped to PostgreSQL. |
+| `FERROEHR_S3_PORT` | `8333` | Host port mapped to the S3 gateway (the `s3` profile). |
+| `PG_INIT_USER` / `PG_INIT_PASSWORD` / `PG_INIT_DB` | `ferroehr` | App role, password, and database created by the DB image's init script. |
+| `POSTGRES_PASSWORD` | `postgres` | Bootstrap superuser password (init only). |
+| `FERROEHR__LOG__FORMAT` | `pretty` | Log rendering for `docker compose logs`. Set `json` for log collectors. |
+| `FERROEHR__LOG__FILTER` | `info` | Log level filter. |
+| `FERROEHR__DB__MAX_CONNECTIONS` | `10` | Server connection-pool ceiling. |
+| `FERROEHR__SERVER__MAX_IN_FLIGHT` | `256` | In-flight request admission cap (`503` past it; `0` disables). |
+| `FERROEHR__SIGNING__ENABLED` | `true` | Version signing. |
+
+The Keycloak overlay adds `KEYCLOAK_PORT` (default `8081`),
+`KEYCLOAK_HOSTNAME`, `KEYCLOAK_ADMIN_USER`, and `KEYCLOAK_ADMIN_PASSWORD`
+(both `admin`).
+
+The server container itself is passed `FERROEHR__DB__URL` (assembled from the
+DB variables); its configuration file is the inline quickstart config,
+delivered to `/etc/ferroehr/ferroehr.toml`, where the server auto-discovers it.
+Any other setting from the [configuration reference](configuration.md) can be
+added under the `ferroehr` service's `environment:` block, and takes precedence
+over the file.
+
+## Repository development
+
+In a checkout of the repository, `docker-compose.override.yml` is
+[merged automatically](https://docs.docker.com/compose/how-tos/multiple-compose-files/)
+onto any bare `docker compose` command, and switches the stack to the
+from-source developer posture:
+
+```shell
+docker compose up --build
+```
+
+That builds the server, database, and console images from the current sources
+(the `:local` tags) instead of pulling published ones, and replaces the inline
+quickstart configuration with `docker/ferroehr.dev.toml` — three Basic users
+(`ferroehr`, `ferroehr-admin`, `ferroehr-readonly`, all with password
+`ferroehr`), **RBAC enabled** so the role separation is exercised, and trust
+for the development Keycloak realm. The override also defines a `keycloak`
+profile that imports the full development realm
+(`docker compose --profile keycloak up`).
+
+Downloaders of the standalone quickstart file never see any of this; it is
+purely a convenience for working on FerroEHR itself. Note that passing `-f`
+explicitly (as the overlays above do) replaces the default file set, so the
+override is *not* merged in those invocations — add
+`-f docker-compose.override.yml` to the chain if you want it.
 
 ## Build provenance
 
-Images built by CI (and any `docker compose build` you drive) embed a build
-SHA reported at `/management/info` and on the `ferroehr_build_info` metric. The
-build does not read `.git`; instead the SHA is passed as the standard
-`REVISION` build argument — the same value that fills the
-`org.opencontainers.image.revision` image label (CI uses the commit SHA; the
-project's own scripts export `git rev-parse --short=12 HEAD`). When no value is
-supplied the identity falls back to the workspace version with an `unknown`
-SHA — the build never fails for lack of it.
+Images built by CI (and any `docker compose build` you drive from a checkout)
+embed a build SHA reported at `/management/info` and on the
+`ferroehr_build_info` metric. The build does not read `.git`; instead the SHA
+is passed as the standard `REVISION` build argument — the same value that fills
+the `org.opencontainers.image.revision` image label (CI uses the commit SHA;
+the project's own scripts export `git rev-parse --short=12 HEAD`). The build
+argument is declared by the files that carry `build:` blocks — the development
+override and the conformance stack — not by the pull-only quickstart file. When
+no value is supplied the identity falls back to the workspace version with an
+`unknown` SHA; the build never fails for lack of it.
 
 ## Observability overlay
 
-A second Compose file adds a full local telemetry stack — an OTLP collector,
+A further Compose file adds a full local telemetry stack — an OTLP collector,
 Prometheus, Tempo, Loki, and Grafana with a provisioned service-overview
-dashboard:
+dashboard. Like the Keycloak overlay it is standalone: the dashboard and
+scrape configuration travel inline in the file, so downloading it beside
+`docker-compose.yml` is enough:
 
 ```shell
-docker compose -f docker-compose.yml -f docker-compose.observability.yml up --build
+docker compose -f docker-compose.yml -f docker-compose.observability.yml up
 # Grafana → http://localhost:3000
 ```
 
@@ -155,6 +283,11 @@ only reachable on the Compose network — Grafana's 3000 is the sole published
 port. Every variable uses the same `FERROEHR__…` grammar as the rest of the
 [configuration reference](configuration.md); a single-underscore spelling is
 rejected at startup, not ignored.
+
+Grafana's port 3000 is the same one the admin console would use, but the two
+never collide by accident: the console only starts when you ask for the
+`admin-ui` profile. If you want both at once, move one of them
+(`FERROEHR_ADMIN_UI_PORT=3001`).
 
 This is the easiest way to see the server's metrics and traces without wiring
 up a collector by hand. See [Operations](../operations.md) for what the server

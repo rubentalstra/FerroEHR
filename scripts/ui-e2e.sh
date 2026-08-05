@@ -59,7 +59,10 @@ export COMPOSE_PROJECT_NAME=ferroehr-e2e
 # on the `up` left the trap's `down -v` blind to keycloak and leaked the
 # container on every run. COMPOSE_PROFILES scopes EVERY compose call below —
 # `up`, `stop` and the teardown alike. Comma-separate any profile added here.
-export COMPOSE_PROFILES=keycloak
+# `admin-ui` is here because the console service now carries that profile: the
+# export is what keeps the image mode's `stop ferroehr-admin-ui` cleanup and
+# the trap's `down -v` able to see the container at all.
+export COMPOSE_PROFILES=keycloak,admin-ui
 # Build provenance for the compose-built images: the OCI-standard REVISION arg
 # (forwarded by the compose build.args block, bridged into build.rs by the
 # server Dockerfile). Degrades to `unknown` off-checkout.
@@ -240,14 +243,22 @@ if [ -n "${UI_E2E_IMAGE:-}" ]; then
   # (docker/admin-ui/Dockerfile) with the e2e-env override supplying the OIDC
   # test wiring; the issuer (http://keycloak:8081) resolves in-network via
   # docker DNS and in the E2E browser via the harness host-resolver mapping.
+  # docker-compose.override.yml is in the explicit -f chain because every other
+  # call in this lane is a BARE `docker compose` (base + override, so `ferroehr`
+  # runs the dev config the override's `!override` swap selects). Without it
+  # here, this call's model gives `ferroehr` the inline quickstart config
+  # instead, and `up ferroehr-admin-ui` would RECREATE the running server
+  # container against that different config — breaking the lane mid-run.
   if [ -n "${UI_E2E_IMAGE_REF:-}" ]; then
     echo "── compose up the PUBLISHED console image ($UI_E2E_IMAGE_REF)"
     FERROEHR_ADMIN_UI_IMAGE="$UI_E2E_IMAGE_REF" \
-      docker compose -f docker-compose.yml -f docker/admin-ui/e2e-env.yml \
+      docker compose -f docker-compose.yml -f docker-compose.override.yml \
+      -f docker/admin-ui/e2e-env.yml \
       up -d --no-build --pull always ferroehr-admin-ui
   else
     echo "── compose up the console image (build from source)"
-    docker compose -f docker-compose.yml -f docker/admin-ui/e2e-env.yml \
+    docker compose -f docker-compose.yml -f docker-compose.override.yml \
+      -f docker/admin-ui/e2e-env.yml \
       up -d --build ferroehr-admin-ui
   fi
 else

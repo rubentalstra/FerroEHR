@@ -1,0 +1,116 @@
+# Repo-development override — merged automatically onto docker-compose.yml by
+# any bare `docker compose` invocation run from a repo checkout
+# (docs.docker.com/compose/how-tos/multiple-compose-files — "the override
+# file"). Downloaders of the standalone docker-compose.yml never see it.
+#
+# It restores the from-source developer posture:
+#   * images flip to the unpublished `:local` tags + `build:` blocks (both
+#     final Dockerfile targets share ONE runtime stage — compose builds
+#     `runtime-from-source`, CI builds `runtime-prebuilt`), so a plain
+#     `docker compose up --build` runs the CURRENT sources;
+#   * the server config swaps from the inline quickstart posture to
+#     docker/ferroehr.dev.toml (three users, RBAC on, the dev OIDC trust);
+#   * the dev `keycloak` profile lives here (it bind-mounts the full exported
+#     realm from docker/keycloak/import — the ui-e2e lane and local OIDC work
+#     use it; the standalone docker-compose.keycloak.yml overlay carries its
+#     own minimal demo realm instead).
+#
+# The conformance lanes do NOT use this file — they compose the self-contained
+# SUT stack docker/sut-ferroehr.yml (scripts/conformance.sh). The ui-e2e lane
+# (scripts/ui-e2e.sh, project ferroehr-e2e, COMPOSE_PROFILES=keycloak,admin-ui)
+# runs on bare compose calls, so this override IS its model.
+#
+# Build provenance uses the OCI-standard REVISION build-arg only (no bespoke
+# arg): the server Dockerfile bridges it into build.rs so /management/info
+# matches the org.opencontainers.image.revision LABEL. The driving scripts
+# export `REVISION=$(git rev-parse --short=12 HEAD)`. Absent, the identity
+# degrades to version-only with SHA=unknown by design (.git is not in the
+# build context).
+
+services:
+  ferroehr-postgres:
+    image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:local}
+    build:
+      context: ./docker/postgres
+      dockerfile: Dockerfile
+
+  ferroehr:
+    image: ${FERROEHR_IMAGE:-ghcr.io/rubentalstra/ferroehr:local}
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      # The Dockerfile has two final targets sharing one runtime stage; compose
+      # builds the from-source one (CI builds runtime-prebuilt). Without this,
+      # buildx would build the last stage (runtime-prebuilt) and fail on the
+      # missing bin/ context.
+      target: runtime-from-source
+      args:
+        REVISION: ${REVISION:-}
+
+  ferroehr-admin-ui:
+    image: ${FERROEHR_ADMIN_UI_IMAGE:-ghcr.io/rubentalstra/ferroehr-admin-ui:local}
+    build:
+      context: .
+      dockerfile: docker/admin-ui/Dockerfile
+      target: runtime-from-source
+      args:
+        REVISION: ${REVISION:-}
+
+  # Keycloak for OAuth2/OIDC bearer auth (the "ferroehr" realm is imported from
+  # docker/keycloak/import), behind the `keycloak` profile. The app defaults to
+  # Basic auth, so it does NOT depend on Keycloak; docker/ferroehr.dev.toml's
+  # [auth.oidc] block points at the realm below, and the OIDC lanes start it
+  # with `docker compose --profile keycloak up`.
+  keycloak:
+    profiles: [keycloak]
+    # Digest-pinned quay.io/keycloak/keycloak:26.7.0 (current release), resolved
+    # 2026-07-24 (docs.docker.com/build/building/best-practices).
+    image: quay.io/keycloak/keycloak:26.7.0@sha256:0f198be292568439d700cdbfb893e69a6009bb43a94a06a945b1d3d506c76b13
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HTTP_RELATIVE_PATH: /auth
+      # In-network port == default host port (8081): one issuer hostname:port
+      # (http://keycloak:8081) is then valid from BOTH the docker network and
+      # the host (the E2E browser maps `keycloak` to 127.0.0.1), so the
+      # containerized console and a host browser can share one OIDC issuer.
+      KC_HTTP_PORT: 8081
+      # ONE canonical issuer regardless of which host the caller used —
+      # token `iss` claims stay stable, so the CDR can validate bearer
+      # tokens against a single configured issuer (ferroehr.dev.toml
+      # [auth.oidc]). Override for human admin-console browsing if needed.
+      # NOTE: a URL-form KC_HOSTNAME replaces the whole base — Keycloak does
+      # NOT append KC_HTTP_RELATIVE_PATH to it, so /auth must be included.
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-http://keycloak:8081/auth}
+    volumes:
+      - ./docker/keycloak/import:/opt/keycloak/data/import:ro
+    ports:
+      - "${KEYCLOAK_PORT:-8081}:8081"
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1G
+    # F10: the Keycloak image ships bash (no curl/wget), so probe the imported
+    # realm's OIDC discovery doc over bash's /dev/tcp — this makes
+    # `depends_on: {keycloak: {condition: service_healthy}}` a valid gate for
+    # the OIDC lanes (docs.docker.com/compose/how-tos/startup-order). Readiness
+    # here means the realm is imported AND the HTTP listener answers 200.
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "exec 3<>/dev/tcp/127.0.0.1/8081; printf 'GET /auth/realms/ferroehr/.well-known/openid-configuration HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nConnection: close\\r\\n\\r\\n' >&3; grep -q '^HTTP/1.1 200' <&3"
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+configs:
+  # The dev-lane server config replaces the ENTIRE inline quickstart config
+  # (`!override` — docs.docker.com/reference/compose-file/merge §Replace value):
+  # three users, RBAC on (the ADMIN/USER/READONLY split), the dev Keycloak
+  # OIDC trust, and the disabled terminology providers the CNF stack's
+  # overlays switch on.
+  ferroehr-config: !override
+    file: ./docker/ferroehr.dev.toml
