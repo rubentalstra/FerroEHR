@@ -208,7 +208,7 @@ async-trait = "0.1"                 # still handy for dyn traits; native async-f
 pin-project-lite = "0.2"
 
 # ── Authentication & authorization (do NOT hand-roll) ────────────────────────
-jsonwebtoken = { version = "10.4.0", features = ["aws_lc_rs"] }   # JWT encode/decode/validate; aws-lc-rs crypto provider (matches the rustls stack)
+jsonwebtoken = { version = "11.0.0", features = ["aws_lc_rs"] }   # JWT encode/decode/validate; aws-lc-rs crypto provider (matches the rustls stack)
 oauth2 = { version = "5", default-features = false } # OAuth2 client (HTTP-client agnostic: we supply the pinned reqwest)
 openidconnect = "4"                 # OIDC / Keycloak          (verify latest 4.x)
 argon2 = "0.5"                      # password hashing (Argon2id)
