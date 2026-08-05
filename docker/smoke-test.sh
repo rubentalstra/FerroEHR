@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
-# End-to-end smoke test for the two container images (amd64).
+# End-to-end smoke test for the two container images (amd64), run against the
+# TRUE end-user artifact: the standalone docker-compose.yml, pinned with an
+# explicit -f so a repo checkout's docker-compose.override.yml never merges in.
 #
-# Brings up ONLY the two core services (postgres + app; Keycloak is not needed
-# for the Basic-auth path), then:
+# Only postgres + the server start (the admin console sits behind the
+# `admin-ui` profile). The server configuration is the quickstart posture the
+# compose `configs:` block carries inline — Basic user ferroehr/ferroehr,
+# RBAC off. The steps:
 #   1. waits for the app healthcheck to report healthy;
 #   2. asserts GET /rest/status returns 200;
 #   3. creates an EHR with the dev Basic credentials (ferroehr/ferroehr);
@@ -15,47 +19,54 @@
 # FERROEHR_IMAGE / FERROEHR_POSTGRES_IMAGE select the images to run.
 set -Eeuo pipefail
 
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
 # Own project (docs.docker.com/compose/how-tos/project-name) so the `down -v`
 # teardown is scoped to `ferroehr-smoke` and never wipes a running dev
 # (`ferroehr`) stack (issue #282 D3). Only the two core services are started
-# (keycloak/seaweedfs are behind profiles and stay down).
+# (the admin console and seaweedfs are behind profiles and stay down).
 export COMPOSE_PROJECT_NAME=ferroehr-smoke
+# The single compose model for every call below: the standalone quickstart file
+# ONLY. An explicit -f suppresses the automatic override merge
+# (docs.docker.com/compose/how-tos/multiple-compose-files), so this smoke test
+# exercises what a downloader actually runs, never the repo dev posture.
+COMPOSE=(docker compose -f "$ROOT_DIR/docker-compose.yml")
 BASE="http://localhost:8080/ferroehr/rest"
 CORE_SERVICES=(ferroehr-postgres ferroehr)
 
 cleanup() {
   echo "::group::app logs"
-  docker compose logs ferroehr || true
+  "${COMPOSE[@]}" logs ferroehr || true
   echo "::endgroup::"
-  docker compose down -v || true
+  "${COMPOSE[@]}" down -v || true
 }
 trap cleanup EXIT
 
 wait_healthy() {
   local cid
   for _ in $(seq 1 60); do
-    cid=$(docker compose ps -q ferroehr)
+    cid=$("${COMPOSE[@]}" ps -q ferroehr)
     if [ -n "$cid" ] && [ "$(docker inspect -f '{{.State.Health.Status}}' "$cid")" = "healthy" ]; then
       return 0
     fi
     sleep 5
   done
   echo "::error::app container did not become healthy"
-  docker compose ps
-  docker compose logs ferroehr || true
+  "${COMPOSE[@]}" ps
+  "${COMPOSE[@]}" logs ferroehr || true
   return 1
 }
 
 migration_count() {
   # Query as the bootstrap superuser (peer auth over the container's unix
   # socket maps the postgres OS user to the postgres role).
-  docker compose exec -T ferroehr-postgres \
+  "${COMPOSE[@]}" exec -T ferroehr-postgres \
     psql -U postgres -d "${PG_INIT_DB:-ferroehr}" -tAc \
     "SELECT count(*) FROM ehr._sqlx_migrations" | tr -d '[:space:]'
 }
 
 echo "==> Starting core services"
-docker compose up -d --no-build "${CORE_SERVICES[@]}"
+"${COMPOSE[@]}" up -d --no-build "${CORE_SERVICES[@]}"
 
 echo "==> Waiting for app to become healthy"
 wait_healthy
@@ -76,7 +87,7 @@ echo "    ehr._sqlx_migrations count = $before"
 [ "$before" -ge 1 ] || { echo "::error::migrations did not apply on first boot"; exit 1; }
 
 echo "==> Restarting app (second boot must be a migration no-op)"
-docker compose restart ferroehr
+"${COMPOSE[@]}" restart ferroehr
 wait_healthy
 after=$(migration_count)
 echo "    ehr._sqlx_migrations count = $after"

@@ -7,8 +7,8 @@
 # in the pgp posture, as its own compose project (`-p ferroehr-cnf-pgp`),
 # alongside the standard digest stack:
 #
-#   docker compose -p ferroehr-cnf-pgp \
-#     -f docker-compose.yml -f docker/sut-smart.yml \
+#   docker compose -p ferroehr-cnf-pgp --project-directory . \
+#     -f docker/sut-ferroehr.yml -f docker/sut-smart.yml \
 #     -f docker/sut-signing-pgp.yml -f docker/sut-pgp-parallel.yml \
 #     up -d --wait ferroehr
 #
@@ -21,7 +21,7 @@
 # instead (same page, "Replace value with !override").
 #
 # It never builds: the primary compose builds the image under the SAME
-# explicit `image:` tag (docker-compose.yml pins `${FERROEHR_IMAGE}` /
+# explicit `image:` tag (docker/sut-ferroehr.yml pins `${FERROEHR_IMAGE}` /
 # `${FERROEHR_POSTGRES_IMAGE}`, which are project-independent), so this project
 # starts the identical artefact with a different configuration — one build,
 # two postures.

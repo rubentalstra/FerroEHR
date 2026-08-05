@@ -95,6 +95,14 @@ jobs:
           tag_name: ${{ steps.tag.outputs.tag }}
           name: ${{ steps.tag.outputs.tag }}
           body_path: release-notes.md
+          # The quickstart compose files ride along as release assets: the base
+          # file pulls the images this tag published, and the two standalone
+          # overlays are downloaded beside it, so a downloader never has to
+          # clone the repo to run the release.
+          files: |
+            docker-compose.yml
+            docker-compose.keycloak.yml
+            docker-compose.observability.yml
           # Releases publish as OFFICIAL releases (owner sign-off
           # 2026-07-31, superseding the 2026-07-11 always-prerelease rule);
           # only an explicitly suffixed tag (v3.16.0-rc1, ...) is a

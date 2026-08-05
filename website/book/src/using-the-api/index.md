@@ -57,8 +57,8 @@ attribute-based policies. The full picture — mechanisms, roles, multi-tenancy 
 is in [Security & multi-tenancy](../security.md).
 
 > [!NOTE]
-> The development stack ships throwaway Basic users (`ferroehr` / `ferroehr`).
-> Replace them before any real use.
+> The quickstart ships a throwaway Basic user (`ferroehr` / `ferroehr`).
+> Replace it before any real use.
 
 ## The chapters here
 

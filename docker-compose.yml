@@ -1,77 +1,65 @@
-# Quickstart for ferroehr: the preconfigured PostgreSQL image + the app image
-# + the admin console.
+# FerroEHR quickstart — a STANDALONE file: download it anywhere and run
 #
-#   docker compose up --build          # build + run the core services
+#   docker compose up
 #   curl -u ferroehr:ferroehr -X POST -i \
 #     http://localhost:8080/ferroehr/rest/openehr/v1/ehr
 #
-# The same Dockerfiles CI publishes are used here (no drift — the compose build
-# targets `runtime-from-source`, CI targets `runtime-prebuilt`, both share ONE
-# runtime stage). CI can point the `*_IMAGE` vars at pre-built images and run
-# `docker compose up --no-build`.
+# It pulls the published images (ghcr.io/rubentalstra/*, pinned to the release
+# this file shipped with) and needs NO repo checkout, no bind mounts, and no
+# environment variables. The server configuration travels INLINE as the
+# `ferroehr-config` compose config below (requires Docker Compose >= 2.23.1 —
+# docs.docker.com/reference/compose-file/configs). The quickstart posture is
+# Basic auth with the dev user ferroehr/ferroehr and RBAC disabled — dev
+# credentials, NOT for production (see the config block for the ways out).
 #
-# ── Lanes (docs.docker.com/compose/how-tos/project-name) ──────────────────────
-# NO hard-coded `name:` (issue #282 D3): the project name is chosen per lane so
-# the lanes coexist and never tear down each other's containers/networks/volumes.
-# All lanes share the 8080/3000/5432/8081 host port block (the CNF ixit pins
-# localhost:8080), so they run one at a time on defaults — conformance is the
-# "exclusive-server ground" by design; override the *_PORT env vars for true
-# parallel coexistence.
+# The image tags below are bumped at every release cut (the Helm appVersion
+# treatment); scripts/check-compose-image-tags.sh guards them against the
+# workspace version in CI.
 #
-#   | Lane      | Invocation                                   | Project             |
-#   |-----------|----------------------------------------------|---------------------|
-#   | dev       | docker compose up                            | ferroehr (dir)    |
-#   | CNF (rs)  | scripts/conformance.sh                       | ferroehr-cnf      |
-#   | CNF (pgp) | (same run — the parallel signing posture)    | ferroehr-cnf-pgp  |
-#   | CNF(java) | CONF_SUT=ehrbase-java scripts/conformance.sh | cnf-ehrbase-java    |
-#   | ui-e2e    | scripts/ui-e2e.sh                            | ferroehr-e2e      |
-#
-# The CNF (rs) run brings up BOTH of its projects: the standard stack and a
-# second deployment of the same image in the openPGP version-signing posture
-# (docker/sut-pgp-parallel.yml remaps it to 8081/5433 so the two coexist), so
-# one record covers both claimed signing modes.
-#
-# ── Profiles (docs.docker.com/compose/how-tos/profiles) ───────────────────────
-# Core services (postgres, ferroehr, ferroehr-admin-ui) are profile-less and start
-# on every `up`. Optional dependencies are opt-in:
-#   --profile keycloak        OAuth2/OIDC provider (the app defaults to Basic)
-#   --profile s3              SeaweedFS S3 gateway for DV_MULTIMEDIA (off by default)
-#   --profile terminology     a real FHIR R4 terminology server + its seed step
-#                             (external terminology is off by default). The
-#                             profile only STARTS the server; pointing the CDR
-#                             at it is the docker/sut-terminology.yml overlay:
-#                               docker compose --profile terminology \
-#                                 -f docker-compose.yml -f docker/sut-terminology.yml up
-# The observability stack stays a documented overlay
-# (docker-compose.observability.yml) because it must MUTATE the ferroehr service's
-# env (OTEL endpoint, internal management port) — a change profiles cannot express
+# ── The two quickstart variants ───────────────────────────────────────────────
+# Basic auth only (this file alone):
+#   docker compose up
+# With a ready-made Keycloak identity provider (download the overlay too):
+#   docker compose -f docker-compose.yml -f docker-compose.keycloak.yml up
+# The observability stack is a third standalone overlay
+# (docker-compose.observability.yml): Grafana/OTel beside the server. Overlays
+# rather than profiles because they must MUTATE the ferroehr service's env —
+# a change profiles cannot express
 # (docs.docker.com/compose/how-tos/multiple-compose-files).
 #
-# ── Build provenance ──────────────────────────────────────────────────────────
-# Provenance uses the OCI-standard REVISION build-arg only (no bespoke arg): the
-# server Dockerfile bridges it into build.rs so /management/info matches the
-# org.opencontainers.image.revision LABEL. The driving scripts export
-# `REVISION=$(git rev-parse --short=12 HEAD)`. Absent, the identity degrades to
-# version-only with SHA=unknown by design (.git is not in the build context).
+# ── Profiles (docs.docker.com/compose/how-tos/profiles) ───────────────────────
+# Core services (postgres, ferroehr) are profile-less and start on every `up`.
+# Optional services are opt-in:
+#   --profile admin-ui        the admin console on port 3000
+#   --profile s3              SeaweedFS S3 gateway for DV_MULTIMEDIA (off by default)
+#
+# ── Repo development / CI (never needed by downloaders) ──────────────────────
+# In a repo checkout, docker-compose.override.yml is merged automatically onto
+# a bare `docker compose up`: it flips the images to `:local`
+# build-from-source tags, swaps the inline config below for
+# docker/ferroehr.dev.toml, and defines the dev `keycloak` profile (the full
+# exported realm). The conformance lanes never touch this file — they compose
+# their own self-contained SUT stack (docker/sut-ferroehr.yml, see its header
+# for the lane table). NO hard-coded `name:` (issue #282 D3): each lane picks
+# its own project name so the lanes coexist; all lanes share the
+# 8080/3000/5432/8081 host port block, so they run one at a time on defaults —
+# override the *_PORT env vars for true parallel coexistence.
 
 services:
   ferroehr-postgres:
-    image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:local}
+    image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:3.17.3}
     # Docker's default 64MB /dev/shm starves PostgreSQL's dynamic shared
     # memory under load (parallel workers error `could not resize shared
     # memory segment … No space left on device`); measured runs share this
     # floor with the upstream comparison stack (docker/sut-ehrbase-java.yml).
     shm_size: ${BENCH_PG_SHM_SIZE:-1gb}
-    build:
-      context: ./docker/postgres
-      dockerfile: Dockerfile
     environment:
       # Bootstrap superuser (postgres) — dev default; override in production.
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      # App role/database created by the init script (dev defaults). These
-      # configure the DB *container*, not the server binary — the PG_INIT_
-      # prefix keeps them out of the server's reserved FERROEHR_ namespace (the
-      # strict boot-time env sweep would otherwise reject them).
+      # App role/database created by the image's baked-in init script (dev
+      # defaults). These configure the DB *container*, not the server binary —
+      # the PG_INIT_ prefix keeps them out of the server's reserved FERROEHR_
+      # namespace (the strict boot-time env sweep would otherwise reject them).
       PG_INIT_USER: ${PG_INIT_USER:-ferroehr}
       PG_INIT_PASSWORD: ${PG_INIT_PASSWORD:-ferroehr}
       PG_INIT_DB: ${PG_INIT_DB:-ferroehr}
@@ -113,24 +101,14 @@ services:
       start_period: 10s
 
   ferroehr:
-    image: ${FERROEHR_IMAGE:-ghcr.io/rubentalstra/ferroehr:local}
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
-      # The Dockerfile has two final targets sharing one runtime stage; compose
-      # builds the from-source one (CI builds runtime-prebuilt). Without this,
-      # buildx would build the last stage (runtime-prebuilt) and fail on the
-      # missing bin/ context.
-      target: runtime-from-source
-      args:
-        REVISION: ${REVISION:-}
+    image: ${FERROEHR_IMAGE:-ghcr.io/rubentalstra/ferroehr:3.17.3}
     depends_on:
       ferroehr-postgres:
         condition: service_healthy
     environment:
       # FERROEHR_ env overrides use the mechanical `__` mapping (TOML path,
       # upper-cased, `__` between segments); they layer on top of the mounted
-      # ferroehr.dev.toml (env beats file).
+      # quickstart config (env beats file).
       FERROEHR__DB__URL: postgres://${PG_INIT_USER:-ferroehr}:${PG_INIT_PASSWORD:-ferroehr}@ferroehr-postgres:5432/${PG_INIT_DB:-ferroehr}
       # Connection-pool ceiling; measured comparison runs raise it in lockstep
       # with the upstream stack's HikariCP pool (config parity — the dominant
@@ -144,17 +122,18 @@ services:
       # Version-signing toggle pass-through (measured comparison runs disable it
       # for throughput parity — upstream has no signing.)
       FERROEHR__SIGNING__ENABLED: ${FERROEHR__SIGNING__ENABLED:-true}
-      # Dev quickstart: human-readable colored logs in `docker compose logs`.
+      # Quickstart: human-readable colored logs in `docker compose logs`.
       # Production/collector deployments override to `json` (or unset — the
       # `auto` default picks json when stdout is not a TTY).
       FERROEHR__LOG__FORMAT: ${FERROEHR__LOG__FORMAT:-pretty}
       # Measurement parity (logging equal and minimal on both SUTs):
       # measured comparison runs set warn on BOTH SUTs; default stays info.
       FERROEHR__LOG__FILTER: ${FERROEHR__LOG__FILTER:-info}
-    volumes:
+    configs:
       # Auto-discovered at config search-order position 4 (no pointer needed).
-      # Enables Basic auth with the ferroehr/ferroehr user.
-      - ./docker/ferroehr.dev.toml:/etc/ferroehr/ferroehr.toml:ro
+      # The inline quickstart posture — see the `configs:` block at the bottom.
+      - source: ferroehr-config
+        target: /etc/ferroehr/ferroehr.toml
     ports:
       - "${FERROEHR_PORT:-8080}:8080"
     # Default sized to the party ixit's documented measurement envelope (the
@@ -176,16 +155,12 @@ services:
 
   # The admin console (ferroehr-admin-ui): a standalone Leptos SSR web app +
   # BFF that consumes the CDR strictly over ITS-REST — never the database.
-  # Basic login proxies the CDR's dev users (ferroehr/ferroehr); for OIDC set
-  # the FERROEHR_ADMIN__AUTH__OIDC__* variables at the Keycloak realm below.
+  # Opt-in (`docker compose --profile admin-ui up`); Basic login proxies the
+  # CDR's quickstart user (ferroehr/ferroehr). For OIDC set the
+  # FERROEHR_ADMIN__AUTH__OIDC__* variables at your identity provider.
   ferroehr-admin-ui:
-    image: ${FERROEHR_ADMIN_UI_IMAGE:-ghcr.io/rubentalstra/ferroehr-admin-ui:local}
-    build:
-      context: .
-      dockerfile: docker/admin-ui/Dockerfile
-      target: runtime-from-source
-      args:
-        REVISION: ${REVISION:-}
+    profiles: [admin-ui]
+    image: ${FERROEHR_ADMIN_UI_IMAGE:-ghcr.io/rubentalstra/ferroehr-admin-ui:3.17.3}
     depends_on:
       ferroehr:
         condition: service_healthy
@@ -238,123 +213,60 @@ services:
       retries: 20
       start_period: 10s
 
-  # A real FHIR R4 terminology server (HAPI FHIR JPA), behind the
-  # `terminology` profile. openEHR models the resolver of an archetype
-  # constraint binding as an external "terminology query server" (BASE
-  # docs/architecture_overview/master12-terminology.adoc §"Binding Terminology
-  # Value-sets to Archetypes": the archetype "simply hold[s] an identifier for
-  # a query; the query itself is defined within a 'terminology query server'"),
-  # and §Overview names the ecosystem — LOINC, ICDx, ICPC, SNOMED CT "and the
-  # many other terminologies and vocabularies used in healthcare" — so a
-  # deployment binds to SEVERAL at once. This service is that server for the
-  # conformance record and for local experimentation; the CDR reaches it
-  # through the `[terminology.external]` providers in docker/ferroehr.dev.toml,
-  # which stay DISABLED until an overlay enables them.
-  #
-  # The seeded content is SYNTHETIC (docker/terminology/seed/): two code
-  # systems shaped like SNOMED CT and LOINC, under the reserved example.test
-  # domain. No licensed terminology content is distributed with this repo.
-  terminology:
-    profiles: [terminology]
-    # Digest-pinned hapiproject/hapi:v8.10.0-3 (current release), resolved
-    # 2026-07-29; no `:latest` (docs.docker.com/build/building/best-practices).
-    image: hapiproject/hapi:v8.10.0-3@sha256:55213612779ab3eeec919226b7bad378f0061ade823393a61d7dd46dd5087a3d
-    environment:
-      hapi.fhir.fhir_version: R4
-      # The stock image ships with Hibernate Search DISABLED, and without it
-      # `ValueSet/$expand` and `CodeSystem/$subsumes` answer 500
-      # (HSEARCH800001: Hibernate Search was not initialized). Enabling it
-      # naively then crash-loops on HSEARCH000353 (Unknown analyzer) unless
-      # HAPI's own Lucene analysis configurer is named, so the whole block
-      # below travels together — it is the minimum working terminology
-      # configuration of this image.
-      SPRING_JPA_PROPERTIES_HIBERNATE_SEARCH_ENABLED: "true"
-      SPRING_JPA_PROPERTIES_HIBERNATE_SEARCH_BACKEND_TYPE: lucene
-      SPRING_JPA_PROPERTIES_HIBERNATE_SEARCH_BACKEND_ANALYSIS_CONFIGURER: ca.uhn.fhir.jpa.search.HapiHSearchAnalysisConfigurers$$HapiLuceneAnalysisConfigurer
-      SPRING_JPA_PROPERTIES_HIBERNATE_SEARCH_BACKEND_DIRECTORY_TYPE: local-filesystem
-      SPRING_JPA_PROPERTIES_HIBERNATE_SEARCH_BACKEND_DIRECTORY_ROOT: target/lucenefiles
-      SPRING_JPA_PROPERTIES_HIBERNATE_SEARCH_BACKEND_LUCENE_VERSION: lucene_current
-    ports:
-      - "${FERROEHR_TERMINOLOGY_PORT:-8090}:8080"
-    deploy:
-      resources:
-        limits:
-          cpus: "${FERROEHR_TERMINOLOGY_CPUS:-2}"
-          memory: ${FERROEHR_TERMINOLOGY_MEM:-2G}
-    # No healthcheck: the image carries no in-container HTTP client (no
-    # curl/wget), so readiness is polled EXTERNALLY by the seeder below, which
-    # is also the gate every dependant waits on.
+configs:
+  # The quickstart server configuration, inline so the downloaded file is
+  # self-sufficient (docs.docker.com/reference/compose-file/configs — the
+  # `content` attribute; `$` is escaped as `$$` against compose interpolation).
+  # QUICKSTART DEFAULTS — do NOT use in production:
+  #   * one Basic-auth user  ferroehr / ferroehr  (Argon2id PHC hash below)
+  #   * RBAC disabled (any authenticated caller may use every enabled surface;
+  #     flip [authz.rbac] enabled = true and give users explicit roles for the
+  #     ADMIN / USER / READONLY separation)
+  #   * admin API + management introspection enabled, permissive CORS
+  # The repo's dev/CI lanes replace this whole config with
+  # docker/ferroehr.dev.toml via docker-compose.override.yml.
+  ferroehr-config:
+    content: |
+      [server]
+      bind = "0.0.0.0:8080"
+      # Permissive CORS — quickstart only. Production configures explicit origins.
+      cors_permissive = true
 
-  # One-shot seeding of the terminology server through its OWN FHIR API — the
-  # CDR is never the writer of terminology content. Idempotent (`PUT
-  # /<type>/<id>`, the FHIR "update as create" interaction), and it verifies
-  # `$validate-code` + `$expand` before exiting so a misconfigured server fails
-  # here instead of inside a conformance run.
-  terminology-seed:
-    profiles: [terminology]
-    # Digest-pinned curlimages/curl:8.19.0, resolved 2026-07-29.
-    image: curlimages/curl:8.19.0@sha256:c03110c736db81bbe1be0296f1f1608c81b954b01626bdfb0a8f84e5bd00ff3c
-    depends_on:
-      terminology:
-        condition: service_started
-    environment:
-      FHIR_BASE: http://terminology:8080/fhir
-    entrypoint: ["/bin/sh", "/seed.sh"]
-    volumes:
-      - ./docker/terminology/seed.sh:/seed.sh:ro
-      - ./docker/terminology/seed:/seed:ro
-    restart: "no"
+      [auth]
+      enabled = true
 
-  # Keycloak for OAuth2/OIDC bearer auth (the "ferroehr" realm is imported from
-  # docker/keycloak/import), behind the `keycloak` profile. The app defaults to
-  # Basic auth (see ferroehr.dev.toml), so it does NOT depend on Keycloak; add an
-  # [auth.oidc] block to ferroehr.dev.toml (or set FERROEHR__AUTH__OIDC__* env)
-  # pointing issuer at http://localhost:8081/auth/realms/ferroehr to use it, and
-  # start it with `docker compose --profile keycloak up`.
-  keycloak:
-    profiles: [keycloak]
-    # Digest-pinned quay.io/keycloak/keycloak:26.7.0 (current release), resolved
-    # 2026-07-24 (docs.docker.com/build/building/best-practices).
-    image: quay.io/keycloak/keycloak:26.7.0@sha256:0f198be292568439d700cdbfb893e69a6009bb43a94a06a945b1d3d506c76b13
-    command: ["start-dev", "--import-realm"]
-    environment:
-      KC_BOOTSTRAP_ADMIN_USERNAME: admin
-      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
-      KC_HTTP_RELATIVE_PATH: /auth
-      # In-network port == default host port (8081): one issuer hostname:port
-      # (http://keycloak:8081) is then valid from BOTH the docker network and
-      # the host (the E2E browser maps `keycloak` to 127.0.0.1), so the
-      # containerized console and a host browser can share one OIDC issuer.
-      KC_HTTP_PORT: 8081
-      # ONE canonical issuer regardless of which host the caller used —
-      # token `iss` claims stay stable, so the CDR can validate bearer
-      # tokens against a single configured issuer (ferroehr.dev.toml
-      # [auth.oidc]). Override for human admin-console browsing if needed.
-      # NOTE: a URL-form KC_HOSTNAME replaces the whole base — Keycloak does
-      # NOT append KC_HTTP_RELATIVE_PATH to it, so /auth must be included.
-      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-http://keycloak:8081/auth}
-    volumes:
-      - ./docker/keycloak/import:/opt/keycloak/data/import:ro
-    ports:
-      - "${KEYCLOAK_PORT:-8081}:8081"
-    deploy:
-      resources:
-        limits:
-          cpus: "2"
-          memory: 1G
-    # F10: the Keycloak image ships bash (no curl/wget), so probe the imported
-    # realm's OIDC discovery doc over bash's /dev/tcp — this makes
-    # `depends_on: {keycloak: {condition: service_healthy}}` a valid gate for
-    # the OIDC lanes (docs.docker.com/compose/how-tos/startup-order). Readiness
-    # here means the realm is imported AND the HTTP listener answers 200.
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - "exec 3<>/dev/tcp/127.0.0.1/8081; printf 'GET /auth/realms/ferroehr/.well-known/openid-configuration HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nConnection: close\\r\\n\\r\\n' >&3; grep -q '^HTTP/1.1 200' <&3"
-      interval: 10s
-      timeout: 5s
-      retries: 30
-      start_period: 20s
+      # The quickstart user: ferroehr / ferroehr (the hash is Argon2id of
+      # "ferroehr"). Replace with your own users — or an [auth.oidc] issuer —
+      # before exposing the server to anything real.
+      [[auth.basic.users]]
+      username = "ferroehr"
+      password_hash = "$$argon2id$$v=19$$m=4096,t=2,p=1$$ZmVycm9laHJEZXZTYWx0$$Q0QFn5AN9941PDEcY+c9oKApFK7oGnhig+JpIwZkLWc"
+      roles = ["ADMIN", "USER"]
+
+      # Quickstart: authentication only, no role gate — the one user above can
+      # use the clinical API, the admin API and the management endpoints.
+      [authz.rbac]
+      enabled = false
+
+      # The admin API (DELETE /admin/...) — on for the quickstart so the
+      # optional admin console's panels work; keep off in production unless
+      # operationally needed.
+      [admin]
+      enabled = true
+
+      # Ops introspection (/management/...) on the main listener, for the
+      # optional admin console and for curl-based poking. The health probes
+      # (/health, /health/liveness, /health/readiness) are always served and
+      # need none of this.
+      [management]
+      enabled = true
+
+      [management.endpoints]
+      info = "private"
+      metrics = "private"
+      prometheus = "public"
+      env = "admin_only"
+      loggers = "admin_only"
 
 volumes:
   ferroehr-pgdata:

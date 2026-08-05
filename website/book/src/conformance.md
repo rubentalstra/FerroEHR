@@ -175,8 +175,10 @@ else.
 An **external terminology server is part of the standard posture** too. An
 archetype can constrain a coded element to a value set that only an external
 terminology query server can resolve, so the pipeline composes a real FHIR R4B
-server beside the CDR (`--profile terminology` plus
-`docker/sut-terminology.yml`), seeded with synthetic test code systems and
+server beside the CDR (the `docker/sut-ferroehr.yml` conformance stack with
+`--profile terminology` plus the `docker/sut-terminology.yml` overlay,
+composed with `--project-directory .` from the repository root), seeded with
+synthetic test code systems and
 value sets, and the one committed record covers the terminology-routed
 surface: AQL `TERMINOLOGY()` resolved through the routed server, and
 commit-time validation of a bound value set — accepted for a member code,

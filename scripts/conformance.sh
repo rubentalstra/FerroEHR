@@ -21,8 +21,9 @@
 #
 # Env:
 #   CONF_SUT        ferroehr (default) | ehrbase-java | byo.
-#                   ferroehr: builds + composes the root stack (the current
-#                     sources — the phase-gate zero-drift run), PLUS a second
+#                   ferroehr: builds + composes the self-contained SUT stack
+#                     docker/sut-ferroehr.yml (the current sources — the
+#                     phase-gate zero-drift run), PLUS a second
 #                     deployment of the same image in the openPGP
 #                     version-signing posture on its own project/ports, so
 #                     both claimed signing modes are exercised in the one
@@ -67,6 +68,12 @@ PARTY="$REPO_ROOT/tools/cnf-runner/party/$SUT_NAME"
 IXIT="${CONF_IXIT:-$PARTY/ixit.json}"
 STATEMENT="${CONF_STATEMENT:-$PARTY/statement.json}"
 
+# The SUT stack is docker/sut-ferroehr.yml — SELF-CONTAINED, like the
+# ehrbase-java lane's docker/sut-ehrbase-java.yml. The root docker-compose.yml
+# is the END-USER quickstart (published images, inline config) and is not part
+# of any conformance lane. All paths inside the sut-*.yml files are
+# repo-root-relative, hence `--project-directory "$REPO_ROOT"`
+# (docs.docker.com/reference/cli/docker/compose).
 # The ferroehr SUT composes as its OWN project (docs.docker.com/compose/how-tos/project-name)
 # so it coexists with — and never tears down — a running dev stack (which
 # defaults to the directory-name project `ferroehr`). Its `down -v` is thus
@@ -85,8 +92,9 @@ STATEMENT="${CONF_STATEMENT:-$PARTY/statement.json}"
 # validation — when a real FHIR R4 server is composed and seeded beside the
 # CDR. docker/sut-terminology.yml points the CDR at it in the fail-OPEN
 # posture; the ixit declares the resulting servers/namespaces/posture.
-FERROEHR_RS_COMPOSE=(docker compose -p ferroehr-cnf --profile terminology \
-  -f "$REPO_ROOT/docker-compose.yml" \
+FERROEHR_RS_COMPOSE=(docker compose -p ferroehr-cnf \
+  --project-directory "$REPO_ROOT" --profile terminology \
+  -f "$REPO_ROOT/docker/sut-ferroehr.yml" \
   -f "$REPO_ROOT/docker/sut-smart.yml" \
   -f "$REPO_ROOT/docker/sut-terminology.yml")
 # BOTH claimed version-signing modes are exercised in the ONE record: a SECOND
@@ -106,7 +114,8 @@ FERROEHR_RS_COMPOSE=(docker compose -p ferroehr-cnf --profile terminology \
 # carries the pgp signing posture AND the fail-closed terminology posture, and
 # the ixit declares both on its `sut_pgp` instance.
 FERROEHR_RS_PGP_COMPOSE=(docker compose -p ferroehr-cnf-pgp \
-  -f "$REPO_ROOT/docker-compose.yml" \
+  --project-directory "$REPO_ROOT" \
+  -f "$REPO_ROOT/docker/sut-ferroehr.yml" \
   -f "$REPO_ROOT/docker/sut-smart.yml" \
   -f "$REPO_ROOT/docker/sut-signing-pgp.yml" \
   -f "$REPO_ROOT/docker/sut-terminology-failclosed.yml" \
@@ -196,12 +205,11 @@ if [ -z "${CONF_NO_COMPOSE:-}" ] && [ "$SUT" != "byo" ]; then
       (cd "$REPO_ROOT" && "${FERROEHR_RS_COMPOSE[@]}" up -d --build --wait ferroehr)
     fi
     # The parallel pgp-posture deployment of the SAME image. NEVER --build:
-    # docker-compose.yml pins explicit `image:` tags, which are project-
+    # docker/sut-ferroehr.yml pins explicit `image:` tags, which are project-
     # independent, so the artefact the primary just built (or, under
     # SKIP_BUILD, pulled) is the artefact this project starts — one build,
     # two postures, and no chance of the two records describing different code.
-    # `up ferroehr` starts only that service and its depends_on (postgres);
-    # the admin console depends ON ferroehr, so it stays down.
+    # `up ferroehr` starts only that service and its depends_on (postgres).
     (cd "$REPO_ROOT" && "${FERROEHR_RS_PGP_COMPOSE[@]}" up -d --wait ferroehr)
   fi
 fi

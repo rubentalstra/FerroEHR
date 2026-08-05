@@ -23,8 +23,11 @@ optional:
   workspace `version` in the root `Cargo.toml` (+ `Cargo.lock` via a
   `cargo check`, + Helm `appVersion`, golden renders via
   `deploy/helm/validate.sh --update`, + `CITATION.cff` `version` and
-  `date-released` — the `citation-guard` CI job enforces the version
-  match), merge the release PR, then tag
+  `date-released` (the `citation-guard` CI job enforces the version match),
+  + the default image tags in `docker-compose.yml` — the `ghcr.io/…:X.Y.Z`
+  fallbacks the standalone quickstart pulls, guarded by
+  `scripts/check-compose-image-tags.sh` / the `compose-version-guard` CI
+  job), merge the release PR, then tag
   `vX.Y.Z` on the merge commit. The release workflow publishes the GitHub
   Release from the matching changelog section and **fails if the section or
   version match is missing**. Releases publish as OFFICIAL
