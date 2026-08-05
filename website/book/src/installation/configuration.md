@@ -247,7 +247,7 @@ acquire_timeout_secs = 30
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `url` | secret URL | `postgres://ferroehr:ferroehr@localhost:5432/ferroehr` | Connection DSN. The default matches the compose dev stack; **production MUST set it**. Credentials are redacted from every rendering. `DATABASE_URL` is a recognized lower-priority alias. |
+| `url` | secret URL | `postgres://ferroehr:ferroehr@localhost:5432/ferroehr` | Connection DSN. The default suits a local from-source run against a localhost PostgreSQL (the compose stacks set `FERROEHR__DB__URL` explicitly); **production MUST set it**. Credentials are redacted from every rendering. `DATABASE_URL` is a recognized lower-priority alias. |
 | `max_connections` | int | `20` | Pool ceiling. Write-heavy deployments benefit from 50+. |
 | `min_connections` | int | `2` | Idle connections kept open (avoids cold-reopen churn). |
 | `acquire_timeout_secs` | int | `30` | Seconds to wait for a free connection before failing. |
@@ -799,10 +799,10 @@ touches no database — use it in CI and before a rollout.
 
 With no file and no environment, the server boots as: listener `0.0.0.0:8080`
 at the ITS-REST base path with Swagger UI; DB at the compose-dev DSN; auth
-**enabled with no mechanism ⇒ every API request 401s** (fail-closed; boot logs
-a prominent warning naming the two ways out — add `[[auth.basic.users]]` /
-`[auth.oidc]`, or set `auth.enabled = false` for dev); RBAC on; signing on
-(digest); log `auto`/`info`; **everything else off**.
+**enabled with no mechanism ⇒ every API request 401s** (fail-closed; the server
+logs a prominent warning at startup naming the two ways out — add
+`[[auth.basic.users]]` / `[auth.oidc]`, or set `auth.enabled = false` for dev);
+RBAC on; signing on (digest); log `auto`/`info`; **everything else off**.
 
 For production, set at least:
 
@@ -829,8 +829,11 @@ blob** — is referenced by an in-TOML `*_path` / `*_file` key pointing at a
 mounted path (e.g. the Helm chart's `config.files`). Everything else is a
 plain key you can set in the file or override with an `FERROEHR_*` env var.
 
-See `docker/ferroehr.dev.toml` in the repository for a worked dev example
-(server section, CORS, admin, and the Basic-auth users).
+For a worked dev example (server section, CORS, admin, management, and the
+Basic-auth user store), read the configuration carried inline in the quickstart
+`docker-compose.yml` — see [Docker Compose](compose.md); the repository's
+`docker/ferroehr.dev.toml`, used by the from-source development stack, is a
+fuller one with three users and RBAC enabled.
 
 ## Migrating from 3.x environment variables
 

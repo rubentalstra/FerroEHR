@@ -37,7 +37,7 @@ pub enum ManagementAccess {
 #[serde(default, deny_unknown_fields)]
 pub struct RbacConfig {
     /// Master switch; the coarse role gate is active only when auth is enabled
-    /// (`FERROEHR_AUTHZ_RBAC__ENABLED`, default `true`). Disabling restores
+    /// (`FERROEHR__AUTHZ__RBAC__ENABLED`, default `true`). Disabling restores
     /// authentication-only behaviour.
     #[serde(default = "defaults::yes")]
     pub enabled: bool,

@@ -9,12 +9,13 @@ JavaScript anywhere, including its browser tests.
 
 ## Running it
 
-The quickstart compose ships the console as the `ferroehr-admin-ui` service
-on port 3000:
+The quickstart compose ships the console as the `ferroehr-admin-ui` service on
+port 3000, behind the `admin-ui` [profile](../installation/compose.md) — so it
+is opt-in and does not start with a plain `docker compose up`:
 
 ```bash
-docker compose up ferroehr-postgres ferroehr ferroehr-admin-ui
-# → http://localhost:3000  (log in with the dev users, e.g. ferroehr/ferroehr)
+docker compose --profile admin-ui up
+# → http://localhost:3000  (log in with the quickstart user ferroehr/ferroehr)
 ```
 
 Standalone, point it at any CDR:

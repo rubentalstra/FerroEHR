@@ -1,0 +1,211 @@
+# The ferroehr CNF SUT stack (compose BASE — self-contained, like
+# docker/sut-ehrbase-java.yml): the conformance lanes compose THIS file, never
+# the end-user quickstart docker-compose.yml, so the quickstart artifact and
+# the conformance instrument evolve independently.
+#
+# ALL relative paths in this file (and the sut-*.yml overlays stacked on it)
+# are REPO-ROOT-relative: the lanes compose with `--project-directory` at the
+# repo root (docs.docker.com/reference/cli/docker/compose — relative paths
+# resolve against the project directory, which defaults to the first -f
+# file's directory and must therefore be pinned explicitly here).
+#
+#   | Lane      | Invocation                                   | Project           |
+#   |-----------|----------------------------------------------|-------------------|
+#   | CNF (rs)  | scripts/conformance.sh                       | ferroehr-cnf      |
+#   | CNF (pgp) | (same run — the parallel signing posture)    | ferroehr-cnf-pgp  |
+#   | CNF(java) | CONF_SUT=ehrbase-java scripts/conformance.sh | cnf-ehrbase-java  |
+#
+# The CNF (rs) run brings up BOTH of its projects: this stack and a second
+# deployment of the same image in the openPGP version-signing posture
+# (docker/sut-pgp-parallel.yml remaps it to 8081/5433 so the two coexist), so
+# one record covers both claimed signing modes. The standard conformance
+# posture stacks docker/sut-smart.yml + docker/sut-terminology.yml on top
+# (scripts/conformance.sh), with `--profile terminology` starting the seeded
+# FHIR R4 server below.
+#
+# The SUT builds FROM SOURCE (`runtime-from-source` — a conformance verdict on
+# this server is only meaningful against the current sources; SKIP_BUILD pulls
+# a published image instead) and mounts docker/ferroehr.dev.toml: three Basic
+# users (ferroehr / ferroehr-admin / ferroehr-readonly, password "ferroehr"),
+# RBAC ON for the authorization-separation cases, the dev OIDC trust, and the
+# disabled terminology providers the sut-terminology overlays switch on.
+#
+# Build provenance uses the OCI-standard REVISION build-arg only: the server
+# Dockerfile bridges it into build.rs so /management/info matches the
+# org.opencontainers.image.revision LABEL (scripts/conformance.sh exports it).
+#
+# Resource ceilings default to the party ixit's documented measurement
+# envelope (the committed measured records are environment-bound to the
+# 8-CPU/8GB docker VM); the BENCH_* / FERROEHR_* env vars let a measured lane
+# match its ixit exactly.
+
+services:
+  ferroehr-postgres:
+    image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:local}
+    build:
+      context: ./docker/postgres
+      dockerfile: Dockerfile
+    # Docker's default 64MB /dev/shm starves PostgreSQL's dynamic shared
+    # memory under load (parallel workers error `could not resize shared
+    # memory segment … No space left on device`); measured runs share this
+    # floor with the upstream comparison stack (docker/sut-ehrbase-java.yml).
+    shm_size: ${BENCH_PG_SHM_SIZE:-1gb}
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      # App role/database created by the image's init script. The PG_INIT_
+      # prefix keeps these out of the server's reserved FERROEHR_ namespace
+      # (the strict boot-time env sweep would otherwise reject them).
+      PG_INIT_USER: ${PG_INIT_USER:-ferroehr}
+      PG_INIT_PASSWORD: ${PG_INIT_PASSWORD:-ferroehr}
+      PG_INIT_DB: ${PG_INIT_DB:-ferroehr}
+    # The same PG tuning floor the measurement instruments assume
+    # (pg_stat_statements so scripts/profile.sh can attribute time per
+    # statement; negligible overhead, ships in the stock image).
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+      - -c
+      - shared_buffers=${BENCH_PG_SHARED_BUFFERS:-1GB}
+      - -c
+      - max_wal_size=${BENCH_PG_MAX_WAL_SIZE:-4GB}
+      - -c
+      - work_mem=${BENCH_PG_WORK_MEM:-16MB}
+    volumes:
+      - ferroehr-pgdata:/var/lib/postgresql
+    ports:
+      - "${FERROEHR_DB_PORT:-5432}:5432"
+    deploy:
+      resources:
+        limits:
+          cpus: "${FERROEHR_DB_CPUS:-4}"
+          memory: ${FERROEHR_DB_MEM:-4G}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_INIT_USER:-ferroehr} -d ${PG_INIT_DB:-ferroehr}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  ferroehr:
+    image: ${FERROEHR_IMAGE:-ghcr.io/rubentalstra/ferroehr:local}
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      # Two final targets share one runtime stage; the conformance lanes build
+      # the from-source one (CI's prebuilt lane injects FERROEHR_IMAGE).
+      target: runtime-from-source
+      args:
+        REVISION: ${REVISION:-}
+    depends_on:
+      ferroehr-postgres:
+        condition: service_healthy
+    environment:
+      FERROEHR__DB__URL: postgres://${PG_INIT_USER:-ferroehr}:${PG_INIT_PASSWORD:-ferroehr}@ferroehr-postgres:5432/${PG_INIT_DB:-ferroehr}
+      # Connection-pool ceiling; measured comparison runs raise it in lockstep
+      # with the upstream stack's HikariCP pool (config parity — the dominant
+      # tunable must match across compared SUTs).
+      FERROEHR__DB__MAX_CONNECTIONS: ${FERROEHR__DB__MAX_CONNECTIONS:-10}
+      # The openEHR generation set (development | stable) — see the
+      # configuration book page for the profile-change contract.
+      FERROEHR__SPEC_PROFILE: ${FERROEHR__SPEC_PROFILE:-development}
+      # In-flight admission cap (503 load shed past it; 0 disables). The
+      # comparison runs raise it so overload manifests as queueing latency —
+      # the same failure mode as upstream's Tomcat admission window — instead
+      # of shed errors tripping the stress envelope's error-rate arm.
+      FERROEHR__SERVER__MAX_IN_FLIGHT: ${FERROEHR__SERVER__MAX_IN_FLIGHT:-256}
+      # Version-signing toggle pass-through (measured comparison runs disable
+      # it for throughput parity — upstream has no signing.)
+      FERROEHR__SIGNING__ENABLED: ${FERROEHR__SIGNING__ENABLED:-true}
+      FERROEHR__LOG__FORMAT: ${FERROEHR__LOG__FORMAT:-pretty}
+      # Measurement parity (logging equal and minimal on both SUTs):
+      # measured comparison runs set warn on BOTH SUTs; default stays info.
+      FERROEHR__LOG__FILTER: ${FERROEHR__LOG__FILTER:-info}
+    volumes:
+      # Auto-discovered at config search-order position 4 (no pointer needed).
+      - ./docker/ferroehr.dev.toml:/etc/ferroehr/ferroehr.toml:ro
+    ports:
+      - "${FERROEHR_PORT:-8080}:8080"
+    deploy:
+      resources:
+        limits:
+          cpus: "${FERROEHR_CPUS:-4}"
+          memory: ${FERROEHR_MEM:-4G}
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/ferroehr", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # A real FHIR R4 terminology server (HAPI FHIR JPA), behind the
+  # `terminology` profile. openEHR models the resolver of an archetype
+  # constraint binding as an external "terminology query server" (BASE
+  # docs/architecture_overview/master12-terminology.adoc §"Binding Terminology
+  # Value-sets to Archetypes": the archetype "simply hold[s] an identifier for
+  # a query; the query itself is defined within a 'terminology query server'"),
+  # and §Overview names the ecosystem — LOINC, ICDx, ICPC, SNOMED CT "and the
+  # many other terminologies and vocabularies used in healthcare" — so a
+  # deployment binds to SEVERAL at once. This service is that server for the
+  # conformance record and for local experimentation; the CDR reaches it
+  # through the `[terminology.external]` providers in docker/ferroehr.dev.toml,
+  # which stay DISABLED until an overlay enables them:
+  #   docker compose -p ferroehr-cnf --profile terminology \
+  #     -f docker/sut-ferroehr.yml -f docker/sut-terminology.yml up -d --wait ferroehr
+  #
+  # The seeded content is SYNTHETIC (docker/terminology/seed/): two code
+  # systems shaped like SNOMED CT and LOINC, under the reserved example.test
+  # domain. No licensed terminology content is distributed with this repo.
+  terminology:
+    profiles: [terminology]
+    # Digest-pinned hapiproject/hapi:v8.10.0-3 (current release), resolved
+    # 2026-07-29; no `:latest` (docs.docker.com/build/building/best-practices).
+    image: hapiproject/hapi:v8.10.0-3@sha256:55213612779ab3eeec919226b7bad378f0061ade823393a61d7dd46dd5087a3d
+    environment:
+      hapi.fhir.fhir_version: R4
+      # The stock image ships with Hibernate Search DISABLED, and without it
+      # `ValueSet/$expand` and `CodeSystem/$subsumes` answer 500
+      # (HSEARCH800001: Hibernate Search was not initialized). Enabling it
+      # naively then crash-loops on HSEARCH000353 (Unknown analyzer) unless
+      # HAPI's own Lucene analysis configurer is named, so the whole block
+      # below travels together — it is the minimum working terminology
+      # configuration of this image.
+      SPRING_JPA_PROPERTIES_HIBERNATE_SEARCH_ENABLED: "true"
+      SPRING_JPA_PROPERTIES_HIBERNATE_SEARCH_BACKEND_TYPE: lucene
+      SPRING_JPA_PROPERTIES_HIBERNATE_SEARCH_BACKEND_ANALYSIS_CONFIGURER: ca.uhn.fhir.jpa.search.HapiHSearchAnalysisConfigurers$$HapiLuceneAnalysisConfigurer
+      SPRING_JPA_PROPERTIES_HIBERNATE_SEARCH_BACKEND_DIRECTORY_TYPE: local-filesystem
+      SPRING_JPA_PROPERTIES_HIBERNATE_SEARCH_BACKEND_DIRECTORY_ROOT: target/lucenefiles
+      SPRING_JPA_PROPERTIES_HIBERNATE_SEARCH_BACKEND_LUCENE_VERSION: lucene_current
+    ports:
+      - "${FERROEHR_TERMINOLOGY_PORT:-8090}:8080"
+    deploy:
+      resources:
+        limits:
+          cpus: "${FERROEHR_TERMINOLOGY_CPUS:-2}"
+          memory: ${FERROEHR_TERMINOLOGY_MEM:-2G}
+    # No healthcheck: the image carries no in-container HTTP client (no
+    # curl/wget), so readiness is polled EXTERNALLY by the seeder below, which
+    # is also the gate every dependant waits on.
+
+  # One-shot seeding of the terminology server through its OWN FHIR API — the
+  # CDR is never the writer of terminology content. Idempotent (`PUT
+  # /<type>/<id>`, the FHIR "update as create" interaction), and it verifies
+  # `$validate-code` + `$expand` before exiting so a misconfigured server fails
+  # here instead of inside a conformance run.
+  terminology-seed:
+    profiles: [terminology]
+    # Digest-pinned curlimages/curl:8.19.0, resolved 2026-07-29.
+    image: curlimages/curl:8.19.0@sha256:c03110c736db81bbe1be0296f1f1608c81b954b01626bdfb0a8f84e5bd00ff3c
+    depends_on:
+      terminology:
+        condition: service_started
+    environment:
+      FHIR_BASE: http://terminology:8080/fhir
+    entrypoint: ["/bin/sh", "/seed.sh"]
+    volumes:
+      - ./docker/terminology/seed.sh:/seed.sh:ro
+      - ./docker/terminology/seed:/seed:ro
+    restart: "no"
+
+volumes:
+  ferroehr-pgdata:

@@ -6,7 +6,7 @@
 # §Digital Signature) — not only the digest recompute.
 #
 # Usage (overlay on the root stack):
-#   docker compose -f docker-compose.yml -f docker/sut-signing-pgp.yml up -d --wait ferroehr
+#   docker compose --project-directory . -f docker/sut-ferroehr.yml -f docker/sut-signing-pgp.yml up -d --wait ferroehr
 # The reference conformance pipeline composes it UNCONDITIONALLY, as the
 # second (parallel) deployment of the same image: scripts/conformance.sh
 # stacks it with docker/sut-pgp-parallel.yml under its own project so both

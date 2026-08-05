@@ -9,28 +9,39 @@ outside local evaluation.
 
 > [!WARNING]
 > The steps below enable Basic auth with the throwaway user `ferroehr` /
-> `ferroehr` and a permissive CORS policy — this is a development configuration
-> only. See [Security & multi-tenancy](security.md) and the
+> `ferroehr`, leave role-based access control **off**, and use a permissive CORS
+> policy — this is a development configuration only. See
+> [Security & multi-tenancy](security.md) and the
 > [configuration reference](installation/configuration.md) before exposing a
 > server.
 
 ## 1. Start the stack
 
-You need Docker with the Compose plugin. From a checkout of the repository:
+You need Docker with the Compose plugin (2.23.1 or newer). Download
+`docker-compose.yml` — attached to every
+[release](https://github.com/rubentalstra/FerroEHR/releases/latest) — into an
+empty directory and start it:
 
 ```shell
-docker compose up --build
+docker compose up
 ```
 
-This builds and starts two services: the server (`ferroehr`) on port **8080**,
+This pulls and starts two services: the server (`ferroehr`) on port **8080**,
 and a preconfigured **PostgreSQL 18** database. The server runs its schema
 migrations automatically on first boot, so the database is ready as soon as it
-reports healthy. The Compose file also defines optional SeaweedFS (S3) and
-Keycloak (OIDC) services that the quickstart does not depend on.
+reports healthy. Nothing else is needed — the server's configuration travels
+inside the Compose file.
 
-The development server configuration is mounted from `docker/ferroehr.dev.toml`,
-which ships one Basic-auth user (`ferroehr` / `ferroehr`) and one admin user
-(`ferroehr-admin` / `ferroehr`) so the API authenticates out of the box.
+Three things are optional and stay down until you ask for them: the
+[admin console](admin-ui/index.md) (`docker compose --profile admin-ui up`, then
+<http://localhost:3000>), a SeaweedFS S3 gateway for multimedia
+(`--profile s3`), and a ready-made Keycloak identity provider for bearer-token
+auth (a second downloadable overlay, `docker-compose.keycloak.yml`). See
+[Docker Compose](installation/compose.md) for all of them.
+
+The Compose file's inline configuration ships one Basic-auth user
+(`ferroehr` / `ferroehr`, holding both the `ADMIN` and `USER` roles) so the API
+authenticates out of the box.
 
 ## 2. Probe the status endpoint
 
