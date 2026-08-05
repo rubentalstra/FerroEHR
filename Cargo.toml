@@ -300,7 +300,7 @@ logos = "0.16.1"                      # DFA lexer
 chumsky = "0.13.0"                    # 0.10 usable stable (1.0 still alpha; repo now on Codeberg)
 winnow = "1.0.3"                      # alternative parser combinator
 regex = "1"
-fancy-regex = "0.18.0"               # backreferences for cADL where needed (verify)
+fancy-regex = "0.19.0"               # backreferences for cADL where needed (verify)
 # parser diagnostics (great for ADL/AQL error reporting):
 ariadne = "0.6.0"                    # verify
 miette = { version = "7", features = ["fancy"] }
