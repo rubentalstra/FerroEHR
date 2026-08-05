@@ -175,10 +175,10 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
 
     // ASCII banner before telemetry/log init (skipped under `json` logging).
     if telemetry_config.log.format != LogFormat::Json {
-        ferroehr::banner::print();
+        ferroehr::banner::print(config.spec_profile);
     }
 
-    let build_info = BuildInfo::current();
+    let build_info = BuildInfo::for_profile(config.spec_profile);
     let mut telemetry =
         telemetry::init(&telemetry_config, &build_info).context("initialising telemetry")?;
 
