@@ -1,8 +1,30 @@
 # `openehr-lang` — BMM / P_BMM / ODIN (hand-written tooling layer)
 
 The LANG component: the BMM object model + the `*.bmm.json` loader that
-**feeds codegen**, and the hand-written ODIN reader (`src/v1_1/odin/` — for
-ADL/ODIN *instance* parsing — deliberately off the codegen path).
+**feeds codegen**, and the hand-written ODIN readers (`src/v1_1/odin/` +
+`src/v1_0/odin/` — for ADL/ODIN *instance* parsing — deliberately off the
+codegen path). Two component-version GENERATIONS: `v1_1` (the development
+line, the prelude) and `v1_0` (the released LANG 1.0.0).
+
+- **`src/v1_0/` is the Release-1.0.0 generation, and it carries ONLY what
+  that release defines.** Generated: the 1.0.0 BMM model (`bmm/`,
+  `bmm_persistence/`, `obsolete_elom/` — emitted faithfully from the
+  released `openehr_lang_1.0.0.bmm.json`, defects verbatim). Hand-written:
+  the ODIN reader (`odin/`), the ODIN-ONLY lexer (`lexer/` — `lex_odin` is
+  the whole surface: 1.0.0 EL is DEVELOPMENT prose with no grammar, BEL
+  first appears in 1.1.0, and the ADL reading's consumer pins v1_1), plus
+  `escape.rs`/`position.rs`. Spec oracle: the Release-1.0.0 docs text
+  (generation-identical to the vendored current text — every 1.0.0→current
+  change is a typo fix, verified 2026-08-05) + the vendored 1.0.0 grammars
+  `vendor/grammar/v1_0/{odin.g4, odin_values.g4, base_patterns.g4,
+  base_lexer.g4}` (the release's own syntax-appendix include set). Every
+  divergence from the v1_1 reader carries a `NOTE` with its 1.0.0 citation:
+  lowercase-only attribute keys (`attribute_id : ALPHA_LC_ID`), the full
+  `primitive_value` container-key set, the top-level `keyed_object+` /
+  `included_other_language` document forms, `,`-only fractional seconds on
+  times, `.`-only on durations, no `ALPHA_UNDERSCORE_ID`, lowercase-only
+  path heads. Never "sync" the two generations — a 1.0.0 behaviour changes
+  only on a re-derivation against the release text.
 
 - **This crate is upstream of everything generated.** A change to the BMM
   loader can silently change what `openehr-codegen` emits across five
@@ -234,7 +256,11 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
   the literal's span. Never re-implement escape decoding anywhere.
 - Spec authority: `docs/specs/openehr/LANG/docs/` (bmm, odin). Parser
   behaviour divergences are spec-citable, never silent.
-- Spec pins are per generation (`Generation` enum + generation-module `SPEC_VERSION`s; both vendored files are 1.1.0-line snapshots). The released 1.0.0 machine-readable BMM is an adjudicated refusal as a codegen input (#1942; defect class in upstream-report #1927).
+- Spec pins are per generation: the emitted `Generation` enum is the ONLY
+  pin authority (no version constants; both vendored v1_1 BMM files are
+  1.1.0-line snapshots). The released 1.0.0 machine-readable BMM emits the
+  `v1_0` generation FAITHFULLY, defects verbatim (#1946 reversed the #1942
+  refusal; the defect class stays reported in upstream-report #1927).
 - Gates: `cargo clippy -p openehr-lang --all-targets` +
   `cargo nextest run -p openehr-lang`, plus a drift check when the model
   changed.

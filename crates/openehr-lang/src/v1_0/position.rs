@@ -1,8 +1,8 @@
-//! Source-text position arithmetic — one home for every LANG-family parser.
+//! Source-text position arithmetic — one home for this generation's parsers.
 //!
-//! ODIN, BEL and the ADL/cADL front end all report defects at a byte offset in
-//! the source they were handed and all need to present that offset to a human
-//! as a line and column. The mapping is a property of the text, not of any one
+//! The lexer and the ODIN parser report defects at a byte offset in the
+//! source they were handed and need to present that offset to a human as a
+//! line and column. The mapping is a property of the text, not of any one
 //! grammar, so it lives here once rather than being re-derived per parser.
 
 /// The 1-based line and column of a byte `offset` in `src`, counting COLUMNS

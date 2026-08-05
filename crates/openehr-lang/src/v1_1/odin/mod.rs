@@ -658,6 +658,30 @@ mod tests {
         assert!(parse("p = <[1] = <1>>\nq = <[1] = <2>>").is_ok());
     }
 
+    /// `odin_values.g4` `integer_value : ('+'|'-')? INTEGER` — an integer
+    /// container key takes the optional sign, and its lexeme is EVALUATED:
+    /// an exponent scales, and an unevaluable lexeme is a refusal, never a
+    /// silent substitute value.
+    #[test]
+    fn integer_keys_take_signs_and_evaluate_exponents() {
+        let cases = [
+            ("k = <[-1] = <1>>", -1i64),
+            ("k = <[+2] = <1>>", 2),
+            ("k = <[29e2] = <1>>", 2900),
+        ];
+        for (src, expected) in cases {
+            let m = obj(src);
+            let Some(OdinValue::KeyedList(entries)) = m.get("k") else {
+                panic!("{src}: expected keyed list");
+            };
+            assert_eq!(entries[0].0, OdinKey::Integer(expected), "{src}");
+        }
+        // Out-of-range magnitude: refused, never coerced to a default.
+        assert!(parse("k = <[99999999999999999999] = <1>>").is_err());
+        // A sign prefixes only the integer form of the five key types.
+        assert!(parse(r#"k = <[-"a"] = <1>>"#).is_err());
+    }
+
     /// Rule *VDATU* (`LANG/docs/odin/master05-content` §General Structure) /
     /// the "Sibling attribute names must be unique" principle of
     /// `AM/docs/ADL1.4/master04-dadl` §General Form.

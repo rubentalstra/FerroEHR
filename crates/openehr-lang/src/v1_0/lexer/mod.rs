@@ -1,71 +1,49 @@
-//! The ONE openEHR lexical layer: a single `logos` token superset plus four
-//! thin per-language entry points.
+//! The LANG 1.0.0 lexical layer: the shared `logos` token superset read under
+//! this generation's ONE language, ODIN.
 //!
-//! ADL2/cADL, ODIN, BEL and EL are four readings of one family of lexical
-//! rules — the vendored `.g4` grammars all build on the same base id/symbol
-//! layer (`vendor/grammar/v1_1/`), and each language's syntax appendix is an
-//! include of those files, which makes them normative-by-reference. This
-//! module is that shared layer, and it is the ONLY lexer in the workspace:
-//! `openehr-adl` and the `odin`/`bel`/`el` readers here all consume
-//! [`Token`]/[`Spanned`] from it.
+//! LANG Release-1.0.0 publishes exactly one machine-readable syntax — ODIN
+//! (`vendor/grammar/v1_0/{odin.g4, odin_values.g4, base_patterns.g4,
+//! base_lexer.g4}`, the release's own syntax-appendix include set). Its
+//! Expression Language is DEVELOPMENT prose with no grammar and BEL first
+//! appears in 1.1.0, so this generation carries no other reading and no other
+//! entry point — [`lex_odin`] is the whole surface.
 //!
 //! # The two-stage contract
 //!
-//! 1. **One DFA, the union of the four lexical layers** ([`Token`]). It runs
+//! 1. **One DFA, the workspace token superset** ([`Token`]). It is the same
+//!    union shape the v1_1 generation reads under four languages; it runs
 //!    once over the source and produces the longest match at every position.
-//! 2. **A per-language RECLASSIFICATION pass**. For each
-//!    token it asks what that language's own lexer would have produced for the
-//!    same source slice, and:
-//!    - keeps the token when the language admits it;
-//!    - **re-tags** it when the language reads the same text differently — the
-//!      keyword variants stay UNIT variants and a language that reserves
-//!      nothing simply gets the identifier variant back, read off the source
-//!      at the token's span;
-//!    - **narrows** it when the language's longest match at that position is
-//!      shorter, by retrying successively shorter prefixes — the
-//!      union can only ever match at least as far as one member;
-//!    - **fails** when no prefix is a token of that language at all, which is
-//!      exactly where its stand-alone lexer reported a lexical error.
-//!
-//! The pass is therefore not a filter but a total function from the union
-//! reading to each member reading, and the entry points [`lex_adl`],
-//! [`lex_odin`] and [`lex_bel`] are behaviour-identical to the three lexers
-//! they replace (pinned token-for-token, span-for-span, by the
-//! `lexer_equivalence` battery in `tests/it/`); [`lex_el`] joined them when
-//! the EL grammars were vendored.
+//! 2. **The ODIN RECLASSIFICATION pass**. For each token it asks what the
+//!    Release-1.0.0 ODIN lexer would have produced for the same source
+//!    slice, and:
+//!    - keeps the token when ODIN admits it;
+//!    - **re-tags** it when ODIN reads the same text differently — the
+//!      keyword variants stay UNIT variants and ODIN, which reserves
+//!      nothing, gets the identifier variant back, read off the source at
+//!      the token's span;
+//!    - **narrows** it when ODIN's longest match at that position is
+//!      shorter, by retrying successively shorter prefixes — the union can
+//!      only ever match at least as far as one member;
+//!    - **fails** when no prefix is an ODIN token at all, which is exactly
+//!      where a stand-alone 1.0.0 ODIN lexer reported a lexical error.
 //!
 //! # Adjudications this layer encodes
 //!
 //! - `// NOTE:` **ODIN reserves nothing.** `LANG/docs/odin/master03-basics.adoc`
-//!   §Keywords: "ODIN has no keywords of its own". Every cADL/BEL keyword is
-//!   therefore an ordinary ODIN attribute identifier, which is what the ODIN
-//!   pass demotes them to.
-//! - `// NOTE:` **cADL section keywords are not reserved either**
-//!   (`AM/docs/ADL2/master07.04`: they "can safely appear as identifiers in
-//!   the definition and terminology sections"), so they are NOT tokens here at
-//!   all — `language`, `definition`, … lex as `ALPHA_LC_ID` and the outer
-//!   parser recognises a section header positionally (column 0). This also
-//!   makes multi-line strings safe: a `STRING` maximally munches across
-//!   newlines, so a section word inside a quoted value can never read as a
-//!   header.
-//! - `// NOTE:` **Keyword matching is ASCII-case-insensitive** in the cADL
-//!   reading: `adl_keywords.g4` spells every keyword
-//!   `[Mm][Aa][Tt][Cc][Hh][Ee][Ss]`-style, and `ADL1.4/master05-cadl.adoc`
-//!   §Symbols L1326-1354 does the same in prose. ADL2's prose is silent, so the
-//!   grammar is the citation. `base_expressions.g4` spells BEL's operators
-//!   case-SENSITIVELY, and the BEL pass honours that.
-//! - `// NOTE:` The Expression Language reading takes the cADL layer wherever
-//!   `ElLexer.g4` declares nothing (it is an `import Cadl2Lexer, SymbolsLexer,
-//!   GeneralIdsLexer`) and `ElLexer.g4`'s own case-SENSITIVE spelling wherever
-//!   it does.
+//!   §Keywords: "ODIN has no keywords of its own". Every foreign keyword of
+//!   the shared superset is therefore an ordinary ODIN identifier, which is
+//!   what the reclassification pass demotes them to.
+//! - `// NOTE:` The 1.0.0-only lexical deltas — `,`-only fractional seconds
+//!   on times, `.`-only on durations, no `ALPHA_UNDERSCORE_ID` — are pinned
+//!   on the affected tokens in `token.rs` and in `reclassify`'s arms, each
+//!   with its Release-1.0.0 citation.
 
-// TODO(#1946): stopgap copy of the v1_1 reader — re-derive against the LANG 1.0.0 release docs.
 mod reclassify;
 mod token;
 
 use logos::Logos;
 
-use crate::v1_0::lexer::reclassify::{Language, reclassify};
+use crate::v1_0::lexer::reclassify::reclassify;
 pub use crate::v1_0::lexer::token::Token;
 
 /// A lexed token together with its byte span in the original source.
@@ -87,24 +65,9 @@ pub struct LexError {
     pub text: String,
 }
 
-/// Lex `src` under the ADL2 / cADL reading (`AM/docs/ADL2/`; `adl2.g4`,
-/// `cadl2.g4`, `adl_keywords.g4` over `base_lexer.g4`).
-///
-/// A whole ADL2 source file is lexed once as a single stream, so this reading
-/// is the union of the outer artefact grammar, cADL, the ODIN sections and the
-/// rules sub-syntax — the outer parser only *parses* the identification header
-/// and the ODIN sections, capturing the cADL definition and rules bodies as
-/// raw spans, so their tokens only need to lex here, not classify perfectly.
-///
-/// # Errors
-/// Returns a [`LexError`] at the byte span of the first input that is not a
-/// cADL token (an unrecognised character or an illegal string escape).
-pub fn lex_adl(src: &str) -> Result<Vec<Spanned>, LexError> {
-    lex_with(Language::Adl, src)
-}
-
-/// Lex `src` under the ODIN reading (`LANG/docs/odin/`; `odin.g4`,
-/// `odin_values.g4` over `base_lexer.g4`).
+/// Lex `src` under the Release-1.0.0 ODIN reading (`LANG/docs/odin/`;
+/// `vendor/grammar/v1_0/{odin.g4, odin_values.g4}` over `base_patterns.g4` +
+/// `base_lexer.g4`).
 ///
 /// ODIN is a standalone leaf-data notation — it backs BMM `.bmm`/`.idx` files
 /// and the ADL description/terminology/annotation sections alike — and
@@ -113,11 +76,33 @@ pub fn lex_adl(src: &str) -> Result<Vec<Spanned>, LexError> {
 ///
 /// # Errors
 /// Returns a [`LexError`] at the byte span of the first input that is not an
-/// ODIN token.
+/// ODIN token (an unrecognised character or an illegal string escape).
 pub fn lex_odin(src: &str) -> Result<Vec<Spanned>, LexError> {
-    let mut spanned = lex_with(Language::Odin, src)?;
-    retag_odin_value_words_in_key_position(src, &mut spanned);
-    Ok(spanned)
+    let mut out = Vec::new();
+    let mut lexer = Token::lexer(src);
+    while let Some(result) = lexer.next() {
+        let span = lexer.span();
+        let text = src.get(span.clone()).unwrap_or_default();
+        let Ok(produced) = result else {
+            let end = stuck_at(src, span.start, span.end);
+            return Err(LexError {
+                text: src.get(span.start..end).unwrap_or_default().to_owned(),
+                span: span.start..end,
+            });
+        };
+        match reclassify(&produced, text, src, span.start) {
+            // The BOM carries no syntax and is dropped.
+            Some(Token::Bom) => {}
+            Some(read) => out.push(Spanned { token: read, span }),
+            None => {
+                let resumed = narrow(src, span.start, span.end, &mut out)?;
+                lexer = Token::lexer(src);
+                lexer.bump(resumed);
+            }
+        }
+    }
+    retag_odin_value_words_in_key_position(src, &mut out);
+    Ok(out)
 }
 
 /// Re-tag `true`/`false`/`infinity` to identifiers where they stand as ODIN
@@ -130,10 +115,11 @@ pub fn lex_odin(src: &str) -> Result<Vec<Spanned>, LexError> {
 /// endpoints of `AM/docs/ADL1.4/master04-dadl` §Intervals of Ordered Primitive
 /// Types), so the per-token `reclassify` pass cannot demote them. Key
 /// position is decidable with one token of lookahead instead: an attribute
-/// name is always followed by `=` (`odin.g4` `attr_val : odin_object_key '='
-/// object_block`), and no VALUE position ever is — so a value word
-/// immediately before `SYM_EQ` is re-tagged to the identifier its spelling
-/// gives, exactly as the reclassification pass demotes every other keyword.
+/// name is always followed by `=` (the Release-1.0.0 `odin.g4`
+/// `attr_val : attribute_id '=' object_block`), and no VALUE position ever
+/// is — so a value word immediately before `SYM_EQ` is re-tagged to the
+/// identifier its spelling gives, exactly as the reclassification pass
+/// demotes every other keyword.
 fn retag_odin_value_words_in_key_position(src: &str, spanned: &mut [Spanned]) {
     let mut index = 0;
     while index < spanned.len() {
@@ -157,82 +143,19 @@ fn retag_odin_value_words_in_key_position(src: &str, spanned: &mut [Spanned]) {
     }
 }
 
-/// Lex `src` under the BEL reading (`LANG/docs/BEL/`; `base_expressions.g4`).
+/// Emit the longest prefix of `src[start..limit]` that IS a single ODIN
+/// token, and return where the caller resumes.
 ///
-/// The Basic Expression Language surface: statements, assertions, assignments,
-/// operators (text + symbol forms), literals, variables, paths and the
-/// `matches { … }` constraint delimiters.
-///
-/// # Errors
-/// Returns a [`LexError`] at the byte span of the first input that is not a
-/// BEL token.
-pub fn lex_bel(src: &str) -> Result<Vec<Spanned>, LexError> {
-    lex_with(Language::Bel, src)
-}
-
-/// Lex `src` under the Expression Language reading (`LANG/docs/EL/`;
-/// `vendor/grammar/v1_1/ElLexer.g4`, which the EL syntax appendix
-/// `masterAppA-syntax.adoc` includes verbatim).
-///
-/// `ElLexer.g4` imports `Cadl2Lexer`, `SymbolsLexer` and `GeneralIdsLexer`
-/// (none of which upstream publishes in the same repository), so this reading
-/// is the cADL one for the inherited layer plus `ElLexer.g4`'s own rules,
-/// which ANTLR gives precedence.
-///
-/// Two `ElLexer.g4` symbols have no union production and are therefore not
-/// lexable here: `?` (`SYM_INTERROGATION`) and the guillemets `«`/`»`. `?`
-/// reaches only `dlBinaryChoice` and the guillemets reach no `ElParser.g4`
-/// production at all.
+/// The union DFA matched `limit`, which the ODIN reading refused. A
+/// stand-alone ODIN DFA would have taken the longest prefix some production
+/// of ITS OWN admits — and every such production is in the union, so
+/// re-running the union over each shorter prefix and asking `reclassify`
+/// again finds exactly that prefix.
 ///
 /// # Errors
-/// Returns a [`LexError`] at the byte span of the first input that is not an
-/// EL token.
-pub fn lex_el(src: &str) -> Result<Vec<Spanned>, LexError> {
-    lex_with(Language::El, src)
-}
-
-/// Run the shared DFA over `src` and reclassify every token into `language`'s
-/// own reading.
-fn lex_with(language: Language, src: &str) -> Result<Vec<Spanned>, LexError> {
-    let mut out = Vec::new();
-    let mut lexer = Token::lexer(src);
-    while let Some(result) = lexer.next() {
-        let span = lexer.span();
-        let text = src.get(span.clone()).unwrap_or_default();
-        let Ok(produced) = result else {
-            let end = stuck_at(language, src, span.start, span.end);
-            return Err(LexError {
-                text: src.get(span.start..end).unwrap_or_default().to_owned(),
-                span: span.start..end,
-            });
-        };
-        match reclassify(language, &produced, text, src, span.start) {
-            // The BOM carries no syntax; the readings that tolerate it drop it.
-            Some(Token::Bom) => {}
-            Some(read) => out.push(Spanned { token: read, span }),
-            None => {
-                let resumed = narrow(language, src, span.start, span.end, &mut out)?;
-                lexer = Token::lexer(src);
-                lexer.bump(resumed);
-            }
-        }
-    }
-    Ok(out)
-}
-
-/// Emit the longest prefix of `src[start..limit]` that IS a single token of
-/// `language`, and return where the caller resumes.
-///
-/// The union DFA matched `limit`, which `language` refused. Its own DFA would
-/// have taken the longest prefix some production of ITS OWN admits — and every
-/// such production is in the union, so re-running the union over each shorter
-/// prefix and asking `reclassify` again finds exactly that prefix.
-///
-/// # Errors
-/// Returns a [`LexError`] spanning the first character when no prefix at all is
-/// a token of `language` — the position its stand-alone lexer failed at.
+/// Returns a [`LexError`] spanning the first character when no prefix at all
+/// is an ODIN token — the position a stand-alone lexer failed at.
 fn narrow(
-    language: Language,
     src: &str,
     start: usize,
     limit: usize,
@@ -242,7 +165,7 @@ fn narrow(
     while end > start {
         if let Some(produced) = single_token(src, start, end) {
             let text = src.get(start..end).unwrap_or_default();
-            if let Some(read) = reclassify(language, &produced, text, src, start) {
+            if let Some(read) = reclassify(&produced, text, src, start) {
                 if !matches!(read, Token::Bom) {
                     out.push(Spanned {
                         token: read,
@@ -261,24 +184,22 @@ fn narrow(
     })
 }
 
-/// Where `language`'s own lexer stops consuming when the shared DFA gets stuck
-/// at `start` after reaching `union_end`.
+/// Where the ODIN lexer stops consuming when the shared DFA gets stuck at
+/// `start` after reaching `union_end`.
 ///
 /// A DFA walks as far as ANY of its patterns can still be matching before it
-/// reports failure, so the union's extent overshoots a member whose production
-/// set cannot leave the start state on that character at all. Exactly one
-/// character in the union is in that position: `?`, which starts a token only
-/// through the leading `??` field of `TIME_CONSTRAINT_PATTERN`
+/// reports failure, so the union's extent overshoots a member whose
+/// production set cannot leave the start state on that character at all.
+/// Exactly one character in the union is in that position: `?`, which starts
+/// a token only through the leading `??` field of `TIME_CONSTRAINT_PATTERN`
 /// (`ADL1.4/master05-cadl.adoc` §Symbols L1420), a cADL-only production — the
-/// ODIN and BEL readings cannot begin any token with it, so they fail on the
-/// character itself. Every other union-only class produces a whole TOKEN that
-/// the reclassification pass refuses, which [`narrow`] already resolves. The
+/// ODIN reading cannot begin any token with it, so it fails on the character
+/// itself. Every other union-only class produces a whole TOKEN that the
+/// reclassification pass refuses, which [`narrow`] already resolves. The
 /// failing OFFSET is the same either way; this keeps the reported extent the
 /// same too.
-fn stuck_at(language: Language, src: &str, start: usize, union_end: usize) -> usize {
-    let cannot_start =
-        language != Language::Adl && src.get(start..).is_some_and(|rest| rest.starts_with('?'));
-    if cannot_start {
+fn stuck_at(src: &str, start: usize, union_end: usize) -> usize {
+    if src.get(start..).is_some_and(|rest| rest.starts_with('?')) {
         next_boundary(src, start)
     } else {
         union_end
@@ -314,15 +235,7 @@ fn next_boundary(src: &str, at: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use super::{Token, lex_adl, lex_bel, lex_odin};
-
-    fn adl(src: &str) -> Vec<Token> {
-        lex_adl(src)
-            .unwrap_or_else(|e| panic!("lex failed: {e}"))
-            .into_iter()
-            .map(|s| s.token)
-            .collect()
-    }
+    use super::{Token, lex_odin};
 
     fn odin(src: &str) -> Vec<Token> {
         lex_odin(src)
@@ -332,364 +245,10 @@ mod tests {
             .collect()
     }
 
-    fn bel(src: &str) -> Vec<Token> {
-        lex_bel(src)
-            .unwrap_or_else(|e| panic!("lex failed: {e}"))
-            .into_iter()
-            .map(|s| s.token)
-            .collect()
-    }
-
-    #[test]
-    fn codes_and_identifiers() {
-        assert_eq!(adl("id1"), vec![Token::RootIdCode("id1".into())]);
-        assert_eq!(adl("id1.1"), vec![Token::RootIdCode("id1.1".into())]);
-        assert_eq!(adl("id2"), vec![Token::IdCode("id2".into())]);
-        assert_eq!(adl("id0.1"), vec![Token::IdCode("id0.1".into())]);
-        assert_eq!(adl("at0000"), vec![Token::AtCode("at0000".into())]);
-        assert_eq!(adl("at0.1"), vec![Token::AtCode("at0.1".into())]);
-        assert_eq!(adl("ac1"), vec![Token::AcCode("ac1".into())]);
-        assert_eq!(
-            adl("OBSERVATION"),
-            vec![Token::AlphaUcId("OBSERVATION".into())]
-        );
-        assert_eq!(adl("items"), vec![Token::AlphaLcId("items".into())]);
-        // `id`/`at` without a code are plain identifiers.
-        assert_eq!(adl("identity"), vec![Token::AlphaLcId("identity".into())]);
-    }
-
-    #[test]
-    fn archetype_and_version_ids() {
-        assert_eq!(
-            adl("openehr-TEST_PKG-WHOLE.most_minimal.v2.0.0"),
-            vec![Token::ArchetypeId(
-                "openehr-TEST_PKG-WHOLE.most_minimal.v2.0.0".into()
-            )]
-        );
-        // partial version (ARCHETYPE_REF shape) folds into the same token.
-        assert_eq!(
-            adl("openehr-TASK_PLANNING-TASK_PLAN.good_include.v0"),
-            vec![Token::ArchetypeId(
-                "openehr-TASK_PLANNING-TASK_PLAN.good_include.v0".into()
-            )]
-        );
-        assert_eq!(adl("2.0.5"), vec![Token::VersionId("2.0.5".into())]);
-        assert_eq!(adl("1.0.2"), vec![Token::VersionId("1.0.2".into())]);
-    }
-
-    #[test]
-    fn iso_values_and_partials() {
-        assert_eq!(
-            adl("2004-06-01"),
-            vec![Token::Iso8601Date("2004-06-01".into())]
-        );
-        assert_eq!(adl("2004-06"), vec![Token::Iso8601Date("2004-06".into())]);
-        assert_eq!(
-            adl("2004-06-??"),
-            vec![Token::Iso8601Date("2004-06-??".into())]
-        );
-        assert_eq!(
-            adl("2004-06-01T10:30:00"),
-            vec![Token::Iso8601DateTime("2004-06-01T10:30:00".into())]
-        );
-        assert_eq!(adl("10:30:00"), vec![Token::Iso8601Time("10:30:00".into())]);
-        assert_eq!(adl("P1Y2M"), vec![Token::Iso8601Duration("P1Y2M".into())]);
-        assert_eq!(adl("PT30M"), vec![Token::Iso8601Duration("PT30M".into())]);
-        assert_eq!(adl("P0W"), vec![Token::Iso8601Duration("P0W".into())]);
-    }
-
-    #[test]
-    fn constraint_patterns() {
-        assert_eq!(
-            adl("yyyy-mm-dd"),
-            vec![Token::DateConstraintPattern("yyyy-mm-dd".into())]
-        );
-        assert_eq!(
-            adl("yyyy-??-XX"),
-            vec![Token::DateConstraintPattern("yyyy-??-XX".into())]
-        );
-        assert_eq!(
-            adl("hh:mm:ss"),
-            vec![Token::TimeConstraintPattern("hh:mm:ss".into())]
-        );
-        assert_eq!(
-            adl("yyyy-mm-ddThh:mm:ss"),
-            vec![Token::DateTimeConstraintPattern(
-                "yyyy-mm-ddThh:mm:ss".into()
-            )]
-        );
-        assert_eq!(
-            adl("PYMD"),
-            vec![Token::DurationConstraintPattern("PYMD".into())]
-        );
-        // a real type name that starts with `P` but has other letters wins by
-        // length as an identifier.
-        assert_eq!(
-            adl("POINT_EVENT"),
-            vec![Token::AlphaUcId("POINT_EVENT".into())]
-        );
-    }
-
-    #[test]
-    fn interval_and_range_symbols() {
-        // `1..5` must lex as INTEGER SYM_IVL_SEP INTEGER, not a REAL.
-        assert_eq!(
-            adl("1..5"),
-            vec![
-                Token::Integer("1".into()),
-                Token::SymIvlSep,
-                Token::Integer("5".into()),
-            ]
-        );
-        assert_eq!(adl("1.5"), vec![Token::Real("1.5".into())]);
-        assert_eq!(
-            adl("|>=0.0..<10.0|"),
-            vec![
-                Token::SymIvlDelim,
-                Token::SymGe,
-                Token::Real("0.0".into()),
-                Token::SymIvlSep,
-                Token::SymLt,
-                Token::Real("10.0".into()),
-                Token::SymIvlDelim,
-            ]
-        );
-    }
-
-    #[test]
-    fn term_code_ref_and_embedded_uri() {
-        assert_eq!(
-            adl("[ISO_639-1::en]"),
-            vec![Token::TermCodeRef("[ISO_639-1::en]".into())]
-        );
-        assert_eq!(
-            adl("<http://loinc.org/id/9272-6>"),
-            vec![Token::EmbeddedUri("<http://loinc.org/id/9272-6>".into())]
-        );
-        // a `<[…]>` value block is NOT a URI: `<` then term code then `>`.
-        assert_eq!(
-            adl("<[ISO_639-1::en]>"),
-            vec![
-                Token::SymLt,
-                Token::TermCodeRef("[ISO_639-1::en]".into()),
-                Token::SymGt,
-            ]
-        );
-    }
-
-    #[test]
-    fn brackets_with_codes_are_not_term_codes() {
-        // `[id2]` / `[ac1]` have no `::` so they split into bracket + code.
-        assert_eq!(
-            adl("[id2]"),
-            vec![
-                Token::LBracket,
-                Token::IdCode("id2".into()),
-                Token::RBracket
-            ]
-        );
-        assert_eq!(
-            adl("[ac1]"),
-            vec![
-                Token::LBracket,
-                Token::AcCode("ac1".into()),
-                Token::RBracket
-            ]
-        );
-    }
-
-    #[test]
-    fn unicode_operators_lex() {
-        assert_eq!(adl("\u{2208}"), vec![Token::SymMatches]);
-        assert_eq!(adl("\u{2227}"), vec![Token::SymAnd]);
-        assert_eq!(adl("\u{2203}"), vec![Token::SymThereExists]);
-        assert_eq!(adl("matches"), vec![Token::SymMatches]);
-        assert_eq!(adl("*"), vec![Token::SymStar]);
-        assert_eq!(adl("\u{2217}"), vec![Token::SymStar]);
-    }
-
-    #[test]
-    fn comments_and_overlay_separator_are_skipped() {
-        assert_eq!(
-            adl("id1 -- a trailing comment\nitems"),
-            vec![
-                Token::RootIdCode("id1".into()),
-                Token::AlphaLcId("items".into())
-            ]
-        );
-        assert_eq!(
-            adl("--------------\ntemplate_overlay"),
-            vec![Token::AlphaLcId("template_overlay".into())]
-        );
-    }
-
-    #[test]
-    fn strings_and_escapes() {
-        assert_eq!(
-            adl(r#""a\"x'c\\d""#),
-            vec![Token::String(r#""a\"x'c\\d""#.into())]
-        );
-        // multi-line string.
-        assert_eq!(
-            adl("\"line1\nline2\""),
-            vec![Token::String("\"line1\nline2\"".into())]
-        );
-        // illegal escape (`\d`) is a lex error per master03.
-        assert!(lex_adl(r#""bad \d escape""#).is_err());
-        // BOM is skipped, not an error.
-        assert_eq!(
-            adl("\u{feff}archetype"),
-            vec![Token::AlphaLcId("archetype".into())]
-        );
-    }
-
-    #[test]
-    fn character_escapes() {
-        // The six legal quoted forms and a plain/unicode character lex
-        // (`ADL2/master03-file_encoding.adoc` §Special Character Sequences).
-        for ok in [
-            r"'\n'", r"'\t'", r"'\r'", r"'\\'", r#"'\"'"#, r"'\''", "'x'", "'ü'",
-        ] {
-            assert!(lex_adl(ok).is_ok(), "legal character must lex: {ok}");
-        }
-        // "Any other character combination starting with a backslash is
-        // illegal" — an unknown escape fails the lex.
-        assert!(lex_adl(r"'\q'").is_err());
-        assert!(lex_adl(r"'\d'").is_err());
-    }
-
-    #[test]
-    fn boolean_word_symbols() {
-        assert_eq!(adl("True"), vec![Token::SymTrue]);
-        assert_eq!(adl("False"), vec![Token::SymFalse]);
-        assert_eq!(adl("true"), vec![Token::SymTrue]);
-    }
-
-    /// `ADL1.4/master05-cadl.adoc` §Symbols L1326-1354 + `adl_keywords.g4`
-    /// spell every keyword in the `[Mm][Aa]…` case-insensitive form.
-    #[test]
-    fn keywords_are_case_insensitive() {
-        assert_eq!(adl("MATCHES"), vec![Token::SymMatches]);
-        assert_eq!(adl("Is_In"), vec![Token::SymMatches]);
-        assert_eq!(adl("OCCURRENCES"), vec![Token::SymOccurrences]);
-        assert_eq!(adl("Existence"), vec![Token::SymExistence]);
-        assert_eq!(adl("CaRdInAlItY"), vec![Token::SymCardinality]);
-        assert_eq!(adl("ORDERED"), vec![Token::SymOrdered]);
-        assert_eq!(adl("UNORDERED"), vec![Token::SymUnordered]);
-        assert_eq!(adl("Unique"), vec![Token::SymUnique]);
-        assert_eq!(adl("INFINITY"), vec![Token::SymInfinity]);
-        assert_eq!(adl("Use_Node"), vec![Token::SymUseNode]);
-        assert_eq!(adl("ALLOW_ARCHETYPE"), vec![Token::SymAllowArchetype]);
-        assert_eq!(adl("Include"), vec![Token::SymInclude]);
-        assert_eq!(adl("EXCLUDE"), vec![Token::SymExclude]);
-        assert_eq!(adl("Before"), vec![Token::SymBefore]);
-        assert_eq!(adl("AFTER"), vec![Token::SymAfter]);
-        assert_eq!(adl("TRUE"), vec![Token::SymTrue]);
-        assert_eq!(adl("fAlSe"), vec![Token::SymFalse]);
-        assert_eq!(adl("NOT"), vec![Token::SymNot]);
-        assert_eq!(adl("Implies"), vec![Token::SymImplies]);
-        // The one keyword the grammars spell case-sensitively.
-        assert_eq!(adl("there_exists"), vec![Token::SymThereExists]);
-        assert_eq!(
-            adl("There_Exists"),
-            vec![Token::AlphaUcId("There_Exists".into())]
-        );
-    }
-
-    /// `infinity` is its own keyword token (`master05` §Keywords L50, §Symbols
-    /// L1349), used as an interval endpoint (`|0..infinity|`, L771).
-    #[test]
-    fn infinity_is_a_keyword_not_an_identifier() {
-        assert_eq!(
-            adl("|0..infinity|"),
-            vec![
-                Token::SymIvlDelim,
-                Token::Integer("0".into()),
-                Token::SymIvlSep,
-                Token::SymInfinity,
-                Token::SymIvlDelim,
-            ]
-        );
-        assert_eq!(
-            adl("|-infinity..5.0|"),
-            vec![
-                Token::SymIvlDelim,
-                Token::SymMinus,
-                Token::SymInfinity,
-                Token::SymIvlSep,
-                Token::Real("5.0".into()),
-                Token::SymIvlDelim,
-            ]
-        );
-    }
-
-    /// Literal-substituted pattern fields (`master05` §Patterns L894), the
-    /// ASCII timezone modifiers (L852 + the tz table L900-906) and the
-    /// space-separated date/time pattern (§Symbols L1422 `[ T]`).
-    #[test]
-    fn pattern_variants() {
-        assert_eq!(
-            adl("1995-??-XX"),
-            vec![Token::DateConstraintPattern("1995-??-XX".into())]
-        );
-        assert_eq!(
-            adl("1995-mm-dd"),
-            vec![Token::DateConstraintPattern("1995-mm-dd".into())]
-        );
-        assert_eq!(
-            adl("hh:mm:ss+hh:mm"),
-            vec![Token::TimeConstraintPattern("hh:mm:ss+hh:mm".into())]
-        );
-        assert_eq!(
-            adl("hh:mm:ss-hh"),
-            vec![Token::TimeConstraintPattern("hh:mm:ss-hh".into())]
-        );
-        assert_eq!(
-            adl("hh:mm:ss+hhmm"),
-            vec![Token::TimeConstraintPattern("hh:mm:ss+hhmm".into())]
-        );
-        assert_eq!(
-            adl("hh:mm:ssZ"),
-            vec![Token::TimeConstraintPattern("hh:mm:ssZ".into())]
-        );
-        assert_eq!(
-            adl("yyyy-mm-dd hh:mm:XX"),
-            vec![Token::DateTimeConstraintPattern(
-                "yyyy-mm-dd hh:mm:XX".into()
-            )]
-        );
-        assert_eq!(
-            adl("yyyy-mm-ddThh:mm:ss\u{00B1}hh:mm"),
-            vec![Token::DateTimeConstraintPattern(
-                "yyyy-mm-ddThh:mm:ss\u{00B1}hh:mm".into()
-            )]
-        );
-        // A text that is both a legal VALUE and a legal all-literal pattern
-        // stays the value reading (see the note on the ISO8601 value tokens).
-        assert_eq!(
-            adl("2004-06-01"),
-            vec![Token::Iso8601Date("2004-06-01".into())]
-        );
-    }
-
-    /// The `^…^` regex delimiter is a `CONTAINED_REGEXP` in its own right
-    /// (`master05` §Regular Expression L696-702; `V_REGEXP` L1476).
-    #[test]
-    fn caret_delimited_regexp_lexes() {
-        assert_eq!(
-            adl("{^km/h|mi/h^}"),
-            vec![Token::ContainedRegexp("{^km/h|mi/h^}".into())]
-        );
-        assert_eq!(
-            adl(r"{/km\/h|mi\/h/}"),
-            vec![Token::ContainedRegexp(r"{/km\/h|mi\/h/}".into())]
-        );
-    }
-
     /// `LANG/docs/odin/master03-basics.adoc` §Keywords: "ODIN has no keywords
-    /// of its own" — every cADL/BEL keyword reads back as an ODIN identifier.
+    /// of its own" — every foreign keyword reads back as an ODIN identifier.
     #[test]
-    fn odin_reserves_no_cadl_or_bel_keyword() {
+    fn odin_reserves_no_foreign_keyword() {
         for word in [
             "matches",
             "occurrences",
@@ -747,10 +306,13 @@ mod tests {
                 Token::AlphaLcId("dd".into()),
             ]
         );
-        // `$variable`, `{`, `:` and `%` have no ODIN production at all.
+        // `$variable`, `{`, `:`, `%`, `^` and `!=` have no ODIN production.
         for refused in ["$v", "{", ":", "%", "^", "!="] {
             assert!(lex_odin(refused).is_err(), "ODIN must refuse {refused:?}");
         }
+        // `<>` is not an ODIN `SYM_NE`: it splits into the `SYM_LT` `SYM_GT`
+        // an empty ODIN block is written with.
+        assert_eq!(odin("<>"), vec![Token::SymLt, Token::SymGt]);
         // `@` IS an ODIN token since #1373: it opens the document prefix
         // `schema_identifier ::= '@' schema '=' URI`
         // (`LANG/docs/odin/master04-odin_artefacts` intro); a misplaced `@`
@@ -758,125 +320,254 @@ mod tests {
         assert_eq!(odin("@"), vec![Token::SymAt]);
     }
 
-    /// `AM/docs/ADL1.4/master04-dadl` §Symbols `V_LOCAL_TERM_CODE_REF` is an
-    /// ODIN leaf value; cADL splits the same text into bracket + code.
+    /// NOTE: the Release-1.0.0 `base_lexer.g4` declares no
+    /// `ALPHA_UNDERSCORE_ID`, so a `_`-initial word is a 1.0.0 lex error.
     #[test]
-    fn local_term_code_ref_is_odin_only() {
+    fn underscore_initial_words_are_not_1_0_0_tokens() {
+        assert!(lex_odin("_default").is_err());
+        assert!(lex_odin("_x = <1>").is_err());
+        // An INTERIOR underscore is ordinary `WORD_CHAR` text.
+        assert_eq!(
+            odin("some_attr"),
+            vec![Token::AlphaLcId("some_attr".into())]
+        );
+    }
+
+    /// ISO 8601 values, including the `??` partial forms of
+    /// `master07-leaf_data` §Partial Date/Times (docs text this generation
+    /// shares verbatim with 1.1.0).
+    #[test]
+    fn iso_values_and_partials() {
+        assert_eq!(
+            odin("2004-06-01"),
+            vec![Token::Iso8601Date("2004-06-01".into())]
+        );
+        assert_eq!(odin("2004-06"), vec![Token::Iso8601Date("2004-06".into())]);
+        assert_eq!(
+            odin("2004-06-??"),
+            vec![Token::Iso8601Date("2004-06-??".into())]
+        );
+        assert_eq!(
+            odin("2004-06-01T10:30:00"),
+            vec![Token::Iso8601DateTime("2004-06-01T10:30:00".into())]
+        );
+        assert_eq!(
+            odin("10:30:00"),
+            vec![Token::Iso8601Time("10:30:00".into())]
+        );
+        assert_eq!(odin("P1Y2M"), vec![Token::Iso8601Duration("P1Y2M".into())]);
+        assert_eq!(odin("PT30M"), vec![Token::Iso8601Duration("PT30M".into())]);
+        assert_eq!(odin("P0W"), vec![Token::Iso8601Duration("P0W".into())]);
+    }
+
+    /// NOTE: fractional seconds on times take `,` alone in Release-1.0.0
+    /// (`base_lexer.g4` `ISO8601_TIME : … ( SYM_COMMA INTEGER )?`; the
+    /// `master07-leaf_data` example `16:35:04,5`); `.` postdates it.
+    #[test]
+    fn time_fractional_seconds_are_comma_separated() {
+        assert_eq!(
+            odin("16:35:04,5"),
+            vec![Token::Iso8601Time("16:35:04,5".into())]
+        );
+        // A dot does not extend the time token.
+        assert_eq!(
+            odin("16:35:04.5"),
+            vec![
+                Token::Iso8601Time("16:35:04".into()),
+                Token::SymDot,
+                Token::Integer("5".into()),
+            ]
+        );
+        assert_eq!(
+            odin("2004-06-01T16:35:04,5"),
+            vec![Token::Iso8601DateTime("2004-06-01T16:35:04,5".into())]
+        );
+    }
+
+    /// NOTE: fractional seconds in durations take `.` alone in Release-1.0.0
+    /// (`base_lexer.g4` `ISO8601_DURATION : … ('.' DIGIT+)? [sS]`); the `,`
+    /// alternative postdates it.
+    #[test]
+    fn duration_fractional_seconds_are_dot_separated() {
+        assert_eq!(
+            odin("PT2.5S"),
+            vec![Token::Iso8601Duration("PT2.5S".into())]
+        );
+        // The comma form is not a 1.0.0 duration token.
+        assert_ne!(
+            odin("PT2,5S"),
+            vec![Token::Iso8601Duration("PT2,5S".into())]
+        );
+    }
+
+    /// `master07-leaf_data` §Terms and Term Codes + the embedded-URI leaf.
+    #[test]
+    fn term_code_ref_and_embedded_uri() {
+        assert_eq!(
+            odin("[ISO_639-1::en]"),
+            vec![Token::TermCodeRef("[ISO_639-1::en]".into())]
+        );
+        assert_eq!(
+            odin("<http://loinc.org/id/9272-6>"),
+            vec![Token::EmbeddedUri("<http://loinc.org/id/9272-6>".into())]
+        );
+        // a `<[…]>` value block is NOT a URI: `<` then term code then `>`.
+        assert_eq!(
+            odin("<[ISO_639-1::en]>"),
+            vec![
+                Token::SymLt,
+                Token::TermCodeRef("[ISO_639-1::en]".into()),
+                Token::SymGt,
+            ]
+        );
+    }
+
+    /// `AM/docs/ADL1.4/master04-dadl` §Symbols `V_LOCAL_TERM_CODE_REF` is an
+    /// ODIN leaf value; integer container keys still lex as keys.
+    #[test]
+    fn local_term_code_ref_and_keys() {
         assert_eq!(
             odin("[at0200]"),
             vec![Token::LocalTermCodeRef("[at0200]".into())]
         );
-        assert_eq!(
-            adl("[at0200]"),
-            vec![
-                Token::LBracket,
-                Token::AtCode("at0200".into()),
-                Token::RBracket,
-            ]
-        );
-        // integer / date container keys still lex as keys, not local codes.
         assert_eq!(
             odin("[1]"),
             vec![Token::LBracket, Token::Integer("1".into()), Token::RBracket,]
         );
     }
 
-    /// `AM/docs/ADL1.4/master08-adl` §Revision History Section writes
-    /// `time_committed = <2004-11-02 09:31:04+1000>`; the ODIN reading accepts
-    /// the space form and normalises it to the ISO `T` designator, while cADL
-    /// reads the same text as an all-literal constraint pattern.
+    /// Intervals: delimiters, relational bounds and the `infinity` endpoint
+    /// (`AM/docs/ADL1.4/master04-dadl` §Intervals of Ordered Primitive Types).
     #[test]
-    fn space_separated_date_time_is_an_odin_widening() {
+    fn interval_symbols_and_infinity() {
+        assert_eq!(
+            odin("|>=0.0..<10.0|"),
+            vec![
+                Token::SymIvlDelim,
+                Token::SymGe,
+                Token::Real("0.0".into()),
+                Token::SymIvlSep,
+                Token::SymLt,
+                Token::Real("10.0".into()),
+                Token::SymIvlDelim,
+            ]
+        );
+        assert_eq!(
+            odin("|0..infinity|"),
+            vec![
+                Token::SymIvlDelim,
+                Token::Integer("0".into()),
+                Token::SymIvlSep,
+                Token::SymInfinity,
+                Token::SymIvlDelim,
+            ]
+        );
+        // `1..5` must lex as INTEGER SYM_IVL_SEP INTEGER, not a REAL.
+        assert_eq!(
+            odin("1..5"),
+            vec![
+                Token::Integer("1".into()),
+                Token::SymIvlSep,
+                Token::Integer("5".into()),
+            ]
+        );
+    }
+
+    /// Booleans are case-insensitive (`master07-leaf_data` §Boolean Data),
+    /// and a value word before `=` re-tags to the identifier ODIN's
+    /// no-keywords rule gives it.
+    #[test]
+    fn boolean_words_and_key_position_retag() {
+        assert_eq!(odin("True"), vec![Token::SymTrue]);
+        assert_eq!(odin("true"), vec![Token::SymTrue]);
+        assert_eq!(odin("fAlSe"), vec![Token::SymFalse]);
+        assert_eq!(
+            odin("true = <1>"),
+            vec![
+                Token::AlphaLcId("true".into()),
+                Token::SymEq,
+                Token::SymLt,
+                Token::Integer("1".into()),
+                Token::SymGt,
+            ]
+        );
+    }
+
+    /// `AM/docs/ADL1.4/master08-adl` §Revision History Section writes
+    /// `time_committed = <2004-11-02 09:31:04+1000>`; the ODIN reading
+    /// accepts the space form and normalises it to the ISO `T` designator.
+    #[test]
+    fn space_separated_date_time_is_normalised() {
         assert_eq!(
             odin("2004-11-02 09:31:04+1000"),
             vec![Token::Iso8601DateTime("2004-11-02T09:31:04+1000".into())]
         );
-        assert_eq!(
-            adl("2004-11-02 09:31:04+1000"),
-            vec![
-                Token::DateTimeConstraintPattern("2004-11-02 09:31:04".into()),
-                Token::SymPlus,
-                Token::Integer("1000".into()),
-            ]
-        );
     }
 
     /// `LANG/docs/odin/master07-leaf_data` §String Data: multi-line string
-    /// contents drop the white-space leaders of the continuation lines — an
-    /// ODIN-only transform; cADL and BEL keep the literal verbatim.
+    /// contents drop the white-space leaders of the continuation lines.
     #[test]
-    fn multi_line_string_leaders_are_stripped_for_odin_only() {
+    fn multi_line_string_leaders_are_stripped() {
         let src = "    text = <\"first\n        second\">";
         let stripped = Token::String("\"first\nsecond\"".into());
-        let verbatim = Token::String("\"first\n        second\"".into());
         assert!(odin(src).contains(&stripped));
-        assert!(adl(src).contains(&verbatim));
     }
 
-    /// `base_expressions.g4` spells BEL's operators case-sensitively, has no
-    /// exponent on `INTEGER`, no `ALPHA_UNDERSCORE_ID`, and adds `in` and the
-    /// ADL 1.4 `<>` spelling of `SYM_NE`.
+    /// `master03` escapes: the legal quoted forms lex, an illegal escape is a
+    /// lex error, and a BOM is skipped.
     #[test]
-    fn bel_keeps_its_own_narrower_lexical_surface() {
-        assert_eq!(bel("matches"), vec![Token::SymMatches]);
-        assert_eq!(bel("MATCHES"), vec![Token::AlphaUcId("MATCHES".into())]);
-        assert_eq!(bel("in"), vec![Token::SymIn]);
-        assert_eq!(adl("in"), vec![Token::AlphaLcId("in".into())]);
-        assert_eq!(bel("<>"), vec![Token::SymNe]);
-        assert_eq!(adl("<>"), vec![Token::SymLt, Token::SymGt]);
+    fn strings_characters_and_escapes() {
         assert_eq!(
-            bel("29e6"),
-            vec![Token::Integer("29".into()), Token::AlphaLcId("e6".into())]
+            odin(r#""a\"x'c\\d""#),
+            vec![Token::String(r#""a\"x'c\\d""#.into())]
         );
-        assert_eq!(adl("29e6"), vec![Token::Integer("29e6".into())]);
-        assert_eq!(bel("TRUE"), vec![Token::AlphaUcId("TRUE".into())]);
-        assert_eq!(adl("TRUE"), vec![Token::SymTrue]);
-        assert!(lex_bel("_default").is_err());
-        // the movable-path leader and the single-segment predicate form.
-        assert_eq!(bel("//foo/bar"), vec![Token::AdlPath("//foo/bar".into())]);
-        assert_eq!(
-            bel("foo[at0001]"),
-            vec![Token::AdlPath("foo[at0001]".into())]
-        );
-        assert_eq!(
-            adl("foo[at0001]"),
-            vec![
-                Token::AlphaLcId("foo".into()),
-                Token::LBracket,
-                Token::AtCode("at0001".into()),
-                Token::RBracket,
-            ]
-        );
-    }
-
-    /// `base_lexer.g4 ADL_PATH` requires a lower-case segment head; `odin.g4`
-    /// takes either case, so the two readings split `/Foo/bar` differently.
-    #[test]
-    fn path_segment_head_case_differs_between_cadl_and_odin() {
-        assert_eq!(odin("/Foo/bar"), vec![Token::AdlPath("/Foo/bar".into())]);
-        assert_eq!(
-            adl("/Foo/bar"),
-            vec![
-                Token::SymSlash,
-                Token::AlphaUcId("Foo".into()),
-                Token::AdlPath("/bar".into()),
-            ]
-        );
-    }
-
-    /// A BOM is tolerated by the cADL and ODIN readings and refused by BEL,
-    /// exactly as the three stand-alone lexers did.
-    #[test]
-    fn byte_order_mark_is_language_specific() {
-        assert_eq!(
-            adl("\u{feff}archetype"),
-            vec![Token::AlphaLcId("archetype".into())]
-        );
+        for ok in [
+            r"'\n'", r"'\t'", r"'\r'", r"'\\'", r#"'\"'"#, r"'\''", "'x'", "'ü'",
+        ] {
+            assert!(lex_odin(ok).is_ok(), "legal character must lex: {ok}");
+        }
+        assert!(lex_odin(r#""bad \d escape""#).is_err());
+        assert!(lex_odin(r"'\q'").is_err());
         assert_eq!(
             odin("\u{feff}archetype"),
             vec![Token::AlphaLcId("archetype".into())]
         );
-        let error = lex_bel("\u{feff}archetype").expect_err("BEL refuses a BOM");
-        assert_eq!(error.span, 0..3);
+    }
+
+    /// Line comments are skipped
+    /// (`LANG/docs/odin/master03-basics.adoc` §Comments).
+    #[test]
+    fn comments_are_skipped() {
+        assert_eq!(
+            odin("items -- a trailing comment\nvalue"),
+            vec![
+                Token::AlphaLcId("items".into()),
+                Token::AlphaLcId("value".into())
+            ]
+        );
+    }
+
+    /// The `(syntax) <# … #>` plug-in block
+    /// (`LANG/docs/odin/master09-plug_in_syntaxes`).
+    #[test]
+    fn plug_in_block_lexes() {
+        assert_eq!(
+            odin("(cadl) <# ELEMENT[at0001] #>"),
+            vec![
+                Token::LParen,
+                Token::AlphaLcId("cadl".into()),
+                Token::RParen,
+                Token::PlugInBlock("<# ELEMENT[at0001] #>".into()),
+            ]
+        );
+    }
+
+    /// Path segment heads are lower-case in Release-1.0.0 (`base_lexer.g4`
+    /// `PATH_SEGMENT : ALPHA_LC_ID …`; the v1_1 either-case widening's
+    /// `odin_object_key` ground does not exist in this generation).
+    #[test]
+    fn path_segment_heads_are_lower_case() {
+        assert_eq!(odin("/foo/bar"), vec![Token::AdlPath("/foo/bar".into())]);
+        assert_ne!(odin("/Foo/bar"), vec![Token::AdlPath("/Foo/bar".into())]);
     }
 }
