@@ -61,7 +61,6 @@
 
 use crate::analyze::{External, Model, emittable_specs};
 use crate::load::bmm::BmmSchema;
-use crate::render::naming;
 use std::path::Path;
 
 /// The vendored BMM root. Paths below mirror the upstream ITS-BMM layout
@@ -548,7 +547,9 @@ pub(crate) fn compose(key: &str) -> Result<Composed, Box<dyn std::error::Error>>
 }
 
 /// The Rust identifier of a generation's [`Generation`]-enum variant
-/// (`v1_2` → `V1_2`).
+/// (`v1_2` → `V1_2`) — the module token upper-cased with its underscores
+/// KEPT: collapsing them (`V12`) would make `v1_2` and a future `v12`
+/// indistinguishable.
 pub(crate) fn generation_variant(module: &str) -> String {
-    naming::type_name(module)
+    module.to_uppercase()
 }

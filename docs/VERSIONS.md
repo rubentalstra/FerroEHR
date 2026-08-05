@@ -91,9 +91,9 @@ pin accepts every valid older-minor instance.
 |---|---|---|---|---|
 | BASE (Foundation + Base Types) | **1.3.0** (pre-release generation; text + BMM refreshed 2026-07-25 @ `e4879576` — SPECBASE-48 invariants, SPECAM-82 CODE_PHRASE move, SPECPR-426/386/460) | 1.2.0 (09-Apr-2021) | 1.3.0 | generated → `openehr-base` (foundation + base types; `openehr-foundation` folded in) |
 | RM (Reference Model) | **1.2.0** (development generation; text + BMM refreshed 2026-07-26 @ `66d3ac45` — asterisk-entity normalization only, zero generated-output change) | 1.1.0 (29-Sep-2020) | dev | generated → `openehr-rm` |
-| AM (Archetype Model) | **1.4 + 2.4.0** (1.4 released; 2.4.0 WIP generation) | 2.3.0 (20-Mar-2024) | 2.4.0, **3.0.0** | generated → `openehr-am`, both majors side by side as `am14` (ADL 1.4) + `am24` (ADL 2) — the spec-mandated dual-generation case |
+| AM (Archetype Model) | **1.4 + 2.4.0** (1.4 released; 2.4.0 WIP generation) | 2.3.0 (20-Mar-2024) | 2.4.0, **3.0.0** | generated → `openehr-am`, both majors side by side as the generation modules `v1_4` (ADL 1.4) + `v2_4` (ADL 2) — the spec-mandated dual-generation case |
 | QUERY (AQL) | 1.1.0 (= the release) | 1.1.0 (14-May-2021) | 1.2.0 | `openehr-query`; grammar-driven (AqlLexer/Parser `.g4`), not BMM |
-| LANG (BMM / ODIN / EL) | master snapshot beyond 1.0.0 (development toward 1.1.0); **both extant BMM generations vendored** — the stable v2.x BMM (`openehr_lang_1.1.0.bmm.json`) and the v3 development line (`openehr_lang_1.1.0-bmm3.bmm.json`) | 1.0.0 (11-May-2020) | dev | `openehr-lang` — the ODIN + BMM reader that feeds codegen; the crate carries 1.0.0 as its spec version. **The two BMM generations are emitted side by side** (the second live dual-generation case beside AM's `am14`/`am24`): 18 class names occur in both files with materially different shapes, so the v2.x model emits under `bmm/` + `bmm_persistence/` + `beom/` and the v3 model under `bmm3/`. Upstream formalised the split in SPECLANG-14 (`LANG/docs/bmm3/master00-amendment_record.adoc`) and keeps v2.x as "the normative, tool-implemented version" (`LANG/docs/bmm/master01-preface.adoc` §History). The crate prelude exports one type per Rust name — the v3 twin for a colliding name; the v2.x twin is reachable by its full module path |
+| LANG (BMM / ODIN / EL) | master snapshot beyond 1.0.0 (development toward 1.1.0); **both extant BMM generations vendored** — the stable v2.x BMM (`openehr_lang_1.1.0.bmm.json`) and the v3 development line (`openehr_lang_1.1.0-bmm3.bmm.json`) | 1.0.0 (11-May-2020) | dev | `openehr-lang` — the ODIN + BMM reader that feeds codegen; the crate carries 1.0.0 as its spec version. **The two BMM generations are emitted side by side** (the second live dual-generation case beside AM's `v1_4`/`v2_4`): 18 class names occur in both files with materially different shapes, so the v2.x model (`bmm` + `bmm_persistence` + `beom`) emits under the `v2` generation module and the v3 model (`bmm3`) under `v3`. Upstream formalised the split in SPECLANG-14 (`LANG/docs/bmm3/master00-amendment_record.adoc`) and keeps v2.x as "the normative, tool-implemented version" (`LANG/docs/bmm/master01-preface.adoc` §History). The crate prelude re-exports the CURRENT generation (`v3`) only; the v2.x types are reachable by full module path |
 | TERM (Terminology) | **3.1.0** (WIP generation) | 3.0.0 (26-Jun-2023) | 3.1.0 | `openehr-term` — **hand-written** (BMM has only interface classes; bundle/assets/logic are not derivable) |
 | ITS-XML (XSDs) | **both published lineages vendored**: tag `Release-1.0.2v2` @ `f7a93777` (namespace `…/v1`, the STABLE bundle) + tag `Release-2.0.0v2` @ `de8b37ba` (namespace `…/v2`, TRIAL upstream) | 2.0.0 TRIAL (26-Apr-2021) | 2.1.0 | canonical XML in `openehr-its`, one generated codec for both (the lineages differ only in the root `xmlns`); bundles at `crates/openehr-its/schemas/xml/`. **Served wire = v2 by default, v1 on request** (owner ruling 2026-08-03, issue #1666 — the v1 bundle cannot describe 50 RM 1.2.0 classes the server emits, register AMB-185): a client selects the lineage with the `version` media-type parameter on `application/xml` — our own extension, no openEHR spec governs namespace selection on the REST wire. OPT 1.4 template XML is always v1. |
 | ITS-REST (REST API) | **Release-1.1.0** @ `24058992d` | 1.1.0 (19-Jul-2026) | 1.2.0 | policy: single version, always the latest released; spec text at `docs/specs/openehr/ITS-REST/` and the OAS at `crates/openehr-its/vendor/rest-oas/` are the **same commit** (tag Release-1.1.0). Per-API lifecycle within the release: Overview/System/EHR/Query/Definition/Formats **STABLE**; Demographic/Admin/SMART **DEVELOPMENT** (the OAS bundle artifacts are marked TRIAL) — all 7 API groups vendored |
@@ -132,7 +132,7 @@ possibly data migration".
   - **AM** — the BASE Architecture Overview
     (`master05-package_structure.adoc`) mandates ADL 1.4 and ADL 2
     "maintained side by side", and `openehr-am` ships both as
-    `am14`/`am24`. A future major (AM 3.0.0 is in WIP upstream) gets the same
+    `v1_4`/`v2_4`. A future major (AM 3.0.0 is in WIP upstream) gets the same
     treatment only if the ecosystem runs both generations; otherwise
     cutover.
   - **LANG's BMM** — upstream formalised the v2/v3 split in SPECLANG-14
@@ -140,13 +140,13 @@ possibly data migration".
     separate specifications, and keeps v2.x as "the normative,
     tool-implemented version" (`LANG/docs/bmm/master01-preface.adoc`
     §History) while the v3 line adds the expression/statement meta-model. The
-    two are vendored as separate BMM files and emitted separately — v2.x at
-    `bmm/` + `bmm_persistence/` + `beom/`, v3 at `bmm3/` — because 18 class
-    names occur in both with materially different attribute sets, so merging
-    them into one class map would discard one generation's shapes.
-    Unlike AM the generations share one crate prelude (one type per Rust
-    name, the v3 twin winning a collision), because nothing outside the crate
-    consumes the v2.x model.
+    two are vendored as separate BMM files and emitted separately — the v2.x
+    packages (`bmm` + `bmm_persistence` + `beom`) under the `v2` generation
+    module, v3 (`bmm3`) under `v3` — because 18 class names occur in both
+    with materially different attribute sets, so merging them into one class
+    map would discard one generation's shapes. As in every generated crate,
+    the crate prelude re-exports the CURRENT generation (`v3`) only; the
+    v2.x types are reached by full module path.
 - **ITS-REST is single-version: always the latest RELEASED API** — no legacy
   REST surface. The 1.1.0 adoption is tracked on issue #178; future releases
   are detected automatically (the spec-update/release watcher workflows).

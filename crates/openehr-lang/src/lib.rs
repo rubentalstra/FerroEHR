@@ -55,8 +55,7 @@ impl Generation {
     #[must_use]
     pub const fn spec_version(self) -> &'static str {
         match self {
-            Self::V2 => "1.1.0",
-            Self::V3 => "1.1.0",
+            Self::V2 | Self::V3 => "1.1.0",
         }
     }
 

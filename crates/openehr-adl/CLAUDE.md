@@ -4,7 +4,7 @@ The ADL2 text + semantics engine: ADL2/cADL/ODIN parser (`logos` + `chumsky`,
 like `openehr-query`), the AOM2 validation engine, the `master04.5` conformance
 functions, specialisation flattening, OPT2 generation, the ADL printer, and
 ADL 1.4→2 conversion. Builds directly into the generated
-`openehr_am::am24::aom2` model — never re-model AOM2.
+`openehr_am::v2_4::aom2` model — never re-model AOM2.
 
 ## Module map (the whole `src/` tree, one line each)
 

@@ -38,21 +38,21 @@ pub const SPEC_VERSION: &str = "3.1.0";
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Generation {
     /// The `v3_1` generation — openEHR specification version 3.1.0.
-    V31,
+    V3_1,
 }
 
 impl Generation {
     /// The crate's CURRENT generation — the one `crate::prelude` re-exports.
-    pub const CURRENT: Self = Self::V31;
+    pub const CURRENT: Self = Self::V3_1;
 
     /// Every generation this crate emits, oldest first.
-    pub const ALL: &'static [Self] = &[Self::V31];
+    pub const ALL: &'static [Self] = &[Self::V3_1];
 
     /// The openEHR specification version this generation implements.
     #[must_use]
     pub const fn spec_version(self) -> &'static str {
         match self {
-            Self::V31 => "3.1.0",
+            Self::V3_1 => "3.1.0",
         }
     }
 
@@ -61,7 +61,7 @@ impl Generation {
     #[must_use]
     pub const fn module(self) -> &'static str {
         match self {
-            Self::V31 => "v3_1",
+            Self::V3_1 => "v3_1",
         }
     }
 }
@@ -97,7 +97,7 @@ impl std::str::FromStr for Generation {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "v3_1" => Ok(Self::V31),
+            "v3_1" => Ok(Self::V3_1),
             other => Err(GenerationParseError {
                 unrecognized: other.to_owned(),
             }),
