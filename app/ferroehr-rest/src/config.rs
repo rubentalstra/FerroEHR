@@ -32,6 +32,10 @@ pub struct AppConfig {
     pub terminology_api_enabled: bool,
     /// `[events].admin_api` — mount the `/admin/event_subscription` CRUD.
     pub events_admin_api: bool,
+    /// `spec_profile` — the openEHR specification generation set the server
+    /// runs; the demographic ingress boundary reads it (the stable
+    /// generation's released surface differs from the typed core's).
+    pub spec_profile: ferroehr::config::profile::SpecProfile,
 }
 
 #[cfg(test)]

@@ -49,7 +49,7 @@ pub(super) async fn run(
         "create" => {
             // All per-kind `*CreateParams` are field-identical; reuse one.
             let _p = params::build::<AgentCreateParams>(&parts.path, q, h)?;
-            let body = decode_party_body(kind, h, &parts.body)?;
+            let body = decode_party_body(kind, h, &parts.body, state.config().spec_profile)?;
             // The wrapper-header tags are judged BEFORE the commit, so a
             // defective tag refuses the request while nothing is durable.
             let pending_tags = pending_party_tags(h)?;
@@ -99,7 +99,7 @@ pub(super) async fn run(
         "update" => {
             let p = params::build::<AgentUpdateParams>(&parts.path, q, h)?;
             let uid = p.uid_based_id.clone();
-            let body = decode_party_body(kind, h, &parts.body)?;
+            let body = decode_party_body(kind, h, &parts.body, state.config().spec_profile)?;
             // The wrapper-header tags are judged BEFORE the commit, so a
             // defective tag refuses the request while nothing is durable.
             let pending_tags = pending_party_tags(h)?;
@@ -357,16 +357,78 @@ fn decode_party_body(
     kind: PartyKind,
     h: &HeaderMap,
     body: &bytes::Bytes,
+    profile: ferroehr::config::profile::SpecProfile,
 ) -> Result<Party, ApiError> {
     match kind {
-        PartyKind::Agent => negotiate::rm_value::<Agent>(h, body).map(Party::Agent),
-        PartyKind::Group => negotiate::rm_value::<Group>(h, body).map(Party::Group),
-        PartyKind::Organisation => {
-            negotiate::rm_value::<Organisation>(h, body).map(Party::Organisation)
+        PartyKind::Agent => {
+            rm_party::<openehr_rm::v1_1::demographic::agent::Agent, Agent>(h, body, profile)
+                .map(Party::Agent)
         }
-        PartyKind::Person => negotiate::rm_value::<Person>(h, body).map(Party::Person),
-        PartyKind::Role => negotiate::rm_value::<Role>(h, body).map(Party::Role),
+        PartyKind::Group => {
+            rm_party::<openehr_rm::v1_1::demographic::group::Group, Group>(h, body, profile)
+                .map(Party::Group)
+        }
+        PartyKind::Organisation => rm_party::<
+            openehr_rm::v1_1::demographic::organisation::Organisation,
+            Organisation,
+        >(h, body, profile)
+        .map(Party::Organisation),
+        PartyKind::Person => {
+            rm_party::<openehr_rm::v1_1::demographic::person::Person, Person>(h, body, profile)
+                .map(Party::Person)
+        }
+        PartyKind::Role => {
+            rm_party::<openehr_rm::v1_1::demographic::role::Role, Role>(h, body, profile)
+                .map(Party::Role)
+        }
     }
+}
+
+/// Decode one concrete party kind through the ACTIVE profile's acceptance
+/// boundary.
+///
+/// Under the STABLE profile a canonical-JSON body is read by the RM 1.1.0
+/// generation's own strict reader first, because the released generation's
+/// surface admits `PARTY.reverse_relationships`
+/// (`RM/docs/UML/classes/org.openehr.rm.demographic.party.adoc` 1.1.0;
+/// upstream SPECRM-124, `RM/docs/demographic/master00-amendment_record.adoc`,
+/// removed it in the development line) — the development reader refuses it
+/// as an undeclared key, and refusing a valid instance of the advertised
+/// generation would invent a prohibition. The validated value then enters
+/// the typed core with that one attribute dropped: SPECRM-124 records it as
+/// the computed inverse of `relationships`, so the server re-derives it and
+/// persists nothing the payload's copy adds.
+///
+/// The XML branch needs no profile split: the XSD-grounded reader skips
+/// undeclared elements in every profile, so a 1.1.0 `reverse_relationships`
+/// element is already tolerated there.
+fn rm_party<Stable, Current>(
+    h: &HeaderMap,
+    body: &bytes::Bytes,
+    profile: ferroehr::config::profile::SpecProfile,
+) -> Result<Current, ApiError>
+where
+    Stable: serde::de::DeserializeOwned + serde::Serialize,
+    Current: openehr_its::xml::FromXml + serde::de::DeserializeOwned,
+{
+    let stable_json = profile == ferroehr::config::profile::SpecProfile::Stable
+        && matches!(
+            negotiate::content_type_format(h),
+            Some(negotiate::WireFormat::CanonicalJson)
+        );
+    if !stable_json {
+        return negotiate::rm_value::<Current>(h, body);
+    }
+    let json = std::str::from_utf8(body)
+        .map_err(|e| ApiError::BadRequest(format!("body is not UTF-8: {e}")))?;
+    let released: Stable = openehr_its::json::from_canonical_json(json)
+        .map_err(|e| ApiError::BadRequest(format!("invalid canonical JSON body: {e}")))?;
+    let mut value = openehr_its::json::to_canonical_value(&released);
+    if let serde_json::Value::Object(map) = &mut value {
+        map.remove("reverse_relationships");
+    }
+    openehr_its::json::from_canonical_value::<Current>(&value)
+        .map_err(|e| ApiError::BadRequest(format!("invalid canonical JSON body: {e}")))
 }
 
 /// Render a party body as JSON or canonical XML (monomorphized per kind).
@@ -424,4 +486,118 @@ fn read_party(kind: PartyKind, h: &HeaderMap, resp: &ServiceResponse) -> Respons
     super::set_versioning_headers(&mut out, resp.meta.as_ref());
     super::set_item_tag_headers(&mut out, resp);
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ferroehr::config::profile::SpecProfile;
+    use serde_json::json;
+
+    fn json_headers() -> HeaderMap {
+        let mut h = HeaderMap::new();
+        h.insert(
+            http::header::CONTENT_TYPE,
+            http::HeaderValue::from_static("application/json"),
+        );
+        h
+    }
+
+    /// A minimal RM-valid PERSON body (raw JSON: client-simulation input).
+    fn person_body() -> serde_json::Value {
+        json!({
+            "_type": "PERSON",
+            "name": { "_type": "DV_TEXT", "value": "PERSON" },
+            "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1",
+            "identities": [{
+                "_type": "PARTY_IDENTITY",
+                "name": { "_type": "DV_TEXT", "value": "legal identity" },
+                "archetype_node_id": "at0002",
+                "details": {
+                    "_type": "ITEM_TREE",
+                    "name": { "_type": "DV_TEXT", "value": "tree" },
+                    "archetype_node_id": "at0003"
+                }
+            }]
+        })
+    }
+
+    /// The same body carrying the RM 1.1.0 `reverse_relationships` surface.
+    fn person_body_with_reverse_relationships() -> serde_json::Value {
+        let mut body = person_body();
+        body["reverse_relationships"] = json!([{
+            "_type": "LOCATABLE_REF",
+            "namespace": "local",
+            "type": "PARTY_RELATIONSHIP",
+            "id": {
+                "_type": "HIER_OBJECT_ID",
+                "value": "11111111-1111-4111-8111-111111111111"
+            }
+        }]);
+        body
+    }
+
+    fn decode(profile: SpecProfile, body: &serde_json::Value) -> Result<Party, ApiError> {
+        decode_party_body(
+            PartyKind::Person,
+            &json_headers(),
+            &bytes::Bytes::from(body.to_string()),
+            profile,
+        )
+    }
+
+    /// The stable profile accepts `PARTY.reverse_relationships` — the RM
+    /// 1.1.0 released surface (`party.adoc` 1.1.0; removed by SPECRM-124 in
+    /// the development line) — and the value enters the typed core with the
+    /// derived attribute dropped.
+    #[test]
+    fn stable_profile_accepts_reverse_relationships() {
+        let decoded = decode(
+            SpecProfile::Stable,
+            &person_body_with_reverse_relationships(),
+        )
+        .unwrap();
+        let Party::Person(person) = decoded else {
+            panic!("expected a PERSON");
+        };
+        assert_eq!(person.identities.len(), 1);
+    }
+
+    /// The development profile keeps refusing the removed attribute — the
+    /// refusal twin pinning that the boundary widens ONLY the stable
+    /// profile.
+    #[test]
+    fn development_profile_still_refuses_reverse_relationships() {
+        let err = decode(
+            SpecProfile::Development,
+            &person_body_with_reverse_relationships(),
+        )
+        .expect_err("the development reader refuses the undeclared key");
+        assert!(
+            format!("{err:?}").contains("reverse_relationships"),
+            "{err:?}"
+        );
+    }
+
+    /// The stable boundary VALIDATES the attribute against RM 1.1.0 — a
+    /// defective `reverse_relationships` value is a 400, never blind-stripped.
+    #[test]
+    fn stable_profile_validates_the_attribute_it_accepts() {
+        let mut body = person_body();
+        body["reverse_relationships"] =
+            json!([{ "_type": "DV_TEXT", "value": "not a LOCATABLE_REF" }]);
+        assert!(decode(SpecProfile::Stable, &body).is_err());
+        // An empty list violates the container bound just the same.
+        let mut body = person_body();
+        body["reverse_relationships"] = json!([]);
+        assert!(decode(SpecProfile::Stable, &body).is_err());
+    }
+
+    /// A body without the removed attribute decodes identically under both
+    /// profiles — the boundary is transparent for shared surface.
+    #[test]
+    fn plain_bodies_decode_under_both_profiles() {
+        assert!(decode(SpecProfile::Stable, &person_body()).is_ok());
+        assert!(decode(SpecProfile::Development, &person_body()).is_ok());
+    }
 }

@@ -394,6 +394,7 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         fhir_api_enabled: config.fhir.api_enabled,
         terminology_api_enabled: config.terminology.api_enabled,
         events_admin_api: config.events.admin_api,
+        spec_profile: config.spec_profile,
     };
 
     if app_config.auth.enabled && !app_config.auth.has_mechanism() {
