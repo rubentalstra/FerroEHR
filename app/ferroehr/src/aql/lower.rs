@@ -27,8 +27,11 @@ use super::ir::{
 
 /// Lowers one parsed [`SelectQuery`] into a [`QueryIr`] (without parameter-
 /// presence validation, which [`super::plan`] performs).
-pub(crate) fn lower(query: &SelectQuery) -> Result<QueryIr, AqlError> {
-    let mut planner = Planner::default();
+pub(crate) fn lower(
+    query: &SelectQuery,
+    profile: crate::config::profile::SpecProfile,
+) -> Result<QueryIr, AqlError> {
+    let mut planner = Planner::for_profile(profile);
     let contains = planner.lower_from(&query.from, None)?;
 
     let select = query
@@ -72,6 +75,14 @@ pub(crate) fn lower(query: &SelectQuery) -> Result<QueryIr, AqlError> {
 struct Planner {
     sources: Vec<Source>,
     bindings: Bindings,
+}
+
+impl Planner {
+    fn for_profile(profile: crate::config::profile::SpecProfile) -> Self {
+        let mut p = Self::default();
+        p.bindings.profile = profile;
+        p
+    }
 }
 
 impl Planner {
@@ -151,6 +162,14 @@ impl Planner {
                 // store: at least one concrete descendant is a structure root.
                 let class = model::class(rm_type)
                     .ok_or_else(|| AnalysisError::UnknownClass(rm_type.clone()))?;
+                if !crate::aql::analyze::profile_defines_class(self.bindings.profile, rm_type) {
+                    return Err(AnalysisError::ClassNotInProfile {
+                        class: rm_type.clone(),
+                        profile: self.bindings.profile.as_str(),
+                        generation: self.bindings.profile.rm().spec_version(),
+                    }
+                    .into());
+                }
                 let concrete =
                     TypeSet::new(class.descendants.iter().map(|s| (*s).to_owned()).collect());
                 if !concrete.names().iter().any(|t| model::is_structure_root(t)) {

@@ -38,9 +38,13 @@ pub(super) const ALLOWLIST: &[&str] = &[
     "FERROEHR_TERMINOLOGY_MEM",
 ];
 
-/// The eighteen top-level section names — the did-you-mean candidate set for an
-/// unknown `FERROEHR__<SECTION>__…` variable.
+/// The top-level configuration names (the section tables plus the scalar
+/// `spec_profile`) — the did-you-mean candidate set for an unknown
+/// `FERROEHR__<SECTION>__…` variable.
 pub(super) const SECTIONS: &[&str] = &[
+    // Top-level scalar keys (no section table) — `spec_profile` maps to
+    // FERROEHR__SPEC_PROFILE with no further segments.
+    "spec_profile",
     "server",
     "db",
     "log",

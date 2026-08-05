@@ -97,6 +97,38 @@ server refuses to start on any error:
 - **Semantic errors are aggregated** — one pass reports every problem at once,
   so a broken config is fixed in a single iteration.
 
+## `spec_profile`
+
+```toml
+spec_profile = "development"
+```
+
+Which openEHR specification generation set the server runs — **one coupled
+choice**, because the components' generations are modelled against each
+other and never vary independently:
+
+| value | RM | BASE | LANG | meaning |
+|---|---|---|---|---|
+| `development` *(default)* | 1.2.0 | 1.3.0 | 1.1.0 | the pre-release generations this build is developed against |
+| `stable` | 1.1.0 | 1.2.0 | 1.0.0 | the latest RELEASED openEHR generations |
+
+The active profile is visible on the boot banner and `/management/info`.
+Under `stable`, requests that address specification surface the released
+generations do not define are refused with an error naming the profile —
+never answered as if the surface existed.
+
+**Changing the profile on an existing deployment:**
+
+- `stable` → `development` is always safe: openEHR minor releases are
+  additive, so everything stored under the released generations is valid
+  under the development ones.
+- `development` → `stable` is supported **only** for data that never used
+  development-only constructs. Stored objects that did are refused loudly at
+  read, with an error naming the profile conflict — they are never silently
+  down-converted or hidden. Treat the profile as a deployment commitment:
+  choose `stable` from day one if you need to stay on released
+  specifications.
+
 ## `[server]`
 
 The HTTP listener and REST surface.

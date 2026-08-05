@@ -45,6 +45,11 @@ use super::ir::{
 #[derive(Debug, Default)]
 pub(crate) struct Bindings {
     vars: HashMap<String, Binding>,
+    /// The ACTIVE `spec_profile` — path resolution refuses classes/attributes
+    /// the selected released generation does not define (a conformant server
+    /// of that generation would answer "unknown", and answering rows instead
+    /// would silently overclaim the profile).
+    pub(crate) profile: crate::config::profile::SpecProfile,
 }
 
 /// One FROM variable binding.
@@ -91,7 +96,7 @@ pub(crate) fn analyze_path(
         .ok_or_else(|| AnalysisError::UnknownVariable(path.root.clone()))?;
     let source = binding.source;
     match &binding.kind {
-        BindingKind::Ehr => analyze_ehr_path(source, path),
+        BindingKind::Ehr => analyze_ehr_path(source, path, bindings.profile),
         BindingKind::Version => Ok(PathTarget::Version {
             source,
             field: resolve_version_field(path.path.as_ref())?,
@@ -102,7 +107,13 @@ pub(crate) fn analyze_path(
                 .as_ref()
                 .map(resolve_node_predicate)
                 .transpose()?;
-            let leaf = analyze_rm_path(source, types, root_predicate, path.path.as_ref())?;
+            let leaf = analyze_rm_path(
+                source,
+                types,
+                root_predicate,
+                path.path.as_ref(),
+                bindings.profile,
+            )?;
             Ok(PathTarget::Data(Box::new(leaf)))
         }
     }
@@ -115,6 +126,7 @@ fn analyze_rm_path(
     root_types: &TypeSet,
     root_predicate: Option<NodeConstraint>,
     object_path: Option<&ObjectPath>,
+    profile: crate::config::profile::SpecProfile,
 ) -> Result<LeafPath, AqlError> {
     let mut anchor: Vec<StructureStep> = Vec::new();
     let mut fragment: Vec<FragmentStep> = Vec::new();
@@ -132,7 +144,7 @@ fn analyze_rm_path(
         for part in &op.parts {
             parent_types = current.clone();
             last_name = Some(part.name.clone());
-            let (step_types, is_multi) = resolve_attribute(&current, &part.name)?;
+            let (step_types, is_multi) = resolve_attribute(&current, &part.name, profile)?;
             if is_multi {
                 multi_valued = true;
             }
@@ -187,13 +199,21 @@ fn analyze_rm_path(
 /// Resolve `attr` across every concrete type in `current`, returning the union
 /// of concrete declared types and whether the attribute is a container on any
 /// of them.
-fn resolve_attribute(current: &TypeSet, attr: &str) -> Result<(TypeSet, bool), AqlError> {
+fn resolve_attribute(
+    current: &TypeSet,
+    attr: &str,
+    profile: crate::config::profile::SpecProfile,
+) -> Result<(TypeSet, bool), AqlError> {
     let mut resolved: Vec<String> = Vec::new();
     let mut multi = false;
     let mut any = false;
+    let mut any_in_profile = false;
     for ty in current.names() {
         if let Some(a) = model::attribute(ty, attr) {
             any = true;
+            if profile_defines_attribute(profile, ty, attr) {
+                any_in_profile = true;
+            }
             if matches!(a.container, model::Container::List | model::Container::Set) {
                 multi = true;
             }
@@ -207,7 +227,52 @@ fn resolve_attribute(current: &TypeSet, attr: &str) -> Result<(TypeSet, bool), A
         }
         .into());
     }
+    // The attribute resolves in the development model but the ACTIVE released
+    // generation defines it on none of the candidate classes: a conformant
+    // server of that generation answers "unknown attribute", so this one does
+    // too — planning it against the superset model would silently overclaim
+    // the profile.
+    if !any_in_profile {
+        return Err(AnalysisError::AttributeNotInProfile {
+            attribute: attr.to_owned(),
+            on: describe_types(current),
+            profile: profile.as_str(),
+            generation: profile.rm().spec_version(),
+        }
+        .into());
+    }
     Ok((TypeSet::new(resolved), multi))
+}
+
+/// Does the ACTIVE profile's RM generation define `attr` on `ty` (or on any
+/// ancestor `ty` inherits it from)?
+///
+/// Only booleans cross this seam — the planner keeps working over the
+/// current (superset) model's types, so no cross-generation type ever leaks.
+fn profile_defines_attribute(
+    profile: crate::config::profile::SpecProfile,
+    ty: &str,
+    attr: &str,
+) -> bool {
+    match profile {
+        crate::config::profile::SpecProfile::Development => true,
+        crate::config::profile::SpecProfile::Stable => {
+            openehr_rm::v1_1::model::attribute(ty, attr).is_some()
+        }
+    }
+}
+
+/// Does the ACTIVE profile's RM generation define class `name`?
+pub(crate) fn profile_defines_class(
+    profile: crate::config::profile::SpecProfile,
+    name: &str,
+) -> bool {
+    match profile {
+        crate::config::profile::SpecProfile::Development => true,
+        crate::config::profile::SpecProfile::Stable => {
+            openehr_rm::v1_1::model::class(name).is_some()
+        }
+    }
 }
 
 /// Expand a declared type name to its concrete descendant set. A primitive (or
@@ -298,7 +363,11 @@ fn classify(types: &TypeSet) -> Coercion {
 /// [`PathTarget::EhrStatus`] the SQL package resolves via an engine-level join.
 /// Every other EHR attribute (`ehr_id`, `time_created`, `system_id`) is a scalar
 /// field resolved directly.
-fn analyze_ehr_path(source: SourceId, path: &IdentifiedPath) -> Result<PathTarget, AqlError> {
+fn analyze_ehr_path(
+    source: SourceId,
+    path: &IdentifiedPath,
+    profile: crate::config::profile::SpecProfile,
+) -> Result<PathTarget, AqlError> {
     let heads_ehr_status = path
         .path
         .as_ref()
@@ -348,7 +417,7 @@ fn analyze_ehr_path(source: SourceId, path: &IdentifiedPath) -> Result<PathTarge
         Some(&rest)
     };
     let ehr_status = TypeSet::new(vec!["EHR_STATUS".to_owned()]);
-    let leaf = analyze_rm_path(source, &ehr_status, None, rest_ref)?;
+    let leaf = analyze_rm_path(source, &ehr_status, None, rest_ref, profile)?;
     Ok(PathTarget::EhrStatus(Box::new(leaf)))
 }
 
