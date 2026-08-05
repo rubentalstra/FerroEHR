@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-base/base_types/identification/version_tree_id_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM/BASE class invariants + accessor functions for
 //! `VERSION_TREE_ID`.
 //!

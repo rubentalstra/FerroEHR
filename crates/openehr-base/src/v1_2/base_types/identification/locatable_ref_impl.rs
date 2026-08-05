@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-base/base_types/identification/locatable_ref_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written accessor function for `LOCATABLE_REF`.
 //!
 //! Spec: BASE 1.3.0

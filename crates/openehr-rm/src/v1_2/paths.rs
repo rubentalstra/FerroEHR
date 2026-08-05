@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/paths.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! openEHR path machinery (hand-written spec behaviour; preserved
 //! across `openehr-codegen` regeneration like `validate.rs`).
 //!

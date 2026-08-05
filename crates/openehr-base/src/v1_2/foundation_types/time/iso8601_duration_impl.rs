@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-base/foundation_types/time/iso8601_duration_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written `Iso8601_duration` spec behaviour.
 //!
 //! Covers the accessor functions (component counts, `to_seconds`, `is_partial`,

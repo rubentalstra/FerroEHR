@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/composition/event_context_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariant for `EVENT_CONTEXT`.
 //!
 //! `location_valid` (BMM `EVENT_CONTEXT.location_valid`,

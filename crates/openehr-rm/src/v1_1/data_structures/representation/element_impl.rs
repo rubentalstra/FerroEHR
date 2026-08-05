@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/data_structures/representation/element_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariants for `ELEMENT`.
 //!
 //! Mirrors archie `Element` (non-terminology invariants) + inherited LOCATABLE:

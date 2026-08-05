@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/data_types/time_specification/dv_periodic_time_specification_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariants for `DV_PERIODIC_TIME_SPECIFICATION`.
 //!
 //! Spec: RM 1.2.0

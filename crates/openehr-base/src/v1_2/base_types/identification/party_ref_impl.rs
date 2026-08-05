@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-base/base_types/identification/party_ref_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written BASE class checks for `PARTY_REF`.
 //!
 //! - `Type_validity` — a RELEASED invariant, declared by BASE base_types

@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/common/generic/revision_history_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written spec functions of `REVISION_HISTORY`.
 //!
 //! Spec: RM

@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-base/base_types/identification/uid_based_id_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written accessor functions for the `UID_BASED_ID` family
 //! (`HIER_OBJECT_ID`, `OBJECT_VERSION_ID`) and the abstract enum.
 //!

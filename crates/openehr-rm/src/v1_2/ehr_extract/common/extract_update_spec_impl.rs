@@ -1,3 +1,4 @@
+// @generated-from-template templates/openehr-rm/ehr_extract/common/extract_update_spec_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Hand-written RM class invariants for `EXTRACT_UPDATE_SPEC`.
 //!
 //! Spec: RM 1.2.0
