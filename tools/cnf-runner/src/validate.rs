@@ -1605,8 +1605,7 @@ impl<'a> SpecIndex<'a> {
     /// vendors PROSE, so the docs tree's `ITS-XML/components/**` holds only
     /// the upstream `README.adoc` stubs; the released XSD bundles themselves
     /// are vendored ONCE, at `crates/openehr-its/schemas/xml/`, as the
-    /// canonical-XML codec's input (`docs/VERSIONS.md` §openEHR
-    /// specification matrix). An XSD-element citation therefore resolved
+    /// canonical-XML codec's input. An XSD-element citation therefore resolved
     /// nowhere. Adjudication (issue #1833): the gate learns the bundle as a
     /// SECOND ROOT — one vendored copy, two readers — rather than the
     /// bundle being copied into the docs tree, which would fork the

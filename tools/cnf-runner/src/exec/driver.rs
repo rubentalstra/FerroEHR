@@ -1177,7 +1177,7 @@ fn parse_http_date_ms(value: &str) -> Option<i64> {
 /// Runner-clock milliseconds since the Unix epoch.
 ///
 /// Wall-clock time comes from `jiff`, the pinned time library
-/// (`docs/VERSIONS.md`); elapsed-time measurement uses
+///; elapsed-time measurement uses
 /// [`std::time::Instant`] instead.
 pub(crate) fn now_ms() -> i64 {
     jiff::Timestamp::now().as_millisecond()

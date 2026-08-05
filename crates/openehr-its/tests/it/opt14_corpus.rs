@@ -376,3 +376,111 @@ fn opt_revision_history_item_without_audits_is_refused_at_parse() {
         "the refusal names the empty container: {err}"
     );
 }
+
+/// Every `ARCHETYPE_SLOT` reachable from an OPT definition tree, in document
+/// order.
+fn slots(root: &openehr_its::opt14::CArchetypeRoot) -> Vec<&openehr_its::opt14::ArchetypeSlot> {
+    use openehr_its::opt14::{CAttribute, CObject};
+
+    fn walk<'a>(objs: &'a [CObject], out: &mut Vec<&'a openehr_its::opt14::ArchetypeSlot>) {
+        for o in objs {
+            let attrs: &[CAttribute] = match o {
+                CObject::ArchetypeSlot(s) => {
+                    out.push(s);
+                    continue;
+                }
+                CObject::CComplexObject(c) => &c.attributes,
+                CObject::CArchetypeRoot(r) => &r.attributes,
+                _ => continue,
+            };
+            for a in attrs {
+                match a {
+                    CAttribute::CMultipleAttribute(m) => walk(&m.children, out),
+                    CAttribute::CSingleAttribute(s) => walk(&s.children, out),
+                }
+            }
+        }
+    }
+
+    let mut out = Vec::new();
+    for a in &root.attributes {
+        match a {
+            CAttribute::CMultipleAttribute(m) => walk(&m.children, &mut out),
+            CAttribute::CSingleAttribute(s) => walk(&s.children, &mut out),
+        }
+    }
+    out
+}
+
+/// The two `EXPR_LEAF`s of an `archetype_id/value matches {…}` assertion.
+fn matches_operands(
+    a: &openehr_its::opt14::Assertion,
+) -> (&openehr_its::opt14::ExprLeaf, &openehr_its::opt14::ExprLeaf) {
+    use openehr_its::opt14::ExprItem;
+
+    let ExprItem::ExprBinaryOperator(op) = a.expression.as_ref() else {
+        panic!("a slot assertion is a binary `matches` expression");
+    };
+    let (ExprItem::ExprLeaf(left), ExprItem::ExprLeaf(right)) =
+        (op.left_operand.as_ref(), op.right_operand.as_ref())
+    else {
+        panic!("both operands of a slot `matches` are leaves");
+    };
+    (left, right)
+}
+
+/// `EXPR_LEAF.item` is declared `xs:anyType` (`Template.xsd` ALL/Archetype.xsd
+/// §`EXPR_LEAF`) over a model that types it `Any` — "a manifest constant, an
+/// attribute path …, or … a constraint, often a `C_PRIMITIVE_OBJECT`"
+/// (`AM aom14 §EXPR_LEAF Class`). The codec must therefore carry the element's
+/// SUBTREE, not discard it: a slot's `includes` holds the constrained
+/// archetype-id regex, and every OPT 1.4 slot constraint is erased if the
+/// payload is dropped.
+#[test]
+fn expr_leaf_any_type_items_carry_their_payload() {
+    let path = corpus_dir().join("knowledge/IDCR Problem List.v1.opt");
+    let xml = std::fs::read_to_string(&path).expect("read the IDCR corpus OPT");
+    let opt = openehr_its::opt14::from_xml(&xml).expect("the IDCR OPT parses");
+
+    let found = slots(&opt.definition);
+    let slot = found
+        .iter()
+        .find(|s| s.node_id == "at0002")
+        .expect("the problem/diagnosis EVALUATION slot at0002");
+    let assertion = slot.includes.first().expect("at0002 has an includes");
+    let (left, right) = matches_operands(assertion);
+
+    // Left operand: the attribute path, a bare text payload under an
+    // XML-Schema primitive `xsi:type` (`xsd:string` — prefix stripped).
+    assert_eq!(left.item.xsi_type(), Some("string"));
+    assert_eq!(left.item.text(), "archetype_id/value");
+
+    // Right operand: the C_STRING constraint, whose `<pattern>` child is the
+    // whole datum the slot constrains on.
+    assert_eq!(right.item.xsi_type(), Some("C_STRING"));
+    assert_eq!(
+        right
+            .item
+            .child("pattern")
+            .map(openehr_its::xml::XmlAny::text),
+        Some(r"openEHR-EHR-EVALUATION\.problem_diagnosis(-[a-zA-Z0-9_]+)*\.v1".to_owned()),
+    );
+
+    // Every slot in this template constrains a real archetype id.
+    for s in &found {
+        for a in &s.includes {
+            let (_, constraint) = matches_operands(a);
+            assert!(
+                constraint.item.child("pattern").is_some(),
+                "slot {} lost its C_STRING pattern",
+                s.node_id
+            );
+        }
+    }
+
+    // The payload survives serialization: re-emitted attributes, text and
+    // children re-parse to the same tree.
+    let re_xml = openehr_its::opt14::to_xml(&opt).expect("re-serialize the OPT");
+    let re_opt = openehr_its::opt14::from_xml(&re_xml).expect("the re-serialized OPT parses");
+    assert_eq!(slots(&re_opt.definition), found);
+}

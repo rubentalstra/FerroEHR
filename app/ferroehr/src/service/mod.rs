@@ -21,7 +21,7 @@
 //! validity checker ([`validity`]).
 //!
 //! NOTE (adjudicated 2026-08-04, #1845 — no openEHR spec governs the internal
-//! layering; the SM component map in `docs/architecture.md` is our design):
+//! layering; the SM-chapter module map is our design):
 //! the ~90 one-expression `Ok(self.inner(...).await?)` methods across the SM
 //! modules are DELIBERATE, not dead weight. Each is the SM-named operation
 //! of the platform service model (`docs/specs/openehr/SM/`) AND the error

@@ -76,7 +76,7 @@ impl From<StorageError> for crate::service::status::SmError {
     /// concurrency detail is preserved via `classify_sqlx` for the raw
     /// `sqlx` case; the typed conflicts keep their specific `409` meaning; codec
     /// faults are genuine server faults (`exception` → `500`). No openEHR spec
-    /// governs the persistence mechanism (`docs/architecture.md` §Storage); the
+    /// governs the persistence mechanism; the
     /// HTTP mapping the resulting status drives is the ITS-REST-governed one
     /// (overview §HTTP status codes).
     fn from(e: StorageError) -> Self {

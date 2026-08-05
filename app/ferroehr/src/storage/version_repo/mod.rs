@@ -2,7 +2,7 @@
 //! `contribution`, `vo_attestation`, plus the folder-membership and
 //! event-outbox writes that ride along inside the same commit transaction.
 //!
-//! No openEHR spec governs the SQL schema (`docs/architecture.md` §Storage) —
+//! No openEHR spec governs the SQL schema —
 //! this module is pure plumbing. All **semantics** (change classification,
 //! version-tree placement, lifecycle, signing, attestation policy, import
 //! policy) stay in the versioning layer, which hands these functions plain
@@ -38,7 +38,7 @@
 #![expect(
     clippy::disallowed_types,
     reason = "owner-approved 2026-08-03 (#1694 family 1): stored canonical fragments — a typed \
-              round-trip drops forward-compatible keys (docs/VERSIONS.md §Spec version policy)"
+              round-trip drops forward-compatible keys (the openEHR release strategy: minors are compatible supersets)"
 )]
 
 //

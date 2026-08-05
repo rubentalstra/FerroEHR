@@ -110,6 +110,25 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Uploaded OPT 1.4 templates no longer lose their archetype-slot
+  constraints.** The XML codec discarded the content of every element the
+  schemas declare as `xs:anyType`, which on an operational template is the
+  `EXPR_LEAF.item` carrying each slot assertion's archetype-id regex and its
+  left-hand attribute path — so every OPT 1.4 slot constraint read back
+  empty. Such an element is now kept verbatim (attributes, text and child
+  elements) and re-serialized unchanged, so slot patterns survive a
+  template round-trip and the OPT-to-ADL2 conversion and template-validation
+  paths that read them now see the real payload. Canonical RM XML is
+  unaffected.
+- **A served Web Template (`application/openehr.wt+json`) no longer reports a
+  field as mandatory when the template leaves it optional.** A node's `min`
+  was taken from the constraint's `occurrences` alone, ignoring the owning
+  single-valued attribute's `existence`; the two are orthogonal, and for a
+  single-valued attribute existence is what governs presence. So an optional
+  attribute carrying a `1..1`-occurrences constraint — for example
+  `ISM_TRANSITION/careflow_step`, which openEHR declares optional — was
+  published as `min: 1`. `min` is now the lower of the two. Container
+  attributes, node `max`, and commit-time validation are unchanged.
 - **ADL2 slot-narrowing validation (VDSSM) no longer stops at the first
   include it cannot read.** A specialised `ARCHETYPE_SLOT` whose `include`
   list mixes archetype-id regexes with constraint-based assertions was

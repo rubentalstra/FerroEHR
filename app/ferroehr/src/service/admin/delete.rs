@@ -10,10 +10,14 @@
 //! baseline count. No openEHR spec governs the cascade SQL / FK graph — our own
 //! design over the greenfield schema (`0001_baseline.sql`).
 
-#![expect(
-    clippy::disallowed_types,
-    reason = "owner-approved 2026-08-03 (#1694 family 3): EHR-Extract/TDD/dump-load compose over \
-              verbatim stored content (RM common master06 §Copying)"
+#![cfg_attr(
+    feature = "multimedia",
+    expect(
+        clippy::disallowed_types,
+        reason = "owner-approved 2026-08-03 (#1694 family 3): EHR-Extract/TDD/dump-load compose \
+                  over verbatim stored content (RM common master06 §Copying); the Value sites \
+                  are multimedia-gated, so the expectation exists only where it is fulfilled"
+    )
 )]
 
 use uuid::Uuid;
@@ -122,8 +126,8 @@ impl FerroEhrService {
                 format!("template {template_id}"),
             ));
         };
-        // Physical deletes never orphan clinical data (docs/architecture.md
-        // §Storage — no openEHR spec governs the FK graph, our own design).
+        // Physical deletes never orphan clinical data (no openEHR spec
+        // governs the FK graph — our own design).
         // Counted over BOTH storage tiers: the cold archival mirror is
         // foreign-key-free, so an archived composition's reference is invisible
         // to the `template_ref` FK and would be orphaned silently.
@@ -323,59 +327,67 @@ impl FerroEhrService {
     /// The distinct externalized-blob keys referenced by a SET of EHRs' nodes
     /// (empty when externalization is disabled) — one read for the whole
     /// chunk. Our own extension — no openEHR spec governs multimedia offload.
+    #[cfg(feature = "multimedia")]
     async fn collect_blob_keys_for(&self, ehr_ids: &[EhrId]) -> Result<Vec<String>, ServiceError> {
-        #[cfg(not(feature = "multimedia"))]
-        {
-            let _ = ehr_ids;
+        let Some(engine) = &self.multimedia else {
             return Ok(Vec::new());
-        }
-        #[cfg(feature = "multimedia")]
-        {
-            let Some(engine) = &self.multimedia else {
-                return Ok(Vec::new());
-            };
-            let datas: Vec<serde_json::Value> =
-                sqlx::query_scalar("SELECT data FROM node_all WHERE ehr_id = ANY($1)")
-                    .bind(ehr_ids)
-                    .fetch_all(&self.pool)
-                    .await?;
-            let mut keys: Vec<String> = datas
-                .iter()
-                .flat_map(|d| engine.referenced_keys(d))
-                .collect();
-            keys.sort_unstable();
-            keys.dedup();
-            Ok(keys)
-        }
+        };
+        let datas: Vec<serde_json::Value> =
+            sqlx::query_scalar("SELECT data FROM node_all WHERE ehr_id = ANY($1)")
+                .bind(ehr_ids)
+                .fetch_all(&self.pool)
+                .await?;
+        let mut keys: Vec<String> = datas
+            .iter()
+            .flat_map(|d| engine.referenced_keys(d))
+            .collect();
+        keys.sort_unstable();
+        keys.dedup();
+        Ok(keys)
+    }
+
+    /// The slim twin: externalization is compiled out, so no stored node
+    /// references a blob and the key set is empty by construction.
+    #[cfg(not(feature = "multimedia"))]
+    #[expect(
+        clippy::unused_async,
+        reason = "the multimedia twin awaits; callers await unconditionally"
+    )]
+    async fn collect_blob_keys_for(&self, _ehr_ids: &[EhrId]) -> Result<Vec<String>, ServiceError> {
+        Ok(Vec::new())
     }
 
     /// Collect the distinct externalized-blob keys referenced by an EHR's stored
     /// nodes (empty when externalization is disabled). Read-only, on the pool.
     /// Our own extension — no openEHR spec governs multimedia offload.
+    #[cfg(feature = "multimedia")]
     async fn collect_ehr_blob_keys(&self, ehr_id: EhrId) -> Result<Vec<String>, ServiceError> {
-        #[cfg(not(feature = "multimedia"))]
-        {
-            let _ = ehr_id;
+        let Some(engine) = &self.multimedia else {
             return Ok(Vec::new());
-        }
-        #[cfg(feature = "multimedia")]
-        {
-            let Some(engine) = &self.multimedia else {
-                return Ok(Vec::new());
-            };
-            let datas: Vec<serde_json::Value> =
-                sqlx::query_scalar("SELECT data FROM node_all WHERE ehr_id = $1")
-                    .bind(ehr_id)
-                    .fetch_all(&self.pool)
-                    .await?;
-            let mut keys: Vec<String> = datas
-                .iter()
-                .flat_map(|d| engine.referenced_keys(d))
-                .collect();
-            keys.sort_unstable();
-            keys.dedup();
-            Ok(keys)
-        }
+        };
+        let datas: Vec<serde_json::Value> =
+            sqlx::query_scalar("SELECT data FROM node_all WHERE ehr_id = $1")
+                .bind(ehr_id)
+                .fetch_all(&self.pool)
+                .await?;
+        let mut keys: Vec<String> = datas
+            .iter()
+            .flat_map(|d| engine.referenced_keys(d))
+            .collect();
+        keys.sort_unstable();
+        keys.dedup();
+        Ok(keys)
+    }
+
+    /// The slim twin: externalization is compiled out, so the key set is empty
+    /// by construction.
+    #[cfg(not(feature = "multimedia"))]
+    #[expect(
+        clippy::unused_async,
+        reason = "the multimedia twin awaits; callers await unconditionally"
+    )]
+    async fn collect_ehr_blob_keys(&self, _ehr_id: EhrId) -> Result<Vec<String>, ServiceError> {
+        Ok(Vec::new())
     }
 
     /// Delete each candidate blob no longer referenced by any surviving `node`.
@@ -387,47 +399,50 @@ impl FerroEhrService {
     /// The reference check is ONE pass over `node` for the whole candidate
     /// set (the still-referenced keys fall out of a single scan joined
     /// against the candidate array), never a scan per blob.
+    #[cfg(feature = "multimedia")]
     async fn gc_unreferenced_blobs(&self, candidates: Vec<String>) {
-        #[cfg(not(feature = "multimedia"))]
-        {
-            let _candidates = candidates;
+        let Some(engine) = &self.multimedia else {
+            return;
+        };
+        if candidates.is_empty() {
+            return;
         }
-        #[cfg(feature = "multimedia")]
+        let uris: Vec<String> = candidates
+            .iter()
+            .map(|hex| engine.store().uri_for(hex))
+            .collect();
+        let still_referenced: Vec<String> = match sqlx::query_scalar(
+            "SELECT DISTINCT k.uri FROM node_all n \
+             JOIN unnest($1::text[]) AS k(uri) ON position(k.uri in n.data::text) > 0",
+        )
+        .bind(&uris)
+        .fetch_all(&self.pool)
+        .await
         {
-            let Some(engine) = &self.multimedia else {
-                return;
-            };
-            if candidates.is_empty() {
+            Ok(rows) => rows,
+            Err(e) => {
+                tracing::warn!(error = %e, "multimedia blob GC reference scan failed; keeping all candidates");
                 return;
             }
-            let uris: Vec<String> = candidates
-                .iter()
-                .map(|hex| engine.store().uri_for(hex))
-                .collect();
-            let still_referenced: Vec<String> = match sqlx::query_scalar(
-                "SELECT DISTINCT k.uri FROM node_all n \
-             JOIN unnest($1::text[]) AS k(uri) ON position(k.uri in n.data::text) > 0",
-            )
-            .bind(&uris)
-            .fetch_all(&self.pool)
-            .await
-            {
-                Ok(rows) => rows,
-                Err(e) => {
-                    tracing::warn!(error = %e, "multimedia blob GC reference scan failed; keeping all candidates");
-                    return;
-                }
-            };
-            for (hex, uri) in candidates.iter().zip(&uris) {
-                if still_referenced.contains(uri) {
-                    continue;
-                }
-                if let Err(e) = engine.store().delete(hex).await {
-                    tracing::warn!(blob = %hex, error = %e, "multimedia blob GC delete failed");
-                }
+        };
+        for (hex, uri) in candidates.iter().zip(&uris) {
+            if still_referenced.contains(uri) {
+                continue;
+            }
+            if let Err(e) = engine.store().delete(hex).await {
+                tracing::warn!(blob = %hex, error = %e, "multimedia blob GC delete failed");
             }
         }
     }
+
+    /// The slim twin: externalization is compiled out, so no blob can exist to
+    /// collect.
+    #[cfg(not(feature = "multimedia"))]
+    #[expect(
+        clippy::unused_async,
+        reason = "the multimedia twin awaits; callers await unconditionally"
+    )]
+    async fn gc_unreferenced_blobs(&self, _candidates: Vec<String>) {}
 
     /// `physical_party_delete` (`i_admin_service.adoc`): physically delete a
     /// PARTY "along with related Party relationships", in one transaction —

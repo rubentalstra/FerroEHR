@@ -403,7 +403,7 @@ impl FerroEhrService {
         ehr_id: EhrId,
     ) -> Result<Vec<(VoId, String)>, ServiceError> {
         let rows = sqlx::query(
-            "SELECT vo_id, kind FROM vo_version \
+            "SELECT vo_id, kind FROM vo_version_all \
              WHERE ehr_id = $1 AND upper_inf(sys_period) AND branch_number = 0 \
              ORDER BY vo_id",
         )
@@ -425,7 +425,7 @@ impl FerroEhrService {
         vo_id: VoId,
     ) -> Result<Option<String>, ServiceError> {
         Ok(sqlx::query_scalar(
-            "SELECT kind FROM vo_version \
+            "SELECT kind FROM vo_version_all \
              WHERE vo_id = $1 AND ehr_id = $2 AND upper_inf(sys_period) \
              AND branch_number = 0",
         )
@@ -440,7 +440,7 @@ impl FerroEhrService {
     async fn vo_version_numbers(&self, vo_id: VoId) -> Result<Vec<(i32, bool)>, ServiceError> {
         let rows = sqlx::query(
             "SELECT sys_version, (upper_inf(sys_period) AND branch_number = 0) AS is_current \
-             FROM vo_version WHERE vo_id = $1 ORDER BY sys_version",
+             FROM vo_version_all WHERE vo_id = $1 ORDER BY sys_version",
         )
         .bind(vo_id)
         .fetch_all(&self.pool)

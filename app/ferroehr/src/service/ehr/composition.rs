@@ -22,7 +22,9 @@ use serde_json::Value;
 use crate::ids::{EhrId, VoId};
 use crate::service::FerroEhrService;
 use crate::service::datetime::parse_at_time;
-use crate::service::error::{ServiceError, Violation, internal_fault};
+#[cfg(feature = "multimedia")]
+use crate::service::error::internal_fault;
+use crate::service::error::{ServiceError, Violation};
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::{CallStatusType, SmError};
 use crate::versioning::Kind;
@@ -945,22 +947,32 @@ impl FerroEhrService {
     /// # Errors
     /// [`SmError`] when the configured multimedia engine fails to expand a
     /// reference (e.g. the external object store is unreachable).
+    #[cfg(feature = "multimedia")]
     pub async fn expand_multimedia(&self, body: Value) -> Result<Value, SmError> {
-        // Off by default: no engine (or a slim build) serves the stored form
-        // unchanged.
-        #[cfg(feature = "multimedia")]
-        {
-            let Some(engine) = &self.multimedia else {
-                return Ok(body);
-            };
-            let mut body = body;
-            engine
-                .expand(&mut body)
-                .await
-                .map_err(|e| internal_fault("expand a multimedia reference", &e))?;
-            Ok(body)
-        }
-        #[cfg(not(feature = "multimedia"))]
+        // Off by default: no engine serves the stored form unchanged.
+        let Some(engine) = &self.multimedia else {
+            return Ok(body);
+        };
+        let mut body = body;
+        engine
+            .expand(&mut body)
+            .await
+            .map_err(|e| internal_fault("expand a multimedia reference", &e))?;
+        Ok(body)
+    }
+
+    /// The slim twin: externalization is compiled out, so the stored canonical
+    /// form is always served unchanged.
+    ///
+    /// # Errors
+    /// Infallible in this configuration; the `Result` mirrors the multimedia
+    /// twin so callers are configuration-independent.
+    #[cfg(not(feature = "multimedia"))]
+    #[expect(
+        clippy::unused_async,
+        reason = "the multimedia twin awaits; callers await unconditionally"
+    )]
+    pub async fn expand_multimedia(&self, body: Value) -> Result<Value, SmError> {
         Ok(body)
     }
 }

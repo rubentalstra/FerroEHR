@@ -6,8 +6,7 @@
 //! reassembly or attestation aggregation the full
 //! [`crate::storage::version_repo::read::read_current`] does.
 //!
-//! No openEHR spec governs the SQL — our own design (`docs/architecture.md`
-//! §Storage). The version identity these reads serve is RM common master06
+//! No openEHR spec governs the SQL — our own design. The version identity these reads serve is RM common master06
 //! §Version Identification; the commit instant is §Committal.
 //!
 //! NOTE (no openEHR spec governs storage tiering — our own design): every
@@ -21,7 +20,7 @@
 #![expect(
     clippy::disallowed_types,
     reason = "owner-approved 2026-08-03 (#1694 family 1): stored canonical fragments — a typed \
-              round-trip drops forward-compatible keys (docs/VERSIONS.md §Spec version policy)"
+              round-trip drops forward-compatible keys (the openEHR release strategy: minors are compatible supersets)"
 )]
 
 use serde_json::Value;

@@ -2,14 +2,14 @@
 //! back as canonical JSON.
 //!
 //! No openEHR spec governs the `node` table — it is our own decomposed store
-//! (`docs/architecture.md` §Storage). This module is the single home for the
+//!. This module is the single home for the
 //! `node` write and the `node`→canonical reload: the version read path, the
 //! dump/load export, and the AQL result assembly all funnel here.
 
 #![expect(
     clippy::disallowed_types,
     reason = "owner-approved 2026-08-03 (#1694 family 1): stored canonical fragments — a typed \
-              round-trip drops forward-compatible keys (docs/VERSIONS.md §Spec version policy)"
+              round-trip drops forward-compatible keys (the openEHR release strategy: minors are compatible supersets)"
 )]
 
 use std::collections::{BTreeMap, HashMap};
@@ -203,7 +203,7 @@ pub async fn read_version_canonical_in(
 /// The AQL executor collects one per whole-object cell across a whole
 /// `RESULT_SET` page so [`read_subtrees_canonical`] can load them all in a
 /// single round trip. No openEHR spec governs the `node` store — our own
-/// decomposed design (`docs/architecture.md` §Storage).
+/// decomposed design.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SubtreeAnchor {
     /// The versioned object id.

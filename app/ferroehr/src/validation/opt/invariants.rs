@@ -25,6 +25,7 @@ use openehr_its::opt14::{
     ArchetypeInternalRef, ArchetypeSlot, Assertion, CObject, ConstraintRef, ExprItem,
     Intervalofinteger,
 };
+use openehr_its::xml::XmlAny;
 
 use super::interval::{iv_lower, iv_upper};
 use super::{Ctx, NodeView, RuleViolation};
@@ -213,11 +214,14 @@ pub(super) fn check_slot(slot: &ArchetypeSlot) -> Result<(), RuleViolation> {
 fn slot_assertion_pattern(a: &Assertion) -> Option<String> {
     fn find_pattern(e: &ExprItem) -> Option<String> {
         match e {
-            ExprItem::ExprLeaf(l) => l
-                .item
-                .as_str()
-                .map(|s| s.trim_matches('/').to_owned())
-                .filter(|s| s.contains("openEHR") || s.contains('\\') || s.contains('.')),
+            ExprItem::ExprLeaf(l) => {
+                let raw = l
+                    .item
+                    .child("pattern")
+                    .map_or_else(|| l.item.text(), XmlAny::text);
+                Some(raw.trim_matches('/').to_owned())
+                    .filter(|s| s.contains("openEHR") || s.contains('\\') || s.contains('.'))
+            }
             ExprItem::ExprBinaryOperator(b) => {
                 find_pattern(&b.right_operand).or_else(|| find_pattern(&b.left_operand))
             }

@@ -1,15 +1,13 @@
-//! The version-tree placement reads: the preceding lineage tip, the next
-//! storage commit ordinal, the transaction timestamp, and the next branch
-//! number at a fork point.
+//! The version-tree placement reads: the next storage commit ordinal, the
+//! transaction timestamp, and the next branch number at a fork point.
 //!
 //! The placement *decision* (classify, tree placement, lifecycle) stays in
 //! the versioning layer (`versioning::change`), which takes the per-vo
 //! advisory lock first and then calls these reads.
 //!
-//! No openEHR spec governs the SQL — our own design (`docs/architecture.md`
-//! §Storage); the version tree realized is RM common master06 §The 'Virtual Version Tree'.
+//! No openEHR spec governs the SQL — our own design; the version tree
+//! realized is RM common master06 §The 'Virtual Version Tree'.
 
-use sqlx::postgres::PgRow;
 use sqlx::{PgConnection, Row};
 
 use crate::ids::{EhrId, VoId};
@@ -41,66 +39,6 @@ pub struct TipRow {
     pub lifecycle_state: String,
     /// Whether the tip is still open (`upper_inf(sys_period)`).
     pub open: bool,
-}
-
-fn tip_row(row: &PgRow) -> Result<TipRow, StorageError> {
-    Ok(TipRow {
-        ehr_id: row.try_get("ehr_id")?,
-        kind: row.try_get("kind")?,
-        sys_version: row.try_get("sys_version")?,
-        trunk_version: row.try_get("trunk_version")?,
-        branch_number: row.try_get("branch_number")?,
-        branch_version: row.try_get("branch_version")?,
-        creating_system_id: row.try_get("creating_system_id")?,
-        lifecycle_state: row.try_get("lifecycle_state")?,
-        open: row.try_get("open")?,
-    })
-}
-
-macro_rules! tip_select {
-    ($tail:literal) => {
-        concat!(
-            "SELECT ehr_id, kind, sys_version, trunk_version, branch_number, ",
-            "branch_version, creating_system_id, lifecycle_state, ",
-            "upper_inf(sys_period) AS open FROM vo_version ",
-            $tail
-        )
-    };
-}
-
-/// Read the preceding lineage tip: the version `expected` names (trunk or
-/// branch), or the current open TRUNK tip when `expected` is `None`.
-///
-/// # Errors
-/// Returns [`StorageError::Database`] on a driver failure.
-pub async fn lineage_tip(
-    tx: &mut PgConnection,
-    vo_id: VoId,
-    expected: Option<(i32, i32, i32)>,
-) -> Result<Option<TipRow>, StorageError> {
-    let row = match expected {
-        None => {
-            sqlx::query(tip_select!(
-                "WHERE vo_id = $1 AND upper_inf(sys_period) AND branch_number = 0"
-            ))
-            .bind(vo_id)
-            .fetch_optional(&mut *tx)
-            .await?
-        }
-        Some((t, b, v)) => {
-            sqlx::query(tip_select!(
-                "WHERE vo_id = $1 AND trunk_version = $2 AND branch_number = $3 \
-                 AND branch_version = $4"
-            ))
-            .bind(vo_id)
-            .bind(t)
-            .bind(b)
-            .bind(v)
-            .fetch_optional(&mut *tx)
-            .await?
-        }
-    };
-    row.as_ref().map(tip_row).transpose()
 }
 
 /// The merged placement read ([`next_placement`]).

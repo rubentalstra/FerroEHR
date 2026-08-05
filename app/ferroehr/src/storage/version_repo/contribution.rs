@@ -1,14 +1,13 @@
 //! CONTRIBUTION reads: a contribution's own audit, the versions it affected,
 //! and per-EHR listing/counting.
 //!
-//! No openEHR spec governs the SQL — our own design (`docs/architecture.md`
-//! §Storage). The CONTRIBUTION semantics realized are RM common master06
+//! No openEHR spec governs the SQL — our own design. The CONTRIBUTION semantics realized are RM common master06
 //! §Contributions / §Committal and Audits.
 
 #![expect(
     clippy::disallowed_types,
     reason = "owner-approved 2026-08-03 (#1694 family 1): stored canonical fragments — a typed \
-              round-trip drops forward-compatible keys (docs/VERSIONS.md §Spec version policy)"
+              round-trip drops forward-compatible keys (the openEHR release strategy: minors are compatible supersets)"
 )]
 
 use serde_json::Value;

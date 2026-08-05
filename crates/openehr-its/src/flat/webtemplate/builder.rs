@@ -323,7 +323,7 @@ pub fn build_web_template(
 
 fn build_node(
     ctx: &Ctx,
-    attr_name: Option<&str>,
+    owner: Option<&crate::opt14::CAttribute>,
     co: &CObject,
     parent_path: &str,
     parent_arch_id: &str,
@@ -335,19 +335,20 @@ fn build_node(
         CObject::CArchetypeRoot(r) => r.archetype_id.value.as_str(),
         _ => parent_arch_id,
     };
-    let mut node = create_node(ctx, attr_name, co, parent_path, node_arch_id, identity);
+    let mut node = create_node(ctx, owner, co, parent_path, node_arch_id, identity);
     build_children(ctx, co, &mut node, node_arch_id, group);
     node
 }
 
 fn create_node(
     ctx: &Ctx,
-    attr_name: Option<&str>,
+    owner: Option<&crate::opt14::CAttribute>,
     co: &CObject,
     parent_path: &str,
     arch_id: &str,
     identity: shape::Identity,
 ) -> WebTemplateNode {
+    let attr_name = owner.map(inputs::attribute_name);
     let archetyped = identity == shape::Identity::Archetyped;
     let rm_type = object_rm_type(co).to_owned();
     let arch_node_id = if archetyped {
@@ -355,7 +356,8 @@ fn create_node(
     } else {
         String::new()
     };
-    let (min, max) = occurrences(object_occurrences(co));
+    let (occ_min, max) = occurrences(object_occurrences(co));
+    let min = meet_single_existence(occ_min, owner);
     let name_constraint = if archetyped {
         name_constraint(co)
     } else {
@@ -468,7 +470,7 @@ fn build_children(
                 }
                 built.push(build_node(
                     ctx,
-                    Some(attr_name),
+                    Some(attr),
                     child_co,
                     &node.aql_path,
                     arch_id,
@@ -1256,6 +1258,36 @@ fn attribute_existence(attr: &crate::opt14::CAttribute) -> &Intervalofinteger {
         crate::opt14::CAttribute::CSingleAttribute(s) => &s.existence,
         crate::opt14::CAttribute::CMultipleAttribute(m) => &m.existence,
     }
+}
+
+/// The node's effective `min`: its own occurrences lower bound met with the
+/// owning SINGLE attribute's `C_ATTRIBUTE.existence` lower bound.
+///
+/// ADL 1.4 `AM/docs/ADL1.4/master05-cadl.adoc` §Occurrences: occurrences "only
+/// has significance for objects which are children of a container attribute,
+/// since by definition, the occurrences of an object which is the value of a
+/// single valued attribute can only be `0..1` or `1..1`, and this is already
+/// defined by the attribute `existence`". Existence and occurrences are
+/// orthogonal (AOM 1.4 `master04-constraint_model_package.adoc` §"Attribute Node
+/// Types": existence "indicates whether an object will be found in a given
+/// attribute field"), so an optional single attribute (`existence {0..1}`)
+/// carrying a `1..1`-occurrences constraint — the shape OPT tooling emits for
+/// `ISM_TRANSITION.careflow_step`, whose `master05-rm_mapping.adoc`
+/// §`ISM_TRANSITION` row is Required "no" — yields an OPTIONAL child, not a
+/// mandatory one.
+///
+/// A container attribute is left alone: there occurrences is the significant
+/// constraint, and the attribute's own existence is reported separately by
+/// [`existence_constraints`].
+fn meet_single_existence(
+    occurrences_min: Option<i32>,
+    owner: Option<&crate::opt14::CAttribute>,
+) -> Option<i32> {
+    let Some(crate::opt14::CAttribute::CSingleAttribute(s)) = owner else {
+        return occurrences_min;
+    };
+    let existence_min = occurrences(&s.existence).0.unwrap_or(0);
+    occurrences_min.map(|m| m.min(existence_min))
 }
 
 /// `(min, max)` from an occurrences/cardinality interval; `max == -1` unbounded.

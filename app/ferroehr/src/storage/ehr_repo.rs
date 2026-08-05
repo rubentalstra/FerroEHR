@@ -4,7 +4,7 @@
 //! part of the versioned-object spine ([`crate::storage::version_repo`]).
 //!
 //! No openEHR spec governs the `ehr` / `ehr_folder` schema — it is our own
-//! PG18-native design (`docs/architecture.md` §Storage). The EHR concepts these
+//! PG18-native design. The EHR concepts these
 //! rows realize are arch-overview `master06-design_of_the_ehr.adoc` §The EHR
 //! (root, `system_id`, `time_created`) and RM ehr `master04-ehr_package.adoc`
 //! §EHR Creation / §Folders / §EHR Status. All *semantics* (subject sync
@@ -14,7 +14,7 @@
 #![expect(
     clippy::disallowed_types,
     reason = "owner-approved 2026-08-03 (#1694 family 1): stored canonical fragments — a typed \
-              round-trip drops forward-compatible keys (docs/VERSIONS.md §Spec version policy)"
+              round-trip drops forward-compatible keys (the openEHR release strategy: minors are compatible supersets)"
 )]
 
 use serde_json::Value;

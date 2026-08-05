@@ -10,10 +10,7 @@
     clippy::nursery,
     reason = "mechanically generated model text: the XSD is emitted in full under its own spec-owned element/attribute spellings, so naming, style and dead-code lints do not apply — the hand-written runtime carries the lint bar"
 )]
-#![expect(
-    clippy::disallowed_types,
-    reason = "adjudicated free-form JSON slots: serde_json::Value is workspace-banned (#1694); a generated carrier exists only where the spec leaves the slot open, and each adjudicated field's NOTE names its citation"
-)]
+
 /// openEHR AOM2 model-form `ARCHETYPE` — declared `abstract` in the XSD with no
 /// concrete subtype in this schema closure, so it is emitted as the
 /// plain shape a conforming document must present at its slots.
@@ -623,7 +620,7 @@ pub struct ExprLeaf {
     /// The `reference_type` attribute/element of the AOM2 model-form `EXPR_LEAF` XSD type.
     pub reference_type: Option<String>,
     /// The `item` attribute/element of the AOM2 model-form `EXPR_LEAF` XSD type.
-    pub item: serde_json::Value,
+    pub item: crate::xml::XmlAny,
 }
 
 /// openEHR AOM2 model-form `EXPR_OPERATOR`.

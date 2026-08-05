@@ -1,6 +1,6 @@
 ---
 source: crates/openehr-its/tests/it/webtemplate.rs
-assertion_line: 199
+assertion_line: 200
 expression: wt
 ---
 {
@@ -24,7 +24,7 @@ expression: wt
       {
         "id": "context",
         "rmType": "EVENT_CONTEXT",
-        "min": 1,
+        "min": 0,
         "max": 1,
         "aqlPath": "/context",
         "children": [

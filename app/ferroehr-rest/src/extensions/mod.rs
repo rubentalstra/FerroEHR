@@ -50,4 +50,4 @@ pub mod terminology;
 // openEHR spec governs an endpoint reporting the server's own spec/build
 // provenance — our own operational surface. The ITS-REST identity is the
 // released `Release-1.1.0`, the same tree the codegen consumes
-// (`crates/openehr-its/vendor/rest-oas/PROVENANCE.md`; pins `docs/VERSIONS.md`).
+// (`crates/openehr-its/vendor/rest-oas/PROVENANCE.md`).

@@ -5,8 +5,7 @@
 //! [`StoredVersion`] shape the versioning layer maps into a
 //! `VERSION`/`ORIGINAL_VERSION`.
 //!
-//! No openEHR spec governs the SQL — our own design (`docs/architecture.md`
-//! §Storage). The version-access semantics realized are RM common master06
+//! No openEHR spec governs the SQL — our own design. The version-access semantics realized are RM common master06
 //! (§Versioned Objects, §Logical Deletion) and master08 §Change Management
 //! (time-travel).
 //!
@@ -19,7 +18,7 @@
 #![expect(
     clippy::disallowed_types,
     reason = "owner-approved 2026-08-03 (#1694 family 1): stored canonical fragments — a typed \
-              round-trip drops forward-compatible keys (docs/VERSIONS.md §Spec version policy)"
+              round-trip drops forward-compatible keys (the openEHR release strategy: minors are compatible supersets)"
 )]
 
 use serde_json::Value;
