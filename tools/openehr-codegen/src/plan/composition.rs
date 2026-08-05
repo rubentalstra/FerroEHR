@@ -154,13 +154,6 @@ pub(crate) struct CrateComposition {
     pub key: &'static str,
     /// Emitted crate directory.
     pub crate_name: &'static str,
-    /// The crate-level implemented-spec pin, emitted as the crate's
-    /// `SPEC_VERSION` constant — deliberately independent of the crates.io
-    /// package version. Usually the current generation's version; LANG
-    /// deviates (its crate pin is the latest LANG release, 1.0.0, while both
-    /// vendored files are 1.1.0-line snapshots — `docs/VERSIONS.md` §openEHR
-    /// specification matrix).
-    pub spec_version: &'static str,
     /// The crate's BMM generations, oldest first. Exactly one is `current`.
     pub generations: &'static [GenerationSpec],
     /// Crate doc comment (emitted into `lib.rs`).
@@ -176,7 +169,6 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
     CrateComposition {
         key: "base",
         crate_name: "openehr-base",
-        spec_version: "1.3.0",
         generations: &[
             GenerationSpec {
                 module: "v1_2",
@@ -204,7 +196,6 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
     CrateComposition {
         key: "rm",
         crate_name: "openehr-rm",
-        spec_version: "1.2.0",
         generations: &[
             GenerationSpec {
                 module: "v1_1",
@@ -247,7 +238,6 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
     CrateComposition {
         key: "lang",
         crate_name: "openehr-lang",
-        spec_version: "1.0.0",
         generations: &[
             GenerationSpec {
                 module: "v2",
@@ -295,7 +285,6 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
     CrateComposition {
         key: "am",
         crate_name: "openehr-am",
-        spec_version: "2.4.0",
         generations: &[
             GenerationSpec {
                 module: "v1_4",
@@ -373,7 +362,6 @@ pub(crate) const COMPOSITIONS: &[CrateComposition] = &[
     CrateComposition {
         key: "term",
         crate_name: "openehr-term",
-        spec_version: "3.1.0",
         generations: &[GenerationSpec {
             module: "v3_1",
             spec_version: "3.1.0",

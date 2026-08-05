@@ -61,8 +61,6 @@ pub struct CompositionInfo {
     pub key: String,
     /// The emitted crate directory.
     pub crate_name: String,
-    /// The crate-level implemented-spec pin.
-    pub spec_version: String,
     /// The crate's BMM generations, oldest first.
     pub generations: Vec<GenerationInfo>,
     /// The `includes` citation behind the composition.
@@ -84,7 +82,6 @@ pub fn composition_infos() -> Vec<CompositionInfo> {
         .map(|c| CompositionInfo {
             key: c.key.to_string(),
             crate_name: c.crate_name.to_string(),
-            spec_version: c.spec_version.to_string(),
             generations: c
                 .generations
                 .iter()
@@ -373,9 +370,7 @@ pub fn classify_invariants(key: &str) -> Result<Vec<ClassifiedInvariant>, Error>
             }
         }
     }
-    out.sort_by(|a, b| {
-        (&a.generation, &a.class, &a.name).cmp(&(&b.generation, &b.class, &b.name))
-    });
+    out.sort_by(|a, b| (&a.generation, &a.class, &a.name).cmp(&(&b.generation, &b.class, &b.name)));
     Ok(out)
 }
 

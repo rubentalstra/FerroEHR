@@ -1,10 +1,16 @@
 //! Build/spec provenance constants.
 //!
-//! The spec pins are **read from each `openehr-*` crate's `SPEC_VERSION`
-//! constant** (emitted from the vendored spec inputs, independent of the
-//! crates.io package version), never hand-typed literals: a pin bump in the
-//! spec layer propagates here at compile time, so the identity surfaces
-//! cannot drift.
+//! The spec pins are **read from the `openehr-*` crates**, never hand-typed
+//! literals, so a pin bump in the spec layer propagates here at compile time
+//! and the identity surfaces cannot drift. For the generated multi-generation
+//! crates the authority is the emitted `Generation` enum (the crates carry no
+//! crate-level pin — a fixed one would contradict a configured non-current
+//! generation); the hand-written single-spec crates keep their literal
+//! `SPEC_VERSION`.
+
+// TODO(#1943): the RM/BASE pins below advertise `Generation::CURRENT`; once
+// the `spec_profile` seam lands they must follow the CONFIGURED generation on
+// every served identity surface (banner, /status, OPTIONS manifest, OpenAPI).
 
 /// The openEHR ITS-REST contract version this server implements.
 ///
@@ -16,19 +22,19 @@
 pub const ITS_REST: &str = openehr_its::SPEC_VERSION;
 /// The AQL (QUERY) specification version.
 pub const AQL: &str = openehr_query::SPEC_VERSION;
-/// The openEHR Reference Model version.
-pub const RM: &str = openehr_rm::SPEC_VERSION;
-/// The openEHR BASE version.
-pub const BASE: &str = openehr_base::SPEC_VERSION;
+/// The openEHR Reference Model version — the current RM generation's.
+pub const RM: &str = openehr_rm::Generation::CURRENT.spec_version();
+/// The openEHR BASE version — the current BASE generation's.
+pub const BASE: &str = openehr_base::Generation::CURRENT.spec_version();
 /// The ADL 1.4 generation of the Archetype Model (the `openehr-am` crate
-/// ships both extant generations side by side; this one is the `am14`
-/// module's own pin).
+/// ships both extant generations side by side; this is the `v1_4` module's
+/// own pin).
 pub const AM14: &str = openehr_am::v1_4::SPEC_VERSION;
 /// The ADL 2 generation of the Archetype Model (the `openehr-am` crate's
-/// primary generation — its crate-level pin equals the `am24` module's).
-pub const AM24: &str = openehr_am::SPEC_VERSION;
-/// The openEHR Terminology version.
-pub const TERM: &str = openehr_term::SPEC_VERSION;
+/// current generation, the `v2_4` module).
+pub const AM24: &str = openehr_am::v2_4::SPEC_VERSION;
+/// The openEHR Terminology version — the current TERM generation's.
+pub const TERM: &str = openehr_term::Generation::CURRENT.spec_version();
 /// The `PostgreSQL` version this server targets. No openEHR spec governs the
 /// datastore — our own design; no crate carries this pin, so it stays
 /// hand-maintained here.
@@ -49,17 +55,26 @@ mod tests {
     use super::*;
 
     /// The derivation chain holds end to end: every pin is the owning
-    /// crate's own `SPEC_VERSION`, and the AM crate-level pin is its ADL 2
-    /// generation's.
+    /// crate's own authority — the `Generation` enum for the generated
+    /// multi-generation crates (each variant agreeing with its generation
+    /// module's `SPEC_VERSION`), the literal `SPEC_VERSION` for the
+    /// hand-written ones.
     #[test]
     fn pins_are_the_crate_spec_versions() {
         assert_eq!(ITS_REST, openehr_its::SPEC_VERSION);
         assert_eq!(AQL, openehr_query::SPEC_VERSION);
-        assert_eq!(RM, openehr_rm::SPEC_VERSION);
-        assert_eq!(BASE, openehr_base::SPEC_VERSION);
+        assert_eq!(RM, openehr_rm::v1_2::SPEC_VERSION);
+        assert_eq!(BASE, openehr_base::v1_3::SPEC_VERSION);
         assert_eq!(AM14, openehr_am::v1_4::SPEC_VERSION);
         assert_eq!(AM24, openehr_am::v2_4::SPEC_VERSION);
-        assert_eq!(TERM, openehr_term::SPEC_VERSION);
-        assert_eq!(openehr_am::SPEC_VERSION, openehr_am::v2_4::SPEC_VERSION);
+        assert_eq!(TERM, openehr_term::v3_1::SPEC_VERSION);
+        assert_eq!(
+            openehr_am::Generation::CURRENT.spec_version(),
+            openehr_am::v2_4::SPEC_VERSION
+        );
+        // The released generations carry their own pins, selectable later
+        // (#1943) — pinned here so a table edit is a visible identity change.
+        assert_eq!(openehr_rm::Generation::V1_1.spec_version(), "1.1.0");
+        assert_eq!(openehr_base::Generation::V1_2.spec_version(), "1.2.0");
     }
 }

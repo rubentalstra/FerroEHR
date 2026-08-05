@@ -449,15 +449,12 @@ fn emit_lib(top: &BTreeSet<String>, comp: &CrateComposition) -> GenFile {
         b.push_str(&format!("pub mod {m};\n"));
     }
     b.push_str("pub mod prelude;\n");
-    b.push_str(&format!(
-        "\n/// The openEHR specification version this crate implements.\n\
-         ///\n\
-         /// The pin is emitted by `openehr-codegen` from the vendored inputs and is\n\
-         /// deliberately independent of the crates.io package version, which is the\n\
-         /// crate's own `SemVer` line and moves only with this implementation's code.\n\
-         pub const SPEC_VERSION: &str = \"{}\";\n",
-        comp.spec_version,
-    ));
+    // No crate-level SPEC_VERSION const (owner ruling 2026-08-05, #1942): a
+    // multi-generation crate has no single implemented spec version — the
+    // [`Generation`] enum is the authority (per-variant `spec_version()`,
+    // `CURRENT` for the default surface), and each generation module carries
+    // its own `SPEC_VERSION`. A fixed crate-root pin would contradict the
+    // selected generation the moment a consumer configures a non-current one.
     b.push_str(&emit_generation_enum(comp));
     GenFile {
         path: "lib.rs".to_string(),
