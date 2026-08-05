@@ -148,14 +148,19 @@ mod tests {
     /// `Display`/`FromStr` round-trip the configuration token, and serde uses
     /// the same spelling.
     #[test]
+    #[expect(
+        clippy::panic_in_result_fn,
+        reason = "Result-returning test with assertions — the Book ch11 shape \
+                  (https://doc.rust-lang.org/book/ch11-01-writing-tests.html)"
+    )]
     fn tokens_round_trip() -> Result<(), Box<dyn std::error::Error>> {
+        #[derive(Deserialize)]
+        struct Probe {
+            profile: SpecProfile,
+        }
         for p in [SpecProfile::Stable, SpecProfile::Development] {
             assert_eq!(p.to_string().parse::<SpecProfile>()?, p);
             let toml = format!("profile = \"{p}\"");
-            #[derive(Deserialize)]
-            struct Probe {
-                profile: SpecProfile,
-            }
             let probe: Probe = toml::from_str(&toml)?;
             assert_eq!(probe.profile, p);
         }
