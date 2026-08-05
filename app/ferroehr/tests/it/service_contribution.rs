@@ -1385,7 +1385,10 @@ async fn incomplete_admits_missing_composition_data_but_never_wrong_data() {
     );
 
     // (2) The 532 twin of the SAME content is refused — the relaxation is
-    // scoped to the incomplete state and nothing else changed.
+    // scoped to the incomplete state and nothing else changed. The class is
+    // the 400 row: a complete commit runs the strict typed door, and the
+    // released `responses/422.yaml` scopes 422 to content that "could be
+    // converted to a resource".
     let err = svc
         .create_ehr_contribution(ehr_uuid, member(&missing, "532"))
         .await
@@ -1394,11 +1397,11 @@ async fn incomplete_admits_missing_composition_data_but_never_wrong_data() {
         matches!(
             err,
             SmError {
-                status: CallStatusType::ContentInvalid,
+                status: CallStatusType::PreconditionViolation,
                 ..
             }
         ),
-        "expected 422 for the complete twin, got {err:?}"
+        "expected 400 for the complete twin, got {err:?}"
     );
 
     // (3) WRONG data stays refused under 553: a `language` CODE_PHRASE whose
@@ -1475,6 +1478,8 @@ async fn incomplete_relaxes_the_folder_kind_too() {
         .await
         .expect("a 553 FOLDER may omit its mandatory name");
 
+    // The complete twin's class is the 400 row — the strict typed door, per
+    // the released `responses/422.yaml` scope ("could be converted").
     let err = svc
         .create_ehr_contribution(ehr_uuid, body("532"))
         .await
@@ -1483,11 +1488,11 @@ async fn incomplete_relaxes_the_folder_kind_too() {
         matches!(
             err,
             SmError {
-                status: CallStatusType::ContentInvalid,
+                status: CallStatusType::PreconditionViolation,
                 ..
             }
         ),
-        "expected 422 for the complete FOLDER twin, got {err:?}"
+        "expected 400 for the complete FOLDER twin, got {err:?}"
     );
 }
 

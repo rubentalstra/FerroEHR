@@ -11,7 +11,7 @@
 
 use crate::analyze::{External, Model};
 use crate::load::bmm::{BmmClass, BmmPropKind, BmmType};
-use crate::plan::overrides::{back_reference, primitive};
+use crate::plan::overrides::{back_reference, open_extension_point, primitive};
 use crate::render::naming;
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -49,6 +49,8 @@ impl Model {
                     n.clone()
                 } else if n == "Any" {
                     "serde_json::Value".to_string()
+                } else if let Some(carrier) = open_extension_point(n) {
+                    carrier.to_string()
                 } else if local.contains(n) || external.contains(n) {
                     // A bare reference to a *generic* class (BMM omits the args,
                     // e.g. `normal_range: DV_INTERVAL`) is filled with each type

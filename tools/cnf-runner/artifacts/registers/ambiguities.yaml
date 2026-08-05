@@ -8416,7 +8416,9 @@ AMB-194:
     data would be treated as invalid by the repository and rejected by the API"
     — but neither the ITS-REST docs text nor the released OAS assigns a status
     to it. The contribution operation's declared error responses
-    (400_CONTRIBUTION, 404, 409, 422_COMPOSITION) never name this trigger, and
+    (400_CONTRIBUTION, 404, 409 — contribution_create.yaml declares no 422
+    branch at all; 422_COMPOSITION.yaml is the released response DEFINITION
+    other commit operations reference) never name this trigger, and
     the overview's §HTTP status codes table describes the codes generically
     rather than per-rule. Two conformant implementations may therefore answer
     the same complete-but-incomplete commit 400 or 422.

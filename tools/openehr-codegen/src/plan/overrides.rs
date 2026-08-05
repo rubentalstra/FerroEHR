@@ -257,7 +257,23 @@ pub(crate) const MAPPED_CLASSES: &[MappedClass] = &[
         citation: "BASE base_types.definitions (OPENEHR_DEFINITIONS; Base Types §Definitions Package)",
         reason: "Constant holder; its constants live in base_types/definitions/definitions_impl.rs.",
     },
+    // ── spec-declared open extension points → the validated verbatim carrier ──
+    MappedClass {
+        name: "ACCESS_CONTROL_SETTINGS",
+        citation: "RM ehr_access.adoc §settings (\"allowing for the use of different access \
+                   control schemes. Currently implementation dependent.\")",
+        reason: "Open extension point: a valid instance is a scheme-defined subtype the \
+                 published model cannot name → openehr_base::serde_support::OpenSubtype.",
+    },
 ];
+
+/// The Rust realization of a spec-declared OPEN extension point, when `name`
+/// is one: a class whose instances are scheme-defined subtypes outside the
+/// published model, carried verbatim by the validated
+/// `openehr_base::serde_support::OpenSubtype`.
+pub(crate) fn open_extension_point(name: &str) -> Option<&'static str> {
+    (name == "ACCESS_CONTROL_SETTINGS").then_some("openehr_base::serde_support::OpenSubtype")
+}
 
 /// Is `name` a mapped/skipped foundation class (never emitted)? Behaviour-
 /// identical to the former `SKIP.contains(&name)`.

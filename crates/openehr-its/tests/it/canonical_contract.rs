@@ -155,3 +155,58 @@ fn type_discriminator_is_the_first_member() {
         "_type must lead the object: {out}"
     );
 }
+
+// ── the open extension-point carrier (ACCESS_CONTROL_SETTINGS, #1935) ────────
+
+/// `EHR_ACCESS.settings` is a spec-declared OPEN seam — "allowing for the use
+/// of different access control schemes. Currently implementation dependent."
+/// (`RM/docs/UML/classes/org.openehr.rm.ehr.ehr_access.adoc` §Attributes) — so
+/// a scheme-defined subtype constructs typed and round-trips byte-identically.
+#[test]
+fn scheme_defined_access_control_settings_round_trip() {
+    let wire = r#"{"_type":"EHR_ACCESS","name":{"_type":"DV_TEXT","value":"EHR Access"},"archetype_node_id":"openEHR-EHR-EHR_ACCESS.generic.v1","settings":{"_type":"FERROEHR_ACCESS_CONTROL_V1","default_visibility":"restricted","entries":[{"role":"ADMIN","access":"full"}]}}"#;
+    let access: openehr_rm::prelude::EhrAccess =
+        from_canonical_json(wire).expect("a scheme subtype constructs");
+    let settings = access.settings.as_ref().expect("settings present");
+    assert_eq!(settings.type_name(), "FERROEHR_ACCESS_CONTROL_V1");
+    assert_eq!(
+        settings.member("default_visibility"),
+        Some(&serde_json::Value::String("restricted".to_owned()))
+    );
+    assert_eq!(
+        to_canonical_json(&access),
+        wire,
+        "byte-identical round trip"
+    );
+}
+
+/// The base spec tag itself is a legal (empty) instance of the open seam.
+#[test]
+fn bare_access_control_settings_round_trip() {
+    let wire = r#"{"_type":"EHR_ACCESS","name":{"_type":"DV_TEXT","value":"EHR Access"},"archetype_node_id":"openEHR-EHR-EHR_ACCESS.generic.v1","settings":{"_type":"ACCESS_CONTROL_SETTINGS"}}"#;
+    let access: openehr_rm::prelude::EhrAccess =
+        from_canonical_json(wire).expect("the bare base tag constructs");
+    assert_eq!(to_canonical_json(&access), wire);
+}
+
+/// The carrier's own invariants stay strict: a settings object with no
+/// `_type` cannot construct (`EHR_ACCESS.Scheme_valid` — the scheme must be
+/// named), and a duplicated member is refused like every canonical object.
+#[test]
+fn open_carrier_refusals_stay_strict() {
+    let untagged = r#"{"_type":"EHR_ACCESS","name":{"_type":"DV_TEXT","value":"x"},"archetype_node_id":"openEHR-EHR-EHR_ACCESS.generic.v1","settings":{"default_visibility":"open"}}"#;
+    let err = from_canonical_json::<openehr_rm::prelude::EhrAccess>(untagged)
+        .expect_err("a settings object without a scheme `_type` is refused");
+    assert!(
+        err.to_string().contains("_type"),
+        "the refusal names the missing tag: {err}"
+    );
+
+    let duplicated = r#"{"_type":"EHR_ACCESS","name":{"_type":"DV_TEXT","value":"x"},"archetype_node_id":"openEHR-EHR-EHR_ACCESS.generic.v1","settings":{"_type":"S","k":1,"k":2}}"#;
+    let err = from_canonical_json::<openehr_rm::prelude::EhrAccess>(duplicated)
+        .expect_err("a duplicated scheme member is refused");
+    assert!(
+        err.to_string().contains("duplicate"),
+        "the refusal names the duplication: {err}"
+    );
+}

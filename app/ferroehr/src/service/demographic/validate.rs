@@ -82,8 +82,9 @@ fn validate_party_ref(reference: &Value, context: &str) -> Result<(), ServiceErr
 /// second full decode per write.
 ///
 /// # Errors
-/// [`ServiceError::Unprocessable`] when the body does not deserialize as
-/// `rm_type` or violates an enforceable PARTY/ACTOR/ROLE invariant.
+/// [`ServiceError::BadRequest`] when the strict reader refuses the body;
+/// [`ServiceError::Unprocessable`] when it violates an enforceable
+/// PARTY/ACTOR/ROLE invariant.
 pub(crate) fn party_check(
     rm_type: &str,
     data: &Value,
@@ -110,12 +111,10 @@ pub(crate) fn party_check(
     // — the generated party types make mandatory attributes structural, and RM
     // common master06 §Incomplete Content lifts precisely those bounds.
     if !incomplete {
-        typed.map_err(|e| {
-            ServiceError::Unprocessable(
-                Violation::new(format!("body does not validate as {rm_type}"))
-                    .with_decode_failure(&e),
-            )
-        })?;
+        // NOTE: the released `responses/422.yaml` scopes 422 to content that
+        // "could be converted to a resource" — a body the strict reader
+        // refuses is the 400 row, as on every direct commit route.
+        typed.map_err(|e| ServiceError::BadRequest(format!("invalid canonical JSON body: {e}")))?;
     }
     party_invariants(rm_type, data, incomplete)
 }
@@ -208,10 +207,14 @@ pub(super) fn party_invariants(
 }
 
 /// Structurally validate a candidate `PARTY_RELATIONSHIP` body: deserialize into
-/// the `openehr_rm` type (a type mismatch → `422`), enforce that both `source`
-/// and `target` `PARTY_REF`s are present continuant refs, and enforce their
-/// `PARTY_REF.Type_validity`. `uid` need not be supplied — the server
+/// the `openehr_rm` type (a strict-reader refusal → `400`), enforce that both
+/// `source` and `target` `PARTY_REF`s are present continuant refs, and enforce
+/// their `PARTY_REF.Type_validity`. `uid` need not be supplied — the server
 /// injects it on read, mirroring the PARTY / COMPOSITION services.
+///
+/// # Errors
+/// [`ServiceError::BadRequest`] when the strict reader refuses the body;
+/// [`ServiceError::Unprocessable`] when a ref rule fails.
 pub(crate) fn relationship_check(data: &Value, incomplete: bool) -> Result<(), ServiceError> {
     use openehr_base::prelude::ObjectId;
     use openehr_rm::prelude::PartyRelationship;
@@ -229,11 +232,13 @@ pub(crate) fn relationship_check(data: &Value, incomplete: bool) -> Result<(), S
     let typed = match decoded {
         Ok(typed) => Some(typed),
         Err(_) if incomplete => None,
+        // NOTE: the released `responses/422.yaml` scopes 422 to content that
+        // "could be converted to a resource" — a body the strict reader
+        // refuses is the 400 row, as on every direct commit route.
         Err(e) => {
-            return Err(ServiceError::Unprocessable(
-                Violation::new("body does not validate as PARTY_RELATIONSHIP")
-                    .with_decode_failure(&e),
-            ));
+            return Err(ServiceError::BadRequest(format!(
+                "invalid canonical JSON body: {e}"
+            )));
         }
     };
     for (field, reference) in typed
@@ -351,15 +356,18 @@ mod tests {
     /// `NonEmptyVec<PARTY_IDENTITY>` on the generated party types, so an empty
     /// or absent list has no representation. The refusal is asserted here (it
     /// must not weaken); the service carries no second check of the same rule.
+    /// The refusal class is `BadRequest`: the released `responses/422.yaml`
+    /// scopes 422 to content that "could be converted to a resource", and an
+    /// unconstructible body is the 400 row on every commit route.
     #[test]
     fn identities_valid_is_enforced() {
         for bad in [person(&json!([])), json!({ "_type": "PERSON" })] {
             match party_check("PERSON", &bad, false) {
-                Err(ServiceError::Unprocessable(v)) => assert!(
-                    v.detail().contains("does not validate as PERSON"),
-                    "the decode is the enforcement point, got {v}"
+                Err(ServiceError::BadRequest(m)) => assert!(
+                    m.contains("invalid canonical JSON body"),
+                    "the decode is the enforcement point, got {m}"
                 ),
-                other => panic!("empty identities must be 422, got {other:?}"),
+                other => panic!("an unconstructible body must be 400, got {other:?}"),
             }
         }
         party_check("PERSON", &person(&json!([identity()])), false)
