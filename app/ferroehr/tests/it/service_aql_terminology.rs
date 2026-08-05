@@ -246,7 +246,9 @@ async fn fhir_expand_server() -> MockServer {
         .and(query_param("url", VS_URL))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({
             "resourceType": "ValueSet",
+            "status": "active",
             "expansion": {
+                "timestamp": "2026-08-04T00:00:00Z",
                 "contains": [
                     {"code": "442031002", "display": "Screening for X",
                      "contains": [{"code": "11713004", "display": "child code"}]}

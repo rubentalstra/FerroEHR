@@ -2,7 +2,7 @@
 //! extraction for the promoted subsumption columns.
 //!
 //! No openEHR spec governs the decomposition granularity — it is our own
-//! storage design (`docs/architecture.md` §Storage). The *composition-content*
+//! storage design. The *composition-content*
 //! structure set is NOT hand-maintained here: it is delegated to the single
 //! BMM-generated oracle [`openehr_rm::model::is_structure_root`], which the
 //! codegen keeps in lockstep with this codec — never a local duplicate

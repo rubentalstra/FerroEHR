@@ -79,15 +79,13 @@ fn adjudicated_skip(name: &str) -> Option<&'static str> {
         // lenient-parse gap is a parser concern, not phase-1 validation.
         Some("spurious ODIN delimiter rejected at parse (SDINV) before VOTM is reachable")
     } else if name.ends_with("SOME_TYPE.code_phrase.v1.0.0.adls") {
-        // A legacy ADL 1.4 source (validity/legacy_adl_1.4, INVENTORY §10 "1.4
-        // tolerance") that reuses id-code `id2` for the CODE_PHRASE node under
-        // several non-sibling `defining_code` attributes. In AOM 1.4 node ids are
-        // only *sibling*-unique (AOM1.4 master04 §Node_id and Paths), so the reuse
-        // is 1.4-legal; parsed as ADL2 (this `.adls`), the stricter archetype-wide
-        // VCOSU (master04.5 §C_OBJECT) would flag it. NOTE: we do NOT weaken the
-        // ADL2 archetype-wide VCOSU rule to pass a 1.4-legacy fixture — this file
-        // is a documented, spec-cited tolerance adjudication (the 1.4-origin id
-        // reuse is sibling-unique, hence PASS-tagged upstream).
+        // A legacy ADL 1.4 source (validity/legacy_adl_1.4) that reuses id-code
+        // `id2` for the CODE_PHRASE node under several non-sibling
+        // `defining_code` attributes. In AOM 1.4 node ids are only
+        // *sibling*-unique (AOM1.4 master04 §Node_id and Paths), so the reuse is
+        // 1.4-legal; parsed as ADL2 the stricter archetype-wide VCOSU
+        // (master04.5 §C_OBJECT) flags it. The ADL2 rule is NOT weakened — this
+        // is a spec-cited tolerance for a 1.4-origin fixture.
         Some(
             "legacy 1.4 sibling-unique node-id reuse (AOM1.4 master04); ADL2 archetype-wide VCOSU not weakened to pass it",
         )

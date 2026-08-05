@@ -137,10 +137,9 @@ async fn ehr_composition_lifecycle_end_to_end() {
     let svc = FerroEhrService::new(db.pool());
 
     // ── EHR create + retrieve ────────────────────────────────────────────────
-    // NOTE: the SM `create_ehr` returns the new UUID; the RM `EHR`
-    // body is read via `ehr_object`. The old create-envelope ETag/Location meta
-    // (ehr_id == uid) is exactly that returned uuid — the adapter builds the
-    // header — so the meta assertions are folded into the uuid/body checks.
+    // NOTE: the SM `create_ehr` returns the new UUID; the RM `EHR` body is read
+    // via `ehr_object`, and the ETag/Location meta (ehr_id == uid) is exactly
+    // that returned uuid, so the meta assertions fold into the uuid/body checks.
     let ehr_uuid = svc.create_ehr(None).await.expect("ehr_create");
     let ehr_id = ehr_uuid.to_string();
     let ehr = svc.ehr_object(ehr_uuid).await.expect("ehr object");
@@ -315,10 +314,9 @@ async fn ehr_composition_lifecycle_end_to_end() {
         matches!(stale_delete, Err(ServiceError::Conflict(_))),
         "stale preceding_version_uid must 409, got {stale_delete:?}"
     );
-    // NOTE: the old "bare HIER_OBJECT_ID → 400" sub-check is
-    // dropped — `delete_composition` now takes a typed `ObjectVersionId`, so a
-    // bare id cannot be constructed as an argument; that decode + 400 moved to
-    // the protocol adapter (`ferroehr-rest`), where it is exercised.
+    // NOTE: `delete_composition` takes a typed `ObjectVersionId`, so a bare
+    // HIER_OBJECT_ID cannot be constructed as an argument; that decode + 400
+    // lives in the protocol adapter (`ferroehr-rest`), where it is exercised.
 
     // A fabricated creating_system_id names NO version here — the version_uid
     // identity is the full three-part tuple (ITS-REST overview Resources.md
@@ -713,16 +711,13 @@ async fn unknown_ehr_is_not_found() {
 #[tokio::test]
 async fn ehr_status_subject_type_is_enforced_end_to_end() {
     // RM ehr master04 §EHR Status: EHR_STATUS.subject is a (monomorphic)
-    // PARTY_SELF. A foreign concrete `_type` (PARTY_IDENTIFIED) in that slot
-    // is refused by the strict canonical reader — the slot's declared type is
+    // PARTY_SELF. A foreign concrete `_type` (PARTY_IDENTIFIED) in that slot is
+    // refused by the strict canonical reader — the slot's declared type is
     // concrete, so a present-but-wrong `_type` never becomes an EHR_STATUS at
-    // all. Both commit seams (EHR create and EHR_STATUS PUT) take the TYPED
-    // value, so that refusal is what a client meets, and the ITS-REST overview
-    // (`Requests_and_responses.md` §HTTP status codes) answers it `400`
-    // ("could not be parsed or is invalid"), not the semantic `422`. The
-    // anonymous empty PARTY_SELF stays accepted.
-    // Regression for the upstream diff findings B1/B2 (the X1 upstream
-    // triage ledger; in git history at the upstream-triage record (git history: docs/conformance/upstream-ehrbase/TRIAGE.md)).
+    // all. Both commit seams take the TYPED value, so that refusal is what a
+    // client meets, and the ITS-REST overview (`Requests_and_responses.md` §HTTP
+    // status codes) answers it `400` ("could not be parsed or is invalid"), not
+    // the semantic `422`. The anonymous empty PARTY_SELF stays accepted.
     let db = testkit::db().await.expect("testkit database");
     let svc = FerroEhrService::new(db.pool());
 
@@ -865,7 +860,7 @@ async fn contribution_preserves_the_client_change_type_and_rejects_invalid_combo
     // (never narrowed to `modification` — RM change_control §"Contributions":
     // a correction is committed with change type 250|amendment|), and
     // spec-invalid combinations are rejected: creation on an existing object
-    // as 422 (the register-documented mirror of the directional released
+    // as 422 (the adjudicated mirror of the directional released
     // 400_CONTRIBUTION trigger), an out-of-group code as 422 (content
     // validation).
     let db = testkit::db().await.expect("testkit database");
@@ -961,8 +956,7 @@ async fn contribution_preserves_the_client_change_type_and_rejects_invalid_combo
         ),
         "creation on an existing object is the UNASSIGNED mirror of the \
          released 400_CONTRIBUTION trigger (which is directional: 'first \
-         version of a MODIFICATION') — the register-documented 422 \
-         (AMB-54, narrowed); got {bad_creation:?}"
+         version of a MODIFICATION') — the adjudicated 422; got {bad_creation:?}"
     );
 
     // Invalid code: not a member of the audit_change_type group
@@ -1517,15 +1511,15 @@ async fn item_tag_version_and_container_targets_are_distinct() {
 
 #[tokio::test]
 async fn a_surviving_tag_keeps_its_creation_instant_across_a_replace() {
-    // NOTE: no openEHR spec governs this — our own design. RM common
-    // master07-tags.adoc models ITEM_TAG with no timestamp, and no released
-    // ITS-REST text assigns a tag a creation instant, so `created_at` is a
-    // storage column of ours. It is nevertheless OBSERVABLE — the admin
-    // dump/export round-trips it — and a whole-collection replace that reset
-    // every surviving tag's instant would destroy when each was first
-    // attached. An ITEM_TAG identity present in both the stored and the posted
-    // set is the SAME tag re-asserted, so it keeps its own instant; a new
-    // identity gets the current one.
+    // `created_at` is nevertheless OBSERVABLE — the admin dump/export
+    // round-trips it — and a whole-collection replace that reset every surviving
+    // tag's instant would destroy when each was first attached. An ITEM_TAG
+    // identity present in both the stored and the posted set is the SAME tag
+    // re-asserted, so it keeps its own instant; a new identity gets the current
+    // one.
+    // NOTE: no openEHR spec governs this — our own design: RM common
+    // master07-tags.adoc models ITEM_TAG with no timestamp, so `created_at` is a
+    // storage column of ours.
     let db = testkit::db().await.expect("testkit database");
     let svc = FerroEhrService::new(db.pool());
 
@@ -1679,8 +1673,7 @@ async fn item_tag_put_replaces_the_whole_collection() {
         );
     }
     // …and the ACCEPTING twins: a bare key, a key with a real value, and an
-    // empty `target_path` (register AMB-96: `""` normalizes to ABSENT, so it is
-    // the same identity as no path at all — never a second tag).
+    // empty `target_path`.
     let accepted = svc
         .target_tags_replace(
             ehr_uuid,
@@ -2486,13 +2479,11 @@ async fn ehr_system_id_is_recorded_at_creation_and_survives_a_config_change() {
     // BASE architecture_overview master06-design_of_the_ehr.adoc §System
     // Identity — "Because the `_system_id_` becomes embedded in the version
     // identifiers of committed -- and possibly signed -- content, a globally
-    // unique form should be settled on before data is shared or federated,
-    // since it cannot easily be changed afterwards." An EHR therefore reports
-    // the system that CREATED it (RM ehr EHR class: `system_id` 1..1,
-    // HIER_OBJECT_ID, "The identifier of the logical EHR management system in
+    // unique form should be settled on before data is shared or federated."
+    // An EHR therefore reports the system that CREATED it (RM ehr EHR class:
+    // `system_id` 1..1, "The identifier of the logical EHR management system in
     // which this EHR was created"), never whatever the running process is
-    // configured with today: re-pointing the deployment's configured id must
-    // not rewrite the provenance of records already committed.
+    // configured with today.
     let db = testkit::db().await.expect("testkit database");
 
     let first = FerroEhrService::new(db.pool()).with_system_id("openehr.first.example.com");
@@ -2537,17 +2528,12 @@ async fn ehr_system_id_is_recorded_at_creation_and_survives_a_config_change() {
 async fn the_default_ehr_status_satisfies_the_locatable_root_invariants() {
     // A create without an EHR_STATUS makes the server mint one (SM
     // i_ehr_service.adoc §create_ehr: "otherwise a default `EHR_STATUS` is
-    // created, in which `_is_modifiable_` and `_is_queryable_` are both
-    // True"), and that server-minted instance must satisfy the same RM
-    // invariants a client-supplied one does — it is committed as a VERSION
-    // like any other.
-    //
-    // RM ehr EHR_STATUS class §Invariants — `Is_archetype_root`:
-    // `is_archetype_root`. RM common locatable.adoc defines that as
-    // `archetype_details /= Void`, and RM common archetyped.adoc types
-    // ARCHETYPED with `archetype_id` 1..1 and `rm_version` 1..1. A bootstrap
-    // status without `archetype_details` would be an archetype root by
-    // position and not by content — invalid RM the server itself authored.
+    // created, in which `_is_modifiable_` and `_is_queryable_` are both True"),
+    // and that instance must satisfy the same RM invariants a client-supplied
+    // one does. RM ehr EHR_STATUS §Invariants — `Is_archetype_root`, which RM
+    // common locatable.adoc defines as `archetype_details /= Void`; a bootstrap
+    // status without it would be an archetype root by position and not by
+    // content — invalid RM the server itself authored.
     let db = testkit::db().await.expect("testkit database");
     let svc = FerroEhrService::new(db.pool());
 
@@ -2586,22 +2572,16 @@ async fn the_default_ehr_status_satisfies_the_locatable_root_invariants() {
 #[tokio::test]
 async fn subject_identity_is_matched_exactly_and_never_case_folded() {
     // The subject key: EHR_STATUS.subject.external_ref (id.value, namespace),
-    // compared byte-for-byte.
-    //
-    // NO openEHR SPEC GOVERNS THIS — our own design/extension. The released
-    // sources give the key no comparison rule at all: RM ehr EHR_STATUS
-    // §Attributes types `subject` as 1..1 PARTY_SELF whose `_external_ref_`
-    // "can be used to contain a direct reference to the subject in a
-    // demographic or identity service", and SM i_ehr_service.adoc names the
-    // error `ehr_for_subject_already_exists` without saying what counts as the
-    // same subject. Deliberately NOT the BASE base_types master05 §Composite
-    // Identifiers and Case rule, which governs OBJECT_VERSION_ID-shaped
-    // composite identifiers, not an opaque demographic id.
-    //
-    // Exact match is the safe direction: a demographic identifier is opaque to
-    // the CDR, so folding two spellings together would merge two subjects'
-    // records into one EHR — a silent wrong clinical answer — whereas keeping
-    // them apart is at worst a duplicate the demographic service reconciles.
+    // compared byte-for-byte. Exact match is the safe direction: a demographic
+    // identifier is opaque to the CDR, so folding two spellings together would
+    // merge two subjects' records into one EHR — a silent wrong clinical answer
+    // — whereas keeping them apart is at worst a duplicate the demographic
+    // service reconciles. Deliberately NOT the BASE base_types master05
+    // §Composite Identifiers and Case rule, which governs OBJECT_VERSION_ID-
+    // shaped composite identifiers, not an opaque demographic id.
+    // NOTE: no openEHR spec governs the comparison — our own design; SM
+    // i_ehr_service.adoc names `ehr_for_subject_already_exists` without saying
+    // what counts as the same subject.
     let db = testkit::db().await.expect("testkit database");
     let svc = FerroEhrService::new(db.pool());
 
@@ -2687,12 +2667,9 @@ async fn the_bootstrap_ehr_status_version_has_no_preceding_version_uid() {
     // ORIGINAL_VERSION.preceding_version_uid is Void and, per ITS-REST
     // Resources.md §JSON Format ("The RM attributes (even required ones) that
     // are `Null` or an empty list (array) SHOULD be absent when serialized as
-    // JSON"), is absent from the wire rather than rendered null.
-    //
-    // The EHR-creation commit is the case that had no coverage: the
-    // COMPOSITION v1 is asserted in ehr_composition_lifecycle_end_to_end, but
-    // the EHR_STATUS version the server commits during create_ehr is authored
-    // entirely by the server, on a path no client write touches.
+    // JSON"), is absent from the wire rather than rendered null. This pins the
+    // EHR-creation commit, where the EHR_STATUS version is authored entirely by
+    // the server on a path no client write touches.
     let db = testkit::db().await.expect("testkit database");
     let svc = FerroEhrService::new(db.pool());
 

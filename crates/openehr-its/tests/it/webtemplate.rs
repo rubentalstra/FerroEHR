@@ -337,6 +337,53 @@ fn ids_are_deduplicated_within_a_parent() {
     assert_unique_sibling_ids(&wt.tree);
 }
 
+// ── existence ∧ occurrences (ADL 1.4 master05-cadl §Occurrences) ─────────────
+
+/// A child of an OPTIONAL single attribute is optional whatever occurrences the
+/// constraint object carries.
+///
+/// ADL 1.4 `AM/docs/ADL1.4/master05-cadl.adoc` §Occurrences: for the value of a
+/// single-valued attribute the occurrences "can only be `0..1` or `1..1`, and
+/// this is already defined by the attribute `existence`". `action test.opt`
+/// carries the canonical shape — `ISM_TRANSITION.careflow_step` with
+/// `existence {0..1}` over a `DV_CODED_TEXT` with `occurrences {1..1}` — and RM
+/// declares that attribute `0..1`
+/// (`RM/docs/UML/classes/org.openehr.rm.composition.ism_transition.adoc`;
+/// Simplified Formats `master05-rm_mapping.adoc` §`ISM_TRANSITION` Required "no").
+#[test]
+fn optional_single_attribute_never_yields_a_mandatory_child() {
+    let wt =
+        build_from_file(&better_fixtures_dir().join("action test.opt")).expect("build action test");
+
+    let mut checked = 0usize;
+    for_each_node(&wt.tree, &mut |n| {
+        if n.aql_path.ends_with("/ism_transition/careflow_step") {
+            checked += 1;
+            assert_eq!(
+                n.min,
+                Some(0),
+                "careflow_step is existence 0..1, so its child cannot be mandatory at {}",
+                n.aql_path
+            );
+        }
+        // The mandatory sibling keeps its bound: `current_state` is
+        // existence 1..1 over occurrences 1..1 (RM Required "yes").
+        if n.aql_path.ends_with("/ism_transition/current_state") {
+            checked += 1;
+            assert_eq!(
+                n.min,
+                Some(1),
+                "current_state is existence 1..1 and must stay mandatory at {}",
+                n.aql_path
+            );
+        }
+    });
+    assert!(
+        checked >= 2,
+        "expected the ism_transition pair in the tree, saw {checked} nodes"
+    );
+}
+
 // ── term bindings (node + coded-value level) ─────────────────────────────────
 
 #[test]
@@ -544,4 +591,114 @@ fn no_party_node_is_inputless() {
         "party nodes without the master05 party suffixes:\n{}",
         offenders.join("\n")
     );
+}
+
+/// Every OPT 1.4 constraint the archetype-conformance walk cannot evaluate is
+/// REPORTED rather than dropped: the deployed corpus constrains computed RM
+/// FUNCTIONS as if they were stored members (`EVENT.offset`,
+/// `DV_PROPORTION.is_integral`) and misspells `null_flavour`, none of which a
+/// conformant instance can carry. The skip is a template property, so it is
+/// enumerable from the template alone.
+#[test]
+fn unenforceable_constraints_are_reported_not_dropped() {
+    use openehr_its::flat::validation::{UnenforceableReason, unenforceable_existence_constraints};
+
+    let mut seen: Vec<String> = Vec::new();
+    for path in opt_files(Path::new("tests/fixtures")) {
+        let Ok(wt) = build_from_file(&path) else {
+            continue;
+        };
+        for skipped in unenforceable_existence_constraints(&wt) {
+            assert_eq!(skipped.reason, UnenforceableReason::AttributeNotInRmModel);
+            assert!(
+                skipped.path.ends_with(&skipped.attribute),
+                "the reported path must end with the reported attribute, got {} / {}",
+                skipped.path,
+                skipped.attribute
+            );
+            seen.push(skipped.attribute.clone());
+        }
+    }
+    seen.sort();
+    seen.dedup();
+    assert!(
+        !seen.is_empty(),
+        "the vendored OPT corpus carries unenforceable existence constraints; \
+         reporting none means the skip went silent again"
+    );
+
+    // Whatever the corpus contains, NOTHING reported may be an attribute the RM
+    // actually declares — that would be a real constraint wrongly skipped.
+    for attr in &seen {
+        assert!(
+            !openehr_rm::model::classes().any(|c| c.attributes.iter().any(|a| a.name == attr)),
+            "'{attr}' IS declared by the RM: skipping it would drop an enforceable constraint"
+        );
+    }
+}
+
+/// The slot-pattern probe reads the assertion's EXPRESSION TREE, not its string
+/// form: `ASSERTION.expression` is the "Root of expression tree" while
+/// `string_expression` is only its optional "String form of expression"
+/// (`AM UML/classes/org.openehr.am.aom14.assertion.adoc` §ASSERTION Class).
+///
+/// `IDCR Problem List.v1.opt` is the pin because none of its nine `<includes>`
+/// carries a `string_expression` at all — a source-text scan sees zero of them
+/// and leaves every slot open to any archetype.
+#[test]
+fn opt14_slot_patterns_come_from_the_assertion_tree() {
+    let path = corpus_dir().join("knowledge/IDCR Problem List.v1.opt");
+    let xml = std::fs::read_to_string(&path).expect("read the IDCR corpus OPT");
+    assert!(
+        !xml.contains("string_expression"),
+        "this pin depends on the fixture carrying no string_expression; \
+         re-pick the fixture if the vendored file changed"
+    );
+    let opt = opt14::from_xml(&xml).expect("the IDCR OPT parses");
+    let wt = build_web_template(&opt).expect("build the IDCR web template");
+
+    let includes = slot_includes(&wt.tree);
+    assert!(
+        includes.contains(
+            &r"openEHR-EHR-EVALUATION\.problem_diagnosis(-[a-zA-Z0-9_]+)*\.v1".to_owned()
+        ),
+        "the at0002 problem/diagnosis slot must carry its archetype-id regex, got {includes:?}"
+    );
+    assert!(
+        !includes.iter().any(String::is_empty),
+        "no slot may carry an empty pattern, got {includes:?}"
+    );
+}
+
+/// Every OPT the issue names as silently unconstrained must now constrain its
+/// slots (ADL 1.4 `master05-cadl.adoc` §Archetype Slots: a slot's fillers are
+/// exactly the archetypes its `include`/`exclude` assertions admit).
+#[test]
+fn corpus_slots_are_constrained_without_a_string_expression() {
+    for name in [
+        "knowledge/IDCR Problem List.v1.opt",
+        "knowledge/IDCR Allergies List.v0.opt",
+        "knowledge/Vital Signs Encounter (Composition).opt",
+    ] {
+        let wt = build_from_file(&corpus_dir().join(name)).expect("build the corpus OPT");
+        let includes = slot_includes(&wt.tree);
+        assert!(
+            !includes.is_empty(),
+            "{name}: every slot include went missing — slot fillers are unconstrained"
+        );
+    }
+}
+
+/// Every `ARCHETYPE_SLOT` include pattern reachable from a built `WebTemplate`.
+fn slot_includes(node: &WebTemplateNode) -> Vec<String> {
+    let mut out = Vec::new();
+    for attr in &node.closed_attributes {
+        for slot in &attr.slots {
+            out.extend(slot.includes.iter().cloned());
+        }
+    }
+    for child in &node.children {
+        out.extend(slot_includes(child));
+    }
+    out
 }

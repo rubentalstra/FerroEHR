@@ -234,11 +234,6 @@ impl Authenticator {
         self.config.enabled
     }
 
-    /// The configured admin scope, if the coarse admin gate is enabled.
-    pub(crate) fn admin_scope(&self) -> Option<&str> {
-        self.config.admin_scope.as_deref()
-    }
-
     /// The `WWW-Authenticate` challenge advertising the enabled mechanisms.
     pub(crate) fn challenge(&self) -> HeaderValue {
         let mut parts = Vec::new();
@@ -545,7 +540,6 @@ mod tests {
                 }],
             }),
             oidc: None,
-            admin_scope: Some("ferroehr:admin".to_owned()),
             ..AuthConfig::default()
         })
         .unwrap()
@@ -563,7 +557,6 @@ mod tests {
                 jwks_json: None,
                 ..OidcConfig::default()
             }),
-            admin_scope: None,
             ..AuthConfig::default()
         })
         .unwrap()
@@ -617,7 +610,6 @@ mod tests {
                 }],
             }),
             oidc: None,
-            admin_scope: None,
             ..AuthConfig::default()
         };
         cfg.verified_cache_ttl_seconds = 0;

@@ -26,7 +26,7 @@
 //! escaping pinned by the RFC). This is the single source of the signed bytes
 //! for both signing and verification. That choice is OUR OWN extension — no
 //! released openEHR text licenses it, which is exactly what the `[.tbd]` says;
-//! register entry AMB-188 carries the adjudication, including why RFC 8785 over
+//! the adjudication is recorded on the tracker, including why RFC 8785 over
 //! the served JSON is preferred to the ODIN the spec speculates about.
 //!
 //! The signed input is always assembled as a `serde_json::Value` (the shape the

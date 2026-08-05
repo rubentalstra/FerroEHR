@@ -569,3 +569,212 @@ fn a_class_constant_materialises_with_its_literal_generator()
     assert_eq!(constant.generator.syntax(), "json");
     Ok(())
 }
+
+/// The two generic-inheritance examples of
+/// `master13-model_semantics.adoc` §Generic Inheritance, side by side:
+/// constraint-narrowing (`DV_INTERVAL<T:DV_ORDERED>` over `Interval<T:Ordered>`)
+/// and closed substitution (`TIMER_WAIT` over `WAIT<TIMER_EVENT>`).
+const GENERIC_INHERITANCE_SCHEMA: &str = r#"
+    bmm_version = <"2.4">
+    rm_publisher = <"openehr">
+    schema_name = <"bmm3_generic_inheritance">
+    rm_release = <"1.0.2">
+    packages = <
+        ["test"] = <
+            name = <"test">
+            classes = <"String", "ORDERED", "DV_ORDERED", "EVENT", "TIMER_EVENT", "INTERVAL", "DV_INTERVAL", "WAIT", "TIMER_WAIT", "SHADOWING_WAIT">
+        >
+    >
+    class_definitions = <
+        ["String"] = < name = <"String"> >
+        ["ORDERED"] = < name = <"ORDERED"> >
+        ["DV_ORDERED"] = < name = <"DV_ORDERED"> ancestors = <"ORDERED"> >
+        ["EVENT"] = < name = <"EVENT"> >
+        ["TIMER_EVENT"] = < name = <"TIMER_EVENT"> ancestors = <"EVENT"> >
+        ["INTERVAL"] = <
+            name = <"INTERVAL">
+            generic_parameter_defs = <
+                ["T"] = < name = <"T"> conforms_to_type = <"ORDERED"> >
+            >
+            properties = <
+                ["lower"] = (P_BMM_SINGLE_PROPERTY_OPEN) < name = <"lower"> type = <"T"> >
+            >
+        >
+        ["DV_INTERVAL"] = <
+            name = <"DV_INTERVAL">
+            ancestor_defs = <
+                ["INTERVAL<T>"] = (P_BMM_GENERIC_TYPE) <
+                    root_type = <"INTERVAL">
+                    generic_parameters = <"T">
+                >
+            >
+            generic_parameter_defs = <
+                ["T"] = < name = <"T"> conforms_to_type = <"DV_ORDERED"> >
+            >
+        >
+        ["WAIT"] = <
+            name = <"WAIT">
+            generic_parameter_defs = <
+                ["T"] = < name = <"T"> conforms_to_type = <"EVENT"> >
+            >
+            properties = <
+                ["event"] = (P_BMM_SINGLE_PROPERTY_OPEN) < name = <"event"> type = <"T"> >
+            >
+        >
+        ["TIMER_WAIT"] = <
+            name = <"TIMER_WAIT">
+            ancestor_defs = <
+                ["WAIT<TIMER_EVENT>"] = (P_BMM_GENERIC_TYPE) <
+                    root_type = <"WAIT">
+                    generic_parameters = <"TIMER_EVENT">
+                >
+            >
+        >
+        ["SHADOWING_WAIT"] = <
+            name = <"SHADOWING_WAIT">
+            ancestor_defs = <
+                ["WAIT<TIMER_EVENT>"] = (P_BMM_GENERIC_TYPE) <
+                    root_type = <"WAIT">
+                    generic_parameters = <"TIMER_EVENT">
+                >
+            >
+            properties = <
+                ["event"] = (P_BMM_SINGLE_PROPERTY) < name = <"event"> type = <"String"> >
+            >
+        >
+    >
+"#;
+
+/// The property named `name` on `class`.
+fn property<'a>(class: &'a BmmClass, name: &str) -> &'a BmmProperty {
+    class
+        .properties()
+        .unwrap_or_else(|| panic!("{} declares properties", class.name()))
+        .get(name)
+        .unwrap_or_else(|| panic!("{}.{name} is missing", class.name()))
+}
+
+/// A unitary property's type name + synthesis flag.
+fn unitary(property: &BmmProperty) -> (String, Option<bool>) {
+    match property {
+        BmmProperty::BmmUnitaryProperty(unitary) => (
+            BmmType::from(unitary.r#type.clone()).type_name(),
+            unitary.is_synthesised_generic,
+        ),
+        BmmProperty::BmmContainerProperty(_) => panic!("expected a unitary property"),
+    }
+}
+
+/// `master13-model_semantics.adoc` §Generic Inheritance, the closed case:
+/// `TIMER_WAIT` inheriting `WAIT<TIMER_EVENT>` gets `event` "synthesised new
+/// within `TIMER_WAIT`" typed `TIMER_EVENT` rather than `T:EVENT`, "with the
+/// meta-attribute `_is_synthesised_generic_` set `True`".
+#[test]
+fn a_closed_generic_ancestor_synthesises_its_substituted_property()
+-> Result<(), Box<dyn std::error::Error>> {
+    let model = create_bmm3_model(&read_schema(GENERIC_INHERITANCE_SCHEMA)?)?;
+    let (type_name, synthesised) = unitary(property(class(&model, "TIMER_WAIT"), "event"));
+    assert_eq!(type_name, "TIMER_EVENT");
+    assert_eq!(synthesised, Some(true));
+    // The ancestor keeps its own open property, unflagged.
+    let (ancestor_type, ancestor_flag) = unitary(property(class(&model, "WAIT"), "event"));
+    assert_eq!(ancestor_type, "T");
+    assert_eq!(ancestor_flag, None);
+    Ok(())
+}
+
+/// The constraint-narrowing case of the same section: `DV_INTERVAL
+/// <T:DV_ORDERED>` inheriting `Interval<T:Ordered>` synthesises `lower` whose
+/// "resulting type … is now `T:DV_ORDERED` rather than `T:Ordered` from the
+/// parent".
+#[test]
+fn a_narrowed_generic_parameter_synthesises_its_property() -> Result<(), Box<dyn std::error::Error>>
+{
+    let model = create_bmm3_model(&read_schema(GENERIC_INHERITANCE_SCHEMA)?)?;
+    let interval = class(&model, "DV_INTERVAL");
+    let (type_name, synthesised) = unitary(property(interval, "lower"));
+    assert_eq!(type_name, "T");
+    assert_eq!(synthesised, Some(true));
+    // The narrowing is what the synthesis carries: the descendant's own `T`
+    // conforms to DV_ORDERED, the ancestor's to ORDERED.
+    let BmmClass::BmmGenericClass(generic) = interval else {
+        return Err("DV_INTERVAL is generic".into());
+    };
+    assert_eq!(
+        generic.generic_parameter_conformance_type("T").as_deref(),
+        Some("DV_ORDERED")
+    );
+    Ok(())
+}
+
+/// A property the descendant DECLARES is never overwritten by synthesis: the
+/// section synthesises the ancestor's properties "within" the descendant,
+/// which cannot mean displacing one it defines for itself.
+#[test]
+fn a_declared_property_is_not_displaced_by_synthesis() -> Result<(), Box<dyn std::error::Error>> {
+    let model = create_bmm3_model(&read_schema(GENERIC_INHERITANCE_SCHEMA)?)?;
+    let (type_name, synthesised) = unitary(property(class(&model, "SHADOWING_WAIT"), "event"));
+    assert_eq!(type_name, "String");
+    assert_eq!(synthesised, None);
+    Ok(())
+}
+
+/// `master06-core-types.adoc` §Type Conformance, the base-class branch:
+/// "either type names are identical, or else `a_desc_type` has `an_anc_type`
+/// in its ancestors", with the `Any` top implicit
+/// (`master05-core-model.adoc` §The Any Class and Type).
+#[test]
+fn model_type_conformance_follows_the_base_class_test() -> Result<(), Box<dyn std::error::Error>> {
+    let model = create_bmm3_model(&read_schema(GENERIC_INHERITANCE_SCHEMA)?)?;
+    assert!(model.type_conforms_to("DV_ORDERED", "DV_ORDERED"));
+    // Case-insensitive: §Naming Convention.
+    assert!(model.type_conforms_to("dv_ordered", "ORDERED"));
+    assert!(model.type_conforms_to("TIMER_EVENT", "EVENT"));
+    assert!(!model.type_conforms_to("ORDERED", "DV_ORDERED"));
+    assert!(!model.type_conforms_to("EVENT", "TIMER_EVENT"));
+    // Every class reaches the implicit `Any` top.
+    assert!(model.type_conforms_to("TIMER_EVENT", "Any"));
+    Ok(())
+}
+
+/// The generic branches of the same section: both generic with matching
+/// parameter counts and recursively conformant arguments; and "the case where
+/// anc type is not provided in generic form, but desc is, e.g.
+/// `Interval<Integer>` conforms to `Interval`". A non-generic descendant
+/// against a generic ancestor does NOT conform (the section's final `else`).
+#[test]
+fn model_type_conformance_compares_generic_parameters() -> Result<(), Box<dyn std::error::Error>> {
+    let model = create_bmm3_model(&read_schema(GENERIC_INHERITANCE_SCHEMA)?)?;
+    assert!(model.type_conforms_to("INTERVAL<DV_ORDERED>", "INTERVAL<ORDERED>"));
+    assert!(!model.type_conforms_to("INTERVAL<ORDERED>", "INTERVAL<DV_ORDERED>"));
+    assert!(model.type_conforms_to("INTERVAL<DV_ORDERED>", "INTERVAL"));
+    assert!(!model.type_conforms_to("INTERVAL", "INTERVAL<ORDERED>"));
+    // The descendant's own root must still pass the base-class test.
+    assert!(!model.type_conforms_to("WAIT<EVENT>", "INTERVAL<ORDERED>"));
+    Ok(())
+}
+
+/// `BMM_MODEL.all_ancestor_classes` walks the lineage transitively and
+/// excludes the class itself; `property_definition` resolves an INHERITED
+/// property through the flattened class.
+#[test]
+fn model_navigation_walks_ancestors_and_flat_properties() -> Result<(), Box<dyn std::error::Error>>
+{
+    let model = create_bmm3_model(&read_schema(GENERIC_INHERITANCE_SCHEMA)?)?;
+    let ancestors = model.all_ancestor_classes("TIMER_EVENT");
+    assert!(
+        ancestors.iter().any(|name| name == "EVENT"),
+        "{ancestors:?}"
+    );
+    assert!(
+        !ancestors.iter().any(|name| name == "TIMER_EVENT"),
+        "the class itself is excluded: {ancestors:?}"
+    );
+    // A parentless class closes with the implicit `Any` top.
+    assert_eq!(model.all_ancestor_classes("EVENT"), vec!["Any".to_owned()]);
+    // `event` is declared on WAIT and reached through TIMER_WAIT's lineage.
+    assert!(model.property_definition("TIMER_WAIT", "event").is_some());
+    assert!(model.property_definition("TIMER_WAIT", "no_such").is_none());
+    assert!(model.class_definition("timer_wait").is_some());
+    Ok(())
+}

@@ -118,6 +118,7 @@ use crate::service::admin::types::{
 use crate::service::error::ServiceError;
 use crate::service::status::{CallStatusType, SmError};
 use crate::storage::codec::decompose;
+use crate::storage::version_repo::tier::Tier;
 use crate::storage::{node_repo, version_repo};
 use crate::versioning::audit::AuditInput;
 use crate::versioning::object_version_id::{TreeId, object_version_id};
@@ -384,6 +385,7 @@ const ZIP_ENTRY_FILE: &str = "archive.zip";
 /// The packed 7z container entry (SM `COMPRESSION_FORMAT.7z`).
 const SEVENZ_ENTRY_FILE: &str = "archive.7z";
 /// The entry-name prefix of an externalized `DV_MULTIMEDIA` blob.
+#[cfg(feature = "multimedia")]
 const BLOB_PREFIX: &str = "blobs/";
 /// The entry-name prefix of an externalized version payload document
 /// (`EXPORT_FORMAT.openehr_canonical_xml`).
@@ -1115,6 +1117,7 @@ impl FerroEhrService {
     /// records into `blobs/<hex>` archive entries, returning the blob keys
     /// written (empty when externalization is off). Our own extension — no
     /// openEHR spec governs multimedia offload.
+    #[cfg(feature = "multimedia")]
     async fn export_referenced_blobs(
         &self,
         archive: &mut ArchiveWriter,
@@ -1139,9 +1142,25 @@ impl FerroEhrService {
         Ok(keys)
     }
 
+    /// The slim twin: externalization is compiled out, so no stored record
+    /// references a blob and nothing is exported.
+    #[cfg(not(feature = "multimedia"))]
+    #[expect(
+        clippy::unused_async,
+        reason = "the multimedia twin awaits; callers await unconditionally"
+    )]
+    async fn export_referenced_blobs(
+        &self,
+        _archive: &mut ArchiveWriter,
+        _records: &[EhrRecord],
+    ) -> Result<Vec<String>, SmError> {
+        Ok(Vec::new())
+    }
+
     /// Re-put each archived blob (`blobs/<hex>`) into the object store on load
     /// (idempotent, content-addressed). A no-op when the archive carries no
     /// blobs. Our own extension.
+    #[cfg(feature = "multimedia")]
     async fn import_blobs(
         &self,
         archive: &mut ArchiveReader,
@@ -1168,6 +1187,28 @@ impl FerroEhrService {
                 })?;
         }
         Ok(())
+    }
+
+    /// The slim twin: a blob-carrying archive cannot be loaded into a binary
+    /// built without the `multimedia` feature — refuse loudly rather than
+    /// silently dropping content.
+    #[cfg(not(feature = "multimedia"))]
+    #[expect(
+        clippy::unused_async,
+        reason = "the multimedia twin awaits; callers await unconditionally"
+    )]
+    async fn import_blobs(
+        &self,
+        _archive: &mut ArchiveReader,
+        blobs: &[String],
+    ) -> Result<(), SmError> {
+        if blobs.is_empty() {
+            return Ok(());
+        }
+        Err(SmError::precondition(
+            "archive carries externalized multimedia blobs but this binary \
+             was built without the `multimedia` cargo feature",
+        ))
     }
 
     /// Whether an EHR with `ehr_id` already exists in the target repository.
@@ -1222,7 +1263,7 @@ impl FerroEhrService {
             "SELECT id, time_committed, system_id, change_type, \
              description, committer, attestation FROM audit \
              WHERE id IN (SELECT audit_id FROM contribution WHERE ehr_id = $1 \
-                          UNION SELECT audit_id FROM vo_version WHERE ehr_id = $1) \
+                          UNION SELECT audit_id FROM vo_version_all WHERE ehr_id = $1) \
              ORDER BY id",
         )
         .bind(ehr_id)
@@ -1263,7 +1304,7 @@ impl FerroEhrService {
              upper(sys_period)::text AS hi, lifecycle_state, contribution_id, audit_id, \
              template_id, signature, signature_client_supplied, creating_system_id, \
              wrapped_original \
-             FROM vo_version WHERE ehr_id = $1 ORDER BY vo_id, sys_version",
+             FROM vo_version_all WHERE ehr_id = $1 ORDER BY vo_id, sys_version",
         )
         .bind(ehr_id)
         .fetch_all(&self.pool)
@@ -1273,11 +1314,14 @@ impl FerroEhrService {
             let vo_id: VoId = r.try_get("vo_id")?;
             let sys_version: i32 = r.try_get("sys_version")?;
             let lifecycle_state: String = r.try_get("lifecycle_state")?;
-            // A deleted version has no node rows; its body stays `null`.
+            // A deleted version has no node rows; its body stays `null`. An
+            // export covers the WHOLE repository, so the content is read across
+            // both storage tiers (`crate::storage::version_repo::tier`).
             let body = if lifecycle_state == DELETED_LIFECYCLE {
                 Value::Null
             } else {
-                node_repo::read_version_canonical(&self.pool, vo_id, sys_version).await?
+                node_repo::read_version_canonical_in(&self.pool, vo_id, sys_version, Tier::Both)
+                    .await?
             };
             versions.push(VersionRecord {
                 vo_id,
@@ -1340,7 +1384,7 @@ impl FerroEhrService {
 
         let archive_rows = sqlx::query(
             "SELECT vo_id, archived_at::text AS archived_at, reason FROM vo_archive \
-             WHERE vo_id IN (SELECT DISTINCT vo_id FROM vo_version WHERE ehr_id = $1) \
+             WHERE vo_id IN (SELECT DISTINCT vo_id FROM vo_version_all WHERE ehr_id = $1) \
              ORDER BY vo_id",
         )
         .bind(ehr_id)
@@ -1357,8 +1401,8 @@ impl FerroEhrService {
 
         let attestation_rows = sqlx::query(
             "SELECT id, vo_id, sys_version, contribution_id, time_committed, at_committal, \
-             data FROM vo_attestation \
-             WHERE vo_id IN (SELECT DISTINCT vo_id FROM vo_version WHERE ehr_id = $1) \
+             data FROM vo_attestation_all \
+             WHERE vo_id IN (SELECT DISTINCT vo_id FROM vo_version_all WHERE ehr_id = $1) \
              ORDER BY vo_id, sys_version, time_committed, id",
         )
         .bind(ehr_id)
@@ -1437,14 +1481,11 @@ impl FerroEhrService {
         // The load re-decomposed the EHR_STATUS versions directly, so the
         // promoted `ehr` columns are re-derived from the loaded current status
         // — the EHR_STATUS content is the truth, the exported columns only its
-        // cached projection (an archive written before a promotion fix, or by a
-        // path that never promoted, carries a stale/absent subject). This makes
-        // a loaded EHR visible to the subject lookup (SM
-        // `I_EHR_SERVICE.get_ehrs_for_subject`) and bound by the
+        // cached projection. This makes a loaded EHR visible to the subject
+        // lookup (SM `I_EHR_SERVICE.get_ehrs_for_subject`) and bound by the
         // one-EHR-per-subject rule (RM ehr master04 §EHR Status), and keeps
-        // `is_queryable` / `is_modifiable` matching the loaded state for the AQL
-        // full-population gate (SM I_QUERY_SERVICE — full population =
-        // queryable EHRs) and the content-write guard (§EHR Active Status).
+        // `is_queryable`/`is_modifiable` matching the loaded state for the AQL
+        // full-population gate and the content-write guard (§EHR Active Status).
         self.resync_promoted_columns(&mut tx, ehr_id).await?;
 
         // EHR.folders membership rows, verbatim (rank fidelity — RM ehr §EHR
@@ -1488,15 +1529,13 @@ impl FerroEhrService {
         }
 
         // Lineage keys mirror the removed EXCLUDE constraints exactly: trunk
-        // rows are one lineage per vo_id; branch rows are per
-        // {vo, creating system, fork point, branch number}.
-        // The archive is the ONLY path writing explicit historical
-        // `sys_period` bounds, so it carries the per-lineage temporal
-        // non-overlap invariant check the regular write path holds by
-        // construction (RM common master06: one valid version per lineage at
-        // any instant; the enforcement mechanism is our own design — the
-        // baseline schema NOTE). A corrupted or hand-crafted archive with
-        // overlapping validity fails the whole record before commit.
+        // rows are one lineage per vo_id; branch rows are per {vo, creating
+        // system, fork point, branch number}. The archive is the ONLY path
+        // writing explicit historical `sys_period` bounds, so it carries the
+        // per-lineage temporal non-overlap invariant check the regular write
+        // path holds by construction (RM common master06: one valid version per
+        // lineage at any instant). A corrupted archive with overlapping validity
+        // fails the whole record before commit.
         let overlap: bool = sqlx::query_scalar(
             "SELECT EXISTS ( \
                  SELECT 1 FROM vo_version a \
@@ -1519,6 +1558,13 @@ impl FerroEhrService {
                 )),
             ));
         }
+
+        // Every loaded row went into the primary tier; the ones the record
+        // marks archived belong in the cold tier, so the invariant "a marker
+        // means the rows are in `cold`" holds for a loaded EHR exactly as it
+        // does for a locally archived one.
+        let archived: Vec<VoId> = record.archives.iter().map(|ar| ar.vo_id).collect();
+        version_repo::tier::freeze(&mut tx, &archived).await?;
 
         tx.commit().await?;
         Ok(())

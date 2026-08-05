@@ -1,7 +1,17 @@
 {
+  "_type": "EHR_STATUS",
   "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
   "name": {
+    "_type": "DV_TEXT",
     "value": "EHR Status"
+  },
+  "archetype_details": {
+    "_type": "ARCHETYPED",
+    "archetype_id": {
+      "_type": "ARCHETYPE_ID",
+      "value": "openEHR-EHR-EHR_STATUS.generic.v1"
+    },
+    "rm_version": "1.2.0"
   },
   "subject": {
     "external_ref": {
@@ -15,5 +25,13 @@
     }
   },
   "is_modifiable": true,
-  "is_queryable": true
+  "is_queryable": true,
+  "other_details": {
+    "archetype_node_id": "at0001",
+    "name": {
+      "_type": "DV_TEXT",
+      "value": "other details"
+    },
+    "items": []
+  }
 }

@@ -91,15 +91,26 @@ impl CaptureStore {
         }
     }
 
+    // NOTE: a poisoned shard is RECOVERED, never dropped (#1853) — the guarded
+    // value is a plain per-id map with no cross-entry invariant a panic
+    // elsewhere can break, so `None` now means only "no such shard".
     fn journey<R>(&self, id: u64, f: impl FnOnce(&mut JourneyState) -> R) -> Option<R> {
         let shard = usize::try_from(id).unwrap_or(0) % SHARDS;
-        let mut map = self.journeys.get(shard)?.lock().ok()?;
+        let mut map = self
+            .journeys
+            .get(shard)?
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         Some(f(map.entry(id).or_default()))
     }
 
     fn patient<R>(&self, index: usize, f: impl FnOnce(&mut PatientState) -> R) -> Option<R> {
         let shard = index % SHARDS;
-        let mut map = self.patients.get(shard)?.lock().ok()?;
+        let mut map = self
+            .patients
+            .get(shard)?
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         Some(f(map.entry(index).or_default()))
     }
 

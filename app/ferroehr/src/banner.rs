@@ -77,7 +77,7 @@ mod tests {
             b.contains("https://github.com/rubentalstra/FerroEHR"),
             "project URL must appear"
         );
-        // The load-bearing pins (docs/VERSIONS.md), each on its own line.
+        // The load-bearing pins, each on its own line.
         for (label, pin) in PINS {
             assert!(b.contains(label), "pin label {label:?} must appear");
             assert!(b.contains(pin), "pin version {pin:?} must appear");

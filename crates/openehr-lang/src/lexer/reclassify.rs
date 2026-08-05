@@ -24,6 +24,14 @@ pub(super) enum Language {
     Odin,
     /// The BEL reading (`LANG/docs/BEL/`, `base_expressions.g4`).
     Bel,
+    /// The Expression Language reading (`LANG/docs/EL/`, `ElLexer.g4`).
+    ///
+    /// `ElLexer.g4` is an `import Cadl2Lexer, SymbolsLexer, GeneralIdsLexer`
+    /// with its own rules layered on top, and ANTLR gives the importing
+    /// grammar's rule precedence — so this reading is the cADL one wherever
+    /// `ElLexer.g4` declares nothing, and `ElLexer.g4`'s own (case-SENSITIVE)
+    /// spelling wherever it does.
+    El,
 }
 
 /// What `language`'s own lexer would produce for `slice`, or `None` when it
@@ -47,39 +55,100 @@ pub(super) fn reclassify(
     start: usize,
 ) -> Option<Token> {
     match token {
-        // ── the BOM: tolerated (and dropped) by ADL/ODIN, refused by BEL ──
+        // ── the BOM: tolerated (and dropped) by ADL/ODIN, refused by BEL/EL ──
         Token::Bom => match language {
             Language::Adl | Language::Odin => Some(Token::Bom),
-            Language::Bel => None,
+            Language::Bel | Language::El => None,
         },
 
-        // ── keywords shared by the cADL and BEL layers ──
-        // BEL's `base_expressions.g4` spells these case-SENSITIVELY, so a
-        // differently-cased spelling stays an identifier there.
-        Token::SymMatches => {
-            shared_keyword(language, token, slice, &["matches", "is_in", "\u{2208}"])
-        }
-        Token::SymAnd => shared_keyword(language, token, slice, &["and", "\u{2227}"]),
-        Token::SymOr => shared_keyword(language, token, slice, &["or", "\u{2228}"]),
-        Token::SymXor => shared_keyword(language, token, slice, &["xor"]),
+        // ── keywords shared by the cADL, BEL and EL layers ──
+        // BEL's `base_expressions.g4` and EL's `ElLexer.g4` both spell these
+        // case-SENSITIVELY, so a differently-cased spelling stays an
+        // identifier there.
+        Token::SymMatches => shared_keyword(
+            language,
+            token,
+            slice,
+            &["matches", "is_in", "\u{2208}"],
+            &["matches", "is_in", "\u{2208}"],
+        ),
+        Token::SymAnd => shared_keyword(
+            language,
+            token,
+            slice,
+            &["and", "\u{2227}"],
+            &["and", "AND", "\u{2227}"],
+        ),
+        Token::SymOr => shared_keyword(
+            language,
+            token,
+            slice,
+            &["or", "\u{2228}"],
+            &["or", "OR", "\u{2228}"],
+        ),
+        // `⊻` is not in `ElLexer.g4` `SYM_XOR`; the EL Logical Operators table
+        // (`LANG/docs/EL/master05-expressions.adoc` §Primitive Operators)
+        // lists it as the symbol form, and the docs text is the oracle.
+        Token::SymXor => shared_keyword(
+            language,
+            token,
+            slice,
+            &["xor"],
+            &["xor", "XOR", "\u{22BB}"],
+        ),
         Token::SymNot => shared_keyword(
             language,
             token,
             slice,
             &["not", "~", "\u{223C}", "\u{00AC}", "!"],
+            &["not", "NOT", "!", "~", "\u{00AC}"],
         ),
-        Token::SymImplies => shared_keyword(language, token, slice, &["implies", "\u{00AE}", "->"]),
-        Token::SymForAll => shared_keyword(language, token, slice, &["for_all", "\u{2200}"]),
-        Token::SymExists => shared_keyword(language, token, slice, &["exists"]),
-        Token::SymThereExists => {
-            shared_keyword(language, token, slice, &["there_exists", "\u{2203}"])
+        Token::SymImplies => shared_keyword(
+            language,
+            token,
+            slice,
+            &["implies", "\u{00AE}", "->"],
+            &["implies", "\u{21D2}", "\u{2192}"],
+        ),
+        Token::SymForAll => shared_keyword(
+            language,
+            token,
+            slice,
+            &["for_all", "\u{2200}"],
+            &["for_all", "\u{2200}"],
+        ),
+        Token::SymExists => {
+            shared_keyword(language, token, slice, &["exists"], &["exists", "\u{25A1}"])
         }
+        Token::SymThereExists => shared_keyword(
+            language,
+            token,
+            slice,
+            &["there_exists", "\u{2203}"],
+            &["there_exists", "\u{2203}"],
+        ),
 
-        // ── the BEL-only quantifier binding keyword ──
+        // ── the BEL/EL quantifier binding keyword ──
         Token::SymIn => match language {
             Language::Bel => Some(token.clone()),
+            Language::El => (slice == "in").then(|| token.clone()),
             Language::Adl | Language::Odin => demote_word(language, slice),
         },
+
+        // ── EL-only operators (`ElLexer.g4` `SYM_IFF`, `SYM_BROKEN_BAR`) ──
+        Token::SymIff | Token::SymBrokenBar => match language {
+            Language::El => Some(token.clone()),
+            Language::Adl | Language::Odin | Language::Bel => None,
+        },
+
+        // ── the EL-only word keywords, re-tagged off the identifier the
+        //    shared DFA produced (`ElLexer.g4` `SYM_SELF`/`SYM_RESULT`/
+        //    `SYM_CASE`/`SYM_CHOICE`/`SYM_ASSERT`) ──
+        Token::SymSelf
+        | Token::SymResult
+        | Token::SymCase
+        | Token::SymChoice
+        | Token::SymAssert => None,
 
         // ── cADL-only keywords: identifiers everywhere else ──
         Token::SymNotMatches
@@ -96,18 +165,25 @@ pub(super) fn reclassify(
         | Token::SymExclude
         | Token::SymAfter
         | Token::SymBefore
-        | Token::SymClosed
-        | Token::SymThen => match language {
+        | Token::SymClosed => match language {
             Language::Adl => Some(token.clone()),
-            Language::Odin | Language::Bel => demote_word(language, slice),
+            // EL reserves only what `ElLexer.g4` itself declares. These are
+            // cADL constraint keywords, reachable in EL only inside the
+            // `matches { … }` block `ElParser.g4` delegates to `Cadl2Parser` —
+            // which this reader captures verbatim — so in EL expression
+            // position each is an ordinary feature name.
+            Language::Odin | Language::Bel | Language::El => demote_word(language, slice),
         },
+        // `ElLexer.g4` re-declares `SYM_THEN : 'then' | 'THEN'`, so EL takes
+        // exactly those two spellings.
+        Token::SymThen => shared_keyword(language, token, slice, &[], &["then", "THEN"]),
 
         // `infinity` is an interval endpoint in cADL and in ODIN
         // (`AM/docs/ADL1.4/master04-dadl` §Intervals of Ordered Primitive
         // Types); `base_expressions.g4` has no such keyword.
         Token::SymInfinity => match language {
             Language::Adl | Language::Odin => Some(token.clone()),
-            Language::Bel => demote_word(language, slice),
+            Language::Bel | Language::El => demote_word(language, slice),
         },
 
         // Booleans are case-insensitive in cADL and ODIN; BEL spells only the
@@ -121,12 +197,12 @@ pub(super) fn reclassify(
         Token::RootIdCode(_) | Token::IdCode(_) | Token::AtCode(_) | Token::AcCode(_) => {
             match language {
                 Language::Adl => Some(token.clone()),
-                Language::Odin | Language::Bel => demote_word(language, slice),
+                Language::Odin | Language::Bel | Language::El => demote_word(language, slice),
             }
         }
         Token::ArchetypeId(_) | Token::VersionId(_) | Token::Guid(_) => match language {
             Language::Adl => Some(token.clone()),
-            Language::Odin | Language::Bel => None,
+            Language::Odin | Language::Bel | Language::El => None,
         },
         Token::DateTimeConstraintPattern(_)
         | Token::DateConstraintPattern(_)
@@ -134,23 +210,28 @@ pub(super) fn reclassify(
         | Token::DurationConstraintPattern(_) => match language {
             Language::Adl => Some(token.clone()),
             // `PYMD`/`PWD` are also well-formed uppercase identifiers.
-            Language::Odin | Language::Bel => demote_word(language, slice),
+            Language::Odin | Language::Bel | Language::El => demote_word(language, slice),
         },
-        Token::VariableWithPath(_) | Token::VariableId(_) => match language {
+        // `ElLexer.g4` `BOUND_VARIABLE_ID : '$' LC_ID` has no path suffix.
+        Token::VariableWithPath(_) => match language {
             Language::Adl | Language::Bel => Some(token.clone()),
+            Language::Odin | Language::El => None,
+        },
+        Token::VariableId(_) => match language {
+            Language::Adl | Language::Bel | Language::El => Some(token.clone()),
             Language::Odin => None,
         },
 
         // ── ISO 8601 values ──
         Token::Iso8601DateTime(text) => iso_date_time(language, text),
         Token::Iso8601Date(text) => match language {
-            Language::Adl | Language::Odin => Some(token.clone()),
+            Language::Adl | Language::Odin | Language::El => Some(token.clone()),
             // `base_expressions.g4` `ISO8601_DATE` is the complete
             // `yyyy-mm-dd` form only — no `??` fields, no year-month form.
             Language::Bel => (text.len() == 10 && !text.contains('?')).then(|| token.clone()),
         },
         Token::Iso8601Time(text) => match language {
-            Language::Adl | Language::Odin => Some(token.clone()),
+            Language::Adl | Language::Odin | Language::El => Some(token.clone()),
             // BEL's `ISO8601_TIME` is the union form minus the `??` fields.
             Language::Bel => (!text.contains('?')).then(|| token.clone()),
         },
@@ -159,7 +240,7 @@ pub(super) fn reclassify(
         // ── composed primitives ──
         // `CONTAINED_REGEXP` is a cADL/BEL constraint form; ODIN has no `{`.
         Token::ContainedRegexp(_) | Token::LCurly | Token::RCurly => match language {
-            Language::Adl | Language::Bel => Some(token.clone()),
+            Language::Adl | Language::Bel | Language::El => Some(token.clone()),
             Language::Odin => None,
         },
         // A qualified term code is a cADL primitive, an ODIN leaf value, AND
@@ -173,10 +254,13 @@ pub(super) fn reclassify(
         // expression text) — the BEL boundary recorded at the #884 audit.
         Token::EmbeddedUri(_) => match language {
             Language::Adl | Language::Odin => Some(token.clone()),
-            Language::Bel => None,
+            Language::Bel | Language::El => None,
         },
+        // `ElLexer.g4` `LOCAL_TERM_CODE_REF : '[' ALPHANUM_US_CHAR+ ']'` is
+        // narrower than the ODIN form, which also admits `.` and `-`.
         Token::LocalTermCodeRef(_) => match language {
             Language::Odin => Some(token.clone()),
+            Language::El => is_local_term_code(slice).then(|| token.clone()),
             Language::Adl | Language::Bel => None,
         },
         // `<# … #>` is the ODIN plug-in-syntax block
@@ -184,19 +268,19 @@ pub(super) fn reclassify(
         // the BEL grammar has any `#` production, so both refuse it.
         Token::PlugInBlock(_) => match language {
             Language::Odin => Some(token.clone()),
-            Language::Adl | Language::Bel => None,
+            Language::Adl | Language::Bel | Language::El => None,
         },
         Token::AdlPath(text) => path(language, text).then(|| token.clone()),
 
         // ── atomic primitives ──
         Token::Real(_) | Token::Character(_) => Some(token.clone()),
         Token::Integer(text) => match language {
-            Language::Adl | Language::Odin => Some(token.clone()),
+            Language::Adl | Language::Odin | Language::El => Some(token.clone()),
             // `base_expressions.g4` `INTEGER : DIGIT+` — no exponent suffix.
             Language::Bel => (!text.contains(['e', 'E'])).then(|| token.clone()),
         },
         Token::String(text) => match language {
-            Language::Adl | Language::Bel => Some(token.clone()),
+            Language::Adl | Language::Bel | Language::El => Some(token.clone()),
             Language::Odin => Some(Token::String(strip_line_leaders(
                 text,
                 leader_budget(src, start),
@@ -204,11 +288,18 @@ pub(super) fn reclassify(
         },
 
         // ── identifiers ──
-        Token::AlphaUcId(_) | Token::AlphaLcId(_) => Some(token.clone()),
-        // `base_expressions.g4` has no `ALPHA_UNDERSCORE_ID`.
+        // Under EL the five word keywords `ElLexer.g4` declares over the
+        // imported id layer are re-tagged here, exactly as the ODIN pass
+        // demotes a keyword it does not reserve.
+        Token::AlphaUcId(_) | Token::AlphaLcId(_) => match language {
+            Language::El => Some(el_word(slice, token)),
+            Language::Adl | Language::Odin | Language::Bel => Some(token.clone()),
+        },
+        // `base_expressions.g4` has no `ALPHA_UNDERSCORE_ID`, and neither the
+        // EL nor the cADL parser reaches one.
         Token::AlphaUnderscoreId(_) => match language {
             Language::Adl | Language::Odin => Some(token.clone()),
-            Language::Bel => None,
+            Language::Bel | Language::El => None,
         },
 
         // ── symbols every layer shares ──
@@ -236,6 +327,8 @@ pub(super) fn reclassify(
         Token::SymAssignment | Token::SymColon | Token::SymPercent | Token::SymCarat => {
             match language {
                 Language::Adl | Language::Bel => Some(token.clone()),
+                // `ElLexer.g4` `SYM_ASSIGNMENT : ':='` — no `::=` spelling.
+                Language::El => (slice != "::=").then(|| token.clone()),
                 Language::Odin => None,
             }
         }
@@ -249,19 +342,19 @@ pub(super) fn reclassify(
         // only by BEL; under cADL and ODIN the two characters are the separate
         // `SYM_LT` `SYM_GT` an empty ODIN block is written with.
         Token::SymNe => match language {
-            Language::Adl => (slice != "<>").then(|| token.clone()),
+            Language::Adl | Language::El => (slice != "<>").then(|| token.clone()),
             Language::Bel => Some(token.clone()),
             Language::Odin => None,
         },
         // `SYM_LIST_CONTINUE` and `SYM_PLUS_OR_MINUS` are ODIN/cADL value
         // syntax with no BEL production.
         Token::SymListContinue | Token::SymPlusOrMinus => match language {
-            Language::Adl | Language::Odin => Some(token.clone()),
+            Language::Adl | Language::Odin | Language::El => Some(token.clone()),
             Language::Bel => None,
         },
         // `odin_values.g4` spells the wildcard endpoint as the ASCII `*` only.
         Token::SymStar => match language {
-            Language::Adl | Language::Bel => Some(token.clone()),
+            Language::Adl | Language::Bel | Language::El => Some(token.clone()),
             Language::Odin => (slice == "*").then(|| token.clone()),
         },
     }
@@ -279,11 +372,17 @@ fn shared_keyword(
     token: &Token,
     slice: &str,
     bel_spellings: &[&str],
+    el_spellings: &[&str],
 ) -> Option<Token> {
     match language {
         Language::Adl => Some(token.clone()),
-        Language::Bel => {
-            if bel_spellings.contains(&slice) {
+        Language::Bel | Language::El => {
+            let spellings = if language == Language::Bel {
+                bel_spellings
+            } else {
+                el_spellings
+            };
+            if spellings.contains(&slice) {
                 Some(token.clone())
             } else {
                 demote_word(language, slice)
@@ -291,6 +390,31 @@ fn shared_keyword(
         }
         Language::Odin => demote_word(language, slice),
     }
+}
+
+/// The EL reading of an identifier slice: one of the five word keywords
+/// `ElLexer.g4` declares over the imported id layer, or the identifier itself.
+fn el_word(slice: &str, token: &Token) -> Token {
+    match slice {
+        "Self" => Token::SymSelf,
+        "Result" => Token::SymResult,
+        "case" => Token::SymCase,
+        "choice" => Token::SymChoice,
+        "assert" => Token::SymAssert,
+        _ => token.clone(),
+    }
+}
+
+/// Whether `slice` is an `ElLexer.g4` `LOCAL_TERM_CODE_REF`, i.e. `'['
+/// ALPHANUM_US_CHAR+ ']'` — no `.` and no `-`, unlike the ODIN form.
+fn is_local_term_code(slice: &str) -> bool {
+    let Some(body) = slice
+        .strip_prefix('[')
+        .and_then(|rest| rest.strip_suffix(']'))
+    else {
+        return false;
+    };
+    !body.is_empty() && body.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_')
 }
 
 /// `SYM_TRUE`/`SYM_FALSE`: case-insensitive under cADL (`base_lexer.g4`) and
@@ -304,7 +428,7 @@ fn shared_boolean(
     bel_spellings: &[&str],
 ) -> Option<Token> {
     match language {
-        Language::Adl | Language::Odin => Some(token.clone()),
+        Language::Adl | Language::Odin | Language::El => Some(token.clone()),
         Language::Bel => {
             if bel_spellings.contains(&slice) {
                 Some(token.clone())
@@ -338,6 +462,9 @@ fn iso_date_time(language: Language, text: &str) -> Option<Token> {
         Language::Bel => {
             (!text.contains(['?', ' '])).then(|| Token::Iso8601DateTime(text.to_owned()))
         }
+        // EL inherits the cADL date-time layer but has no space-separated
+        // form: `ElParser.g4` `elArithmeticValue` reaches only `dateTimeValue`.
+        Language::El => (!text.contains(' ')).then(|| Token::Iso8601DateTime(text.to_owned())),
     }
 }
 
@@ -438,7 +565,9 @@ fn demote_word(language: Language, slice: &str) -> Option<Token> {
     match head {
         'a'..='z' => Some(Token::AlphaLcId(slice.to_owned())),
         'A'..='Z' => Some(Token::AlphaUcId(slice.to_owned())),
-        '_' if language != Language::Bel => Some(Token::AlphaUnderscoreId(slice.to_owned())),
+        '_' if !matches!(language, Language::Bel | Language::El) => {
+            Some(Token::AlphaUnderscoreId(slice.to_owned()))
+        }
         _ => None,
     }
 }
@@ -470,14 +599,12 @@ fn path(language: Language, text: &str) -> bool {
         }
         // The ODIN reading takes either case on the segment head — a
         // docs-text-grounded widening over `base_lexer.g4`'s lower-case-only
-        // `ADL_PATH_SEGMENT`: ODIN object keys may be upper-case or
-        // `_`-initial identifiers (`odin.g4` `odin_object_key : ALPHA_UC_ID |
-        // ALPHA_UNDERSCORE_ID | rm_attribute_id`), and every node is
-        // reachable by a path (`LANG/docs/odin/master02-overview`), so a path
-        // must be able to name an upper-case-keyed attribute. (`_`-initial
-        // segment HEADS remain un-lexable in every language — a spec-internal
-        // gap between the object-key and path-segment grammars, recorded at
-        // the #858 ch.8 audit.)
+        // `ADL_PATH_SEGMENT`: ODIN object keys may be upper-case or `_`-initial
+        // identifiers (`odin.g4` `odin_object_key`), and every node is reachable
+        // by a path (`LANG/docs/odin/master02-overview`), so a path must be able
+        // to name an upper-case-keyed attribute. (`_`-initial segment HEADS
+        // remain un-lexable in every language — a spec-internal gap between the
+        // object-key and path-segment grammars.)
         Language::Odin => {
             (shape.leading_slashes == 1 && shape.segments >= 1)
                 || (shape.leading_slashes == 0 && shape.segments >= 2)
@@ -495,6 +622,9 @@ fn path(language: Language, text: &str) -> bool {
                         && shape.segments == 1
                         && shape.first_has_predicate))
         }
+        // `ElParser.g4` has no path production at all — a dotted feature chain
+        // is `elScopedFeatureRef`, lexed as separate ids and `'.'`.
+        Language::El => false,
     }
 }
 

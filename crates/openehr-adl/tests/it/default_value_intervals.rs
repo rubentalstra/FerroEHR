@@ -98,7 +98,7 @@ fn parse_and_print(default: &str) -> (serde_json::Value, String) {
     let archetype = parse_artefact(&src, Dialect::Adl2)
         .unwrap_or_else(|e| panic!("`_default = {default}` must parse, got {e:?}"));
     let json = element_default(&archetype);
-    let printed = print(&archetype);
+    let printed = print(&archetype).expect("print the parsed archetype");
     // The printed text must re-read as the very same artefact.
     let reparsed = parse_artefact(&printed, Dialect::Adl2)
         .unwrap_or_else(|e| panic!("the printed form of `{default}` must re-parse, got {e:?}"));

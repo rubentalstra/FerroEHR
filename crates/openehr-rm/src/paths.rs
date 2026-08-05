@@ -621,7 +621,7 @@ fn apply_conjunct(c: &str, predicate: &mut Predicate) -> Result<(), PathError> {
     if c.contains('\'') {
         return Err(PathError::UnsupportedPredicate(c.to_owned()));
     }
-    // NOTE (register AMB-183): the name-based bare-bracket form with a parenthesised
+    // NOTE: the name-based bare-bracket form with a parenthesised
     // uniqueness modifier that RM common `master05-directory_package.adoc` §Paths
     // states has no production in BASE `master11-paths`, so it is refused, not bound.
     if c.contains('(') || c.contains(')') {
@@ -1395,7 +1395,7 @@ mod tests {
     /// (`[hospital episodes(car accident Aug 1998)]`) has no production in the
     /// BASE `master11-paths` grammar this engine implements, so it is refused
     /// loud rather than bound whole as an `archetype_node_id` that could never
-    /// match (register AMB-183).
+    /// match.
     #[test]
     fn master05_uniqueness_modifier_is_refused() {
         assert!(matches!(
@@ -1408,7 +1408,7 @@ mod tests {
         ));
     }
 
-    /// The bare-bracket bindings AMB-183 leaves unchanged: the master11
+    /// The bare-bracket bindings this leaves unchanged: the master11
     /// archetype-code and archetype-id shortcuts still bind, and a bare NAME
     /// token keeps its master11 reading — it binds as an `archetype_node_id`
     /// (and so matches nothing), which is the registered handling, not a

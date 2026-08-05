@@ -190,8 +190,7 @@ impl FerroEhrService {
     /// they become part of the content of the versioned object." A converted
     /// TDD carrying `COMPOSITION.feeder_audit` therefore keeps its feeder
     /// provenance through this path, inside the committed content, while the
-    /// commit's own `AUDIT_DETAILS` documents the local addition. Register
-    /// AMB-200.
+    /// commit's own `AUDIT_DETAILS` documents the local addition.
     ///
     /// # Errors
     /// - `content_invalid` — the payload is not well-formed XML / has no root,

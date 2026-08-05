@@ -614,16 +614,14 @@ fn log4j2_xml_is_not_odin() {
 
 #[test]
 fn anonymous_document_placeholder_leaf_is_refused() {
-    // Adjudication (re-grounded by the #854 ch.4 audit): the Anonymous
-    // Object Document FORM — an outer `<>` around a fragment — is normative
-    // and "should be supported by parsers"
+    // Adjudication: the Anonymous Object Document FORM — an outer `<>` around a
+    // fragment — is normative and "should be supported by parsers"
     // (`LANG/docs/odin/master04-odin_artefacts` §Anonymous Object Document);
-    // its materialized twin parses in `odin_spec_examples.rs`. What keeps
-    // THIS fixture refused is only its illustrative bareword
-    // meta-placeholder `leaf_value`: a bareword is neither a
-    // `primitive_object`, an `attr_vals`, a `keyed_object`, nor an
-    // `object_reference_block` path (`base_lexer.g4` ADL_PATH requires a
-    // `/`). archie has no test referencing it.
+    // its materialized twin parses in `odin_spec_examples.rs`. What keeps THIS
+    // fixture refused is only its illustrative bareword meta-placeholder
+    // `leaf_value`: a bareword is neither a `primitive_object`, an `attr_vals`,
+    // a `keyed_object`, nor an `object_reference_block` path (`base_lexer.g4`
+    // ADL_PATH requires a `/`).
     let err = parse(&read("odin/odin/anonymous_odin.txt")).expect_err("bareword leaf is invalid");
     assert!(err.line >= 1 && err.column >= 1);
 }

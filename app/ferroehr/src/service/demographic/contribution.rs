@@ -104,8 +104,7 @@ impl FerroEhrService {
         }
         .canonical(&audit.time_committed);
         // NOTE: a JSON-literal envelope over the already-canonical `audit`
-        // fragment (see `crate::versioning::contribution` for the same
-        // reasoning); every part this builder SYNTHESIZES is built from its
+        // fragment; every part this builder SYNTHESIZES is built from its
         // generated type.
         Ok(json!({
             "_type": "CONTRIBUTION",

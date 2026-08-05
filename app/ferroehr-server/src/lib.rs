@@ -212,12 +212,17 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         .await
         .context("applying migrations")?;
 
-    // ATNA audit (fail-open at boot).
+    // ATNA audit (fail-open at boot). A slim build cannot render the FHIR
+    // `AuditEvent` the store and the ATX:FHIR Feed carry, so an enabled
+    // configuration is refused loudly instead.
+    #[cfg(not(feature = "fhir"))]
+    ferroehr::system_log::require_fhir_disabled(&config.audit).map_err(|e| anyhow::anyhow!(e))?;
     let audit_config: AuditConfig = config.audit.clone();
     let (audit_sender, audit_handle) = start_audit(&audit_config, &pool).await;
 
     // Contribution-outbox eventing + FHIR outbound emitter (both off by default).
     let outbox_enabled = config.events.enabled || config.fhir.outbound.enabled;
+    #[cfg(feature = "events")]
     let events_handle = if config.events.enabled {
         tracing::info!(exchange = %config.events.exchange, "contribution-outbox eventing enabled");
         Some(ferroehr::extensions::events::publisher::start(
@@ -227,6 +232,9 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     } else {
         None
     };
+    #[cfg(not(feature = "events"))]
+    ferroehr::extensions::events::require_disabled(&config.events)
+        .map_err(|e| anyhow::anyhow!(e))?;
 
     // Health indicators.
     let mut indicators: Vec<Arc<dyn HealthIndicator>> = vec![
@@ -236,6 +244,7 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     if let Some(sender) = &audit_sender {
         indicators.push(Arc::new(indicators::AuditHealth::new(sender.clone())));
     }
+    #[cfg(feature = "events")]
     if let Some(handle) = &events_handle {
         indicators.push(Arc::new(indicators::EventsHealth::new(handle.healthy())));
     }
@@ -312,10 +321,11 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         service = service.with_subject_proxy(Arc::new(fhir));
     }
 
-    // Opt-in DV_MULTIMEDIA externalization.
-    if let Some(engine) =
-        ferroehr::extensions::multimedia::MultimediaEngine::from_config(&config.multimedia)
-            .context("initialising the multimedia object store")?
+    // Opt-in DV_MULTIMEDIA externalization (the `multimedia` cargo feature; a
+    // slim build refuses an enabled config loudly).
+    #[cfg(feature = "multimedia")]
+    if let Some(engine) = ferroehr::extensions::multimedia::engine_from_config(&config.multimedia)
+        .context("initialising the multimedia object store")?
     {
         tracing::info!(
             bucket = %config.multimedia.bucket,
@@ -324,10 +334,14 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         );
         service = service.with_multimedia(Arc::new(engine));
     }
+    #[cfg(not(feature = "multimedia"))]
+    ferroehr::extensions::multimedia::require_disabled(&config.multimedia)
+        .map_err(|e| anyhow::anyhow!(e))?;
 
     let service = Arc::new(service);
 
     // FHIR outbound emitter (off by default; carries PHI).
+    #[cfg(feature = "events")]
     let fhir_outbound_handle = if config.fhir.outbound.enabled {
         tracing::info!(
             exchange = %config.fhir.outbound.exchange,
@@ -341,6 +355,12 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     } else {
         None
     };
+    #[cfg(not(feature = "events"))]
+    if config.fhir.outbound.enabled {
+        return Err(anyhow::anyhow!(
+            "fhir.outbound.enabled = true, but this binary was built without the `events` cargo feature"
+        ));
+    }
 
     // Authorization — only wired when authentication is enabled: the RBAC gate
     // plus the ABAC engine + DB-backed attribute resolvers. A misconfigured
@@ -390,9 +410,11 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     if let Some(handle) = audit_handle {
         handle.shutdown(AUDIT_DRAIN_TIMEOUT).await;
     }
+    #[cfg(feature = "events")]
     if let Some(handle) = events_handle {
         handle.shutdown(AUDIT_DRAIN_TIMEOUT).await;
     }
+    #[cfg(feature = "events")]
     if let Some(handle) = fhir_outbound_handle {
         handle.shutdown(AUDIT_DRAIN_TIMEOUT).await;
     }

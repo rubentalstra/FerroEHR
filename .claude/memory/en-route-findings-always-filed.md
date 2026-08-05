@@ -1,11 +1,11 @@
 ---
 name: en-route-findings-always-filed
-description: "Owner hard rule 2026-08-02 — anything strange found outside a task's scope gets a tracker issue, never ignored because \"it was already there\""
+description: "Owner hard rules 2026-08-02 + 2026-08-04 — every en-route finding gets a tracker issue, AND a tractable one is fixed in the same branch (file = record, never a parking lot)"
 metadata: 
   node_type: memory
   type: feedback
   originSessionId: af8ec1a8-3953-4ae1-a5d1-355a712f597b
-  modified: 2026-08-02T09:41:50.660Z
+  modified: 2026-08-04T17:01:45.814Z
 ---
 
 Owner hard rule 2026-08-02: when work (mine or a subagent's) encounters
@@ -25,3 +25,12 @@ why in the record, silence is not an option. This generalizes CLAUDE.md
 §Issue workflow's "new work discovered en route gets its own issue".
 Related: [[foundation-first-sequencing]] (systemic classes escalate to a
 sweep phase).
+
+**Sharpened (owner, 2026-08-04, the #1899–#1903 correction):** filing is
+the RECORD, not a deferral. A finding whose fix is tractable in the
+current branch is implemented THERE, and the PR closes its issue
+(`Closes #N`) — consistent with [[owner-work-style]] "defer nothing".
+Only a finding that genuinely cannot land now (needs an idle box, an
+upstream answer, a separate exclusive run) stays open past the branch,
+with the blocker stated on the issue. "It needs its own adjudication" is
+NOT a blocker — adjudicate it now.

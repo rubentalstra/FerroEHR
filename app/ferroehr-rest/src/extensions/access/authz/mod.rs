@@ -160,6 +160,12 @@ impl AuthzHandle {
         self.rbac.as_ref()
     }
 
+    /// The RBAC rule set, when the coarse gate is live — the management
+    /// surface's `AdminOnly` level gates on the same rules (issue #1879).
+    pub(crate) fn rbac_rules(&self) -> Option<&RbacConfig> {
+        self.rbac.as_ref().map(RbacGate::rules)
+    }
+
     /// The fine-grained ABAC gate, if enabled.
     pub(crate) fn abac(&self) -> Option<&AbacGate> {
         self.abac.as_ref()
@@ -274,6 +280,11 @@ fn extension_is_write(method: &Method, matched: &str) -> bool {
 }
 
 impl RbacGate {
+    /// The configured rule set (role names + switches).
+    pub(crate) fn rules(&self) -> &RbacConfig {
+        &self.rules
+    }
+
     fn new(rules: RbacConfig, base_path: &str) -> Self {
         let mut routes = HashMap::new();
         for table in [

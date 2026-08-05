@@ -64,6 +64,10 @@ struct AmBuilder {
     /// cADL primitive-constraint parse errors (with their real `S*` codes),
     /// collected so they survive the [`BelError`] boundary.
     errors: Vec<SyntaxError>,
+    /// The declared type of every variable and constant declared so far, so a
+    /// later `$name` reference recovers it (`LANG/docs/BEL/master03-language`
+    /// §Typing).
+    variables: std::collections::BTreeMap<String, ExprTypeDef>,
 }
 
 impl AmBuilder {
@@ -71,7 +75,23 @@ impl AmBuilder {
         Self {
             mode,
             errors: Vec::new(),
+            variables: std::collections::BTreeMap::new(),
         }
+    }
+
+    /// The [`ExprTypeDef`] recorded for `name`, or an object-reference default.
+    fn type_of(&self, name: &str) -> ExprTypeDef {
+        self.variables
+            .get(name)
+            .cloned()
+            .unwrap_or_else(|| object_ref_type(name))
+    }
+
+    /// Record `name`'s declared type and return it.
+    fn declare(&mut self, name: &str, type_id: &str) -> ExprTypeDef {
+        let ty = object_ref_type(type_id);
+        self.variables.insert(name.to_owned(), ty.clone());
+        ty
     }
 }
 
@@ -133,7 +153,7 @@ impl BelBuilder for AmBuilder {
         Expression::ExprVariableRef(ExprVariableRef {
             item: VariableDeclaration {
                 name: name.to_owned(),
-                r#type: object_ref_type(name),
+                r#type: self.type_of(name),
             },
         })
     }
@@ -200,6 +220,9 @@ impl BelBuilder for AmBuilder {
         Ok(Expression::ExprConstraint(inner))
     }
 
+    // NOTE: `EXPR_FOR_ALL` declares no bound-variable attribute
+    // (`LANG/docs/BEL/master04-expression_object_model.adoc` §Core Package),
+    // so the quantifier's binding name has nowhere to land in the model.
     fn for_all(
         &mut self,
         _variable: &str,
@@ -235,7 +258,7 @@ impl BelBuilder for AmBuilder {
         Statement::Assignment(Assignment {
             target: VariableDeclaration {
                 name: target.to_owned(),
-                r#type: object_ref_type(target),
+                r#type: self.type_of(target),
             },
             source: to_expr_value(source),
         })
@@ -250,7 +273,7 @@ impl BelBuilder for AmBuilder {
         drop(init); // no initialiser slot on VARIABLE_DECLARATION (see beom).
         Statement::VariableDeclaration(VariableDeclaration {
             name: name.to_owned(),
-            r#type: object_ref_type(type_id),
+            r#type: self.declare(name, type_id),
         })
     }
 
@@ -268,7 +291,7 @@ impl BelBuilder for AmBuilder {
         drop(value);
         Statement::VariableDeclaration(VariableDeclaration {
             name: name.to_owned(),
-            r#type: object_ref_type(type_id),
+            r#type: self.declare(name, type_id),
         })
     }
 }
@@ -396,9 +419,13 @@ pub fn parse_artefact_rules(
 /// The block (`master04.3` §Archetype Slots; the cADL grammar
 /// `c_includes : SYM_INCLUDE assertion+`) becomes one or more real
 /// [`Assertion`]s — each `archetype_id_path matches { /regex/ }` →
-/// `EXPR_ARCHETYPE_REF matches EXPR_ARCHETYPE_ID_CONSTRAINT` (`master05`). The
-/// verbatim block `text` is preserved in every assertion's `string_expression`
-/// so the slot stays usable even for a form that is not structurally modelled.
+/// `EXPR_ARCHETYPE_REF matches EXPR_ARCHETYPE_ID_CONSTRAINT` (`master05`).
+///
+/// Each assertion's `string_expression` is ITS OWN string form, rendered from
+/// its tree by [`crate::print::assertion_text`] — the model's own reading of
+/// the attribute ("String form of expression",
+/// `LANG/docs/BEL/master04-expression_object_model.adoc` §Core Package) and
+/// what makes `parse → print → parse` a fixed point.
 ///
 /// The grammar admits more than one assertion after a single `include`/`exclude`
 /// keyword, so every parsed [`Statement::Assertion`] in the block is returned in
@@ -406,7 +433,8 @@ pub fn parse_artefact_rules(
 ///
 /// # Errors
 /// Returns the `S*` errors on a malformed slot assertion (regex compile `SCSRE`,
-/// or `SINVS`/`SEXPT` for the expression shape).
+/// or `SINVS`/`SEXPT` for the expression shape), and `SUNK` when the parsed
+/// tree carries a node the printer has no ADL syntax for.
 pub fn parse_slot_assertions(text: &str) -> Result<Vec<Assertion>, Vec<SyntaxError>> {
     let mut builder = AmBuilder::new(ConstraintMode::Slot);
     let stmts = match parse_statements_with(text, &mut builder) {
@@ -420,17 +448,21 @@ pub fn parse_slot_assertions(text: &str) -> Result<Vec<Assertion>, Vec<SyntaxErr
             });
         }
     };
-    let raw = text.trim().to_owned();
-    let assertions: Vec<Assertion> = stmts
-        .into_iter()
-        .filter_map(|s| match s {
-            Statement::Assertion(mut a) => {
-                a.string_expression = Some(raw.clone());
-                Some(a)
-            }
-            _ => None,
-        })
-        .collect();
+    let mut assertions: Vec<Assertion> = Vec::new();
+    for stmt in stmts {
+        if let Statement::Assertion(mut a) = stmt {
+            let rendered = crate::print::assertion_text(&a).map_err(|e| {
+                vec![SyntaxError::at(
+                    SyntaxErrorCode::Sunk,
+                    e.to_string(),
+                    0..text.len(),
+                    text,
+                )]
+            })?;
+            a.string_expression = Some(rendered);
+            assertions.push(a);
+        }
+    }
     if assertions.is_empty() {
         return Err(vec![SyntaxError::at(
             SyntaxErrorCode::Sccog,
@@ -440,6 +472,56 @@ pub fn parse_slot_assertions(text: &str) -> Result<Vec<Assertion>, Vec<SyntaxErr
         )]);
     }
     Ok(assertions)
+}
+
+/// Returns the two operands of a slot assertion's top-level `matches`.
+///
+/// A slot constraint's core expression is `<reference> matches { … }`
+/// (`ADL2/master04.3` §Slots based on Lexical Archetype Identifiers); an
+/// assertion of any other shape yields `None`.
+fn matches_operands(assertion: &Assertion) -> Option<(&Expression, &Expression)> {
+    match assertion.expression.as_ref() {
+        Expression::ExprBinaryOperator(b) if b.operator == OperatorKind::Matches => {
+            Some((&b.left_operand, &b.right_operand))
+        }
+        _ => None,
+    }
+}
+
+/// Returns the reference path a slot assertion constrains.
+///
+/// This is the left operand of the assertion's `matches` — `archetype_id/value`
+/// for an identifier slot (`ADL2/master04.3` §Slots based on Lexical Archetype
+/// Identifiers), some other property or path for the constraint-based form
+/// (§Slots based on other Constraints).
+#[must_use]
+pub fn slot_assertion_path(assertion: &Assertion) -> Option<&str> {
+    match matches_operands(assertion)?.0 {
+        Expression::ExprValueRef(ExprValueRef::ExprArchetypeRef(r)) => Some(r.path.as_str()),
+        _ => None,
+    }
+}
+
+/// Returns the regular expression a slot assertion constrains its reference
+/// with, without the `/…/` delimiters.
+///
+/// The right operand is an `EXPR_ARCHETYPE_ID_CONSTRAINT` (or, for an assertion
+/// built outside the slot parser, a plain `C_STRING` constraint), whose
+/// `C_STRING` carries one delimited regex (`AOM2/master04.5` §`C_STRING`). An
+/// assertion constraining a literal value list rather than a regex yields
+/// `None`.
+#[must_use]
+pub fn slot_assertion_regex(assertion: &Assertion) -> Option<&str> {
+    let cstring = match matches_operands(assertion)?.1 {
+        Expression::ExprConstraint(ExprConstraint::ExprArchetypeIdConstraint(c)) => &c.item,
+        Expression::ExprConstraint(ExprConstraint::ExprConstraint(c)) => match &c.item {
+            CPrimitiveObject::CString(s) => s,
+            _ => return None,
+        },
+        _ => return None,
+    };
+    crate::odin::regex_of(cstring.constraint.as_deref().unwrap_or_default())
+        .map(crate::odin::regex_inner)
 }
 
 /// Resolves every `EXPR_ARCHETYPE_REF` proxy against the archetype definition.

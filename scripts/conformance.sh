@@ -27,7 +27,7 @@
 #                     version-signing posture on its own project/ports, so
 #                     both claimed signing modes are exercised in the one
 #                     record (the ixit's `sut_pgp` instance).
-#                   ehrbase-java: composes upstream EHRbase (Java) from
+#                   ehrbase-java: composes upstream EHRbase from
 #                     docker/sut-ehrbase-java.yml (official images, fresh
 #                     volumes, host port 8091) — the #232 comparison target
 #                     with its committed party set.

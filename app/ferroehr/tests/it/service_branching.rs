@@ -358,8 +358,8 @@ async fn modifying_an_imported_foreign_version_forks_a_branch() {
 /// schema-validating client rejects this body. Emitting a top-level `data`
 /// would duplicate the entire clinical payload with no consistency rule for
 /// the two copies, and would contradict both the RM's `(effected)` typing and
-/// the ITS-XML content model, so the wire follows the model. Register AMB-198;
-/// the omission is deliberate, which is what this test pins.
+/// the ITS-XML content model, so the wire follows the model; the omission is
+/// deliberate, which is what this test pins.
 #[tokio::test]
 async fn the_served_imported_version_is_the_wrapper_shape_without_data() {
     let source_db = testkit::db().await.expect("testkit database");
@@ -413,18 +413,13 @@ async fn the_served_imported_version_is_the_wrapper_shape_without_data() {
 #[tokio::test]
 async fn merge_provenance_is_preserved_by_the_route_that_carries_it() {
     // `ORIGINAL_VERSION.other_input_version_uids` (RM common master06 §Version
-    // Merging) is PRODUCE-only on this server: the released commit wire
-    // declares no merge shape at all (ITS-REST `UpdateVersion.yaml` has no such
-    // property and `NewContribution.versions` items are `UpdateVersion`), so a
-    // member carrying it is refused — pinned by
-    // `service_contribution::merge_provenance_is_refused_on_the_commit_wire`.
-    // What DOES carry merge provenance is the route that reproduces a FOREIGN
-    // `ORIGINAL_VERSION` verbatim: master06 §Copying — "the `ORIGINAL_VERSION`
-    // instance is never modified … it remains a faithful copy of its original".
-    // This test pins that direction end to end: an imported merged version
-    // keeps its inputs and serves them on the read side
-    // (`OriginalVersion.yaml` declares the property), while a locally
-    // committed version carries none (`Is_merged_validity`).
+    // Merging) is PRODUCE-only on this server: the released commit wire declares
+    // no merge shape at all, so a member carrying it is refused. What DOES carry
+    // merge provenance is the route that reproduces a FOREIGN `ORIGINAL_VERSION`
+    // verbatim — master06 §Copying: "the `ORIGINAL_VERSION` instance is never
+    // modified". This test pins that direction end to end: an imported merged
+    // version keeps its inputs and serves them, while a locally committed
+    // version carries none (`Is_merged_validity`).
     let source_db = testkit::db().await.expect("testkit database");
     let source_svc = FerroEhrService::new(source_db.pool());
     let db = testkit::db().await.expect("testkit database");
@@ -562,13 +557,10 @@ async fn a_version_tree_with_branches_reexports_and_reimports_whole() {
     // In the THIRD repository the version is a copy, so it is served as an
     // IMPORTED_VERSION wrapping the received original (master06 §Copying). An
     // IMPORTED_VERSION carries NO `uid` attribute of its own: `uid` is an
-    // effected function, `Post: Result = item.uid`
-    // (`UML/classes/org.openehr.rm.common.imported_version.adoc` §Functions;
-    // master06 §Version and its Subtypes — "an `IMPORTED_VERSION` does not have
-    // its own version identifier distinct from the version it is wrapping"),
-    // and ITS-REST 1.1.0's `schemas/ehr/ImportedVersion.yaml` likewise declares
-    // only `item` on top of `Version.yaml`. So the branch identity is read
-    // through the wrapper.
+    // effected function, `Post: Result = item.uid` (`imported_version.adoc`
+    // §Functions), and ITS-REST 1.1.0's `schemas/ehr/ImportedVersion.yaml`
+    // likewise declares only `item` on top of `Version.yaml`. So the branch
+    // identity is read through the wrapper.
     assert_eq!(ov["_type"], json!("IMPORTED_VERSION"));
     assert_eq!(ov["item"]["uid"]["value"], json!(branch_uid));
     assert_eq!(ov["item"]["_type"], json!("ORIGINAL_VERSION"));

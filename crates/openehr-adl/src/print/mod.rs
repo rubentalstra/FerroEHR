@@ -23,7 +23,9 @@
 //! and `odin` (the generic ODIN leaf/keyed-list rendering the other sections
 //! share). This module keeps only the printer state, the artefact-kind
 //! projection, and the top-level section driver; the [`print`](fn@print)
-//! function is the crate's whole serializer seam.
+//! function is the crate's serializer seam for a whole artefact, and
+//! [`assertion_text`] the one for a single assertion (the string form
+//! `ASSERTION.string_expression` carries).
 
 mod definition;
 mod header;
@@ -39,19 +41,73 @@ use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
 use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
 use openehr_am::am24::aom2::rm_overlay::rm_overlay::RmOverlay;
 use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
+use openehr_am::am24::beom::core::assertion::Assertion;
 use openehr_am::am24::beom::core::statement_set::StatementSet;
 use openehr_am::am24::resource::resource_description::ResourceDescription;
 use openehr_base::prelude::{ResourceAnnotations, TerminologyCode, TranslationDetails, Uuid};
 
-/// Serialize an assembled [`Archetype`] to ADL2 source text.
+/// A refusal from the ADL2 serializer.
 ///
-/// `parse_artefact(&print(a))` reconstructs an [`Archetype`] structurally equal
-/// to `a` (the round-trip gate).
-#[must_use]
-pub fn print(archetype: &Archetype) -> String {
+/// The printer renders only what a released grammar spells; a modelled node
+/// with no surface syntax is refused rather than rendered into invented (or
+/// empty) text.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
+pub enum PrintError {
+    /// An `EXTERNAL_QUERY` reached the printer as an assignment source.
+    #[error(
+        "EXTERNAL_QUERY (assignment to ${target}) has no ADL surface syntax: neither released \
+         grammar defines a production for it"
+    )]
+    ExternalQuery {
+        /// Name of the variable the refused assignment targets.
+        target: String,
+    },
+    /// An `EXPR_FUNCTION_CALL` whose leaf `item` carries no string name.
+    #[error(
+        "EXPR_FUNCTION_CALL without a string name has no ADL surface syntax: the BEL function \
+         call production requires an identifier"
+    )]
+    NamelessFunctionCall,
+    /// An `EXPR_VALUE_REF` whose leaf `item` carries no string path.
+    #[error(
+        "EXPR_VALUE_REF without a string path has no ADL surface syntax: the BEL value \
+         reference production requires a path"
+    )]
+    PathlessValueRef,
+}
+
+/// Serializes an assembled [`Archetype`] to ADL2 source text.
+///
+/// `parse_artefact(&print(a)?)` reconstructs an [`Archetype`] structurally
+/// equal to `a` (the round-trip gate).
+///
+/// # Errors
+///
+/// Returns [`PrintError`] when the archetype carries a modelled node the
+/// released ADL/BEL grammars give no syntax for.
+pub fn print(archetype: &Archetype) -> Result<String, PrintError> {
     let mut p = Printer { out: String::new() };
-    p.archetype(archetype);
-    p.out
+    p.archetype(archetype)?;
+    Ok(p.out)
+}
+
+/// Renders one [`Assertion`] to its ADL/BEL string form, from its expression
+/// tree.
+///
+/// This is the string form `ASSERTION.string_expression` carries
+/// (`LANG/docs/BEL/master04-expression_object_model.adoc` §Core Package: the
+/// tree is the root, the string its serialisation), so
+/// [`crate::rules::parse_slot_assertions`] fills that attribute through here
+/// and `parse → print → parse` stays a fixed point.
+///
+/// # Errors
+///
+/// Returns [`PrintError`] when the assertion carries a modelled node the
+/// released ADL/BEL grammars give no syntax for — the same refusal
+/// [`print`](fn@print) raises, so both serializer seams carry one contract.
+pub fn assertion_text(assertion: &Assertion) -> Result<String, PrintError> {
+    rules::assertion_str(assertion)
 }
 
 /// The output accumulator every section module writes its lines through.
@@ -73,7 +129,7 @@ impl Printer {
     }
 
     // ── artefact ──────────────────────────────────────────────────────────
-    fn archetype(&mut self, a: &Archetype) {
+    fn archetype(&mut self, a: &Archetype) -> Result<(), PrintError> {
         let parts = Parts::of(a);
         self.identification(&parts);
         if let Some(parent) = parts.parent_archetype_id {
@@ -87,12 +143,12 @@ impl Printer {
         }
         self.blank();
         self.line(0, "definition");
-        self.definition(parts.definition);
+        self.definition(parts.definition)?;
         if !parts.rules.is_empty() {
             self.blank();
             self.line(0, "rules");
             for set in parts.rules {
-                self.rules(set);
+                self.rules(set)?;
             }
         }
         self.terminology_section(parts.terminology);
@@ -112,8 +168,9 @@ impl Printer {
                 "----------------------------------------------------------------",
             );
             self.blank();
-            self.archetype(&Archetype::TemplateOverlay(Box::new(overlay.clone())));
+            self.archetype(&Archetype::TemplateOverlay(Box::new(overlay.clone())))?;
         }
+        Ok(())
     }
 }
 

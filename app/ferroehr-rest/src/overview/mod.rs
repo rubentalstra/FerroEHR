@@ -73,7 +73,7 @@
 //!   [`ApiError::NotImplemented`](openehr_its::rest::runtime::ApiError) at
 //!   dispatch level; there is no `501` handler, and the overview's
 //!   SHOULD-`501` for an *unrecognized method* is answered `405` instead — a
-//!   registered deviation (`AMB-60`, rationale in [`crate::router::router`]).
+//!   settled deviation (rationale in [`crate::router::router`]).
 //! - **Version identity / `openehr-uri`** are out of this change's
 //!   scope; `/status` reports the tested
 //!   development-edition contract identity (shared provenance,
@@ -106,8 +106,9 @@
 //! - [`error`] — the HTTP status-code table (`Requests_and_responses.md`
 //!   §HTTP status codes: 200/201/204/400/401/403/404/405/406/408/409/412/
 //!   415/422/500/501; §HTTP Methods: unrecognized method SHOULD → `501`,
-//!   known-but-not-allowed SHOULD → `405`, the former deviating to `405` per
-//!   `AMB-60`) + the optional error body ("if `Prefer: return=representation`")
+//!   known-but-not-allowed SHOULD → `405`, the former deviating to `405` as
+//!   [`crate::router::router`] explains) + the optional error body
+//!   ("if `Prefer: return=representation`")
 //!   + the single SM → HTTP mapping table (`CALL_STATUS_TYPE` meets the
 //!     wire here and only here).
 //! - [`version_id`] — resource identification (`Resources.md` §Resource

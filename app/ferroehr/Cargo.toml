@@ -13,7 +13,17 @@ keywords.workspace = true
 categories.workspace = true
 publish = false
 
+[features]
+# The optional-integration gates (#1890): default = all on, so the shipped
+# binary and every existing consumer keep today's surface; a
+# --no-default-features build is the slim CDR. Additive only.
+default = ["fhir", "events", "multimedia"]
+fhir = ["dep:ferroehr-ext", "ferroehr-ext/fhir", "events"]
+events = ["dep:ferroehr-ext", "ferroehr-ext/events"]
+multimedia = ["dep:ferroehr-ext", "ferroehr-ext/multimedia"]
+
 [dependencies]
+ferroehr-ext = { path = "../ferroehr-ext", optional = true }
 http.workspace = true
 secrecy.workspace = true
 urlencoding.workspace = true
@@ -76,9 +86,9 @@ base64.workspace = true
 # `multimedia` module (DV_MULTIMEDIA externalization to S3-compatible object
 # storage — no openEHR spec governs blob storage mechanics; our own design):
 # `object_store` is the backend abstraction (SeaweedFS in dev/test via its S3
-# gateway, any S3 endpoint in prod); `bytes` carries blob payloads to/from it.
+# gateway, any S3 endpoint in prod); the blob payload plumbing (`bytes`)
+# lives in `ferroehr-ext`.
 object_store.workspace = true
-bytes.workspace = true
 # `service::admin::dump_load`: the SM COMPRESSION_FORMAT member `zip`
 # (docs/specs/openehr/SM/docs/UML/classes/compression_format.adoc) — the dump
 # archive packed as one ZIP container instead of loose segment files.
@@ -105,6 +115,7 @@ openehr-adl = { path = "../../crates/openehr-adl" }
 openehr-query = { path = "../../crates/openehr-query" }
 
 [dev-dependencies]
+ferroehr-ext = { path = "../ferroehr-ext", features = ["multimedia", "events"] }
 testkit = { path = "../../tools/testkit" }
 serde_norway.workspace = true
 # Temp config files for the pure-loader (`config` module) tests.

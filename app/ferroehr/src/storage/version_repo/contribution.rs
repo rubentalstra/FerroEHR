@@ -1,14 +1,13 @@
 //! CONTRIBUTION reads: a contribution's own audit, the versions it affected,
 //! and per-EHR listing/counting.
 //!
-//! No openEHR spec governs the SQL — our own design (`docs/architecture.md`
-//! §Storage). The CONTRIBUTION semantics realized are RM common master06
+//! No openEHR spec governs the SQL — our own design. The CONTRIBUTION semantics realized are RM common master06
 //! §Contributions / §Committal and Audits.
 
 #![expect(
     clippy::disallowed_types,
     reason = "owner-approved 2026-08-03 (#1694 family 1): stored canonical fragments — a typed \
-              round-trip drops forward-compatible keys (docs/VERSIONS.md §Spec version policy)"
+              round-trip drops forward-compatible keys (the openEHR release strategy: minors are compatible supersets)"
 )]
 
 use serde_json::Value;
@@ -88,12 +87,12 @@ pub async fn contribution_version_refs(
 ) -> Result<Vec<(VoId, (i32, i32, i32), String, String)>, StorageError> {
     let rows = sqlx::query(
         "SELECT vo_id, trunk_version, branch_number, branch_version, creating_system_id, \
-         kind FROM vo_version \
+         kind FROM vo_version_all \
          WHERE contribution_id = $1 \
          UNION \
          SELECT v.vo_id, v.trunk_version, v.branch_number, v.branch_version, \
-         v.creating_system_id, v.kind FROM vo_version v \
-         JOIN vo_attestation att ON att.vo_id = v.vo_id AND att.sys_version = v.sys_version \
+         v.creating_system_id, v.kind FROM vo_version_all v \
+         JOIN vo_attestation_all att ON att.vo_id = v.vo_id AND att.sys_version = v.sys_version \
          WHERE att.contribution_id = $1 \
          ORDER BY vo_id",
     )

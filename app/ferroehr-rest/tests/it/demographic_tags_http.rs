@@ -75,7 +75,6 @@ fn config() -> AppConfig {
             enabled: false,
             basic: None,
             oidc: None,
-            admin_scope: None,
             ..AuthConfig::default()
         },
         ..Default::default()
@@ -183,7 +182,7 @@ async fn container_and_version_tag_collections_are_disjoint() {
         tags[0]["target"]["_type"], "OBJECT_VERSION_ID",
         "version-addressed target is an OBJECT_VERSION_ID: {tags:?}"
     );
-    // owner_id follows the released examples' shape (register AMB-137).
+    // owner_id follows the released examples' shape.
     assert_eq!(tags[0]["owner_id"]["namespace"], "local");
     assert_eq!(tags[0]["owner_id"]["type"], "SYSTEM");
 

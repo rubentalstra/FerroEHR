@@ -168,7 +168,7 @@ pub(super) async fn run(
 /// response metadata per header so the echo confirms exactly what each target
 /// now holds. Both headers are accepted on create AND update — the released
 /// update declares `openehr-version-item-tag` and its own prose says
-/// "`openehr-item-tag` or `openehr-version-item-tag`" (register-documented).
+/// "`openehr-item-tag` or `openehr-version-item-tag`" (adjudicated).
 async fn persist_request_tags(
     state: &AppState,
     kind: PartyKind,
@@ -300,16 +300,12 @@ async fn run_delete(
     // version_uid). All per-kind delete params are field-identical; reuse one.
     let p = params::build::<AgentDeleteParams>(&parts.path, parts.query.as_deref(), h)?;
     let preceding = p.uid_based_id.clone();
-    // NOTE (wire, compatibility): the delete operation takes the preceding
-    // version from the path `uid_based_id` (an `OBJECT_VERSION_ID`), which is
-    // passed positionally to `party_delete` below — ITS-REST overview
-    // §"If-Match and accidental overwrites" requires `If-Match` only "when the
-    // `preceding_version_uid` is not part of the endpoint path segment", and
-    // here it is. `If-Match` is therefore accepted, never required, as an
-    // alternative source of the preceding version. The service
-    // signals a stale uid via `version_mismatch` (→ 409, handled below with the
+    // The service signals a stale uid via `version_mismatch` (→ 409, with the
     // latest `version_uid` echoed in `ETag`) and an already-deleted target via
     // `precondition_violation` (→ 400_already_deleted).
+    // NOTE: the preceding version comes from the path `uid_based_id`, so
+    // `If-Match` is accepted but never required — ITS-REST overview §"If-Match
+    // and accidental overwrites" requires it only when the path lacks it.
     match state
         .backend()
         .party_delete(

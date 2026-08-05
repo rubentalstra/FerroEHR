@@ -20,4 +20,22 @@ upstream commit) are also vendored at `crates/openehr-adl/vendor/grammar/`
 for the ADL2/cADL grammar set — each crate's vendor dir stays
 self-contained.
 
+## The Expression Language (EL) grammars
+
+- Source: https://github.com/openEHR/openEHR-antlr4 (Apache-2.0;
+  `LICENSE-openEHR-antlr4` vendored alongside — the ONLY home of the EL
+  grammars: `openEHR/adl-antlr` carries none, verified 2026-08-04).
+- Commit: `3494da942f3ed35963279837447b3039dd098e20` (2025-12-15), via
+  `scripts/vendor-el-grammar.sh`.
+- Files: `reader_common/src/main/antlr/{ElLexer.g4, ElParser.g4}` plus their
+  transitive grammar imports `{Cadl2Lexer, Cadl2Parser, SymbolsLexer,
+  GeneralIdsLexer}.g4`, copied verbatim (the appendix includes only the two EL
+  files; the imports are vendored so the syntax resolves standalone).
+
+Why here: the LANG EL syntax appendix
+(`docs/specs/openehr/LANG/docs/EL/masterAppA-syntax.adoc`) is an `include::`
+of exactly these two files — they are the normative EL syntax, and the
+reference input for the hand-written `openehr_lang` EL parser (no ANTLR
+runtime).
+
 Never hand-edit; re-vendor from upstream and update the commit pin here.

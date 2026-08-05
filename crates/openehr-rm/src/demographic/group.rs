@@ -48,7 +48,7 @@ pub struct Group {
     /// All other details for this Party.
     pub details: Option<ItemStructure>,
     /// Relationships in which this Party takes part as source.
-    pub relationships: Option<Vec<PartyRelationship>>,
+    pub relationships: Option<openehr_base::containers::NonEmptyVec<PartyRelationship>>,
 
     // inherited: ACTOR
     /// Languages which can be used to communicate with this actor, in preferred order of use (if known, else order irrelevant).

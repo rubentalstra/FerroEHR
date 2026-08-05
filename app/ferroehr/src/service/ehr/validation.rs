@@ -63,21 +63,14 @@ impl FerroEhrService {
         let Some(template_id) = composition_template_id(composition) else {
             return Ok(());
         };
-        // NOTE (settled shape, measured): the pre-check reads the EHR's live
-        // COMPOSITION ids in one SELECT and reassembles each to read its
-        // category + declared template — the two values it compares are root
-        // COMPOSITION attributes, and reassembly is the one read that answers
-        // for any stored composition regardless of how it was committed. Cost
-        // is therefore linear in the EHR's live COMPOSITION count: measured on
-        // the reference dev box (PG 18.4, local testkit clone, 200 live
-        // COMPOSITIONs of ~10 nodes each) at ~1.3-2.7 ms for the id SELECT and
-        // ~1.1-2.3 ms per reassembly, ~220-460 ms for the whole 200-composition
-        // scan. It is paid ONLY on a create whose body is persistent
-        // (`431|persistent|`) AND declares a template — every event-composition
-        // create returns at the two guards above without touching storage — and
-        // openEHR defines no such cardinality at all: the criterion is the CNF
-        // schedule's, still "under debate in the openEHR SEC … due to the lack
-        // of information in the openEHR specifications"
+        // The pre-check reads the EHR's live COMPOSITION ids in one SELECT and
+        // reassembles each to read its category + declared template, so cost is
+        // linear in the EHR's live COMPOSITION count. It is paid ONLY on a
+        // create whose body is persistent (`431|persistent|`) AND declares a
+        // template — every event-composition create returns at the two guards
+        // above without touching storage.
+        // NOTE: openEHR defines no such cardinality — the criterion is the CNF
+        // schedule's, still "under debate in the openEHR SEC"
         // (`CNF/docs/platform_test_schedule/master07-func_tc_ehr_composition.adoc`).
         let vo_ids = crate::storage::version_repo::meta::current_vo_ids(
             &self.pool,
@@ -166,15 +159,13 @@ impl FerroEhrService {
             });
             template_failures = messages.len() - rm_terminology_failures;
             // Archetype constraint bindings (ac-code → external value set)
-            // resolve against the routed terminology servers. A no-op — and
-            // free of any remote call — unless `[terminology.external]` is
-            // configured (BASE `architecture_overview/master12-terminology.adoc`
+            // resolve against the routed terminology servers — a no-op, free of
+            // any remote call, unless `[terminology.external]` is configured
+            // (BASE `architecture_overview/master12-terminology.adoc`
             // §"Binding Terminology Value-sets to Archetypes"). The relaxation
             // for a `553|incomplete|` commit does not reach it: a code that IS
             // present may not be wrong (RM common master06 §Incomplete
-            // Content). Counted as its own pass — a bound value set the
-            // terminology server rejects is a different operational signal
-            // from an archetype-shape violation.
+            // Content). Counted as its own pass.
             let bindings = self.constraint_binding_violations(composition, &wt).await;
             binding_failures = bindings.len();
             messages.extend(bindings);
@@ -241,14 +232,8 @@ impl FerroEhrService {
         match kind {
             Kind::Composition => self.validate_composition_for_commit(data, incomplete).await,
             // NOTE: EHR_STATUS is the ONE committable kind the relaxation does
-            // not reach. The CNF schedule's EHR_STATUS reject case 2
-            // (`CNF/docs/platform_test_schedule/master08-func_tc_ehr_contribution.adoc`
-            // §EHR_STATUS CONTRIBUTION Commit Data Sets) says the incomplete
-            // state "doesn't apply to EHR_STATUS", and the schedule itself
-            // flags that as open upstream (SPECPR-368) — the adjudication
-            // carried by register entry AMB-9, which reports rather than gates
-            // until upstream resolves. Until then this kind keeps the strict
-            // reading and the `incomplete` flag is deliberately not threaded.
+            // not reach — the CNF schedule's EHR_STATUS reject case 2 says the
+            // incomplete state "doesn't apply to EHR_STATUS" (open: SPECPR-368).
             Kind::EhrStatus => validate_ehr_status(data),
             Kind::EhrAccess => validate_ehr_access(data, incomplete),
             Kind::Folder => validate_folder(data, incomplete),
@@ -562,23 +547,16 @@ pub(in crate::service) fn validate_ehr_access(
                 .to_owned(),
         ));
     }
-    // NOTE (owner-ruled 2026-08-03, #1694 family 10; #1624): `settings` is
-    // excluded from the whole-instance RM pass, and only from it — the one
-    // RM-mandated OPEN slot, approved as a permanent Value exception; no
-    // emitter change (an open emitter representation is what the open slot
-    // IS), no register row (spec-grounded, not silent). `EHR_ACCESS.settings` is the RM's one implementation-defined
-    // slot — "Instance is a subtype of the type `ACCESS_CONTROL_SETTINGS`,
-    // allowing for the use of different access control schemes"
+    // `EHR_ACCESS.settings` is the RM's one implementation-defined slot —
+    // "Instance is a subtype of the type `ACCESS_CONTROL_SETTINGS`, allowing for
+    // the use of different access control schemes"
     // (`RM/docs/UML/classes/org.openehr.rm.ehr.ehr_access.adoc` §Attributes) —
-    // and the slot's type is abstract with no attributes, no invariants and no
-    // RM-defined descendant: "Access Control Settings for the EHR and
-    // components. Intended to support multiple access control schemes.
-    // Currently implementation dependent."
-    // (`…org.openehr.rm.ehr.access_control_settings.adoc`). So the RM defines
-    // NOTHING for the pass to judge inside it, while a pass that walked in
-    // would refuse every legal instance (the scheme's own `_type` names a class
-    // the RM does not declare). `Scheme_valid` above is the whole of the RM's
-    // demand on the slot.
+    // and that type is abstract with no attributes, no invariants and no
+    // RM-defined descendant, so the RM defines NOTHING inside it to judge while
+    // a pass that walked in would refuse every legal instance. `Scheme_valid`
+    // above is the whole of the RM's demand on the slot.
+    // NOTE: `settings` is therefore excluded from the whole-instance RM pass,
+    // and only from it — the one RM-mandated OPEN slot.
     let mut without_settings = access.clone();
     if let Some(map) = without_settings.as_object_mut() {
         map.remove("settings");

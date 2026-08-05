@@ -842,13 +842,42 @@ pub fn coverage_accounting(set: &ArtifactSet) -> RunReport {
     report
 }
 
+/// Whether a decision-table row's `violates` list names a MANDATORY-attribute
+/// breach of the RM schema — the refusal the release puts on the 400 row.
+///
+/// ITS-REST `specifications/responses/422.yaml` scopes 422 to content that
+/// "could be converted to a resource", while `responses/400.yaml` covers
+/// "syntactically invalid header, parameter or content"; a body missing a
+/// member the release's own request-body schema lists as `required:` never
+/// converts, so it cannot reach the 422 branch. The discriminator is the
+/// authored `rm_schema:` clause.
+fn refused_at_parse(columns: &[String], row: &[serde_json::Value]) -> bool {
+    // NOTE: register AMB-209 is the home of the boundary — a `rm_schema:`
+    // clause about a VALUE's lexical form (a non-RFC-3986 `DV_URI.value`)
+    // converts first, so only the mandatory-attribute class refuses at parse.
+    columns
+        .iter()
+        .position(|column| column == "violates")
+        .and_then(|index| row.get(index))
+        .and_then(serde_json::Value::as_array)
+        .is_some_and(|violations| {
+            violations
+                .iter()
+                .filter_map(serde_json::Value::as_str)
+                .any(|violation| {
+                    violation.starts_with("rm_schema:") && violation.contains("mandatory")
+                })
+        })
+}
+
 /// Synthesizes the functional execution of a content case.
 ///
 /// The decision
 /// table becomes a matrix (rows drive `${row.*}`), the flow is one commit of
 /// the generated instance against the constraint context's template, and the
-/// per-row `expected` column (accepted → created, rejected →
-/// `validation_failed`) is the outcome expectation.
+/// per-row `expected` column is the outcome expectation: `accepted` →
+/// `created`, and `rejected` → `bad_request` or `validation_failed` by
+/// `refused_at_parse`.
 #[must_use]
 pub fn synthesize_content_case(case: &CaseCore) -> CaseCore {
     let mut synthesized = case.clone();
@@ -869,6 +898,7 @@ pub fn synthesize_content_case(case: &CaseCore) -> CaseCore {
                     if column == "expected" {
                         let kind = match cell.as_str() {
                             Some("accepted") => "created",
+                            _ if refused_at_parse(&columns, row) => "bad_request",
                             _ => "validation_failed",
                         };
                         crate::model::case::MatrixCell::Literal(serde_json::Value::String(
@@ -929,6 +959,67 @@ pub fn synthesize_content_case(case: &CaseCore) -> CaseCore {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The authored `rejected` token covers TWO wire outcomes, and the row's
+    /// own `violates` list is the discriminator: a missing mandatory attribute
+    /// never converts to the resource (`responses/400.yaml`, "syntactically
+    /// invalid … content"), while a value that converts and then fails a
+    /// constraint, an RM invariant, or its lexical form is the 422 branch
+    /// (`responses/422.yaml`, "could be converted to a resource"). Row 1 is
+    /// the malformed-URI class issue #1899 adjudicated onto the 422 side and
+    /// register AMB-209 records.
+    #[test]
+    fn a_rejected_row_splits_on_its_violation_class() {
+        let case: CaseCore = serde_json::from_value(serde_json::json!({
+            "id": "CONT-DV_URI-validate_open", "kind": "content", "component": "CONTENT",
+            "rm_class": "DV_URI",
+            "test_purpose": "t", "description": "d", "spec_refs": [],
+            "decision_table": {
+                "columns": ["value", "expected", "violates"],
+                "rows": [
+                    [null, "rejected", ["rm_schema: value is mandatory"]],
+                    ["xyz", "rejected", ["rm_schema: value is not a valid RFC 3986 URI"]],
+                    ["x", "rejected", ["constraint(pattern)"]],
+                    ["y", "rejected", ["rm_invariant(DV_URI.Value_valid)"]],
+                    ["z", "rejected", ["iso8601"]],
+                    ["ftp://ftp.is.co.za/rfc/rfc1808.txt", "accepted", []]
+                ]
+            }
+        }))
+        .unwrap();
+        let synthesized = synthesize_content_case(&case);
+        let matrix = synthesized
+            .parameters
+            .as_ref()
+            .and_then(|p| p.matrix.as_ref())
+            .expect("the decision table becomes a parameters matrix");
+        let column = matrix
+            .columns
+            .iter()
+            .position(|c| c == "expected")
+            .expect("the reserved `expected` column survives synthesis");
+        let kinds: Vec<&str> = matrix
+            .rows
+            .iter()
+            .map(|row| match row.get(column) {
+                Some(crate::model::case::MatrixCell::Literal(serde_json::Value::String(s))) => {
+                    s.as_str()
+                }
+                other => panic!("row expectation is not a literal kind: {other:?}"),
+            })
+            .collect();
+        assert_eq!(
+            kinds,
+            [
+                "bad_request",
+                "validation_failed",
+                "validation_failed",
+                "validation_failed",
+                "validation_failed",
+                "created",
+            ]
+        );
+    }
 
     /// `OperationBinding.applies` is LIVE (issue #629): a binding declaring a
     /// spec-version floor the party does not meet takes its cases out of

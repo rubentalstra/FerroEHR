@@ -1,12 +1,13 @@
-//! The ONE openEHR lexical layer: a single `logos` token superset plus three
+//! The ONE openEHR lexical layer: a single `logos` token superset plus four
 //! thin per-language entry points.
 //!
-//! ADL2/cADL, ODIN and BEL are three readings of one family of lexical rules —
-//! the vendored `.g4` grammars for all three import the same `base_lexer.g4`
-//! (`vendor/grammar/`), and each language's syntax appendix is an include of
-//! those files, which makes them normative-by-reference. This module is that
-//! shared layer, and it is the ONLY lexer in the workspace: `openehr-adl` and
-//! the `odin`/`bel` readers here all consume [`Token`]/[`Spanned`] from it.
+//! ADL2/cADL, ODIN, BEL and EL are four readings of one family of lexical
+//! rules — the vendored `.g4` grammars all build on the same base id/symbol
+//! layer (`vendor/grammar/`), and each language's syntax appendix is an
+//! include of those files, which makes them normative-by-reference. This
+//! module is that shared layer, and it is the ONLY lexer in the workspace:
+//! `openehr-adl` and the `odin`/`bel`/`el` readers here all consume
+//! [`Token`]/[`Spanned`] from it.
 //!
 //! # The two-stage contract
 //!
@@ -30,7 +31,8 @@
 //! reading to each member reading, and the entry points [`lex_adl`],
 //! [`lex_odin`] and [`lex_bel`] are behaviour-identical to the three lexers
 //! they replace (pinned token-for-token, span-for-span, by the
-//! `lexer_equivalence` battery in `tests/it/`).
+//! `lexer_equivalence` battery in `tests/it/`); [`lex_el`] joined them when
+//! the EL grammars were vendored.
 //!
 //! # Adjudications this layer encodes
 //!
@@ -52,8 +54,10 @@
 //!   §Symbols L1326-1354 does the same in prose. ADL2's prose is silent, so the
 //!   grammar is the citation. `base_expressions.g4` spells BEL's operators
 //!   case-SENSITIVELY, and the BEL pass honours that.
-//! - `// NOTE:` The Expression Language (`LANG/docs/EL/`) is deliberately
-//!   excluded from the union — see the note on [`Token`].
+//! - `// NOTE:` The Expression Language reading takes the cADL layer wherever
+//!   `ElLexer.g4` declares nothing (it is an `import Cadl2Lexer, SymbolsLexer,
+//!   GeneralIdsLexer`) and `ElLexer.g4`'s own case-SENSITIVE spelling wherever
+//!   it does.
 
 mod reclassify;
 mod token;
@@ -163,6 +167,27 @@ fn retag_odin_value_words_in_key_position(src: &str, spanned: &mut [Spanned]) {
 /// BEL token.
 pub fn lex_bel(src: &str) -> Result<Vec<Spanned>, LexError> {
     lex_with(Language::Bel, src)
+}
+
+/// Lex `src` under the Expression Language reading (`LANG/docs/EL/`;
+/// `vendor/grammar/ElLexer.g4`, which the EL syntax appendix
+/// `masterAppA-syntax.adoc` includes verbatim).
+///
+/// `ElLexer.g4` imports `Cadl2Lexer`, `SymbolsLexer` and `GeneralIdsLexer`
+/// (none of which upstream publishes in the same repository), so this reading
+/// is the cADL one for the inherited layer plus `ElLexer.g4`'s own rules,
+/// which ANTLR gives precedence.
+///
+/// Two `ElLexer.g4` symbols have no union production and are therefore not
+/// lexable here: `?` (`SYM_INTERROGATION`) and the guillemets `«`/`»`. `?`
+/// reaches only `dlBinaryChoice` and the guillemets reach no `ElParser.g4`
+/// production at all.
+///
+/// # Errors
+/// Returns a [`LexError`] at the byte span of the first input that is not an
+/// EL token.
+pub fn lex_el(src: &str) -> Result<Vec<Spanned>, LexError> {
+    lex_with(Language::El, src)
 }
 
 /// Run the shared DFA over `src` and reclassify every token into `language`'s

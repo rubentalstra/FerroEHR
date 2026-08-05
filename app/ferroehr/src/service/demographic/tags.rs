@@ -129,16 +129,11 @@ impl FerroEhrService {
             .await?;
         // Validate + dedup (last wins) before touching the DB, keyed on the
         // ITEM_TAG identity — the (key, target_path) PAIR, never the key alone
-        // (two same-key tags on different target_paths coexist; keying by tag
-        // key collapsed them — the run-2 triage defect, 2026-07-28, mirroring
-        // the EHR-side #369 identity fix). BTreeMap ordering matches the
-        // `ORDER BY key` read-back order on the leading component.
-        //
-        // The invariants and the `target_path: ""` normalization are the EHR
-        // family's, called rather than restated: one implementation of each,
-        // so the two families cannot diverge (register AMB-96 says the
-        // normalization is "applied identically on the EHR and demographic
-        // families" — this is what makes that structurally true).
+        // (two same-key tags on different target_paths coexist). BTreeMap
+        // ordering matches the `ORDER BY key` read-back order on the leading
+        // component. The invariants and the `target_path: ""` normalization are
+        // the EHR family's, called rather than restated: one implementation of
+        // each, so the two families cannot diverge.
         let target = match target_version {
             Some(version) => UidBasedId::ObjectVersionId(version.clone()),
             // A bare container key is a UUID by type, so the conversion is
@@ -236,7 +231,7 @@ impl FerroEhrService {
 /// configured system identifier (every
 /// `schemas/demographic/ItemTagOf<T>.yaml` example; no demographic class
 /// declares a `tags` containment, so the EHR side's `EHR.tags` anchor has no
-/// analogue here — the register carries the fixed handling).
+/// analogue here — a settled fixed handling).
 ///
 /// # Errors
 /// [`VersionIdError`] when the configured `system_id` or the stored tag target
@@ -258,7 +253,7 @@ fn party_item_tag(system_id: &str, row: &tag_repo::TagRow) -> Result<ItemTag, Se
 /// The `ITEM_TAG.owner_id` of a demographic (ehr-less) tag — the `OBJECT_REF`
 /// `{namespace: local, type: SYSTEM}` of every released
 /// `schemas/demographic/ItemTagOf<T>.yaml` example, whose `id` carries the
-/// server's configured system identifier (register AMB-137). One function so
+/// server's configured system identifier. One function so
 /// the shape a tag is VALIDATED under is the shape it is SERVED under.
 ///
 /// # Errors

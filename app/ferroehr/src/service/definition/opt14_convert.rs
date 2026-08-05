@@ -39,12 +39,6 @@
 //! service layer already depends on both `openehr_its::opt14` and
 //! `openehr_adl::adl14`, so it is the existing meeting point.
 
-#![expect(
-    clippy::disallowed_types,
-    reason = "owner-approved 2026-08-03 (#1694): stored template/query artefacts served verbatim + \
-              ADL/OPT wire envelopes"
-)]
-
 use std::collections::BTreeMap;
 
 use openehr_adl::adl14::convert::{ConvertConfig, ConvertError, convert};
@@ -92,6 +86,9 @@ pub(crate) enum OptConvertError {
     /// The converter core rejected a decomposed source.
     #[error("converting decomposed source {0:?}: {1}")]
     Convert(String, ConvertError),
+    /// The ADL2 serializer refused a converted source.
+    #[error("printing converted source {0:?}: {1}")]
+    Print(String, openehr_adl::print::PrintError),
 }
 
 /// A parent → child slot-fill edge recovered from the flattened OPT: the
@@ -132,17 +129,20 @@ pub(crate) struct OptConversion {
 /// # Errors
 /// - [`OptConvertError::Hrid`] if an embedded root's archetype id does not parse.
 /// - [`OptConvertError::Convert`] if the converter rejects a decomposed source.
+/// - [`OptConvertError::Print`] if a converted source carries a node the ADL2
+///   serializer has no syntax for.
 pub(crate) fn convert_opt_to_adl2(
     opt: &opt14::OperationalTemplate,
 ) -> Result<OptConversion, OptConvertError> {
     let (archetypes, structure) = convert_opt_to_archetypes(opt)?;
     let roots = archetypes
         .into_iter()
-        .map(|(archetype_id, art)| ConvertedRoot {
-            archetype_id,
-            adl2: openehr_adl::print::print(&art),
+        .map(|(archetype_id, art)| {
+            let adl2 = openehr_adl::print::print(&art)
+                .map_err(|e| OptConvertError::Print(archetype_id.clone(), e))?;
+            Ok(ConvertedRoot { archetype_id, adl2 })
         })
-        .collect();
+        .collect::<Result<Vec<ConvertedRoot>, OptConvertError>>()?;
     Ok(OptConversion { roots, structure })
 }
 
@@ -239,8 +239,7 @@ pub(crate) fn convert_opt_to_archetypes(
         };
         // NOTE: `is_differential`, `adl_version`, `rm_release`, `is_generated`
         // above are the converter's starting point only — `convert` overrides
-        // them (`is_differential` from the absent parent; the ADL/RM stamps from
-        // `ConvertConfig`).
+        // them from the absent parent and from `ConvertConfig`.
         let art =
             Archetype::AuthoredArchetype(Box::new(AuthoredArchetype::AuthoredArchetype(data)));
         let converted = convert(&art, &cfg, &mut log)
@@ -544,16 +543,13 @@ impl Decomposer<'_> {
                 ),
             ),
             // A `C_CODE_REFERENCE` names an external reference set by URI. With
-            // no inline code list, that is exactly the AOM2 ac-code
-            // term-binding pattern: an ac-code constraint whose binding URI
-            // "will designate a ref-set or value set"
-            // (`AOM2/master07-terminology_package.adoc` §Overview; keys per
-            // VTCBK). A minted ac-code + definition + binding is emitted; the
-            // converter core shifts all three consistently. When an inline
-            // code list is ALSO present the (more concrete) list constraint
-            // wins and the URI is carried in `conversion_details` — a
-            // dual-constrained node has no single ADL2 form (no openEHR spec
-            // governs 1.4→2 conversion — our own design).
+            // no inline code list that is exactly the AOM2 ac-code term-binding
+            // pattern, whose binding URI "will designate a ref-set or value set"
+            // (`AOM2/master07-terminology_package.adoc` §Overview), so a minted
+            // ac-code + definition + binding is emitted. When an inline code
+            // list is ALSO present the list constraint wins and the URI is
+            // carried in `conversion_details` (no openEHR spec governs 1.4→2
+            // conversion — our own design).
             opt14::CObject::CCodeReference(c) => map_code_reference(c, cx),
             // A `CONSTRAINT_REF` names an ac-code whose definition lives in the
             // flattened ontology's `constraint_definitions` (AOM 1.4
@@ -1301,25 +1297,31 @@ fn render_expr(e: &opt14::ExprItem) -> Option<String> {
 /// or a constraint (`C_STRING` pattern/list) as the `{/…/}`/`{"…"}` block.
 fn render_leaf(leaf: &opt14::ExprLeaf) -> Option<String> {
     let item = &leaf.item;
+    let text = item.text();
     match leaf.reference_type.to_lowercase().as_str() {
-        "attribute" => item.as_str().map(str::to_owned),
-        "constant" => item
-            .as_str()
-            .map(|s| format!("{s:?}"))
-            .or_else(|| item.as_i64().map(|n| n.to_string())),
+        "attribute" => (!text.is_empty()).then_some(text),
+        "constant" => {
+            if text.is_empty() {
+                None
+            } else if item.xsi_type() == Some("string") || text.trim().parse::<i64>().is_err() {
+                Some(format!("{text:?}"))
+            } else {
+                Some(text.trim().to_owned())
+            }
+        }
         "constraint" => {
             // The XML leaf item is a C_STRING: a regex `pattern` or a literal
             // string list.
-            if let Some(p) = item.get("pattern").and_then(serde_json::Value::as_str) {
+            if let Some(p) = item.child("pattern") {
+                let p = p.text();
                 let body = p.trim_matches('/');
                 return Some(format!("{{/{body}/}}"));
             }
-            let list = item.get("list").and_then(serde_json::Value::as_array)?;
-            let items = list
-                .iter()
-                .map(|v| v.as_str().map(|s| format!("{s:?}")))
-                .collect::<Option<Vec<_>>>()?;
-            Some(format!("{{{}}}", items.join(", ")))
+            let items: Vec<String> = item
+                .children_named("list")
+                .map(|v| format!("{:?}", v.text()))
+                .collect();
+            (!items.is_empty()).then(|| format!("{{{}}}", items.join(", ")))
         }
         _ => None,
     }
@@ -1571,15 +1573,13 @@ fn quantity_tuple(c: &opt14::CDvQuantity, cx: &mut RootCx) -> CObject {
             is_multiple: false,
         });
     }
-    // Tuple members co-vary: a tuple is emitted only when EVERY item
-    // constrains the magnitude (the reference corpus renders a units-only
-    // constraint as a plain `units` attribute, never a tuple with empty
-    // members — `dv_quantity_variations_1` fixture). A mixed set (some items
-    // with a magnitude, some without) widens to the plain units list — the
-    // safe direction (a widened constraint never rejects valid data) — with
-    // the dropped per-unit ranges reported. Precision joins the tuple only
-    // when every item carries one, on the same rule. No openEHR spec governs
-    // 1.4→2 conversion — our own design.
+    // Tuple members co-vary: a tuple is emitted only when EVERY item constrains
+    // the magnitude (the reference corpus renders a units-only constraint as a
+    // plain `units` attribute). A mixed set widens to the plain units list — the
+    // safe direction, since a widened constraint never rejects valid data — with
+    // the dropped per-unit ranges reported. Precision joins the tuple only when
+    // every item carries one. No openEHR spec governs 1.4→2 conversion — our own
+    // design.
     let all_magnitude = !c.list.is_empty() && c.list.iter().all(|i| i.magnitude.is_some());
     let all_precision = !c.list.is_empty() && c.list.iter().all(|i| i.precision.is_some());
     let some_dropped = c
@@ -1961,7 +1961,8 @@ mod tests {
                 // depth-0 emission and reused 1.4 node codes re-mint
                 // archetype-wide-unique ids in the converter core.
                 assert!(errors.is_empty(), "{name}/{id}: phase-1 errors: {errors:?}");
-                let printed = openehr_adl::print::print(art);
+                let printed = openehr_adl::print::print(art)
+                    .unwrap_or_else(|e| panic!("{name}/{id}: printing refused: {e}"));
                 openehr_adl::assemble::parse_artefact(&printed, Dialect::Adl2).unwrap_or_else(
                     |e| panic!("{name}/{id}: printed ADL2 does not re-parse: {e:?}\n{printed}"),
                 );

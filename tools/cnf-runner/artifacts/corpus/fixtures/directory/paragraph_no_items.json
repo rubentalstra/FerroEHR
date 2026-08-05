@@ -1,0 +1,30 @@
+{
+  "_type": "FOLDER",
+  "name": {
+    "_type": "DV_TEXT",
+    "value": "root"
+  },
+  "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+  "details": {
+    "_type": "ITEM_TREE",
+    "name": {
+      "_type": "DV_TEXT",
+      "value": "folder details"
+    },
+    "archetype_node_id": "at0901",
+    "items": [
+      {
+        "_type": "ELEMENT",
+        "name": {
+          "_type": "DV_TEXT",
+          "value": "leaf"
+        },
+        "archetype_node_id": "at0902",
+        "value": {
+          "_type": "DV_PARAGRAPH",
+          "items": []
+        }
+      }
+    ]
+  }
+}

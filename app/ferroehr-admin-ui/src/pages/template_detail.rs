@@ -209,12 +209,9 @@ fn tab_href(template_id: &str, tab: &str) -> String {
 )]
 #[component]
 pub fn TemplateDetailPage() -> impl IntoView {
-    // NOTE: the route param arrives ALREADY percent-decoded on both targets —
-    // `leptos_router`'s `ParamsMap::insert` runs every value through
-    // `Url::unescape` (`percent_encoding::percent_decode_str` under `ssr`,
-    // `js_sys::decode_uri_component` in the browser). So the encode that
-    // builds the link (`crate::pages::templates::detail_href`) is the whole
-    // round trip and a decode here would be a second, corrupting one.
+    // NOTE: the route param arrives ALREADY percent-decoded on both targets
+    // (`leptos_router`'s `ParamsMap::insert` runs every value through
+    // `Url::unescape`), so decoding here would be a second, corrupting pass.
     let params = use_params_map();
     let template_id =
         Signal::derive(move || params.with(|map| map.get("template_id").unwrap_or_default()));

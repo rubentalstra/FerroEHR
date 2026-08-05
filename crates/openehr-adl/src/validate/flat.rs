@@ -61,7 +61,7 @@ use crate::aom::access::{aom_type, child_occurrences, complex_attributes, object
 use crate::aom::interval::finite_upper;
 use crate::artefact::view;
 use crate::codes::{is_at_code, is_id_code, is_redefined_code, specialisation_parent_from_code};
-use crate::paths::{Resolution, child_path, locate, parse_path, resolve};
+use crate::paths::{Resolution, child_path, is_ancestor_path, locate, resolve};
 
 // ── the flat-form proxy + cardinality walk ────────────────────────────────
 
@@ -242,25 +242,6 @@ impl FlatScan<'_> {
             );
         }
     }
-}
-
-/// True iff `target` addresses the proxy's own ancestor line: its parsed
-/// segments are a (non-proper-checked) prefix of the proxy's own path
-/// segments, compared segment-wise on attribute name + node-id predicate —
-/// a string prefix would false-positive on `/items[id2]` vs `/items[id22]`.
-/// A root target (`/`, zero segments) is the ultimate ancestor. Sibling and
-/// cross-branch targets differ in some segment and stay legal
-/// (`ADL2/master04.3-cadl_complex_types.adoc` §Internal References).
-fn is_ancestor_path(target: &str, proxy: &str) -> bool {
-    let target_segs = parse_path(target);
-    let proxy_segs = parse_path(proxy);
-    if target_segs.len() > proxy_segs.len() {
-        return false;
-    }
-    target_segs
-        .iter()
-        .zip(&proxy_segs)
-        .all(|(t, p)| t.attribute == p.attribute && (t.node_id.is_none() || t.node_id == p.node_id))
 }
 
 // ── the deferred phase-1 halves for a specialised archetype ───────────────

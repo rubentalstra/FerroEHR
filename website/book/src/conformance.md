@@ -94,9 +94,9 @@ under test, into its own directory:
 - **FerroEHR** (the default) — the composed stack built from the current
   sources. This is the project's own gate: a phase can only close on a run
   with zero drift against the committed baseline.
-- **Upstream EHRbase (Java)** — `CONF_SUT=ehrbase-java` composes the
+- **EHRbase** — `CONF_SUT=ehrbase-java` composes the
   official `ehrbase/ehrbase` image (with its companion PostgreSQL) on fresh
-  volumes and runs the same catalogue with upstream's own committed party
+  volumes and runs the same catalogue with EHRbase's own committed party
   set. Its measured artifacts live under `docs/conformance/ehrbase-java/`
   and feed the [comparison page](comparison.md).
 - **Bring your own endpoint** — point the runner at any deployed CDR by URL
@@ -126,7 +126,7 @@ available:
 # our server, from the current sources (the default)
 bash scripts/conformance.sh
 
-# upstream EHRbase (Java), from the official images
+# EHRbase, from the official images
 CONF_SUT=ehrbase-java bash scripts/conformance.sh
 
 # any deployed CDR, by URL (credentials via the SUT_* variables the
@@ -166,7 +166,7 @@ for `ferroehr` — every pipeline run boots the server with `smart.enabled`,
 tokens carrying the roles and resource scopes each case needs. The SMART
 discovery document, the resource-scope grammar, and the fail-closed 403 are
 executable cases in the same committed record as everything else; a SUT
-whose ixit declares no `smart` block (upstream EHRbase) records those cases
+whose ixit declares no `smart` block (EHRbase) records those cases
 not-applicable with the citation instead. The tokens are signed by a
 **committed test issuer** under `tools/cnf-runner/party/smart/` — public
 test key material for the conformance harness, never usable for anything
@@ -235,7 +235,7 @@ capabilities the hospital-simulation load actually exercised; a capability the
 simulation does not reach must carry an adjudicated exclusion, printed with
 its reason, and the runner's `validate` gate refuses an artifact tree that
 leaves such a row undecided. It is emitted for **every** assessed system —
-FerroEHR, upstream, or your own — and always identifies itself as a
+FerroEHR, EHRbase, or your own — and always identifies itself as a
 framework assessment with the claim computed from the attached run; it is
 never an official openEHR certification. This is the document to hand to a
 procurement or evaluation reviewer who wants the capability-by-capability
@@ -246,7 +246,7 @@ picture.
 `docs/conformance/COMPARISON.md` is the fully generated multi-SUT record:
 profile verdicts, the capability-by-capability evidence matrix, and failure
 tables in both directions, derived from the two committed
-results/verdicts sets (ours and upstream EHRbase's) by
+results/verdicts sets (ours and EHRbase's) by
 `scripts/render-comparison.sh` — measured numbers only, no editorial
 adjustment, both directions always published. The same content renders as
 the [comparison page](comparison.md).

@@ -2815,55 +2815,6 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::VersionTreeId {
     }
 }
 
-impl crate::xml::runtime::ToXml for openehr_rm::prelude::AccessControlSettings {
-    fn xml_type_name(&self) -> &'static str {
-        "ACCESS_CONTROL_SETTINGS"
-    }
-    fn write_xml(
-        &self,
-        w: &mut crate::xml::runtime::XmlWriter,
-        tag: &str,
-        declared: Option<&str>,
-    ) -> Result<(), crate::xml::runtime::XmlError> {
-        let mut __attrs: Vec<(&str, String)> = Vec::new();
-        if let Some(d) = declared {
-            if d != "ACCESS_CONTROL_SETTINGS" {
-                __attrs.push(("xsi:type", "ACCESS_CONTROL_SETTINGS".to_string()));
-            }
-        }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
-        for (k, v) in &__attrs {
-            __e.push_attribute((*k, v.as_str()));
-        }
-        w.write_start(__e)?;
-        w.write_end(tag)?;
-        Ok(())
-    }
-}
-
-impl crate::xml::runtime::FromXml for openehr_rm::prelude::AccessControlSettings {
-    fn from_xml(
-        reader: &mut crate::xml::runtime::XmlReader,
-        start: &crate::xml::runtime::StartTag,
-    ) -> Result<Self, crate::xml::runtime::XmlError> {
-        loop {
-            match reader.read()? {
-                crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
-                    _ => reader.skip_element()?,
-                },
-                crate::xml::runtime::XmlEvent::End => break,
-                crate::xml::runtime::XmlEvent::Text(_) => {}
-                crate::xml::runtime::XmlEvent::Eof => {
-                    return Err(crate::xml::runtime::XmlError::Parse(
-                        "unexpected EOF".into(),
-                    ));
-                }
-            }
-        }
-        Ok(openehr_rm::prelude::AccessControlSettings {})
-    }
-}
-
 impl crate::xml::runtime::ToXml for openehr_rm::prelude::Action {
     fn xml_type_name(&self) -> &'static str {
         "ACTION"
@@ -3874,7 +3825,13 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Agent {
             relationships: if __relationships.is_empty() {
                 None
             } else {
-                Some(__relationships)
+                Some(
+                    openehr_base::containers::NonEmptyVec::new(__relationships).map_err(|__e| {
+                        crate::xml::runtime::XmlError::Parse(
+                            ::std::format!("element relationships: {__e}",).into(),
+                        )
+                    })?,
+                )
             },
             languages: if __languages.is_empty() {
                 None
@@ -11621,7 +11578,13 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Group {
             relationships: if __relationships.is_empty() {
                 None
             } else {
-                Some(__relationships)
+                Some(
+                    openehr_base::containers::NonEmptyVec::new(__relationships).map_err(|__e| {
+                        crate::xml::runtime::XmlError::Parse(
+                            ::std::format!("element relationships: {__e}",).into(),
+                        )
+                    })?,
+                )
             },
             languages: if __languages.is_empty() {
                 None
@@ -14893,7 +14856,13 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Organisation {
             relationships: if __relationships.is_empty() {
                 None
             } else {
-                Some(__relationships)
+                Some(
+                    openehr_base::containers::NonEmptyVec::new(__relationships).map_err(|__e| {
+                        crate::xml::runtime::XmlError::Parse(
+                            ::std::format!("element relationships: {__e}",).into(),
+                        )
+                    })?,
+                )
             },
             languages: if __languages.is_empty() {
                 None
@@ -16237,7 +16206,13 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Person {
             relationships: if __relationships.is_empty() {
                 None
             } else {
-                Some(__relationships)
+                Some(
+                    openehr_base::containers::NonEmptyVec::new(__relationships).map_err(|__e| {
+                        crate::xml::runtime::XmlError::Parse(
+                            ::std::format!("element relationships: {__e}",).into(),
+                        )
+                    })?,
+                )
             },
             languages: if __languages.is_empty() {
                 None
@@ -17053,7 +17028,13 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Role {
             relationships: if __relationships.is_empty() {
                 None
             } else {
-                Some(__relationships)
+                Some(
+                    openehr_base::containers::NonEmptyVec::new(__relationships).map_err(|__e| {
+                        crate::xml::runtime::XmlError::Parse(
+                            ::std::format!("element relationships: {__e}",).into(),
+                        )
+                    })?,
+                )
             },
             time_validity: __time_validity,
             performer: __performer.ok_or_else(|| {
@@ -17062,7 +17043,13 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::Role {
             capabilities: if __capabilities.is_empty() {
                 None
             } else {
-                Some(__capabilities)
+                Some(
+                    openehr_base::containers::NonEmptyVec::new(__capabilities).map_err(|__e| {
+                        crate::xml::runtime::XmlError::Parse(
+                            ::std::format!("element capabilities: {__e}",).into(),
+                        )
+                    })?,
+                )
             },
         })
     }

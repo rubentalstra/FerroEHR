@@ -8,6 +8,17 @@ composed SUT by `scripts/generate-ckm-examples.sh` and committed
 (byte-identical payload ground for every SUT; never fetched at run
 time). Manifest entries: `tools/cnf-runner/artifacts/corpus/MANIFEST.yaml`.
 
+Four of them — `ccta-report`, `gp-data-set`,
+`international-patient-summary`, `sars-event-notification` — were
+produced by the pre-fix generator and carried `name` /
+`archetype_node_id` on their `ISM_TRANSITION` nodes, which RM
+`UML/classes/org.openehr.rm.composition.ism_transition.adoc` inherits
+from PATHABLE, not LOCATABLE, so it declares neither. The fixed
+generator's transformation was applied to the committed files directly
+(via `jq`) rather than by a re-run: they are in exact `jq -S .` output
+form and RM-correct, but a real re-run against a composed SUT
+confirming byte-identical output is still outstanding (issue #1724).
+
 The **curated journey pack** below is referenced by slug from the
 manifest, the journey definitions and the example generator — the
 slugs are a stable contract. The **full library** is a separate pack

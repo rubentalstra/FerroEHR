@@ -34,3 +34,8 @@
 - [Extract export is latest-only by default](extract-export-latest-only-default.md) — a version-stack assertion can't ride a default export; use total_version_count or POST /message/export with include_all_versions
 - [Fixed-identity import fixtures are single-use](fixed-identity-fixtures-are-single-use.md) — two cases sharing one `requires.import` fixture ⇒ spec-correct 409 + 404; the runner's 409 tolerance hides it
 - [Commit member uid is service-generated](commit-member-uid-is-service-generated.md) — SM master03 + UpdateVersion.yaml + AMB-89: a pre-built ORIGINAL_VERSION fixture must not spell `uid`
+- [Parse-vs-semantic 400/422 split](parse-vs-semantic-400-422-split.md) — `responses/422.yaml` "could be converted to a resource" + the OAS `required:` lists; missing-mandatory = 400, template/invariant = 422, FLAT validation = 422
+- [ETag matcher placeholder refusal](etag-matcher-placeholder-refusal.md) — RUNNER bin: #1865 reddens 338 spec-correct cases; `validate` has no placeholder-resolvability gate
+- [Optional-list invariant emitter gap](optional-list-invariant-emitter-gap.md) — APP bin: `ROLE.capabilities`/`PARTY.relationships` still `Option<Vec>`, empty list accepted 201; the raw-body checks were deleted
+- [CONTRIBUTION seam skips the strict reader](contribution-seam-skips-strict-reader.md) — APP bin: both contribution lanes 422 a payload the direct routes 400; AMB-193+AMB-194 already fix the line
+- [OAS `required:` ≠ non-empty array](oas-required-does-not-forbid-empty-arrays.md) — `Clstr.yaml required: [items]` is satisfied by `[]`; only the BMM cardinality grounds an empty-list refusal

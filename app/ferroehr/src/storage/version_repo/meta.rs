@@ -6,14 +6,21 @@
 //! reassembly or attestation aggregation the full
 //! [`crate::storage::version_repo::read::read_current`] does.
 //!
-//! No openEHR spec governs the SQL — our own design (`docs/architecture.md`
-//! §Storage). The version identity these reads serve is RM common master06
+//! No openEHR spec governs the SQL — our own design. The version identity these reads serve is RM common master06
 //! §Version Identification; the commit instant is §Committal.
+//!
+//! NOTE (no openEHR spec governs storage tiering — our own design): every
+//! object-addressed lookup here falls back to the cold archival tier
+//! ([`crate::storage::version_repo::tier`]) ONLY when the primary tier misses,
+//! so an unarchived read costs exactly what it always did. The EHR-wide
+//! aggregate and enumeration reads at the bottom of this file stay
+//! primary-only: they answer for the operational store, which is precisely what
+//! an archived object has been moved out of.
 
 #![expect(
     clippy::disallowed_types,
     reason = "owner-approved 2026-08-03 (#1694 family 1): stored canonical fragments — a typed \
-              round-trip drops forward-compatible keys (docs/VERSIONS.md §Spec version policy)"
+              round-trip drops forward-compatible keys (the openEHR release strategy: minors are compatible supersets)"
 )]
 
 use serde_json::Value;
@@ -22,6 +29,7 @@ use sqlx::{PgPool, Row};
 
 use crate::ids::{EhrId, VoId};
 use crate::storage::error::StorageError;
+use crate::storage::version_repo::tier::on_cold;
 
 // ── revision-history enumeration ──────────────────────────────────────────────
 
@@ -72,17 +80,19 @@ pub async fn all_version_meta(
     pool: &PgPool,
     vo_id: VoId,
 ) -> Result<Vec<VersionMeta>, StorageError> {
-    let rows = sqlx::query(
-        "SELECT v.ehr_id, v.kind, v.sys_version, v.trunk_version, v.branch_number, \
-         v.branch_version, v.creating_system_id, v.lifecycle_state, \
-         a.system_id, a.change_type, a.description, a.committer, a.attestation, \
-         a.time_committed \
-         FROM vo_version v JOIN audit a ON a.id = v.audit_id \
-         WHERE v.vo_id = $1 ORDER BY v.sys_version",
-    )
-    .bind(vo_id)
-    .fetch_all(pool)
-    .await?;
+    const SQL: &str = "SELECT v.ehr_id, v.kind, v.sys_version, v.trunk_version, v.branch_number, \
+                       v.branch_version, v.creating_system_id, v.lifecycle_state, \
+                       a.system_id, a.change_type, a.description, a.committer, a.attestation, \
+                       a.time_committed \
+                       FROM vo_version v JOIN audit a ON a.id = v.audit_id \
+                       WHERE v.vo_id = $1 ORDER BY v.sys_version";
+    let mut rows = sqlx::query(SQL).bind(vo_id).fetch_all(pool).await?;
+    if rows.is_empty() {
+        rows = on_cold!(pool, |conn| sqlx::query(SQL)
+            .bind(vo_id)
+            .fetch_all(&mut *conn)
+            .await);
+    }
     rows.iter()
         .map(|row| {
             Ok(VersionMeta {
@@ -117,14 +127,21 @@ pub async fn time_created(
     pool: &PgPool,
     vo_id: VoId,
 ) -> Result<Option<jiff::Timestamp>, StorageError> {
-    Ok(sqlx::query_scalar::<_, jiff_sqlx::Timestamp>(
-        "SELECT a.time_committed FROM vo_version v JOIN audit a ON a.id = v.audit_id \
-         WHERE v.vo_id = $1 ORDER BY v.sys_version LIMIT 1",
-    )
-    .bind(vo_id)
-    .fetch_optional(pool)
-    .await?
-    .map(jiff_sqlx::Timestamp::to_jiff))
+    const SQL: &str = "SELECT a.time_committed FROM vo_version v JOIN audit a ON a.id = v.audit_id \
+                       WHERE v.vo_id = $1 ORDER BY v.sys_version LIMIT 1";
+    let mut stamp = sqlx::query_scalar::<_, jiff_sqlx::Timestamp>(SQL)
+        .bind(vo_id)
+        .fetch_optional(pool)
+        .await?;
+    if stamp.is_none() {
+        stamp = on_cold!(pool, |conn| sqlx::query_scalar::<_, jiff_sqlx::Timestamp>(
+            SQL
+        )
+        .bind(vo_id)
+        .fetch_optional(&mut *conn)
+        .await);
+    }
+    Ok(stamp.map(jiff_sqlx::Timestamp::to_jiff))
 }
 
 /// The commit instants bounding an object's held versions, in one scalar read.
@@ -144,18 +161,25 @@ pub async fn commit_bounds(
     pool: &PgPool,
     vo_id: VoId,
 ) -> Result<Option<(jiff::Timestamp, jiff::Timestamp)>, StorageError> {
-    let row = sqlx::query(
-        "SELECT min(a.time_committed) AS created, max(a.time_committed) AS modified \
-         FROM vo_version v JOIN audit a ON a.id = v.audit_id WHERE v.vo_id = $1",
-    )
-    .bind(vo_id)
-    .fetch_one(pool)
-    .await?;
-    let created: Option<jiff_sqlx::Timestamp> = row.try_get("created")?;
-    let modified: Option<jiff_sqlx::Timestamp> = row.try_get("modified")?;
-    Ok(created
-        .zip(modified)
-        .map(|(c, m)| (c.to_jiff(), m.to_jiff())))
+    const SQL: &str = "SELECT min(a.time_committed) AS created, \
+                       max(a.time_committed) AS modified \
+                       FROM vo_version v JOIN audit a ON a.id = v.audit_id WHERE v.vo_id = $1";
+    let bounds = |row: &PgRow| -> Result<Option<(jiff::Timestamp, jiff::Timestamp)>, StorageError> {
+        let created: Option<jiff_sqlx::Timestamp> = row.try_get("created")?;
+        let modified: Option<jiff_sqlx::Timestamp> = row.try_get("modified")?;
+        Ok(created
+            .zip(modified)
+            .map(|(c, m)| (c.to_jiff(), m.to_jiff())))
+    };
+    let row = sqlx::query(SQL).bind(vo_id).fetch_one(pool).await?;
+    if let Some(found) = bounds(&row)? {
+        return Ok(Some(found));
+    }
+    let cold_row = on_cold!(pool, |conn| sqlx::query(SQL)
+        .bind(vo_id)
+        .fetch_one(&mut *conn)
+        .await);
+    bounds(&cold_row)
 }
 
 /// The stored `template_id` of one version of an object — the current open
@@ -172,30 +196,41 @@ pub async fn template_id_of(
     vo_id: VoId,
     tree: Option<(i32, i32, i32)>,
 ) -> Result<Option<Option<String>>, StorageError> {
-    let row = match tree {
-        Some((trunk, branch, branch_version)) => {
-            sqlx::query_scalar(
-                "SELECT template_id FROM vo_version WHERE vo_id = $1 \
-                 AND trunk_version = $2 AND branch_number = $3 AND branch_version = $4",
-            )
+    const BY_TREE_SQL: &str = "SELECT template_id FROM vo_version WHERE vo_id = $1 \
+                               AND trunk_version = $2 AND branch_number = $3 \
+                               AND branch_version = $4";
+    const CURRENT_SQL: &str = "SELECT template_id FROM vo_version WHERE vo_id = $1 \
+                               AND upper_inf(sys_period) AND branch_number = 0";
+    if let Some((trunk, branch, branch_version)) = tree {
+        let primary: Option<Option<String>> = sqlx::query_scalar(BY_TREE_SQL)
             .bind(vo_id)
             .bind(trunk)
             .bind(branch)
             .bind(branch_version)
             .fetch_optional(pool)
-            .await?
+            .await?;
+        if primary.is_some() {
+            return Ok(primary);
         }
-        None => {
-            sqlx::query_scalar(
-                "SELECT template_id FROM vo_version WHERE vo_id = $1 \
-                 AND upper_inf(sys_period) AND branch_number = 0",
-            )
+        return Ok(on_cold!(pool, |conn| sqlx::query_scalar(BY_TREE_SQL)
             .bind(vo_id)
-            .fetch_optional(pool)
-            .await?
-        }
-    };
-    Ok(row)
+            .bind(trunk)
+            .bind(branch)
+            .bind(branch_version)
+            .fetch_optional(&mut *conn)
+            .await));
+    }
+    let primary: Option<Option<String>> = sqlx::query_scalar(CURRENT_SQL)
+        .bind(vo_id)
+        .fetch_optional(pool)
+        .await?;
+    if primary.is_some() {
+        return Ok(primary);
+    }
+    Ok(on_cold!(pool, |conn| sqlx::query_scalar(CURRENT_SQL)
+        .bind(vo_id)
+        .fetch_optional(&mut *conn)
+        .await))
 }
 
 // ── existence / kind / ownership ──────────────────────────────────────────────
@@ -220,13 +255,19 @@ pub async fn ehr_exists(pool: &PgPool, ehr_id: EhrId) -> Result<bool, StorageErr
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn object_kind(pool: &PgPool, vo_id: VoId) -> Result<Option<String>, StorageError> {
-    Ok(sqlx::query_scalar(
-        "SELECT kind FROM vo_version WHERE vo_id = $1 AND upper_inf(sys_period) \
-         AND branch_number = 0",
-    )
-    .bind(vo_id)
-    .fetch_optional(pool)
-    .await?)
+    const SQL: &str = "SELECT kind FROM vo_version WHERE vo_id = $1 AND upper_inf(sys_period) \
+                       AND branch_number = 0";
+    let primary: Option<String> = sqlx::query_scalar(SQL)
+        .bind(vo_id)
+        .fetch_optional(pool)
+        .await?;
+    if primary.is_some() {
+        return Ok(primary);
+    }
+    Ok(on_cold!(pool, |conn| sqlx::query_scalar(SQL)
+        .bind(vo_id)
+        .fetch_optional(&mut *conn)
+        .await))
 }
 
 /// The kind text of the current version of EVERY object in `vo_ids`.
@@ -243,19 +284,33 @@ pub async fn object_kinds(
     pool: &PgPool,
     vo_ids: &[VoId],
 ) -> Result<Vec<(VoId, String)>, StorageError> {
+    const SQL: &str = "SELECT vo_id, kind FROM vo_version WHERE vo_id = ANY($1) \
+                       AND upper_inf(sys_period) AND branch_number = 0";
     if vo_ids.is_empty() {
         return Ok(Vec::new());
     }
-    let rows = sqlx::query(
-        "SELECT vo_id, kind FROM vo_version WHERE vo_id = ANY($1) \
-         AND upper_inf(sys_period) AND branch_number = 0",
-    )
-    .bind(vo_ids)
-    .fetch_all(pool)
-    .await?;
-    rows.iter()
+    let rows = sqlx::query(SQL).bind(vo_ids).fetch_all(pool).await?;
+    let mut found: Vec<(VoId, String)> = rows
+        .iter()
         .map(|r| Ok((r.try_get("vo_id")?, r.try_get("kind")?)))
-        .collect()
+        .collect::<Result<_, StorageError>>()?;
+    // Only the ids the primary tier did not answer for reach the cold tier.
+    let missing: Vec<VoId> = vo_ids
+        .iter()
+        .filter(|id| !found.iter().any(|(seen, _)| seen == *id))
+        .copied()
+        .collect();
+    if missing.is_empty() {
+        return Ok(found);
+    }
+    let cold_rows = on_cold!(pool, |conn| sqlx::query(SQL)
+        .bind(&missing)
+        .fetch_all(&mut *conn)
+        .await);
+    for row in &cold_rows {
+        found.push((row.try_get("vo_id")?, row.try_get("kind")?));
+    }
+    Ok(found)
 }
 
 /// The owning EHR of a versioned object (`None` when the object does not
@@ -264,12 +319,18 @@ pub async fn object_kinds(
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn vo_owner(pool: &PgPool, vo_id: VoId) -> Result<Option<Option<EhrId>>, StorageError> {
-    Ok(
-        sqlx::query_scalar("SELECT ehr_id FROM vo_version WHERE vo_id = $1 LIMIT 1")
-            .bind(vo_id)
-            .fetch_optional(pool)
-            .await?,
-    )
+    const SQL: &str = "SELECT ehr_id FROM vo_version WHERE vo_id = $1 LIMIT 1";
+    let primary: Option<Option<EhrId>> = sqlx::query_scalar(SQL)
+        .bind(vo_id)
+        .fetch_optional(pool)
+        .await?;
+    if primary.is_some() {
+        return Ok(primary);
+    }
+    Ok(on_cold!(pool, |conn| sqlx::query_scalar(SQL)
+        .bind(vo_id)
+        .fetch_optional(&mut *conn)
+        .await))
 }
 
 /// A versioned object's owning EHR **and its RM kind**.
@@ -285,12 +346,16 @@ pub async fn vo_owner_kind(
     pool: &PgPool,
     vo_id: VoId,
 ) -> Result<Option<(Option<EhrId>, String)>, StorageError> {
-    let row: Option<(Option<EhrId>, String)> =
-        sqlx::query_as("SELECT ehr_id, kind FROM vo_version WHERE vo_id = $1 LIMIT 1")
-            .bind(vo_id)
-            .fetch_optional(pool)
-            .await?;
-    Ok(row)
+    const SQL: &str = "SELECT ehr_id, kind FROM vo_version WHERE vo_id = $1 LIMIT 1";
+    let primary: Option<(Option<EhrId>, String)> =
+        sqlx::query_as(SQL).bind(vo_id).fetch_optional(pool).await?;
+    if primary.is_some() {
+        return Ok(primary);
+    }
+    Ok(on_cold!(pool, |conn| sqlx::query_as(SQL)
+        .bind(vo_id)
+        .fetch_optional(&mut *conn)
+        .await))
 }
 
 /// Whether a specific VERSION of a versioned object exists, addressed by its
@@ -305,17 +370,29 @@ pub async fn version_exists(
     branch_number: i32,
     branch_version: i32,
 ) -> Result<bool, StorageError> {
-    Ok(sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM vo_version WHERE vo_id = $1 \
-         AND trunk_version = $2 AND branch_number = $3 AND branch_version = $4)",
-    )
-    .bind(vo_id)
-    .bind(trunk)
-    .bind(branch_number)
-    .bind(branch_version)
-    .fetch_one(pool)
-    .await?)
+    let primary: bool = sqlx::query_scalar(EXISTS_SQL)
+        .bind(vo_id)
+        .bind(trunk)
+        .bind(branch_number)
+        .bind(branch_version)
+        .fetch_one(pool)
+        .await?;
+    if primary {
+        return Ok(true);
+    }
+    Ok(on_cold!(pool, |conn| sqlx::query_scalar(EXISTS_SQL)
+        .bind(vo_id)
+        .bind(trunk)
+        .bind(branch_number)
+        .bind(branch_version)
+        .fetch_one(&mut *conn)
+        .await))
 }
+
+/// The version-addressed existence probe, shared by both tiers.
+const EXISTS_SQL: &str = "SELECT EXISTS(SELECT 1 FROM vo_version WHERE vo_id = $1 \
+                          AND trunk_version = $2 AND branch_number = $3 \
+                          AND branch_version = $4)";
 
 // ── current-version identity reads ────────────────────────────────────────────
 
@@ -346,15 +423,22 @@ pub async fn current_vo(
     ehr_id: EhrId,
     kind: &str,
 ) -> Result<Option<CurrentVoRow>, StorageError> {
-    let Some(row) = sqlx::query(
-        "SELECT vo_id, trunk_version, branch_number, branch_version FROM vo_version \
-         WHERE ehr_id = $1 AND kind = $2 AND upper_inf(sys_period) AND branch_number = 0",
-    )
-    .bind(ehr_id)
-    .bind(kind)
-    .fetch_optional(pool)
-    .await?
-    else {
+    const SQL: &str = "SELECT vo_id, trunk_version, branch_number, branch_version FROM vo_version \
+                       WHERE ehr_id = $1 AND kind = $2 AND upper_inf(sys_period) \
+                       AND branch_number = 0";
+    let mut found = sqlx::query(SQL)
+        .bind(ehr_id)
+        .bind(kind)
+        .fetch_optional(pool)
+        .await?;
+    if found.is_none() {
+        found = on_cold!(pool, |conn| sqlx::query(SQL)
+            .bind(ehr_id)
+            .bind(kind)
+            .fetch_optional(&mut *conn)
+            .await);
+    }
+    let Some(row) = found else {
         return Ok(None);
     };
     Ok(Some(CurrentVoRow {
@@ -417,18 +501,24 @@ pub async fn current_version_meta_by_kind(
     ehr_id: EhrId,
     kind: &str,
 ) -> Result<Option<CurrentMeta>, StorageError> {
-    let Some(row) = sqlx::query(
-        "SELECT v.vo_id, v.trunk_version, v.branch_number, v.branch_version, \
-         v.creating_system_id, a.time_committed \
-         FROM vo_version v JOIN audit a ON a.id = v.audit_id \
-         WHERE v.ehr_id = $1 AND v.kind = $2 AND upper_inf(v.sys_period) \
-         AND v.branch_number = 0",
-    )
-    .bind(ehr_id)
-    .bind(kind)
-    .fetch_optional(pool)
-    .await?
-    else {
+    const SQL: &str = "SELECT v.vo_id, v.trunk_version, v.branch_number, v.branch_version, \
+                       v.creating_system_id, a.time_committed \
+                       FROM vo_version v JOIN audit a ON a.id = v.audit_id \
+                       WHERE v.ehr_id = $1 AND v.kind = $2 AND upper_inf(v.sys_period) \
+                       AND v.branch_number = 0";
+    let mut found = sqlx::query(SQL)
+        .bind(ehr_id)
+        .bind(kind)
+        .fetch_optional(pool)
+        .await?;
+    if found.is_none() {
+        found = on_cold!(pool, |conn| sqlx::query(SQL)
+            .bind(ehr_id)
+            .bind(kind)
+            .fetch_optional(&mut *conn)
+            .await);
+    }
+    let Some(row) = found else {
         return Ok(None);
     };
     Ok(Some(current_meta_row(&row)?))
@@ -449,18 +539,24 @@ pub async fn current_version_meta_scoped(
     vo_id: VoId,
     ehr_id: EhrId,
 ) -> Result<Option<CurrentMeta>, StorageError> {
-    let Some(row) = sqlx::query(
-        "SELECT v.vo_id, v.trunk_version, v.branch_number, v.branch_version, \
-         v.creating_system_id, a.time_committed \
-         FROM vo_version v JOIN audit a ON a.id = v.audit_id \
-         WHERE v.vo_id = $1 AND v.ehr_id = $2 AND upper_inf(v.sys_period) \
-         AND v.branch_number = 0",
-    )
-    .bind(vo_id)
-    .bind(ehr_id)
-    .fetch_optional(pool)
-    .await?
-    else {
+    const SQL: &str = "SELECT v.vo_id, v.trunk_version, v.branch_number, v.branch_version, \
+                       v.creating_system_id, a.time_committed \
+                       FROM vo_version v JOIN audit a ON a.id = v.audit_id \
+                       WHERE v.vo_id = $1 AND v.ehr_id = $2 AND upper_inf(v.sys_period) \
+                       AND v.branch_number = 0";
+    let mut found = sqlx::query(SQL)
+        .bind(vo_id)
+        .bind(ehr_id)
+        .fetch_optional(pool)
+        .await?;
+    if found.is_none() {
+        found = on_cold!(pool, |conn| sqlx::query(SQL)
+            .bind(vo_id)
+            .bind(ehr_id)
+            .fetch_optional(&mut *conn)
+            .await);
+    }
+    let Some(row) = found else {
         return Ok(None);
     };
     Ok(Some(current_meta_row(&row)?))
@@ -506,17 +602,19 @@ pub async fn current_demographic_meta(
     pool: &PgPool,
     vo_id: VoId,
 ) -> Result<Option<CurrentDemographicMeta>, StorageError> {
-    let Some(row) = sqlx::query(
-        "SELECT v.kind, v.lifecycle_state, v.trunk_version, v.branch_number, \
-         v.branch_version, v.creating_system_id, a.time_committed \
-         FROM vo_version v JOIN audit a ON a.id = v.audit_id \
-         WHERE v.vo_id = $1 AND v.ehr_id IS NULL AND upper_inf(v.sys_period) \
-         AND v.branch_number = 0",
-    )
-    .bind(vo_id)
-    .fetch_optional(pool)
-    .await?
-    else {
+    const SQL: &str = "SELECT v.kind, v.lifecycle_state, v.trunk_version, v.branch_number, \
+                       v.branch_version, v.creating_system_id, a.time_committed \
+                       FROM vo_version v JOIN audit a ON a.id = v.audit_id \
+                       WHERE v.vo_id = $1 AND v.ehr_id IS NULL AND upper_inf(v.sys_period) \
+                       AND v.branch_number = 0";
+    let mut found = sqlx::query(SQL).bind(vo_id).fetch_optional(pool).await?;
+    if found.is_none() {
+        found = on_cold!(pool, |conn| sqlx::query(SQL)
+            .bind(vo_id)
+            .fetch_optional(&mut *conn)
+            .await);
+    }
+    let Some(row) = found else {
         return Ok(None);
     };
     Ok(Some(CurrentDemographicMeta {
@@ -587,20 +685,25 @@ pub async fn current_composition_meta(
     pool: &PgPool,
     vo_id: VoId,
 ) -> Result<Option<CurrentCompositionMeta>, StorageError> {
-    let Some(row) = sqlx::query(
-        "SELECT v.ehr_id, v.lifecycle_state, v.trunk_version, v.branch_number, \
-         v.branch_version, v.creating_system_id, a.time_committed, e.is_modifiable, \
-         n.data AS root_data \
-         FROM vo_version v \
-         JOIN audit a ON a.id = v.audit_id \
-         JOIN ehr e ON e.id = v.ehr_id \
-         LEFT JOIN node n ON n.vo_id = v.vo_id AND n.sys_version = v.sys_version AND n.num = 0 \
-         WHERE v.vo_id = $1 AND upper_inf(v.sys_period) AND v.branch_number = 0",
-    )
-    .bind(vo_id)
-    .fetch_optional(pool)
-    .await?
-    else {
+    // On the cold-tier retry `node` resolves to the archival mirror while `ehr`
+    // and `audit`, which are never moved, keep resolving to the primary schema.
+    const SQL: &str = "SELECT v.ehr_id, v.lifecycle_state, v.trunk_version, v.branch_number, \
+                       v.branch_version, v.creating_system_id, a.time_committed, \
+                       e.is_modifiable, n.data AS root_data \
+                       FROM vo_version v \
+                       JOIN audit a ON a.id = v.audit_id \
+                       JOIN ehr e ON e.id = v.ehr_id \
+                       LEFT JOIN node n ON n.vo_id = v.vo_id \
+                       AND n.sys_version = v.sys_version AND n.num = 0 \
+                       WHERE v.vo_id = $1 AND upper_inf(v.sys_period) AND v.branch_number = 0";
+    let mut found = sqlx::query(SQL).bind(vo_id).fetch_optional(pool).await?;
+    if found.is_none() {
+        found = on_cold!(pool, |conn| sqlx::query(SQL)
+            .bind(vo_id)
+            .fetch_optional(&mut *conn)
+            .await);
+    }
+    let Some(row) = found else {
         return Ok(None);
     };
     Ok(Some(CurrentCompositionMeta {
@@ -624,11 +727,16 @@ pub async fn current_composition_meta(
 /// `EHR_SUMMARY.composition_count` (SM `ehr_summary.adoc`: "(versioned)
 /// Compositions", i.e. distinct `vo_id`, not versions).
 ///
+/// Counted over BOTH storage tiers: an EHR may hold archived and live
+/// compositions at once, and a summary that silently dropped the archived ones
+/// would understate the record.
+///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
 pub async fn composition_count(pool: &PgPool, ehr_id: EhrId) -> Result<i64, StorageError> {
     Ok(sqlx::query_scalar(
-        "SELECT count(DISTINCT vo_id) FROM vo_version WHERE ehr_id = $1 AND kind = 'COMPOSITION'",
+        "SELECT count(DISTINCT vo_id) FROM vo_version_all \
+         WHERE ehr_id = $1 AND kind = 'COMPOSITION'",
     )
     .bind(ehr_id)
     .fetch_one(pool)
@@ -637,6 +745,9 @@ pub async fn composition_count(pool: &PgPool, ehr_id: EhrId) -> Result<i64, Stor
 
 /// The ids of an EHR's current (open trunk tip) versioned objects of one kind,
 /// excluding an optional lifecycle state (e.g. `523|deleted|`).
+///
+/// Enumerated over BOTH storage tiers: the callers use it to decide whether
+/// something already exists in the EHR, and an archived object still does.
 ///
 /// # Errors
 /// Returns [`StorageError::Database`] on a driver failure.
@@ -647,7 +758,7 @@ pub async fn current_vo_ids(
     exclude_lifecycle: Option<&str>,
 ) -> Result<Vec<VoId>, StorageError> {
     Ok(sqlx::query_scalar(
-        "SELECT vo_id FROM vo_version WHERE ehr_id = $1 AND kind = $2 \
+        "SELECT vo_id FROM vo_version_all WHERE ehr_id = $1 AND kind = $2 \
          AND upper_inf(sys_period) AND branch_number = 0 \
          AND ($3::text IS NULL OR lifecycle_state <> $3)",
     )

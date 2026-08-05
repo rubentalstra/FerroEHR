@@ -64,14 +64,30 @@ impl TerminologyRouter {
     ///
     /// # Errors
     ///
-    /// [`SmError`] from the first provider whose configuration is invalid (an
-    /// empty URL, an un-buildable HTTP client, a missing or invalid
-    /// `oauth2_client`). A provider that cannot be built is a boot failure,
-    /// never a silently-absent route.
+    /// [`SmError`] when this binary was built without the `fhir` cargo
+    /// feature (it cannot decode a terminology server's FHIR responses, so a
+    /// configured provider is refused loudly rather than silently ignored —
+    /// the in-process bundle remains the terminology), or from the first
+    /// provider whose configuration is invalid (an empty URL, an un-buildable
+    /// HTTP client, a missing or invalid `oauth2_client`). A provider that
+    /// cannot be built is a boot failure, never a silently-absent route.
     pub fn build(cfg: &ExternalTerminologyConfig) -> Result<Option<Self>, SmError> {
         if !cfg.enabled || cfg.providers.is_empty() {
             return Ok(None);
         }
+        #[cfg(not(feature = "fhir"))]
+        return Err(SmError::exception(
+            "terminology.external is enabled with configured providers, but this binary was \
+             built without the `fhir` cargo feature (external FHIR terminology servers are \
+             unavailable; the in-process bundle remains)",
+        ));
+        #[cfg(feature = "fhir")]
+        Self::build_providers(cfg).map(Some)
+    }
+
+    /// Materialise the configured providers and their routing.
+    #[cfg(feature = "fhir")]
+    fn build_providers(cfg: &ExternalTerminologyConfig) -> Result<Self, SmError> {
         let mut providers = BTreeMap::new();
         for (name, provider_cfg) in &cfg.providers {
             let provider = cfg.build_provider(name, provider_cfg)?;
@@ -95,12 +111,12 @@ impl TerminologyRouter {
             .iter()
             .map(|(key, provider)| (key.trim().to_ascii_lowercase(), provider.clone()))
             .collect();
-        Ok(Some(Self {
+        Ok(Self {
             providers,
             routes,
             default,
             fail_on_error: cfg.fail_on_error,
-        }))
+        })
     }
 
     /// A router over one already-built provider, registered under the

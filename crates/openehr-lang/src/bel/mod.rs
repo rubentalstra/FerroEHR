@@ -373,14 +373,15 @@ impl BelBuilder for BeomBuilder {
 
     fn for_all(
         &mut self,
-        variable: &str,
+        _variable: &str,
         collection: Expression,
         condition: Expression,
     ) -> Result<Expression, BelError> {
         // beom EXPR_FOR_ALL: `operand` is the collection reference (an
-        // EXPR_VALUE_REF), `condition` the per-member assertion. The bound
-        // variable name is recorded so a `$var` inside the condition resolves.
-        let _ = variable;
+        // EXPR_VALUE_REF), `condition` the per-member assertion.
+        // NOTE: EXPR_FOR_ALL declares no bound-variable attribute
+        // (`LANG/docs/BEL/master04-expression_object_model.adoc` §Core
+        // Package), so the binding name has nowhere to land in the model.
         let operand = match collection {
             Expression::ExprValueRef(r) => r,
             _ => ExprValueRef { item: None },
@@ -441,15 +442,9 @@ impl BelBuilder for BeomBuilder {
         type_id: &str,
         value: Option<Expression>,
     ) -> Statement {
-        // NOTE: the beom defines exactly three statement classes — ASSERTION,
-        // VARIABLE_DECLARATION and ASSIGNMENT
+        // NOTE: the beom declares no constant class
         // (`LANG/docs/BEL/master04-expression_object_model.adoc` §Core
-        // Package) — and no constant class, while the language chapter
-        // (`master03-language.adoc` §Constants) and the grammar
-        // (`constant_declaration`) both define the construct. The BEOM is the
-        // normative bound (`master02-overview.adoc`), so a constant
-        // materialises as the model's one declaration shape, its value
-        // discarded exactly as a variable initialiser is.
+        // Package), so its one declaration shape carries the construct.
         let ty = object_ref_type(type_id);
         self.vars.insert(name.to_owned(), ty.clone());
         drop(value);

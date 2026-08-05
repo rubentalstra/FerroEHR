@@ -529,7 +529,7 @@ fn both_custom_forms_convert_to_adl2_and_print() {
             &mut log,
         )
         .unwrap_or_else(|e| panic!("{constraint} must convert: {e:?}"));
-        let printed = openehr_adl::print::print(&converted);
+        let printed = openehr_adl::print::print(&converted).expect("print the converted artefact");
         assert!(
             parse_artefact(&printed, Dialect::Adl2).is_ok(),
             "the converted ADL 2 text must re-parse as ADL 2:\n{printed}"

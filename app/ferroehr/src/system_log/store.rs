@@ -10,15 +10,16 @@
 //! outside the EHR data (`migrations/audit/0001_baseline.sql`).
 //!
 //! The canonical stored form is the **FHIR R4B `AuditEvent`** (IHE BALP
-//! shape, [`super::fhir`]) in the `fhir` jsonb column — the exact document
+//! shape, rendered by the `fhir` cargo feature) in the `fhir` jsonb column —
+//! the exact document
 //! the RESTful-ATNA ITI-81 search serves; the promoted columns are derived
 //! search keys, nothing more. Rows are append-only except the per-sink
 //! delivery stamps (the forwarding outbox) and retention reaping.
 
 #![expect(
     clippy::disallowed_types,
-    reason = "owner-approved 2026-08-03 (#1694 family 6): FHIR resources are an external standard \
-              with no RM type (typed-FHIR evaluation tracked separately)"
+    reason = "owner-approved 2026-08-03 (#1694 family 6, settled by #1885): the store carries an \
+              already-rendered FHIR document, never a typed resource"
 )]
 
 use jiff_sqlx::Timestamp;
@@ -28,7 +29,6 @@ use uuid::Uuid;
 use crate::system_log::AuditError;
 use crate::system_log::codes::AtnaAction;
 use crate::system_log::event::{AuditEvent, EventType, ObjectClass};
-use crate::system_log::fhir::FhirAuditEvent;
 
 /// The PG-backed Audit Record Repository (the `store` sink).
 #[derive(Debug, Clone)]
@@ -51,15 +51,13 @@ impl AuditStore {
     /// stamps).
     ///
     /// # Errors
-    /// [`AuditError::Store`] when serialization of the FHIR document or the
-    /// INSERT fails.
+    /// [`AuditError::Store`] when the INSERT fails.
     pub async fn insert(
         &self,
         event: &AuditEvent,
         subject: Option<&str>,
-        fhir: &FhirAuditEvent,
+        fhir: &serde_json::Value,
     ) -> Result<Uuid, AuditError> {
-        let fhir_json = serde_json::to_value(fhir).map_err(|e| AuditError::Store(e.to_string()))?;
         let outcome = outcome_smallint(event);
         sqlx::query(
             "INSERT INTO audit.audit_event (recorded_at, action, outcome, event_code, \
@@ -80,7 +78,7 @@ impl AuditStore {
         .bind(event.client_ip.as_deref())
         .bind(event.token_id.as_deref())
         .bind(event.tenant_id)
-        .bind(fhir_json)
+        .bind(fhir.clone())
         .fetch_one(&self.pool)
         .await
         .map_err(|e| AuditError::Store(e.to_string()))?
@@ -95,12 +93,15 @@ impl AuditStore {
     /// only when no per-row delivery stamping is needed (the syslog sink
     /// keeps the per-event [`Self::insert`]).
     ///
+    /// A record whose FHIR rendering failed carries no document and is
+    /// skipped here — the drop is already metered where the rendering failed.
+    ///
     /// # Errors
-    /// [`AuditError::Store`] when serialization of a FHIR document or the
-    /// INSERT fails (the whole batch fails together; the caller retries).
+    /// [`AuditError::Store`] when the INSERT fails (the whole batch fails
+    /// together; the caller retries).
     pub async fn insert_batch(
         &self,
-        records: &[(AuditEvent, Option<String>, FhirAuditEvent)],
+        records: &[(AuditEvent, Option<String>, Option<serde_json::Value>)],
     ) -> Result<(), AuditError> {
         if records.is_empty() {
             return Ok(());
@@ -119,6 +120,9 @@ impl AuditStore {
         let mut tenant_ids: Vec<Option<Uuid>> = Vec::with_capacity(records.len());
         let mut fhir_docs: Vec<serde_json::Value> = Vec::with_capacity(records.len());
         for (event, subject, fhir) in records {
+            let Some(fhir) = fhir else {
+                continue;
+            };
             recorded_at.push(Timestamp::from(event.timestamp));
             actions.push(action_str(event));
             outcomes.push(outcome_smallint(event));
@@ -131,8 +135,10 @@ impl AuditStore {
             client_ips.push(event.client_ip.as_deref());
             token_ids.push(event.token_id.as_deref());
             tenant_ids.push(event.tenant_id);
-            fhir_docs
-                .push(serde_json::to_value(fhir).map_err(|e| AuditError::Store(e.to_string()))?);
+            fhir_docs.push(fhir.clone());
+        }
+        if fhir_docs.is_empty() {
+            return Ok(());
         }
         sqlx::query(
             "INSERT INTO audit.audit_event (recorded_at, action, outcome, event_code, \

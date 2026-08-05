@@ -204,13 +204,11 @@ const FIXTURES: &[(&str, Expect)] = &[
     ("openEHR-EHR-CLUSTER.cadl_keyword_case.v1.adl", Expect::Pass),
     // ── the accepting twins of the two vendored concept-less 1.4 fixtures ─
     // `ADL1.4/master08-adl.adoc` §Syntax Specification makes `arch_concept`
-    // mandatory and §Validity Rules VARCN requires its term, so
-    // `adl2-reference/validity/legacy_adl_1.4/openehr-test_pkg-SOME_TYPE.
-    // {c_dv_quantity,code_phrase}.v1.adl` are refused (SACO — pinned as such in
+    // mandatory and §Validity Rules VARCN requires its term, so the two
+    // concept-less `legacy_adl_1.4` fixtures are refused (SACO — pinned in
     // `legacy14_corpus.rs`). These are their concept-carrying twins, so the
     // constructs they exercise (1.4 inline dADL `C_DV_QUANTITY` blocks; the
-    // vanilla and 1.4-qualified `CODE_PHRASE` constraint spellings) keep their
-    // accepted-and-validates-clean coverage.
+    // `CODE_PHRASE` constraint spellings) keep their accepted coverage.
     (
         "openehr-TEST_PKG-SOME_TYPE.c_dv_quantity_concept.v1.adl",
         Expect::Pass,

@@ -57,30 +57,17 @@ pub fn App() -> impl IntoView {
         >
             <Router>
                 <Routes fallback=|| view! { <NotFound /> }>
-                    // NOTE: /login deviates from the out-of-order streaming
-                    // default: the sign-in form must work with JavaScript
-                    // disabled (the ActionForm progressive-enhancement
-                    // contract), and out-of-order streaming needs JS to move
-                    // suspended fragments into place — SsrMode::Async sends
-                    // the resolved HTML instead (Leptos book, ssr/23 "Async
-                    // Rendering": "Works if JavaScript is disabled").
+                    // NOTE: /login uses SsrMode::Async so the sign-in form
+                    // works with JavaScript disabled (Leptos book, ssr/23
+                    // "Async Rendering": "Works if JavaScript is disabled").
                     <Route
                         path=path!("/login")
                         view=crate::pages::login::LoginPage
                         ssr=leptos_router::SsrMode::Async
                     />
-                    // NOTE: every authenticated screen deviates from the
-                    // out-of-order streaming default. Streamed resource
-                    // fragments race WASM init: the E2E console gate caught
-                    // "expected a text node" hydration crashes whenever the
-                    // WASM finished loading after the fragments had swapped
-                    // in (the serialized-resource arrays showed a dozen
-                    // resources still "pending" at hydration). Async waits
-                    // server-side and sends one complete, stable document
-                    // (Leptos book, ssr/23 "Async Rendering"); the mode must
-                    // sit on the PARENT route — a child-route override does
-                    // not take effect under a streaming parent (verified
-                    // live 2026-07-18).
+                    // NOTE: every authenticated screen uses SsrMode::Async on
+                    // the PARENT route — streamed fragments race WASM init and
+                    // crash hydration (Leptos book, ssr/23 "Async Rendering").
                     <ParentRoute
                         path=path!("")
                         view=crate::pages::shell::AppShell

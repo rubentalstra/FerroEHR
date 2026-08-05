@@ -240,6 +240,74 @@ struct LeafGroup {
     suffixes: Vec<String>,
 }
 
+/// The `(path, code)` of every FLAT leaf whose `|code` names a code outside
+/// its closed web-template value set while no `|value` suffix supplies the
+/// text.
+///
+/// Such a datum cannot be resolved to a valid coded value (master04
+/// §Validation: "Terminology bindings are valid"); the closed-set predicate
+/// and the terminology-scope bias mirror the archetype pass's
+/// `check_code_membership` (confident violations only — an explicit
+/// differently-scoped `|terminology` is left to the terminology pass).
+#[must_use]
+pub fn unresolvable_coded_leaves(
+    doc: &Map<String, Value>,
+    wt: &WebTemplate,
+) -> Vec<(String, String)> {
+    struct CodedLeaf {
+        segments: Vec<path::Segment>,
+        code: Option<String>,
+        has_value: bool,
+        terminology: Option<String>,
+    }
+    let mut per_leaf: IndexMap<String, CodedLeaf> = IndexMap::new();
+    for (key, value) in doc {
+        let Ok(fk) = path::FlatKey::parse(key) else {
+            continue; // a malformed key is the conversion path's rejection, not this one's
+        };
+        if fk.is_ctx() {
+            continue;
+        }
+        let path_str = key.split('|').next().unwrap_or(key).to_owned();
+        let suffix = fk.suffixes.first().map(|s| s.name.clone());
+        let entry = per_leaf.entry(path_str).or_insert_with(|| CodedLeaf {
+            segments: fk.segments,
+            code: None,
+            has_value: false,
+            terminology: None,
+        });
+        match suffix.as_deref() {
+            Some("code") => entry.code = value.as_str().map(str::to_owned),
+            Some("value") => entry.has_value = true,
+            Some("terminology") => entry.terminology = value.as_str().map(str::to_owned),
+            _ => {}
+        }
+    }
+    let mut out = Vec::new();
+    for (path_str, leaf) in per_leaf {
+        let Some(code) = leaf.code else { continue };
+        if leaf.has_value {
+            continue;
+        }
+        let Some(node) = find_node_by_segments(wt, &leaf.segments) else {
+            continue;
+        };
+        let miss = node.inputs.iter().any(|input| {
+            !input.list.is_empty()
+                && input.list_open != Some(true)
+                && leaf::terminology_matches(
+                    input.terminology.as_deref(),
+                    leaf.terminology.as_deref(),
+                )
+                && !input.list.iter().any(|cv| cv.value == code)
+        });
+        if miss {
+            out.push((path_str, code));
+        }
+    }
+    out
+}
+
 /// Validates that the **mandatory context fields** are present.
 ///
 /// The fields are checked on a parsed simplified document (ITS-REST
@@ -541,6 +609,82 @@ fn rm_declares_attribute(attr: &str) -> bool {
     DECLARED.contains(attr)
 }
 
+/// Why a template constraint cannot be evaluated against any instance.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UnenforceableReason {
+    /// The constrained attribute is declared by no RM class, so no conformant
+    /// instance can carry it as a stored member.
+    ///
+    /// Two shapes reach this in the deployed OPT 1.4 corpus: a constraint on a
+    /// computed FUNCTION written as if it were stored (`EVENT.offset`,
+    /// `DV_PROPORTION.is_integral` — RM
+    /// `UML/classes/org.openehr.rm.data_structures.event.adoc` §Functions and
+    /// `UML/classes/org.openehr.rm.data_types.quantity.dv_proportion.adoc`
+    /// §Functions declare them as functions, not attributes), and the US
+    /// spelling `null_flavor` for the RM's `null_flavour`.
+    AttributeNotInRmModel,
+}
+
+/// A template constraint the archetype-conformance walk cannot evaluate.
+///
+/// Enforcing one would demand an instance member the canonical reader refuses,
+/// so the walk skips it. The skip is reported rather than dropped: template
+/// content that can never be checked is a property of the template a caller is
+/// entitled to see. These are NOT validation failures — a conformant instance
+/// is unaffected, and nothing here rejects a commit.
+#[derive(Debug, Clone)]
+pub struct UnenforceableConstraint {
+    /// Absolute archetype path of the constrained attribute.
+    pub path: String,
+    /// The constrained attribute name.
+    pub attribute: String,
+    /// Why the walk cannot evaluate it.
+    pub reason: UnenforceableReason,
+}
+
+/// Reports every existence constraint in `wt` that the conformance walk cannot
+/// evaluate.
+///
+/// A template-level property: the answer depends only on the template, so it is
+/// computed once per template rather than per commit. Pair it with
+/// [`validate_archetype_conformance`], which skips exactly these constraints.
+///
+/// # Examples
+///
+/// ```no_run
+/// # use openehr_its::flat::validation::unenforceable_existence_constraints;
+/// # fn demo(wt: &openehr_its::flat::webtemplate::WebTemplate) {
+/// for skipped in unenforceable_existence_constraints(wt) {
+///     eprintln!("unenforceable at {}: {}", skipped.path, skipped.attribute);
+/// }
+/// # }
+/// # let _ = demo;
+/// ```
+#[must_use]
+pub fn unenforceable_existence_constraints(wt: &WebTemplate) -> Vec<UnenforceableConstraint> {
+    let mut out = Vec::new();
+    collect_unenforceable(&wt.tree, &mut out);
+    out
+}
+
+/// Walks the node tree accumulating unenforceable existence constraints.
+fn collect_unenforceable(node: &WebTemplateNode, out: &mut Vec<UnenforceableConstraint>) {
+    for ex in &node.existence {
+        let attribute = ex.path.rsplit('/').next().unwrap_or_default();
+        if attribute.is_empty() || rm_declares_attribute(attribute) {
+            continue;
+        }
+        out.push(UnenforceableConstraint {
+            path: ex.path.clone(),
+            attribute: attribute.to_owned(),
+            reason: UnenforceableReason::AttributeNotInRmModel,
+        });
+    }
+    for child in &node.children {
+        collect_unenforceable(child, out);
+    }
+}
+
 impl Validator {
     fn push(&mut self, path: impl Into<String>, message: impl Into<String>, kind: ValidationKind) {
         self.out.push(ValidationMessage {
@@ -787,14 +931,12 @@ impl Validator {
             let Some((last, intermediate)) = segments.split_last() else {
                 continue;
             };
-            // An existence constraint on an attribute the RM does not declare
-            // cannot be satisfied by a conformant instance, so it is skipped: the
-            // deployed OPT 1.4 corpus constrains computed FUNCTIONS as if stored
-            // (`EVENT.offset`, `DV_PROPORTION.is_integral` — RM
-            // `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.event.adoc`
-            // §Functions) and misspells `null_flavour`; requiring either would
-            // demand a member the canonical reader refuses. The generated RM model
-            // is the oracle.
+            // An existence constraint on an attribute no RM class declares cannot
+            // be satisfied by a conformant instance — enforcing it would demand a
+            // member the canonical reader refuses. Skipped here and REPORTED by
+            // `unenforceable_existence_constraints`, which shares this predicate;
+            // see `UnenforceableReason::AttributeNotInRmModel` for the shapes and
+            // their RM citations.
             if !rm_declares_attribute(&last.attribute) {
                 continue;
             }
@@ -861,15 +1003,7 @@ impl Validator {
         let raw_id_seg = &segments[identity_idx];
         let trailing = &segments[identity_idx + 1..];
         let identity_is_locatable = !trailing.is_empty() || is_locatable(&first.rm_type);
-        // `ism_transition` is also non-`LOCATABLE` (PATHABLE), but it is left
-        // UNMATCHED deliberately — the WebTemplate builder models its careflow
-        // steps as separate per-state nodes (a documented builder scope gap, see
-        // the occurrences NOTE below), and structurally matching them would check
-        // the instance's single ISM_TRANSITION against every per-state constraint.
-        // Its presence is an RM invariant, so keeping it unmatched here is sound.
-        let structural_match = !identity_is_locatable
-            && !raw_id_seg.predicate.is_empty()
-            && raw_id_seg.attribute != "ism_transition";
+        let structural_match = !identity_is_locatable && !raw_id_seg.predicate.is_empty();
         let structural_id_seg;
         let id_seg: &PathSegment = if structural_match {
             let mut stripped = raw_id_seg.clone();
@@ -886,17 +1020,12 @@ impl Validator {
         // Occurrences are an *archetype-node* constraint: only checked when the
         // matched node is identified by an archetype-node predicate (at-code /
         // archetype id) on a `LOCATABLE` node that can bear one. Plain RM
-        // structural attributes (`context`, `value`, `action_archetype_id`, …) and
-        // non-`LOCATABLE` nodes (e.g. `EVENT_CONTEXT`, matched structurally above)
-        // are governed by RM cardinality/invariants, not archetype occurrences, so
-        // they are not occurrence-checked here.
-        //
-        // NOTE: `ism_transition` is skipped (the builder models careflow steps as
-        // per-state nodes while an ACTION instance carries one ISM_TRANSITION,
-        // whose presence is an RM invariant); `in_context` nodes are structural.
+        // structural attributes (`context`, `value`, `ism_transition`, …),
+        // non-`LOCATABLE` nodes (`EVENT_CONTEXT`, matched structurally above) and
+        // `in_context` nodes are governed by RM cardinality/invariants, not
+        // archetype occurrences, so they are not occurrence-checked here.
         let occ_applies = identity_is_locatable
             && id_seg.predicate.archetype_node_id.is_some()
-            && id_seg.attribute != "ism_transition"
             && !members.iter().any(|c| c.in_context == Some(true));
         let group_min = members
             .iter()

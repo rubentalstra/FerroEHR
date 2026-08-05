@@ -126,13 +126,11 @@ impl FerroEhrService {
         // Validate every tag before writing; the storage replace dedupes the
         // posted set on the ITEM_TAG identity — the (key, target_path) PAIR
         // (ITS-REST Requests_and_responses.md §item-tag headers), last-wins.
-        //
         // The judgement is the RM's own: each posted UPDATE_ITEM_TAG is turned
         // into the ITEM_TAG the write would store — with the `target` and
-        // `owner_id` the server assigns, which is exactly why the write schema
-        // omits them — and run through `ItemTag`'s single `Validate` impl. The
-        // demographic seam does the same with its own owner, so there is ONE
-        // invariant implementation behind both families.
+        // `owner_id` the server assigns, which is why the write schema omits
+        // them — and run through `ItemTag`'s single `Validate` impl, the same
+        // one the demographic seam uses.
         let target = match target_version {
             Some(version) => UidBasedId::ObjectVersionId(version.clone()),
             None => UidBasedId::HierObjectId(HierObjectId::from(target_vo_id.0)),
@@ -246,7 +244,7 @@ impl FerroEhrService {
         // covers "when the `uid_based_id` does not exist", the collection is
         // EHR-scoped ("owned by EHR identified by `ehr_id`"), and the route
         // family is kind-checked — a composition-route DELETE must not touch
-        // an EHR_STATUS container's tags (register-documented).
+        // an EHR_STATUS container's tags (adjudicated).
         self.ensure_tag_target(ehr_id, target_vo_id, target_version, target_type)
             .await?;
         if !crate::storage::tag_repo::delete_tag(
@@ -276,7 +274,7 @@ impl FerroEhrService {
     ///
     /// NOTE: two shape decisions, both register-adjudicated rather than
     /// settled by any single released sentence.
-    /// `_type: "ITEM_TAG"` IS on the wire (register AMB-201): the released
+    /// `_type: "ITEM_TAG"` IS on the wire: the released
     /// `ItemTag.yaml` is `additionalProperties: false` without declaring
     /// `_type`, while the same group's `discriminator.propertyName` names that
     /// member — an OAS-internal self-contradiction, reported upstream, whose
@@ -284,7 +282,7 @@ impl FerroEhrService {
     /// `ITEM_TAG` carries no `uid` and no archetype id and `_type` is its only
     /// self-description.
     /// `target` is a BARE `UID_BASED_ID`, the RM's shape, not the OAS's
-    /// `OBJECT_REF` wrapper (register AMB-202): the OAS is the wire projection
+    /// `OBJECT_REF` wrapper: the OAS is the wire projection
     /// of a model and the RM is the released definition of the model being
     /// projected, so where the projection disagrees with its subject about what
     /// an attribute IS, the subject decides.
@@ -356,10 +354,10 @@ fn ehr_owner_ref(ehr_id: EhrId) -> ObjectRef {
 /// RM models `target_path` 0..1 (absent = no path) with no non-empty
 /// invariant, while six of the seven released `ItemTagOf<T>` examples write
 /// `target_path: ""`; under the (`key`, `target_path`) identity those would be
-/// two distinct tags. Register AMB-96 fixes the handling, and this is the ONE
-/// function that applies it — the EHR and demographic families both call it, so
-/// the register's "applied identically on the EHR and demographic families"
-/// is a structural fact rather than a claim.
+/// two distinct tags, so the normalization is our own — and this is the ONE
+/// function that applies it: the EHR and demographic families both call it, so
+/// applying it identically across the two families is a structural fact rather
+/// than a claim.
 pub(in crate::service) fn normalized_target_path(raw: Option<&str>) -> Option<&str> {
     raw.filter(|p| !p.is_empty())
 }
@@ -414,7 +412,7 @@ impl FerroEhrService {
         let (vo_id, version) = parse_tag_target(&uid_based_id)?;
         // The released 404 trigger — "when the `uid_based_id` does not
         // exist" — plus the EHR scope and the route-kind discipline
-        // (register-documented): the guard runs on the GET too; an existing
+        // (adjudicated): the guard runs on the GET too; an existing
         // target with no tags stays an empty 200 list.
         self.ensure_tag_target(an_ehr_id, vo_id, version.as_ref(), target_type)
             .await?;

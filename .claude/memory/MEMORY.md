@@ -7,7 +7,7 @@
 - [One worker per phase, hard fences](one-worker-per-phase-hard-fences.md) — within a refactor phase run ONE worker with explicit file fences; reverts are orchestrator-only; back up before any reset
 - [Concurrent sessions share this tree](concurrent-sessions-shared-tree.md) — explicit-pathspec commits, scoped gates, worktree-isolate parallel agents; ONE `./target` for everything incl. the IDE; `cargo clean` above ~30 GB
 - [Session workflow gotchas](session-workflow-gotchas.md) — background-task ~30min kill (nohup+caffeinate+Monitor), attribution/vendored-spec hook traps, guard labels need a fresh PR event, conformance.sh EXIT trap wipes the seed, heredocs for `gh` bodies, nextest container-group filters
-- [En-route findings always filed](en-route-findings-always-filed.md) — out-of-scope discoveries become tracker issues, never ignored because "it was already there"
+- [En-route findings always filed](en-route-findings-always-filed.md) — out-of-scope discoveries become tracker issues AND tractable ones are fixed in the same branch (file = record, never a parking lot)
 - [Foundation-first sequencing](foundation-first-sequencing.md) — a systemic defect class gets a full-repo sweep phase before the next audit unit (blocked-by edge + P1); generated types construct through validated `new() -> Result`, containers carry their spec bounds
 - [Spec-chapter audit programs](spec-chapter-audit-programs.md) — milestone=component, issue=chapter, sub-issue per §X.Y section, whole-codebase `/spec-audit`, fix-first cadence; small wire cases find escape classes
 - [Component fixes ride the current patch](component-fixes-ride-current-patch.md) — open program milestone → the fix goes there; closed program → it joins the CURRENT patch milestone and ships that cycle
@@ -22,3 +22,5 @@
 - [Official CLI/tooling first](official-cli-tooling-first.md) — use the official CLI for tool-managed artifacts (sqlx-cli etc.); never hand-name or hand-roll
 - [Verify crate versions from live sources](verify-crate-versions-live.md) — never pin from training data; check crates.io/docs.rs first
 - [SVG text: keep owner wording](svg-text-owner-wording.md) — never reword/rewrap approved chart text off px estimates; adjust geometry, wording is fixed
+- [Published crates cite specs only](published-crates-cite-specs-only.md) — openehr-* sources never reference AMB ids/cnf-runner; adjudications state decision + released ground in place
+- [BMM v3 on hold](bmm3-on-hold.md) — record #1920; v3-only issues get on-hold + blocked-by #1920, never the worklist; tracker-state only, landed code stays

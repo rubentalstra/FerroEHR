@@ -43,8 +43,9 @@
 //! - [`codes`] — DCM / RFC-3881 code constants + the ATNA rendering of the
 //!   event enums.
 //! - [`message`] — the DICOM `AuditMessage` model + `quick-xml` serializer.
-//! - [`fhir`] — the FHIR R4B `AuditEvent` rendering per the IHE BALP content
-//!   profiles (the modern half of the dual format).
+//! - `fhir` — the FHIR R4B `AuditEvent` rendering per the IHE BALP content
+//!   profiles (the modern half of the dual format; the `fhir` cargo
+//!   feature, over `ferroehr_ext::fhir::audit`).
 //! - [`syslog`] — RFC 5424 assembly + RFC 5426 UDP / RFC 5425 TLS transports.
 //! - [`store`] — the local Audit Record Repository (the `audit` schema) +
 //!   the ITI-81 search filter.
@@ -54,13 +55,14 @@
 
 #![expect(
     clippy::disallowed_types,
-    reason = "owner-approved 2026-08-03 (#1694 family 6): FHIR resources are an external standard \
-              with no RM type (typed-FHIR evaluation tracked separately)"
+    reason = "owner-approved 2026-08-03 (#1694 family 6, settled by #1885): a carrier of an \
+              already-rendered FHIR document stays a JSON value"
 )]
 
 pub mod codes;
 pub mod config;
 pub mod event;
+#[cfg(feature = "fhir")]
 pub mod fhir;
 pub mod message;
 pub mod sender;
@@ -88,6 +90,9 @@ pub enum AuditError {
     /// The local Audit Record Repository write/reap failed.
     #[error("audit store error: {0}")]
     Store(String),
+    /// Rendering the FHIR `AuditEvent` document failed.
+    #[error("audit rendering failed: {0}")]
+    Render(String),
 }
 
 // quick-xml's `Writer` over an in-memory buffer surfaces write failures as
@@ -96,6 +101,40 @@ impl From<std::io::Error> for AuditError {
     fn from(e: std::io::Error) -> Self {
         AuditError::Xml(e.to_string())
     }
+}
+
+/// The loud slim-build refusal for the FHIR-rendering audit sinks.
+///
+/// Both the local Audit Record Repository and the ITI-20 ATX:FHIR Feed carry
+/// a FHIR R4B `AuditEvent` document, which a binary built without the `fhir`
+/// cargo feature cannot render. A configuration that enables either is a
+/// boot error, never a silently document-less audit trail (the syslog sink
+/// needs no FHIR and stays available).
+///
+/// # Errors
+/// The refusal message when `[audit.store]` or `[audit.fhir_feed]` is
+/// enabled.
+#[cfg(not(feature = "fhir"))]
+pub fn require_fhir_disabled(cfg: &config::AuditConfig) -> Result<(), String> {
+    if !cfg.enabled {
+        return Ok(());
+    }
+    if cfg.store.enabled {
+        return Err(
+            "audit.store.enabled = true, but this binary was built without the \
+             `fhir` cargo feature (the audit record repository stores FHIR \
+             AuditEvent documents)"
+                .to_owned(),
+        );
+    }
+    if cfg.fhir_feed.enabled {
+        return Err(
+            "audit.fhir_feed.enabled = true, but this binary was built without \
+             the `fhir` cargo feature"
+                .to_owned(),
+        );
+    }
+    Ok(())
 }
 
 /// The platform realizes the SM `I_SYSTEM_LOG` component: it emits resolved

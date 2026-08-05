@@ -123,6 +123,25 @@ impl CorpusEntry {
                 "invalid fixture must carry validity.defect and validity.spec_ref".to_owned(),
             );
         }
+        // A `raw-json` entry exists to deliver SOURCE BYTES unrepaired, so
+        // the two structural ways of having no bytes are refused here rather
+        // than at drive time.
+        if self.format == CorpusFormat::RawJson {
+            if self.generated_by.is_some() {
+                return Err(
+                    "raw-json entry is generated: a recipe yields a Value, which has no \
+                     byte-level form to preserve — declare a source"
+                        .to_owned(),
+                );
+            }
+            if self.views.as_deref().is_some_and(|v| !v.is_empty()) {
+                return Err(
+                    "raw-json entry declares views: a view projects PARSED structure, which \
+                     the raw carrier deliberately does not have"
+                        .to_owned(),
+                );
+            }
+        }
         Ok(())
     }
 
@@ -198,5 +217,46 @@ mod tests {
         }))
         .unwrap();
         assert!(e.check_invariants().is_err()); // no origin
+    }
+
+    /// A `raw-json` entry carries SOURCE BYTES (issue #1725), so the two
+    /// structural ways of having none are refused: a recipe yields a `Value`,
+    /// and a view projects parsed structure the raw carrier does not have.
+    #[test]
+    fn raw_json_entries_must_carry_source_bytes() {
+        let entry = |extra: serde_json::Value| -> CorpusEntry {
+            let mut doc = serde_json::json!({
+                "format": "raw-json",
+                "validity": { "verdict": "invalid",
+                              "defect": "JSON: `name` appears twice in the COMPOSITION object",
+                              "spec_ref": "ITS-REST Resources.md §JSON Format" },
+                "provenance": "p"
+            });
+            if let (Some(map), Some(more)) = (doc.as_object_mut(), extra.as_object()) {
+                map.extend(more.clone());
+            }
+            serde_json::from_value(doc).unwrap()
+        };
+
+        assert!(
+            entry(serde_json::json!({ "source": "fixtures/raw/dup_member.json" }))
+                .check_invariants()
+                .is_ok()
+        );
+        assert!(
+            entry(serde_json::json!({
+                "generated_by": { "recipe": "bp_series", "digest": "sha256:x" }
+            }))
+            .check_invariants()
+            .is_err()
+        );
+        assert!(
+            entry(serde_json::json!({
+                "source": "fixtures/raw/dup_member.json",
+                "views": { "magnitude_ge_140_by_uid": { "select": "s" } }
+            }))
+            .check_invariants()
+            .is_err()
+        );
     }
 }

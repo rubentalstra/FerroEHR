@@ -11,7 +11,7 @@
 //! operation SEMANTICS come from
 //! `docs/specs/openehr/SM/docs/UML/classes/i_definition_adl14.adoc` and
 //! `i_definition_adl2.adoc`; the wire shape is our own design/extension
-//! (registers AMB-41 / AMB-37). What is asserted here is exactly what the CNF
+//! for both generations. What is asserted here is exactly what the CNF
 //! `adl14-archetype` / `adl2-archetype` `served_extensions` families declare.
 #![expect(
     clippy::expect_used,

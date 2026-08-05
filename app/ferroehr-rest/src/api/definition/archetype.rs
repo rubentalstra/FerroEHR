@@ -13,8 +13,8 @@
 //! `docs/specs/openehr/SM/docs/UML/classes/i_definition_adl2.adoc`:
 //! `list_archetypes` / `archetypes_count` / `list_artefacts` /
 //! `artefacts_count` / `delete_artefact`), so these routes are the honest
-//! realization of a *service* basis with no *wire* basis — registers AMB-41
-//! (ADL 1.4) and AMB-37 (ADL 2).
+//! realization of a *service* basis with no *wire* basis, for ADL 1.4 and
+//! ADL 2 alike.
 //!
 //! Every route here is therefore **excluded from ITS-REST wire conformance**:
 //! it gates the `Adl14ArchetypeProvisioning` / `Adl2ArchetypeProvisioning`
@@ -98,8 +98,8 @@ const ADL_TEXT: &str = "text/plain; charset=utf-8";
 /// List the stored ADL 1.4 source archetypes
 /// (`GET /definition/archetype/adl1.4`).
 ///
-/// **Our own extension — no ITS-REST operation governs this** (module docs;
-/// register AMB-41). Realizes SM `I_DEFINITION_ADL14.list_archetypes`
+/// **Our own extension — no ITS-REST operation governs this** (module
+/// docs). Realizes SM `I_DEFINITION_ADL14.list_archetypes`
 /// (`i_definition_adl14.adoc`), cursored by the SM list convention
 /// (`master02-overview.adoc` §List Handling: `item_offset` / `items_to_fetch`),
 /// spelled `offset` / `fetch` here to match the released template list's own
@@ -147,8 +147,8 @@ pub(crate) async fn definition_archetype_adl14_list(
 
 /// Store an ADL 1.4 source archetype (`POST /definition/archetype/adl1.4`).
 ///
-/// **Our own extension — no ITS-REST operation governs this** (module docs;
-/// register AMB-41). Realizes SM `I_DEFINITION_ADL14.upload_archetype`, whose
+/// **Our own extension — no ITS-REST operation governs this** (module
+/// docs). Realizes SM `I_DEFINITION_ADL14.upload_archetype`, whose
 /// declared semantics are replace-or-create ("If an archetype with the same id
 /// already exists, replace it. The archetype must be valid to succeed." —
 /// `i_definition_adl14.adoc`), and whose `Pre_valid_archetype` is enforced by
@@ -216,8 +216,8 @@ pub(crate) async fn definition_archetype_adl14_upload(
 /// Retrieve one ADL 1.4 source archetype
 /// (`GET /definition/archetype/adl1.4/{archetype_id}`).
 ///
-/// **Our own extension — no ITS-REST operation governs this** (module docs;
-/// register AMB-41). Realizes SM `I_DEFINITION_ADL14.get_archetype`; the
+/// **Our own extension — no ITS-REST operation governs this** (module
+/// docs). Realizes SM `I_DEFINITION_ADL14.get_archetype`; the
 /// `200`-vs-`404` of this read is also the wire realization of the interface's
 /// boolean `has_archetype` (the same existence-as-presence realization the
 /// released party read gives `I_PARTY.has_party`).
@@ -260,8 +260,8 @@ pub(crate) async fn definition_archetype_adl14_get(
 /// Delete one ADL 1.4 source archetype
 /// (`DELETE /definition/archetype/adl1.4/{archetype_id}`).
 ///
-/// **Our own extension — no ITS-REST operation governs this** (module docs;
-/// register AMB-41). Realizes SM `I_DEFINITION_ADL14.delete_archetype`
+/// **Our own extension — no ITS-REST operation governs this** (module
+/// docs). Realizes SM `I_DEFINITION_ADL14.delete_archetype`
 /// (`Pre_artefact_exists` / `Post_archetype_removed`). This is a definition-store
 /// removal, not a clinical delete: no VERSION is produced, so the success is a
 /// bodyless `204`.
@@ -303,8 +303,8 @@ pub(crate) async fn definition_archetype_adl14_delete(
 
 /// List the stored ADL 2 archetypes (`GET /definition/archetype/adl2`).
 ///
-/// **Our own extension — no ITS-REST operation governs this** (module docs;
-/// register AMB-37). Realizes SM `I_DEFINITION_ADL2.list_archetypes` — the
+/// **Our own extension — no ITS-REST operation governs this** (module
+/// docs). Realizes SM `I_DEFINITION_ADL2.list_archetypes` — the
 /// artefacts whose concrete AOM2 type is `AUTHORED_ARCHETYPE` (AM AOM2
 /// §Archetypes), as opposed to the templates and OPTs the released
 /// `/definition/template/adl2` list already serves.
@@ -343,8 +343,8 @@ pub(crate) async fn definition_archetype_adl2_list(
 
 /// Count the stored ADL 2 archetypes (`GET /definition/archetype/adl2/count`).
 ///
-/// **Our own extension — no ITS-REST operation governs this** (module docs;
-/// register AMB-37). Realizes SM `I_DEFINITION_ADL2.archetypes_count`. The
+/// **Our own extension — no ITS-REST operation governs this** (module
+/// docs). Realizes SM `I_DEFINITION_ADL2.archetypes_count`. The
 /// operation returns an `Integer`, so the response body is a bare JSON number —
 /// the count IS the resource, and wrapping it in an object would invent a
 /// schema no spec defines.
@@ -372,8 +372,8 @@ pub(crate) async fn definition_archetype_adl2_count(
 
 /// List every stored ADL 2 artefact (`GET /definition/artefact/adl2`).
 ///
-/// **Our own extension — no ITS-REST operation governs this** (module docs;
-/// register AMB-37). Realizes SM `I_DEFINITION_ADL2.list_artefacts` — the whole
+/// **Our own extension — no ITS-REST operation governs this** (module
+/// docs). Realizes SM `I_DEFINITION_ADL2.list_artefacts` — the whole
 /// AOM2 artefact union (archetypes + templates + OPTs), which no released route
 /// exposes: `/definition/template/adl2` lists templates only.
 #[utoipa::path(
@@ -411,8 +411,8 @@ pub(crate) async fn definition_artefact_adl2_list(
 
 /// Count every stored ADL 2 artefact (`GET /definition/artefact/adl2/count`).
 ///
-/// **Our own extension — no ITS-REST operation governs this** (module docs;
-/// register AMB-37). Realizes SM `I_DEFINITION_ADL2.artefacts_count`; the body
+/// **Our own extension — no ITS-REST operation governs this** (module
+/// docs). Realizes SM `I_DEFINITION_ADL2.artefacts_count`; the body
 /// is a bare JSON number, as for the archetype count.
 #[utoipa::path(
     get, path = "/definition/artefact/adl2/count", tag = "definition-archetype",
@@ -438,8 +438,8 @@ pub(crate) async fn definition_artefact_adl2_count(
 /// Delete one stored ADL 2 artefact
 /// (`DELETE /definition/artefact/adl2/{artefact_id}`).
 ///
-/// **Our own extension — no ITS-REST operation governs this** (module docs;
-/// register AMB-37). Realizes SM `I_DEFINITION_ADL2.delete_artefact`
+/// **Our own extension — no ITS-REST operation governs this** (module
+/// docs). Realizes SM `I_DEFINITION_ADL2.delete_artefact`
 /// (`Pre_artefact_exists`, error `artefact_does_not_exist`) over the whole AOM2
 /// artefact union — archetype, template or OPT. The released ADL 2 group has no
 /// DELETE at all.

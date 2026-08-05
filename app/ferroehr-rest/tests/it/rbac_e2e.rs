@@ -5,8 +5,8 @@
 //! is gone), and asserts the coarse role gate: an Admin-class operation is 403
 //! for a `USER` and clears the gate for an `ADMIN`; a clinical operation needs a
 //! role; disabling RBAC restores today's behaviour; a deny is attributed to the
-//! caller and audited by the ATNA layer; and the deprecated `admin_scope` alias
-//! migrates (a `scope` named `ADMIN` surfaces as role `ADMIN`).
+//! caller and audited by the ATNA layer; and scope→role extraction
+//! clears the admin gate (a `scope` named `ADMIN` surfaces as role `ADMIN`).
 //!
 //! Where the old test asserted the exact post-gate status (`501`, the removed
 //! stub backend), it now asserts only that the gate did not reject (`!= 403`) —
@@ -93,7 +93,6 @@ fn rest_config() -> AppConfig {
                 jwks_json: None,
                 ..OidcConfig::default()
             }),
-            admin_scope: None,
             ..AuthConfig::default()
         },
         // The admin group must be reachable so the RBAC gate is what decides
@@ -279,8 +278,8 @@ async fn rbac_disabled_restores_admin_access() {
 }
 
 #[tokio::test]
-async fn admin_scope_alias_migrates_via_scope_role() {
-    // The deprecated `admin_scope` gate is subsumed: a token whose `scope`
+async fn scope_role_extraction_clears_admin_gate() {
+    // Scope→role extraction: a token whose `scope`
     // carries `ADMIN` surfaces role `ADMIN` and clears the admin gate, while a
     // non-admin scope is rejected — the automatic migration path (§5.2).
     let (_pg, app) = app(true, None).await;

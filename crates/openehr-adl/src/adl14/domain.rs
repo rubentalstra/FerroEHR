@@ -83,12 +83,11 @@ pub(crate) fn adl14_code_phrase_parts(odin: &OdinValue) -> Result<CodePhrasePart
     let terminology = terminology_id_value(terminology)
         .ok_or_else(|| "'terminology_id' is not a terminology identifier".to_owned())?;
     let Some(code_list) = map.get("code_list") else {
+        // A loud refusal is the honest boundary: silently emitting an empty
+        // code set would NARROW the constraint to nothing.
         // NOTE: `AOM1.4/masterAppA-domain_extension.adoc` §C_CODED_TEXT makes
-        // `code_list` optional ("No list means any code from the terminology is
-        // allowed"), but the 1.4 custom syntax this lowering targets carries a
-        // code set and nothing else, so an open constraint has no faithful
-        // carrier here. A loud refusal is the honest boundary: silently emitting
-        // an empty code set would NARROW the constraint to nothing.
+        // `code_list` optional, but the 1.4 custom syntax this lowering targets
+        // carries a code set and nothing else, so it has no faithful carrier.
         return Err("missing 'code_list'".to_owned());
     };
     let codes = code_list_codes(code_list)?;
@@ -309,24 +308,14 @@ pub(crate) fn lower_adl14_domain(
         OdinValue::Object(map) if !map.is_empty() => map,
         // An EMPTY domain block — `C_DV_QUANTITY <>` (or `< >` with only
         // whitespace) — constrains the TYPE and nothing else: it lowers to the
-        // open complex object, exactly `DV_QUANTITY matches {*}`.
+        // open complex object, exactly `DV_QUANTITY matches {*}`. The upstream
+        // regression fixture `FAIL_c_dv_quantity_minimal.v1.adl` points the
+        // other way, but it is stalled reference DATA, not spec text; 9 CKM
+        // archetypes rely on the form.
         //
-        // NOTE (adjudicated 2026-08-01, #1465 family 3): the docs text ADMITS
-        // the form — the domain block's content is dADL
-        // (`ADL1.4/master05-cadl.adoc` §Symbols `V_C_DOMAIN_TYPE`, "sections
-        // of dADL syntax"), and the dADL chapter's own normative grammar makes
-        // the empty block its FIRST alternative
-        // (`ADL1.4/master04-dadl.adoc` §Syntax `untyped_single_attr_object_block:
-        // single_attr_object_complex_head SYM_END_DBLOCK | …`) with §Empty
-        // Sections stating "Empty sections are allowed at both internal and
-        // leaf node levels" and the principle "Empty sections can appear
-        // anywhere". The upstream regression fixture
-        // `FAIL_c_dv_quantity_minimal.v1.adl` ("Show that empty dADL objects
-        // are not accepted", tag SDINV) points the other way, but it is
-        // stalled reference DATA, not spec text — it never overrides the
-        // chapter's own grammar, and SDINV ("invalid ODIN section") would
-        // misclassify grammatical ODIN as a syntax error. 9 CKM archetypes
-        // rely on the form.
+        // NOTE: the docs text ADMITS the form — the domain block's content is
+        // dADL (`ADL1.4/master05-cadl.adoc` §Symbols `V_C_DOMAIN_TYPE`) and the
+        // dADL grammar makes the empty block its FIRST alternative.
         OdinValue::Empty | OdinValue::Object(_) => {
             let target_rm = match rm_type {
                 "C_DV_ORDINAL" => "DV_ORDINAL",
@@ -408,17 +397,12 @@ pub(crate) fn lower_adl14_domain(
 
     // `assumed_value = <units=<"C"> magnitude=<8.0> …>` — the 1.4 domain
     // constrainer's assumed value is an INSTANCE of the constrained RM type
-    // (AOM 1.4 `C_DV_QUANTITY.assumed_value: DV_QUANTITY`). AOM2 has no
-    // `assumed_value` on `C_COMPLEX_OBJECT` — `AOM2/master04.2` §Assumed_value
-    // puts it on `C_PRIMITIVE_OBJECT`/`C_TERMINOLOGY_CODE`, and §Assumed_value
-    // L175 expressly separates it from `default_value` ("default values do appear
-    // in data, while assumed values don't"), so `default_value` is NOT a legal
-    // carrier. The instance is therefore decomposed into its per-attribute leaves
-    // and each leaf lands on the `C_PRIMITIVE_OBJECT.assumed_value` of the
-    // constraint of the ONE alternative whose rows admit the whole assumed
-    // combination (with several alternatives the instance belongs to exactly
-    // one, the same one-row rule tuples already follow); no alternative
-    // admitting it keeps the loud `AssumedValueUnmatched` refusal.
+    // (AOM 1.4 `C_DV_QUANTITY.assumed_value: DV_QUANTITY`). AOM2 puts
+    // `assumed_value` on `C_PRIMITIVE_OBJECT`/`C_TERMINOLOGY_CODE`, not on
+    // `C_COMPLEX_OBJECT`, and expressly separates it from `default_value`
+    // (`AOM2/master04.2` §Assumed_value). The instance is therefore decomposed
+    // into per-attribute leaves onto the ONE alternative whose rows admit the
+    // whole combination; none matching keeps the `AssumedValueUnmatched` refusal.
     if let Some(OdinValue::Object(assumed)) = map.get("assumed_value").map(untyped) {
         let mut placed = None;
         let mut first_err = None;

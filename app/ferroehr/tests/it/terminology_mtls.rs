@@ -416,13 +416,9 @@ async fn a_custom_ca_bundle_trusts_a_private_server_that_default_trust_refuses()
     // Same server, same URL, no configured anchors: the default trust store
     // does not know this CA, so the connection is refused.
     //
-    // NOTE: this arm is the slow one on macOS. Default trust goes through the
-    // operating system's certificate evaluation, which hunts for the unknown
-    // issuer (network included) before giving up, and it does so synchronously
-    // inside the handshake — the provider's own connect/request timeouts
-    // cannot cut it short. Pinning the anchors with `ca_bundle_path`, the
-    // arm above, verifies against exactly the configured CA and returns
-    // immediately.
+    // NOTE: this arm is the slow one on macOS — default trust goes through the
+    // OS certificate evaluation, which hunts for the unknown issuer
+    // synchronously inside the handshake, past the provider's own timeouts.
     let untrusted = provider_cfg(&ts.url());
     let err = lookup(untrusted)
         .await

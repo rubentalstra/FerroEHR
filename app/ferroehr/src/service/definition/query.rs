@@ -488,35 +488,16 @@ impl FerroEhrService {
         };
 
         // The versioned store requires an EXACT numeric `major.minor.patch` —
-        // ITS-REST `specifications/docs/query/Qualified_query_name.md`: "The
-        // `version` identifier is in the format specified by SEMVER style
-        // (i.e. `major.minor.patch`)".
-        //
-        // The partial-prefix form is a READ-resolution semantic that cannot
-        // apply to a write. The same chapter states it over versions that
-        // ALREADY exist — "the system must use the latest `version` with the
-        // supplied prefix … then the latest query version matching supplied
-        // prefix will be used" — so on a store it either resolves to an
-        // existing `(name, version)` pair (which that operation assigns to
-        // `409`, making its declared `200` unreachable for every prefix) or
-        // resolves to nothing at all. No released sentence completes a prefix
-        // into a version to create, so the write outcome is a released
-        // silence, adjudicated in the conformance ambiguity register.
-        //
-        // The refusal STATUS is assigned by the docs text, not chosen:
-        // `specifications/docs/overview/Requests_and_responses.md` §"HTTP
-        // status codes", below the table — "Status code `400` indicates
-        // normally a bad request, as well as a generic client-side error,
-        // used when no other `4xx` error code is appropriate. The client
-        // SHOULD NOT repeat the request without modifications" (re-issuing
-        // with an exact version is exactly that modification). An outright
-        // malformed segment (`v1.x`) is the table's own `400` row.
-        //
-        // Accepting the value verbatim is untenable besides: a non-numeric
-        // segment (`1.0.0-rc.1`) breaks the surface's SEMVER ordering
-        // (`string_to_array(semver, '.')::int[]`) and a stored prefix (`1`)
-        // collides with the read-side resolution algebra that must resolve
-        // `1` to a full version.
+        // ITS-REST `docs/query/Qualified_query_name.md`: "The `version`
+        // identifier is in the format specified by SEMVER style (i.e.
+        // `major.minor.patch`)". The partial-prefix form is a READ-resolution
+        // semantic stated over versions that ALREADY exist, so on a store it
+        // resolves either to an existing pair (which that operation assigns to
+        // `409`) or to nothing; accepting it verbatim would also break the
+        // surface's SEMVER ordering (`string_to_array(semver, '.')::int[]`).
+        // NOTE: no released sentence completes a prefix into a version to
+        // create, so the refusal status is the docs text's own generic client
+        // error (`Requests_and_responses.md` §"HTTP status codes", `400`).
         if !is_exact_semver(v) {
             return Err(ServiceError::BadRequest(format!(
                 "`{v}` is not an exact SEMVER version: the versioned store requires \

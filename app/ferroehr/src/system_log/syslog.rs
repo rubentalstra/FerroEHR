@@ -40,10 +40,9 @@ pub const SYSLOG_PRI: u16 = (SYSLOG_FACILITY as u16) * 8 + SYSLOG_SEVERITY as u1
 /// RFC 5424 SYSLOG version.
 pub const SYSLOG_VERSION: u8 = 1;
 /// The IHE ATNA `MSGID` for an audit record.
-// NOTE: IHE ITI TF-2 ITI-20 §3.20.4.1.2: "The MSGID field in the HEADER of
-// the SYSLOG-MSG shall be set to 'IHE+RFC-3881'" — the value is uniform for
-// every ITI-20 message (the RFC3881 token "is retained for backward
-// compatibility") even though the MSG payload is DICOM PS3.15 §A.5 XML.
+// NOTE: IHE ITI TF-2 ITI-20 §3.20.4.1.2 — MSGID "shall be set to
+// 'IHE+RFC-3881'", uniform for every ITI-20 message even though the MSG
+// payload is DICOM PS3.15 §A.5 XML (the token is a back-compat retention).
 pub const SYSLOG_MSGID: &str = "IHE+RFC-3881";
 /// UTF-8 byte-order mark that RFC 5424 §6.4 recommends prefixing a UTF-8 `MSG`.
 pub const UTF8_BOM: &[u8] = &[0xEF, 0xBB, 0xBF];

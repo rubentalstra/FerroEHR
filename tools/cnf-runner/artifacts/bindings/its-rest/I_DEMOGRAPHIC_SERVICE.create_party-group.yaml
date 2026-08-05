@@ -33,6 +33,9 @@ outcomes:
       Location: present
       Content-Type: negotiated
     body: prefer_conditional
+  bad_request:
+    status: 400                             # overview §HTTP status codes, the 400 row — the parse class (typed construction refuses missing mandatories, empty 1..* lists and the #1730 present-empty optional lists; owner rulings 2026-08-03/04)
+    body: error_loose
 captures:
   version_uid:
     from: header ETag

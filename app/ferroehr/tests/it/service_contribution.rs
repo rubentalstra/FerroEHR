@@ -1385,7 +1385,10 @@ async fn incomplete_admits_missing_composition_data_but_never_wrong_data() {
     );
 
     // (2) The 532 twin of the SAME content is refused — the relaxation is
-    // scoped to the incomplete state and nothing else changed.
+    // scoped to the incomplete state and nothing else changed. The class is
+    // the 400 row: a complete commit runs the strict typed door, and the
+    // released `responses/422.yaml` scopes 422 to content that "could be
+    // converted to a resource".
     let err = svc
         .create_ehr_contribution(ehr_uuid, member(&missing, "532"))
         .await
@@ -1394,11 +1397,11 @@ async fn incomplete_admits_missing_composition_data_but_never_wrong_data() {
         matches!(
             err,
             SmError {
-                status: CallStatusType::ContentInvalid,
+                status: CallStatusType::PreconditionViolation,
                 ..
             }
         ),
-        "expected 422 for the complete twin, got {err:?}"
+        "expected 400 for the complete twin, got {err:?}"
     );
 
     // (3) WRONG data stays refused under 553: a `language` CODE_PHRASE whose
@@ -1475,6 +1478,8 @@ async fn incomplete_relaxes_the_folder_kind_too() {
         .await
         .expect("a 553 FOLDER may omit its mandatory name");
 
+    // The complete twin's class is the 400 row — the strict typed door, per
+    // the released `responses/422.yaml` scope ("could be converted").
     let err = svc
         .create_ehr_contribution(ehr_uuid, body("532"))
         .await
@@ -1483,11 +1488,11 @@ async fn incomplete_relaxes_the_folder_kind_too() {
         matches!(
             err,
             SmError {
-                status: CallStatusType::ContentInvalid,
+                status: CallStatusType::PreconditionViolation,
                 ..
             }
         ),
-        "expected 422 for the complete FOLDER twin, got {err:?}"
+        "expected 400 for the complete FOLDER twin, got {err:?}"
     );
 }
 
@@ -1552,8 +1557,8 @@ async fn contribution_member_without_lifecycle_state_is_refused() {
 /// `other_input_version_uids` is not a member of the released commit wire:
 /// ITS-REST `UpdateVersion.yaml` declares no such property and
 /// `NewContribution.versions` items are `UpdateVersion`, so the merge commit
-/// has no released shape (the same absence register entry AMB-89 records for
-/// the import commit). Merge provenance is produce-only — `OriginalVersion.yaml`
+/// has no released shape — the same absence the import commit has. Merge
+/// provenance is produce-only — `OriginalVersion.yaml`
 /// declares it on reads. A member carrying it is refused; the twin without it
 /// commits and serves no merge provenance.
 #[tokio::test]
@@ -1628,8 +1633,8 @@ async fn merge_provenance_is_refused_on_the_commit_wire() {
 /// exactly six properties (`preceding_version_uid`, `signature`,
 /// `lifecycle_state`, `attestations`, `data`, `commit_audit`) and
 /// `NewContribution.versions` items are `UpdateVersion` with no `oneOf` and no
-/// discriminator, so the import commit has no released shape at all (register
-/// AMB-89). RM common master06 §Copying puts it behind
+/// discriminator, so the import commit has no released shape at all. RM common
+/// master06 §Copying puts it behind
 /// `VERSIONED_OBJECT.commit_imported_version` ("Details of version id etc come
 /// from the `ORIGINAL_VERSION`"), realized here by the EHR-Extract import route.
 ///

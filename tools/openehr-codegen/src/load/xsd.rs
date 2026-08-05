@@ -565,8 +565,6 @@ pub(crate) fn aom2_model_files(aom2_dir: &Path) -> Vec<std::path::PathBuf> {
     AOM2_MODEL_FILES.iter().map(|f| aom2_dir.join(f)).collect()
 }
 
-// NOTE: there is no whole-bundle v2 file list. The two published ITS-XML
-// lineages differ only in the schemas' target namespace, so ONE emitted codec
-// serves both (docs/VERSIONS.md §Spec version policy) and the emit-xml input is
-// the v1 `ALL/` bundle plus the named v2 supplement above
-// ([`RM_FILES_V2_SUPPLEMENT`]) — never a parallel v2 bundle.
+// NOTE: there is no whole-bundle v2 file list — the two published ITS-XML
+// lineages differ only in target namespace, so ONE emitted codec serves both
+// and the emit-xml input is the v1 `ALL/` bundle plus the named v2 supplement.

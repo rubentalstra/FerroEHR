@@ -428,10 +428,6 @@ pub fn structural_check(
     node: &::serde_json::Value,
 ) -> ::core::option::Option<::core::result::Result<(), crate::json::JsonParseError>> {
     match ty {
-        "ACCESS_CONTROL_SETTINGS" => ::core::option::Option::Some(
-            crate::json::from_canonical_value::<openehr_rm::prelude::AccessControlSettings>(node)
-                .map(|_| ()),
-        ),
         "ACCESS_GROUP_REF" => ::core::option::Option::Some(
             crate::json::from_canonical_value::<openehr_base::prelude::AccessGroupRef>(node)
                 .map(|_| ()),
@@ -1942,7 +1938,6 @@ pub fn structural_check(
 #[must_use]
 pub fn declared_fields(ty: &str) -> ::core::option::Option<&'static [&'static str]> {
     match ty {
-        "ACCESS_CONTROL_SETTINGS" => ::core::option::Option::Some(&[]),
         "ACCESS_GROUP_REF" => ::core::option::Option::Some(&["id", "namespace", "type"]),
         "ACTION" => ::core::option::Option::Some(&[
             "archetype_details",

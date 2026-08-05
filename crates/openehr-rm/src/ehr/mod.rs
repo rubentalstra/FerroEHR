@@ -2,7 +2,6 @@
 
 //! The openEHR spec package `ehr` — generated module tree.
 
-pub mod access_control_settings;
 pub mod ehr;
 pub mod ehr_access;
 pub mod ehr_status;

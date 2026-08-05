@@ -48,6 +48,14 @@ format_headers:
 # NOTE: header matchers are EXECUTED assertions (#403, exec/headers.rs) — a
 # violated declaration is a red row.
 outcomes:
+  bad_request:
+    # The PARSE class the operation itself declares. A body carrying an empty
+    # list where the RM bounds the container at 1..* (CLUSTER.items,
+    # DV_PARAGRAPH.items, PARTY.identities, CONTACT.addresses) never converts
+    # to the resource `responses/422.yaml` presupposes, so it lands on the 400
+    # row: "syntactically invalid header, parameter or content".
+    status: 400                           # operations/composition_update.yaml '400' -> responses/400.yaml
+    body: error_loose
   updated:
     status: 200                           # 204 when Prefer minimal (204_version_updated.yaml)
     headers:

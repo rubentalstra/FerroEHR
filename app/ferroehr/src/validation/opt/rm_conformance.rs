@@ -135,18 +135,12 @@ pub(super) fn check_attribute(
         return Ok(());
     }
     match model::attribute(parent_rm, attr_name) {
-        // NOTE (why this is not a VCARM violation): a LOCATABLE meta attribute
-        // (`name`, `archetype_node_id`, …) constrained on a class the RM
-        // derives from PATHABLE only (e.g. ISM_TRANSITION —
-        // `RM/docs/UML/classes/org.openehr.rm.composition.ism_transition.adoc`
-        // inherits PATHABLE) binds to a field the canonical serialization of
-        // that node carries, so the constraint has a referent and nothing in
-        // the released text makes it invalid. The tolerance is therefore
-        // grounded on the RM + the serialization, not on any implementation.
         // (Prior art, named only as where the shape is OBSERVED and never as
-        // its authority: archie/openEHR-SDK-generated OPTs — including the
-        // vendored IPS template — model every constrainable node as Locatable
-        // and emit exactly these constraints.)
+        // its authority: archie/openEHR-SDK-generated OPTs model every
+        // constrainable node as Locatable and emit exactly these constraints.)
+        // NOTE: a LOCATABLE meta attribute constrained on a PATHABLE-only class
+        // (e.g. ISM_TRANSITION) binds to a field that node's canonical
+        // serialization carries, so it has a referent and is not a VCARM breach.
         None if LOCATABLE_META_ATTRS.contains(attr_name)
             || is_us_orthography_of_rm_attribute(parent_rm, attr_name)
             || LEGACY_RM_ATTRS.contains(&(parent_rm, attr_name)) =>
@@ -255,24 +249,12 @@ fn check_rm_cardinality(
         return Ok(());
     };
     // The fully-open interval states NO cardinality override and defers to the
-    // RM, so it can never widen it. Two spec facts force that reading of an
-    // OPT 1.4 artefact:
-    //
-    // - AOM2 types the field `C_ATTRIBUTE.cardinality [0..1]` and gives the
-    //   governing principle on its sibling `existence`: "Only set if it
-    //   overrides the underlying reference model or parent archetype"
-    //   (`AM/docs/UML/classes/org.openehr.am.aom2.c_attribute.adoc`
-    //   §Attributes). AOM **1.4** types it `C_MULTIPLE_ATTRIBUTE.cardinality
-    //   [1..1]` — MANDATORY
-    //   (`…org.openehr.am.aom14.c_multiple_attribute.adoc` §Attributes) — so an
-    //   OPT 1.4 has no way to say "not overridden"; it must write an interval
-    //   for every container attribute.
-    // - cADL spells the open range `{*}`, "a single `*` means the range
-    //   `0..*`", and §"'Any' Constraints" fixes what an open constraint means:
-    //   "any value permitted by the underlying information model is also
-    //   permitted by the archetype" (`AM/docs/ADL1.4/master05-cadl.adoc`) —
-    //   deference to the RM, not a widening of it.
-    //
+    // RM, so it can never widen it. Two spec facts force that reading of an OPT
+    // 1.4 artefact: AOM2 types `C_ATTRIBUTE.cardinality [0..1]` and says of its
+    // sibling "Only set if it overrides the underlying reference model or parent
+    // archetype" (`c_attribute.adoc` §Attributes), while AOM 1.4 types it
+    // MANDATORY (`c_multiple_attribute.adoc`); and cADL's §"'Any' Constraints"
+    // fixes `{*}` as deference to the RM (`AM/docs/ADL1.4/master05-cadl.adoc`).
     // Every STATED interval (a finite bound on either side) is judged below.
     if iv_lower(&card.interval) == 0 && iv_upper(&card.interval).is_none() {
         return Ok(());

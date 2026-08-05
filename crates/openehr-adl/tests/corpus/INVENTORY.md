@@ -300,7 +300,10 @@ V-codes (48): VACMCO VALC VARAV VARD VARID VARRV VARXAV VARXNC VARXRA VARXTV
 
 The SC*AV / SC*PT S-code family is the per-primitive value-constraint syntax
 set — one malformed-primitive fixture per primitive type covers a cluster.
-`VSONI`/`VSONIR` are recognise-deprecated-only.
+`VSONI`/`VSONIR` are recognise-deprecated-only. Zero corpus coverage means no
+vendored fixture, not "unimplemented": `VTPIN`/`VTPNC` fire from the
+specialisation walk and are pinned by hand-written fixtures in
+`validate::specialisation::tests`.
 
 ### 3c. Corpus codes NOT in the catalogue
 

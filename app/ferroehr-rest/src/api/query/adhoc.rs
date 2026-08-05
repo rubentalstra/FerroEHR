@@ -65,7 +65,7 @@ pub(super) async fn execute(
             let body: AdhocQueryExecute = response::decode_body(h, &parts.body)?;
             // The docs-text SHOULD-list draws no GET/POST distinction — the
             // URL forms are accepted here too; a body-vs-URL conflict is a
-            // 400 (the AMB-59 pattern, register-documented).
+            // 400 (the same rule the two `ehr_id` carriers follow).
             let offset = response::merge_body_and_url_i64(body.offset, q, "offset")?;
             let fetch = response::merge_body_and_url_i64(body.fetch, q, "fetch")?;
             let parameters = response::merge_body_and_url_parameters(

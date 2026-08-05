@@ -84,17 +84,14 @@ pub(super) async fn store(state: &AppState, parts: &RequestParts) -> Result<Resp
     // MUST), an absent `Content-Type` declares nothing to refuse.
     negotiate::require_text_plain(h)?;
     let body = negotiate::text_body(&parts.body)?;
-    // The `DefinitionAdapter::query_store` impl honours `query_type`: an
-    // AQL formalism runs the syntactic check, while an unsupported non-AQL
+    // The `DefinitionAdapter::query_store` impl honours `query_type`: an AQL
+    // formalism runs the syntactic check, while an unsupported non-AQL
     // formalism is rejected as a distinct unsupported-formalism `400`
-    // (not a blanket "invalid AQL"). See `QUERY_DESCRIPTOR.formalism`,
-    // `parameters/query/query_type.yaml`.
+    // (`QUERY_DESCRIPTOR.formalism`, `parameters/query/query_type.yaml`).
     //
     // The store returns the SEMVER it actually wrote at, and the `Location`
-    // names exactly that resource (`headers/Location_Query.yaml`: the header
-    // "indicates the URL of the Stored Query resource") — never a
-    // neighbouring version recovered by a post-hoc lookup, which could name
-    // a higher version this PUT did not touch.
+    // names exactly that resource (`headers/Location_Query.yaml`) — never a
+    // neighbouring version recovered by a post-hoc lookup.
     let version = state
         .backend()
         .query_store(name.clone(), None, query_type, body)

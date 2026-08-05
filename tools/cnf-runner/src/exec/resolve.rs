@@ -221,11 +221,15 @@ impl<'a> Resolver<'a> {
                         message: format!("JSON parse: {e}"),
                     })?
                 }
+                // NOTE: `raw-json` joins the text formats deliberately — a
+                // `Value::String` body is the carrier `crate::exec::driver`
+                // writes verbatim, so the bytes reach the SUT unrepaired.
                 crate::vocab::CorpusFormat::CanonicalXml
                 | crate::vocab::CorpusFormat::OptXml
                 | crate::vocab::CorpusFormat::Adl2Text
                 | crate::vocab::CorpusFormat::Adl14Text
-                | crate::vocab::CorpusFormat::AqlText => Value::String(text),
+                | crate::vocab::CorpusFormat::AqlText
+                | crate::vocab::CorpusFormat::RawJson => Value::String(text),
             }
         } else if let Some(generated) = &entry.generated_by {
             // Generated sets: the whole set as a JSON array via the recipe.
@@ -608,6 +612,50 @@ mod tests {
             "2026-01-01T00:00:00.000Z"
         );
         assert_eq!(format_instant_ms(999), "1970-01-01T00:00:00.999Z");
+    }
+
+    /// A `raw-json` data set reaches the driver as the file's BYTES (issue
+    /// #1725): `canonical-json` round-trips through `serde_json::Value` and
+    /// silently repairs the very defects a byte-level negative case exists to
+    /// deliver — a repeated member, member ordering, an exotic number lexeme.
+    /// The `Value::String` carrier is what makes `driver::send` write the
+    /// body verbatim (`body_is_json == false`).
+    #[test]
+    fn a_raw_json_data_set_is_delivered_byte_for_byte() {
+        let defective = "{\n  \"_type\": \"COMPOSITION\",\n  \"name\": {\"value\": \"a\"},\n  \
+                         \"name\": {\"value\": \"b\"},\n  \"magnitude\": 1.500\n}\n";
+        let dir = assert_fs::TempDir::new().unwrap();
+        assert_fs::prelude::FileWriteStr::write_str(
+            &assert_fs::prelude::PathChild::child(&dir, "dup.json"),
+            defective,
+        )
+        .unwrap();
+        let m: CorpusManifest = serde_saphyr::from_str(
+            "cnf.raw.dup_member:\n  source: dup.json\n  format: raw-json\n  \
+             validity: { verdict: invalid, defect: \"JSON: repeated member\", \
+             spec_ref: \"ITS-REST Resources.md §JSON Format\" }\n  provenance: p\n",
+        )
+        .unwrap();
+        let mut r = Resolver::new(&m, dir.path(), None);
+        let resolved = r
+            .data_set(&CorpusKey::parse("cnf.raw.dup_member").unwrap())
+            .unwrap();
+        assert_eq!(resolved, Value::String(defective.to_owned()));
+
+        // The control: the SAME bytes declared `canonical-json` lose the
+        // repeated member and the `1.500` lexeme before they can be sent.
+        let m: CorpusManifest = serde_saphyr::from_str(
+            "cnf.raw.dup_member:\n  source: dup.json\n  format: canonical-json\n  \
+             validity: { verdict: invalid, defect: \"JSON: repeated member\", \
+             spec_ref: \"ITS-REST Resources.md §JSON Format\" }\n  provenance: p\n",
+        )
+        .unwrap();
+        let mut r = Resolver::new(&m, dir.path(), None);
+        let normalised = r
+            .data_set(&CorpusKey::parse("cnf.raw.dup_member").unwrap())
+            .unwrap();
+        assert!(normalised.is_object());
+        assert_ne!(normalised.to_string(), defective);
     }
 
     /// `${ixit:system_id}` reads the PARTY declaration and nothing else: a

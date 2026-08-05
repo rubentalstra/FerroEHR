@@ -224,19 +224,35 @@ legitimate single-instant interval and are reported normally.
 
 ## The admin API: archiving
 
-Two routes that mark a selected set of records as archived, behind the same
-gate and role. Archiving is **not** a delete: it is a lifecycle marker, and
-the archived records stay fully readable through the normal API.
+Two routes that move a selected set of records to the server's cold storage
+tier, behind the same gate and role. Archiving is **not** a delete: the
+archived records stay fully readable through the normal API, with their whole
+revision history intact.
 
-- `POST {base}/admin/archive/ehrs` with `{"ehr_ids": ["…"]}` — mark every
-  named EHR (and all its versioned content) archived. **204** on success.
-- `POST {base}/admin/archive/parties` with `{"party_ids": ["…"]}` — mark every
-  named demographic party archived. **204** on success.
+- `POST {base}/admin/archive/ehrs` with `{"ehr_ids": ["…"]}` — archive every
+  named EHR and all its versioned content. **204** on success.
+- `POST {base}/admin/archive/parties` with `{"party_ids": ["…"]}` — archive
+  every named demographic party. **204** on success.
 
 Both are **all-or-nothing and idempotent**: a malformed id is **400** and an
-id that names nothing is **404**, in both cases before anything is marked;
+id that names nothing is **404**, in both cases before anything is archived;
 re-archiving an already-archived record changes nothing. An empty list
 succeeds and archives nothing.
+
+What "cold storage tier" means here: the archived rows are physically moved
+out of the primary tables into a separate schema in the same database, so the
+tables and indexes that serve everyday traffic shrink by exactly what was
+archived — no extra tablespace, volume, or external service to operate. Reads
+of unarchived records never touch the cold tier; a read that addresses an
+archived record is served from it. Writing to an archived record silently
+brings it back to the primary tier first, a physical delete clears both
+tiers, and `admin/dump` still exports archived content.
+
+One deliberate consequence: **AQL queries see the primary tier only**, so an
+archived record stops appearing in query results until it is brought back —
+that is what shedding the query tables' rows and indexes buys you. Everything
+addressed by id (an EHR, a composition, a folder, a party, a version, a
+revision history) keeps working exactly as before.
 
 ## The admin API: dump and load
 

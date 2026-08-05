@@ -171,12 +171,10 @@ pub(crate) fn excluded(name: &str) -> Option<&'static str> {
         // DEFECTIVE upstream fixture, adjudicated: two ENTRY nodes hoist
         // `feeder_system_audit` onto the ENTRY itself, while three sibling
         // nodes in the SAME document nest it correctly. That member belongs to
-        // FEEDER_AUDIT
-        // (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.feeder_audit.adoc`
-        // §Attributes), reachable from a LOCATABLE only through
-        // `LOCATABLE.feeder_audit` (`…common.locatable.adoc` §Attributes). Kept
-        // vendored verbatim as the INVALID twin; the corrected VALID twin and
-        // the asserted refusal live in `fixture_twins.rs`.
+        // FEEDER_AUDIT (`…rm.common.feeder_audit.adoc` §Attributes), reachable
+        // from a LOCATABLE only through `LOCATABLE.feeder_audit`. Kept vendored
+        // verbatim as the INVALID twin; the corrected VALID twin and the
+        // asserted refusal live in `fixture_twins.rs`.
         "composition/canonical_json/all_types_systematic_tests_feeder_audit.json" => reason(
             "defective fixture: two ENTRY nodes hoist FEEDER_AUDIT.feeder_system_audit onto \
              the ENTRY (valid twin in tests/fixtures/twins/, refusal in fixture_twins.rs)",
@@ -185,12 +183,10 @@ pub(crate) fn excluded(name: &str) -> Option<&'static str> {
         // PLACEHOLDER `OBJECT_VERSION_ID`
         // (`__THIS_SHOULD_BE_MODIFIED_BY_THE_TEST_::ehrbase.org::1`) whose
         // `object_id` matches none of the three `uid` productions of BASE
-        // `base_types/master05-identification_package.adoc` §Syntaxes
-        // (`uid = iso_oid | uuid | internet_id`; an `internet_id` label must
-        // begin with a letter). Each is kept vendored verbatim as the INVALID
-        // twin, with its corrected VALID twin in `tests/fixtures/twins/` — so
-        // the coverage these documents provide is preserved, not lost.
-        // Asserted refusals: `fixture_twins.rs`.
+        // `base_types/master05-identification_package.adoc` §Syntaxes. Each is
+        // kept vendored verbatim as the INVALID twin, with its corrected VALID
+        // twin in `tests/fixtures/twins/`; asserted refusals in
+        // `fixture_twins.rs`.
         "composition/canonical_json/alternative_types.json"
         | "composition/canonical_json/duration_tests.json"
         | "composition/canonical_json/laboratory_report.json"
@@ -220,16 +216,12 @@ pub(crate) fn excluded(name: &str) -> Option<&'static str> {
         ),
         // DEFECTIVE upstream fixture, adjudicated on TWO axes. (a) Three `uid`
         // slots are tagged `_type: OBJECT_VERSION_ID` while carrying a BARE
-        // UUID. §Syntaxes gives `object_version_id = object_id, '::',
-        // creating_system_id, '::', version_tree_id` — exactly three parts — so
-        // a one-part value is a `HIER_OBJECT_ID`, the other subtype of the
-        // declared `UID_BASED_ID` slot. (b) Two `OBJECT_REF.id` slots are tagged
-        // `_type: OBJECT_REF_ID`, which names NO class in the released specs;
-        // `OBJECT_REF.id` is declared `OBJECT_ID`
-        // (`docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.object_ref.adoc`
-        // §Attributes), and a bare-UUID value is a `HIER_OBJECT_ID` by the same
-        // §Syntaxes reasoning. Valid twin in `tests/fixtures/twins/` (both
-        // re-tagged, values kept).
+        // UUID; §Syntaxes gives `object_version_id` exactly three parts, so a
+        // one-part value is a `HIER_OBJECT_ID`. (b) Two `OBJECT_REF.id` slots
+        // are tagged `_type: OBJECT_REF_ID`, which names NO class in the
+        // released specs — `OBJECT_REF.id` is declared `OBJECT_ID`
+        // (`…base_types.object_ref.adoc` §Attributes). Valid twin in
+        // `tests/fixtures/twins/` (both re-tagged, values kept).
         "folder/canonical_json/folder_with_items.json" => reason(
             "defective fixture: bare-UUID values tagged OBJECT_VERSION_ID, and OBJECT_REF.id \
              tagged with the non-existent class OBJECT_REF_ID (valid twin in \

@@ -257,7 +257,23 @@ pub(crate) const MAPPED_CLASSES: &[MappedClass] = &[
         citation: "BASE base_types.definitions (OPENEHR_DEFINITIONS; Base Types §Definitions Package)",
         reason: "Constant holder; its constants live in base_types/definitions/definitions_impl.rs.",
     },
+    // ── spec-declared open extension points → the validated verbatim carrier ──
+    MappedClass {
+        name: "ACCESS_CONTROL_SETTINGS",
+        citation: "RM ehr_access.adoc §settings (\"allowing for the use of different access \
+                   control schemes. Currently implementation dependent.\")",
+        reason: "Open extension point: a valid instance is a scheme-defined subtype the \
+                 published model cannot name → openehr_base::serde_support::OpenSubtype.",
+    },
 ];
+
+/// The Rust realization of a spec-declared OPEN extension point, when `name`
+/// is one: a class whose instances are scheme-defined subtypes outside the
+/// published model, carried verbatim by the validated
+/// `openehr_base::serde_support::OpenSubtype`.
+pub(crate) fn open_extension_point(name: &str) -> Option<&'static str> {
+    (name == "ACCESS_CONTROL_SETTINGS").then_some("openehr_base::serde_support::OpenSubtype")
+}
 
 /// Is `name` a mapped/skipped foundation class (never emitted)? Behaviour-
 /// identical to the former `SKIP.contains(&name)`.
@@ -1071,7 +1087,7 @@ pub(crate) struct XmlBmmOnlyField {
 /// `render::emit_xml`), forcing an explicit decision instead of a silent drop.
 ///
 /// The governing spec citation for every entry is the pinned-version delta
-/// (`docs/VERSIONS.md`): the emitted model is RM 1.2.0 / BASE 1.3.0, while the
+///: the emitted model is RM 1.2.0 / BASE 1.3.0, while the
 /// vendored canonical-XML schemas are ITS-XML 1.0.2 (namespace `.../v1`) and, for
 /// the EHR/demographic/extract closure, ITS-XML 2.0.0 (RM 1.1.0). Where the model
 /// added or renamed a field after those XSDs were cut, no XSD slot exists.
@@ -1982,10 +1998,10 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
     InvariantRealization {
         class: "PARTY",
         name: "Contacts_valid",
-        venue: InvariantVenue::App,
-        site: "app/ferroehr/src/service/demographic/validate.rs",
+        venue: InvariantVenue::Excluded,
+        site: "",
         spec_file: "org.openehr.rm.demographic.party.adoc",
-        reason: "`contacts /= Void implies not contacts.is_empty`: present-but-empty is unrepresentable in the `Vec`-emitted typed model, so the demographic write boundary enforces it on the raw body (422).",
+        reason: "the `x /= Void implies not x.is_empty` family: holds BY CONSTRUCTION since #1730 — an optional container carrying the invariant emits `Option<NonEmptyVec<T>>` (`analyze::nonempty_optional_lists`), so a present-but-empty value is unrepresentable and the strict readers refuse `[]` at parse.",
     },
     InvariantRealization {
         class: "PARTY",
@@ -2038,10 +2054,10 @@ pub(crate) const INVARIANT_REALIZATIONS: &[InvariantRealization] = &[
     InvariantRealization {
         class: "ROLE",
         name: "Capabilities_valid",
-        venue: InvariantVenue::App,
-        site: "app/ferroehr/src/service/demographic/validate.rs",
+        venue: InvariantVenue::Excluded,
+        site: "",
         spec_file: "org.openehr.rm.demographic.role.adoc",
-        reason: "`capabilities /= Void implies not capabilities.empty`: present-but-empty is unrepresentable in the `Vec`-emitted typed model, so the demographic write boundary enforces it on the raw body (422).",
+        reason: "the `x /= Void implies not x.empty` family (Eiffel spelling): holds BY CONSTRUCTION — an optional container carrying the invariant emits `Option<NonEmptyVec<T>>` (`analyze::nonempty_optional_lists`), so a present-but-empty value is unrepresentable and the strict readers refuse `[]` at parse.",
     },
     InvariantRealization {
         class: "EXTRACT",

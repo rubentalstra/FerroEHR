@@ -9,7 +9,7 @@
 //! `list_contributions`, `contribution_count`, `versioned_composition_count`,
 //! `composition_version_count`, each taking a `PLATFORM_SERVICE` (`a_service`,
 //! "Name of a versioned content service") and an optional
-//! `Interval<Iso8601_date_time>`. Register AMB-33 carries the SM↔ITS gap.
+//! `Interval<Iso8601_date_time>`. No released ITS-REST operation covers these calls.
 //!
 //! These routes are the honest realization of that service basis, and are
 //! **excluded from ITS-REST wire conformance**: they gate the `ActivityReport`
@@ -57,8 +57,8 @@ pub(crate) fn report_routes() -> OpenApiRouter<AppState> {
 /// List the CONTRIBUTION ids of one platform service
 /// (`GET /admin/report/contribution`).
 ///
-/// **Our own extension — no ITS-REST operation governs this** (module docs;
-/// register AMB-33). Realizes SM `I_ADMIN_SERVICE.list_contributions`.
+/// **Our own extension — no ITS-REST operation governs this** (module
+/// docs). Realizes SM `I_ADMIN_SERVICE.list_contributions`.
 #[utoipa::path(
     get, path = "/admin/report/contribution", tag = "admin-report",
     params(
@@ -127,8 +127,8 @@ pub(crate) async fn admin_report_contributions(
 /// Count the CONTRIBUTIONs of one platform service
 /// (`GET /admin/report/contribution/count`).
 ///
-/// **Our own extension — no ITS-REST operation governs this** (module docs;
-/// register AMB-33). Realizes SM `I_ADMIN_SERVICE.contribution_count`. The SM
+/// **Our own extension — no ITS-REST operation governs this** (module
+/// docs). Realizes SM `I_ADMIN_SERVICE.contribution_count`. The SM
 /// return is an `Integer`, so the body is a bare JSON number — the count IS the
 /// resource, and an object wrapper would invent a schema no spec defines.
 #[utoipa::path(
@@ -197,8 +197,8 @@ pub(crate) async fn admin_report_contribution_count(
 /// Count the `VERSIONED_COMPOSITION`s of one platform service
 /// (`GET /admin/report/versioned_composition/count`).
 ///
-/// **Our own extension — no ITS-REST operation governs this** (module docs;
-/// register AMB-33). Realizes SM
+/// **Our own extension — no ITS-REST operation governs this** (module
+/// docs). Realizes SM
 /// `I_ADMIN_SERVICE.versioned_composition_count` — distinct version
 /// CONTAINERS, as against the individual versions its sibling counts.
 #[utoipa::path(
@@ -275,8 +275,8 @@ pub(crate) async fn admin_report_versioned_composition_count(
 /// Count the individual COMPOSITION versions of one platform service
 /// (`GET /admin/report/composition_version/count`).
 ///
-/// **Our own extension — no ITS-REST operation governs this** (module docs;
-/// register AMB-33). Realizes SM
+/// **Our own extension — no ITS-REST operation governs this** (module
+/// docs). Realizes SM
 /// `I_ADMIN_SERVICE.composition_version_count`.
 #[utoipa::path(
     get, path = "/admin/report/composition_version/count", tag = "admin-report",

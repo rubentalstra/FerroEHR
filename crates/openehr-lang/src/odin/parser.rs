@@ -337,11 +337,9 @@ fn object_block<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clon
         // object, i.e. an object attribute that has no value is allowed in an
         // ODIN text, but ignored by parsers."
         //
-        // NOTE: it maps to [`OdinValue::Empty`], the same value as `<>` —
-        // both spec passages define the construct as "this attribute exists
-        // and has no data", so no consumer can act on the distinction between
-        // the two spellings, and a separate variant would force every match
-        // arm in every consumer to handle a second no-data case.
+        // NOTE: it maps to [`OdinValue::Empty`], the same value as `<>` — both
+        // spec passages define the construct as "this attribute exists and has
+        // no data", so no consumer can act on the distinction.
         let void = just(Token::SymListContinue).to(OdinValue::Empty);
 
         let inner = choice((
@@ -375,14 +373,12 @@ fn object_block<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clon
 
         // `attr_name = (syntax) <# … #>` — a plug-in-syntax object block
         // (`LANG/docs/odin/master09-plug_in_syntaxes`: "Plug-in syntaxes are
-        // indicated in ODIN in a similar way as typed objects, i.e. by the
-        // use of the syntax type in parentheses preceding the `<>` block. For
-        // a plug-in section, the `<>` delimiters are modified to `<# #>`").
-        // The general form makes the `(syntax)` tag part of the construct —
-        // it names the plug-in parser the body is for — so a bare `<# … #>`
-        // with no tag stays a parse error. The tag is an ordinary identifier
-        // (the chapter's example tag is the lower-case `cadl`), and the body
-        // is handed over verbatim.
+        // indicated in ODIN … by the use of the syntax type in parentheses
+        // preceding the `<>` block. For a plug-in section, the `<>` delimiters
+        // are modified to `<# #>`"). The general form makes the `(syntax)` tag
+        // part of the construct, so a bare `<# … #>` with no tag stays a parse
+        // error. The tag is an ordinary identifier and the body is handed over
+        // verbatim.
         let plug_in_tag = select! {
             Token::AlphaLcId(s) => s,
             Token::AlphaUcId(s) => s,
@@ -479,29 +475,16 @@ fn primitive_object<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + 
     // `|0..5|, ...`).
     let item = choice((interval_value(leaf.clone()), leaf));
 
-    // primitive_value | primitive_list_value | *_interval_list_value: a
-    // single item (scalar), or a comma-separated list, optionally left open
-    // with a trailing `, ...` continuation marker. Per `master07` §"Lists of
-    // Built-in Types", `...` is the open-list continuation marker: a
-    // single-datum list `v, ...` *requires* it (to distinguish the list from
-    // a bare scalar `v`), and a multi-datum list `v1, v2, ..., vn, ...` may
-    // equally be left open with it (as the published CIMI reference-model
-    // schemas do). The `odin_values.g4`
-    // `string_list_value : v ( (',' v)+ | ',' SYM_LIST_CONTINUE )` encoding
-    // admits only the single-datum-plus-continue and the closed-multi forms;
-    // the general `v (',' v)* (',' '...')?` accepted here is a strict
-    // superset that additionally admits the open multi-datum list the spec
-    // prose describes. A bare item with no following comma stays a scalar.
-    //
-    // Lists are HOMOGENEOUS: every `odin_values.g4` list production is
-    // per-type, and §Lists of Built-in Types says "comma-separated lists of
-    // items, all of the same type" — a kind mismatch is a typed refusal at
-    // the offending item, never a silently mixed list. Kinds compare at the
-    // value-variant level (Integer ≠ Real, Date ≠ Date_time, …); NOTE: an
-    // interval item's ENDPOINT type is not re-checked here — the per-type
-    // interval productions already pin each interval's own endpoints, and
-    // interval-list endpoint homogeneity beyond the variant level is left to
-    // the consuming model.
+    // primitive_value | primitive_list_value | *_interval_list_value: a single
+    // item (scalar), or a comma-separated list, optionally left open with a
+    // trailing `, ...`. Per `master07` §"Lists of Built-in Types" `...` is the
+    // open-list continuation marker; the general `v (',' v)* (',' '...')?`
+    // accepted here is a strict superset of `odin_values.g4`'s encoding that
+    // additionally admits the open multi-datum list the prose describes. Lists
+    // are HOMOGENEOUS ("items, all of the same type"), so a kind mismatch is a
+    // typed refusal at the offending item, compared at the value-variant level.
+    // NOTE: an interval item's ENDPOINT type is not re-checked here — the
+    // per-type interval productions already pin each interval's own endpoints.
     item.clone()
         .map_with(|value, e| (value, e.span()))
         .then(

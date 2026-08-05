@@ -82,8 +82,9 @@ fn validate_party_ref(reference: &Value, context: &str) -> Result<(), ServiceErr
 /// second full decode per write.
 ///
 /// # Errors
-/// [`ServiceError::Unprocessable`] when the body does not deserialize as
-/// `rm_type` or violates an enforceable PARTY/ACTOR/ROLE invariant.
+/// [`ServiceError::BadRequest`] when the strict reader refuses the body;
+/// [`ServiceError::Unprocessable`] when it violates an enforceable
+/// PARTY/ACTOR/ROLE invariant.
 pub(crate) fn party_check(
     rm_type: &str,
     data: &Value,
@@ -103,20 +104,17 @@ pub(crate) fn party_check(
             ));
         }
     };
-    // NOTE: on a `553|incomplete|` commit the TYPED construction is not the
-    // gate — the generated party types make `PARTY.identities [1..*]` and every
-    // mandatory attribute structural, and those are precisely the bounds RM
-    // common master06 §Incomplete Content lifts ("mandatory attributes may be
-    // absent … container attributes may be empty"). A body that DOES construct
-    // is still fully judged; one that does not is handed to the relaxed
-    // whole-instance pass below, which enforces everything except presence.
+    // A body that DOES construct is still fully judged; one that does not is
+    // handed to the relaxed whole-instance pass below, which enforces
+    // everything except presence.
+    // NOTE: on a `553|incomplete|` commit the TYPED construction is not the gate
+    // — the generated party types make mandatory attributes structural, and RM
+    // common master06 §Incomplete Content lifts precisely those bounds.
     if !incomplete {
-        typed.map_err(|e| {
-            ServiceError::Unprocessable(
-                Violation::new(format!("body does not validate as {rm_type}"))
-                    .with_decode_failure(&e),
-            )
-        })?;
+        // NOTE: the released `responses/422.yaml` scopes 422 to content that
+        // "could be converted to a resource" — a body the strict reader
+        // refuses is the 400 row, as on every direct commit route.
+        typed.map_err(|e| ServiceError::BadRequest(format!("invalid canonical JSON body: {e}")))?;
     }
     party_invariants(rm_type, data, incomplete)
 }
@@ -148,28 +146,18 @@ pub(super) fn party_invariants(
         crate::service::ehr::validation::validate_root_locatable(obj, rm_type)?;
     }
 
-    // NOTE: Identities_valid (1..* -> NonEmptyVec) and the present-implies-
-    // non-empty family (Contacts/Relationships/Roles/Capabilities -> #1730
-    // Option<NonEmptyVec>) hold by construction at the strict typed door; the
-    // 553|incomplete| lane skips typed construction (master06 §Incomplete
-    // Content relaxes empty containers).
+    // NOTE: Identities_valid (1..* → NonEmptyVec) and the present-implies-
+    // non-empty family hold by construction at the strict typed door; the
+    // `553|incomplete|` lane skips typed construction (master06 §Incomplete).
 
     // Relationships_validity, second arm (party.adoc): every inline
-    // relationship's `source` must reference THIS party. The party's identity
-    // is its `uid` (copied from the version container); when the body carries
-    // one, an inline relationship pointing at another source is invalid.
-    //
-    // The comparison is against the party's CONTAINER id, not the version id:
-    // RM demographic `docs/demographic/master02-demographic_package.adoc`
-    // §Party Relationships (L44) requires the refs to be "`OBJECT_REFs`
-    // containing `HIER_OBJECT_IDs` to denote the Version container of a Party,
-    // rather than `OBJECT_VERSION_IDs`, which would denote particular
-    // versions" — while a served party's `uid` is the three-part
-    // `OBJECT_VERSION_ID` of the version it was read from. So the body's uid is
-    // reduced to its `object_id` (BASE `master05-identification_package.adoc`
-    // §Syntaxes: `object_version_id = object_id, '::', creating_system_id,
-    // '::', version_tree_id`, the object_id being the version container's id),
-    // which leaves a body carrying a bare container id compared verbatim.
+    // relationship's `source` must reference THIS party. The comparison is
+    // against the party's CONTAINER id, not the version id: RM demographic
+    // `master02-demographic_package.adoc` §Party Relationships requires
+    // "`OBJECT_REFs` containing `HIER_OBJECT_IDs` to denote the Version
+    // container of a Party", while a served party's `uid` is the three-part
+    // `OBJECT_VERSION_ID`, so the body's uid is reduced to its `object_id`
+    // (BASE `master05-identification_package.adoc` §Syntaxes).
     if let (Some(uid), Some(relationships)) = (
         data.pointer("/uid/value").and_then(Value::as_str),
         data.get("relationships").and_then(Value::as_array),
@@ -219,35 +207,38 @@ pub(super) fn party_invariants(
 }
 
 /// Structurally validate a candidate `PARTY_RELATIONSHIP` body: deserialize into
-/// the `openehr_rm` type (a type mismatch → `422`), enforce that both `source`
-/// and `target` `PARTY_REF`s are present continuant refs, and enforce their
-/// `PARTY_REF.Type_validity`. `uid` need not be supplied — the server
+/// the `openehr_rm` type (a strict-reader refusal → `400`), enforce that both
+/// `source` and `target` `PARTY_REF`s are present continuant refs, and enforce
+/// their `PARTY_REF.Type_validity`. `uid` need not be supplied — the server
 /// injects it on read, mirroring the PARTY / COMPOSITION services.
+///
+/// # Errors
+/// [`ServiceError::BadRequest`] when the strict reader refuses the body;
+/// [`ServiceError::Unprocessable`] when a ref rule fails.
 pub(crate) fn relationship_check(data: &Value, incomplete: bool) -> Result<(), ServiceError> {
     use openehr_base::prelude::ObjectId;
     use openehr_rm::prelude::PartyRelationship;
     // The decode is the validating ACT, and its result is the carrier the two
     // ref rules below are judged on — `source`/`target` are mandatory
     // `PARTY_REF`s on the RM type, so once this succeeds their PRESENCE and
-    // their `PARTY_REF` SHAPE are facts of the type, not things to re-check
-    // (the Rust Book ch9.3 custom-validation-type pattern: a downstream
-    // function "wouldn't need to do any additional checks in its body").
-    //
-    // NOTE: on a `553|incomplete|` commit the decode is not the gate — mandatory
-    // `source`/`target` may be absent (RM common master06 §Incomplete Content:
-    // "single-valued attributes may have null values"), which is exactly what
-    // the decode refuses. A body that DOES construct is still fully judged by
-    // the two ref rules below; one that does not is handed to the relaxed
-    // whole-instance pass, which enforces everything except presence.
+    // SHAPE are facts of the type, not things to re-check (the Rust Book ch9.3
+    // custom-validation-type pattern). A body that does NOT construct is handed
+    // to the relaxed whole-instance pass, which enforces everything except
+    // presence.
+    // NOTE: on a `553|incomplete|` commit the decode is not the gate —
+    // mandatory `source`/`target` may be absent (RM common master06 §Incomplete
+    // Content), which is exactly what the decode refuses.
     let decoded = openehr_its::json::from_canonical_value::<PartyRelationship>(data);
     let typed = match decoded {
         Ok(typed) => Some(typed),
         Err(_) if incomplete => None,
+        // NOTE: the released `responses/422.yaml` scopes 422 to content that
+        // "could be converted to a resource" — a body the strict reader
+        // refuses is the 400 row, as on every direct commit route.
         Err(e) => {
-            return Err(ServiceError::Unprocessable(
-                Violation::new("body does not validate as PARTY_RELATIONSHIP")
-                    .with_decode_failure(&e),
-            ));
+            return Err(ServiceError::BadRequest(format!(
+                "invalid canonical JSON body: {e}"
+            )));
         }
     };
     for (field, reference) in typed
@@ -365,15 +356,18 @@ mod tests {
     /// `NonEmptyVec<PARTY_IDENTITY>` on the generated party types, so an empty
     /// or absent list has no representation. The refusal is asserted here (it
     /// must not weaken); the service carries no second check of the same rule.
+    /// The refusal class is `BadRequest`: the released `responses/422.yaml`
+    /// scopes 422 to content that "could be converted to a resource", and an
+    /// unconstructible body is the 400 row on every commit route.
     #[test]
     fn identities_valid_is_enforced() {
         for bad in [person(&json!([])), json!({ "_type": "PERSON" })] {
             match party_check("PERSON", &bad, false) {
-                Err(ServiceError::Unprocessable(v)) => assert!(
-                    v.detail().contains("does not validate as PERSON"),
-                    "the decode is the enforcement point, got {v}"
+                Err(ServiceError::BadRequest(m)) => assert!(
+                    m.contains("invalid canonical JSON body"),
+                    "the decode is the enforcement point, got {m}"
                 ),
-                other => panic!("empty identities must be 422, got {other:?}"),
+                other => panic!("an unconstructible body must be 400, got {other:?}"),
             }
         }
         party_check("PERSON", &person(&json!([identity()])), false)

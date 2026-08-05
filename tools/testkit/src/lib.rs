@@ -567,7 +567,7 @@ fn redacted(url: &str) -> String {
 /// clone name and read back by the sweep.
 ///
 /// Wall-clock time comes from `jiff`, the pinned time library
-/// (`docs/VERSIONS.md`); the monotonic deadlines above use
+///; the monotonic deadlines above use
 /// [`std::time::Instant`] instead, which is what they actually measure.
 /// Negative timestamps (a clock set before 1970) floor at 0 so a clone name
 /// always parses back.

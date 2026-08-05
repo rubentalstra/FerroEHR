@@ -333,6 +333,129 @@ impl<'de, A: MapAccess<'de>> Deserializer<'de> for TaggedRest<A> {
     }
 }
 
+// ── the open extension-point carrier ─────────────────────────────────────────
+
+/// A refused [`OpenSubtype`] construction.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
+pub enum OpenSubtypeError {
+    /// The subtype tag was empty — a scheme instance must name its scheme.
+    #[error("an open-subtype instance must carry a non-empty `_type` scheme name")]
+    EmptyTypeName,
+    /// The member set carried its own `_type` key, which belongs to the tag.
+    #[error("`_type` is the subtype tag, not a member")]
+    TypeAmongMembers,
+}
+
+/// A scheme-defined instance at a spec-declared OPEN polymorphic seam.
+///
+/// Some classes the specs deliberately leave open for downstream schemes —
+/// `ACCESS_CONTROL_SETTINGS` is "Intended to support multiple access control
+/// schemes. Currently implementation dependent."
+/// (`RM/docs/UML/classes/org.openehr.rm.security.access_control_settings.adoc`)
+/// — so a valid instance may carry a `_type` the published model cannot name.
+/// This carrier keeps such an instance verbatim: the declared subtype tag and
+/// every member in document order, re-serialized exactly as read.
+///
+/// Construction is validated, so an invalid carrier cannot exist: the tag is
+/// non-empty and never duplicated among the members. The reader is otherwise
+/// deliberately open — member names and shapes belong to the scheme, which is
+/// exactly what the spec declines to constrain.
+#[derive(Debug, Clone, PartialEq)]
+pub struct OpenSubtype {
+    type_name: String,
+    members: serde_json::Map<String, serde_json::Value>,
+}
+
+impl OpenSubtype {
+    /// Builds a carrier from the subtype tag and its members.
+    ///
+    /// # Errors
+    /// [`OpenSubtypeError`] when the tag is empty or `members` carries a
+    /// `_type` key of its own.
+    pub fn new(
+        type_name: impl Into<String>,
+        members: serde_json::Map<String, serde_json::Value>,
+    ) -> Result<Self, OpenSubtypeError> {
+        let type_name = type_name.into();
+        if type_name.is_empty() {
+            return Err(OpenSubtypeError::EmptyTypeName);
+        }
+        if members.contains_key(TYPE_KEY) {
+            return Err(OpenSubtypeError::TypeAmongMembers);
+        }
+        Ok(Self { type_name, members })
+    }
+
+    /// The declared subtype tag (the wire `_type`).
+    #[must_use]
+    pub fn type_name(&self) -> &str {
+        &self.type_name
+    }
+
+    /// The scheme's members, in document order, `_type` excluded.
+    #[must_use]
+    pub fn members(&self) -> &serde_json::Map<String, serde_json::Value> {
+        &self.members
+    }
+
+    /// The value of member `key`, if present.
+    #[must_use]
+    pub fn member(&self, key: &str) -> Option<&serde_json::Value> {
+        self.members.get(key)
+    }
+}
+
+impl serde::Serialize for OpenSubtype {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::SerializeMap as _;
+        let mut map = serializer.serialize_map(Some(self.members.len() + 1))?;
+        map.serialize_entry(TYPE_KEY, &self.type_name)?;
+        for (key, value) in &self.members {
+            map.serialize_entry(key, value)?;
+        }
+        map.end()
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for OpenSubtype {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        struct OpenVisitor;
+        impl<'de> Visitor<'de> for OpenVisitor {
+            type Value = OpenSubtype;
+            fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.write_str("an object carrying a `_type` scheme name")
+            }
+            fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
+                let mut type_name: Option<String> = None;
+                let mut members = serde_json::Map::new();
+                while let Some(key) = map.next_key::<String>()? {
+                    if key == TYPE_KEY {
+                        if type_name.is_some() {
+                            return Err(A::Error::duplicate_field(TYPE_KEY));
+                        }
+                        type_name = Some(map.next_value::<String>()?);
+                        continue;
+                    }
+                    if members.contains_key(&key) {
+                        return Err(A::Error::custom(format_args!(
+                            "duplicate member `{key}` on an open-subtype instance"
+                        )));
+                    }
+                    members.insert(key, map.next_value::<serde_json::Value>()?);
+                }
+                let Some(type_name) = type_name else {
+                    return Err(A::Error::custom(
+                        "an open-subtype instance must carry a `_type` scheme name",
+                    ));
+                };
+                OpenSubtype::new(type_name, members).map_err(A::Error::custom)
+            }
+        }
+        deserializer.deserialize_map(OpenVisitor)
+    }
+}
+
 // ── the refusal a polymorphic slot raises ────────────────────────────────────
 
 /// The refusal for a polymorphic slot whose `_type` names no permitted class.

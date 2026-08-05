@@ -514,6 +514,19 @@ repeated validate/expand/subsumes/lookup within the window is served locally
 instead of one HTTPS round trip per validated code; `0` disables),
 `cache_capacity` (int, `10000` — maximum cached responses per provider).
 
+Cached entries are the *decoded* responses, not raw JSON: a server answer that
+is not a valid FHIR R4B `Parameters`/`ValueSet` resource — for example a
+`$expand` result missing the required `ValueSet.status` or
+`expansion.timestamp` — is rejected as an upstream fault (HTTP `500`, subject
+to `fail_on_error`) rather than partially read.
+
+> [!NOTE]
+> External terminology servers need the `fhir` build feature (on in the
+> published binary and container images). A binary built with
+> `--no-default-features` refuses at startup if `terminology.external` is
+> enabled with any provider configured; the in-process openEHR terminology
+> bundle remains available.
+
 ### Several terminology servers at once
 
 **Every** entry under `[terminology.external.providers]` is materialised at
@@ -668,6 +681,13 @@ The IHE ATNA audit trail (see the [Audit trail chapter](../audit.md)). **On
 by default** with only the local store active; forwarding is opt-in per
 sink. (`[atna]` keys are rejected at boot with did-you-mean guidance
 pointing here.)
+
+> [!NOTE]
+> The local store and the ATX:FHIR Feed both carry a FHIR R4B `AuditEvent`
+> document, so both need the `fhir` build feature (on in the published binary
+> and container images). A binary built with `--no-default-features` refuses
+> at startup if `audit.store.enabled` or `audit.fhir_feed.enabled` is set; the
+> DICOM/syslog feed (`[audit.syslog]`) needs no FHIR and stays available.
 
 | Key | Type | Default | Description |
 |---|---|---|---|

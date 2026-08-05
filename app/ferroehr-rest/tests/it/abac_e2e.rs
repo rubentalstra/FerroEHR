@@ -130,7 +130,6 @@ fn rest_config() -> AppConfig {
                 jwks_json: None,
                 ..OidcConfig::default()
             }),
-            admin_scope: None,
             ..AuthConfig::default()
         },
         ..Default::default()

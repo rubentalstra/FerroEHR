@@ -19,7 +19,7 @@
 //!
 //! Registration (master03), token issuance/grants/PKCE (master06), and
 //! launch-sequence UI (master07) are Authorization-Server/Launcher duties —
-//! out of scope for a CDR, recorded in the conformance register.
+//! out of scope for a CDR, a settled adjudication (out of scope for a CDR).
 //! Config-gated (`ferroehr::config::smart::SmartConfig`): off by default, zero
 //! wire drift when disabled.
 

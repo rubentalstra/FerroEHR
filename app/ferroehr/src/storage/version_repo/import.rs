@@ -4,14 +4,13 @@
 //! import (master06 §Copying) and the admin archive load — plus the lineage
 //! close and container-state read the import policy needs.
 //!
-//! No openEHR spec governs the SQL — our own design (`docs/architecture.md`
-//! §Storage). The import *policy* (period-chain synthesis, Case 2/3
+//! No openEHR spec governs the SQL — our own design. The import *policy* (period-chain synthesis, Case 2/3
 //! classification) lives in the versioning layer.
 
 #![expect(
     clippy::disallowed_types,
     reason = "owner-approved 2026-08-03 (#1694 family 1): stored canonical fragments — a typed \
-              round-trip drops forward-compatible keys (docs/VERSIONS.md §Spec version policy)"
+              round-trip drops forward-compatible keys (the openEHR release strategy: minors are compatible supersets)"
 )]
 
 use serde_json::Value;

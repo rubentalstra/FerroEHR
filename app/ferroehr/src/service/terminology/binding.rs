@@ -55,8 +55,8 @@
 
 #![expect(
     clippy::disallowed_types,
-    reason = "owner-approved 2026-08-03 (#1694 family 6): FHIR resources are an external standard \
-              with no RM type (typed-FHIR evaluation tracked separately)"
+    reason = "owner-approved 2026-08-03 (#1694 family 6): the walked value is the composition's \
+              canonical openEHR JSON, dynamic by construction"
 )]
 
 use openehr_its::flat::validation::ConstraintBindingCheck;

@@ -42,7 +42,6 @@ fn config(smart_enabled: bool, fail_closed: bool) -> AppConfig {
             enabled: false,
             basic: None,
             oidc: None,
-            admin_scope: None,
             ..AuthConfig::default()
         },
         ..Default::default()

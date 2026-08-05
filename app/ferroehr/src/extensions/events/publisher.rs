@@ -39,10 +39,10 @@ use sqlx::{PgPool, Row};
 use tokio::sync::watch;
 use tokio::task::JoinHandle;
 
-use super::amqp::AmqpPublisher;
 use super::config::EventsConfig;
-use super::{EventError, EventPublisher};
 use crate::telemetry::prometheus::EVENTS_PUBLISHED;
+use ferroehr_ext::events::amqp::AmqpPublisher;
+use ferroehr_ext::events::{EventError, EventPublisher};
 
 /// Owns the drainer task; the binary keeps it and shuts it down on exit.
 #[derive(Debug)]
@@ -263,7 +263,7 @@ async fn sync_subscriptions(
         let kind: Option<String> = row.try_get("kind").map_err(SyncError::Db)?;
         let change_type: Option<String> = row.try_get("change_type").map_err(SyncError::Db)?;
         let template_id: Option<String> = row.try_get("template_id").map_err(SyncError::Db)?;
-        let binding_key = super::subscription_binding_key(
+        let binding_key = ferroehr_ext::events::subscription_binding_key(
             kind.as_deref(),
             change_type.as_deref(),
             template_id.as_deref(),
@@ -364,9 +364,12 @@ fn version_routing_keys(envelope: &serde_json::Value) -> Vec<(usize, String)> {
         Some(versions) if !versions.is_empty() => versions
             .iter()
             .enumerate()
-            .map(|(i, v)| (i, super::routing_key_of_version(v)))
+            .map(|(i, v)| (i, ferroehr_ext::events::routing_key_of_version(v)))
             .collect(),
-        _ => vec![(0, super::routing_key("UNKNOWN", super::ABSENT, None))],
+        _ => vec![(
+            0,
+            ferroehr_ext::events::routing_key("UNKNOWN", ferroehr_ext::events::ABSENT, None),
+        )],
     }
 }
 

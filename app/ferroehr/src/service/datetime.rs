@@ -74,15 +74,13 @@ fn resolve(raw: &str) -> Option<jiff::Timestamp> {
     if let Ok(instant) = raw.parse::<jiff::Timestamp>() {
         return Some(instant);
     }
-    // (2) No offset, so the value is read as civil — but only after two
-    // guards, because jiff's civil parser is more permissive than the general
-    // form the spec MUSTs and would otherwise turn a rejected value into a
-    // confidently wrong instant:
+    // (2) No offset, so the value is read as civil — but only after two guards,
+    // because jiff's civil parser is more permissive than the general form the
+    // spec MUSTs:
     //   * an RFC 9557 annotation suffix (`…[Europe/Amsterdam]`) is not part of
-    //     the extended ISO 8601 form, and the civil parser DISCARDS it — the
-    //     value would be resolved in the server's zone while naming another;
-    //   * a bare `YYYY-MM-DD` is silently defaulted to midnight by the civil
-    //     parser, so the ISO `T` designator of the general form is required.
+    //     the extended ISO 8601 form and the civil parser DISCARDS it;
+    //   * a bare `YYYY-MM-DD` is silently defaulted to midnight, so the ISO `T`
+    //     designator of the general form is required.
     if raw.contains('[') || !raw.contains(['T', 't']) {
         return None;
     }

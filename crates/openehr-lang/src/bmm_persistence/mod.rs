@@ -35,6 +35,7 @@ pub mod p_bmm_single_property_open;
 pub mod p_bmm_type;
 
 // hand-written modules (spec behaviour), auto-declared:
+pub mod create_bmm3_assertion;
 pub mod create_bmm3_model;
 pub mod create_model;
 pub mod error;
@@ -45,3 +46,4 @@ pub mod p_bmm_enumeration_impl;
 pub mod p_bmm_schema_impl;
 pub mod p_bmm_type_impl;
 pub mod reader;
+pub mod validate;

@@ -546,11 +546,8 @@ pub(crate) fn emit(composition: &Value, out: &mut SimNode) {
         set_bare(out, "location", loc.clone());
     }
     // NOTE: health_care_facility and participations are NOT emitted as ctx/
-    // shortcuts — the master06 shortcut vocabulary is lossy for them (no
-    // id_scheme key, no full PARTY shape), so the lossless master05
-    // §EVENT_CONTEXT path rows (`context/_health_care_facility`,
-    // `context/_participation:i`) own the output; the ctx/ shortcuts stay
-    // accepted on input only.
+    // shortcuts — the master06 shortcut vocabulary is lossy for them, so the
+    // lossless master05 §EVENT_CONTEXT path rows own the output.
 }
 
 /// Emit a party's `external_ref` id/namespace/scheme as `ctx/composer_id` +

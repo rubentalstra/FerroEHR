@@ -90,7 +90,7 @@ impl ScopeOutcome {
 /// §Resource Scopes lists exactly three resource types, so those operations
 /// are governed by the compartment binding + the existing RBAC/ABAC layers,
 /// not by a SMART resource scope; the SMART gate does not deny them
-/// (register-documented — the out-of-noun silence).
+/// (adjudicated — the out-of-noun silence).
 #[must_use]
 pub fn family_of_op(op: &str) -> Option<ResourceFamily> {
     if op.starts_with("composition_") || op.starts_with("versioned_composition_") {

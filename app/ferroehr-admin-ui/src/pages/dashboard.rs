@@ -154,19 +154,13 @@ pub async fn namespace_tiles() -> Result<Vec<NamespaceTile>, AdminUiError> {
     let rows = crate::queries_api::list_stored_queries().await?;
     let mut tiles = Vec::new();
     for group in crate::query_namespace::group_by_namespace(&rows) {
-        // Every member runs, because the grouping is DERIVED — there is no
-        // stored member list to narrow by (and storing one is exactly what the
-        // console does not do). The runs therefore fan out with a bounded
-        // concurrency (`TILE_CONCURRENCY`) instead of a serial await chain: the
-        // tile row costs one slow query, not the sum of every query, and the
-        // bound keeps a large query store from opening an unbounded burst of
-        // CDR requests. `buffered` preserves order, which nothing here relies
-        // on, but keeps the log deterministic.
+        // The grouping is DERIVED — there is no stored member list to narrow
+        // by — so every member runs, fanned out with bounded concurrency
+        // (`TILE_CONCURRENCY`) instead of a serial await chain.
+        //
         // The identifiers are collected into owned pairs BEFORE the stream: an
-        // async block that borrows out of `group` is not general enough over
-        // lifetimes for the server-fn future (a higher-ranked-lifetime error at
-        // the `#[server]` boundary), and cloning two short strings per member is
-        // free next to the request each one makes.
+        // async block borrowing out of `group` is not general enough over
+        // lifetimes for the `#[server]` boundary's future.
         let members: Vec<(String, String)> = group
             .members
             .iter()

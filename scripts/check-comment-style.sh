@@ -84,16 +84,23 @@ for f in "${files[@]}"; do
       is_doc  = (line ~ /^\/\/[\/!]/)
       is_line = (!is_doc && line ~ /^\/\//)
 
-      # 1. block comments on code lines (a `/*` before any string literal)
+      # 1. block comments on code lines: a `/*` at line start or after
+      # whitespace, before any string literal on the line. The position
+      # guard skips glob/media-type/URL text inside multi-line string
+      # literals (`*/*`, `dir/*.xml`, `://***@`), which an earlier-opened
+      # string puts on a quote-less line.
       if (!is_doc && !is_line) {
         bc = index($0, "/*"); q = index($0, "\"")
-        if (bc > 0 && (q == 0 || bc < q))
+        if (bc > 0 && (q == 0 || bc < q) \
+            && (bc == 1 || substr($0, bc - 1, 1) ~ /[[:space:]]/))
           printf ":%d: block comment — use line comments (`//`) only (RFC 505)\n", NR
       }
 
-      # 2 + 3. marker forms, anywhere in a comment
+      # 2 + 3. marker forms. TODO is judged only as the LEADING marker of a
+      # comment — prose or a verbatim spec quotation mentioning the word is
+      # not a marker.
       if (is_doc || is_line) {
-        if (line ~ /TODO/ && line !~ /TODO\(#[0-9]+\):/)
+        if (line ~ /^\/\/+[!\/]?[[:space:]]*TODO/ && line !~ /TODO\(#[0-9]+\):/)
           printf ":%d: TODO without an issue reference — the only sanctioned form is `TODO(#NNNN):`\n", NR
         if (line ~ /PORT NOTE|PORT STATUS|TODO\(port\)|PERF\(port\)|NOTE\(port\)|FIXME|HACK:|(^|[^A-Za-z0-9_])XXX([^A-Za-z0-9_]|$)|\/\/[[:space:]]*WIP[: ]/)
           printf ":%d: unsanctioned comment marker — the only forms are TODO(#NNNN): / NOTE: / SAFETY:\n", NR

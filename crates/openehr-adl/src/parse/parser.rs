@@ -174,16 +174,14 @@ impl Parser<'_> {
     fn parse_type_object(&mut self) -> PResult<CObject> {
         let type_span = self.cur_span();
         let rm_type = self.parse_rm_type_id()?;
-        // NOTE: `cadl2.g4` requires `'[' ID_CODE ']'`, but a *missing* node id
-        // is a semantic defect (VCOID, `AOM2/master08`), not a syntax error —
-        // the ADL Workbench parses it and flags VCOID in validation. We do the
-        // same: an absent `[…]` yields an empty node id that validation flags.
         // OPT-inlined `C_ARCHETYPE_ROOT` form `TYPE[id, archetype_ref] …`: a
         // flattened slot-filler / external reference carries the full archetype
         // id inside the node bracket and an inline body (OPT2 master03
         // §Artefact Structure + §Flattening; the same `'[' ID_CODE ','
-        // archetype_ref ']'` shape as `cadl14.g4` `c_archetype_root`, kept for
-        // the OPT serialisation the `operational_template` printer round-trips).
+        // archetype_ref ']'` shape as `cadl14.g4` `c_archetype_root`).
+        // NOTE: `cadl2.g4` requires `'[' ID_CODE ']'`, but a *missing* node id
+        // is a semantic defect (VCOID, `AOM2/master08`), not a syntax error, so
+        // an absent `[…]` yields an empty node id that validation flags.
         let mut archetype_ref: Option<String> = None;
         let node_id = if self.eat(|t| matches!(t, Token::LBracket)) {
             let n = self.parse_node_id()?;
@@ -510,13 +508,9 @@ impl Parser<'_> {
             "expecting '{' in cardinality expression",
         )?;
         let interval = self.parse_multiplicity(SyntaxErrorCode::Soccf)?;
-        // NOTE: `ADL2/master04.3` §Cardinality — when a `cardinality` clause omits
-        // the ordering/uniqueness modifier, the constraint defaults to an ordered,
-        // non-unique container (`ordered`, `not unique`). This is the spec default
-        // applied verbatim; the RM container kind (List/Set/Bag) is not consulted
-        // here because the cardinality stated in the archetype is authoritative for
-        // the constraint (no openEHR rule refines a stated cardinality from the RM
-        // container shape at parse time).
+        // NOTE: `ADL2/master04.3` §Cardinality — a `cardinality` clause that
+        // omits the ordering/uniqueness modifier defaults to an ordered,
+        // non-unique container, applied verbatim here.
         let mut is_ordered = true;
         let mut is_unique = false;
         for _ in 0..2 {
@@ -793,18 +787,11 @@ impl Parser<'_> {
             // 1.4-only: the pipe-ordinal shorthand `0|[local::at0005], 1|[…]`
             // (`cadl14.g4` `c_ordinal`, one of the `c_non_primitive_object`
             // alternatives — so it stands exactly where an object is expected).
-            //
             // It is dispatched INSIDE the loop, not as a whole-body special
-            // case: an ordinal list is one alternative among the siblings of
-            // its block, so it may stand beside a regular complex object in
-            // either order (`DV_TEXT matches {*}` then the ordinal terms, or
-            // the ordinal terms then `DV_TEXT matches {*}` — both occur in
-            // real CKM archetypes). `ADL1.4/master05-cadl.adoc` §Mixed
-            // Structures is the reading: a node's block is "a series of
-            // possible constraints on objects" and "at any given node, all
-            // three types can co-exist" — the chapter enumerates the three
-            // core object forms and says nothing that would make the
-            // openEHR-profiled ordinal shorthand the sole occupant of a block.
+            // case: an ordinal list is one alternative among the siblings of its
+            // block, so it may stand beside a regular complex object in either
+            // order. `ADL1.4/master05-cadl.adoc` §Mixed Structures is the
+            // reading: "at any given node, all three types can co-exist".
             if self.dialect == Dialect::Adl14 && self.is_adl14_ordinal_start() {
                 objs.push(self.parse_adl14_ordinal()?);
                 continue;

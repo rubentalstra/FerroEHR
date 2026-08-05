@@ -206,12 +206,26 @@ impl<'a> ParentScan<'a> {
     }
 }
 
-/// True if two slot-assertion lists are structurally identical (the same set of
-/// `matches {…}` constraint bodies), used by VDSSM to detect a restatement (not a
-/// proper narrowing) of the parent slot.
+/// True if two slot-assertion lists are structurally identical, used by VDSSM to
+/// detect a restatement (not a proper narrowing) of the parent slot.
+///
+/// Every assertion counts, whatever its shape: the comparison key is the
+/// assertion's own string form rendered from its expression tree
+/// ([`crate::print::assertion_text`]), so an assertion the regex reading cannot
+/// express still distinguishes the two lists.
+///
+/// An assertion the printer refuses has no comparison key, so the two lists are
+/// reported as different: VDSSM fires only on a proven restatement, and an
+/// unrenderable assertion proves nothing.
 fn slot_assertions_equal(a: &[Assertion], b: &[Assertion]) -> bool {
-    let mut as_: Vec<String> = a.iter().filter_map(assertion_regex).collect();
-    let mut bs: Vec<String> = b.iter().filter_map(assertion_regex).collect();
+    let rendered = |list: &[Assertion]| {
+        list.iter()
+            .map(crate::print::assertion_text)
+            .collect::<Result<Vec<String>, _>>()
+    };
+    let (Ok(mut as_), Ok(mut bs)) = (rendered(a), rendered(b)) else {
+        return false;
+    };
     as_.sort();
     bs.sort();
     as_ == bs
@@ -221,12 +235,33 @@ fn slot_assertions_equal(a: &[Assertion], b: &[Assertion]) -> bool {
 /// archetype id (a regex body with no meta-characters) that the parent slot does
 /// not admit, the child admits an archetype outside the parent's set — a
 /// widening, not a subset. Returns the first such literal id.
+///
+/// VDSSM is a proper-subset test over the archetype sets the two slot
+/// definitions match (`master04.5` §Validity Rules: `ARCHETYPE_SLOT`), and a
+/// slot's set is the union over its `include` assertions
+/// (`ADL2/master04.3` §Archetype Slots). So each include is judged on its own:
+/// one whose constraint is not a readable archetype-id regex (the
+/// §Slots based on other Constraints form) contributes an unknown share and is
+/// SKIPPED, while the remaining literals are still judged — an unreadable
+/// assertion is undecidable, never a violation. The parent side is all-or-
+/// nothing for the same reason: if any parent `include` is unreadable the
+/// admitted superset is unknown, and an unknown superset can refute nothing.
 fn slot_widens_by_literal(
     child_slot: &ArchetypeSlot,
     parent_slot: &ArchetypeSlot,
 ) -> Option<String> {
+    if parent_slot
+        .includes
+        .iter()
+        .flatten()
+        .any(|a| assertion_regex(a).is_none())
+    {
+        return None;
+    }
     for inc in child_slot.includes.iter().flatten() {
-        let body = assertion_regex(inc)?;
+        let Some(body) = assertion_regex(inc) else {
+            continue; // not an archetype-id regex — its contribution is unknown
+        };
         // Unescape the ADL id-regex `\.` dots; a literal id carries no other
         // regex meta-characters.
         let literal = body.replace("\\.", ".");
@@ -291,13 +326,10 @@ fn assertion_specific_match(a: &Assertion, id: &str) -> bool {
     regex::Regex::new(&re).is_ok_and(|rx| rx.is_match(id))
 }
 
-/// Extract the regex body of a slot assertion's `matches {/re/}` constraint.
+/// Extract the regex body of a slot assertion's `matches {/re/}` constraint,
+/// from the assertion's expression tree.
 fn assertion_regex(a: &Assertion) -> Option<String> {
-    let text = a.string_expression.as_deref()?;
-    let open = text.find('{')?;
-    let close = text.rfind('}')?;
-    let body = text.get(open + 1..close)?.trim();
-    Some(body.trim_matches('/').to_owned())
+    crate::rules::slot_assertion_regex(a).map(str::to_owned)
 }
 
 // ── template / external-reference fillers (VTPL + VARXR) ──────────────────

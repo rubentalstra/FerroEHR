@@ -93,8 +93,8 @@ pub(super) const H_EHR_ID: &str = "openehr-ehr-id";
 /// # Precedence when both forms are supplied
 ///
 /// `Request.md` says "or alternatively" and never states what happens when a
-/// request carries BOTH forms; the released text is silent (ambiguity register
-/// `AMB-59`). Fixed handling:
+/// request carries BOTH forms; the released text is silent, so the handling
+/// below is our own:
 ///
 /// - exactly one form supplied → that value is the scope;
 /// - both supplied naming the SAME EHR → accepted (the request names one EHR,
@@ -229,8 +229,8 @@ fn stable_uuid(bytes: &[u8]) -> Uuid {
 /// SHOULD support at least the following parameters", `Request.md` §Common
 /// Headers and Query Parameters) draws no GET/POST distinction, so the URL
 /// forms are accepted on the POSTs too; released text assigns no precedence,
-/// so a value carried in BOTH places must agree — a conflict is a `400` (the
-/// AMB-59 pattern, register-documented).
+/// so a value carried in BOTH places must agree — a conflict is a `400`, the
+/// same rule the two `ehr_id` carriers follow.
 pub(super) fn merge_body_and_url_i64(
     body: Option<i64>,
     query: Option<&str>,
@@ -262,7 +262,7 @@ pub(super) fn merge_body_and_url_i64(
 /// Merge the body `query_parameters` object with the URL's named
 /// `$parameter` binds (the same named-binding law the GETs follow,
 /// `Request.md` §Query parameters). A parameter carried in BOTH places must
-/// agree — a conflict is a `400` (the AMB-59 pattern, register-documented).
+/// agree — a conflict is a `400`, the same rule the `ehr_id` carriers follow.
 pub(super) fn merge_body_and_url_parameters(
     body: std::collections::BTreeMap<String, serde_json::Value>,
     query: Option<&str>,
@@ -436,7 +436,7 @@ mod tests {
     #[test]
     fn ehr_id_both_forms_agreeing_is_accepted() {
         // Both forms naming the SAME EHR: the request names one EHR, so there
-        // is nothing to arbitrate (register AMB-59).
+        // is nothing to arbitrate.
         let h = headers(&[(H_EHR_ID, "same-ehr")]);
         assert_eq!(
             ehr_id_from_request(Some("same-ehr".to_owned()), &h)
@@ -449,8 +449,8 @@ mod tests {
     #[test]
     fn ehr_id_conflicting_forms_are_bad_request() {
         // Both forms naming DIFFERENT EHRs is self-contradictory → 400
-        // (Requests_and_responses.md §HTTP status codes, row 400). Register
-        // AMB-59 records the spec silence this handling settles.
+        // (Requests_and_responses.md §HTTP status codes, row 400); no released
+        // text assigns a precedence, so this handling is our own.
         let h = headers(&[(H_EHR_ID, "from-header")]);
         let err = ehr_id_from_request(Some("from-query".to_owned()), &h).unwrap_err();
         assert!(matches!(err.0, ApiError::BadRequest(_)), "got {:?}", err.0);
@@ -522,24 +522,12 @@ mod tests {
 
 // ── Query error-status mapping (the QUERY responses enumerate 400/404/408) ─────
 //
-// The status codes for a query are assembled platform-side (`app/ferroehr`,
-// `service/aql_query.rs`) as typed `SmError`s and turned into the ITS-REST
-// status by `crate::overview::error::sm_api_error`; this renderer emits the
-// success `RESULT_SET` (and its `meta`) verbatim. The three query codes:
-//
-// - `ehr_id_does_not_exist` → `404`: a scoped query probes existence
-//   (`aql_query::resolve_ehr_ids`) and raises `SmError::ehr_not_found`
-//   (`CallStatusType::EhrIdDoesNotExist` → `ApiError::NotFound`) for a
-//   well-formed-but-absent EHR id; a malformed UUID stays a `400`
-//   (`SmError::precondition`). (`Request.md` §About the ehr_id parameter.)
-//
-// - query-execution timeout → `408` (`responses/408_Query.yaml`): the executor
-//   bounds the DB execution by the `FERROEHR__QUERY__TIMEOUT_MS` budget and, on
-//   overrun, raises the timeout-tagged `SmError` that `sm_api_error`/
-//   `RestError::into_response` render as `408 Request Timeout`
-//   (`Requests_and_responses.md` §HTTP status codes, row `408`). With the budget
-//   unset, an over-long query trips only the blunt global `TimeoutLayer`.
-//
-// - `meta._executed_aql` (the parameter-substituted query text) is assembled by
-//   `aql_query::substitute_params` into the `RESULT_SET.meta`; this renderer
-//   emits it as-is.
+// The status codes are assembled platform-side as typed `SmError`s and turned
+// into the ITS-REST status by `crate::overview::error::sm_api_error`; this
+// renderer emits the success `RESULT_SET` (and its `meta`, including the
+// parameter-substituted `_executed_aql`) verbatim. `ehr_id_does_not_exist` →
+// `404` for a well-formed-but-absent EHR id, while a malformed UUID stays a
+// `400` (`Request.md` §About the ehr_id parameter).
+// NOTE: a query-execution timeout is `408` (`responses/408_Query.yaml`),
+// bounded by the `FERROEHR__QUERY__TIMEOUT_MS` budget; unset, only the blunt
+// global `TimeoutLayer` applies.

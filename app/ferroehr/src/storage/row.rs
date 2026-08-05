@@ -2,14 +2,14 @@
 //! read row the repository fetches back.
 //!
 //! No openEHR spec governs the physical row layout — this is our own decomposed
-//! node model (`docs/architecture.md` §Storage). The promoted columns and the
+//! node model. The promoted columns and the
 //! nested-set index (`num`/`num_cap`/`parent_num`/`citem_num`) exist to make AQL
 //! CONTAINS an integer interval join, never a JSON walk.
 
 #![expect(
     clippy::disallowed_types,
     reason = "owner-approved 2026-08-03 (#1694 family 1): stored canonical fragments — a typed \
-              round-trip drops forward-compatible keys (docs/VERSIONS.md §Spec version policy)"
+              round-trip drops forward-compatible keys (the openEHR release strategy: minors are compatible supersets)"
 )]
 
 use serde_json::Value;
@@ -61,7 +61,7 @@ pub struct NodeRow {
     /// on a versioned-object root whose leaf is present, `None` elsewhere.
     /// [`crate::storage::node_repo::write_nodes`] converts and writes each into
     /// its promoted column. No openEHR spec governs promoted columns — our own
-    /// storage design (`docs/architecture.md` §Storage).
+    /// storage design.
     pub promoted: Vec<Option<String>>,
 }
 

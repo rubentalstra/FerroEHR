@@ -106,23 +106,13 @@ fn every_adl_file_is_claimed_with_an_outcome() {
         } else if r.contains("validity/legacy_adl_1.4/") {
             if r.contains("FAIL_c_dv_quantity_minimal") {
                 // Adjudicated against the spec text, over the fixture's own
-                // FAIL name, "not accepted" purpose text and `SDINV` tag
-                // (#1465 family 3): the empty `(C_DV_QUANTITY) <>` block IS
-                // grammatical — the domain block's content is dADL
-                // (`ADL1.4/master05-cadl.adoc` §Symbols `V_C_DOMAIN_TYPE`),
-                // the dADL chapter's own grammar admits the empty block
-                // (`ADL1.4/master04-dadl.adoc` §Syntax
-                // `untyped_single_attr_object_block`, first alternative) and
-                // §Empty Sections allows empty sections anywhere — so it
-                // lowers to the open `DV_QUANTITY matches {*}` constraint.
-                // The fixture is stalled reference DATA and never overrides
-                // the chapter's own text; its expectation is reported
-                // upstream rather than honoured. It still REFUSES — the file
-                // also carries no `concept` section, which ADL 1.4 mandates
-                // (`ADL1.4/master08-adl.adoc` §Syntax Specification
-                // `arch_concept`, §Validity VARCN — the same SACO adjudication
-                // as the two concept-less fixtures below) — so the refusal
-                // stands on the spec-grounded defect, not the intended one.
+                // FAIL name and `SDINV` tag: the empty `(C_DV_QUANTITY) <>`
+                // block IS grammatical — the domain block's content is dADL
+                // (`ADL1.4/master05-cadl.adoc` §Symbols `V_C_DOMAIN_TYPE`) and
+                // the dADL grammar admits the empty block. It still REFUSES,
+                // because the file also carries no `concept` section, which
+                // ADL 1.4 mandates (`master08-adl.adoc` §Validity VARCN) — so
+                // the refusal stands on the spec-grounded defect.
                 let err = parse_artefact(&src, Dialect::Adl14)
                     .expect_err("FAIL_c_dv_quantity_minimal still refuses: no concept section");
                 assert!(
@@ -133,17 +123,13 @@ fn every_adl_file_is_claimed_with_an_outcome() {
                 );
             } else if CONCEPT_LESS.iter().any(|f| r.ends_with(f)) {
                 // Adjudicated against the spec text, over the file's own `PASS`
-                // tag: these two vendored fixtures carry NO `concept` section,
-                // which ADL 1.4 does not allow. `ADL1.4/master08-adl.adoc`
-                // §Syntax Specification gives `arch_concept: SYM_CONCEPT
-                // V_LOCAL_TERM_CODE_REF | SYM_CONCEPT error` — no empty
-                // alternative, unlike `arch_specialisation`/`arch_language`/
-                // `arch_description`/`arch_invariant` — and §Validity Rules
-                // VARCN: "The archetype must have an archetype term value in the
-                // concept section." The ADL Workbench that produced the tag is
-                // prior art, not the oracle. Their concept-carrying twins live
-                // in `adl14-cadl/` (see `adl14_cadl_gates.rs`), so the
-                // constructs they exercise keep their accepting coverage.
+                // tag: these two vendored fixtures carry NO `concept` section.
+                // `ADL1.4/master08-adl.adoc` §Syntax Specification gives
+                // `arch_concept: SYM_CONCEPT V_LOCAL_TERM_CODE_REF | SYM_CONCEPT
+                // error` — no empty alternative — and §Validity Rules VARCN:
+                // "The archetype must have an archetype term value in the
+                // concept section." Their concept-carrying twins live in
+                // `adl14-cadl/` (see `adl14_cadl_gates.rs`).
                 let err = parse_artefact(&src, Dialect::Adl14)
                     .err()
                     .unwrap_or_else(|| panic!("{r}: a concept-less 1.4 source must reject"));

@@ -89,13 +89,23 @@ async fn decode_composition_body(
 }
 
 /// Re-type a converted Simplified-Formats body as the RM `COMPOSITION` the
-/// commit seam takes. A conversion that produced something the canonical
-/// reader refuses is a `400` — the same parse class a canonical-JSON body of
-/// that shape would get.
+/// commit seam takes.
+///
+/// The document was already readable AS FLAT/STRUCTURED (conversion
+/// succeeded), so a refusal here is template-mediated content that does not
+/// form a valid resource — the `422` row, never the `400` parse class.
 fn typed_composition(value: &Value) -> Result<Composition, RestError> {
+    // NOTE: a post-conversion strict-reader refusal is the template-mediated
+    // 422 class (master04 §Validation; `responses/422.yaml`).
     openehr_its::json::from_canonical_value(value).map_err(|e| {
-        RestError(ApiError::BadRequest(format!(
-            "the simplified-format body did not convert to a valid COMPOSITION: {e}"
+        let detail = e.to_string();
+        let hint = if detail.contains("invalid type") {
+            " (value does not match the expected data type for the field)"
+        } else {
+            ""
+        };
+        RestError(ApiError::Unprocessable(format!(
+            "the simplified-format body did not convert to a valid COMPOSITION: {detail}{hint}"
         )))
     })
 }
@@ -244,26 +254,17 @@ pub(super) async fn run(
             let body = decode_composition_body(&state, h, &parts.body).await?;
             // A body-supplied COMPOSITION.uid must identify the same
             // versioned object as the path `uid_based_id` — never a silent
-            // write to the path's object. NOTE: the "must match" rule is
-            // grounded by the released OAS operation description (the docs
-            // text is silent), but neither source assigns the rejection a
-            // status; the body is well-formed,
-            // so the fitting released row is 422 ("well-formed but was unable
-            // to be followed due to semantic errors",
-            // Requests_and_responses.md §HTTP status codes) — our register-
-            // documented handling.
+            // write to the path's object.
+            // NOTE: the rule is OAS-grounded (docs text silent) with no
+            // assigned status; the fitting released row is 422
+            // (Requests_and_responses.md §HTTP status codes) — adjudicated.
             if let Some(body_uid) = body.uid.as_ref() {
                 // The versioned object a body `uid` names is its
-                // OBJECT_VERSION_ID `object_id`, read through the BASE
-                // accessor (`base_types` §Functions `object_id`;
-                // `docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.object_version_id.adoc`).
-                // Anything whose object_id is not this CDR's UUID key cannot
-                // name the addressed object, so it fails the comparison — as
-                // does a `uid` of the other `UID_BASED_ID` subtype, which
-                // names no VERSION at all. (A `uid` that is not a well-formed
-                // identifier never reaches here: the identifier types
-                // construct through their validating doors, so a malformed one
-                // is refused at the parse, `400`.)
+                // OBJECT_VERSION_ID `object_id` (BASE `base_types` §Functions
+                // `object_id`). A non-UUID `object_id` cannot name the
+                // addressed object and a HIER_OBJECT_ID names no VERSION —
+                // both fail the comparison; a malformed identifier never gets
+                // here (the validating doors refuse it at parse, `400`).
                 let body_vo = match body_uid {
                     UidBasedId::ObjectVersionId(ovid) => object_id_uuid(ovid),
                     UidBasedId::HierObjectId(_) => None,
@@ -483,25 +484,16 @@ async fn composition_write_response(
         } else {
             crate::formats::dispatch::composition_flat_response(state, repr, &body).await?
         };
-        // The committed-resource version-id headers are representation-
-        // independent: a FLAT/STRUCTURED commit carries the same `ETag`
-        // (new version uid) + `Location` as the canonical path. RFC 7231
+        // Version-id headers are representation-independent: RFC 7231
         // §6.3.2 requires `Location` on a `201` regardless of body form, and
-        // the ITS-REST response definitions declare both headers on every
-        // COMPOSITION commit (`docs/specs/openehr/ITS-REST/specifications/
-        // responses/201_COMPOSITION.yaml` + `200_COMPOSITION_updated.yaml`
-        // — `ETag`/`Location` unconditional;
-        // `specifications/docs/overview/Requests_and_responses.md` §Prefer).
-        // Route through the same header helper the canonical write uses, as
-        // the CONTRIBUTION simplified-commit path already does.
+        // the ITS-REST response definitions declare `ETag` + `Location` on
+        // every COMPOSITION commit (`responses/201_COMPOSITION.yaml`,
+        // `200_COMPOSITION_updated.yaml`; overview `Requests_and_responses.md`
+        // §Prefer) — routed through the canonical write path's header helper.
         negotiate::set_resource_headers(&mut out, base, Some("composition"), &meta);
-        // NOTE: a Simplified-Formats commit always answers with the committed
-        // COMPOSITION in the negotiated FLAT/STRUCTURED form — the `Accept`
-        // decides the body here, not `Prefer` — so the preference this
-        // response applies is `return=representation` whatever the client
-        // asked for. `Preference-Applied` states what the response DID
-        // (`Requests_and_responses.md` §Representation details negotiation),
-        // so it is declared through the same seam as every other write path.
+        // NOTE: a Simplified-Formats commit always returns the committed body
+        // in the negotiated form (`Accept` decides, not `Prefer`), so the
+        // applied preference is representation (§Representation details negotiation).
         negotiate::set_preference_applied(&mut out, AppliedPreference::Representation);
         return Ok(out);
     }

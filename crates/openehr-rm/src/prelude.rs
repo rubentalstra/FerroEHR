@@ -118,7 +118,6 @@ pub use crate::demographic::party_relationship::PartyRelationship;
 pub use crate::demographic::person::Person;
 pub use crate::demographic::role::Role;
 pub use crate::demographic::versioned_party::VersionedParty;
-pub use crate::ehr::access_control_settings::AccessControlSettings;
 pub use crate::ehr::ehr::Ehr;
 pub use crate::ehr::ehr_access::EhrAccess;
 pub use crate::ehr::ehr_status::EhrStatus;

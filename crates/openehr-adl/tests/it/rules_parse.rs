@@ -15,6 +15,7 @@ use openehr_am::am24::aom2::rules::expr_constraint::ExprConstraint;
 use openehr_am::am24::beom::core::expr_value_ref::ExprValueRef;
 use openehr_am::am24::beom::core::expression::Expression;
 use openehr_am::am24::beom::core::statement::Statement;
+use openehr_lang::beom::types::expr_type_def::ExprTypeDef;
 
 fn only_assertion(body: &str) -> Expression {
     let set = parse_rules_body(body).unwrap_or_else(|e| panic!("parse {body:?}: {e:?}"));
@@ -163,6 +164,131 @@ fn slot_assertion_block_splits_multiple_assertions() {
 }
 
 #[test]
+fn slot_assertion_string_form_is_rendered_per_assertion() {
+    // `ASSERTION.string_expression` is the "String form of expression"
+    // (`LANG/docs/BEL/master04-expression_object_model.adoc` §Core Package) —
+    // each assertion of a multi-assertion block carries ITS OWN form, rendered
+    // from its own tree, never the whole block's source text.
+    let text = "archetype_id/value matches {/openEHR-EHR-OBSERVATION\\.a\\.v1/}\n\
+                archetype_id/value matches {/openEHR-EHR-OBSERVATION\\.b\\.v1/}";
+    let assertions = parse_slot_assertions(text).unwrap_or_else(|e| panic!("slot parse: {e:?}"));
+    assert_eq!(
+        assertions
+            .iter()
+            .map(|a| a.string_expression.clone().unwrap_or_default())
+            .collect::<Vec<_>>(),
+        vec![
+            "archetype_id/value matches {/openEHR-EHR-OBSERVATION\\.a\\.v1/}".to_owned(),
+            "archetype_id/value matches {/openEHR-EHR-OBSERVATION\\.b\\.v1/}".to_owned(),
+        ]
+    );
+}
+
+#[test]
+fn symbolic_matches_renders_from_the_tree_in_its_keyword_form() {
+    // `ADL2/master04.3` §Slots based on Lexical Archetype Identifiers writes
+    // the operator symbolically (`archetype_id/value ∈ {/…/}`); the operator
+    // is one node either way, so the rendered string form is the keyword
+    // spelling the printer emits everywhere else.
+    let assertions = parse_slot_assertions("archetype_id/value \u{2208} {/.*/}")
+        .unwrap_or_else(|e| panic!("slot parse: {e:?}"));
+    let a = &assertions[0];
+    assert_eq!(binop(&a.expression).0, "matches");
+    assert_eq!(
+        a.string_expression.as_deref(),
+        Some("archetype_id/value matches {/.*/}")
+    );
+}
+
+#[test]
+fn slot_assertion_prints_from_the_tree_not_the_string_form() {
+    // The printer reads `ASSERTION.expression` (the "Root of expression
+    // tree"), so an assertion whose string form is absent still renders.
+    let text = "archetype_id/value matches {/openEHR-EHR-CLUSTER\\.device\\.v1/}";
+    let mut assertions = parse_slot_assertions(text).unwrap_or_else(|e| panic!("slot: {e:?}"));
+    assertions[0].string_expression = None;
+    assert_eq!(
+        openehr_adl::print::assertion_text(&assertions[0]).expect("render the assertion"),
+        text
+    );
+}
+
+#[test]
+fn slot_assertion_accessors_read_the_expression_tree() {
+    // The path and regex a slot constrains come from the tree, not from a
+    // scan of the string form (`master04.3` §Slots based on Lexical Archetype
+    // Identifiers).
+    let mut assertions =
+        parse_slot_assertions("archetype_id/value matches {/openEHR-EHR-CLUSTER\\..*\\.v1/}")
+            .unwrap_or_else(|e| panic!("slot: {e:?}"));
+    assertions[0].string_expression = None;
+    assert_eq!(
+        openehr_adl::rules::slot_assertion_path(&assertions[0]),
+        Some("archetype_id/value")
+    );
+    assert_eq!(
+        openehr_adl::rules::slot_assertion_regex(&assertions[0]),
+        Some("openEHR-EHR-CLUSTER\\..*\\.v1")
+    );
+
+    // A non-`matches` assertion constrains no archetype-id regex.
+    let existence = parse_rules_body("exists /items[id2]").expect("parse");
+    let Statement::Assertion(a) = existence.statement.into_iter().flatten().next().unwrap() else {
+        panic!("expected an assertion");
+    };
+    assert_eq!(openehr_adl::rules::slot_assertion_path(&a), None);
+    assert_eq!(openehr_adl::rules::slot_assertion_regex(&a), None);
+}
+
+#[test]
+fn statement_string_form_drops_only_the_outermost_parentheses() {
+    // A statement's outermost operator needs no parentheses of its own; every
+    // operand keeps them, so the form re-parses to the identical tree
+    // whatever the precedence.
+    let set = parse_rules_body("score: /data[id3]/x = /data[id3]/a + /data[id3]/b").expect("parse");
+    let Statement::Assertion(a) = set.statement.into_iter().flatten().next().unwrap() else {
+        panic!("expected an assertion");
+    };
+    let text = openehr_adl::print::assertion_text(&a).expect("render the assertion");
+    assert_eq!(
+        text, "score: /data[id3]/x = (/data[id3]/a + /data[id3]/b)",
+        "the tag and the parenthesized operands are kept"
+    );
+    // Re-parsing the rendered form yields the same tree.
+    let again = parse_rules_body(&text).expect("re-parse");
+    let Statement::Assertion(b) = again.statement.into_iter().flatten().next().unwrap() else {
+        panic!("expected an assertion");
+    };
+    assert_eq!(a.expression, b.expression);
+    assert_eq!(a.tag, b.tag);
+}
+
+#[test]
+fn declared_variable_type_is_recovered_by_a_later_reference() {
+    // `LANG/docs/BEL/master03-language.adoc` §Typing: a declared variable's
+    // type belongs to the declaration; a later `$name` reference carries the
+    // declared `VARIABLE_DECLARATION`, not a type named after the variable.
+    let set = parse_rules_body("$sys : Quantity\n$sys > 3").expect("parse");
+    let statements: Vec<Statement> = set.statement.into_iter().flatten().collect();
+    assert_eq!(statements.len(), 2);
+    let Statement::Assertion(a) = &statements[1] else {
+        panic!("expected the assertion, got {:?}", statements[1]);
+    };
+    let (op, lhs, _) = binop(&a.expression);
+    assert_eq!(op, "gt");
+    match lhs {
+        Expression::ExprVariableRef(v) => {
+            assert_eq!(v.item.name, "sys");
+            match &v.item.r#type {
+                ExprTypeDef::TypeDefObjectRef(r) => assert_eq!(r.type_name, "Quantity"),
+                other => panic!("expected an object-reference type def, got {other:?}"),
+            }
+        }
+        other => panic!("expected EXPR_VARIABLE_REF, got {other:?}"),
+    }
+}
+
+#[test]
 fn invalid_rule_expression_is_typed_error() {
     // An unparsable rule expression surfaces a typed error, never a panic.
     let err = parse_rules_body("exists").unwrap_err();
@@ -228,4 +354,109 @@ fn archetype_ref_item_resolves_to_target_node() {
         }
         other => panic!("expected a resolved C_COMPLEX_OBJECT, got {other:?}"),
     }
+}
+
+#[test]
+fn external_query_assignment_is_refused_by_the_printer() {
+    // NOTE: neither `LANG/docs/BEL/masterAppA-syntax.adoc` nor
+    // `AM/docs/ADL2/masterAppB-syntax_spec.adoc` has an EXTERNAL_QUERY
+    // production, so the printer refuses it rather than invent syntax.
+    use openehr_adl::assemble::parse_artefact;
+    use openehr_adl::print::{PrintError, print};
+    use openehr_am::am24::aom2::archetype::archetype::Archetype;
+    use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
+    use openehr_am::am24::beom::core::assignment::Assignment;
+    use openehr_am::am24::beom::core::expr_value::ExprValue;
+    use openehr_am::am24::beom::core::statement_set::StatementSet;
+    use openehr_lang::beom::core::external_query::ExternalQuery;
+
+    let src = "archetype (adl_version=2.0.5; rm_release=1.0.2)\n\
+        \topenEHR-EHR-CLUSTER.external_query.v1.0.0\n\n\
+        language\n\toriginal_language = <[ISO_639-1::en]>\n\n\
+        description\n\tlifecycle_state = <\"draft\">\n\n\
+        definition\n\tCLUSTER[id1] matches {*}\n\n\
+        terminology\n\tterm_definitions = <\n\t\t[\"en\"] = <\n\t\t\t[\"id1\"] = <text=<\"\"> description=<\"\">>\n\t\t>\n\t>\n";
+    let mut art = parse_artefact(src, Dialect::Adl2).unwrap_or_else(|e| panic!("parse: {e:?}"));
+    print(&art).expect("the artefact prints before the EXTERNAL_QUERY is injected");
+
+    // The target declaration comes from the parser, so only the assignment's
+    // source is hand-built.
+    let declaration = parse_rules_body("$dob : Date").expect("parse the declaration");
+    let Some(Statement::VariableDeclaration(target)) =
+        declaration.statement.and_then(|s| s.into_iter().next())
+    else {
+        panic!("expected a variable declaration");
+    };
+    let external = StatementSet {
+        name: None,
+        statement: Some(vec![Statement::Assignment(Assignment {
+            target,
+            source: ExprValue::ExternalQuery(ExternalQuery {
+                context: "patient".to_owned(),
+                query_id: "date_of_birth".to_owned(),
+                query_args: None,
+            }),
+        })]),
+    };
+    match &mut art {
+        Archetype::AuthoredArchetype(inner) => match inner.as_mut() {
+            AuthoredArchetype::AuthoredArchetype(d) => d.rules = Some(vec![external]),
+            other => panic!("expected an authored archetype, got {other:?}"),
+        },
+        Archetype::TemplateOverlay(_) => panic!("expected an authored archetype, got an overlay"),
+    }
+
+    assert_eq!(
+        print(&art).expect_err("EXTERNAL_QUERY has no ADL surface syntax"),
+        PrintError::ExternalQuery {
+            target: "dob".to_owned()
+        },
+    );
+}
+
+#[test]
+fn nameless_function_call_is_refused_by_the_printer() {
+    // NOTE: the BEL function-call production requires an identifier name
+    // (`LANG/docs/BEL/masterAppA-syntax.adoc`); a leaf `item` (`Any`, beom
+    // `EXPR_LEAF`) with no string name has no spelling, so the printer refuses.
+    use openehr_adl::print::{PrintError, assertion_text};
+    use openehr_am::am24::beom::core::assertion::Assertion;
+    use openehr_am::am24::beom::core::expr_function_call::ExprFunctionCall;
+    use openehr_am::am24::beom::core::expression::Expression;
+
+    let assertion = Assertion {
+        tag: None,
+        string_expression: None,
+        expression: Box::new(Expression::ExprFunctionCall(ExprFunctionCall {
+            item: None,
+            arguments: None,
+        })),
+    };
+    assert_eq!(
+        assertion_text(&assertion).expect_err("a nameless function call has no ADL spelling"),
+        PrintError::NamelessFunctionCall,
+    );
+}
+
+#[test]
+fn pathless_value_ref_is_refused_by_the_printer() {
+    // NOTE: the BEL value-reference production requires a path
+    // (`LANG/docs/BEL/masterAppA-syntax.adoc`); a leaf `item` (`Any`, beom
+    // `EXPR_LEAF`) with no string path has no spelling, so the printer refuses.
+    use openehr_adl::print::{PrintError, assertion_text};
+    use openehr_am::am24::beom::core::assertion::Assertion;
+    use openehr_am::am24::beom::core::expr_value_ref::{ExprValueRef, ExprValueRefData};
+    use openehr_am::am24::beom::core::expression::Expression;
+
+    let assertion = Assertion {
+        tag: None,
+        string_expression: None,
+        expression: Box::new(Expression::ExprValueRef(ExprValueRef::ExprValueRef(
+            ExprValueRefData { item: None },
+        ))),
+    };
+    assert_eq!(
+        assertion_text(&assertion).expect_err("a pathless value reference has no ADL spelling"),
+        PrintError::PathlessValueRef,
+    );
 }

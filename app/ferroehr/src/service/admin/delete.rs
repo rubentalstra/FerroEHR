@@ -10,10 +10,14 @@
 //! baseline count. No openEHR spec governs the cascade SQL / FK graph — our own
 //! design over the greenfield schema (`0001_baseline.sql`).
 
-#![expect(
-    clippy::disallowed_types,
-    reason = "owner-approved 2026-08-03 (#1694 family 3): EHR-Extract/TDD/dump-load compose over \
-              verbatim stored content (RM common master06 §Copying)"
+#![cfg_attr(
+    feature = "multimedia",
+    expect(
+        clippy::disallowed_types,
+        reason = "owner-approved 2026-08-03 (#1694 family 3): EHR-Extract/TDD/dump-load compose \
+                  over verbatim stored content (RM common master06 §Copying); the Value sites \
+                  are multimedia-gated, so the expectation exists only where it is fulfilled"
+    )
 )]
 
 use uuid::Uuid;
@@ -122,10 +126,13 @@ impl FerroEhrService {
                 format!("template {template_id}"),
             ));
         };
-        // Physical deletes never orphan clinical data (docs/architecture.md
-        // §Storage — no openEHR spec governs the FK graph, our own design).
+        // Physical deletes never orphan clinical data (no openEHR spec
+        // governs the FK graph — our own design).
+        // Counted over BOTH storage tiers: the cold archival mirror is
+        // foreign-key-free, so an archived composition's reference is invisible
+        // to the `template_ref` FK and would be orphaned silently.
         let refs: i64 =
-            sqlx::query_scalar("SELECT count(*) FROM vo_version WHERE template_id = $1")
+            sqlx::query_scalar("SELECT count(*) FROM vo_version_all WHERE template_id = $1")
                 .bind(&stored)
                 .fetch_one(&mut *tx)
                 .await?;
@@ -206,15 +213,21 @@ impl FerroEhrService {
         let mut tx = self.pool.begin().await?;
 
         // Capture the audit ids the EHR's versions and contributions reference,
-        // before the cascade deletes those referencing rows.
+        // before the cascade deletes those referencing rows. Read over BOTH
+        // storage tiers: an archived version still holds its audit row.
         let audit_ids: Vec<Uuid> = sqlx::query_scalar(
-            "SELECT audit_id FROM vo_version WHERE ehr_id = $1 \
+            "SELECT audit_id FROM vo_version_all WHERE ehr_id = $1 \
              UNION \
              SELECT audit_id FROM contribution WHERE ehr_id = $1",
         )
         .bind(ehr_id)
         .fetch_all(&mut *tx)
         .await?;
+
+        // The cold archival tier is foreign-key-free by design, so no cascade
+        // reaches it — the EHR's archived rows and their markers are removed
+        // explicitly (`crate::storage::version_repo::tier`).
+        crate::storage::version_repo::tier::purge_ehrs(&mut tx, &[ehr_id]).await?;
 
         // Delete the EHR — cascades vo_version (→ node), contribution, item_tag.
         let deleted = sqlx::query("DELETE FROM ehr WHERE id = $1")
@@ -279,13 +292,14 @@ impl FerroEhrService {
             let candidate_blobs = self.collect_blob_keys_for(chunk).await?;
             let mut tx = self.pool.begin().await?;
             let audit_ids: Vec<Uuid> = sqlx::query_scalar(
-                "SELECT audit_id FROM vo_version WHERE ehr_id = ANY($1) \
+                "SELECT audit_id FROM vo_version_all WHERE ehr_id = ANY($1) \
                  UNION \
                  SELECT audit_id FROM contribution WHERE ehr_id = ANY($1)",
             )
             .bind(chunk)
             .fetch_all(&mut *tx)
             .await?;
+            crate::storage::version_repo::tier::purge_ehrs(&mut tx, chunk).await?;
             let removed: Vec<Uuid> =
                 sqlx::query_scalar("DELETE FROM ehr WHERE id = ANY($1) RETURNING id")
                     .bind(chunk)
@@ -313,12 +327,13 @@ impl FerroEhrService {
     /// The distinct externalized-blob keys referenced by a SET of EHRs' nodes
     /// (empty when externalization is disabled) — one read for the whole
     /// chunk. Our own extension — no openEHR spec governs multimedia offload.
+    #[cfg(feature = "multimedia")]
     async fn collect_blob_keys_for(&self, ehr_ids: &[EhrId]) -> Result<Vec<String>, ServiceError> {
         let Some(engine) = &self.multimedia else {
             return Ok(Vec::new());
         };
         let datas: Vec<serde_json::Value> =
-            sqlx::query_scalar("SELECT data FROM node WHERE ehr_id = ANY($1)")
+            sqlx::query_scalar("SELECT data FROM node_all WHERE ehr_id = ANY($1)")
                 .bind(ehr_ids)
                 .fetch_all(&self.pool)
                 .await?;
@@ -331,15 +346,27 @@ impl FerroEhrService {
         Ok(keys)
     }
 
+    /// The slim twin: externalization is compiled out, so no stored node
+    /// references a blob and the key set is empty by construction.
+    #[cfg(not(feature = "multimedia"))]
+    #[expect(
+        clippy::unused_async,
+        reason = "the multimedia twin awaits; callers await unconditionally"
+    )]
+    async fn collect_blob_keys_for(&self, _ehr_ids: &[EhrId]) -> Result<Vec<String>, ServiceError> {
+        Ok(Vec::new())
+    }
+
     /// Collect the distinct externalized-blob keys referenced by an EHR's stored
     /// nodes (empty when externalization is disabled). Read-only, on the pool.
     /// Our own extension — no openEHR spec governs multimedia offload.
+    #[cfg(feature = "multimedia")]
     async fn collect_ehr_blob_keys(&self, ehr_id: EhrId) -> Result<Vec<String>, ServiceError> {
         let Some(engine) = &self.multimedia else {
             return Ok(Vec::new());
         };
         let datas: Vec<serde_json::Value> =
-            sqlx::query_scalar("SELECT data FROM node WHERE ehr_id = $1")
+            sqlx::query_scalar("SELECT data FROM node_all WHERE ehr_id = $1")
                 .bind(ehr_id)
                 .fetch_all(&self.pool)
                 .await?;
@@ -352,6 +379,17 @@ impl FerroEhrService {
         Ok(keys)
     }
 
+    /// The slim twin: externalization is compiled out, so the key set is empty
+    /// by construction.
+    #[cfg(not(feature = "multimedia"))]
+    #[expect(
+        clippy::unused_async,
+        reason = "the multimedia twin awaits; callers await unconditionally"
+    )]
+    async fn collect_ehr_blob_keys(&self, _ehr_id: EhrId) -> Result<Vec<String>, ServiceError> {
+        Ok(Vec::new())
+    }
+
     /// Delete each candidate blob no longer referenced by any surviving `node`.
     /// Our own extension — no openEHR spec governs multimedia offload. A
     /// conservative scan-based GC (a `blob_ref` count table is a scale
@@ -361,6 +399,7 @@ impl FerroEhrService {
     /// The reference check is ONE pass over `node` for the whole candidate
     /// set (the still-referenced keys fall out of a single scan joined
     /// against the candidate array), never a scan per blob.
+    #[cfg(feature = "multimedia")]
     async fn gc_unreferenced_blobs(&self, candidates: Vec<String>) {
         let Some(engine) = &self.multimedia else {
             return;
@@ -373,7 +412,7 @@ impl FerroEhrService {
             .map(|hex| engine.store().uri_for(hex))
             .collect();
         let still_referenced: Vec<String> = match sqlx::query_scalar(
-            "SELECT DISTINCT k.uri FROM node n \
+            "SELECT DISTINCT k.uri FROM node_all n \
              JOIN unnest($1::text[]) AS k(uri) ON position(k.uri in n.data::text) > 0",
         )
         .bind(&uris)
@@ -396,6 +435,15 @@ impl FerroEhrService {
         }
     }
 
+    /// The slim twin: externalization is compiled out, so no blob can exist to
+    /// collect.
+    #[cfg(not(feature = "multimedia"))]
+    #[expect(
+        clippy::unused_async,
+        reason = "the multimedia twin awaits; callers await unconditionally"
+    )]
+    async fn gc_unreferenced_blobs(&self, _candidates: Vec<String>) {}
+
     /// `physical_party_delete` (`i_admin_service.adoc`): physically delete a
     /// PARTY "along with related Party relationships", in one transaction —
     /// mirroring [`Self::delete_ehr`]'s capture-then-cascade approach.
@@ -413,12 +461,14 @@ impl FerroEhrService {
     async fn physical_delete_party(&self, party_id: VoId) -> Result<(), ServiceError> {
         let mut tx = self.pool.begin().await?;
 
-        // The target must be a demographic PARTY (ehr-less; any version exists).
-        let kind: Option<String> =
-            sqlx::query_scalar("SELECT kind FROM vo_version WHERE vo_id = $1 AND ehr_id IS NULL")
-                .bind(party_id)
-                .fetch_optional(&mut *tx)
-                .await?;
+        // The target must be a demographic PARTY (ehr-less; any version exists),
+        // in either storage tier — an archived party is still deletable.
+        let kind: Option<String> = sqlx::query_scalar(
+            "SELECT kind FROM vo_version_all WHERE vo_id = $1 AND ehr_id IS NULL LIMIT 1",
+        )
+        .bind(party_id)
+        .fetch_optional(&mut *tx)
+        .await?;
         if !kind.as_deref().is_some_and(super::is_party_kind) {
             // `party_id_does_not_exist` → NotFound (→ 404). Rolls back cleanly.
             return Err(ServiceError::sm(
@@ -434,8 +484,8 @@ impl FerroEhrService {
         // versioned-object id — is matched with a jsonb path extraction.
         let party_txt = party_id.to_string();
         let rel_ids: Vec<VoId> = sqlx::query_scalar(
-            "SELECT DISTINCT n.vo_id FROM node n \
-             JOIN vo_version v ON v.vo_id = n.vo_id AND v.sys_version = n.sys_version \
+            "SELECT DISTINCT n.vo_id FROM node_all n \
+             JOIN vo_version_all v ON v.vo_id = n.vo_id AND v.sys_version = n.sys_version \
              WHERE v.kind = 'PARTY_RELATIONSHIP' \
                AND (n.data #>> '{source,id,value}' = $1 OR n.data #>> '{target,id,value}' = $1)",
         )
@@ -449,15 +499,15 @@ impl FerroEhrService {
         // Capture the CONTRIBUTION + audit ids these VOs reference before the
         // vo_version delete cascades their node/attestation rows away.
         let contribution_ids: Vec<Uuid> = sqlx::query_scalar(
-            "SELECT contribution_id FROM vo_version WHERE vo_id = ANY($1) \
+            "SELECT contribution_id FROM vo_version_all WHERE vo_id = ANY($1) \
              UNION \
-             SELECT contribution_id FROM vo_attestation WHERE vo_id = ANY($1)",
+             SELECT contribution_id FROM vo_attestation_all WHERE vo_id = ANY($1)",
         )
         .bind(&vo_ids)
         .fetch_all(&mut *tx)
         .await?;
         let audit_ids: Vec<Uuid> = sqlx::query_scalar(
-            "SELECT audit_id FROM vo_version WHERE vo_id = ANY($1) \
+            "SELECT audit_id FROM vo_version_all WHERE vo_id = ANY($1) \
              UNION \
              SELECT audit_id FROM contribution WHERE id = ANY($2)",
         )
@@ -466,7 +516,10 @@ impl FerroEhrService {
         .fetch_all(&mut *tx)
         .await?;
 
-        // Delete the versioned objects — cascades node + vo_attestation.
+        // Delete the versioned objects — cascades node + vo_attestation. The
+        // cold archival tier is foreign-key-free by design, so its rows and the
+        // archive markers go explicitly (`crate::storage::version_repo::tier`).
+        crate::storage::version_repo::tier::purge_vos(&mut tx, &vo_ids).await?;
         sqlx::query("DELETE FROM vo_version WHERE vo_id = ANY($1)")
             .bind(&vo_ids)
             .execute(&mut *tx)

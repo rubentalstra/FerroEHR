@@ -15,6 +15,194 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- Archiving an EHR or a party (`POST /admin/archive/ehrs`,
+  `POST /admin/archive/parties`) now **physically moves** the archived
+  objects' rows out of the primary storage tables into a cold storage tier
+  held in the same database (a new `cold` schema, added by migration
+  `0007_cold_archive_tier`), instead of only flagging them. The primary
+  tables — and their indexes — shrink by exactly what was archived, while
+  the wire is unchanged: an archived EHR, composition, folder or party is
+  still retrievable, still carries its full revision history, and is served
+  from the cold tier; unarchived reads are untouched and never consult it.
+  Writing to an archived object brings it back automatically, a physical
+  delete clears both tiers, and an admin export still dumps archived
+  content. Multi-tenant isolation is enforced on the new tier by the same
+  row-level-security policy as the primary tables.
+- **`ferroehr-ext` — the optional-integration crate.** The FHIR conversion
+  core (mapping model + FLAT builder, outbound reverse-map, feeder-audit
+  probe), the events transport (the `EventPublisher` seam, the AMQP
+  publisher, the routing-key grammar), and the multimedia engine
+  (content-addressed S3-compatible blob store + offload/expand transforms)
+  now live in their own crate behind one additive cargo feature each
+  (`fhir`, `events`, `multimedia`). Default builds are unchanged (all
+  features on, wire-identical); a `--no-default-features` build produces a
+  slim CDR that compiles the integrations out entirely and refuses an
+  enabled-but-unbuilt integration loudly at boot. Configuration sections
+  are unchanged and stay in the one config tree.
+- **The typed FHIR R4B surface.** The ATNA `AuditEvent` the audit trail
+  stores and forwards, and the `Parameters`/`ValueSet` responses an external
+  terminology server answers with, are now built and read through a typed
+  FHIR R4B resource model (`fhir-model`, contained entirely in the
+  optional-integration crate behind its `fhir` feature) instead of
+  hand-written partial structs. The audit wire bytes are unchanged. The
+  terminology client is correspondingly stricter: a server response that is
+  not a valid R4B resource — for example a `$expand` result missing the
+  required `ValueSet.status` or `expansion.timestamp` — is now reported as an
+  upstream fault instead of being partially read, and its response cache
+  holds decoded results rather than raw JSON. A binary built with
+  `--no-default-features` refuses at startup when `audit.store`,
+  `audit.fhir_feed`, or an external terminology provider is configured; the
+  DICOM/syslog audit feed and the in-process terminology bundle stay
+  available.
+- The OPT 1.4 constraints that target computed RM functions (`EVENT.offset`,
+  `DV_PROPORTION.is_integral`, the US-spelled `null_flavor`) are now
+  visible as a typed per-template report of unenforceable constraints
+  instead of a silent skip; nothing new is rejected.
+- The BMM v3 model gains MODEL-level navigation (`type_conforms_to`,
+  ancestor walks, flattened property lookup) and generic-substituted
+  property synthesis per the LANG generic-inheritance semantics; a new
+  P_BMM schema-validity pass reports duplicate package listings,
+  case-folded class-name collisions, and non-conformant property
+  redefinitions with spec citations.
+- The Expression Language has a native parser (hand-written over the
+  vendored normative EL grammars): BMM_ASSERTION class invariants and
+  routine pre/post-conditions in the BMM v3 model now parse into the
+  published EL expression classes, with unparseable published-schema
+  invariant strings collected as typed findings (319 of 400 pinned-schema
+  strings parse; the remainder are Eiffel-flavoured forms the normative
+  grammar does not admit, reported upstream).
+- ADL rules and slot assertions are now modeled as full expression trees
+  (the BEL expression object model), with the string form derived from the
+  tree. Printed ADL 2 output changes minimally where the old form was
+  wrong: each assertion in a multi-assertion block carries its own string
+  form (previously the whole block repeated), `include`/`exclude` emit
+  their keyword once per list per the grammar, a symbolic `∈` prints as
+  `matches` (one operator in the model), and an archetype-id constraint's
+  `; "assumed"` value is no longer dropped.
+
+### Changed
+
+- **The `openehr-adl` serializer seam is fallible.**
+  `openehr_adl::print::print` and `openehr_adl::print::assertion_text` now
+  return `Result<String, openehr_adl::print::PrintError>`. An in-memory
+  archetype whose `rules` assign an `EXTERNAL_QUERY` is refused instead of
+  serialized with the assignment's right-hand side silently empty: no
+  released grammar spells `EXTERNAL_QUERY`, so no rendering of it could be
+  valid ADL. The same refusal now covers a function-call expression node
+  carrying no string name and a value-reference node carrying no string
+  path — the two remaining shapes the printer used to render as empty
+  text. Printed text for every other artefact is byte-identical.
+- Served OpenAPI descriptions no longer reference the internal conformance
+  register ("register-documented …"); each affected description states its
+  adjudicated handling with the released citation it already carried. Wire
+  behaviour is unchanged.
+- The documentation site's comparison chapter (and every page that echoed
+  it) no longer frames EHRbase as "upstream": FerroEHR and EHRbase are
+  presented as two independent open-source openEHR CDRs measured by the same
+  neutral instrument. The rendered comparison charts and generated tables
+  carry the new labeling; provenance and licensing statements are unchanged.
+
+### Removed
+
+- **BREAKING:** the deprecated `auth.admin_scope` configuration key is
+  retired. The management surface's `AdminOnly` access level now gates on
+  the RBAC admin role (`authz.rbac.admin_role`, default `ADMIN`) — the same
+  gate every Admin-class API operation already uses. Deployments that
+  disabled RBAC keep the previous behaviour (any authenticated caller
+  passes `AdminOnly`); deployments that set `admin_scope` should grant the
+  admin role instead (a JWT `scope` entry naming the role continues to
+  surface as that role via scope→role extraction).
+
+### Fixed
+
+- A CONTRIBUTION commit whose version `data` cannot be converted to its RM
+  resource — an empty mandatory `1..*` container, a missing mandatory
+  attribute — is now refused as `400 Bad Request`, exactly as the same bytes
+  are refused on every direct commit route, instead of `422`. The commit
+  seam runs the same strict canonical-JSON door the direct routes run
+  (the released `responses/422.yaml` scopes 422 to content that "could be
+  converted to a resource"); demographic party and party-relationship
+  bodies take the same correction. Incomplete (`553`) commits keep their
+  master06 relaxation.
+- `EHR_ACCESS.settings` now constructs typed: the spec leaves
+  `ACCESS_CONTROL_SETTINGS` open for scheme-defined subtypes, and the
+  generated model carries such an instance verbatim through a validated
+  open-subtype carrier instead of refusing every legal scheme instance.
+  Canonical JSON round-trips a scheme instance byte-identically; canonical
+  XML — which defines no mapping for scheme members — refuses one honestly
+  instead of dropping content.
+- **Commits into an OPT 1.4 archetype slot are now checked against the slot's
+  allowed archetypes.** The slot's `include`/`exclude` archetype-id patterns
+  were read only from each assertion's optional `string_expression` string,
+  which most operational templates do not emit — so for those templates the
+  slot admitted any archetype of the right RM type, and a composition
+  carrying a filler the template never allowed was accepted. The patterns are
+  now read from the assertion's expression tree (the constraint itself), with
+  the string form used only as a fallback, so slot fillers are validated
+  against what the template actually constrains. Templates whose assertions
+  did carry the string form behave exactly as before, and a slot whose
+  assertion constrains something other than the archetype id stays open as
+  before rather than being narrowed by a pattern that does not apply to it.
+- **Uploaded OPT 1.4 templates no longer lose their archetype-slot
+  constraints.** The XML codec discarded the content of every element the
+  schemas declare as `xs:anyType`, which on an operational template is the
+  `EXPR_LEAF.item` carrying each slot assertion's archetype-id regex and its
+  left-hand attribute path — so every OPT 1.4 slot constraint read back
+  empty. Such an element is now kept verbatim (attributes, text and child
+  elements) and re-serialized unchanged, so slot patterns survive a
+  template round-trip and the OPT-to-ADL2 conversion and template-validation
+  paths that read them now see the real payload. Canonical RM XML is
+  unaffected.
+- **A served Web Template (`application/openehr.wt+json`) no longer reports a
+  field as mandatory when the template leaves it optional.** A node's `min`
+  was taken from the constraint's `occurrences` alone, ignoring the owning
+  single-valued attribute's `existence`; the two are orthogonal, and for a
+  single-valued attribute existence is what governs presence. So an optional
+  attribute carrying a `1..1`-occurrences constraint — for example
+  `ISM_TRANSITION/careflow_step`, which openEHR declares optional — was
+  published as `min: 1`. `min` is now the lower of the two. Container
+  attributes, node `max`, and commit-time validation are unchanged.
+- **ADL2 slot-narrowing validation (VDSSM) no longer stops at the first
+  include it cannot read.** A specialised `ARCHETYPE_SLOT` whose `include`
+  list mixes archetype-id regexes with constraint-based assertions was
+  skipped entirely, so a genuinely widening literal after such an assertion
+  went unreported. Each `include` is now judged on its own — an unreadable
+  one is skipped, the rest are still checked. Symmetrically, no widening is
+  claimed when the PARENT slot's admitted set is itself unreadable, and a
+  restatement is now judged over all assertions rather than the regex ones
+  alone, so neither case invents a prohibition.
+- **Flattening a specialised archetype no longer drops an inherited tuple
+  constraint.** A child node's `[a, b]` attribute-tuple wholly replaced the
+  flat parent's tuple set, so a parent tuple over a disjoint attribute group
+  silently vanished from the flat form (and from every operational template
+  and Web Template built from it). Tuple overlay now merges by
+  member-attribute group: a child tuple redefines the parent tuple over the
+  same group, tuples over other groups are inherited, and a group the parent
+  does not carry is added.
+- **A ROLE carrying an empty `capabilities` list (and a party carrying an
+  empty `relationships` list) is now refused at parse (`400`)** — the RM
+  invariants `Capabilities_valid`/`Relationships_validity` forbid
+  present-but-empty; the generated model now emits these optional lists as
+  `Option<NonEmptyVec<…>>` (the emitter's invariant matcher learned the
+  BMM's `.empty` spelling and conjunction form), so a lenient acceptance is
+  unrepresentable.
+- **Template-mediated Simplified-Format commit failures now answer `422`
+  instead of `400`**: a missing mandatory ctx field (`language`/`territory`),
+  a `|code` outside a closed value set with no `|value`, a datatype mismatch,
+  or any other post-conversion validation failure of a body that was readable
+  as FLAT/STRUCTURED (register entries AMB-207/AMB-208). Refusal messages now
+  name the actual defect. Template-independent FLAT syntax violations
+  (`|other` conflicts, malformed keys) keep answering `400`.
+- The six missing-mandatory conformance expectations, the `create_ehr` and
+  `update_directory` binding outcomes, the `invalid-other-details` fixture,
+  and the shared EHR-Extract import identity were corrected on the catalogue
+  side after spec-adjudicated triage; the CNF runner's ETag matcher gained
+  released-grammar structural tokens for the object-id and template-id
+  segments plus a validate gate that refuses un-resolvable matcher
+  placeholders.
+
 ## [3.17.2] - 2026-08-04
 
 ### Added

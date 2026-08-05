@@ -213,28 +213,12 @@ fn cmd_emit_rest() -> Result<(), Box<dyn std::error::Error>> {
     let hoisted = emit_rest::hoist_set(&bundles, &names);
 
     let mut written = Vec::new();
-    // `common` emits from the first bundle that declares each hoisted schema —
-    // the definitions are identical by construction, so pick the bundle with
-    // the widest coverage deterministically: emit from the first bundle that
-    // contains ALL hoisted names, else merge per-name from the first declarer.
+    // `common` always emits from the merged per-name view (first declarer
+    // wins; the copies are identical by the hoist analysis) — ONE emission
+    // path, so no representative-vs-merged equivalence needs testing (#1854).
     {
-        let representative = bundles
-            .iter()
-            .find(|(_, o)| {
-                let names: std::collections::BTreeSet<String> =
-                    o.schemas().iter().map(|(n, _)| n.clone()).collect();
-                hoisted.iter().all(|h| names.contains(h))
-            })
-            .map(|(_, o)| o);
-        // No single bundle need carry every hoisted schema: emit from a
-        // synthetic merged view when none does (first declarer wins; the
-        // copies are identical by the hoist analysis).
-        let body = if let Some(o) = representative {
-            emit_rest::emit_common(o, &names, &hoisted)
-        } else {
-            let merged = oas::Oas::merged_schemas(&bundles, &hoisted);
-            emit_rest::emit_common(&merged, &names, &hoisted)
-        };
+        let merged = oas::Oas::merged_schemas(&bundles, &hoisted);
+        let body = emit_rest::emit_common(&merged, &names, &hoisted);
         let path = gen_dir.join("common.rs");
         std::fs::write(&path, emit::guard_value_carriers(&body))?;
         written.push(path);

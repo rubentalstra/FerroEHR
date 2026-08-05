@@ -31,13 +31,9 @@
 //! siblings [`crate::bmm3::core::entity::bmm_class_impl`] and
 //! [`crate::bmm3::core::feature::bmm_feature_impl`].
 //!
-//! TODO(#1876): implement v3 MODEL-level navigation (a `BMM_MODEL` counterpart of
-//! [`crate::bmm::core::bmm_model_impl`]'s `type_conforms_to` /
-//! `all_ancestor_classes` / `property_definition` over
-//! `crate::bmm3::core::model::bmm_model::BmmModel`). The type-level lattice above
-//! is its precondition and is now in place; §Type Conformance
-//! (`LANG/docs/bmm3/master06-core-types.adoc`) is the algorithm to implement, and
-//! its Tuple and Signature branches are empty upstream (L251, L253).
+//! The MODEL-level navigation this lattice is the precondition for
+//! (`type_conforms_to` / `all_ancestor_classes` / `property_definition`) lives
+//! at [`crate::bmm3::core::model::bmm_model_impl`].
 
 use crate::bmm3::core::entity::bmm_class::BmmClass;
 use crate::bmm3::core::entity::bmm_container_type::BmmContainerType;

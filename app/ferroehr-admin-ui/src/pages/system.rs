@@ -124,11 +124,9 @@ pub async fn fetch_openapi(
             "{family:?} is not an API family the CDR serves a document for"
         )));
     }
-    // NOTE: no openEHR spec governs an OAS-serving endpoint — our own design /
-    // product extension. The CDR serves ONLY its own natively generated
-    // documents (never a vendored OAS) under this default directory
-    // ("/ferroehr/rest/api-docs/", configurable CDR-side), outside auth as a
-    // public discoverability surface.
+    // NOTE: no openEHR spec governs an OAS-serving endpoint — our own design;
+    // the CDR serves only its own natively generated documents under this
+    // default directory ("/ferroehr/rest/api-docs/", configurable CDR-side).
     let url = if family.is_empty() {
         state.cdr.origin_url("ferroehr/rest/api-docs/openapi.json")
     } else {

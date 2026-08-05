@@ -52,7 +52,9 @@
 use indexmap::IndexMap;
 use serde_json::{Map, Value};
 
-use openehr_its::flat::convert::{composition_from_flat, flat_to_structured, structured_to_flat};
+use openehr_its::flat::convert::{
+    composition_from_flat, flat_to_structured, structured_to_flat, submitted_composition_from_flat,
+};
 use openehr_its::flat::error::FlatError;
 use openehr_its::flat::path::FlatKey;
 use openehr_its::flat::sim::flat::{emit_flat, parse_flat};
@@ -519,6 +521,39 @@ fn rejects_other_on_closed_value_set() {
         msgs.iter().any(|m| m.kind == ValidationKind::CodedValue),
         "validate_flat_other should flag the closed value-set, got {msgs:?}"
     );
+}
+
+/// master04 §Validation ("Mandatory context fields (language, territory) are
+/// present") — the submission seam refuses a buildable FLAT document missing
+/// `ctx/territory`, while the plain projection stays permissive for
+/// fragments and round-trips.
+#[test]
+fn submission_rejects_missing_mandatory_context() {
+    let wt = coded_leaf_wt(true);
+    let doc = flat_of(r#"{ "ctx/language": "en", "test/coded|code": "at0001" }"#);
+    let err = submitted_composition_from_flat(&doc, &wt, NOW).unwrap_err();
+    assert!(
+        matches!(err, FlatError::MissingContext("territory")),
+        "got {err:?}"
+    );
+    assert!(composition_from_flat(&doc, &wt, NOW).is_ok());
+}
+
+/// master04 §Validation ("Terminology bindings are valid") — a `|code`
+/// outside a CLOSED value set with no `|value` cannot resolve to a coded
+/// value: the submission seam names the cause instead of emitting a
+/// value-less `DV_CODED_TEXT` for the strict reader to refuse downstream.
+#[test]
+fn submission_rejects_code_outside_closed_value_set() {
+    let doc =
+        flat_of(r#"{ "ctx/language": "en", "ctx/territory": "NL", "test/coded|code": "at9999" }"#);
+    let err = submitted_composition_from_flat(&doc, &coded_leaf_wt(false), NOW).unwrap_err();
+    assert!(
+        matches!(err, FlatError::CodeNotInValueSet { .. }),
+        "got {err:?}"
+    );
+    // An OPEN list admits the unlisted code (master04 §Open Value-Sets).
+    assert!(submitted_composition_from_flat(&doc, &coded_leaf_wt(true), NOW).is_ok());
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

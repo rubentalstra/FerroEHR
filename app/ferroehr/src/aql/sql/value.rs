@@ -165,18 +165,14 @@ impl Builder<'_> {
         sub.expr(Expr::val(1));
         sub.and_where(cond(coerce_value(base, mode, leaf)));
         if self.streaming {
-            // STREAMING shape: the EXISTS must stay CORRELATED. As a bare
-            // WHERE sublink the planner may pull it up into a semi-join and
-            // DECORRELATE its inner side into a corpus-wide Materialize —
-            // the instrumented 32/s rung caught exactly that plan (600k
-            // subtree rows materialized, 18M join-filter rejections, 13-35 s
-            // per execution) while the correlated probe runs in
-            // milliseconds; which side the planner lands on flips with the
-            // ANALYZE sample. Hosting the EXISTS inside a LATERAL subquery
-            // behind the `OFFSET 0` fence pins the correlated per-row
-            // SubPlan by construction (a `LIMIT 1` inside the sublink is
-            // NOT a fence — the planner simplifies EXISTS sublinks before
-            // pull-up). Identical semantics: one boolean per outer row.
+            // STREAMING shape: the EXISTS must stay CORRELATED. As a bare WHERE
+            // sublink the planner may pull it up into a semi-join and
+            // DECORRELATE its inner side into a corpus-wide Materialize, which
+            // costs seconds per execution where the correlated probe runs in
+            // milliseconds. Hosting the EXISTS inside a LATERAL subquery behind
+            // the `OFFSET 0` fence pins the correlated per-row SubPlan by
+            // construction (a `LIMIT 1` inside the sublink is NOT a fence).
+            // Identical semantics: one boolean per outer row.
             let probe = format!("p{}", self.next_ctr());
             let mut wrapper = Query::select();
             wrapper.expr_as(Expr::exists(sub), Alias::new("hit"));
@@ -389,14 +385,13 @@ pub(super) fn coerce_value(base: Expr, mode: ValueMode, leaf: &LeafPath) -> Expr
             }
         }
         ValueMode::Value(Coercion::Boolean) => cast(as_text(base), "boolean"),
-        // NOTE: temporal comparison casts the ISO-8601 leaf text to
-        // timestamptz — precise for full timestamps; partial-precision temporals
-        // (`2019`, `12:00`) are a documented gap (QUERY master03 §Built-in
-        // Types/Dates and Times). ISO 8601 permits a COMMA decimal sign on the
-        // fractional second (BASE foundation_types master06 — canonical
-        // DV_DATE_TIME values may carry it); PostgreSQL's timestamptz input
-        // does not, and a comma cannot occur elsewhere in a valid ISO
-        // timestamp, so it normalizes to the dot before the cast.
+        // ISO 8601 permits a COMMA decimal sign on the fractional second (BASE
+        // foundation_types master06); PostgreSQL's timestamptz input does not,
+        // and a comma cannot occur elsewhere in a valid ISO timestamp, so it
+        // normalizes to the dot before the cast.
+        // NOTE: temporal comparison casts the ISO-8601 leaf text to timestamptz
+        // — precise for full timestamps; partial-precision values (`2019`,
+        // `12:00`) are a documented gap (QUERY master03 §Dates and Times).
         ValueMode::Value(Coercion::Temporal) => cast(
             Expr::cust_with_exprs("replace($1, ',', '.')", [as_text(base)]),
             "timestamptz",
