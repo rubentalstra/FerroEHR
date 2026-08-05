@@ -29,9 +29,9 @@ pub struct VersionOfParty {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub signature: Option<String>,
     /// The `commit_audit` property of `VersionOfParty`.
-    pub commit_audit: openehr_rm::prelude::AuditDetails,
+    pub commit_audit: openehr_rm::v1_2::common::generic::audit_details::AuditDetails,
     /// The `data` property of `VersionOfParty`.
-    pub data: openehr_rm::prelude::Party,
+    pub data: openehr_rm::v1_2::demographic::party::Party,
 }
 
 /// The `Versionable` ITS-REST OAS component schema: `_type`-discriminated
@@ -39,19 +39,19 @@ pub struct VersionOfParty {
 #[derive(Debug, Clone)]
 pub enum Versionable {
     /// `_type: "ACTOR"`
-    Actor(openehr_rm::prelude::Actor),
+    Actor(openehr_rm::v1_2::demographic::actor::Actor),
     /// `_type: "AGENT"`
-    Agent(openehr_rm::prelude::Agent),
+    Agent(openehr_rm::v1_2::demographic::agent::Agent),
     /// `_type: "GROUP"`
-    Group(openehr_rm::prelude::Group),
+    Group(openehr_rm::v1_2::demographic::group::Group),
     /// `_type: "ORGANISATION"`
-    Organisation(openehr_rm::prelude::Organisation),
+    Organisation(openehr_rm::v1_2::demographic::organisation::Organisation),
     /// `_type: "PARTY"`
-    Party(openehr_rm::prelude::Party),
+    Party(openehr_rm::v1_2::demographic::party::Party),
     /// `_type: "PERSON"`
-    Person(openehr_rm::prelude::Person),
+    Person(openehr_rm::v1_2::demographic::person::Person),
     /// `_type: "ROLE"`
-    Role(openehr_rm::prelude::Role),
+    Role(openehr_rm::v1_2::demographic::role::Role),
 }
 
 impl ::serde::Serialize for Versionable {
@@ -166,7 +166,7 @@ pub type UpdateVersion = super::common::UpdateVersion<Versionable>;
 pub struct NewContribution {
     /// The `uid` property of `NewContribution`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub uid: Option<openehr_base::prelude::HierObjectId>,
+    pub uid: Option<openehr_base::v1_3::base_types::identification::hier_object_id::HierObjectId>,
     /// The `versions` property of `NewContribution`.
     pub versions: Vec<UpdateVersion>,
     /// The `audit` property of `NewContribution`.
@@ -175,23 +175,23 @@ pub struct NewContribution {
 
 /// The `ItemTagOfPerson` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ItemTagOfPerson = openehr_rm::prelude::ItemTag;
+pub type ItemTagOfPerson = openehr_rm::v1_2::common::tags::item_tag::ItemTag;
 
 /// The `ItemTagOfAgent` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ItemTagOfAgent = openehr_rm::prelude::ItemTag;
+pub type ItemTagOfAgent = openehr_rm::v1_2::common::tags::item_tag::ItemTag;
 
 /// The `ItemTagOfGroup` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ItemTagOfGroup = openehr_rm::prelude::ItemTag;
+pub type ItemTagOfGroup = openehr_rm::v1_2::common::tags::item_tag::ItemTag;
 
 /// The `ItemTagOfOrganisation` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ItemTagOfOrganisation = openehr_rm::prelude::ItemTag;
+pub type ItemTagOfOrganisation = openehr_rm::v1_2::common::tags::item_tag::ItemTag;
 
 /// The `ItemTagOfRole` ITS-REST OAS component schema (a non-object shape, so
 /// it is an alias rather than a struct).
-pub type ItemTagOfRole = openehr_rm::prelude::ItemTag;
+pub type ItemTagOfRole = openehr_rm::v1_2::common::tags::item_tag::ItemTag;
 
 /// Parameters for `agent_create` (path/query/header).
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -869,7 +869,7 @@ pub trait DemographicApi {
     async fn agent_create(
         &self,
         params: AgentCreateParams,
-        body: openehr_rm::prelude::Agent,
+        body: openehr_rm::v1_2::demographic::agent::Agent,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -877,14 +877,14 @@ pub trait DemographicApi {
     async fn agent_get(
         &self,
         params: AgentGetParams,
-    ) -> Result<openehr_rm::prelude::Agent, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::v1_2::demographic::agent::Agent, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /demographic/agent/{uid_based_id}`
     async fn agent_update(
         &self,
         params: AgentUpdateParams,
-        body: openehr_rm::prelude::Agent,
+        body: openehr_rm::v1_2::demographic::agent::Agent,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -899,7 +899,7 @@ pub trait DemographicApi {
     async fn group_create(
         &self,
         params: GroupCreateParams,
-        body: openehr_rm::prelude::Group,
+        body: openehr_rm::v1_2::demographic::group::Group,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -907,14 +907,14 @@ pub trait DemographicApi {
     async fn group_get(
         &self,
         params: GroupGetParams,
-    ) -> Result<openehr_rm::prelude::Group, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::v1_2::demographic::group::Group, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /demographic/group/{uid_based_id}`
     async fn group_update(
         &self,
         params: GroupUpdateParams,
-        body: openehr_rm::prelude::Group,
+        body: openehr_rm::v1_2::demographic::group::Group,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -929,7 +929,7 @@ pub trait DemographicApi {
     async fn organisation_create(
         &self,
         params: OrganisationCreateParams,
-        body: openehr_rm::prelude::Organisation,
+        body: openehr_rm::v1_2::demographic::organisation::Organisation,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -937,14 +937,17 @@ pub trait DemographicApi {
     async fn organisation_get(
         &self,
         params: OrganisationGetParams,
-    ) -> Result<openehr_rm::prelude::Organisation, crate::rest::runtime::ApiError> {
+    ) -> Result<
+        openehr_rm::v1_2::demographic::organisation::Organisation,
+        crate::rest::runtime::ApiError,
+    > {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /demographic/organisation/{uid_based_id}`
     async fn organisation_update(
         &self,
         params: OrganisationUpdateParams,
-        body: openehr_rm::prelude::Organisation,
+        body: openehr_rm::v1_2::demographic::organisation::Organisation,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -959,7 +962,7 @@ pub trait DemographicApi {
     async fn person_create(
         &self,
         params: PersonCreateParams,
-        body: openehr_rm::prelude::Person,
+        body: openehr_rm::v1_2::demographic::person::Person,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -967,14 +970,14 @@ pub trait DemographicApi {
     async fn person_get(
         &self,
         params: PersonGetParams,
-    ) -> Result<openehr_rm::prelude::Person, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::v1_2::demographic::person::Person, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /demographic/person/{uid_based_id}`
     async fn person_update(
         &self,
         params: PersonUpdateParams,
-        body: openehr_rm::prelude::Person,
+        body: openehr_rm::v1_2::demographic::person::Person,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -989,7 +992,7 @@ pub trait DemographicApi {
     async fn role_create(
         &self,
         params: RoleCreateParams,
-        body: openehr_rm::prelude::Role,
+        body: openehr_rm::v1_2::demographic::role::Role,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -997,14 +1000,14 @@ pub trait DemographicApi {
     async fn role_get(
         &self,
         params: RoleGetParams,
-    ) -> Result<openehr_rm::prelude::Role, crate::rest::runtime::ApiError> {
+    ) -> Result<openehr_rm::v1_2::demographic::role::Role, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `PUT /demographic/role/{uid_based_id}`
     async fn role_update(
         &self,
         params: RoleUpdateParams,
-        body: openehr_rm::prelude::Role,
+        body: openehr_rm::v1_2::demographic::role::Role,
     ) -> Result<serde_json::Value, crate::rest::runtime::ApiError> {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
@@ -1019,14 +1022,20 @@ pub trait DemographicApi {
     async fn versioned_party_get(
         &self,
         params: VersionedPartyGetParams,
-    ) -> Result<openehr_rm::prelude::VersionedParty, crate::rest::runtime::ApiError> {
+    ) -> Result<
+        openehr_rm::v1_2::demographic::versioned_party::VersionedParty,
+        crate::rest::runtime::ApiError,
+    > {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /demographic/versioned_party/{versioned_object_uid}/revision_history`
     async fn versioned_party_revision_history(
         &self,
         params: VersionedPartyRevisionHistoryParams,
-    ) -> Result<openehr_rm::prelude::RevisionHistory, crate::rest::runtime::ApiError> {
+    ) -> Result<
+        openehr_rm::v1_2::common::generic::revision_history::RevisionHistory,
+        crate::rest::runtime::ApiError,
+    > {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /demographic/versioned_party/{versioned_object_uid}/version`
@@ -1055,7 +1064,10 @@ pub trait DemographicApi {
     async fn contribution_get(
         &self,
         params: ContributionGetParams,
-    ) -> Result<openehr_rm::prelude::Contribution, crate::rest::runtime::ApiError> {
+    ) -> Result<
+        openehr_rm::v1_2::common::change_control::contribution::Contribution,
+        crate::rest::runtime::ApiError,
+    > {
         Err(crate::rest::runtime::ApiError::NotImplemented)
     }
     /// `GET /demographic/tags`

@@ -1,6 +1,6 @@
 //! Constructors for the generated AOM2 constraint model.
 //!
-//! The generated `openehr_am::am24::aom2` structs are plain records with every
+//! The generated `openehr_am::v2_4::aom2` structs are plain records with every
 //! field spelled out (including the `parent`/`soc_parent` back-references the
 //! emitter leaves unset; back-references are hand-wired, never emitted owning
 //! fields). Building one by
@@ -19,22 +19,22 @@
               spec) (#1694)"
 )]
 
-use openehr_am::am24::aom2::constraint_model::c_archetype_root::CArchetypeRoot;
-use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
-use openehr_am::am24::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
-use openehr_am::am24::aom2::constraint_model::c_complex_object::{
+use openehr_am::v2_4::aom2::constraint_model::c_archetype_root::CArchetypeRoot;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute::CAttribute;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::{
     CComplexObject, CComplexObjectData,
 };
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
-use openehr_am::am24::aom2::constraint_model::primitive::c_integer::CInteger;
-use openehr_am::am24::aom2::constraint_model::primitive::c_real::CReal;
-use openehr_am::am24::aom2::constraint_model::primitive::c_string::CString;
-use openehr_base::base_types::definitions::definitions_impl::LOCAL_TERMINOLOGY_ID;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_integer::CInteger;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_real::CReal;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_string::CString;
 use openehr_base::prelude::{
     Interval, MultiplicityInterval, PointInterval, ProperInterval, ProperIntervalData,
     TerminologyCode,
 };
+use openehr_base::v1_3::base_types::definitions::definitions_impl::LOCAL_TERMINOLOGY_ID;
 
 /// Build a [`MultiplicityInterval`].
 pub(crate) fn mult(

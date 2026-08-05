@@ -18,7 +18,9 @@
     reason = "mechanically generated codec text: every item is named by its full path and every branch shape is emitted uniformly, so style and unused-binding lints do not apply — the hand-written runtime carries the lint bar"
 )]
 
-impl ::serde::Serialize for crate::prelude::AccessGroupRef {
+impl ::serde::Serialize
+    for crate::v1_3::base_types::identification::access_group_ref::AccessGroupRef
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -34,7 +36,9 @@ impl ::serde::Serialize for crate::prelude::AccessGroupRef {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::AccessGroupRef {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::base_types::identification::access_group_ref::AccessGroupRef
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -80,7 +84,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::AccessGroupRef {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::AccessGroupRef;
+            type Value = crate::v1_3::base_types::identification::access_group_ref::AccessGroupRef;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `ACCESS_GROUP_REF` object")
             }
@@ -132,17 +136,19 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::AccessGroupRef {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::AccessGroupRef {
-                    namespace: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("namespace"))?,
-                    r#type: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                    id: __s2
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("id"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v1_3::base_types::identification::access_group_ref::AccessGroupRef {
+                        namespace: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("namespace"))?,
+                        r#type: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+                        id: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("id"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -154,7 +160,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::AccessGroupRef {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ArchetypeId {
+impl ::serde::Serialize for crate::v1_3::base_types::identification::archetype_id::ArchetypeId {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -167,7 +173,9 @@ impl ::serde::Serialize for crate::prelude::ArchetypeId {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ArchetypeId {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::base_types::identification::archetype_id::ArchetypeId
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -209,7 +217,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ArchetypeId {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ArchetypeId;
+            type Value = crate::v1_3::base_types::identification::archetype_id::ArchetypeId;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `ARCHETYPE_ID` object")
             }
@@ -243,11 +251,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ArchetypeId {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ArchetypeId {
-                    value: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v1_3::base_types::identification::archetype_id::ArchetypeId {
+                        value: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -259,7 +269,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ArchetypeId {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::AuthoredResource {
+impl ::serde::Serialize for crate::v1_3::resource::authored_resource::AuthoredResource {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -307,7 +317,7 @@ impl ::serde::Serialize for crate::prelude::AuthoredResource {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::AuthoredResource {
+impl<'de> ::serde::Deserialize<'de> for crate::v1_3::resource::authored_resource::AuthoredResource {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -366,7 +376,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::AuthoredResource {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::AuthoredResource;
+            type Value = crate::v1_3::resource::authored_resource::AuthoredResource;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `AUTHORED_RESOURCE` object")
             }
@@ -445,16 +455,18 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::AuthoredResource {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::AuthoredResource {
-                    uid: __s0.flatten(),
-                    original_language: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("original_language"))?,
-                    description: __s2.flatten(),
-                    is_controlled: __s3.flatten(),
-                    annotations: __s4.flatten(),
-                    translations: __s5.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v1_3::resource::authored_resource::AuthoredResource {
+                        uid: __s0.flatten(),
+                        original_language: __s1.flatten().ok_or_else(|| {
+                            ::serde::de::Error::missing_field("original_language")
+                        })?,
+                        description: __s2.flatten(),
+                        is_controlled: __s3.flatten(),
+                        annotations: __s4.flatten(),
+                        translations: __s5.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -466,7 +478,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::AuthoredResource {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::CodePhrase {
+impl ::serde::Serialize for crate::v1_3::base_types::terminology::code_phrase::CodePhrase {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -494,7 +506,9 @@ impl ::serde::Serialize for crate::prelude::CodePhrase {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::CodePhrase {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::base_types::terminology::code_phrase::CodePhrase
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -540,7 +554,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::CodePhrase {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::CodePhrase;
+            type Value = crate::v1_3::base_types::terminology::code_phrase::CodePhrase;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `CODE_PHRASE` object")
             }
@@ -592,15 +606,17 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::CodePhrase {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::CodePhrase {
-                    terminology_id: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("terminology_id"))?,
-                    code_string: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("code_string"))?,
-                    preferred_term: __s2.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v1_3::base_types::terminology::code_phrase::CodePhrase {
+                        terminology_id: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("terminology_id"))?,
+                        code_string: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("code_string"))?,
+                        preferred_term: __s2.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -612,7 +628,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::CodePhrase {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::Cardinality {
+impl ::serde::Serialize for crate::v1_3::foundation_types::interval::cardinality::Cardinality {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -627,7 +643,9 @@ impl ::serde::Serialize for crate::prelude::Cardinality {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::Cardinality {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::foundation_types::interval::cardinality::Cardinality
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -673,7 +691,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Cardinality {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::Cardinality;
+            type Value = crate::v1_3::foundation_types::interval::cardinality::Cardinality;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `Cardinality` object")
             }
@@ -725,17 +743,19 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Cardinality {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::Cardinality {
-                    interval: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("interval"))?,
-                    is_ordered: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_ordered"))?,
-                    is_unique: __s2
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("is_unique"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v1_3::foundation_types::interval::cardinality::Cardinality {
+                        interval: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("interval"))?,
+                        is_ordered: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("is_ordered"))?,
+                        is_unique: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("is_unique"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -747,7 +767,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Cardinality {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::GenericId {
+impl ::serde::Serialize for crate::v1_3::base_types::identification::generic_id::GenericId {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -761,7 +781,9 @@ impl ::serde::Serialize for crate::prelude::GenericId {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::GenericId {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::base_types::identification::generic_id::GenericId
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -805,7 +827,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::GenericId {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::GenericId;
+            type Value = crate::v1_3::base_types::identification::generic_id::GenericId;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `GENERIC_ID` object")
             }
@@ -848,21 +870,23 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::GenericId {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::GenericId {
-                    value: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
-                    scheme: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("scheme"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v1_3::base_types::identification::generic_id::GenericId {
+                        value: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
+                        scheme: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("scheme"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(__deserializer, "GENERIC_ID", __FIELDS, __Visitor)
     }
 }
 
-impl ::serde::Serialize for crate::prelude::HierObjectId {
+impl ::serde::Serialize for crate::v1_3::base_types::identification::hier_object_id::HierObjectId {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -875,7 +899,9 @@ impl ::serde::Serialize for crate::prelude::HierObjectId {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::HierObjectId {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::base_types::identification::hier_object_id::HierObjectId
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -917,7 +943,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::HierObjectId {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::HierObjectId;
+            type Value = crate::v1_3::base_types::identification::hier_object_id::HierObjectId;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `HIER_OBJECT_ID` object")
             }
@@ -954,7 +980,10 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::HierObjectId {
                 let __a0: String = __s0
                     .flatten()
                     .ok_or_else(|| ::serde::de::Error::missing_field("value"))?;
-                let __built = crate::prelude::HierObjectId::new(__a0);
+                let __built =
+                    crate::v1_3::base_types::identification::hier_object_id::HierObjectId::new(
+                        __a0,
+                    );
                 __built.map_err(|__e| {
                     ::serde::de::Error::custom(::std::format!("HIER_OBJECT_ID: {__e}"))
                 })
@@ -969,7 +998,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::HierObjectId {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::InternetId {
+impl ::serde::Serialize for crate::v1_3::base_types::identification::internet_id::InternetId {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -982,7 +1011,9 @@ impl ::serde::Serialize for crate::prelude::InternetId {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::InternetId {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::base_types::identification::internet_id::InternetId
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -1024,7 +1055,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::InternetId {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::InternetId;
+            type Value = crate::v1_3::base_types::identification::internet_id::InternetId;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `INTERNET_ID` object")
             }
@@ -1061,7 +1092,8 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::InternetId {
                 let __a0: String = __s0
                     .flatten()
                     .ok_or_else(|| ::serde::de::Error::missing_field("value"))?;
-                let __built = crate::prelude::InternetId::new(__a0);
+                let __built =
+                    crate::v1_3::base_types::identification::internet_id::InternetId::new(__a0);
                 __built
                     .map_err(|__e| ::serde::de::Error::custom(::std::format!("INTERNET_ID: {__e}")))
             }
@@ -1075,7 +1107,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::InternetId {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::IsoOid {
+impl ::serde::Serialize for crate::v1_3::base_types::identification::iso_oid::IsoOid {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -1088,7 +1120,7 @@ impl ::serde::Serialize for crate::prelude::IsoOid {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::IsoOid {
+impl<'de> ::serde::Deserialize<'de> for crate::v1_3::base_types::identification::iso_oid::IsoOid {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -1128,7 +1160,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::IsoOid {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::IsoOid;
+            type Value = crate::v1_3::base_types::identification::iso_oid::IsoOid;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `ISO_OID` object")
             }
@@ -1165,7 +1197,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::IsoOid {
                 let __a0: String = __s0
                     .flatten()
                     .ok_or_else(|| ::serde::de::Error::missing_field("value"))?;
-                let __built = crate::prelude::IsoOid::new(__a0);
+                let __built = crate::v1_3::base_types::identification::iso_oid::IsoOid::new(__a0);
                 __built.map_err(|__e| ::serde::de::Error::custom(::std::format!("ISO_OID: {__e}")))
             }
         }
@@ -1173,16 +1205,18 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::IsoOid {
     }
 }
 
-impl<T: ::serde::Serialize> ::serde::Serialize for crate::prelude::Interval<T> {
+impl<T: ::serde::Serialize> ::serde::Serialize
+    for crate::v1_3::foundation_types::interval::interval::Interval<T>
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::Interval::PointInterval(__x) => {
+            crate::v1_3::foundation_types::interval::interval::Interval::PointInterval(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::Interval::ProperInterval(__x) => {
+            crate::v1_3::foundation_types::interval::interval::Interval::ProperInterval(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
@@ -1190,7 +1224,7 @@ impl<T: ::serde::Serialize> ::serde::Serialize for crate::prelude::Interval<T> {
 }
 
 impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
-    for crate::prelude::Interval<T>
+    for crate::v1_3::foundation_types::interval::interval::Interval<T>
 {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
@@ -1198,7 +1232,7 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
         const __TAGS: &[&str] = &["Multiplicity_interval", "Point_interval", "Proper_interval"];
         struct __Visitor<T>(::core::marker::PhantomData<(T,)>);
         impl<'de, T: ::serde::de::DeserializeOwned> ::serde::de::Visitor<'de> for __Visitor<T> {
-            type Value = crate::prelude::Interval<T>;
+            type Value = crate::v1_3::foundation_types::interval::interval::Interval<T>;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `Interval` object")
             }
@@ -1212,29 +1246,11 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
                         let __rest =
                             crate::serde_support::TaggedRest::new(Some(__t), __buffered, __map);
                         match __t {
-                            "Multiplicity_interval" => ::core::result::Result::Ok(
-                                crate::prelude::Interval::ProperInterval(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "Point_interval" => {
-                                ::core::result::Result::Ok(crate::prelude::Interval::PointInterval(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "Proper_interval" => ::core::result::Result::Ok(
-                                crate::prelude::Interval::ProperInterval(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => {
-                                ::core::result::Result::Err(crate::serde_support::unexpected_type(
-                                    "Interval",
-                                    __other,
-                                    "Multiplicity_interval, Point_interval, Proper_interval",
-                                ))
-                            }
-                        }
+"Multiplicity_interval" => ::core::result::Result::Ok(crate::v1_3::foundation_types::interval::interval::Interval::ProperInterval(::serde::Deserialize::deserialize(__rest)?)),
+"Point_interval" => ::core::result::Result::Ok(crate::v1_3::foundation_types::interval::interval::Interval::PointInterval(::serde::Deserialize::deserialize(__rest)?)),
+"Proper_interval" => ::core::result::Result::Ok(crate::v1_3::foundation_types::interval::interval::Interval::ProperInterval(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(crate::serde_support::unexpected_type("Interval", __other, "Multiplicity_interval, Point_interval, Proper_interval")),
+}
                     }
                     Some(crate::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(crate::serde_support::unexpected_type(
@@ -1257,7 +1273,7 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
     }
 }
 
-impl ::serde::Serialize for crate::prelude::Iso8601Date {
+impl ::serde::Serialize for crate::v1_3::foundation_types::time::iso8601_date::Iso8601Date {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -1270,7 +1286,9 @@ impl ::serde::Serialize for crate::prelude::Iso8601Date {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601Date {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::foundation_types::time::iso8601_date::Iso8601Date
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -1312,7 +1330,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601Date {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::Iso8601Date;
+            type Value = crate::v1_3::foundation_types::time::iso8601_date::Iso8601Date;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `Iso8601_date` object")
             }
@@ -1346,11 +1364,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601Date {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::Iso8601Date {
-                    value: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v1_3::foundation_types::time::iso8601_date::Iso8601Date {
+                        value: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -1362,7 +1382,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601Date {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::Iso8601DateTime {
+impl ::serde::Serialize
+    for crate::v1_3::foundation_types::time::iso8601_date_time::Iso8601DateTime
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -1376,7 +1398,9 @@ impl ::serde::Serialize for crate::prelude::Iso8601DateTime {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601DateTime {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::foundation_types::time::iso8601_date_time::Iso8601DateTime
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -1418,7 +1442,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601DateTime {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::Iso8601DateTime;
+            type Value = crate::v1_3::foundation_types::time::iso8601_date_time::Iso8601DateTime;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `Iso8601_date_time` object")
             }
@@ -1452,11 +1476,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601DateTime {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::Iso8601DateTime {
-                    value: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v1_3::foundation_types::time::iso8601_date_time::Iso8601DateTime {
+                        value: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -1468,7 +1494,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601DateTime {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::Iso8601Duration {
+impl ::serde::Serialize for crate::v1_3::foundation_types::time::iso8601_duration::Iso8601Duration {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -1482,7 +1508,9 @@ impl ::serde::Serialize for crate::prelude::Iso8601Duration {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601Duration {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::foundation_types::time::iso8601_duration::Iso8601Duration
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -1524,7 +1552,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601Duration {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::Iso8601Duration;
+            type Value = crate::v1_3::foundation_types::time::iso8601_duration::Iso8601Duration;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `Iso8601_duration` object")
             }
@@ -1558,11 +1586,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601Duration {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::Iso8601Duration {
-                    value: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v1_3::foundation_types::time::iso8601_duration::Iso8601Duration {
+                        value: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -1574,7 +1604,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601Duration {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::Iso8601Time {
+impl ::serde::Serialize for crate::v1_3::foundation_types::time::iso8601_time::Iso8601Time {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -1587,7 +1617,9 @@ impl ::serde::Serialize for crate::prelude::Iso8601Time {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601Time {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::foundation_types::time::iso8601_time::Iso8601Time
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -1629,7 +1661,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601Time {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::Iso8601Time;
+            type Value = crate::v1_3::foundation_types::time::iso8601_time::Iso8601Time;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `Iso8601_time` object")
             }
@@ -1663,11 +1695,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601Time {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::Iso8601Time {
-                    value: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v1_3::foundation_types::time::iso8601_time::Iso8601Time {
+                        value: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -1679,7 +1713,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601Time {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::Iso8601Timezone {
+impl ::serde::Serialize for crate::v1_3::foundation_types::time::iso8601_timezone::Iso8601Timezone {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -1693,7 +1727,9 @@ impl ::serde::Serialize for crate::prelude::Iso8601Timezone {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601Timezone {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::foundation_types::time::iso8601_timezone::Iso8601Timezone
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -1735,7 +1771,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601Timezone {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::Iso8601Timezone;
+            type Value = crate::v1_3::foundation_types::time::iso8601_timezone::Iso8601Timezone;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `Iso8601_timezone` object")
             }
@@ -1769,11 +1805,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601Timezone {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::Iso8601Timezone {
-                    value: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v1_3::foundation_types::time::iso8601_timezone::Iso8601Timezone {
+                        value: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -1785,32 +1823,34 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601Timezone {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::Iso8601Type {
+impl ::serde::Serialize for crate::v1_3::foundation_types::time::iso8601_type::Iso8601Type {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::Iso8601Type::Iso8601Date(__x) => {
+            crate::v1_3::foundation_types::time::iso8601_type::Iso8601Type::Iso8601Date(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::Iso8601Type::Iso8601DateTime(__x) => {
+            crate::v1_3::foundation_types::time::iso8601_type::Iso8601Type::Iso8601DateTime(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
+            crate::v1_3::foundation_types::time::iso8601_type::Iso8601Type::Iso8601Duration(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
+            crate::v1_3::foundation_types::time::iso8601_type::Iso8601Type::Iso8601Time(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::Iso8601Type::Iso8601Duration(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::Iso8601Type::Iso8601Time(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::Iso8601Type::Iso8601Timezone(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
+            crate::v1_3::foundation_types::time::iso8601_type::Iso8601Type::Iso8601Timezone(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601Type {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::foundation_types::time::iso8601_type::Iso8601Type
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -1823,7 +1863,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601Type {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::Iso8601Type;
+            type Value = crate::v1_3::foundation_types::time::iso8601_type::Iso8601Type;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `Iso8601_type` object")
             }
@@ -1837,39 +1877,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601Type {
                         let __rest =
                             crate::serde_support::TaggedRest::new(Some(__t), __buffered, __map);
                         match __t {
-                            "Iso8601_date" => ::core::result::Result::Ok(
-                                crate::prelude::Iso8601Type::Iso8601Date(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "Iso8601_date_time" => ::core::result::Result::Ok(
-                                crate::prelude::Iso8601Type::Iso8601DateTime(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "Iso8601_duration" => ::core::result::Result::Ok(
-                                crate::prelude::Iso8601Type::Iso8601Duration(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "Iso8601_time" => ::core::result::Result::Ok(
-                                crate::prelude::Iso8601Type::Iso8601Time(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "Iso8601_timezone" => ::core::result::Result::Ok(
-                                crate::prelude::Iso8601Type::Iso8601Timezone(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => {
-                                ::core::result::Result::Err(crate::serde_support::unexpected_type(
-                                    "Iso8601_type",
-                                    __other,
-                                    "Iso8601_date, Iso8601_date_time, Iso8601_duration, Iso8601_time, Iso8601_timezone",
-                                ))
-                            }
-                        }
+"Iso8601_date" => ::core::result::Result::Ok(crate::v1_3::foundation_types::time::iso8601_type::Iso8601Type::Iso8601Date(::serde::Deserialize::deserialize(__rest)?)),
+"Iso8601_date_time" => ::core::result::Result::Ok(crate::v1_3::foundation_types::time::iso8601_type::Iso8601Type::Iso8601DateTime(::serde::Deserialize::deserialize(__rest)?)),
+"Iso8601_duration" => ::core::result::Result::Ok(crate::v1_3::foundation_types::time::iso8601_type::Iso8601Type::Iso8601Duration(::serde::Deserialize::deserialize(__rest)?)),
+"Iso8601_time" => ::core::result::Result::Ok(crate::v1_3::foundation_types::time::iso8601_type::Iso8601Type::Iso8601Time(::serde::Deserialize::deserialize(__rest)?)),
+"Iso8601_timezone" => ::core::result::Result::Ok(crate::v1_3::foundation_types::time::iso8601_type::Iso8601Type::Iso8601Timezone(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(crate::serde_support::unexpected_type("Iso8601_type", __other, "Iso8601_date, Iso8601_date_time, Iso8601_duration, Iso8601_time, Iso8601_timezone")),
+}
                     }
                     Some(crate::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(crate::serde_support::unexpected_type(
@@ -1889,7 +1903,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Iso8601Type {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::LocatableRef {
+impl ::serde::Serialize for crate::v1_3::base_types::identification::locatable_ref::LocatableRef {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -1910,7 +1924,9 @@ impl ::serde::Serialize for crate::prelude::LocatableRef {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::LocatableRef {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::base_types::identification::locatable_ref::LocatableRef
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -1958,7 +1974,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::LocatableRef {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::LocatableRef;
+            type Value = crate::v1_3::base_types::identification::locatable_ref::LocatableRef;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `LOCATABLE_REF` object")
             }
@@ -2019,18 +2035,20 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::LocatableRef {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::LocatableRef {
-                    namespace: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("namespace"))?,
-                    r#type: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                    id: __s2
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("id"))?,
-                    path: __s3.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v1_3::base_types::identification::locatable_ref::LocatableRef {
+                        namespace: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("namespace"))?,
+                        r#type: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+                        id: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("id"))?,
+                        path: __s3.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -2042,7 +2060,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::LocatableRef {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::MultiplicityInterval {
+impl ::serde::Serialize
+    for crate::v1_3::foundation_types::interval::multiplicity_interval::MultiplicityInterval
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -2091,7 +2111,9 @@ impl ::serde::Serialize for crate::prelude::MultiplicityInterval {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::MultiplicityInterval {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::foundation_types::interval::multiplicity_interval::MultiplicityInterval
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -2150,7 +2172,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::MultiplicityInterval {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::MultiplicityInterval;
+            type Value = crate::v1_3::foundation_types::interval::multiplicity_interval::MultiplicityInterval;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `Multiplicity_interval` object")
             }
@@ -2229,14 +2251,14 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::MultiplicityInterval {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::MultiplicityInterval {
-                    lower: __s0.flatten(),
-                    upper: __s1.flatten(),
-                    lower_unbounded: __s2.flatten().unwrap_or(false),
-                    upper_unbounded: __s3.flatten().unwrap_or(false),
-                    lower_included: __s4.flatten().unwrap_or(true),
-                    upper_included: __s5.flatten().unwrap_or(true),
-                })
+                ::core::result::Result::Ok(crate::v1_3::foundation_types::interval::multiplicity_interval::MultiplicityInterval {
+lower: __s0.flatten(),
+upper: __s1.flatten(),
+lower_unbounded: __s2.flatten().unwrap_or(false),
+upper_unbounded: __s3.flatten().unwrap_or(false),
+lower_included: __s4.flatten().unwrap_or(true),
+upper_included: __s5.flatten().unwrap_or(true),
+})
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -2248,35 +2270,37 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::MultiplicityInterval {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ObjectId {
+impl ::serde::Serialize for crate::v1_3::base_types::identification::object_id::ObjectId {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::ObjectId::ArchetypeId(__x) => {
+            crate::v1_3::base_types::identification::object_id::ObjectId::ArchetypeId(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ObjectId::GenericId(__x) => {
+            crate::v1_3::base_types::identification::object_id::ObjectId::GenericId(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ObjectId::HierObjectId(__x) => {
+            crate::v1_3::base_types::identification::object_id::ObjectId::HierObjectId(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ObjectId::ObjectVersionId(__x) => {
+            crate::v1_3::base_types::identification::object_id::ObjectId::ObjectVersionId(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ObjectId::TemplateId(__x) => {
+            crate::v1_3::base_types::identification::object_id::ObjectId::TemplateId(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ObjectId::TerminologyId(__x) => {
+            crate::v1_3::base_types::identification::object_id::ObjectId::TerminologyId(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ObjectId {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::base_types::identification::object_id::ObjectId
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -2290,7 +2314,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ObjectId {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ObjectId;
+            type Value = crate::v1_3::base_types::identification::object_id::ObjectId;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `OBJECT_ID` object")
             }
@@ -2304,44 +2328,14 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ObjectId {
                         let __rest =
                             crate::serde_support::TaggedRest::new(Some(__t), __buffered, __map);
                         match __t {
-                            "ARCHETYPE_ID" => {
-                                ::core::result::Result::Ok(crate::prelude::ObjectId::ArchetypeId(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "GENERIC_ID" => {
-                                ::core::result::Result::Ok(crate::prelude::ObjectId::GenericId(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "HIER_OBJECT_ID" => {
-                                ::core::result::Result::Ok(crate::prelude::ObjectId::HierObjectId(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "OBJECT_VERSION_ID" => ::core::result::Result::Ok(
-                                crate::prelude::ObjectId::ObjectVersionId(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "TEMPLATE_ID" => {
-                                ::core::result::Result::Ok(crate::prelude::ObjectId::TemplateId(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "TERMINOLOGY_ID" => {
-                                ::core::result::Result::Ok(crate::prelude::ObjectId::TerminologyId(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            __other => {
-                                ::core::result::Result::Err(crate::serde_support::unexpected_type(
-                                    "OBJECT_ID",
-                                    __other,
-                                    "ARCHETYPE_ID, GENERIC_ID, HIER_OBJECT_ID, OBJECT_VERSION_ID, TEMPLATE_ID, TERMINOLOGY_ID",
-                                ))
-                            }
-                        }
+"ARCHETYPE_ID" => ::core::result::Result::Ok(crate::v1_3::base_types::identification::object_id::ObjectId::ArchetypeId(::serde::Deserialize::deserialize(__rest)?)),
+"GENERIC_ID" => ::core::result::Result::Ok(crate::v1_3::base_types::identification::object_id::ObjectId::GenericId(::serde::Deserialize::deserialize(__rest)?)),
+"HIER_OBJECT_ID" => ::core::result::Result::Ok(crate::v1_3::base_types::identification::object_id::ObjectId::HierObjectId(::serde::Deserialize::deserialize(__rest)?)),
+"OBJECT_VERSION_ID" => ::core::result::Result::Ok(crate::v1_3::base_types::identification::object_id::ObjectId::ObjectVersionId(::serde::Deserialize::deserialize(__rest)?)),
+"TEMPLATE_ID" => ::core::result::Result::Ok(crate::v1_3::base_types::identification::object_id::ObjectId::TemplateId(::serde::Deserialize::deserialize(__rest)?)),
+"TERMINOLOGY_ID" => ::core::result::Result::Ok(crate::v1_3::base_types::identification::object_id::ObjectId::TerminologyId(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(crate::serde_support::unexpected_type("OBJECT_ID", __other, "ARCHETYPE_ID, GENERIC_ID, HIER_OBJECT_ID, OBJECT_VERSION_ID, TEMPLATE_ID, TERMINOLOGY_ID")),
+}
                     }
                     Some(crate::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(crate::serde_support::unexpected_type(
@@ -2361,7 +2355,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ObjectId {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ObjectRefData {
+impl ::serde::Serialize for crate::v1_3::base_types::identification::object_ref::ObjectRefData {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -2376,7 +2370,9 @@ impl ::serde::Serialize for crate::prelude::ObjectRefData {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ObjectRefData {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::base_types::identification::object_ref::ObjectRefData
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -2422,7 +2418,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ObjectRefData {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ObjectRefData;
+            type Value = crate::v1_3::base_types::identification::object_ref::ObjectRefData;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `OBJECT_REF` object")
             }
@@ -2474,46 +2470,50 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ObjectRefData {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ObjectRefData {
-                    namespace: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("namespace"))?,
-                    r#type: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                    id: __s2
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("id"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v1_3::base_types::identification::object_ref::ObjectRefData {
+                        namespace: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("namespace"))?,
+                        r#type: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+                        id: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("id"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(__deserializer, "OBJECT_REF", __FIELDS, __Visitor)
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ObjectRef {
+impl ::serde::Serialize for crate::v1_3::base_types::identification::object_ref::ObjectRef {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::ObjectRef::AccessGroupRef(__x) => {
+            crate::v1_3::base_types::identification::object_ref::ObjectRef::AccessGroupRef(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ObjectRef::LocatableRef(__x) => {
+            crate::v1_3::base_types::identification::object_ref::ObjectRef::LocatableRef(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ObjectRef::PartyRef(__x) => {
+            crate::v1_3::base_types::identification::object_ref::ObjectRef::PartyRef(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::ObjectRef::ObjectRef(__x) => {
+            crate::v1_3::base_types::identification::object_ref::ObjectRef::ObjectRef(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ObjectRef {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::base_types::identification::object_ref::ObjectRef
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -2525,7 +2525,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ObjectRef {
         ];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ObjectRef;
+            type Value = crate::v1_3::base_types::identification::object_ref::ObjectRef;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `OBJECT_REF` object")
             }
@@ -2539,34 +2539,12 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ObjectRef {
                         let __rest =
                             crate::serde_support::TaggedRest::new(Some(__t), __buffered, __map);
                         match __t {
-                            "ACCESS_GROUP_REF" => ::core::result::Result::Ok(
-                                crate::prelude::ObjectRef::AccessGroupRef(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "LOCATABLE_REF" => {
-                                ::core::result::Result::Ok(crate::prelude::ObjectRef::LocatableRef(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "OBJECT_REF" => {
-                                ::core::result::Result::Ok(crate::prelude::ObjectRef::ObjectRef(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "PARTY_REF" => {
-                                ::core::result::Result::Ok(crate::prelude::ObjectRef::PartyRef(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            __other => {
-                                ::core::result::Result::Err(crate::serde_support::unexpected_type(
-                                    "OBJECT_REF",
-                                    __other,
-                                    "ACCESS_GROUP_REF, LOCATABLE_REF, OBJECT_REF, PARTY_REF",
-                                ))
-                            }
-                        }
+"ACCESS_GROUP_REF" => ::core::result::Result::Ok(crate::v1_3::base_types::identification::object_ref::ObjectRef::AccessGroupRef(::serde::Deserialize::deserialize(__rest)?)),
+"LOCATABLE_REF" => ::core::result::Result::Ok(crate::v1_3::base_types::identification::object_ref::ObjectRef::LocatableRef(::serde::Deserialize::deserialize(__rest)?)),
+"OBJECT_REF" => ::core::result::Result::Ok(crate::v1_3::base_types::identification::object_ref::ObjectRef::ObjectRef(::serde::Deserialize::deserialize(__rest)?)),
+"PARTY_REF" => ::core::result::Result::Ok(crate::v1_3::base_types::identification::object_ref::ObjectRef::PartyRef(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(crate::serde_support::unexpected_type("OBJECT_REF", __other, "ACCESS_GROUP_REF, LOCATABLE_REF, OBJECT_REF, PARTY_REF")),
+}
                     }
                     Some(crate::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(crate::serde_support::unexpected_type(
@@ -2577,9 +2555,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ObjectRef {
                     }
                     None => {
                         let __rest = crate::serde_support::TaggedRest::new(None, __buffered, __map);
-                        ::core::result::Result::Ok(crate::prelude::ObjectRef::ObjectRef(
-                            ::serde::Deserialize::deserialize(__rest)?,
-                        ))
+                        ::core::result::Result::Ok(crate::v1_3::base_types::identification::object_ref::ObjectRef::ObjectRef(::serde::Deserialize::deserialize(__rest)?))
                     }
                 }
             }
@@ -2588,7 +2564,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ObjectRef {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ObjectVersionId {
+impl ::serde::Serialize
+    for crate::v1_3::base_types::identification::object_version_id::ObjectVersionId
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -2602,7 +2580,9 @@ impl ::serde::Serialize for crate::prelude::ObjectVersionId {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ObjectVersionId {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::base_types::identification::object_version_id::ObjectVersionId
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -2644,7 +2624,8 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ObjectVersionId {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ObjectVersionId;
+            type Value =
+                crate::v1_3::base_types::identification::object_version_id::ObjectVersionId;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `OBJECT_VERSION_ID` object")
             }
@@ -2681,7 +2662,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ObjectVersionId {
                 let __a0: String = __s0
                     .flatten()
                     .ok_or_else(|| ::serde::de::Error::missing_field("value"))?;
-                let __built = crate::prelude::ObjectVersionId::new(__a0);
+                let __built = crate::v1_3::base_types::identification::object_version_id::ObjectVersionId::new(__a0);
                 __built.map_err(|__e| {
                     ::serde::de::Error::custom(::std::format!("OBJECT_VERSION_ID: {__e}"))
                 })
@@ -2696,7 +2677,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ObjectVersionId {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::PartyRef {
+impl ::serde::Serialize for crate::v1_3::base_types::identification::party_ref::PartyRef {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -2711,7 +2692,9 @@ impl ::serde::Serialize for crate::prelude::PartyRef {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::PartyRef {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::base_types::identification::party_ref::PartyRef
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -2757,7 +2740,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PartyRef {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::PartyRef;
+            type Value = crate::v1_3::base_types::identification::party_ref::PartyRef;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `PARTY_REF` object")
             }
@@ -2809,24 +2792,28 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::PartyRef {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PartyRef {
-                    namespace: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("namespace"))?,
-                    r#type: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
-                    id: __s2
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("id"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v1_3::base_types::identification::party_ref::PartyRef {
+                        namespace: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("namespace"))?,
+                        r#type: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("type"))?,
+                        id: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("id"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(__deserializer, "PARTY_REF", __FIELDS, __Visitor)
     }
 }
 
-impl<T: ::serde::Serialize> ::serde::Serialize for crate::prelude::PointInterval<T> {
+impl<T: ::serde::Serialize> ::serde::Serialize
+    for crate::v1_3::foundation_types::interval::point_interval::PointInterval<T>
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -2871,7 +2858,7 @@ impl<T: ::serde::Serialize> ::serde::Serialize for crate::prelude::PointInterval
 }
 
 impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
-    for crate::prelude::PointInterval<T>
+    for crate::v1_3::foundation_types::interval::point_interval::PointInterval<T>
 {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
@@ -2931,7 +2918,7 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
         }
         struct __Visitor<T>(::core::marker::PhantomData<(T,)>);
         impl<'de, T: ::serde::de::DeserializeOwned> ::serde::de::Visitor<'de> for __Visitor<T> {
-            type Value = crate::prelude::PointInterval<T>;
+            type Value = crate::v1_3::foundation_types::interval::point_interval::PointInterval<T>;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `Point_interval` object")
             }
@@ -3010,14 +2997,16 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::PointInterval {
-                    lower: __s0.flatten(),
-                    upper: __s1.flatten(),
-                    lower_unbounded: __s2.flatten().unwrap_or(false),
-                    upper_unbounded: __s3.flatten().unwrap_or(false),
-                    lower_included: __s4.flatten().unwrap_or(true),
-                    upper_included: __s5.flatten().unwrap_or(true),
-                })
+                ::core::result::Result::Ok(
+                    crate::v1_3::foundation_types::interval::point_interval::PointInterval {
+                        lower: __s0.flatten(),
+                        upper: __s1.flatten(),
+                        lower_unbounded: __s2.flatten().unwrap_or(false),
+                        upper_unbounded: __s3.flatten().unwrap_or(false),
+                        lower_included: __s4.flatten().unwrap_or(true),
+                        upper_included: __s5.flatten().unwrap_or(true),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -3029,7 +3018,9 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
     }
 }
 
-impl<T: ::serde::Serialize> ::serde::Serialize for crate::prelude::ProperIntervalData<T> {
+impl<T: ::serde::Serialize> ::serde::Serialize
+    for crate::v1_3::foundation_types::interval::proper_interval::ProperIntervalData<T>
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -3074,7 +3065,7 @@ impl<T: ::serde::Serialize> ::serde::Serialize for crate::prelude::ProperInterva
 }
 
 impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
-    for crate::prelude::ProperIntervalData<T>
+    for crate::v1_3::foundation_types::interval::proper_interval::ProperIntervalData<T>
 {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
@@ -3134,7 +3125,8 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
         }
         struct __Visitor<T>(::core::marker::PhantomData<(T,)>);
         impl<'de, T: ::serde::de::DeserializeOwned> ::serde::de::Visitor<'de> for __Visitor<T> {
-            type Value = crate::prelude::ProperIntervalData<T>;
+            type Value =
+                crate::v1_3::foundation_types::interval::proper_interval::ProperIntervalData<T>;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `Proper_interval` object")
             }
@@ -3213,14 +3205,16 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ProperIntervalData {
-                    lower: __s0.flatten(),
-                    upper: __s1.flatten(),
-                    lower_unbounded: __s2.flatten().unwrap_or(false),
-                    upper_unbounded: __s3.flatten().unwrap_or(false),
-                    lower_included: __s4.flatten().unwrap_or(true),
-                    upper_included: __s5.flatten().unwrap_or(true),
-                })
+                ::core::result::Result::Ok(
+                    crate::v1_3::foundation_types::interval::proper_interval::ProperIntervalData {
+                        lower: __s0.flatten(),
+                        upper: __s1.flatten(),
+                        lower_unbounded: __s2.flatten().unwrap_or(false),
+                        upper_unbounded: __s3.flatten().unwrap_or(false),
+                        lower_included: __s4.flatten().unwrap_or(true),
+                        upper_included: __s5.flatten().unwrap_or(true),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -3232,24 +3226,22 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
     }
 }
 
-impl<T: ::serde::Serialize> ::serde::Serialize for crate::prelude::ProperInterval<T> {
+impl<T: ::serde::Serialize> ::serde::Serialize
+    for crate::v1_3::foundation_types::interval::proper_interval::ProperInterval<T>
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::ProperInterval::MultiplicityInterval(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::ProperInterval::ProperInterval(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-        }
+crate::v1_3::foundation_types::interval::proper_interval::ProperInterval::MultiplicityInterval(__x) => ::serde::Serialize::serialize(__x, __serializer),
+crate::v1_3::foundation_types::interval::proper_interval::ProperInterval::ProperInterval(__x) => ::serde::Serialize::serialize(__x, __serializer),
+}
     }
 }
 
 impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
-    for crate::prelude::ProperInterval<T>
+    for crate::v1_3::foundation_types::interval::proper_interval::ProperInterval<T>
 {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
@@ -3257,7 +3249,8 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
         const __TAGS: &[&str] = &["Multiplicity_interval", "Proper_interval"];
         struct __Visitor<T>(::core::marker::PhantomData<(T,)>);
         impl<'de, T: ::serde::de::DeserializeOwned> ::serde::de::Visitor<'de> for __Visitor<T> {
-            type Value = crate::prelude::ProperInterval<T>;
+            type Value =
+                crate::v1_3::foundation_types::interval::proper_interval::ProperInterval<T>;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `Proper_interval` object")
             }
@@ -3271,24 +3264,10 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
                         let __rest =
                             crate::serde_support::TaggedRest::new(Some(__t), __buffered, __map);
                         match __t {
-                            "Multiplicity_interval" => ::core::result::Result::Ok(
-                                crate::prelude::ProperInterval::MultiplicityInterval(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "Proper_interval" => ::core::result::Result::Ok(
-                                crate::prelude::ProperInterval::ProperInterval(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => {
-                                ::core::result::Result::Err(crate::serde_support::unexpected_type(
-                                    "Proper_interval",
-                                    __other,
-                                    "Multiplicity_interval, Proper_interval",
-                                ))
-                            }
-                        }
+"Multiplicity_interval" => ::core::result::Result::Ok(crate::v1_3::foundation_types::interval::proper_interval::ProperInterval::MultiplicityInterval(::serde::Deserialize::deserialize(__rest)?)),
+"Proper_interval" => ::core::result::Result::Ok(crate::v1_3::foundation_types::interval::proper_interval::ProperInterval::ProperInterval(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(crate::serde_support::unexpected_type("Proper_interval", __other, "Multiplicity_interval, Proper_interval")),
+}
                     }
                     Some(crate::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(crate::serde_support::unexpected_type(
@@ -3299,9 +3278,7 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
                     }
                     None => {
                         let __rest = crate::serde_support::TaggedRest::new(None, __buffered, __map);
-                        ::core::result::Result::Ok(crate::prelude::ProperInterval::ProperInterval(
-                            ::serde::Deserialize::deserialize(__rest)?,
-                        ))
+                        ::core::result::Result::Ok(crate::v1_3::foundation_types::interval::proper_interval::ProperInterval::ProperInterval(::serde::Deserialize::deserialize(__rest)?))
                     }
                 }
             }
@@ -3313,7 +3290,7 @@ impl<'de, T: ::serde::de::DeserializeOwned> ::serde::Deserialize<'de>
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ResourceAnnotations {
+impl ::serde::Serialize for crate::v1_3::resource::resource_annotations::ResourceAnnotations {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -3331,7 +3308,9 @@ impl ::serde::Serialize for crate::prelude::ResourceAnnotations {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ResourceAnnotations {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::resource::resource_annotations::ResourceAnnotations
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -3373,7 +3352,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ResourceAnnotations {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ResourceAnnotations;
+            type Value = crate::v1_3::resource::resource_annotations::ResourceAnnotations;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `RESOURCE_ANNOTATIONS` object")
             }
@@ -3407,11 +3386,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ResourceAnnotations {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ResourceAnnotations {
-                    documentation: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("documentation"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v1_3::resource::resource_annotations::ResourceAnnotations {
+                        documentation: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("documentation"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -3423,7 +3404,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ResourceAnnotations {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ResourceDescription {
+impl ::serde::Serialize for crate::v1_3::resource::resource_description::ResourceDescription {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -3540,7 +3521,9 @@ impl ::serde::Serialize for crate::prelude::ResourceDescription {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ResourceDescription {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::resource::resource_description::ResourceDescription
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -3629,7 +3612,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ResourceDescription {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ResourceDescription;
+            type Value = crate::v1_3::resource::resource_description::ResourceDescription;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `RESOURCE_DESCRIPTION` object")
             }
@@ -3798,28 +3781,30 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ResourceDescription {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ResourceDescription {
-                    title: __s0.flatten(),
-                    original_author: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("original_author"))?,
-                    original_namespace: __s2.flatten(),
-                    original_publisher: __s3.flatten(),
-                    other_contributors: __s4,
-                    lifecycle_state: __s5
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("lifecycle_state"))?,
-                    custodian_namespace: __s6.flatten(),
-                    custodian_organisation: __s7.flatten(),
-                    copyright: __s8.flatten(),
-                    licence: __s9.flatten(),
-                    ip_acknowledgements: __s10.flatten(),
-                    references: __s11.flatten(),
-                    resource_package_uri: __s12.flatten(),
-                    conversion_details: __s13.flatten(),
-                    details: __s14.flatten(),
-                    other_details: __s15.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v1_3::resource::resource_description::ResourceDescription {
+                        title: __s0.flatten(),
+                        original_author: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("original_author"))?,
+                        original_namespace: __s2.flatten(),
+                        original_publisher: __s3.flatten(),
+                        other_contributors: __s4,
+                        lifecycle_state: __s5
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("lifecycle_state"))?,
+                        custodian_namespace: __s6.flatten(),
+                        custodian_organisation: __s7.flatten(),
+                        copyright: __s8.flatten(),
+                        licence: __s9.flatten(),
+                        ip_acknowledgements: __s10.flatten(),
+                        references: __s11.flatten(),
+                        resource_package_uri: __s12.flatten(),
+                        conversion_details: __s13.flatten(),
+                        details: __s14.flatten(),
+                        other_details: __s15.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -3831,7 +3816,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ResourceDescription {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ResourceDescriptionItem {
+impl ::serde::Serialize
+    for crate::v1_3::resource::resource_description_item::ResourceDescriptionItem
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -3886,7 +3873,9 @@ impl ::serde::Serialize for crate::prelude::ResourceDescriptionItem {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ResourceDescriptionItem {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::resource::resource_description_item::ResourceDescriptionItem
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -3948,7 +3937,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ResourceDescriptionItem 
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::ResourceDescriptionItem;
+            type Value = crate::v1_3::resource::resource_description_item::ResourceDescriptionItem;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `RESOURCE_DESCRIPTION_ITEM` object")
             }
@@ -4036,19 +4025,21 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ResourceDescriptionItem 
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::ResourceDescriptionItem {
-                    language: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("language"))?,
-                    purpose: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("purpose"))?,
-                    keywords: __s2,
-                    use_: __s3.flatten(),
-                    misuse: __s4.flatten(),
-                    original_resource_uri: __s5.flatten(),
-                    other_details: __s6.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v1_3::resource::resource_description_item::ResourceDescriptionItem {
+                        language: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("language"))?,
+                        purpose: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("purpose"))?,
+                        keywords: __s2,
+                        use_: __s3.flatten(),
+                        misuse: __s4.flatten(),
+                        original_resource_uri: __s5.flatten(),
+                        other_details: __s6.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -4060,7 +4051,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ResourceDescriptionItem 
     }
 }
 
-impl ::serde::Serialize for crate::prelude::TemplateId {
+impl ::serde::Serialize for crate::v1_3::base_types::identification::template_id::TemplateId {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -4073,7 +4064,9 @@ impl ::serde::Serialize for crate::prelude::TemplateId {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::TemplateId {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::base_types::identification::template_id::TemplateId
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -4115,7 +4108,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TemplateId {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::TemplateId;
+            type Value = crate::v1_3::base_types::identification::template_id::TemplateId;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `TEMPLATE_ID` object")
             }
@@ -4149,11 +4142,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TemplateId {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::TemplateId {
-                    value: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v1_3::base_types::identification::template_id::TemplateId {
+                        value: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -4165,7 +4160,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TemplateId {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::TerminologyId {
+impl ::serde::Serialize for crate::v1_3::base_types::identification::terminology_id::TerminologyId {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -4178,7 +4173,9 @@ impl ::serde::Serialize for crate::prelude::TerminologyId {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::TerminologyId {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::base_types::identification::terminology_id::TerminologyId
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -4220,7 +4217,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TerminologyId {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::TerminologyId;
+            type Value = crate::v1_3::base_types::identification::terminology_id::TerminologyId;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `TERMINOLOGY_ID` object")
             }
@@ -4254,11 +4251,13 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TerminologyId {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::TerminologyId {
-                    value: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v1_3::base_types::identification::terminology_id::TerminologyId {
+                        value: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("value"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -4270,7 +4269,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TerminologyId {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::TranslationDetails {
+impl ::serde::Serialize for crate::v1_3::resource::translation_details::TranslationDetails {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -4319,7 +4318,9 @@ impl ::serde::Serialize for crate::prelude::TranslationDetails {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::TranslationDetails {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::resource::translation_details::TranslationDetails
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -4378,7 +4379,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TranslationDetails {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::TranslationDetails;
+            type Value = crate::v1_3::resource::translation_details::TranslationDetails;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `TRANSLATION_DETAILS` object")
             }
@@ -4457,18 +4458,20 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TranslationDetails {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::TranslationDetails {
-                    language: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("language"))?,
-                    author: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("author"))?,
-                    accreditation: __s2.flatten(),
-                    other_details: __s3.flatten(),
-                    version_last_translated: __s4.flatten(),
-                    other_contributors: __s5,
-                })
+                ::core::result::Result::Ok(
+                    crate::v1_3::resource::translation_details::TranslationDetails {
+                        language: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("language"))?,
+                        author: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("author"))?,
+                        accreditation: __s2.flatten(),
+                        other_details: __s3.flatten(),
+                        version_last_translated: __s4.flatten(),
+                        other_contributors: __s5,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -4480,7 +4483,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TranslationDetails {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::TerminologyCode {
+impl ::serde::Serialize
+    for crate::v1_3::foundation_types::terminology::terminology_code::TerminologyCode
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -4515,7 +4520,9 @@ impl ::serde::Serialize for crate::prelude::TerminologyCode {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::TerminologyCode {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::foundation_types::terminology::terminology_code::TerminologyCode
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -4568,7 +4575,8 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TerminologyCode {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::TerminologyCode;
+            type Value =
+                crate::v1_3::foundation_types::terminology::terminology_code::TerminologyCode;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `Terminology_code` object")
             }
@@ -4629,16 +4637,18 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TerminologyCode {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::TerminologyCode {
-                    terminology_id: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("terminology_id"))?,
-                    terminology_version: __s1.flatten(),
-                    code_string: __s2
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("code_string"))?,
-                    uri: __s3.flatten(),
-                })
+                ::core::result::Result::Ok(
+                    crate::v1_3::foundation_types::terminology::terminology_code::TerminologyCode {
+                        terminology_id: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("terminology_id"))?,
+                        terminology_version: __s1.flatten(),
+                        code_string: __s2
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("code_string"))?,
+                        uri: __s3.flatten(),
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -4650,7 +4660,9 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TerminologyCode {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::TerminologyTerm {
+impl ::serde::Serialize
+    for crate::v1_3::foundation_types::terminology::terminology_term::TerminologyTerm
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -4665,7 +4677,9 @@ impl ::serde::Serialize for crate::prelude::TerminologyTerm {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::TerminologyTerm {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::foundation_types::terminology::terminology_term::TerminologyTerm
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -4709,7 +4723,8 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TerminologyTerm {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::TerminologyTerm;
+            type Value =
+                crate::v1_3::foundation_types::terminology::terminology_term::TerminologyTerm;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `Terminology_term` object")
             }
@@ -4752,14 +4767,16 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TerminologyTerm {
                         }
                     }
                 }
-                ::core::result::Result::Ok(crate::prelude::TerminologyTerm {
-                    concept: __s0
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("concept"))?,
-                    text: __s1
-                        .flatten()
-                        .ok_or_else(|| ::serde::de::Error::missing_field("text"))?,
-                })
+                ::core::result::Result::Ok(
+                    crate::v1_3::foundation_types::terminology::terminology_term::TerminologyTerm {
+                        concept: __s0
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("concept"))?,
+                        text: __s1
+                            .flatten()
+                            .ok_or_else(|| ::serde::de::Error::missing_field("text"))?,
+                    },
+                )
             }
         }
         ::serde::Deserializer::deserialize_struct(
@@ -4771,29 +4788,33 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::TerminologyTerm {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::Uid {
+impl ::serde::Serialize for crate::v1_3::base_types::identification::uid::Uid {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::Uid::InternetId(__x) => {
+            crate::v1_3::base_types::identification::uid::Uid::InternetId(__x) => {
                 ::serde::Serialize::serialize(__x, __serializer)
             }
-            crate::prelude::Uid::IsoOid(__x) => ::serde::Serialize::serialize(__x, __serializer),
-            crate::prelude::Uid::Uuid(__x) => ::serde::Serialize::serialize(__x, __serializer),
+            crate::v1_3::base_types::identification::uid::Uid::IsoOid(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
+            crate::v1_3::base_types::identification::uid::Uid::Uuid(__x) => {
+                ::serde::Serialize::serialize(__x, __serializer)
+            }
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::Uid {
+impl<'de> ::serde::Deserialize<'de> for crate::v1_3::base_types::identification::uid::Uid {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["INTERNET_ID", "ISO_OID", "UUID"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::Uid;
+            type Value = crate::v1_3::base_types::identification::uid::Uid;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `UID` object")
             }
@@ -4807,17 +4828,21 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Uid {
                         let __rest =
                             crate::serde_support::TaggedRest::new(Some(__t), __buffered, __map);
                         match __t {
-                            "INTERNET_ID" => {
-                                ::core::result::Result::Ok(crate::prelude::Uid::InternetId(
+                            "INTERNET_ID" => ::core::result::Result::Ok(
+                                crate::v1_3::base_types::identification::uid::Uid::InternetId(
                                     ::serde::Deserialize::deserialize(__rest)?,
-                                ))
-                            }
-                            "ISO_OID" => ::core::result::Result::Ok(crate::prelude::Uid::IsoOid(
-                                ::serde::Deserialize::deserialize(__rest)?,
-                            )),
-                            "UUID" => ::core::result::Result::Ok(crate::prelude::Uid::Uuid(
-                                ::serde::Deserialize::deserialize(__rest)?,
-                            )),
+                                ),
+                            ),
+                            "ISO_OID" => ::core::result::Result::Ok(
+                                crate::v1_3::base_types::identification::uid::Uid::IsoOid(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ),
+                            ),
+                            "UUID" => ::core::result::Result::Ok(
+                                crate::v1_3::base_types::identification::uid::Uid::Uuid(
+                                    ::serde::Deserialize::deserialize(__rest)?,
+                                ),
+                            ),
                             __other => {
                                 ::core::result::Result::Err(crate::serde_support::unexpected_type(
                                     "UID",
@@ -4845,30 +4870,32 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Uid {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::UidBasedId {
+impl ::serde::Serialize for crate::v1_3::base_types::identification::uid_based_id::UidBasedId {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
     ) -> ::core::result::Result<__S::Ok, __S::Error> {
         match self {
-            crate::prelude::UidBasedId::HierObjectId(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
-            crate::prelude::UidBasedId::ObjectVersionId(__x) => {
-                ::serde::Serialize::serialize(__x, __serializer)
-            }
+            crate::v1_3::base_types::identification::uid_based_id::UidBasedId::HierObjectId(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
+            crate::v1_3::base_types::identification::uid_based_id::UidBasedId::ObjectVersionId(
+                __x,
+            ) => ::serde::Serialize::serialize(__x, __serializer),
         }
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::UidBasedId {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::base_types::identification::uid_based_id::UidBasedId
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         const __TAGS: &[&str] = &["HIER_OBJECT_ID", "OBJECT_VERSION_ID"];
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::UidBasedId;
+            type Value = crate::v1_3::base_types::identification::uid_based_id::UidBasedId;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `UID_BASED_ID` object")
             }
@@ -4882,24 +4909,10 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::UidBasedId {
                         let __rest =
                             crate::serde_support::TaggedRest::new(Some(__t), __buffered, __map);
                         match __t {
-                            "HIER_OBJECT_ID" => ::core::result::Result::Ok(
-                                crate::prelude::UidBasedId::HierObjectId(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            "OBJECT_VERSION_ID" => ::core::result::Result::Ok(
-                                crate::prelude::UidBasedId::ObjectVersionId(
-                                    ::serde::Deserialize::deserialize(__rest)?,
-                                ),
-                            ),
-                            __other => {
-                                ::core::result::Result::Err(crate::serde_support::unexpected_type(
-                                    "UID_BASED_ID",
-                                    __other,
-                                    "HIER_OBJECT_ID, OBJECT_VERSION_ID",
-                                ))
-                            }
-                        }
+"HIER_OBJECT_ID" => ::core::result::Result::Ok(crate::v1_3::base_types::identification::uid_based_id::UidBasedId::HierObjectId(::serde::Deserialize::deserialize(__rest)?)),
+"OBJECT_VERSION_ID" => ::core::result::Result::Ok(crate::v1_3::base_types::identification::uid_based_id::UidBasedId::ObjectVersionId(::serde::Deserialize::deserialize(__rest)?)),
+__other => ::core::result::Result::Err(crate::serde_support::unexpected_type("UID_BASED_ID", __other, "HIER_OBJECT_ID, OBJECT_VERSION_ID")),
+}
                     }
                     Some(crate::serde_support::TagMatch::Unknown(__other)) => {
                         ::core::result::Result::Err(crate::serde_support::unexpected_type(
@@ -4919,7 +4932,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::UidBasedId {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::Uuid {
+impl ::serde::Serialize for crate::v1_3::base_types::identification::uuid::Uuid {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -4932,7 +4945,7 @@ impl ::serde::Serialize for crate::prelude::Uuid {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::Uuid {
+impl<'de> ::serde::Deserialize<'de> for crate::v1_3::base_types::identification::uuid::Uuid {
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -4972,7 +4985,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Uuid {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::Uuid;
+            type Value = crate::v1_3::base_types::identification::uuid::Uuid;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `UUID` object")
             }
@@ -5009,7 +5022,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Uuid {
                 let __a0: uuid::Uuid = __s0
                     .flatten()
                     .ok_or_else(|| ::serde::de::Error::missing_field("value"))?;
-                let __built = crate::prelude::Uuid::new(__a0);
+                let __built = crate::v1_3::base_types::identification::uuid::Uuid::new(__a0);
                 ::core::result::Result::Ok(__built)
             }
         }
@@ -5017,7 +5030,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::Uuid {
     }
 }
 
-impl ::serde::Serialize for crate::prelude::ValidityKind {
+impl ::serde::Serialize for crate::v1_3::base_types::definitions::validity_kind::ValidityKind {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -5026,13 +5039,15 @@ impl ::serde::Serialize for crate::prelude::ValidityKind {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::ValidityKind {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::base_types::definitions::validity_kind::ValidityKind
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         struct __V;
         impl<'de> ::serde::de::Visitor<'de> for __V {
-            type Value = crate::prelude::ValidityKind;
+            type Value = crate::v1_3::base_types::definitions::validity_kind::ValidityKind;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("a `ValidityKind` token")
             }
@@ -5040,14 +5055,18 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::ValidityKind {
                 self,
                 __v: &str,
             ) -> ::core::result::Result<Self::Value, __E> {
-                ::core::result::Result::Ok(crate::prelude::ValidityKind::from_wire(__v))
+                ::core::result::Result::Ok(
+                    crate::v1_3::base_types::definitions::validity_kind::ValidityKind::from_wire(
+                        __v,
+                    ),
+                )
             }
         }
         ::serde::Deserializer::deserialize_str(__deserializer, __V)
     }
 }
 
-impl ::serde::Serialize for crate::prelude::VersionStatus {
+impl ::serde::Serialize for crate::v1_3::base_types::definitions::version_status::VersionStatus {
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -5056,13 +5075,15 @@ impl ::serde::Serialize for crate::prelude::VersionStatus {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::VersionStatus {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::base_types::definitions::version_status::VersionStatus
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
         struct __V;
         impl<'de> ::serde::de::Visitor<'de> for __V {
-            type Value = crate::prelude::VersionStatus;
+            type Value = crate::v1_3::base_types::definitions::version_status::VersionStatus;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("a `VersionStatus` token")
             }
@@ -5070,14 +5091,20 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::VersionStatus {
                 self,
                 __v: &str,
             ) -> ::core::result::Result<Self::Value, __E> {
-                ::core::result::Result::Ok(crate::prelude::VersionStatus::from_wire(__v))
+                ::core::result::Result::Ok(
+                    crate::v1_3::base_types::definitions::version_status::VersionStatus::from_wire(
+                        __v,
+                    ),
+                )
             }
         }
         ::serde::Deserializer::deserialize_str(__deserializer, __V)
     }
 }
 
-impl ::serde::Serialize for crate::prelude::VersionTreeId {
+impl ::serde::Serialize
+    for crate::v1_3::base_types::identification::version_tree_id::VersionTreeId
+{
     fn serialize<__S: ::serde::Serializer>(
         &self,
         __serializer: __S,
@@ -5090,7 +5117,9 @@ impl ::serde::Serialize for crate::prelude::VersionTreeId {
     }
 }
 
-impl<'de> ::serde::Deserialize<'de> for crate::prelude::VersionTreeId {
+impl<'de> ::serde::Deserialize<'de>
+    for crate::v1_3::base_types::identification::version_tree_id::VersionTreeId
+{
     fn deserialize<__D: ::serde::Deserializer<'de>>(
         __deserializer: __D,
     ) -> ::core::result::Result<Self, __D::Error> {
@@ -5132,7 +5161,7 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::VersionTreeId {
         }
         struct __Visitor;
         impl<'de> ::serde::de::Visitor<'de> for __Visitor {
-            type Value = crate::prelude::VersionTreeId;
+            type Value = crate::v1_3::base_types::identification::version_tree_id::VersionTreeId;
             fn expecting(&self, __f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
                 __f.write_str("an openEHR `VERSION_TREE_ID` object")
             }
@@ -5169,7 +5198,10 @@ impl<'de> ::serde::Deserialize<'de> for crate::prelude::VersionTreeId {
                 let __a0: String = __s0
                     .flatten()
                     .ok_or_else(|| ::serde::de::Error::missing_field("value"))?;
-                let __built = crate::prelude::VersionTreeId::new(__a0);
+                let __built =
+                    crate::v1_3::base_types::identification::version_tree_id::VersionTreeId::new(
+                        __a0,
+                    );
                 __built.map_err(|__e| {
                     ::serde::de::Error::custom(::std::format!("VERSION_TREE_ID: {__e}"))
                 })

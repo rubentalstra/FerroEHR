@@ -9,9 +9,9 @@
 //!
 //! 1. **RM-invariant pass** — for every node with a
 //!    `_type`, or whose parent attribute declares a concrete RM type
-//!    ([`openehr_rm::model::declared_concrete_type`]), run its core RM class
+//!    ([`openehr_rm::v1_2::model::declared_concrete_type`]), run its core RM class
 //!    invariants ([`crate::wire_validate::validate_rm_invariants_as`]) plus the
-//!    JSON-level per-node checks of [`openehr_rm::validate`]
+//!    JSON-level per-node checks of [`openehr_rm::v1_2::validate`]
 //!    (mandatory-container lower bounds, the present-but-empty list family,
 //!    `LOCATABLE.Archetyped_valid`, the data-structure shape duties). This pass
 //!    is independent of any `WebTemplate`, so class invariants on nodes a
@@ -21,7 +21,7 @@
 //!    terminology-group and code-set codes (composition `category`, context
 //!    `setting`, `null_flavour`, `ISM_TRANSITION` `current_state`,
 //!    PARTICIPATION `function`/`mode`, …) against the shared binding table in
-//!    [`openehr_rm::validate::terminology`], backed by [`openehr_term::bundle`].
+//!    [`openehr_rm::v1_2::validate::terminology`], backed by [`openehr_term::bundle`].
 //!
 //! Both key their violations by an RM **instance** path (`/content[0]/…`).
 //!
@@ -46,8 +46,8 @@ pub mod terminology;
 use serde_json::Value;
 use std::fmt::Write as _;
 
-use openehr_rm::model::declared_concrete_type;
-use openehr_rm::validate::{
+use openehr_rm::v1_2::model::declared_concrete_type;
+use openehr_rm::v1_2::validate::{
     check_archetyped_valid, check_cluster_items_present, check_data_structure_shapes,
     check_mandatory_containers, nonempty_list_violations,
 };
@@ -190,7 +190,7 @@ pub fn validate_rm_and_terminology(composition: &Value) -> Vec<ValidationMessage
 /// wire `_type` is legitimately absent (canonical JSON requires `_type` only
 /// on polymorphic slots); every descendant is dispatched from its own `_type`
 /// or its parent attribute's concretely-declared type
-/// ([`openehr_rm::model::declared_concrete_type`]), so a root type that does
+/// ([`openehr_rm::v1_2::model::declared_concrete_type`]), so a root type that does
 /// not match a tagged root is simply overridden by the tag.
 #[must_use]
 pub fn validate_rm_and_terminology_as(root: &Value, declared: &str) -> Vec<ValidationMessage> {
@@ -212,10 +212,10 @@ pub fn validate_rm_and_terminology_as(root: &Value, declared: &str) -> Vec<Valid
 /// cardinality lower limits set to zero".
 ///
 /// Concretely, exactly four things change relative to the strict entry point:
-/// [`openehr_rm::validate::check_mandatory_containers`] and
-/// [`openehr_rm::validate::nonempty_list_violations`] are not run, the
+/// [`openehr_rm::v1_2::validate::check_mandatory_containers`] and
+/// [`openehr_rm::v1_2::validate::nonempty_list_violations`] are not run, the
 /// `CLUSTER.items` presence duty
-/// ([`openehr_rm::validate::check_cluster_items_present`]) is not run, and the
+/// ([`openehr_rm::v1_2::validate::check_cluster_items_present`]) is not run, and the
 /// class-invariant tier goes through
 /// [`crate::wire_validate::validate_rm_invariants_relaxed_as`], which does not
 /// drive the TYPED construction of a node that is missing mandatory data (that
@@ -252,8 +252,8 @@ fn validate_with(root: &Value, declared: &str, bounds: LowerBounds) -> Vec<Valid
     // whatever it validates as). Never relaxed — RM common master06
     // §Incomplete Content: "data may be missing, but it may not be wrong".
     if let Some(wire) = root.get("_type").and_then(Value::as_str)
-        && openehr_rm::model::class(declared).is_some()
-        && !openehr_rm::model::is_a(wire, declared)
+        && openehr_rm::v1_2::model::class(declared).is_some()
+        && !openehr_rm::v1_2::model::is_a(wire, declared)
     {
         push(
             &mut out,
@@ -273,7 +273,7 @@ fn validate_with(root: &Value, declared: &str, bounds: LowerBounds) -> Vec<Valid
 }
 
 /// Pass 1: recurse the whole instance, running each node's core RM class
-/// invariants plus the JSON-level per-node checks of [`openehr_rm::validate`],
+/// invariants plus the JSON-level per-node checks of [`openehr_rm::v1_2::validate`],
 /// keyed by the running RM instance path.
 ///
 /// `path` is a single reusable buffer pushed/popped per recursion step: a
@@ -286,7 +286,7 @@ fn validate_with(root: &Value, declared: &str, bounds: LowerBounds) -> Vec<Valid
 /// effective type of a node whose wire `_type` is legitimately absent
 /// (canonical JSON requires `_type` only on polymorphic slots), so untagged
 /// nodes like `COMPOSITION.context` still run their class invariants
-/// ([`openehr_rm::model::declared_concrete_type`]).
+/// ([`openehr_rm::v1_2::model::declared_concrete_type`]).
 pub(crate) fn rm_invariant_pass(
     out: &mut Vec<ValidationMessage>,
     v: &Value,
@@ -383,7 +383,8 @@ pub(crate) fn rm_invariant_pass(
         // re-dispatches on its own `_type`), so the walk owns it.
         let slot_check = |item: &Value, out: &mut Vec<ValidationMessage>, path: &str| {
             if let (Some(parent), Some(wire)) = (ty, item.get("_type").and_then(Value::as_str))
-                && let Some(iv) = openehr_rm::validate::check_declared_slot_type(parent, k, wire)
+                && let Some(iv) =
+                    openehr_rm::v1_2::validate::check_declared_slot_type(parent, k, wire)
             {
                 push(out, norm_path(path), iv.message, ValidationKind::Invariant);
             }
@@ -398,7 +399,7 @@ pub(crate) fn rm_invariant_pass(
                         rm_invariant_pass(out, item, path, child_declared, bounds);
                         path.truncate(base);
                     } else if let Some(iv) = ty.and_then(|parent| {
-                        openehr_rm::validate::check_slot_member_is_object(parent, k)
+                        openehr_rm::v1_2::validate::check_slot_member_is_object(parent, k)
                     }) {
                         // A scalar member of a class-typed list slot is the
                         // same positive contradiction a foreign `_type` is —

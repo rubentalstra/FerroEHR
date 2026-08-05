@@ -14,12 +14,12 @@
 
 use std::collections::{BTreeSet, HashMap};
 
-use openehr_am::am24::aom2::constraint_model::archetype_slot::ArchetypeSlot;
-use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
-use openehr_am::am24::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
-use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-use openehr_am::am24::beom::core::assertion::Assertion;
+use openehr_am::v2_4::aom2::constraint_model::archetype_slot::ArchetypeSlot;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute::CAttribute;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::beom::core::assertion::Assertion;
 use openehr_base::prelude::Interval;
 use openehr_base::prelude::MultiplicityInterval;
 

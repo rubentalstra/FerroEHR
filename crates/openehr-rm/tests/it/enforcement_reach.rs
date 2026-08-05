@@ -12,18 +12,18 @@
 //! program added it, and the escape behind it survived precisely because
 //! nothing measured reach).
 //!
-//! The slot inventory is DERIVED (`openehr_rm::model::classes()` ×
+//! The slot inventory is DERIVED (`openehr_rm::v1_2::model::classes()` ×
 //! `validate::terminology::slots_for`), never a second hand list; the total is
 //! pinned so an arm for a type outside the static model cannot vanish
 //! silently. The invariant-core dimension (the generated cores in
-//! `openehr_rm::validate::generated`) is deliberately OUT of constructive
+//! `openehr_rm::v1_2::validate::generated`) is deliberately OUT of constructive
 //! scope: cores are arbitrary predicates whose violating instances are not
 //! mechanically derivable from the model — their reach is carried by the
 //! fast-vs-typed corpus equivalence battery and the per-invariant unit tests
 //! beside each `*_impl.rs`, and the boundary is recorded here rather than
 //! silently skipped.
 
-use openehr_rm::validate::terminology::{
+use openehr_rm::v1_2::validate::terminology::{
     Binding, CodeSet, Group, Slot, slot_is_violated, slots_for,
 };
 use serde_json::{Value, json};
@@ -79,7 +79,7 @@ fn coded(terminology: &str, code: &str) -> Value {
 /// Every (type, slot) pair of the binding table, derived from the model.
 fn all_slots() -> Vec<(&'static str, &'static Slot)> {
     let mut out = Vec::new();
-    for class in openehr_rm::model::classes() {
+    for class in openehr_rm::v1_2::model::classes() {
         for slot in slots_for(class.name) {
             out.push((class.name, slot));
         }
@@ -128,7 +128,7 @@ fn every_terminology_slot_detects_a_violation_and_passes_its_valid_twin() {
         // validate_rm_terminology for the owning type.
         let node = json!({ "_type": ty, slot.field: coded(valid_terminology, "no-such-code-999") });
         let mut out = Vec::new();
-        openehr_rm::validate::terminology::validate_rm_terminology(ty, &node, &mut out);
+        openehr_rm::v1_2::validate::terminology::validate_rm_terminology(ty, &node, &mut out);
         assert!(
             out.iter().any(|iv| iv.message.contains(slot.invariant)),
             "{ty}.{}: validate_rm_terminology did not surface {} (got {out:?})",

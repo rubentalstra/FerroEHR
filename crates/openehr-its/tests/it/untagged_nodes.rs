@@ -16,11 +16,11 @@
 //! application per `.claude/rules/cnf-triage.md`; RM ehr `EVENT_CONTEXT`
 //! §Invariants `Setting_valid`). These tests pin the fix: the effective RM
 //! type of an untagged node is its parent's declared attribute type
-//! (`openehr_rm::model::declared_concrete_type`), and validation
+//! (`openehr_rm::v1_2::model::declared_concrete_type`), and validation
 //! verdicts are tag-presence-independent wherever the tag is omittable.
 
 use openehr_its::rm_instance::{ValidationKind, validate_rm_and_terminology};
-use openehr_rm::model::declared_concrete_type;
+use openehr_rm::v1_2::model::declared_concrete_type;
 use serde_json::{Value, json};
 
 use crate::common::corpus_files;

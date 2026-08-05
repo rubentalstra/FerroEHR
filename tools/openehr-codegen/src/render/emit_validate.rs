@@ -254,7 +254,7 @@ fn pending_register(own_schema: &BmmSchema) -> String {
          //! group (`has_code_for_group_id`) or a code set (`code_set (id).has_code`),\n\
          //! so no generated core below can evaluate them mechanically. They are\n\
          //! realized instead by the sibling binding table —\n\
-         //! `crate::validate::terminology::validate_rm_terminology`, over the openEHR\n\
+         //! `super::terminology::validate_rm_terminology`, over the openEHR\n\
          //! terminology bundle (TERM 3.1.0) — which the `openehr-its` wire-boundary\n\
          //! dispatcher runs as a post-core check. Enforcement was audited clean\n\
          //! against the whole corpus first, so none newly rejects previously-accepted\n\
@@ -407,7 +407,7 @@ pub(crate) fn dv_identifier_core(id: &str, out: &mut Vec<InvariantViolation>) {
 
 /// TERM_MAPPING `Match_valid`: `match` must be one of `< = > ?`.
 pub(crate) fn term_mapping_core(match_code: char, out: &mut Vec<InvariantViolation>) {
-    if !crate::data_types::text::term_mapping::TermMapping::is_valid_match_code(match_code) {
+    if !super::super::data_types::text::term_mapping::TermMapping::is_valid_match_code(match_code) {
         out.push(InvariantViolation::here(
             "Invariant Match_valid failed on type TERM_MAPPING",
         ));

@@ -33,16 +33,16 @@
 
 use std::collections::BTreeMap;
 
-use openehr_am::am24::aom2::archetype::archetype::Archetype;
-use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
-use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
-use openehr_am::am24::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
-use openehr_am::am24::aom2::constraint_model::c_complex_object::{
+use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
+use openehr_am::v2_4::aom2::archetype::authored_archetype::AuthoredArchetype;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute::CAttribute;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::{
     CComplexObject, CComplexObjectData,
 };
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-use openehr_am::am24::aom2::constraint_model::sibling_order::SiblingOrder;
-use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::constraint_model::sibling_order::SiblingOrder;
+use openehr_am::v2_4::aom2::terminology::archetype_terminology::ArchetypeTerminology;
 use openehr_base::prelude::MultiplicityInterval;
 
 use crate::aom::access::{
@@ -624,7 +624,7 @@ fn resolve_object_mut<'a>(
 /// (resolved against `tree`), preserving the proxy's node id / occurrences.
 fn expand_proxy(
     tree: &CComplexObject,
-    proxy: &openehr_am::am24::aom2::constraint_model::c_complex_object_proxy::CComplexObjectProxy,
+    proxy: &openehr_am::v2_4::aom2::constraint_model::c_complex_object_proxy::CComplexObjectProxy,
 ) -> Option<CObject> {
     let target = resolve_object_ref(tree, &proxy.target_path)?;
     let mut out = target.clone();

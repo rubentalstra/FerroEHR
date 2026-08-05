@@ -108,7 +108,7 @@ mod tests {
             info.spec.am,
             format!(
                 "{} + {}",
-                openehr_am::am14::SPEC_VERSION,
+                openehr_am::v1_4::SPEC_VERSION,
                 openehr_am::SPEC_VERSION
             )
         );

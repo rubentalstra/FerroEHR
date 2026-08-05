@@ -8,7 +8,7 @@ The openEHR **spec + serialization + REST-contract layer is generated**, not
 hand-written. `openehr-codegen` reads the vendored specs and emits Rust:
 
 - `emit` → the spec crates from BMM: `openehr-base`, `openehr-rm`, `openehr-am`
-  (`am14`+`am24`), `openehr-term`, `openehr-lang`.
+  (`v1_4`+`v2_4`), `openehr-term`, `openehr-lang`.
 - `emit-xml` → canonical-XML `ToXml`/`FromXml` for the RM/BASE types into
   `openehr-its/src/xml/generated/` (from the vendored XSDs + the BMM field model).
 - `emit-rest` → the ITS-REST contract (DTOs + `#[async_trait]` server traits +

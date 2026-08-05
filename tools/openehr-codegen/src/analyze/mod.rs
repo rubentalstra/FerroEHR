@@ -32,13 +32,20 @@ pub(crate) struct Model {
 
 /// Spec types provided by *dependency* crates. When a schema references a type
 /// it does not emit itself but a dependency does, the emitter resolves it to
-/// that crate's prelude (e.g. `openehr_base::prelude::Uid`) instead of
-/// degrading to `serde_json::Value`.
+/// that dependency GENERATION's defining module by full path (e.g.
+/// `openehr_base::v1_3::base_types::identification::uid`) instead of degrading
+/// to `serde_json::Value`. Full generation-module paths — never a crate
+/// prelude — so a generation binds exactly the dependency generation its
+/// composition pairs it with (RM `v1_1` resolves against BASE `v1_2`, not
+/// whatever the dependency crate's current prelude re-exports).
 #[derive(Default)]
 pub(crate) struct External {
-    /// Each entry: the set of spec class names a dependency exports, and the
-    /// Rust path to import them from (its prelude).
-    deps: Vec<(BTreeSet<String>, String)>,
+    /// Each entry: spec class name → the full Rust module path of the
+    /// dependency generation's defining module (the type ident is appended by
+    /// the caller). Entries are consulted in registration order — the FIRST
+    /// map containing a spec name wins, so a composition listing two
+    /// generations of one dependency crate decides collisions by list order.
+    deps: Vec<BTreeMap<String, String>>,
     /// Path to the hand-written container-shape module
     /// (`openehr_base::containers`, or `crate::containers` inside
     /// `openehr-base` itself). `NonEmptyVec` — the emission shape of a `1..*`
@@ -64,23 +71,25 @@ impl External {
         &self.containers
     }
 
-    /// Register a dependency crate's exported spec names under a prelude path.
-    pub(crate) fn with(mut self, specs: BTreeSet<String>, prelude_path: &str) -> Self {
-        self.deps.push((specs, prelude_path.to_string()));
+    /// Register one dependency generation's exported spec names, each mapped
+    /// to the full Rust path of its defining module.
+    pub(crate) fn with(mut self, modules: BTreeMap<String, String>) -> Self {
+        self.deps.push(modules);
         self
     }
 
-    /// The prelude path a dependency exports `spec` from, if any.
-    pub(crate) fn prelude_of(&self, spec: &str) -> Option<&str> {
+    /// The full defining-module path a dependency generation exports `spec`
+    /// from, if any (first registered match wins).
+    pub(crate) fn module_of(&self, spec: &str) -> Option<&str> {
         self.deps
             .iter()
-            .find(|(specs, _)| specs.contains(spec))
-            .map(|(_, path)| path.as_str())
+            .find_map(|modules| modules.get(spec))
+            .map(String::as_str)
     }
 
-    /// Whether a dependency crate exports `spec`.
+    /// Whether a dependency generation exports `spec`.
     pub(crate) fn contains(&self, spec: &str) -> bool {
-        self.prelude_of(spec).is_some()
+        self.module_of(spec).is_some()
     }
 }
 

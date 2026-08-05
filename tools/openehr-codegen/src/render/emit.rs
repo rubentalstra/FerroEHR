@@ -34,7 +34,7 @@ use crate::load::bmm::{
     BmmClass, BmmConstant, BmmEnumValue, BmmEnumeration, BmmPropKind, BmmSchema, BmmType,
 };
 use crate::load::impls::SiblingImpls;
-use crate::plan::composition::Composed;
+use crate::plan::composition::{CrateComposition, GenerationSpec, generation_variant};
 use crate::plan::construction;
 use crate::plan::overrides::{back_reference, class_binding, type_override, untyped_field};
 use crate::plan::{Emission, decide};
@@ -99,13 +99,10 @@ pub(crate) struct GenFile {
 
 /// One emitted type and the module chain it lives in (for import + prelude).
 struct Emitted {
-    /// Module chain under the crate root, e.g. `["base_types","identification","uid"]`.
+    /// Module chain under the crate root, e.g. `["v1_3","base_types","identification","uid"]`.
     chain: Vec<String>,
     /// Rust type identifier, e.g. `Uid`.
     ident: String,
-    /// The openEHR spec class the type realizes (`UID`) — the key the crate
-    /// prelude's one-entry-per-name ownership is decided on.
-    spec: String,
 }
 
 /// The generated files for one schema version plus its top-level module names.
@@ -120,21 +117,25 @@ struct Version {
 
 /// One BMM generation of a crate as the emitter consumes it.
 ///
-/// A crate composed of several generations (LANG's stable v2.x BMM beside the
-/// v3 development line — `LANG/docs/bmm3/master00-amendment_record.adoc`
+/// A crate composed of several generations (AM 1.4/2.4; LANG's stable v2.x
+/// BMM beside the v3 development line — `LANG/docs/bmm3/master00-amendment_record.adoc`
 /// SPECLANG-14) emits each one COMPLETELY from its own schema and its own
-/// resolution model, so a class name declared by both yields two Rust types at
-/// two source-package paths, each with its own shape and its own
-/// intra-generation cross-references.
+/// resolution model under its own version-named top module, so a class name
+/// declared by two generations yields two Rust types at two module paths,
+/// each with its own shape and its own intra-generation cross-references.
 pub(crate) struct CrateGeneration<'a> {
+    /// The table row this generation emits from (module name, spec version,
+    /// current marker).
+    pub spec: &'static GenerationSpec,
     /// The resolution model this generation's classes resolve against.
     pub model: &'a Model,
-    /// This generation's own schema (one vendored BMM file, verbatim).
+    /// This generation's schema WITH its cross-schema re-emission closure
+    /// grafted in (`augmented_schema` — a generation with an empty closure is
+    /// unchanged).
     pub schema: &'a BmmSchema,
-    /// The spec class names this generation contributes to the crate prelude,
-    /// or `None` when it is the crate's sole generation (it then owns
-    /// everything it emits).
-    pub prelude_owned: Option<&'a BTreeSet<String>>,
+    /// The full-path index resolving this generation's cross-crate references
+    /// to its PAIRED dependency generations.
+    pub external: &'a External,
 }
 
 /// The emission shapes that produce a file: [`Emission`] minus its `Skip`
@@ -168,13 +169,15 @@ impl<'a> Shape<'a> {
     }
 }
 
-/// Emit one schema version under `prefix` (empty for a single-version crate).
-/// Produces the type files, the `mod.rs` tree, and a `prelude.rs`; the caller
-/// assembles `lib.rs`.
+/// Emit one BMM generation under its version-named top module. Produces the
+/// type files, the `mod.rs` tree, the generation's own `prelude.rs` and its
+/// `SPEC_VERSION` constant; the caller assembles the crate `lib.rs` and the
+/// crate prelude.
 fn emit_version(
     model: &Model,
     schema: &BmmSchema,
     prefix: &str,
+    spec_version: &str,
     external: &External,
     impls: &SiblingImpls,
 ) -> Version {
@@ -222,7 +225,6 @@ fn emit_version(
         emitted.push(Emitted {
             chain: chain.clone(),
             ident: naming::type_name(name),
-            spec: name.clone(),
         });
         // A polymorphic-concrete class emits a sibling `{Name}Data` struct in the
         // same file (the enum owns `{Name}`); export it from the prelude too so
@@ -232,7 +234,6 @@ fn emit_version(
             emitted.push(Emitted {
                 chain: chain.clone(),
                 ident: format!("{}Data", naming::type_name(name)),
-                spec: name.clone(),
             });
         }
         planned.push(Planned {
@@ -280,80 +281,37 @@ fn emit_version(
 
     let type_chains: Vec<Vec<String>> = planned.iter().map(|p| p.chain.clone()).collect();
 
-    // Module tree. For a prefixed version, also register `<prefix>/prelude` so
-    // the prefix `mod.rs` declares it.
+    // Module tree, with the generation's own `<prefix>/prelude` registered so
+    // the generation `mod.rs` declares it.
     let mut tree_chains = type_chains.clone();
-    if !prefix.is_empty() {
-        tree_chains.push(vec![prefix.to_string(), "prelude".to_string()]);
-    }
+    tree_chains.push(vec![prefix.to_string(), "prelude".to_string()]);
     files.extend(emit_module_tree(&tree_chains));
-    // A prefixed version module carries its own spec-version constant, sourced
-    // from the vendored BMM schema's `rm_release` (the crate-level constant in
-    // `lib.rs` covers only the crate's primary generation).
-    // A prefixed version module carries its own prelude + spec-version constant;
-    // an unprefixed generation contributes to the crate-level prelude the caller
-    // assembles (a crate may be composed of several BMM generations, and the
-    // prelude carries exactly one entry per Rust type name).
-    let emitted = if prefix.is_empty() {
-        emitted
-    } else {
-        let mod_path = format!("{prefix}/mod.rs");
-        for f in &mut files {
-            if f.path == mod_path {
-                f.body.push_str(&format!(
-                    "\n/// The openEHR specification version this generation implements —\n\
-                     /// the vendored BMM schema's `rm_release`.\n\
-                     pub const SPEC_VERSION: &str = \"{}\";\n",
-                    schema.rm_release
-                ));
-            }
+    // The generation module carries its own spec-version constant (the table's
+    // per-generation pin) and its own prelude; the caller assembles the crate
+    // prelude from the CURRENT generation's `emitted` set.
+    let mod_path = format!("{prefix}/mod.rs");
+    for f in &mut files {
+        if f.path == mod_path {
+            f.body.push_str(&format!(
+                "\n/// The openEHR specification version this generation implements.\n\
+                 pub const SPEC_VERSION: &str = \"{spec_version}\";\n",
+            ));
         }
-        files.push(emit_prelude(&emitted, &format!("{prefix}/prelude.rs")));
-        Vec::new()
-    };
+    }
+    files.push(emit_prelude(&emitted, &format!("{prefix}/prelude.rs")));
 
-    // Top modules: the prefix itself if prefixed, else the type roots.
-    let top = if prefix.is_empty() {
-        top_modules(&type_chains)
-    } else {
-        std::iter::once(prefix.to_string()).collect()
-    };
     Version {
         files,
-        top,
+        top: std::iter::once(prefix.to_string()).collect(),
         emitted,
     }
 }
 
-/// Emit a single-generation crate (`openehr-base`): one schema, top-level
-/// modules, crate `prelude`, and `lib.rs`. `external` resolves dependency-crate
-/// types.
-#[must_use]
-pub(crate) fn emit_crate(
-    model: &Model,
-    schema: &BmmSchema,
-    external: &External,
-    crate_doc: &str,
-    spec_version: &str,
-    impls: &SiblingImpls,
-) -> Vec<GenFile> {
-    emit_generations(
-        &[CrateGeneration {
-            model,
-            schema,
-            prelude_owned: None,
-        }],
-        external,
-        crate_doc,
-        spec_version,
-        impls,
-    )
-}
-
-/// The crate-relative module path a class's emitted type lives at, e.g.
-/// `bmm::core::bmm_class` — the same chain [`emit_version`] builds, so a
-/// downstream emitter (`emit-json`) can name a type the crate prelude does not
-/// export.
+/// The crate-relative module path a class's emitted type lives at WITHIN its
+/// generation module, e.g. `core::bmm_class` — the same chain
+/// [`emit_version`] builds under the generation prefix, so a downstream
+/// emitter can name any type by
+/// `<crate>::<generation>::<type_module_path>::<Ident>`.
 #[must_use]
 pub(crate) fn type_module_path(schema: &BmmSchema, class: &str) -> String {
     let pkg = class_paths(schema).get(class).cloned().unwrap_or_default();
@@ -366,97 +324,40 @@ pub(crate) fn type_module_path(schema: &BmmSchema, class: &str) -> String {
     chain.join("::")
 }
 
-/// The per-generation render inputs of a resolved composition, in declaration
-/// order — the bridge from [`crate::plan::composition::compose`] to
-/// [`emit_generations`].
-#[must_use]
-pub(crate) fn crate_generations(composed: &Composed) -> Vec<CrateGeneration<'_>> {
-    composed
-        .generations
-        .iter()
-        .map(|g| CrateGeneration {
-            model: &g.model,
-            schema: &g.schema,
-            prelude_owned: Some(&g.owned),
-        })
-        .collect()
-}
-
-/// Emit a crate composed of one or more BMM **generations** (`openehr-lang`):
-/// every generation is rendered completely at its own source-package paths, and
-/// the crate carries ONE prelude with one entry per Rust type name.
+/// Emit a fully-composed crate: every BMM generation rendered completely
+/// under its version-named top module (with its own prelude + `SPEC_VERSION`),
+/// the crate prelude re-exporting the CURRENT generation only, and `lib.rs`
+/// carrying the crate `SPEC_VERSION` and the [`crate::plan::composition`]
+/// table's emitted `Generation` enum.
 ///
-/// # Panics
-/// Panics if two generations would write the same file (a silent shape pick —
-/// one generation's output overwriting the other's), or if two generations both
-/// claim the same prelude identifier. Both are emitter/table bugs: the
-/// generations' source packages must be disjoint, and prelude ownership is
-/// decided once in [`crate::plan::composition::Generation::owned`].
+/// `generations` pairs each composed generation with the (possibly augmented —
+/// `cross_schema_reemit`) schema the render loop consumes.
 #[must_use]
-pub(crate) fn emit_generations(
+pub(crate) fn emit_composed(
+    comp: &CrateComposition,
     generations: &[CrateGeneration<'_>],
-    external: &External,
-    crate_doc: &str,
-    spec_version: &str,
     impls: &SiblingImpls,
 ) -> Vec<GenFile> {
     let mut files: Vec<GenFile> = Vec::new();
     let mut top: BTreeSet<String> = BTreeSet::new();
-    let mut emitted: Vec<Emitted> = Vec::new();
-    let mut paths: BTreeSet<String> = BTreeSet::new();
-    let mut idents: BTreeSet<String> = BTreeSet::new();
+    let mut current: Vec<Emitted> = Vec::new();
     for g in generations {
-        let v = emit_version(g.model, g.schema, "", external, impls);
-        for f in &v.files {
-            assert!(
-                paths.insert(f.path.clone()),
-                "openehr-codegen: two BMM generations of one crate both emit {:?} — their \
-                 source packages must be disjoint so each generation lands at its own path. \
-                 Emitting one over the other would silently pick a single shape for a \
-                 colliding class.",
-                f.path,
-            );
-        }
+        let v = emit_version(
+            g.model,
+            g.schema,
+            g.spec.module,
+            g.spec.spec_version,
+            g.external,
+            impls,
+        );
         files.extend(v.files);
         top.extend(v.top);
-        for e in v.emitted {
-            if g.prelude_owned
-                .is_some_and(|owned| !owned.contains(&e.spec))
-            {
-                continue;
-            }
-            assert!(
-                idents.insert(e.ident.clone()),
-                "openehr-codegen: two BMM generations both export {:?} from the crate prelude \
-                 — prelude ownership must name exactly one generation per Rust type name.",
-                e.ident,
-            );
-            emitted.push(e);
+        if g.spec.current {
+            current = v.emitted;
         }
     }
-    files.push(emit_prelude(&emitted, "prelude.rs"));
-    files.push(emit_lib(&top, true, crate_doc, spec_version));
-    files
-}
-
-/// Emit a multi-version crate (`openehr-am`): each `(prefix, model, schema)`
-/// becomes a top-level version module (`am14`, `am24`) with its own prelude.
-#[must_use]
-pub(crate) fn emit_multi_crate(
-    versions: &[(&str, &Model, &BmmSchema)],
-    external: &External,
-    crate_doc: &str,
-    spec_version: &str,
-    impls: &SiblingImpls,
-) -> Vec<GenFile> {
-    let mut files = Vec::new();
-    let mut top: BTreeSet<String> = BTreeSet::new();
-    for (prefix, model, schema) in versions {
-        let v = emit_version(model, schema, prefix, external, impls);
-        files.extend(v.files);
-        top.extend(v.top);
-    }
-    files.push(emit_lib(&top, false, crate_doc, spec_version));
+    files.push(emit_prelude(&current, "prelude.rs"));
+    files.push(emit_lib(&top, comp));
     files
 }
 
@@ -495,19 +396,9 @@ fn emit_module_tree(chains: &[Vec<String>]) -> Vec<GenFile> {
         .collect()
 }
 
-/// Top-level module names (first chain segment), deduped.
-fn top_modules(chains: &[Vec<String>]) -> BTreeSet<String> {
-    chains.iter().filter_map(|c| c.first().cloned()).collect()
-}
-
-fn emit_lib(
-    top: &BTreeSet<String>,
-    include_prelude: bool,
-    crate_doc: &str,
-    spec_version: &str,
-) -> GenFile {
+fn emit_lib(top: &BTreeSet<String>, comp: &CrateComposition) -> GenFile {
     let mut b = String::new();
-    for line in crate_doc.lines() {
+    for line in comp.doc.lines() {
         b.push_str(&format!("//! {line}\n"));
     }
     b.push_str("//!\n//! @generated module tree by openehr-codegen. The type files\n");
@@ -557,44 +448,154 @@ fn emit_lib(
     for m in top {
         b.push_str(&format!("pub mod {m};\n"));
     }
-    if include_prelude {
-        b.push_str("pub mod prelude;\n");
-    }
+    b.push_str("pub mod prelude;\n");
     b.push_str(&format!(
         "\n/// The openEHR specification version this crate implements.\n\
          ///\n\
          /// The pin is emitted by `openehr-codegen` from the vendored inputs and is\n\
          /// deliberately independent of the crates.io package version, which is the\n\
          /// crate's own `SemVer` line and moves only with this implementation's code.\n\
-         pub const SPEC_VERSION: &str = \"{spec_version}\";\n",
+         pub const SPEC_VERSION: &str = \"{}\";\n",
+        comp.spec_version,
     ));
+    b.push_str(&emit_generation_enum(comp));
     GenFile {
         path: "lib.rs".to_string(),
         body: b,
     }
 }
 
-fn emit_prelude(emitted: &[Emitted], path: &str) -> GenFile {
-    // The prelude carries ONE entry per Rust type name. A crate composed of two
-    // BMM generations (openEHR publishes the stable v2.x BMM,
-    // `LANG/docs/bmm/master01-preface.adoc` §History, beside the v3 development
-    // line, `LANG/docs/bmm3/master01-preface.adoc` §Previous Versions) emits both
-    // generations completely at their own source-package paths; where a class
-    // name exists in both, the prelude exports the LAST-declared generation's
-    // type and the other twin is reachable by its full module path only.
+/// The crate's `Generation` enum + parse-error type, generated from the
+/// composition table so it can never drift from what is actually emitted.
+fn emit_generation_enum(comp: &CrateComposition) -> String {
+    let variants: Vec<(String, &GenerationSpec)> = comp
+        .generations
+        .iter()
+        .map(|g| (generation_variant(g.module), g))
+        .collect();
+    let current = variants
+        .iter()
+        .find(|(_, g)| g.current)
+        .map(|(v, _)| v.clone())
+        .unwrap_or_default();
     let mut b = String::from(
-        "//! Prelude: re-exports every generated spec type of this version.\n\
+        "\n/// The BMM generations this crate emits, one variant per version module,\n\
+         /// oldest first.\n\
+         ///\n\
+         /// Generated from the openehr-codegen composition table — the single\n\
+         /// authority for which generations exist. [`std::fmt::Display`] and\n\
+         /// [`std::str::FromStr`] round-trip the generation-module name (`\"",
+    );
+    b.push_str(comp.generations.first().map_or("", |g| g.module));
+    b.push_str(
+        "\"`).\n\
+         #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]\n\
+         pub enum Generation {\n",
+    );
+    for (variant, g) in &variants {
+        b.push_str(&format!(
+            "    /// The `{}` generation — openEHR specification version {}.\n    {variant},\n",
+            g.module, g.spec_version,
+        ));
+    }
+    b.push_str("}\n\nimpl Generation {\n");
+    b.push_str(&format!(
+        "    /// The crate's CURRENT generation — the one `crate::prelude` re-exports.\n    \
+         pub const CURRENT: Self = Self::{current};\n\n",
+    ));
+    b.push_str("    /// Every generation this crate emits, oldest first.\n");
+    b.push_str(&format!(
+        "    pub const ALL: &'static [Self] = &[{}];\n\n",
+        variants
+            .iter()
+            .map(|(v, _)| format!("Self::{v}"))
+            .collect::<Vec<_>>()
+            .join(", "),
+    ));
+    b.push_str(
+        "    /// The openEHR specification version this generation implements.\n    \
+         #[must_use]\n    pub const fn spec_version(self) -> &'static str {\n        match self {\n",
+    );
+    // Variants sharing one spec version fold into a single or-pattern arm
+    // (LANG's v2/v3 both carry the 1.1.0-line release) — identical match
+    // arms are a clippy deny in the generated output.
+    let mut version_arms: Vec<(&str, Vec<String>)> = Vec::new();
+    for (variant, g) in &variants {
+        if let Some((_, vs)) = version_arms.iter_mut().find(|(v, _)| *v == g.spec_version) {
+            vs.push(format!("Self::{variant}"));
+        } else {
+            version_arms.push((g.spec_version, vec![format!("Self::{variant}")]));
+        }
+    }
+    for (version, patterns) in &version_arms {
+        b.push_str(&format!(
+            "            {} => \"{version}\",\n",
+            patterns.join(" | ")
+        ));
+    }
+    b.push_str(
+        "        }\n    }\n\n    /// The generation-module name (`\"v1_2\"`) — the\n    \
+         /// [`std::fmt::Display`]/[`std::str::FromStr`] token.\n    \
+         #[must_use]\n    pub const fn module(self) -> &'static str {\n        match self {\n",
+    );
+    for (variant, g) in &variants {
+        b.push_str(&format!(
+            "            Self::{variant} => \"{}\",\n",
+            g.module
+        ));
+    }
+    let tokens = comp
+        .generations
+        .iter()
+        .map(|g| g.module)
+        .collect::<Vec<_>>()
+        .join("`, `");
+    b.push_str(&format!(
+        "        }}\n    }}\n}}\n\n\
+         impl std::fmt::Display for Generation {{\n    \
+         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {{\n        \
+         f.write_str(self.module())\n    }}\n}}\n\n\
+         /// Error returned when parsing a [`Generation`] from an unknown token.\n\
+         ///\n\
+         /// The valid tokens are the generation-module names (`{tokens}`).\n\
+         #[derive(Debug, Clone, PartialEq, Eq)]\n\
+         pub struct GenerationParseError {{\n    unrecognized: String,\n}}\n\n\
+         impl std::fmt::Display for GenerationParseError {{\n    \
+         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {{\n        \
+         write!(\n            f,\n            \"unknown generation {{:?}} (valid: `{tokens}`)\",\n            \
+         self.unrecognized\n        )\n    }}\n}}\n\n\
+         impl std::error::Error for GenerationParseError {{}}\n\n\
+         impl std::str::FromStr for Generation {{\n    type Err = GenerationParseError;\n\n    \
+         fn from_str(s: &str) -> Result<Self, Self::Err> {{\n        match s {{\n",
+    ));
+    for (variant, g) in &variants {
+        b.push_str(&format!(
+            "            \"{}\" => Ok(Self::{variant}),\n",
+            g.module
+        ));
+    }
+    b.push_str(
+        "            other => Err(GenerationParseError {\n                \
+         unrecognized: other.to_owned(),\n            }),\n        }\n    }\n}\n",
+    );
+    b
+}
+
+fn emit_prelude(emitted: &[Emitted], path: &str) -> GenFile {
+    // Both the crate prelude (assembled from the CURRENT generation's emitted
+    // set — the chains carry the generation module) and each generation's own
+    // in-tree prelude are emitted through this one function; only the entry
+    // set differs.
+    let mut b = String::from(
+        "//! Prelude: re-exports every generated spec type of ONE generation.\n\
          //!\n//! @generated by openehr-codegen. Per-file imports are precise;\n\
          //! downstream crates and hand-written code may `use <path>::*`.\n\
          //!\n\
-         //! ONE ENTRY PER RUST TYPE NAME. Where a crate is composed of several BMM\n\
-         //! generations (openEHR publishes the stable v2.x BMM —\n\
-         //! `LANG/docs/bmm/master01-preface.adoc` §History — beside the v3\n\
-         //! development line — `LANG/docs/bmm3/master01-preface.adoc` §Previous\n\
-         //! Versions), EVERY generation is emitted completely at its own\n\
-         //! source-package path, and a class name declared by more than one is\n\
-         //! exported here from the LAST-declared generation; the other\n\
-         //! generation's twin is reachable by its full module path only.\n\n",
+         //! The crate-level prelude re-exports the CURRENT generation only (the\n\
+         //! composition table's `current` marker); every generation module also\n\
+         //! carries its own `prelude`. An older generation's types are reached\n\
+         //! through its generation module (its prelude or full module paths) —\n\
+         //! no cross-generation collision resolution exists anywhere.\n\n",
     );
     let mut lines: Vec<String> = emitted
         .iter()
@@ -1245,7 +1246,7 @@ fn emit_enum(
                         Some(format!("use crate::{}::{};", chain.join("::"), ident))
                     } else {
                         external
-                            .prelude_of(spec)
+                            .module_of(spec)
                             .map(|path| format!("use {path}::{ident};"))
                     }
                 }),
@@ -1535,7 +1536,8 @@ fn emit_enum_literals(class: &BmmClass, enumeration: &BmmEnumeration, has_siblin
 // ── import + header helpers ──────────────────────────────────────────────────
 
 /// Precise `use` lines for a struct's referenced spec types: `crate::…` for
-/// types emitted in this crate, `<dep>::prelude::…` for dependency types.
+/// types emitted in this crate, the dependency generation's full
+/// defining-module path for dependency types.
 fn import_lines(
     model: &Model,
     class: &BmmClass,
@@ -1553,8 +1555,8 @@ fn import_lines(
 }
 
 /// Resolve a referenced spec type to a `use` line: local (`crate::…`) wins,
-/// then a dependency prelude; an unresolved type needs no import (it rendered as
-/// `serde_json::Value`).
+/// then the dependency generation's defining module; an unresolved type needs
+/// no import (it rendered as `serde_json::Value`).
 fn add_import(
     imports: &mut BTreeSet<String>,
     spec: &str,
@@ -1568,7 +1570,7 @@ fn add_import(
     }
     if let Some(chain) = index.get(&ident) {
         imports.insert(format!("use crate::{}::{};", chain.join("::"), ident));
-    } else if let Some(path) = external.prelude_of(spec) {
+    } else if let Some(path) = external.module_of(spec) {
         imports.insert(format!("use {path}::{ident};"));
     }
 }

@@ -3,7 +3,7 @@
 //! The core BEL grammar is `openehr_lang::bel` (a LANG spec — statements,
 //! assertions, assignments, operators, literals → the generated `beom` model).
 //! This module supplies the **AOM composition**: a [`BelBuilder`] that produces
-//! the AM-level expression model (`openehr_am::am24::beom` — the extender enums
+//! the AM-level expression model (`openehr_am::v2_4::beom` — the extender enums
 //! composing the beom variants + the AOM leaves), with the two AOM-specific leaf
 //! productions the spec adds (`AOM2` master05-rules_package):
 //!
@@ -19,29 +19,33 @@
 //! No expression grammar is duplicated: this drives
 //! [`openehr_lang::bel::parse_statements_with`] with the AOM builder.
 
-use openehr_am::am24::aom2::constraint_model::archetype_constraint::ArchetypeConstraint;
-use openehr_am::am24::aom2::constraint_model::c_complex_object::{
+use openehr_am::v2_4::aom2::constraint_model::archetype_constraint::ArchetypeConstraint;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::{
     CComplexObject, CComplexObjectData,
 };
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
-use openehr_am::am24::aom2::rules::expr_archetype_id_constraint::ExprArchetypeIdConstraint;
-use openehr_am::am24::aom2::rules::expr_archetype_ref::ExprArchetypeRef;
-use openehr_am::am24::aom2::rules::expr_constraint::{ExprConstraint, ExprConstraintData};
-use openehr_am::am24::beom::core::assertion::Assertion;
-use openehr_am::am24::beom::core::assignment::Assignment;
-use openehr_am::am24::beom::core::expr_binary_operator::ExprBinaryOperator;
-use openehr_am::am24::beom::core::expr_for_all::ExprForAll;
-use openehr_am::am24::beom::core::expr_function_call::ExprFunctionCall;
-use openehr_am::am24::beom::core::expr_unary_operator::ExprUnaryOperator;
-use openehr_am::am24::beom::core::expr_value::ExprValue;
-use openehr_am::am24::beom::core::expr_value_ref::{ExprValueRef, ExprValueRefData};
-use openehr_am::am24::beom::core::expression::Expression;
-use openehr_am::am24::beom::core::statement::Statement;
-use openehr_am::am24::beom::core::statement_set::StatementSet;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
+use openehr_am::v2_4::aom2::rules::expr_archetype_id_constraint::ExprArchetypeIdConstraint;
+use openehr_am::v2_4::aom2::rules::expr_archetype_ref::ExprArchetypeRef;
+use openehr_am::v2_4::aom2::rules::expr_constraint::{ExprConstraint, ExprConstraintData};
+use openehr_am::v2_4::beom::core::assertion::Assertion;
+use openehr_am::v2_4::beom::core::assignment::Assignment;
+use openehr_am::v2_4::beom::core::expr_binary_operator::ExprBinaryOperator;
+use openehr_am::v2_4::beom::core::expr_for_all::ExprForAll;
+use openehr_am::v2_4::beom::core::expr_function_call::ExprFunctionCall;
+use openehr_am::v2_4::beom::core::expr_unary_operator::ExprUnaryOperator;
+use openehr_am::v2_4::beom::core::expr_value::ExprValue;
+use openehr_am::v2_4::beom::core::expr_value_ref::{ExprValueRef, ExprValueRefData};
+use openehr_am::v2_4::beom::core::expression::Expression;
+use openehr_am::v2_4::beom::core::statement::Statement;
+use openehr_am::v2_4::beom::core::statement_set::StatementSet;
 use openehr_lang::bel::{BelBuilder, BelError, BelLiteral, parse_statements_with};
-use openehr_lang::prelude::{ExprLiteral, ExprVariableRef, OperatorKind, VariableDeclaration};
-use openehr_lang::prelude::{ExprTypeDef, TypeDefObjectRef};
+use openehr_lang::v2::beom::core::expr_literal::ExprLiteral;
+use openehr_lang::v2::beom::core::expr_variable_ref::ExprVariableRef;
+use openehr_lang::v2::beom::core::operator_kind::OperatorKind;
+use openehr_lang::v2::beom::core::variable_declaration::VariableDeclaration;
+use openehr_lang::v2::beom::types::expr_type_def::ExprTypeDef;
+use openehr_lang::v2::beom::types::type_def_object_ref::TypeDefObjectRef;
 
 use crate::error::{SyntaxError, SyntaxErrorCode};
 use crate::parse::{parse_contained_regexp_text, parse_inline_primitive_text};

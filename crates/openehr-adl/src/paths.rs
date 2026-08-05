@@ -17,8 +17,8 @@
 //! "left the archetype" rather than guessing (RM path validity is a
 //! reference-model concern, `crate::validate::rm`). See [`resolve`].
 
-use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
 
 use crate::aom::access::{complex_attributes, object_node_id};
 use crate::codes::code_prefix;
@@ -317,8 +317,8 @@ mod tests {
     use super::*;
     use crate::assemble::parse_artefact;
     use crate::parse::Dialect;
-    use openehr_am::am24::aom2::archetype::archetype::Archetype;
-    use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
+    use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
+    use openehr_am::v2_4::aom2::archetype::authored_archetype::AuthoredArchetype;
 
     #[test]
     fn parse_path_splits_segments_and_predicates() {

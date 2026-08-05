@@ -210,11 +210,11 @@ impl<'a> Decomposer<'a> {
             .and_then(Value::as_str)
             .map(str::to_owned);
         // the archetype ancestor for at-code scoping — an archetype ROOT is
-        // decided by the RM's own node-id reading (`openehr_rm::paths`), not a
+        // decided by the RM's own node-id reading (`openehr_rm::v1_2::paths`), not a
         // prefix guess.
         let my_citem = if archetype
             .as_deref()
-            .is_some_and(openehr_rm::paths::is_archetype_root_node_id)
+            .is_some_and(openehr_rm::v1_2::paths::is_archetype_root_node_id)
         {
             Some(num)
         } else {

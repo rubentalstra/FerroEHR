@@ -410,7 +410,7 @@ fn is_persistent(composition: &Value) -> bool {
 /// (a term-coded node must NOT carry `archetype_details`) and the root-identity
 /// rule (`archetype_node_id` equals the stringified
 /// `archetype_details.archetype_id`) are the whole-instance pass's
-/// (`openehr_rm::validate::check_archetyped_valid`), as is
+/// (`openehr_rm::v1_2::validate::check_archetyped_valid`), as is
 /// `LOCATABLE.Links_valid`, which it applies to every node carrying `links`.
 pub(in crate::service) fn validate_root_locatable(
     obj: &serde_json::Map<String, Value>,

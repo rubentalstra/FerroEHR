@@ -630,7 +630,7 @@ mod tests {
 
         // The result is a canonical COMPOSITION that deserialises as openehr-rm.
         assert_eq!(comp["_type"], json!("COMPOSITION"));
-        let parsed: openehr_rm::composition::composition::Composition =
+        let parsed: openehr_rm::v1_2::composition::composition::Composition =
             openehr_its::json::from_canonical_value(&comp).expect("deserialises as RM Composition");
         assert!(
             parsed.feeder_audit.is_some(),

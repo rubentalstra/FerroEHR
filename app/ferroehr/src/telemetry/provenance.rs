@@ -23,7 +23,7 @@ pub const BASE: &str = openehr_base::SPEC_VERSION;
 /// The ADL 1.4 generation of the Archetype Model (the `openehr-am` crate
 /// ships both extant generations side by side; this one is the `am14`
 /// module's own pin).
-pub const AM14: &str = openehr_am::am14::SPEC_VERSION;
+pub const AM14: &str = openehr_am::v1_4::SPEC_VERSION;
 /// The ADL 2 generation of the Archetype Model (the `openehr-am` crate's
 /// primary generation — its crate-level pin equals the `am24` module's).
 pub const AM24: &str = openehr_am::SPEC_VERSION;
@@ -57,9 +57,9 @@ mod tests {
         assert_eq!(AQL, openehr_query::SPEC_VERSION);
         assert_eq!(RM, openehr_rm::SPEC_VERSION);
         assert_eq!(BASE, openehr_base::SPEC_VERSION);
-        assert_eq!(AM14, openehr_am::am14::SPEC_VERSION);
-        assert_eq!(AM24, openehr_am::am24::SPEC_VERSION);
+        assert_eq!(AM14, openehr_am::v1_4::SPEC_VERSION);
+        assert_eq!(AM24, openehr_am::v2_4::SPEC_VERSION);
         assert_eq!(TERM, openehr_term::SPEC_VERSION);
-        assert_eq!(openehr_am::SPEC_VERSION, openehr_am::am24::SPEC_VERSION);
+        assert_eq!(openehr_am::SPEC_VERSION, openehr_am::v2_4::SPEC_VERSION);
     }
 }

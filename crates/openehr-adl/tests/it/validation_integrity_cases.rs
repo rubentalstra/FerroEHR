@@ -23,12 +23,12 @@ use openehr_adl::assemble::parse_artefact;
 use openehr_adl::parse::Dialect;
 use openehr_adl::validate::catalogue::ValidationCode;
 use openehr_adl::validate::{ValidationIssue, validate_integrity, validate_source_integrity};
-use openehr_am::am24::aom2::archetype::archetype::Archetype;
-use openehr_am::am24::aom2::archetype::authored_archetype::{
+use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
+use openehr_am::v2_4::aom2::archetype::authored_archetype::{
     AuthoredArchetype, AuthoredArchetypeData,
 };
-use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
 
 /// A minimal, phase-1-clean ADL2 archetype (non-specialised, id-coded).
 const BASE: &str = r#"archetype (adl_version=2.0.5; rm_release=1.0.2)
@@ -86,7 +86,7 @@ fn authored_mut(a: &mut Archetype) -> &mut AuthoredArchetypeData {
 
 fn root_data_mut(
     a: &mut Archetype,
-) -> &mut openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObjectData {
+) -> &mut openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObjectData {
     match &mut authored_mut(a).definition {
         CComplexObject::CComplexObject(d) => d,
         CComplexObject::CArchetypeRoot(_) => panic!("base root is a plain C_COMPLEX_OBJECT"),
@@ -212,7 +212,7 @@ fn varid_malformed_identifier() {
 fn vobav_assumed_value_outside_constraint() {
     // master04.5 §C_PRIMITIVE_OBJECT — VOBAV: an assumed value must fall within
     // the value space of its constraint.
-    use openehr_am::am24::aom2::constraint_model::primitive::c_string::CString;
+    use openehr_am::v2_4::aom2::constraint_model::primitive::c_string::CString;
     let mut a = parse(BASE);
     let el = &mut root_data_mut(&mut a)
         .attributes
@@ -224,7 +224,7 @@ fn vobav_assumed_value_outside_constraint() {
     if let CObject::CComplexObject(CComplexObject::CComplexObject(elem)) = el {
         // give the ELEMENT a `value` attribute constrained to a C_STRING whose
         // assumed value is not in the constraint list.
-        use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
+        use openehr_am::v2_4::aom2::constraint_model::c_attribute::CAttribute;
         elem.attributes.get_or_insert_default().push(CAttribute {
             parent: None,
             soc_parent: None,
@@ -260,8 +260,8 @@ fn vobav_ordered_assumed_value_outside_interval_constraint() {
     // master04.5 §C_PRIMITIVE_OBJECT / §C_ORDERED — VOBAV for an ordered
     // primitive: the assumed value must fall within some constraint interval.
     // A C_INTEGER constrained to [0..10] with assumed value 20 violates it.
-    use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
-    use openehr_am::am24::aom2::constraint_model::primitive::c_integer::CInteger;
+    use openehr_am::v2_4::aom2::constraint_model::c_attribute::CAttribute;
+    use openehr_am::v2_4::aom2::constraint_model::primitive::c_integer::CInteger;
     use openehr_base::prelude::{Interval, ProperInterval, ProperIntervalData};
     let interval_0_10 =
         Interval::ProperInterval(ProperInterval::ProperInterval(ProperIntervalData {
@@ -315,9 +315,9 @@ fn vobav_ordered_assumed_value_outside_interval_constraint() {
 fn vrmvp_and_vrmvav_rm_overlay() {
     // master06 §Validity — VRMVP: an rm_visibility path referencing archetype
     // nodes must be valid; VRMVAV: an alias must be a defined at-code.
-    use openehr_am::am24::aom2::rm_overlay::rm_attribute_visibility::RmAttributeVisibility;
-    use openehr_am::am24::aom2::rm_overlay::rm_overlay::RmOverlay;
-    use openehr_am::am24::aom2::rm_overlay::visibility_type::VisibilityType;
+    use openehr_am::v2_4::aom2::rm_overlay::rm_attribute_visibility::RmAttributeVisibility;
+    use openehr_am::v2_4::aom2::rm_overlay::rm_overlay::RmOverlay;
+    use openehr_am::v2_4::aom2::rm_overlay::visibility_type::VisibilityType;
     use openehr_base::prelude::TerminologyCode;
     use std::collections::BTreeMap;
 
@@ -387,7 +387,7 @@ fn varxav_invalid_external_reference() {
     // reference of a C_ARCHETYPE_ROOT must be a valid archetype id. The parser
     // enforces a valid `use_archetype` id at parse time (SUAID/SUAIDI), so the
     // invalid-reference state is built by mutating a parsed C_ARCHETYPE_ROOT.
-    use openehr_am::am24::aom2::constraint_model::c_archetype_root::CArchetypeRoot;
+    use openehr_am::v2_4::aom2::constraint_model::c_archetype_root::CArchetypeRoot;
     let src = r#"archetype (adl_version=2.0.5; rm_release=1.0.2)
     openEHR-EHR-SECTION.ext_varxav.v1.0.0
 
@@ -458,7 +458,7 @@ terminology
 
 fn archetype_root_child_mut(
     a: &mut Archetype,
-) -> &mut openehr_am::am24::aom2::constraint_model::c_archetype_root::CArchetypeRoot {
+) -> &mut openehr_am::v2_4::aom2::constraint_model::c_archetype_root::CArchetypeRoot {
     let root = root_data_mut(a);
     let child = root
         .attributes

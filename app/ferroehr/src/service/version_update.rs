@@ -57,10 +57,10 @@
 
 use openehr_base::prelude::TerminologyId;
 use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
-use openehr_rm::common::generic::party_identified::{PartyIdentified, PartyIdentifiedData};
-use openehr_rm::data_types::text::code_phrase::CodePhrase;
-use openehr_rm::data_types::text::dv_text::DvTextData;
 use openehr_rm::prelude::{DvCodedText, DvText, PartyProxy};
+use openehr_rm::v1_2::common::generic::party_identified::{PartyIdentified, PartyIdentifiedData};
+use openehr_rm::v1_2::data_types::text::code_phrase::CodePhrase;
+use openehr_rm::v1_2::data_types::text::dv_text::DvTextData;
 
 use crate::versioning::audit::{OPENEHR, change_type};
 use crate::versioning::lifecycle;

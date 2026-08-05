@@ -5,19 +5,19 @@
 
 use std::fmt::Write;
 
-use openehr_am::am24::aom2::constraint_model::archetype_slot::ArchetypeSlot;
-use openehr_am::am24::aom2::constraint_model::c_archetype_root::CArchetypeRoot;
-use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
-use openehr_am::am24::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
-use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
-use openehr_am::am24::aom2::constraint_model::c_complex_object_proxy::CComplexObjectProxy;
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
-use openehr_am::am24::aom2::constraint_model::c_primitive_tuple::CPrimitiveTuple;
-use openehr_am::am24::aom2::constraint_model::primitive::c_string::CString;
-use openehr_am::am24::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
-use openehr_am::am24::aom2::constraint_model::primitive::constraint_status::ConstraintStatus;
-use openehr_am::am24::aom2::constraint_model::sibling_order::SiblingOrder;
+use openehr_am::v2_4::aom2::constraint_model::archetype_slot::ArchetypeSlot;
+use openehr_am::v2_4::aom2::constraint_model::c_archetype_root::CArchetypeRoot;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute::CAttribute;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object_proxy::CComplexObjectProxy;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
+use openehr_am::v2_4::aom2::constraint_model::c_primitive_tuple::CPrimitiveTuple;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_string::CString;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
+use openehr_am::v2_4::aom2::constraint_model::primitive::constraint_status::ConstraintStatus;
+use openehr_am::v2_4::aom2::constraint_model::sibling_order::SiblingOrder;
 use openehr_base::prelude::{
     Cardinality, Interval, MultiplicityInterval, PointInterval, ProperInterval,
 };

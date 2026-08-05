@@ -4,7 +4,7 @@
 //! simplified_formats master04-basic_concepts.adoc` §"Web Template Metadata"
 //! defines a Web Template as "a processed representation of an openEHR
 //! Operational Template" — dialect-neutral, and an am24 OPT2
-//! ([`openehr_am::am24::aom2::archetype::operational_template::OperationalTemplate`])
+//! ([`openehr_am::v2_4::aom2::archetype::operational_template::OperationalTemplate`])
 //! *is* an Operational Template. [`build_web_template_am24`] walks the am24
 //! constraint tree into the **same** [`WebTemplate`] model the OPT-1.4 front end
 //! ([`super::builder`]) produces, then hands it to the shared dialect-neutral
@@ -14,7 +14,7 @@
 //! parallel pipeline.
 //!
 //! The AOM2 constraint model differs from OPT 1.4:
-//! `openehr_am::am24::aom2` has no `C_DV_QUANTITY`/`C_DV_ORDINAL`/`C_CODE_PHRASE`
+//! `openehr_am::v2_4::aom2` has no `C_DV_QUANTITY`/`C_DV_ORDINAL`/`C_CODE_PHRASE`
 //! classes — a DV leaf is a `C_COMPLEX_OBJECT` whose RM attributes are
 //! constrained by `C_ATTRIBUTE`s and co-varying `C_ATTRIBUTE_TUPLE`s (e.g.
 //! `[magnitude, units]` for `DV_QUANTITY`, `[value, symbol]` for `DV_ORDINAL`),
@@ -47,25 +47,25 @@
 use std::collections::BTreeMap;
 
 use indexmap::IndexMap;
-use openehr_am::am24::aom2::archetype::archetype_hrid::ArchetypeHrid;
-use openehr_am::am24::aom2::archetype::operational_template::OperationalTemplate;
-use openehr_am::am24::aom2::constraint_model::archetype_slot::ArchetypeSlot;
-use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
-use openehr_am::am24::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
-use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
-use openehr_am::am24::aom2::constraint_model::primitive::c_boolean::CBoolean;
-use openehr_am::am24::aom2::constraint_model::primitive::c_integer::CInteger;
-use openehr_am::am24::aom2::constraint_model::primitive::c_real::CReal;
-use openehr_am::am24::aom2::constraint_model::primitive::c_string::CString;
-use openehr_am::am24::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
-use openehr_am::am24::aom2::rules::expr_constraint::ExprConstraint;
-use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
-use openehr_am::am24::beom::core::assertion::Assertion;
-use openehr_am::am24::beom::core::expression::Expression;
+use openehr_am::v2_4::aom2::archetype::archetype_hrid::ArchetypeHrid;
+use openehr_am::v2_4::aom2::archetype::operational_template::OperationalTemplate;
+use openehr_am::v2_4::aom2::constraint_model::archetype_slot::ArchetypeSlot;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute::CAttribute;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_boolean::CBoolean;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_integer::CInteger;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_real::CReal;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_string::CString;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
+use openehr_am::v2_4::aom2::rules::expr_constraint::ExprConstraint;
+use openehr_am::v2_4::aom2::terminology::archetype_terminology::ArchetypeTerminology;
+use openehr_am::v2_4::beom::core::assertion::Assertion;
+use openehr_am::v2_4::beom::core::expression::Expression;
 use openehr_base::prelude::{Cardinality, Interval, MultiplicityInterval, ProperInterval};
-use openehr_lang::prelude::OperatorKind;
+use openehr_lang::v2::beom::core::operator_kind::OperatorKind;
 
 use super::model::{
     WebTemplate, WebTemplateArchetypeSlot, WebTemplateBindingCodedValue, WebTemplateCardinality,

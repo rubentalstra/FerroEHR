@@ -5,7 +5,7 @@
 //! Archetype Identifier — the physical form
 //! `[ns::]publisher-package-class.concept.vMAJOR[.MINOR[.PATCH]][-status[.build]]`.
 //! [`parse_hrid`] reads that form into the generated
-//! `openehr_am::am24::aom2` [`ArchetypeHrid`] and `hrid_to_string` writes it
+//! `openehr_am::v2_4::aom2` [`ArchetypeHrid`] and `hrid_to_string` writes it
 //! back; the two are inverses over a normalised (3-part-version) id.
 //!
 //! Two further, deliberately *looser* readings of the same grammar live here so
@@ -23,7 +23,7 @@
 
 use std::fmt::Write;
 
-use openehr_am::am24::aom2::archetype::archetype_hrid::ArchetypeHrid;
+use openehr_am::v2_4::aom2::archetype::archetype_hrid::ArchetypeHrid;
 use openehr_base::prelude::VersionStatus;
 
 /// Parse an archetype HRID (or a version-partial specialise reference) into an

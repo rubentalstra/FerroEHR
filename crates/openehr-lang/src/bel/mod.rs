@@ -19,7 +19,7 @@
 //!   [`parse_statements`] uses it. It rejects the `matches` constraint leaf
 //!   (`EXPR_CONSTRAINT` is an AOM extension, defined in `openehr-am`, not beom).
 //! * `openehr-adl` supplies its own builder that produces the AM-level
-//!   expression model (`openehr_am::am24::aom2` — the extender enums composing
+//!   expression model (`openehr_am::v2_4::aom2` — the extender enums composing
 //!   the beom variants + the AOM leaves `EXPR_ARCHETYPE_REF`/`EXPR_CONSTRAINT`),
 //!   parsing archetype paths and `matches { c_primitive_object }` via its cADL
 //!   primitive parser. No expression grammar is duplicated: `openehr-adl` reuses
@@ -37,18 +37,18 @@
 
 mod parser;
 
-use crate::beom::core::assertion::Assertion;
-use crate::beom::core::assignment::Assignment;
-use crate::beom::core::expr_literal::ExprLiteral;
-use crate::beom::core::expr_value::ExprValue;
-use crate::beom::core::expr_value_ref::ExprValueRef;
-use crate::beom::core::expr_variable_ref::ExprVariableRef;
-use crate::beom::core::expression::Expression;
-use crate::beom::core::operator_kind::OperatorKind;
-use crate::beom::core::statement::Statement;
-use crate::beom::core::variable_declaration::VariableDeclaration;
-use crate::beom::types::expr_type_def::ExprTypeDef;
-use crate::beom::types::type_def_object_ref::TypeDefObjectRef;
+use crate::v2::beom::core::assertion::Assertion;
+use crate::v2::beom::core::assignment::Assignment;
+use crate::v2::beom::core::expr_literal::ExprLiteral;
+use crate::v2::beom::core::expr_value::ExprValue;
+use crate::v2::beom::core::expr_value_ref::ExprValueRef;
+use crate::v2::beom::core::expr_variable_ref::ExprVariableRef;
+use crate::v2::beom::core::expression::Expression;
+use crate::v2::beom::core::operator_kind::OperatorKind;
+use crate::v2::beom::core::statement::Statement;
+use crate::v2::beom::core::variable_declaration::VariableDeclaration;
+use crate::v2::beom::types::expr_type_def::ExprTypeDef;
+use crate::v2::beom::types::type_def_object_ref::TypeDefObjectRef;
 use openehr_base::containers::present;
 
 /// A BEL parse/lex error, located by byte offset in the source.
@@ -327,10 +327,12 @@ impl BelBuilder for BeomBuilder {
     fn function_call(&mut self, name: &str, args: Vec<Expression>) -> Expression {
         // beom EXPR_FUNCTION_CALL: `item` carries the function reference (its
         // name here), `arguments` the operands.
-        Expression::ExprFunctionCall(crate::beom::core::expr_function_call::ExprFunctionCall {
-            item: Some(serde_json::Value::String(name.to_owned())),
-            arguments: present(args),
-        })
+        Expression::ExprFunctionCall(
+            crate::v2::beom::core::expr_function_call::ExprFunctionCall {
+                item: Some(serde_json::Value::String(name.to_owned())),
+                arguments: present(args),
+            },
+        )
     }
 
     fn binary(
@@ -341,7 +343,7 @@ impl BelBuilder for BeomBuilder {
         right: Expression,
     ) -> Expression {
         Expression::ExprBinaryOperator(Box::new(
-            crate::beom::core::expr_binary_operator::ExprBinaryOperator {
+            crate::v2::beom::core::expr_binary_operator::ExprBinaryOperator {
                 precedence_overridden: None,
                 operator: op,
                 symbol: Some(symbol.to_owned()),
@@ -353,7 +355,7 @@ impl BelBuilder for BeomBuilder {
 
     fn unary(&mut self, op: OperatorKind, symbol: &str, operand: Expression) -> Expression {
         Expression::ExprUnaryOperator(Box::new(
-            crate::beom::core::expr_unary_operator::ExprUnaryOperator {
+            crate::v2::beom::core::expr_unary_operator::ExprUnaryOperator {
                 precedence_overridden: None,
                 operator: op,
                 symbol: Some(symbol.to_owned()),
@@ -387,7 +389,7 @@ impl BelBuilder for BeomBuilder {
             _ => ExprValueRef { item: None },
         };
         Ok(Expression::ExprForAll(Box::new(
-            crate::beom::core::expr_for_all::ExprForAll {
+            crate::v2::beom::core::expr_for_all::ExprForAll {
                 precedence_overridden: None,
                 operator: OperatorKind::ForAll,
                 symbol: Some("for_all".to_owned()),

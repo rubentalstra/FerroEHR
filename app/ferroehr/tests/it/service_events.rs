@@ -535,7 +535,7 @@ async fn import_writes_one_phi_free_outbox_row() {
         .expect("status update");
 
     let mut extracts = source.extract_ehrs(ehr).await.expect("export");
-    let extract: openehr_rm::ehr_extract::common::extract::Extract =
+    let extract: openehr_rm::v1_2::ehr_extract::common::extract::Extract =
         openehr_its::json::from_canonical_value(&extracts.remove(0)).expect("typed extract");
 
     // Import into the fresh (empty) target: exactly one import CONTRIBUTION.

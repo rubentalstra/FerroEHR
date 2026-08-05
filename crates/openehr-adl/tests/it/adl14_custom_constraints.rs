@@ -39,12 +39,12 @@ use openehr_adl::error::{SyntaxError, SyntaxErrorCode};
 use openehr_adl::parse::Dialect;
 use openehr_adl::validate::catalogue::{Severity, ValidationCode};
 use openehr_adl::validate::validate_source_integrity;
-use openehr_am::am24::aom2::archetype::archetype::Archetype;
-use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
-use openehr_am::am24::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
-use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
+use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
+use openehr_am::v2_4::aom2::archetype::authored_archetype::AuthoredArchetype;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
+use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
 
 /// A whole ADL 1.4 archetype whose single `ELEMENT[at0001]/value` carries
 /// `constraint` verbatim, with `at0039`/`at0040` defined in the ontology.

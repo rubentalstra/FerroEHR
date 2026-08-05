@@ -5,7 +5,7 @@
 //! reference models the ADL2 conformance corpus authors fixtures against:
 //!
 //! - the openEHR RM 1.2.0 production model (`openehr_adl::validate::rm::
-//!   ProductionRmModel`, the generated `openehr_rm::model`) — the
+//!   ProductionRmModel`, the generated `openehr_rm::v1_2::model`) — the
 //!   `openEHR-EHR-*` / `openEHR-DEMOGRAPHIC-*` fixtures under
 //!   `tests/corpus/adl2-reference/validity/rm_checking/`;
 //! - the openEHR `adltest`/`TEST_PKG` test schema (a BMM-loaded [`RmModel`]

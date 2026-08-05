@@ -15,7 +15,7 @@
 //! Because a multi-line `STRING` is one lexer token, a section keyword inside a
 //! quoted value can never read as a header either.
 
-use openehr_am::am24::aom2::archetype::archetype_hrid::ArchetypeHrid;
+use openehr_am::v2_4::aom2::archetype::archetype_hrid::ArchetypeHrid;
 
 use crate::error::{SyntaxError, SyntaxErrorCode};
 use crate::hrid::parse_hrid;

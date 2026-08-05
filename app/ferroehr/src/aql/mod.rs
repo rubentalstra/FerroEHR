@@ -9,7 +9,7 @@
 //!
 //! Spec authority: the vendored
 //! QUERY 1.1 text at `docs/specs/openehr/QUERY/docs/AQL/`. The RM typing oracle
-//! is the generated `openehr_rm::model`.
+//! is the generated `openehr_rm::v1_2::model`.
 //!
 //! Entry point: [`plan`].
 

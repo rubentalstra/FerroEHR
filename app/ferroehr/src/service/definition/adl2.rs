@@ -29,9 +29,9 @@ use openehr_adl::validate::bindings::{TerminologyResolver, external_term_binding
 use openehr_adl::validate::catalogue::Severity;
 use openehr_adl::validate::rm::{ProductionRmModel, production_model_governs};
 use openehr_adl::validate::{validate_source, validate_source_integrity};
-use openehr_am::am24::aom2::archetype::archetype::Archetype;
-use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
-use openehr_am::am24::aom2::archetype::operational_template::OperationalTemplate;
+use openehr_am::v2_4::aom2::archetype::archetype::Archetype;
+use openehr_am::v2_4::aom2::archetype::authored_archetype::AuthoredArchetype;
+use openehr_am::v2_4::aom2::archetype::operational_template::OperationalTemplate;
 use openehr_base::validate::InvariantViolation;
 use openehr_its::flat::example::{DetailLevel, ExampleType, apply_output_uid, example_composition};
 use openehr_its::flat::webtemplate::{WebTemplate, build_web_template_am24};

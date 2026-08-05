@@ -1,5 +1,5 @@
 //! Public-API battery for the P_BMM schema pipeline
-//! (`openehr_lang::bmm_persistence`) over every vendored `.bmm` schema under
+//! (`openehr_lang::v2::bmm_persistence`) over every vendored `.bmm` schema under
 //! `tests/vendor/**`: ODIN text → `P_BMM_SCHEMA` → inclusion resolution →
 //! `BMM_MODEL`.
 //!
@@ -16,7 +16,7 @@
 //!
 //! A defect that breaks no `BMM_*` construction surfaces ABOVE the pipeline
 //! instead, in the collecting model-validity pass
-//! (`openehr_lang::bmm_persistence::validate`); its second table
+//! (`openehr_lang::v2::bmm_persistence::validate`); its second table
 //! ([`finding_cases`]) is adjudicated the same way, and a schema absent from it
 //! must validate clean.
 //!
@@ -43,13 +43,13 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use openehr_lang::bmm_persistence::create_model::create_bmm_model;
-use openehr_lang::bmm_persistence::error::PBmmReadError;
-use openehr_lang::bmm_persistence::include_resolution::resolve_includes;
-use openehr_lang::bmm_persistence::p_bmm_class::PBmmClass;
-use openehr_lang::bmm_persistence::p_bmm_schema::PBmmSchema;
-use openehr_lang::bmm_persistence::reader::read_schema;
-use openehr_lang::bmm_persistence::validate::validate_schema;
+use openehr_lang::v2::bmm_persistence::create_model::create_bmm_model;
+use openehr_lang::v2::bmm_persistence::error::PBmmReadError;
+use openehr_lang::v2::bmm_persistence::include_resolution::resolve_includes;
+use openehr_lang::v2::bmm_persistence::p_bmm_class::PBmmClass;
+use openehr_lang::v2::bmm_persistence::p_bmm_schema::PBmmSchema;
+use openehr_lang::v2::bmm_persistence::reader::read_schema;
+use openehr_lang::v2::bmm_persistence::validate::validate_schema;
 
 /// The pipeline stage an outcome is observed at
 /// (`master02-overview.adoc` §Conceptual Approach).

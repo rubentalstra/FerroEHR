@@ -9,17 +9,17 @@
 //! endpoints these productions read live in [`crate::parse::values`], and the
 //! date/time constraint-pattern validators in [`crate::parse::patterns`].
 
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-use openehr_am::am24::aom2::constraint_model::primitive::c_boolean::CBoolean;
-use openehr_am::am24::aom2::constraint_model::primitive::c_date::CDate;
-use openehr_am::am24::aom2::constraint_model::primitive::c_date_time::CDateTime;
-use openehr_am::am24::aom2::constraint_model::primitive::c_duration::CDuration;
-use openehr_am::am24::aom2::constraint_model::primitive::c_integer::CInteger;
-use openehr_am::am24::aom2::constraint_model::primitive::c_real::CReal;
-use openehr_am::am24::aom2::constraint_model::primitive::c_string::CString;
-use openehr_am::am24::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
-use openehr_am::am24::aom2::constraint_model::primitive::c_time::CTime;
-use openehr_am::am24::aom2::constraint_model::primitive::constraint_status::ConstraintStatus;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_boolean::CBoolean;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_date::CDate;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_date_time::CDateTime;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_duration::CDuration;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_integer::CInteger;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_real::CReal;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_string::CString;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_time::CTime;
+use openehr_am::v2_4::aom2::constraint_model::primitive::constraint_status::ConstraintStatus;
 use openehr_base::prelude::{Iso8601Date, Iso8601DateTime, Iso8601Duration, Iso8601Time};
 
 use crate::aom::build::local_term_code;
@@ -823,11 +823,11 @@ fn strength_status(s: &str) -> ConstraintStatus {
 
 #[cfg(test)]
 mod tests {
-    use openehr_am::am24::aom2::constraint_model::c_complex_object::{
+    use openehr_am::v2_4::aom2::constraint_model::c_complex_object::{
         CComplexObject, CComplexObjectData,
     };
-    use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-    use openehr_am::am24::aom2::constraint_model::primitive::constraint_status::ConstraintStatus;
+    use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+    use openehr_am::v2_4::aom2::constraint_model::primitive::constraint_status::ConstraintStatus;
     use openehr_base::prelude::{Interval, ProperInterval};
 
     use crate::parse::{Dialect, parse_definition_body};

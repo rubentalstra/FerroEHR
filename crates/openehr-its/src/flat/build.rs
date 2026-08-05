@@ -24,7 +24,7 @@
               (#1694)"
 )]
 
-use openehr_rm::paths::PathSegment;
+use openehr_rm::v1_2::paths::PathSegment;
 use serde_json::{Map, Value, json};
 
 use crate::flat::ctx;
@@ -1148,7 +1148,7 @@ fn infer_type(attr: &str, next: Option<&str>) -> &'static str {
 /// §Inherit) and the CKM careflow-state path form `ism_transition[at0109,…]`
 /// reaches these builders through a path predicate.
 pub(crate) fn is_locatable(rm_type: &str) -> bool {
-    openehr_rm::model::is_a(rm_type, "LOCATABLE")
+    openehr_rm::v1_2::model::is_a(rm_type, "LOCATABLE")
 }
 
 fn set_node_id(v: &mut Value, node_id: Option<&str>) {
@@ -1267,7 +1267,7 @@ fn finish_identity(
     let is_root_arch = node
         .node_id
         .as_deref()
-        .is_some_and(openehr_rm::paths::is_archetype_root_node_id);
+        .is_some_and(openehr_rm::v1_2::paths::is_archetype_root_node_id);
     if is_root_arch {
         obj.entry("archetype_details".to_owned())
             .or_insert_with(|| {

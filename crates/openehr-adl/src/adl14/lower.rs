@@ -17,11 +17,11 @@
 //! Constraints names it deprecated and gives the generic
 //! `[value, symbol]` tuple as its replacement, which is what it lowers to.
 
-use openehr_am::am24::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
-use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
-use openehr_am::am24::aom2::constraint_model::c_primitive_tuple::CPrimitiveTuple;
-use openehr_am::am24::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
+use openehr_am::v2_4::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
+use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
+use openehr_am::v2_4::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
+use openehr_am::v2_4::aom2::constraint_model::c_primitive_tuple::CPrimitiveTuple;
+use openehr_am::v2_4::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
 
 use crate::adl14::domain::{
     DomainLoweringError, adl14_code_phrase_parts, is_adl14_domain_type, lower_adl14_domain,

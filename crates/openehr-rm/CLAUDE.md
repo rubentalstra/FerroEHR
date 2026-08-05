@@ -12,7 +12,7 @@ the package version is the crate's own SemVer line
   siblings, each citing its RM spec section
   (`docs/specs/openehr/RM/docs/`). Behavioural back-references
   (`PATHABLE.parent()`) use `Weak`/index, never an owning reference.
-- **`src/validate.rs` is the hand-written value-level validation layer** (the
+- **`src/v1_2/validate.rs` is the hand-written value-level validation layer** (the
   one non-`*_impl.rs` exception): the allocation-free fast path, the shared
   invariant helpers, and the model-driven per-node checks run as their own
   layers beside the fast/typed core pair (`check_mandatory_containers`,
