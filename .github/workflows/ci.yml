@@ -595,7 +595,7 @@ jobs:
         with:
           shared-key: ui-e2e-server-binary
           cache-targets: false
-      - uses: mozilla-actions/sccache-action@v0.0.10
+      - uses: mozilla-actions/sccache-action@v0.0.11
         if: steps.binary-cache.outputs.cache-hit != 'true'
       - name: Build the server binary (release, native)
         if: steps.binary-cache.outputs.cache-hit != 'true'
@@ -664,7 +664,7 @@ jobs:
           # Registry-only cache; sccache owns compilation caching (the same
           # split, for the same lockfile-rotation reason, as the jobs above).
           cache-targets: false
-      - uses: mozilla-actions/sccache-action@v0.0.10
+      - uses: mozilla-actions/sccache-action@v0.0.11
         if: steps.console-cache.outputs.cache-hit != 'true'
       - uses: taiki-e/install-action@v2
         if: steps.console-cache.outputs.cache-hit != 'true'
