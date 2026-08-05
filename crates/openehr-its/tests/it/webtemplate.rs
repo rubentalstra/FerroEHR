@@ -636,3 +636,69 @@ fn unenforceable_constraints_are_reported_not_dropped() {
         );
     }
 }
+
+/// The slot-pattern probe reads the assertion's EXPRESSION TREE, not its string
+/// form: `ASSERTION.expression` is the "Root of expression tree" while
+/// `string_expression` is only its optional "String form of expression"
+/// (`AM UML/classes/org.openehr.am.aom14.assertion.adoc` §ASSERTION Class).
+///
+/// `IDCR Problem List.v1.opt` is the pin because none of its nine `<includes>`
+/// carries a `string_expression` at all — a source-text scan sees zero of them
+/// and leaves every slot open to any archetype.
+#[test]
+fn opt14_slot_patterns_come_from_the_assertion_tree() {
+    let path = corpus_dir().join("knowledge/IDCR Problem List.v1.opt");
+    let xml = std::fs::read_to_string(&path).expect("read the IDCR corpus OPT");
+    assert!(
+        !xml.contains("string_expression"),
+        "this pin depends on the fixture carrying no string_expression; \
+         re-pick the fixture if the vendored file changed"
+    );
+    let opt = opt14::from_xml(&xml).expect("the IDCR OPT parses");
+    let wt = build_web_template(&opt).expect("build the IDCR web template");
+
+    let includes = slot_includes(&wt.tree);
+    assert!(
+        includes.contains(
+            &r"openEHR-EHR-EVALUATION\.problem_diagnosis(-[a-zA-Z0-9_]+)*\.v1".to_owned()
+        ),
+        "the at0002 problem/diagnosis slot must carry its archetype-id regex, got {includes:?}"
+    );
+    assert!(
+        !includes.iter().any(String::is_empty),
+        "no slot may carry an empty pattern, got {includes:?}"
+    );
+}
+
+/// Every OPT the issue names as silently unconstrained must now constrain its
+/// slots (ADL 1.4 `master05-cadl.adoc` §Archetype Slots: a slot's fillers are
+/// exactly the archetypes its `include`/`exclude` assertions admit).
+#[test]
+fn corpus_slots_are_constrained_without_a_string_expression() {
+    for name in [
+        "knowledge/IDCR Problem List.v1.opt",
+        "knowledge/IDCR Allergies List.v0.opt",
+        "knowledge/Vital Signs Encounter (Composition).opt",
+    ] {
+        let wt = build_from_file(&corpus_dir().join(name)).expect("build the corpus OPT");
+        let includes = slot_includes(&wt.tree);
+        assert!(
+            !includes.is_empty(),
+            "{name}: every slot include went missing — slot fillers are unconstrained"
+        );
+    }
+}
+
+/// Every `ARCHETYPE_SLOT` include pattern reachable from a built `WebTemplate`.
+fn slot_includes(node: &WebTemplateNode) -> Vec<String> {
+    let mut out = Vec::new();
+    for attr in &node.closed_attributes {
+        for slot in &attr.slots {
+            out.extend(slot.includes.iter().cloned());
+        }
+    }
+    for child in &node.children {
+        out.extend(slot_includes(child));
+    }
+    out
+}

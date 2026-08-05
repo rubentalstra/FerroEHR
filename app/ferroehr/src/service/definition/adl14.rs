@@ -130,7 +130,8 @@ impl FerroEhrService {
     /// # Errors
     ///
     /// - No archetype with that id → `artefact_does_not_exist` (`404`).
-    /// - The stored source no longer converts (parse / unsupported kind) →
+    /// - The stored source no longer converts (parse / unsupported kind), or
+    ///   the conversion result carries a node with no ADL2 syntax →
     ///   `content_invalid` (`422`).
     /// - A database failure (`exception` → `500`).
     pub async fn adl14_convert_to_adl2(&self, an_id: String) -> Result<String, SmError> {
@@ -142,7 +143,11 @@ impl FerroEhrService {
                     "1.4 → 2 conversion failed: {e}"
                 )))
             })?;
-        Ok(openehr_adl::print::print(&converted))
+        openehr_adl::print::print(&converted).map_err(|e| {
+            SmError::from(ServiceError::Unprocessable(Violation::new(format!(
+                "1.4 → 2 conversion produced unprintable ADL2: {e}"
+            ))))
+        })
     }
 
     /// Convert a stored ADL 1.4 **operational template** (by `UUID`) to ADL2

@@ -213,9 +213,19 @@ impl<'a> ParentScan<'a> {
 /// assertion's own string form rendered from its expression tree
 /// ([`crate::print::assertion_text`]), so an assertion the regex reading cannot
 /// express still distinguishes the two lists.
+///
+/// An assertion the printer refuses has no comparison key, so the two lists are
+/// reported as different: VDSSM fires only on a proven restatement, and an
+/// unrenderable assertion proves nothing.
 fn slot_assertions_equal(a: &[Assertion], b: &[Assertion]) -> bool {
-    let mut as_: Vec<String> = a.iter().map(crate::print::assertion_text).collect();
-    let mut bs: Vec<String> = b.iter().map(crate::print::assertion_text).collect();
+    let rendered = |list: &[Assertion]| {
+        list.iter()
+            .map(crate::print::assertion_text)
+            .collect::<Result<Vec<String>, _>>()
+    };
+    let (Ok(mut as_), Ok(mut bs)) = (rendered(a), rendered(b)) else {
+        return false;
+    };
     as_.sort();
     bs.sort();
     as_ == bs
