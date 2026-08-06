@@ -71,9 +71,10 @@ either claim.
 
 Straight from `GET /management/info`: the CDR's version, the git commit the
 binary was built from, its build timestamp and `rustc` version, the PostgreSQL
-target — and, under their own heading, the openEHR specification versions this
-deployment implements. This is the card to screenshot into an incident report:
-it says exactly what is running.
+target — and, under their own heading, the deployment's active
+[`spec_profile`](../installation/configuration.md#spec_profile) and the openEHR
+specification versions that profile selects. This is the card to screenshot into
+an incident report: it says exactly what is running.
 
 ## Metrics
 

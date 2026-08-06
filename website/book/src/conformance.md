@@ -47,10 +47,13 @@ rather than silently omitted.
 > The runner, catalogue, and verdict pipeline live in `tools/cnf-runner`;
 > the published JSON Schemas for every artifact family are committed under
 > `tools/cnf-runner/schemas/`. The instrument is built from the currently
-> pinned specifications (Reference Model 1.2.0, AQL 1.1.0, Terminology
-> 3.1.0, ITS-REST 1.1.0). The upstream Robot suites are reference material;
-> their official data fixtures enter the corpus only as provenance-stamped
-> re-adjudications.
+> pinned specifications (AQL 1.1.0, Terminology 3.1.0, ITS-REST 1.1.0, and
+> the Reference Model generation the system under test runs — for FerroEHR the
+> default `development` profile, RM 1.2.0; the composed stack takes the profile
+> from an environment variable, so a `stable`-profile run is the same catalogue
+> against the released generation). The upstream Robot suites are reference
+> material; their official data fixtures enter the corpus only as
+> provenance-stamped re-adjudications.
 
 ## The current result
 

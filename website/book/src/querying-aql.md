@@ -262,5 +262,19 @@ negative `OFFSET`, wrong function arity, and `SUM`/`AVG` over non-numeric
 paths are all rejected with a clear message. Variable names are
 case-insensitive, as the specification requires.
 
+### The specification generation is an acceptance boundary
+
+Which Reference Model classes and attributes a query may name depends on the
+deployment's [`spec_profile`](installation/configuration.md#spec_profile). On
+the default `development` profile the query surface is the full RM 1.2.0
+model. On `stable` (RM 1.1.0), a `FROM` class or a path attribute that only a
+newer generation defines is refused with **400 Bad Request**, and the message
+names both the offending class or attribute and the active profile — a server
+of that generation would answer "unknown", so returning rows instead would
+silently overclaim the profile the deployment advertises.
+
+Nothing else about querying changes with the profile: paths, predicates, and
+the result-set shape are identical.
+
 Where a construct is outside the supported set, the server returns a clear
 error identifying it — you never get a silently incorrect answer.

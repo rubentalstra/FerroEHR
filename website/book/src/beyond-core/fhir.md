@@ -103,3 +103,11 @@ environment variable:
 When the inbound switch is off, the `/fhir/r4/*` and `/admin/fhir_mapping`
 routes answer `404` without touching the backend. When the outbound switch is
 off, no emitter task runs.
+
+> [!NOTE]
+> The connectors are also a **cargo feature** (`fhir`), on in the published
+> images and any default build. A slim `--no-default-features` build contains
+> none of their code and refuses to boot when `fhir.outbound.enabled` (or a
+> configured FHIR terminology provider, or a FHIR `AuditEvent` audit sink) asks
+> for it — see
+> [From source → Build features](../installation/from-source.md#build-features).

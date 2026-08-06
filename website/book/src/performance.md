@@ -192,8 +192,8 @@ cnf-runner perf --root tools/cnf-runner/artifacts \
 # an officially EXTENDED sustained window (the hours ladder: one hour is
 # the case's normative window and the default; two, four, six, eight, or
 # twelve hours hold the same offered load for longer — a stricter
-# demonstration of the same class). The seeded corpus is reusable across
-# every run seeds the freshly composed server from empty.
+# demonstration of the same class). There is no seed reuse: every run
+# seeds the freshly composed server from empty.
 cnf-runner perf --root tools/cnf-runner/artifacts \
                 --ixit <ixit.json> --results <results.json> \
                 --class POC --hours 8
@@ -272,15 +272,18 @@ committed HDR V2 histograms for the proof-of-concept class:
 Alongside the latencies, every measured run records its resource telemetry:
 CPU and resident memory for the server and database containers separately,
 plus block-device and network I/O, sampled every 10 seconds across the whole
-window with the warmup shaded, and the database volume's on-disk size at
-four anchors — empty, after the scale seed, after the ward seed, and after
-the measured window — down to the storage cost per committed composition.
-These numbers are capacity-planning context — they never influence whether
-a class is earned. The database volume's on-disk size is probed at four
-anchors — empty, after the scale seed, after the ward seed, and after the
-measured window — down to the storage cost per committed composition. The
-rendered resource time-series and disk-growth charts join this page with
-the next committed measured class run (they render only from a committed
-record — nothing here is ever mocked).
+window with the warmup shaded. These numbers are capacity-planning context —
+they never influence whether a class is earned.
+
+![Container CPU, memory and I/O across the measured window](perf-assets/perf-resources-class-POC.svg)
+
+The database volume's on-disk size is probed at four anchors — empty, after
+the scale seed, after the ward seed, and after the measured window — which is
+where the storage cost per committed composition comes from:
+
+![Database volume growth across the run's four anchors](perf-assets/perf-disk-growth.svg)
+
+Both charts render only from a committed measurement record — nothing on this
+page is ever mocked.
 
 {{#include ../generated/perf-summary.md}}
