@@ -79,7 +79,10 @@ impl PgpKey {
     ///
     /// # Errors
     /// [`KeyError::Read`] / [`KeyError::Parse`] / [`KeyError::Unusable`].
-    pub fn load(path: &Path, passphrase: Option<&str>) -> Result<Self, KeyError> {
+    pub fn load(
+        path: &Path,
+        passphrase: Option<&crate::config::secret::Secret>,
+    ) -> Result<Self, KeyError> {
         let armored = std::fs::read_to_string(path).map_err(|source| KeyError::Read {
             path: path.display().to_string(),
             source,
@@ -93,12 +96,21 @@ impl PgpKey {
     /// # Errors
     /// [`KeyError::Parse`] if the armor is not a secret key; [`KeyError::Unusable`]
     /// if the boot check signature fails.
-    pub fn from_armored(armored: &str, passphrase: Option<&str>) -> Result<Self, KeyError> {
+    pub fn from_armored(
+        armored: &str,
+        passphrase: Option<&crate::config::secret::Secret>,
+    ) -> Result<Self, KeyError> {
         let (secret, _headers) =
             SignedSecretKey::from_string(armored).map_err(|e| KeyError::Parse(e.to_string()))?;
         let public = secret.to_public_key();
+        // The secret is exposed HERE and nowhere earlier: `pgp`'s `Password` is
+        // the one consumer that must have the plaintext, so the value stays
+        // inside its `secrecy`-backed wrapper — which zeroizes on drop — until
+        // this line. Taking it as a `&str` at the boundary would leave an
+        // ordinary copy in freed memory afterwards, which is the guarantee the
+        // crate is pinned to provide.
         let password = match passphrase {
-            Some(p) => Password::from(p),
+            Some(secret) => Password::from(secret.expose()),
             None => Password::empty(),
         };
         let key = Self {
