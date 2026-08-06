@@ -31,6 +31,9 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The Compose deployment path is hardened to match the Helm chart.** The Kubernetes path already ran non-root with a read-only root filesystem, no privilege escalation, a `RuntimeDefault` seccomp profile and every capability dropped; the quickstart Compose file — the one an evaluator downloads and runs — set none of the equivalents. It now does: every service drops all capabilities and adds back only what its entrypoint provably needs (five for PostgreSQL, two for the S3 gateway, none at all for the two distroless images), refuses privilege escalation, bounds its file descriptors, restarts unless stopped, and PostgreSQL and the admin console run read-only roots.
+- **Every published port binds `127.0.0.1` by default.** A published container port is DNAT'd ahead of the host firewall's own chains, so `ufw deny 5432` does not stop it — the quickstart previously exposed PostgreSQL, with the dev credentials that ship in the same file, on every interface. Set `FERROEHR_BIND_HOST=0.0.0.0` (or a specific address) when a deployment genuinely needs to be reachable from another machine.
+
 - **The SMART App Launch discovery document is now boot-validated, not relayed.** `/.well-known/smart-configuration` is published to third-party applications, so an empty or plaintext value is a claim they act on. With `smart.enabled = true`: every advertised endpoint must be an absolute `https` URL (new `smart.endpoints.allow_insecure_endpoints` opts out for development, mirroring `auth.oidc.allow_insecure_issuer`); the advertised `issuer` must carry no query or fragment (RFC 8414 §2 — the same rule `auth.oidc.issuer` follows, since it is the same identity); `response_types_supported` must be non-empty (RFC 8414 §2 marks it REQUIRED); `token_endpoint_auth_methods_supported` must name at least one method; and `code_challenge_methods_supported` must include `S256`, because SMART App Launch requires PKCE (RFC 7636) and publishing a list without it tells every app the authorization server cannot do it. A deployment relying on any of those being empty now fails to boot with the key named.
 - **`smart.endpoints.issuer` and `auth.oidc.issuer` must agree.** One tells applications where to obtain a token; the other is what this server accepts. Configured independently and never compared, a mismatch was silently broken in the most confusing way available — every app obtained a valid token and every request was refused as invalid. Both are known at boot, so a mismatch (and `smart.enabled` with no `[auth.oidc]` at all) is now a boot error naming both keys. A trailing slash is not a mismatch.
 
@@ -84,6 +87,8 @@ workflow refuses a tag that has no matching section here.
 
 
 ### Fixed
+
+- The `s3` profile's SeaweedFS healthcheck could never pass: it probed `http://localhost:8333/`, and `localhost` resolves to `::1` first while the S3 gateway listens on IPv4 only, so `docker compose --profile s3 up --wait` waited forever. It now probes `127.0.0.1`.
 
 - An unknown Basic username now performs the same key-derivation work as a known one, against a fixed decoy hash, so response time no longer reveals whether an account exists.
 - The embedded Cedar policy engine now receives the caller: the principal was a constant with an empty role and scope set, so no role-aware or scope-aware policy could ever match, and every decision log named the same anonymous entity. The authenticated subject, its roles, its scopes and the operation id are now all available to a policy.

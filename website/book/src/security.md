@@ -286,6 +286,55 @@ show a role-keyed break-glass permit and a scope-keyed write restriction.
 > When a patient claim is configured, a local subject gate also rejects access to
 > another patient's EHR before any policy call.
 
+## Secrets: mount files, never bake values
+
+Every secret this server reads has a `*_file` sibling, and the loader reads and
+trims the file at startup: `hmac_secret_file`, `jwks_json_file`,
+`key_passphrase_file`, `client_secret_file`, and the TLS key/cert paths. Exactly
+one of a pair may be set — both is a boot error.
+
+That is deliberately the shape Docker Secrets and Kubernetes Secrets deliver: a
+file mounted into the container. So the recommended posture needs no extra
+machinery.
+
+```yaml
+services:
+  ferroehr:
+    environment:
+      # Point the key at the mount path; the VALUE never appears anywhere.
+      FERROEHR__AUTH__OIDC__JWKS_JSON_FILE: /run/secrets/oidc_jwks
+    secrets:
+      - oidc_jwks
+
+secrets:
+  oidc_jwks:
+    file: ./secrets/oidc_jwks.json   # or `external: true` in swarm
+```
+
+Why files rather than environment variables, concretely: an environment variable
+is readable from `/proc/<pid>/environ` by anything in the container's namespace,
+appears in `docker inspect` output, is inherited by every child process, and is
+routinely captured whole by crash reporters and process listings. A mounted file
+is none of those things, and it can be rotated without recreating the container.
+
+Two properties worth knowing because they are not obvious:
+
+- **Redaction is a property of the type, not a list.** Secret-bearing fields are a
+  `Secret`/`SecretUrl` newtype whose `Debug` and serialization render `***`, so a
+  new secret key cannot be forgotten by a per-endpoint redactor — `/management/env`
+  and `ferroehr config check` show `***` because the type does, not because
+  something remembered to hide it.
+- **A Kubernetes `Secret` is base64, not encryption.** The cheat sheet is blunt
+  about this: Secrets are stored unencrypted in etcd by default. Enable
+  encryption at rest or use an external manager; the chart mounts whatever you
+  give it and cannot make an unencrypted store safe.
+
+> [!WARNING]
+> The downloadable quickstart carries an inline Argon2 hash for its throwaway
+> `ferroehr` user, because a self-contained demo file cannot reference a secret you
+> do not have. That is the one place a credential appears in our own artifacts, and
+> it is a development credential by construction — replace it before any real use.
+
 ## Multi-tenancy
 
 Multi-tenancy lets one deployment host several isolated logical openEHR

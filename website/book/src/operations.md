@@ -88,6 +88,52 @@ terminology server) are deployment-specific. See
 [Installation → Kubernetes & Helm](installation/kubernetes.md) for the chart
 itself.
 
+The Compose path now carries the same floor: every service drops all Linux
+capabilities and adds back only what its entrypoint provably needs, refuses
+privilege escalation, bounds its file descriptors, and publishes its ports on the
+loopback interface. `scripts/checks/compose-hardening.sh` enforces that on every
+committed compose artifact, so it cannot regress. Two services additionally run a
+read-only root filesystem; the quickstart's server container cannot, because
+Compose refuses an inline `config` in a read-only service and the inline config is
+what makes that file standalone — a deployment that mounts its configuration from
+a file instead can add `read_only: true` and a tmpfs at `/tmp`.
+
+### What the host owes, and we cannot enforce
+
+Four controls belong to whoever runs the daemon. They are stated here because a
+container hardening story that ignores them is misleading — the strongest pod
+security context in the world sits on top of these.
+
+**Keep the host kernel and Docker Engine current.** A container is a kernel
+namespace, not a virtual machine: a kernel privilege-escalation bug is a container
+escape, and every runtime hardening above assumes the kernel enforcing it is
+patched. Track your distribution's kernel updates and the Docker Engine release
+notes with the same urgency you would give a public-facing service.
+
+**Prefer rootless mode.** Running the daemon as a non-root user means a container
+escape lands as an unprivileged user rather than as root on the host
+(<https://docs.docker.com/engine/security/rootless/>). The images here need no
+privileged operation, no host networking, and no daemon socket, so nothing in this
+deployment prevents rootless — the constraints are usually the host's (cgroup v2,
+`newuidmap`/`newgidmap`, and no privileged ports below 1024, which is why the
+server binds 8080 rather than 80).
+
+**Set the daemon log level to `info` (the default) and keep it.** Docker's `debug`
+level records request payloads and can put secret material into daemon logs, which
+are typically world-readable to anyone with host log access and are shipped
+wholesale to log aggregators.
+
+**Control who can pull and push your images.** GHCR access is the deployment's
+authorization boundary for what runs in production: whoever can push a tag your
+manifests reference can run their code with your database credentials. Restrict
+push rights, prefer digest pins over mutable tags for anything you deploy (the
+compose files pin the third-party images by digest for exactly this reason), and
+verify the published attestations before rollout — the verification command is in
+[Installation → Kubernetes & Helm](installation/kubernetes.md).
+
+None of these four is something this project can assert on your behalf, which is
+why they are written as your checklist rather than as our claim.
+
 ## Upgrades
 
 - **Backward-compatible migrations.** Migrations are append-only and never
