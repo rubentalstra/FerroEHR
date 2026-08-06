@@ -12,6 +12,85 @@
   <meta property="og:title" content="FerroEHR — a pure-Rust openEHR Clinical Data Repository">
   <meta property="og:description" content="Spec-compliant, measured, built for production. ITS-REST 1.1.0 · AQL 1.1 · PostgreSQL 18.">
   <meta property="og:url" content="https://ferroehr.eu/">
+  <meta property="og:site_name" content="FerroEHR">
+  <meta property="og:image" content="https://ferroehr.eu/assets/social-card.png">
+  <meta property="og:image:width" content="1280">
+  <meta property="og:image:height" content="640">
+  <meta property="og:image:alt" content="FerroEHR — a pure-Rust openEHR Clinical Data Repository">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://ferroehr.eu/assets/social-card.png">
+  <meta name="twitter:title" content="FerroEHR — a pure-Rust openEHR Clinical Data Repository">
+  <meta name="twitter:description" content="Spec-compliant, measured, built for production. ITS-REST 1.1.0 · AQL 1.1 · PostgreSQL 18.">
+
+  <!-- Structured data. `WebSite` + `Organization` identify the site and its
+       publisher; `SoftwareSourceCode` describes what the site is ABOUT (an
+       openEHR CDR), which is what lets a search engine treat the docs
+       subtree as one entity rather than a set of unrelated pages. The
+       `hasPart` list names the site's top-level sections so the hierarchy is
+       explicit rather than inferred from crawling alone.
+       NOTE: Google generates sitelinks algorithmically and no markup can
+       request them — the old sitelinks-searchbox type was withdrawn in 2023;
+       this markup makes the hierarchy unambiguous, which is the part under
+       our control. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://ferroehr.eu/#website",
+        "url": "https://ferroehr.eu/",
+        "name": "FerroEHR",
+        "description": "A pure-Rust openEHR Clinical Data Repository — spec-conformant, measured, and built for production.",
+        "inLanguage": "en",
+        "publisher": { "@id": "https://ferroehr.eu/#publisher" },
+        "hasPart": [
+          {
+            "@type": "WebPage",
+            "name": "Documentation",
+            "url": "https://ferroehr.eu/docs/latest/",
+            "description": "Installation, configuration, querying with AQL, templates and validation, operations and security."
+          },
+          {
+            "@type": "WebPage",
+            "name": "API reference",
+            "url": "https://ferroehr.eu/api/",
+            "description": "The openEHR ITS-REST 1.1.0 endpoint reference served by FerroEHR."
+          },
+          {
+            "@type": "WebPage",
+            "name": "Conformance",
+            "url": "https://ferroehr.eu/docs/latest/conformance.html",
+            "description": "Measured openEHR conformance results, generated from real runs against the live server."
+          }
+        ]
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://ferroehr.eu/#publisher",
+        "name": "FerroEHR",
+        "url": "https://ferroehr.eu/",
+        "logo": "https://ferroehr.eu/assets/logo-mark.svg",
+        "image": "https://ferroehr.eu/assets/social-card.png",
+        "sameAs": ["https://github.com/rubentalstra/FerroEHR"]
+      },
+      {
+        "@type": "SoftwareSourceCode",
+        "@id": "https://ferroehr.eu/#software",
+        "name": "FerroEHR",
+        "description": "A pure-Rust openEHR Clinical Data Repository implementing ITS-REST 1.1.0 and AQL 1.1 on PostgreSQL 18, shipped as a single static binary.",
+        "url": "https://ferroehr.eu/",
+        "codeRepository": "https://github.com/rubentalstra/FerroEHR",
+        "programmingLanguage": "Rust",
+        "license": "https://opensource.org/licenses/MIT",
+        "applicationCategory": "HealthApplication",
+        "runtimePlatform": "PostgreSQL 18",
+        "isBasedOn": "https://specifications.openehr.org/",
+        "documentation": "https://ferroehr.eu/docs/latest/"
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
 
