@@ -55,6 +55,31 @@ migrations run:
   job with the migrator credential _before_ rolling the deployment, and gate
   the rollout so two versions never race the schema.
 
+> [!WARNING]
+> **Migration is a boot step, and nothing re-runs it.** A running instance whose
+> database is replaced, wiped, or reachable-but-empty does not migrate. It reports
+>
+> ```json
+> {"status":"DOWN","components":{"db":{"status":"UP"},
+>  "migrations":{"status":"DOWN","detail":"core schema tables missing (migrations not applied)"}}}
+> ```
+>
+> on `/health/readiness` (`503`), leaves the load balancer's rotation, and keeps
+> passing liveness — correctly, since the process is healthy — so nothing restarts
+> it. Under Kubernetes that is a Deployment sitting at `0/N` ready with no error
+> after the first one.
+>
+> The readiness check re-tests the schema on **every probe**, so recovery does not
+> require a restart *of that instance* — it goes back to `UP` within one probe
+> interval of the schema existing, whoever created it. What needs a restart is the
+> case where the only thing that would migrate is the instance itself: then
+> `kubectl rollout restart deploy/ferroehr` (or a migration job) is the remedy.
+>
+> For the out-of-band flow this means: the migration step must **complete before**
+> the first instance starts, or that instance sits unready until the schema
+> appears — harmless but confusing, and it delays the rollout rather than failing
+> it. Gate the rollout on the migration job.
+
 ## TLS and database security
 
 These are database-side settings that belong to whoever provisions PostgreSQL;

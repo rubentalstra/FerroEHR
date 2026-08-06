@@ -14,8 +14,15 @@ spec:
   template:
     metadata:
       annotations:
-        # Roll pods when the rendered ferroehr.toml changes.
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        # Roll pods when anything the process reads AT BOOT changes: the rendered
+        # ferroehr.toml (wherever it lands), the mounted config files, and the
+        # secret values. Hashing the ConfigMap template alone missed the last two,
+        # so a rotated passphrase or an edited Cedar policy propagated into the
+        # volume while every pod kept running on the value it read at startup.
+        checksum/config: {{ printf "%s|%s|%s"
+          (include "ferroehr.configToml" .)
+          (toYaml .Values.config.files)
+          (toYaml .Values.secrets) | sha256sum }}
         {{- if .Values.metrics.enabled }}
         prometheus.io/scrape: "true"
         prometheus.io/port: {{ include "ferroehr.managementPort" . | quote }}
@@ -102,6 +109,13 @@ spec:
                 secretKeyRef:
                   name: {{ include "ferroehr.secretName" . }}
                   key: FERROEHR__FHIR__OUTBOUND__URL
+            {{- end }}
+            {{- if .Values.secrets.auditFhirFeedUrl }}
+            - name: FERROEHR__AUDIT__FHIR_FEED__URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ferroehr.secretName" . }}
+                  key: FERROEHR__AUDIT__FHIR_FEED__URL
             {{- end }}
             {{- if .Values.secrets.multimediaAccessKeyId }}
             - name: FERROEHR__MULTIMEDIA__ACCESS_KEY_ID
@@ -199,12 +213,17 @@ spec:
         - name: config
           projected:
             sources:
+              {{- if ne (include "ferroehr.configInSecret" .) "true" }}
               - configMap:
                   name: {{ include "ferroehr.fullname" . }}
                   items:
                     - key: ferroehr.toml
                       path: ferroehr.toml
-              {{- if .Values.config.files }}
+              {{- end }}
+              {{- if eq (include "ferroehr.hasConfigSecret" .) "true" }}
+              # Carries ferroehr.toml itself when the configuration holds a
+              # secret the chart cannot route elsewhere (then no ConfigMap
+              # exists), plus every config.files entry.
               - secret:
                   name: {{ include "ferroehr.configSecretName" . }}
               {{- end }}
@@ -228,6 +247,10 @@ spec:
               {{- if .Values.secrets.multimediaSecretAccessKey }}
               - key: multimedia.secret_access_key
                 path: multimedia.secret_access_key
+              {{- end }}
+              {{- range $name, $value := .Values.secrets.terminologyOauth2ClientSecrets }}
+              - key: terminology.external.oauth2_clients.{{ $name }}.client_secret
+                path: terminology.external.oauth2_clients.{{ $name }}.client_secret
               {{- end }}
         {{- end }}
         {{- with .Values.extraVolumes }}

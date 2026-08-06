@@ -12,7 +12,7 @@ kind: NetworkPolicy
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-3.3.0
+    helm.sh/chart: ferroehr-4.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.3"
@@ -58,7 +58,7 @@ kind: PodDisruptionBudget
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-3.3.0
+    helm.sh/chart: ferroehr-4.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.3"
@@ -77,7 +77,7 @@ kind: ServiceAccount
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-3.3.0
+    helm.sh/chart: ferroehr-4.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.3"
@@ -106,7 +106,7 @@ kind: Secret
 metadata:
   name: ferroehr-env
   labels:
-    helm.sh/chart: ferroehr-3.3.0
+    helm.sh/chart: ferroehr-4.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.3"
@@ -117,8 +117,10 @@ stringData:
   auth.oidc.hmac_secret: "dev-hmac-secret"
   signing.key_passphrase: "dev-passphrase"
   multimedia.secret_access_key: "s3-secret"
+  terminology.external.oauth2_clients.tx.client_secret: "tx-client-secret"
   FERROEHR__EVENTS__URL: "amqps://user:pass@rabbitmq:5671/%2f"
   FERROEHR__FHIR__OUTBOUND__URL: "amqps://user:pass@rabbitmq:5671/%2f"
+  FERROEHR__AUDIT__FHIR_FEED__URL: "https://arr:arr-password@arr.example.com/fhir"
   FERROEHR__MULTIMEDIA__ACCESS_KEY_ID: "AKIAEXAMPLE"
 ---
 # Source: ferroehr/templates/secret.yaml
@@ -130,7 +132,7 @@ kind: Secret
 metadata:
   name: ferroehr-config
   labels:
-    helm.sh/chart: ferroehr-3.3.0
+    helm.sh/chart: ferroehr-4.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.3"
@@ -149,7 +151,7 @@ kind: ConfigMap
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-3.3.0
+    helm.sh/chart: ferroehr-4.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.3"
@@ -157,9 +159,11 @@ metadata:
     app.kubernetes.io/part-of: ferroehr
 data:
   # The whole server configuration as one ferroehr.toml, mounted at
-  # /etc/ferroehr/ferroehr.toml (config search-order position 4). Rendered from
-  # .Values.config (minus `files`, which is mounted separately). Secrets are NOT
-  # here — they are injected from the Secret and override the file.
+  # /etc/ferroehr/ferroehr.toml (config search-order position 4). Rendered by
+  # `ferroehr.configToml`, never from .Values.config verbatim: a ConfigMap is not
+  # a sensitive object, so a secret-bearing key is either refused (when a
+  # `secrets:` key carries it) or moves this whole file into the Secret, in which
+  # case this ConfigMap is not created at all.
   # NOTE: Helm decodes values through JSON, so every number reaches a template as
   # a float64 and `toToml` writes it back as a TOML float (`10.0`, `1.6777216e+07`)
   # — the server's configuration layer coerces those onto integer keys, which is
@@ -177,7 +181,6 @@ data:
       source_id = "ferroehr-prod"
       [audit.fhir_feed]
         enabled = true
-        url = "https://arr.example.com/fhir"
       [audit.store]
         enabled = true
         retention_days = 90.0
@@ -189,12 +192,6 @@ data:
     
     [auth]
       enabled = true
-      [auth.basic]
-    
-        [[auth.basic.users]]
-          password_hash = "$argon2id$v=19$m=19456,t=2,p=1$c2FsdA$hash"
-          roles = ["USER"]
-          username = "clinician"
       [auth.oidc]
         algorithms = ["RS256"]
         audiences = ["ferroehr"]
@@ -314,6 +311,12 @@ data:
       [terminology.external]
         enabled = true
         fail_on_error = false
+        [terminology.external.oauth2_clients]
+          [terminology.external.oauth2_clients.tx]
+            client_id = "ferroehr"
+            client_secret_file = "/etc/ferroehr-secrets/terminology.external.oauth2_clients.tx.client_secret"
+            scopes = ["tx.read"]
+            token_url = "https://idp.example.org/realms/ts/protocol/openid-connect/token"
         [terminology.external.providers]
           [terminology.external.providers.default]
             operation = "validate_code"
@@ -326,7 +329,7 @@ kind: Service
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-3.3.0
+    helm.sh/chart: ferroehr-4.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.3"
@@ -353,7 +356,7 @@ kind: Deployment
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-3.3.0
+    helm.sh/chart: ferroehr-4.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.3"
@@ -367,8 +370,12 @@ spec:
   template:
     metadata:
       annotations:
-        # Roll pods when the rendered ferroehr.toml changes.
-        checksum/config: 1e83ea039a4bdbc26d519632d8afdf21bceb8028e0579edec4fd320a60a05992
+        # Roll pods when anything the process reads AT BOOT changes: the rendered
+        # ferroehr.toml (wherever it lands), the mounted config files, and the
+        # secret values. Hashing the ConfigMap template alone missed the last two,
+        # so a rotated passphrase or an edited Cedar policy propagated into the
+        # volume while every pod kept running on the value it read at startup.
+        checksum/config: 3547eeb8daa0f72760d23751ba27f9f967b269aee518c959523f908670fe5fa8
         prometheus.io/scrape: "true"
         prometheus.io/port: "9100"
         prometheus.io/path: "/management/prometheus"
@@ -442,6 +449,11 @@ spec:
                 secretKeyRef:
                   name: ferroehr-env
                   key: FERROEHR__FHIR__OUTBOUND__URL
+            - name: FERROEHR__AUDIT__FHIR_FEED__URL
+              valueFrom:
+                secretKeyRef:
+                  name: ferroehr-env
+                  key: FERROEHR__AUDIT__FHIR_FEED__URL
             - name: FERROEHR__MULTIMEDIA__ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
@@ -505,6 +517,9 @@ spec:
                   items:
                     - key: ferroehr.toml
                       path: ferroehr.toml
+              # Carries ferroehr.toml itself when the configuration holds a
+              # secret the chart cannot route elsewhere (then no ConfigMap
+              # exists), plus every config.files entry.
               - secret:
                   name: ferroehr-config
         - name: secrets
@@ -521,6 +536,8 @@ spec:
                 path: signing.key_passphrase
               - key: multimedia.secret_access_key
                 path: multimedia.secret_access_key
+              - key: terminology.external.oauth2_clients.tx.client_secret
+                path: terminology.external.oauth2_clients.tx.client_secret
 ---
 # Source: ferroehr/templates/hpa.yaml
 apiVersion: autoscaling/v2
@@ -528,7 +545,7 @@ kind: HorizontalPodAutoscaler
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-3.3.0
+    helm.sh/chart: ferroehr-4.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.3"
@@ -561,7 +578,7 @@ kind: Ingress
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-3.3.0
+    helm.sh/chart: ferroehr-4.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.3"
@@ -598,7 +615,7 @@ kind: ServiceMonitor
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-3.3.0
+    helm.sh/chart: ferroehr-4.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.3"

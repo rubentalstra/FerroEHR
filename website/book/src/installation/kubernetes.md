@@ -28,11 +28,29 @@ helm install ferroehr deploy/helm/ferroehr -n ferroehr \
 ```
 
 Always pin `image.tag` to an immutable version or, better, a `@sha256` digest —
-never `latest`; the chart's `appVersion` is the release it was cut with. Pin them
-together: the `config` tree is passed through to the server verbatim, so a key
-the chart's defaults carry and your chosen image does not know is a boot refusal
-(`unknown configuration key …`). `ferroehr config default` from that exact image
-prints the key set it accepts.
+never `latest`; the chart's `appVersion` is only the *default* tag, and it names
+the release the chart was last cut against. Pin the two deliberately: the `config`
+tree is passed through to the server, so a key the chart's defaults carry and your
+chosen image does not know is a boot refusal (`unknown configuration key …`),
+which presents as `CrashLoopBackOff`.
+
+> [!WARNING]
+> Between releases the chart's `config` defaults track development and can be
+> **ahead of `appVersion`'s image**. Check the pairing before you install, with
+> the image itself as the authority:
+>
+> ```shell
+> helm template ferroehr deploy/helm/ferroehr -s templates/configmap.yaml \
+>   --set database.existingSecret=ferroehr-db \
+>   | sed -n '/ferroehr.toml/,$p' | sed '1d;s/^    //' > /tmp/ferroehr.toml
+> docker run --rm -v /tmp/ferroehr.toml:/etc/ferroehr/ferroehr.toml:ro \
+>   -e FERROEHR__DB__URL=postgres://u:p@db:5432/ferroehr \
+>   --entrypoint /usr/local/bin/ferroehr ghcr.io/rubentalstra/ferroehr:<tag> config check
+> ```
+>
+> Exit 0 means the image accepts the rendered configuration. A reported unknown
+> key means the image is older than the chart's defaults: use a newer tag, or set
+> that key to `null` for this deployment.
 
 That install alone **boots but answers `401` to everything**, deliberately:
 `config.auth.enabled` is on and no mechanism is configured yet, and a server that
@@ -40,14 +58,50 @@ authenticates nothing is not a safe default. Add an `config.auth.oidc` issuer or
 a `config.auth.basic.users` entry before expecting a request to succeed.
 
 The chart carries the server's whole configuration under one key, **`config`**,
-which is rendered **verbatim into a `ferroehr.toml`** ConfigMap mounted at
+rendered into a `ferroehr.toml` ConfigMap mounted at
 `/etc/ferroehr/ferroehr.toml`. Its keys are therefore exactly the TOML keys of
 the [configuration reference](configuration.md) — `config.server.bind`,
 `config.authz.rbac.enabled`, `config.spec_profile`, and so on — so anything
 that reference documents can be set without waiting for a bespoke chart key.
-Secret-bearing scalars are the exception: they live under `secrets:` and are
-injected as `FERROEHR_*` environment (which overrides the file). `extraEnv` is
-the escape hatch for anything neither surfaces.
+
+**Secret-bearing keys are the one exception: a credential never reaches that
+ConfigMap.** A ConfigMap is not a sensitive object — it is readable with namespace
+read, quoted wholesale into issues and support tickets, collected by backup tooling
+that skips Secrets, and not covered by Secret encryption at rest. The chart
+therefore classifies every key it renders and takes one of two actions.
+
+**A secret the chart routes** — `auth.oidc.hmac_secret`, `signing.key_passphrase`,
+`multimedia.secret_access_key`, a terminology `client_secret`, and the four
+URL-shaped ones (`db.url`, `events.url`, `fhir.outbound.url`,
+`audit.fhir_feed.url`) — has a `secrets:` key of its own, so a value under
+`config:` is a mistake and fails the render, naming the key that belongs there:
+
+```text
+Error: execution error at (ferroehr/templates/deployment.yaml:18:28):
+  refusing to render a secret into the ConfigMap (a ConfigMap is not a sensitive object …):
+  - config.auth.oidc.hmac_secret: set `secrets.authOidcHmacSecret` instead
+```
+
+**A secret the chart cannot route** — today only a Basic user's
+`auth.basic.users[].password_hash`, whose config key has no `password_hash_file`
+sibling to point at a mounted file — moves the **whole rendered `ferroehr.toml`
+into the chart's Secret, and no ConfigMap is created at all**. The install notes
+say which object your release used, and so does the projected volume. Read the
+effective configuration in that mode with:
+
+```shell
+kubectl -n ferroehr get secret ferroehr-config \
+  -o jsonpath='{.data.ferroehr\.toml}' | base64 -d
+```
+
+Classification is by **name shape**, not by a list of today's keys: any key whose
+name carries `password`, `passphrase`, `secret`, `credential`, `private_key`,
+`api_key` or a trailing `token` is treated as a credential unless it ends in
+`_file`, `_path` or `_dir` (those hold a path), and the URL-shaped secrets are
+matched by path. That is what makes a secret key added to the server's
+configuration tree in a future release move to the Secret rather than leak
+silently. `extraEnv` is the escape hatch for anything neither `config:` nor
+`secrets:` surfaces.
 
 ## Database roles — who runs migrations
 
@@ -82,10 +136,10 @@ read-only from a Secret at `/etc/ferroehr/<key>` (and which is deliberately
 *not* part of the rendered TOML); point the matching in-TOML `*_file` /
 `*_path` key at the mounted path. Secret-bearing scalar values go under
 `secrets:` — `authOidcHmacSecret`, `signingKeyPassphrase`, `eventsUrl`,
-`fhirOutboundUrl`, `multimediaAccessKeyId`, `multimediaSecretAccessKey` — and
-the database DSN comes from `database.existingSecret` (key
-`database.existingSecretKey`, default `FERROEHR__DB__URL`). None of these ever
-reach the ConfigMap.
+`fhirOutboundUrl`, `auditFhirFeedUrl`, `multimediaAccessKeyId`,
+`multimediaSecretAccessKey`, `terminologyOauth2ClientSecrets` — and the database
+DSN comes from `database.existingSecret` (key `database.existingSecretKey`,
+default `FERROEHR__DB__URL`). None of these ever reach the ConfigMap.
 
 How a secret reaches the process differs by whether the configuration key has a
 `*_file` sibling, and the difference is a security one: an environment variable
@@ -99,16 +153,26 @@ asks for a read-only volume instead.
 | `secrets.authOidcHmacSecret` | mounted at `/etc/ferroehr-secrets/auth.oidc.hmac_secret`; only the path is env |
 | `secrets.signingKeyPassphrase` | mounted at `/etc/ferroehr-secrets/signing.key_passphrase` |
 | `secrets.multimediaSecretAccessKey` | mounted at `/etc/ferroehr-secrets/multimedia.secret_access_key` |
+| `secrets.terminologyOauth2ClientSecrets.<name>` | mounted at `/etc/ferroehr-secrets/terminology.external.oauth2_clients.<name>.client_secret`; the chart injects the matching `client_secret_file` into the rendered TOML |
 | the database DSN | `FERROEHR__DB__URL` env — `db.url` has no `*_file` sibling |
-| `secrets.eventsUrl`, `secrets.fhirOutboundUrl` | env — no `*_file` sibling |
+| `secrets.eventsUrl`, `secrets.fhirOutboundUrl`, `secrets.auditFhirFeedUrl` | env — no `*_file` sibling |
 | `secrets.multimediaAccessKeyId` | env — an access key *id* is not secret (it is reported unredacted by `/management/env`) |
 
 The mount is read-only, `0440`, owned `root:65532` so the non-root process reads
 it through the group bit, and it is deliberately **not** a `subPath` mount,
 because a `subPath`-mounted Secret never receives updates and a rotation would
-not propagate. A Basic-auth `password_hash` under `config.auth.basic.users` is
-*not* in this table: it is rendered into the ConfigMap, since the server has no
-`password_hash_file` indirection — prefer `config.auth.oidc` where that matters.
+not propagate.
+
+> [!NOTE]
+> A Basic user is the one secret with no `*_file` route: the server has no
+> `password_hash_file`, so an Argon2id hash cannot be delivered as a mounted file.
+> Configuring `config.auth.basic.users` therefore switches the whole configuration
+> into the Secret (above) rather than leaving the hash in a ConfigMap. It is still
+> not as good as a mounted file — the value sits in the pod's configuration object
+> instead of a rotatable secret path — so prefer `config.auth.oidc` where the
+> choice exists. An Argon2id hash is not a plaintext password, but it is an offline
+> cracking target, which is exactly what the boot-time OWASP parameter floor exists
+> to make expensive.
 
 ## Security posture
 
@@ -179,6 +243,44 @@ receiving traffic) and never liveness (which would restart the container in a
 loop). If the kubelet cannot reach the HTTP port, set `probes.exec.enabled=true`
 to use the binary's `healthcheck` subcommand instead.
 
+> [!WARNING]
+> **Migrations run only at boot, so a replaced or wiped database leaves the pods
+> NotReady until something migrates it.** Readiness reports
+> `"migrations": {"status":"DOWN","detail":"core schema tables missing (migrations
+> not applied)"}` while `"db"` reads `UP` — the pod reaches PostgreSQL, finds no
+> schema, and does not migrate again, because migration is a startup step.
+> Liveness keeps passing (correctly: the process is healthy), so the kubelet never
+> restarts the container and the Deployment sits at `0/N` ready with no error in
+> the logs after the first one:
+>
+> ```shell
+> kubectl -n ferroehr get pods                      # Running, 0/2 READY
+> curl -s http://ferroehr:8080/health/readiness     # 503, "migrations" DOWN, "db" UP
+> kubectl -n ferroehr rollout restart deploy/ferroehr
+> ```
+>
+> The check re-tests the schema on every probe, so a pod recovers on its own within
+> one `readiness.periodSeconds` of the schema existing — verified on a two-replica
+> Deployment: after the schema was dropped both pods went `READY false` with zero
+> restarts, and when a *replacement* pod migrated at boot, the untouched pod
+> returned to `READY true` with `RESTARTS 0` and its original start time. What
+> needs the restart is the case where the only thing that would migrate is the pod
+> itself.
+>
+> That is what makes the interaction with flow (b) load-bearing: when migrations
+> run out of band, the migration step must complete *before* the Deployment rolls,
+> or the first pods sit unready waiting for a schema. Gate the rollout on the
+> migration Job rather than starting both together. Durable storage is the other
+> half — an `emptyDir`-backed or otherwise disposable PostgreSQL puts a clinical
+> repository one node eviction away from this state.
+>
+> One recovery path does **not** self-heal, and it is worth knowing before you try
+> it: restoring or dropping *part* of the schema set. The archival tier's tables
+> live in their own `cold` schema, so a `DROP SCHEMA ehr CASCADE` leaves them
+> behind, and the baseline migration then fails permanently with
+> `relation "vo_version" already exists` — the pod crash-loops, and restarting it
+> retries the same failure. Recreate the whole database rather than one schema.
+
 The management surface is independent of the probes and stays ops-only
 (`/management/info`, `/prometheus`, `/metrics`, `/env`, `/loggers`,
 `/flamegraph`). Unlike the bare binary, the chart ships
@@ -239,8 +341,11 @@ upgrades and node drains never fully interrupt the API; the default
 `terminationGracePeriodSeconds` covers the binary's shutdown drain. Roll back by
 re-pinning the prior image tag or digest.
 
-A change anywhere under `config` rewrites the ConfigMap, whose checksum is a pod
-annotation, so `helm upgrade` rolls the pods for a configuration-only change too.
+A change anywhere under `config`, `config.files` or `secrets` changes the
+`checksum/config` pod annotation, so `helm upgrade` rolls the pods for a
+configuration-only change too — including a rotated secret or an edited ABAC
+policy, both of which are read at boot and would otherwise reach the volume while
+every running pod kept using the old value.
 `helm uninstall` removes everything the chart created — the chart declares no
 PersistentVolumeClaim, so nothing is left behind; your database, and the Secret
 holding its DSN, are yours and survive.
