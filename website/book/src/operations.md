@@ -80,6 +80,46 @@ migrations run:
 > appears — harmless but confusing, and it delays the rollout rather than failing
 > it. Gate the rollout on the migration job.
 
+### Recovering a partially wiped database
+
+A wipe that removes *some* of the server's schemas is not a fresh start, and the
+server refuses to migrate over one rather than doing something plausible with it.
+
+Almost every object lives in `ehr`, but the cold archival tier lives in its own
+`cold` schema, so `DROP SCHEMA ehr CASCADE` — a restore gone wrong, a recreated
+volume, a wiped test database — takes the primary tier and the migration
+bookkeeping and **leaves the archived clinical rows standing**. On the next boot
+you get:
+
+```text
+migration: the cold archival tier (schema `cold`) is present but the primary tier
+(`ehr.vo_version`) is not: the two are one repository and have been wiped apart.
+```
+
+The refusal is deliberate. Those mirror tables were created from the primary
+tables as they stood when archiving was set up, so silently adopting a survivor
+could leave the archive tier a different shape from the tier it mirrors — and
+its rows are clinical content belonging to a repository that no longer exists.
+Two remedies, and which one applies is your call, not the server's:
+
+- **The data mattered.** Restore the whole database from backup — both schemas
+  together, since they are one repository. Do not try to graft the surviving
+  `cold` tables onto a fresh schema; their `ehr`, `contribution` and `audit`
+  parents are gone, so they are fragments, not a recoverable archive.
+- **The wipe was intended** (a test database, a recreated volume). Then
+  `DROP SCHEMA cold CASCADE` and start the server again; it migrates from
+  scratch.
+
+The reverse partial wipe — dropping `cold` while `ehr` survives — is not caught at
+boot, because the migration bookkeeping still records the archival tier as applied.
+It surfaces the first time an archive, restore or whole-repository export runs.
+Restore from backup; there is no forward path that invents the archived rows back.
+
+> [!TIP]
+> When you wipe a FerroEHR database deliberately, drop the **database**, not a
+> schema. `DROP DATABASE` cannot leave half a repository behind, and it is the
+> only wipe with no partial-state failure mode.
+
 ## TLS and database security
 
 These are database-side settings that belong to whoever provisions PostgreSQL;
