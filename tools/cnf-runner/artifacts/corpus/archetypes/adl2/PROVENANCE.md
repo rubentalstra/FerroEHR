@@ -31,7 +31,7 @@ root reference copy: `LICENSE-CC-BY-SA-3.0`.
 
 - ADL 2 archetypes (`*.adls`): **322**
 - ADL 1.4 twins (`*.adl`): **330**
-- archetypes present in BOTH dialects: **320**
+- archetypes present in BOTH dialects: **321**
 
 The dual-dialect pairing is the value here: the same clinical archetype
 in 1.4 and in 2, as published upstream — an INDEPENDENT reference for

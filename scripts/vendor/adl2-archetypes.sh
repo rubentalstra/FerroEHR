@@ -93,62 +93,74 @@ sync_tree "$WORK/src/Reference/CKM_2013_12_09" "$CKM_PAIRS_DEST/ckm-2013-12-09"
 
 # ── provenance for the CNF-corpus tree (the openehr-adl tree keeps its record
 # in crates/openehr-adl/tests/corpus/PROVENANCE.md) ───────────────────────────
-python3 - "$CKM_PAIRS_DEST" "$STAMP" "$REPO" "$PIN" <<'PY'
-import collections
-import pathlib
-import sys
+# The provenance record, in shell: the counts are `find | wc -l`, the pairing is a
+# `comm` over two sorted HRID lists, and the class table is `cut | sort | uniq -c`.
+# No Python in this repository.
+{
+  root="$CKM_PAIRS_DEST/ckm-2013-12-09"
+  # HRID = the name up to `.v<version>`, so an ADL 1.4 file and its ADL 2 twin
+  # reduce to the same key.
+  hrids() { find "$root" -name "$1" -print | sed 's|.*/||; s|\.v[0-9].*$||' | sort -u; }
+  adl_count=$(find "$root" -name '*.adl' -print | wc -l | tr -d ' ')
+  adls_count=$(find "$root" -name '*.adls' -print | wc -l | tr -d ' ')
+  paired_count=$(comm -12 <(hrids '*.adl') <(hrids '*.adls') | wc -l | tr -d ' ')
 
-dest, stamp, repo, pin = sys.argv[1:5]
-root = pathlib.Path(dest) / "ckm-2013-12-09"
-adl = sorted(root.rglob("*.adl"))
-adls = sorted(root.rglob("*.adls"))
+  {
+    printf '# ADL 2 archetype pack (with ADL 1.4 twins) — provenance\n\n'
+    printf 'Vendored verbatim from `https://github.com/%s`\n' "$REPO"
+    printf '(`Reference/CKM_2013_12_09/`) at commit `%s` by\n' "$PIN"
+    printf '`scripts/vendor/adl2-archetypes.sh` on %s.\n\n' "$STAMP"
+    cat <<'PROSE'
+Upstream describes the tree as archetypes exported from the Clinical
+Knowledge Manager (export time Mon Dec 09 15:42:23 CET 2013).
 
-def hrid(path):
-    # openEHR-EHR-OBSERVATION.apgar.v1.0.0.adls -> openEHR-EHR-OBSERVATION.apgar
-    stem = path.name.split(".v")[0]
-    return stem
+## Why this source and not CKM
 
-paired = sorted({hrid(p) for p in adl} & {hrid(p) for p in adls})
-classes = collections.Counter(p.name.split(".")[0] for p in adls)
+The live openEHR CKM publishes **ADL 1.4 only** — `/archetypes/{cid}/adl`
+returns `adl_version=1.4` and there is no ADL 2 export endpoint
+(`/adl2`, `/opt2` 404; `?format=ADL2` is ignored). The ADL 1.4 corpus is
+therefore vendored live (`corpus/archetypes/ckm/`, ADL 1.4) and the ADL 2
+corpus comes from this pinned upstream library.
 
-with open(pathlib.Path(dest) / "PROVENANCE.md", "w") as fh:
-    w = fh.write
-    w("# ADL 2 archetype pack (with ADL 1.4 twins) — provenance\n\n")
-    w(f"Vendored verbatim from `https://github.com/{repo}`\n")
-    w(f"(`Reference/CKM_2013_12_09/`) at commit `{pin}` by\n")
-    w(f"`scripts/vendor/adl2-archetypes.sh` on {stamp}.\n\n")
-    w("Upstream describes the tree as archetypes exported from the Clinical\n")
-    w("Knowledge Manager (export time Mon Dec 09 15:42:23 CET 2013).\n\n")
-    w("## Why this source and not CKM\n\n")
-    w("The live openEHR CKM publishes **ADL 1.4 only** — `/archetypes/{cid}/adl`\n")
-    w("returns `adl_version=1.4` and there is no ADL 2 export endpoint\n")
-    w("(`/adl2`, `/opt2` 404; `?format=ADL2` is ignored). The ADL 1.4 corpus is\n")
-    w("therefore vendored live (`corpus/archetypes/ckm/`, ADL 1.4) and the ADL 2\n")
-    w("corpus comes from this pinned upstream library.\n\n")
-    w("The ADL 2 side is NEVER produced by running our own ADL 1.4->2 converter\n")
-    w("over CKM output: that converter has no spec basis (our own design) and\n")
-    w("would then be validated against its own output.\n\n")
-    w("## Licensing\n\n")
-    w("The upstream repository carries no top-level LICENSE file; individual\n")
-    w("archetypes carry their own `licence` metadata (predominantly CC-BY-SA\n")
-    w("3.0 where stated — see the individual file). openEHR Foundation\n")
-    w("test/reference material, vendored verbatim with metadata retained;\n")
-    w("root reference copy: `LICENSE-CC-BY-SA-3.0`.\n\n")
-    w("## Contents\n\n")
-    w(f"- ADL 2 archetypes (`*.adls`): **{len(adls)}**\n")
-    w(f"- ADL 1.4 twins (`*.adl`): **{len(adl)}**\n")
-    w(f"- archetypes present in BOTH dialects: **{len(paired)}**\n\n")
-    w("The dual-dialect pairing is the value here: the same clinical archetype\n")
-    w("in 1.4 and in 2, as published upstream — an INDEPENDENT reference for\n")
-    w("the conversion path and matched inputs for the DEFINITION API's ADL 1.4\n")
-    w("and ADL 2 wire cases.\n\n")
-    w("| RM class | ADL 2 files |\n|---|---|\n")
-    for cls, n in sorted(classes.items(), key=lambda kv: (-kv[1], kv[0])):
-        w(f"| {cls} | {n} |\n")
-    w("\nNever hand-edit a vendored fixture; re-run this script and bump the pin.\n")
+The ADL 2 side is NEVER produced by running our own ADL 1.4->2 converter
+over CKM output: that converter has no spec basis (our own design) and
+would then be validated against its own output.
 
-print(f"==> {len(adls)} ADL 2 + {len(adl)} ADL 1.4 files ({len(paired)} paired) → {dest}")
-PY
+## Licensing
+
+The upstream repository carries no top-level LICENSE file; individual
+archetypes carry their own `licence` metadata (predominantly CC-BY-SA
+3.0 where stated — see the individual file). openEHR Foundation
+test/reference material, vendored verbatim with metadata retained;
+root reference copy: `LICENSE-CC-BY-SA-3.0`.
+
+## Contents
+
+PROSE
+    printf -- '- ADL 2 archetypes (`*.adls`): **%s**\n' "$adls_count"
+    printf -- '- ADL 1.4 twins (`*.adl`): **%s**\n' "$adl_count"
+    printf -- '- archetypes present in BOTH dialects: **%s**\n\n' "$paired_count"
+    cat <<'PROSE'
+The dual-dialect pairing is the value here: the same clinical archetype
+in 1.4 and in 2, as published upstream — an INDEPENDENT reference for
+the conversion path and matched inputs for the DEFINITION API's ADL 1.4
+and ADL 2 wire cases.
+
+| RM class | ADL 2 files |
+|---|---|
+PROSE
+    # RM class = the leading dotted segment of the file name; ordered by count
+    # descending then name, as the previous record was.
+    find "$root" -name '*.adls' -print \
+      | sed 's|.*/||; s|\..*$||' \
+      | sort | uniq -c | sort -k1,1nr -k2,2 \
+      | while read -r count cls; do printf '| %s | %s |\n' "$cls" "$count"; done
+    printf '\nNever hand-edit a vendored fixture; re-run this script and bump the pin.\n'
+  } > "$CKM_PAIRS_DEST/PROVENANCE.md"
+
+  printf '==> %s ADL 2 + %s ADL 1.4 files (%s paired) → %s\n' \
+    "$adls_count" "$adl_count" "$paired_count" "$CKM_PAIRS_DEST"
+}
 
 echo "==> ADL 2 regression library → $ADL2_REFERENCE_DEST"
 echo "    (its provenance record: crates/openehr-adl/tests/corpus/PROVENANCE.md)"
