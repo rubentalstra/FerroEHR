@@ -33,6 +33,19 @@
 #   --profile admin-ui        the admin console on port 3000
 #   --profile s3              SeaweedFS S3 gateway for DV_MULTIMEDIA (off by default)
 #
+# ── Where the ports are published (security-relevant) ────────────────────────
+# Every published port binds the LOOPBACK interface by default
+# (127.0.0.1:HOST:CONTAINER). This matters more than it looks: a published port
+# is DNAT'd by rules Docker inserts ahead of the host firewall's own chains, so
+# `ufw deny 5432` does NOT stop a container port published on 0.0.0.0
+# (docs.docker.com/engine/network/packet-filtering-firewalls). Running this file
+# unchanged on a public host therefore used to expose PostgreSQL to the internet.
+#
+# To reach the stack from another machine, name the interface explicitly:
+#   FERROEHR_BIND_HOST=0.0.0.0 docker compose up      # every interface
+#   FERROEHR_BIND_HOST=10.0.0.5 docker compose up     # one address
+# Prefer a reverse proxy on the host over publishing the database at all.
+#
 # ── Repo development / CI (never needed by downloaders) ──────────────────────
 # In a repo checkout, docker-compose.override.yml is merged automatically onto
 # a bare `docker compose up`: it flips the images to `:local`
@@ -81,7 +94,7 @@ services:
     volumes:
       - ferroehr-pgdata:/var/lib/postgresql
     ports:
-      - "${FERROEHR_DB_PORT:-5432}:5432"
+      - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_DB_PORT:-5432}:5432"
     # Resource ceilings (docs.docker.com/reference/compose-file/deploy;
     # docs.docker.com/engine/containers/resource_constraints) — the DB gets
     # headroom above the app for shared_buffers (1GB) + /dev/shm (1gb).
@@ -135,7 +148,7 @@ services:
       - source: ferroehr-config
         target: /etc/ferroehr/ferroehr.toml
     ports:
-      - "${FERROEHR_PORT:-8080}:8080"
+      - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_PORT:-8080}:8080"
     # Default sized to the party ixit's documented measurement envelope (the
     # committed measured records are environment-bound to the 8-CPU/8GB
     # docker VM; a 2cpu/1Gi cap halved the measured knee). Production limits
@@ -167,7 +180,7 @@ services:
     environment:
       FERROEHR_ADMIN__CDR__BASE_URL: http://ferroehr:8080
     ports:
-      - "${FERROEHR_ADMIN_UI_PORT:-3000}:3000"
+      - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_ADMIN_UI_PORT:-3000}:3000"
     deploy:
       resources:
         limits:
@@ -200,7 +213,7 @@ services:
     volumes:
       - ferroehr-seaweedfs:/data
     ports:
-      - "${FERROEHR_S3_PORT:-8333}:8333"
+      - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_S3_PORT:-8333}:8333"
     deploy:
       resources:
         limits:

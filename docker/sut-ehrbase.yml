@@ -62,7 +62,7 @@ services:
       SYSTEM_ALLOWTEMPLATEOVERWRITE: "false"
       LOGGING_LEVEL_ROOT: ${LOGGING_LEVEL_ROOT:-INFO}
     ports:
-      - "${FERROEHR_EHRBASE_PORT:-8091}:8080"
+      - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_EHRBASE_PORT:-8091}:8080"
     # NO container healthcheck: the official image ships no wget/curl, so an
     # in-container probe can never pass and `up --wait` hangs on
     # health:starting forever. Readiness is probed EXTERNALLY by
