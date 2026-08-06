@@ -236,10 +236,10 @@ server runs:
 spec_profile = "development"   # the default
 ```
 
-| `spec_profile` | RM | BASE | LANG | Use it when |
-|---|---|---|---|---|
+| `spec_profile`            | RM    | BASE  | LANG  | Use it when                                              |
+|---------------------------|-------|-------|-------|----------------------------------------------------------|
 | `development` *(default)* | 1.2.0 | 1.3.0 | 1.1.0 | You want the generations this build is developed against |
-| `stable` | 1.1.0 | 1.2.0 | 1.0.0 | You need to run on RELEASED openEHR specifications only |
+| `stable`                  | 1.1.0 | 1.2.0 | 1.0.0 | You need to run on RELEASED openEHR specifications only  |
 
 The key is documented in full on the
 [configuration page](https://ferroehr.eu/docs/latest/installation/configuration.html).
@@ -267,16 +267,16 @@ You do not need the whole CDR to get the openEHR specifications in Rust. The
 generated specification layer is published on crates.io as eight
 independently usable crates — the same code this server runs on:
 
-| Crate | What it gives you |
-|---|---|
-| [`openehr-rm`](https://crates.io/crates/openehr-rm) | The Reference Model — `COMPOSITION`, `EHR_STATUS`, `OBSERVATION`, the data structures and data types, change control |
-| [`openehr-base`](https://crates.io/crates/openehr-base) | BASE: the foundation + base types (identifiers, intervals, the terminology-facing types) |
-| [`openehr-am`](https://crates.io/crates/openehr-am) | The Archetype Model, both generations: AOM 1.4 and AOM 2.4 |
-| [`openehr-adl`](https://crates.io/crates/openehr-adl) | The ADL engine: ADL2/cADL/ODIN parser, AOM2 validity catalogue, specialisation flattener, OPT2 generator, ADL 1.4 → 2 conversion |
-| [`openehr-its`](https://crates.io/crates/openehr-its) | Canonical JSON + XML codecs, the ITS-REST contract, and the Simplified Formats (WebTemplate, FLAT, STRUCTURED) |
-| [`openehr-query`](https://crates.io/crates/openehr-query) | The AQL 1.1 lexer, parser and AST |
-| [`openehr-term`](https://crates.io/crates/openehr-term) | The terminology model plus the bundled openEHR terminology |
-| [`openehr-lang`](https://crates.io/crates/openehr-lang) | The BMM/P_BMM object model and the ODIN instance reader |
+| Crate                                                     | What it gives you                                                                                                                |
+|-----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| [`openehr-rm`](https://crates.io/crates/openehr-rm)       | The Reference Model — `COMPOSITION`, `EHR_STATUS`, `OBSERVATION`, the data structures and data types, change control             |
+| [`openehr-base`](https://crates.io/crates/openehr-base)   | BASE: the foundation + base types (identifiers, intervals, the terminology-facing types)                                         |
+| [`openehr-am`](https://crates.io/crates/openehr-am)       | The Archetype Model, both generations: AOM 1.4 and AOM 2.4                                                                       |
+| [`openehr-adl`](https://crates.io/crates/openehr-adl)     | The ADL engine: ADL2/cADL/ODIN parser, AOM2 validity catalogue, specialisation flattener, OPT2 generator, ADL 1.4 → 2 conversion |
+| [`openehr-its`](https://crates.io/crates/openehr-its)     | Canonical JSON + XML codecs, the ITS-REST contract, and the Simplified Formats (WebTemplate, FLAT, STRUCTURED)                   |
+| [`openehr-query`](https://crates.io/crates/openehr-query) | The AQL 1.1 lexer, parser and AST                                                                                                |
+| [`openehr-term`](https://crates.io/crates/openehr-term)   | The terminology model plus the bundled openEHR terminology                                                                       |
+| [`openehr-lang`](https://crates.io/crates/openehr-lang)   | The BMM/P_BMM object model and the ODIN instance reader                                                                          |
 
 The multi-generation crates expose their generations as version-named modules
 (`openehr_rm::v1_2`, `openehr_rm::v1_1`, `openehr_am::v2_4`, …), with the
@@ -478,16 +478,16 @@ spec-codegen drift, comment style, and a container smoke test. See [CONTRIBUTING
 
 ## Documentation
 
-| | |
-|---|---|
-| [Documentation website](https://ferroehr.eu/) | The user guide + OpenAPI endpoint reference (versioned per release) |
-| [Architecture](docs/architecture.md) | How the system is built, and why |
-| [Conformance report](docs/conformance/ferroehr/CONFORMANCE_REPORT.md) | The latest measured results, per test case |
-| [Version matrix](docs/VERSIONS.md) | Every pin: openEHR spec generations, Rust toolchain, PostgreSQL |
-| [`openehr-*` crates](https://crates.io/search?q=openehr) | The specification layer as standalone Rust libraries |
-| [Roadmap board](https://github.com/users/rubentalstra/projects/4) | Where the product goes next — planned, in progress, and shipped, live |
-| [Developer documentation](docs/README.md) | Contributing, design decisions, specifications |
-| [Vendored openEHR specifications](docs/specs/openehr/) | The oracle every spec-facing decision cites |
+|                                                                       |                                                                       |
+|-----------------------------------------------------------------------|-----------------------------------------------------------------------|
+| [Documentation website](https://ferroehr.eu/)                         | The user guide + OpenAPI endpoint reference (versioned per release)   |
+| [Architecture](docs/architecture.md)                                  | How the system is built, and why                                      |
+| [Conformance report](docs/conformance/ferroehr/CONFORMANCE_REPORT.md) | The latest measured results, per test case                            |
+| [Version matrix](docs/VERSIONS.md)                                    | Every pin: openEHR spec generations, Rust toolchain, PostgreSQL       |
+| [`openehr-*` crates](https://crates.io/search?q=openehr)              | The specification layer as standalone Rust libraries                  |
+| [Roadmap board](https://github.com/users/rubentalstra/projects/4)     | Where the product goes next — planned, in progress, and shipped, live |
+| [Developer documentation](docs/README.md)                             | Contributing, design decisions, specifications                        |
+| [Vendored openEHR specifications](docs/specs/openehr/)                | The oracle every spec-facing decision cites                           |
 
 For the openEHR standard itself, see the
 [openEHR specifications](https://specifications.openehr.org/). The
@@ -527,11 +527,11 @@ public issues.
 
 ### Licensing
 
-| Material | License |
-|---|---|
-| **FerroEHR's own code** — the application, the tooling, and the generated crates | [MIT](LICENSE) |
-| openEHR **machine-readable artifacts** (BMM, XSDs, OpenAPI, JSON Schemas — the `specifications-ITS-*` repos) and the vendored **test corpora** (archie, Better `web-template-tests`, the EHRbase SDK) | [Apache-2.0](LICENSE-APACHE-2.0) |
-| openEHR **specification text** (vendored for conformance work) and **CKM-derived clinical models** | [CC-BY-SA 3.0](LICENSE-CC-BY-SA-3.0); clinical models carry per-file `licence` metadata |
+| Material                                                                                                                                                                                              | License                                                                                 |
+|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
+| **FerroEHR's own code** — the application, the tooling, and the generated crates                                                                                                                      | [MIT](LICENSE)                                                                          |
+| openEHR **machine-readable artifacts** (BMM, XSDs, OpenAPI, JSON Schemas — the `specifications-ITS-*` repos) and the vendored **test corpora** (archie, Better `web-template-tests`, the EHRbase SDK) | [Apache-2.0](LICENSE-APACHE-2.0)                                                        |
+| openEHR **specification text** (vendored for conformance work) and **CKM-derived clinical models**                                                                                                    | [CC-BY-SA 3.0](LICENSE-CC-BY-SA-3.0); clinical models carry per-file `licence` metadata |
 
 Each vendored tree documents its exact origin and license in a
 `PROVENANCE.md`, with the upstream `LICENSE` vendored alongside. The full

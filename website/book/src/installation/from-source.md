@@ -28,12 +28,13 @@ To build just the server binary in release mode (what the container image
 ships):
 
 ```shell
-cargo build --release --locked -p ferroehr
+cargo build --release --locked -p ferroehr-server
 ```
 
-The resulting binary is `target/release/ferroehr`. It is statically linked
-against a pure-Rust TLS stack — no OpenSSL, no JVM, no runtime dependencies —
-so it drops into a minimal base image or runs directly on the host.
+The binary crate is `ferroehr-server`; the executable it produces is named
+`ferroehr`, so the resulting binary is `target/release/ferroehr`. It links a
+pure-Rust TLS stack — no OpenSSL, no JVM, no runtime dependencies — so it
+drops into a minimal base image or runs directly on the host.
 
 ## Running the tests
 
@@ -41,8 +42,19 @@ so it drops into a minimal base image or runs directly on the host.
 cargo nextest run --workspace
 ```
 
-The suite includes integration tests that start PostgreSQL 18 via
-`testcontainers`, so Docker must be running.
+Every database-backed test takes its database from a shared harness: one
+PostgreSQL 18 server, one migrated template database, and a fast clone per
+test. By default the harness starts (or re-adopts) a single reusable `postgres:18` container, so
+Docker must be running — reclaim it afterwards with
+`docker rm -f ferroehr-testkit-pg18`. To use a PostgreSQL 18 server you already
+run instead, point the suite at it and Docker is not needed at all:
+
+```shell
+export FERROEHR_TEST_PG_URL='postgres://user:password@localhost:5432/postgres'
+cargo nextest run --workspace
+```
+
+The role in that DSN must be allowed to `CREATE DATABASE`.
 
 ## Running the binary
 
@@ -56,9 +68,24 @@ target/release/ferroehr
 ```
 
 It runs its schema migrations at boot and then serves on the configured bind
-address (default `0.0.0.0:8080`). The binary also has a `healthcheck`
-subcommand (used by the container healthcheck and Kubernetes exec probes) that
-hits the status endpoint and exits 0 or 1.
+address (default `0.0.0.0:8080`).
+
+Three global flags and two subcommands round the CLI out:
+
+- `--config <path>` points at a configuration file, overriding the search
+  order (`FERROEHR_CONFIG`, `./ferroehr.toml`, `/etc/ferroehr/ferroehr.toml`);
+- `--set <key>=<value>` is a repeatable dotted-path override with the highest
+  precedence of all (`--set db.max_connections=40`);
+- `ferroehr config check` validates the effective configuration and prints it
+  redacted, exiting 0 when valid and 1 otherwise — the fastest way to test a
+  deployment's configuration before starting it;
+- `ferroehr config default` writes the annotated default configuration
+  template to stdout, which is the reference every key in the
+  [configuration reference](configuration.md) is drawn from;
+- `ferroehr healthcheck` (used by the container healthcheck and Kubernetes
+  exec probes) probes the status endpoint and exits 0 or 1. It defaults to
+  `http://127.0.0.1:8080/ferroehr/rest/status`; override with `--url` or
+  `FERROEHR_HEALTHCHECK_URL`.
 
 > [!NOTE]
 > Building from source gives you the same binary the images use — the container
@@ -71,12 +98,14 @@ The server builds with three additive cargo features, all **on by default**:
 `fhir` (the FHIR connector, outbound emitter, FHIR terminology providers, and
 the FHIR `AuditEvent` audit sinks), `events` (contribution-outbox eventing
 and the AMQP transport), and `multimedia` (`DV_MULTIMEDIA` externalization
-to S3-compatible object storage).
+to S3-compatible object storage). Their implementations live in a separate
+crate that the platform library pulls in only when the matching feature is on,
+so a build without them contains none of their code.
 
 A slim build compiles them out entirely:
 
 ```bash
-cargo build --release --no-default-features
+cargo build --release --locked -p ferroehr-server --no-default-features
 ```
 
 A slim binary refuses loudly at boot if the configuration enables an

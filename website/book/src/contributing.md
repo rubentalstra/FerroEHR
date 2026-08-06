@@ -22,8 +22,11 @@ The Rust toolchain is pinned by the repository's `rust-toolchain.toml`, so
 `rustup` installs the right version automatically on your first build. Two
 extra tools are needed for the full test suite:
 
-- **Docker**, for the PostgreSQL 18 integration tests (they spin up a real
-  database via testcontainers).
+- **A PostgreSQL 18 server** for the database-backed tests. The shared test
+  harness starts (or re-adopts) one reusable container if Docker is running;
+  otherwise point it at a server you already run with
+  `FERROEHR_TEST_PG_URL` (its role must be able to `CREATE DATABASE`). See
+  [From source → Running the tests](installation/from-source.md#running-the-tests).
 - **`xmllint`** (from `libxml2`), used by the canonical-XML parity tests.
 
 Install the shared git hooks once with `bash scripts/install-hooks.sh`.
@@ -36,12 +39,33 @@ are advisory:
 ```bash
 cargo build --workspace
 cargo nextest run --workspace          # unit + integration (real PostgreSQL 18)
-cargo test --workspace --doc
-cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo fmt --all --check
-cargo deny check && cargo machete      # deny subsumes cargo-audit (same RustSec DB + yanked/licenses/bans/sources)
+
+# clippy is three lanes: the admin console's `hydrate` and `ssr` features are
+# mutually exclusive, so it is excluded from the workspace lane and linted
+# per-feature on both of its targets.
+cargo clippy --workspace --exclude ferroehr-admin-ui --all-targets --all-features -- -D warnings
+cargo clippy -p ferroehr-admin-ui --all-targets --features ssr -- -D warnings
+cargo clippy -p ferroehr-admin-ui --target wasm32-unknown-unknown --features hydrate -- -D warnings
+
+# rustdoc lints + doctests (the [workspace.lints.rustdoc] table is inert
+# without a doc run)
+RUSTDOCFLAGS='-D warnings' cargo doc --workspace --exclude ferroehr-admin-ui \
+  --all-features --no-deps --document-private-items
+cargo test --workspace --doc
+
+cargo deny check                       # subsumes cargo-audit: same RustSec DB, plus yanked/licenses/bans/sources
+cargo machete                          # unused dependencies
+cargo hack check --rust-version --workspace   # the declared MSRV really builds
 bash scripts/check-codegen-drift.sh    # generated layer matches the vendored specs
+bash scripts/check-comment-style.sh --all     # the comment-style rules
 ```
+
+CI adds a few gates that need more than a checkout: a container smoke test that
+composes the built server image against the database image, the browser
+end-to-end battery for the admin console (`bash scripts/ui-e2e.sh`), and the
+changelog, crate-version, and attribution guards. Console-only work has its own
+local battery — see the repository's `CONTRIBUTING.md`.
 
 > [!IMPORTANT]
 > Two rules are absolute. Never hand-edit a generated file — anything under a

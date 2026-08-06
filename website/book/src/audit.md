@@ -75,7 +75,7 @@ under RBAC and answers `404` when the local store is disabled.
 ```bash
 # Who accessed patient-42's data this month?
 curl -u admin:pw \
-  "https://cdr.example.org/ehrbase/rest/openehr/v1/fhir/r4/AuditEvent?patient=patient-42&date=ge2026-07-01T00:00:00Z"
+  "https://cdr.example.org/ferroehr/rest/openehr/v1/fhir/r4/AuditEvent?patient=patient-42&date=ge2026-07-01T00:00:00Z"
 ```
 
 This is also the openEHR "record demerging" instrument: when data lands in
@@ -109,9 +109,13 @@ systems.
 
 Auditing defaults to on with the local store only; see the
 [configuration reference](installation/configuration.md#audit) for every
-`[audit]` key and its `FERROEHR__AUDIT__*` environment form. Deployments
-upgrading from the previous `[atna]` section: the server refuses the old
-keys at boot with did-you-mean guidance — move the settings under
-`[audit.syslog]` (`host`/`port`/`transport`/`tls_ca_file`/
-`tls_identity_cert_file`/`tls_identity_key_file`) and the shared keys to
-`[audit]`.
+`[audit]` key and its `FERROEHR__AUDIT__*` environment form. The syslog sink's
+own keys are `host` / `port` / `transport` / `tls_ca_file` /
+`tls_identity_cert_file` / `tls_identity_key_file` under `[audit.syslog]`; the
+switches shared by every sink stay directly under `[audit]`.
+
+> [!NOTE]
+> There are no alternative spellings for any of these: an unrecognized
+> `FERROEHR_*` variable or an unknown TOML key is a **boot error** naming the
+> spelling it should have had, never a silently ignored setting. Validate a
+> deployment's configuration up front with `ferroehr config check`.

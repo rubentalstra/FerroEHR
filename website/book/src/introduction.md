@@ -31,10 +31,16 @@ what you query and what you read back.
   and computes the profile verdicts automatically. The current, run-derived
   result — every number generated from the committed artifacts, never
   hand-typed — is on the [Conformance](conformance.md) page.
-- **The latest openEHR specifications**, generated directly from the official
-  machine-readable models: the REST API Release-1.1.0, AQL 1.1,
-  Reference Model 1.2.0, Archetype Model 1.4 and 2.4, Terminology 3.1. A
-  specification update is a regeneration, not a rewrite.
+- **The openEHR specifications, generated** directly from the official
+  machine-readable models: the REST API Release-1.1.0, AQL 1.1, the Reference
+  Model, Archetype Model 1.4 and 2.4, Terminology 3.1. A specification update
+  is a regeneration, not a rewrite.
+- **Two selectable specification generations.** One configuration key,
+  `spec_profile`, chooses the whole generation set the server runs:
+  `development` (Reference Model 1.2.0 with BASE 1.3.0 — the default) or
+  `stable` (the latest *released* generations, Reference Model 1.1.0 with
+  BASE 1.2.0). See
+  [`spec_profile`](installation/configuration.md#spec_profile).
 - **One static binary.** No JVM and no runtime dependencies — predictable
   memory, fast cold starts, and a minimal, shell-less container image.
 - **PostgreSQL 18-native storage.** Clinical documents are decomposed into an

@@ -109,6 +109,13 @@ environment variable, with `__` separating nested keys:
 | `FERROEHR__EVENTS__RETENTION_DAYS` | `7` | how long published rows are kept |
 | `FERROEHR__EVENTS__PRUNE_INTERVAL_SECS` | `3600` | how often published rows are pruned |
 
+> [!NOTE]
+> Eventing is also a **cargo feature** (`events`), on in the published images
+> and any default build. A slim `--no-default-features` build contains none of
+> the transport's code and refuses to boot with `events.enabled = true` rather
+> than starting up silently without a publisher — see
+> [From source → Build features](../installation/from-source.md#build-features).
+
 > [!WARNING]
 > The broker URL carries credentials, so keep it in a secret, not a plain
 > environment file. For anything beyond a local broker, use a TLS connection

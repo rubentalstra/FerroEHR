@@ -11,11 +11,19 @@ advice.
 ## FerroEHR's own code — MIT
 
 Everything written for this project — the server and application crates, the
-code generator and tooling, **and the generated openEHR specification
-crates** (they are this project's own emitted Rust) — is licensed under the
+code generator and tooling, the admin console, and the hand-written
+specification engines (`openehr-query`, `openehr-adl`) — is licensed under the
 [MIT License](https://github.com/rubentalstra/FerroEHR/blob/develop/LICENSE).
 You can use, modify, and redistribute it freely, including commercially,
 provided the copyright and permission notice are preserved.
+
+The six published spec crates that **embed** material derived from the official
+openEHR machine-readable artifacts — `openehr-base`, `openehr-rm`,
+`openehr-am`, `openehr-lang`, `openehr-term`, `openehr-its` — declare
+`MIT AND Apache-2.0` and ship both license texts in the package: the emitted
+Rust is this project's, the specification documentation text, terminology XML,
+and JSON Schema carried inside it are openEHR's. See
+[Rust crates](crates.md#licensing).
 
 ## Vendored third-party material
 
@@ -39,7 +47,8 @@ exact upstream source, pinned revision, and license, with the upstream
 The CC-BY-SA specification text and clinical models are redistributed
 **verbatim, with attribution** — they are reference and test material, not
 part of the compiled server. The FerroEHR binary you deploy is built from
-MIT code plus Apache-2.0-licensed machine-readable inputs.
+MIT code plus Apache-2.0-licensed machine-readable inputs; the crates that
+carry those inputs are the `MIT AND Apache-2.0` ones named above.
 
 ## Rust dependencies
 

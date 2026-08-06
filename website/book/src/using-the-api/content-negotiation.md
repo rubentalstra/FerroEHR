@@ -358,10 +358,13 @@ first version — so restating `249` is accepted while any other change type is
 rejected.
 
 > [!NOTE]
-> The older dotted spellings — `openEHR-VERSION.lifecycle_state:
-> code_string="553"`, `openEHR-AUDIT_DETAILS.committer: name="John Doe"`,
-> and so on, with the attribute in the header *name* — are deprecated but
-> still accepted. If both forms appear, the lowercase value-form header wins.
+> openEHR itself deprecated an earlier spelling of these headers in
+> Release-1.0.3 — the attribute sat in the header *name*
+> (`openEHR-VERSION.lifecycle_state: code_string="553"`,
+> `openEHR-AUDIT_DETAILS.committer: name="John Doe"`, and the bare
+> `openEHR-AUDIT_DETAILS`). The specification keeps them available for
+> backward compatibility and so does this server, so an older client keeps
+> working. If both forms appear, the value-form header above wins.
 
 ## Item tags via headers
 
