@@ -30,6 +30,30 @@
 # -- Number of replicas (ignored when autoscaling.enabled is true).
 replicaCount: 2
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Rollout strategy. The OWASP Kubernetes Security Cheat Sheet's upgrade rule is
+# that a new version arrives as a rolling update rather than by mutating a
+# running container, so the strategy is stated here rather than inherited
+# silently from the API server's defaults
+# (https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy).
+#
+# `maxUnavailable: 0` guarantees the served capacity never DROPS during an
+# upgrade: a new pod must pass its readiness probe before an old one is removed.
+# At the default two replicas this is exactly what Kubernetes already computed
+# (25% of 2 rounds down to 0), so it changes nothing here — it only matters above
+# two replicas, where the percentage default would take a pod out of service.
+# The trade-off, stated because it is real: with no spare scheduling capacity a
+# `maxUnavailable: 0` rollout STALLS rather than proceeding at reduced capacity.
+# That is the safe direction for a clinical API, and it fails visibly.
+# ─────────────────────────────────────────────────────────────────────────────
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    # -- Extra pods allowed above `replicaCount` while rolling.
+    maxSurge: 1
+    # -- Pods allowed to be unavailable while rolling. 0 = capacity never drops.
+    maxUnavailable: 0
+
 image:
   # -- Image repository. Multi-arch distroless (gcr.io/distroless/cc-debian12:nonroot base).
   repository: ghcr.io/rubentalstra/ferroehr

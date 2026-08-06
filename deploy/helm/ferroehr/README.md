@@ -261,6 +261,9 @@ Kubernetes: `>=1.25.0-0`
 | serviceAccount.automountServiceAccountToken | bool | `false` | The workload never calls the K8s API, so no token is mounted. |
 | serviceAccount.create | bool | `true` | Create a dedicated ServiceAccount. |
 | serviceAccount.name | string | `""` | Name to use; generated when empty. |
+| strategy.rollingUpdate.maxSurge | int | `1` | Extra pods allowed above `replicaCount` while rolling. |
+| strategy.rollingUpdate.maxUnavailable | int | `0` | Pods allowed to be unavailable while rolling. 0 = capacity never drops. |
+| strategy.type | string | `"RollingUpdate"` |  |
 | terminationGracePeriodSeconds | int | `30` | Termination grace period (audit/outbox drain has a 5s window in-binary). |
 | tolerations | list | `[]` |  |
 | topologySpreadConstraints | list | `[]` | Spread replicas across nodes/zones. Empty = none. |

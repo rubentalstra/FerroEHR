@@ -22,8 +22,23 @@ version: 4.0.0
 # lane re-checks the pairing against the image itself.
 appVersion: "3.17.3"
 
-# PDB (policy/v1, GA 1.21), HPA (autoscaling/v2, GA 1.23), and the
-# seccompProfile pod field (GA 1.27) all resolve cleanly at 1.25+.
+# A COMPATIBILITY floor, not a support statement — the two are different facts and
+# conflating them is how a chart ends up claiming to endorse an EOL cluster.
+#
+# Compatibility: the newest API this chart uses is HPA `autoscaling/v2` (GA 1.23);
+# PDB `policy/v1` is GA 1.21, NetworkPolicy and Ingress `networking.k8s.io/v1` GA
+# 1.19, and the `seccompProfile` pod field is stable since **1.19**
+# (https://kubernetes.io/docs/tutorials/security/seccomp/ — "FEATURE STATE:
+# Kubernetes v1.19 [stable]"; an earlier version of this comment said 1.27, which
+# was the kubelet's separate SeccompDefault feature, not this field). So 1.25 is a
+# true floor and is deliberately not raised: the chart does work there.
+#
+# Support: upstream maintains only the THREE most recent minor releases
+# (https://kubernetes.io/releases/), so a cluster below that window receives no
+# security backports whatever this constraint permits. The supported window is
+# stated in the book (installation/kubernetes-hardening.md) rather than encoded
+# here, because it moves three times a year and a chart that hard-failed on it
+# would refuse to install on a cluster it runs on perfectly well.
 kubeVersion: ">=1.25.0-0"
 
 keywords:

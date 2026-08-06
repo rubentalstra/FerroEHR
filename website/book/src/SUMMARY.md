@@ -6,6 +6,7 @@
 - [Installation](installation/index.md)
   - [Docker Compose](installation/compose.md)
   - [Kubernetes & Helm](installation/kubernetes.md)
+  - [Cluster hardening](installation/kubernetes-hardening.md)
   - [From source](installation/from-source.md)
   - [Configuration reference](installation/configuration.md)
 - [Concepts](concepts/index.md)
