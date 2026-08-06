@@ -291,11 +291,22 @@ fn bound_connections(
     builder: &mut hyper_util::server::conn::auto::Builder<hyper_util::rt::TokioExecutor>,
     connection: ferroehr::config::server::ConnectionConfig,
 ) {
+    // The timer MUST be installed before any timeout knob is set: hyper stores
+    // timeout settings and a timer separately, and PANICS at connection-serve
+    // time with "timeout `header_read_timeout` set, but no timer set" if a
+    // timeout is configured without one
+    // (<https://docs.rs/hyper/latest/hyper/server/conn/http1/struct.Builder.html#method.timer>).
+    // `axum::serve` installs a timer itself, which is why this only became
+    // necessary once the listeners moved onto the builder directly — and the
+    // failure mode is a panic per connection, not a startup error, so nothing
+    // would have caught it before the first request.
     builder
         .http1()
+        .timer(hyper_util::rt::TokioTimer::new())
         .header_read_timeout(connection.header_read_timeout());
     builder
         .http2()
+        .timer(hyper_util::rt::TokioTimer::new())
         .max_concurrent_streams(connection.stream_cap())
         .keep_alive_interval(connection.http2_keep_alive_interval())
         .keep_alive_timeout(connection.http2_keep_alive_timeout());
