@@ -322,6 +322,6 @@ design. The build record is the closed issues + PR descriptions.
   the separate step-load exploration instrument (maximum sustainable
   throughput, `stress.json`, never a conformance record). Published SVGs +
   summaries regenerate FROM the committed artifacts
-  (`scripts/render-perf-assets.sh`, CI diff-guarded).
-- **Drift check** (`scripts/checks/check-codegen-drift.sh` + CI): the generated layer
+  (`scripts/render/perf-assets.sh`, CI diff-guarded).
+- **Drift check** (`scripts/checks/codegen-drift.sh` + CI): the generated layer
   is always in sync with the vendored specs.

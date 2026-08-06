@@ -13,7 +13,7 @@ program): when work under this program surfaces an old-idea/legacy construct
 (e.g. the crate-level `SPEC_VERSION` const that contradicted the selected
 `Generation`), do NOT keep or work around it — remove it properly, and when
 the removal is out of the current child's scope, `gh issue create` it and
-`scripts/gh-rel.sh parent <new> 1936` so it queues inside the program.
+`scripts/gh/rel.sh parent <new> 1936` so it queues inside the program.
 
 **Why:** the refactor's value is doing the multi-generation design fully
 correctly; carrying legacy semantics silently poisons the new model.

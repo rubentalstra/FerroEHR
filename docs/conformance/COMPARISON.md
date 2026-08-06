@@ -5,7 +5,7 @@
 > reference runner (`tools/cnf-runner`) executing the SAME committed
 > catalogue against each system, each with its own committed party statement
 > (`tools/cnf-runner/party/<sut>/`). Nothing here is hand-entered
-> (`scripts/render-comparison.sh`; CI: `scripts/checks/check-conformance-numbers.sh`).
+> (`scripts/render/comparison.sh`; CI: `scripts/checks/conformance-numbers.sh`).
 >
 > - A capability a party's statement does not claim reads **not claimed** and
 >   never gates its verdicts; a ground unrealizable on a party's topology or

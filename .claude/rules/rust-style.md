@@ -43,7 +43,7 @@ The comment/doc-comment discipline lives in **`comments.md`** (RFC 505 +
 RFC 1574): line comments only, `// TODO(#NNNN):` / `// NOTE:` / `// SAFETY:`
 as the only markers, NOTE = citation + one sentence (≤3 lines), `//` runs
 ≤8 lines, doc-comment summary-line + section conventions. Enforced by
-`scripts/checks/check-comment-style.sh` (hook + CI) and
+`scripts/checks/comment-style.sh` (hook + CI) and
 `clippy::too_long_first_doc_paragraph`.
 
 ## Default values live in the struct's `Default` impl (owner directive 2026-08-06)
@@ -98,7 +98,7 @@ from inside the `Default` impl: a spec-fixed value with several readers
 (`service::DEFAULT_SYSTEM_ID`) is a single source of truth, which is the
 opposite of the problem above.
 
-Enforcement (tier 4): `scripts/checks/check-default-style.sh` — per-edit via the
+Enforcement (tier 4): `scripts/checks/default-style.sh` — per-edit via the
 `rust_fmt_clippy.sh` hook, per-PR via the `default-style` CI job (`--all`).
 
 ## HTTP statuses are compared as types (owner directive 2026-08-06)
@@ -120,7 +120,7 @@ Rendering the number stays legal, because that is not a comparison: a log field,
 metric label, a recorded wire outcome, a `/ 100` class bucket. Only comparison
 against a numeric literal is refused.
 
-Enforcement (tier 4): `scripts/checks/check-typed-status.sh` — per-edit via the
+Enforcement (tier 4): `scripts/checks/typed-status.sh` — per-edit via the
 `rust_fmt_clippy.sh` hook, per-PR via the `default-style` CI job (`--all`, since
 the tree has no violations).
 
@@ -132,8 +132,8 @@ that a convention with no check is labelled as such rather than assumed.
 
 | RFC | The rule | Enforcement |
 |---|---|---|
-| 0505 + 1574 | comment/doc conventions | `comments.md` + `scripts/checks/check-comment-style.sh` + `too_long_first_doc_paragraph` |
-| 3681 | a field's default lives inline in its `Default` impl | §Default values above + `scripts/checks/check-default-style.sh` |
+| 0505 + 1574 | comment/doc conventions | `comments.md` + `scripts/checks/comment-style.sh` + `too_long_first_doc_paragraph` |
+| 3681 | a field's default lives inline in its `Default` impl | §Default values above + `scripts/checks/default-style.sh` |
 | 3107 | `#[derive(Default)]` + `#[default]` where the default is a VARIANT | `clippy::derivable_impls` (deny) — hand-write `impl Default` only for VALUES |
 | 0199 / 0344 / 0430 | `as_`/`to_`/`into_` cost conventions, naming | `clippy::wrong_self_convention` (`clippy::all`, deny) + rustc naming lints |
 | 1940 | `#[must_use]` on functions whose result is the point | `clippy::must_use_candidate` (pedantic → deny) |

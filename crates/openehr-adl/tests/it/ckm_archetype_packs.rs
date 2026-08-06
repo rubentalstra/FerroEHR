@@ -5,11 +5,11 @@
 //!
 //! - `tools/cnf-runner/artifacts/corpus/archetypes/ckm/adl14/` — every
 //!   archetype the public openEHR CKM publishes, as **ADL 1.4**
-//!   (`scripts/vendor-ckm-archetypes.sh`). CKM publishes no ADL 2 export.
+//!   (`scripts/vendor/ckm-archetypes.sh`). CKM publishes no ADL 2 export.
 //! - `tools/cnf-runner/artifacts/corpus/archetypes/adl2/ckm-2013-12-09/` —
 //!   upstream's own CKM export carrying `*.adls` (**ADL 2**) beside `*.adl`
 //!   (ADL 1.4) twins of the same archetypes, pinned by commit
-//!   (`scripts/vendor-adl2-archetypes.sh`).
+//!   (`scripts/vendor/adl2-archetypes.sh`).
 //!
 //! The claim here is deliberately narrow and total: every file in both packs
 //! PARSES in its own dialect. That is the breadth net the hand-written
@@ -224,7 +224,7 @@ fn ckm_adl14_pack_parses() {
     assert!(
         files.len() >= 900,
         "the CKM archetype pack is missing: found {} files in {} — re-run \
-         scripts/vendor-ckm-archetypes.sh",
+         scripts/vendor/ckm-archetypes.sh",
         files.len(),
         dir.display()
     );
@@ -246,7 +246,7 @@ fn upstream_adl2_pack_parses() {
     assert!(
         files.len() >= 300,
         "the upstream ADL 2 pack is missing: found {} files in {} — re-run \
-         scripts/vendor-adl2-archetypes.sh",
+         scripts/vendor/adl2-archetypes.sh",
         files.len(),
         dir.display()
     );

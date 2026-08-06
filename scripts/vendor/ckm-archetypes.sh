@@ -15,7 +15,7 @@
 #     `/source` all 404, and `?format=ADL2` / `?version=2` are silently
 #     ignored (byte-identical 1.4 response). The ADL 2.4 corpus therefore
 #     comes from a DIFFERENT official source —
-#     `scripts/vendor-adl2-archetypes.sh` (openEHR/adl-archetypes).
+#     `scripts/vendor/adl2-archetypes.sh` (openEHR/adl-archetypes).
 #     Never present a CKM export as ADL 2, and never fill the ADL 2 side by
 #     running our own 1.4->2 converter over CKM output: that would test the
 #     converter against itself.
@@ -27,9 +27,9 @@
 # the count grew.
 #
 # Usage:
-#   scripts/vendor-ckm-archetypes.sh                # ADL 1.4 texts
-#   scripts/vendor-ckm-archetypes.sh --with-xml     # + the AM 1.4 XML twin
-#   CKM_JOBS=8 scripts/vendor-ckm-archetypes.sh     # parallel (default 4)
+#   scripts/vendor/ckm-archetypes.sh                # ADL 1.4 texts
+#   scripts/vendor/ckm-archetypes.sh --with-xml     # + the AM 1.4 XML twin
+#   CKM_JOBS=8 scripts/vendor/ckm-archetypes.sh     # parallel (default 4)
 set -Eeuo pipefail
 
 CKM="https://ckm.openehr.org/ckm/rest/v1"
@@ -161,13 +161,13 @@ with open(prov_path, "w") as fh:
     w("# CKM archetype library (ADL 1.4) — provenance\n\n")
     w(f"Every archetype the official openEHR CKM (`{ckm}`) publishes, exported\n")
     w("by CKM itself and vendored verbatim by\n")
-    w(f"`scripts/vendor-ckm-archetypes.sh` on {stamp}.\n\n")
+    w(f"`scripts/vendor/ckm-archetypes.sh` on {stamp}.\n\n")
     w("## Dialect\n\n")
     w("`adl14/` holds CKM's `GET /archetypes/{cid}/adl` response — **ADL 1.4**\n")
     w("text (`adl_version=1.4`). CKM publishes NO ADL 2 export (`/adl2`,\n")
     w("`/adl14`, `/opt2` 404; `?format=ADL2` is ignored and returns the same\n")
     w("1.4 bytes), so the **ADL 2.4 half of the corpus comes from\n")
-    w("`scripts/vendor-adl2-archetypes.sh`** (openEHR/adl-archetypes). A CKM\n")
+    w("`scripts/vendor/adl2-archetypes.sh`** (openEHR/adl-archetypes). A CKM\n")
     w("export is never labelled ADL 2, and the ADL 2 side is never produced by\n")
     w("running our own 1.4->2 converter over these files — that would test the\n")
     w("converter against itself.\n\n")

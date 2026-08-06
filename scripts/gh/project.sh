@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# scripts/gh-project.sh — the deterministic GitHub Projects (v2) board helper.
+# scripts/gh/project.sh — the deterministic GitHub Projects (v2) board helper.
 #
 # WHY THIS EXISTS: the public roadmap board is a GitHub Project (v2), and its
 # write commands (`gh project item-edit`) take OPAQUE GraphQL node ids — the
 # project id, the Status field id, the option id, and the per-item id — never
 # the issue #number a human knows. Hand-resolving four ids per status move is
-# the same foot-gun class scripts/gh-rel.sh exists for, so this wrapper
+# the same foot-gun class scripts/gh/rel.sh exists for, so this wrapper
 # resolves everything from the issue #number and fails loud.
 #
 # The board is a VIEW, not a tracker: Status (Todo / In Progress / Done) is
@@ -20,17 +20,17 @@
 # Requires the `project` token scope (`gh auth refresh -s project`).
 #
 # Usage:
-#   scripts/gh-project.sh status <issue> <todo|in-progress|done>  # move an issue's board Status
-#   scripts/gh-project.sh add    <issue>                          # add an issue to the board (auto-add normally does this)
-#   scripts/gh-project.sh show   <issue>                          # print the issue's current board Status
-#   scripts/gh-project.sh board                                   # print the whole board grouped by Status
-#   scripts/gh-project.sh url                                     # print the project URL
-#   scripts/gh-project.sh update <on-track|at-risk|off-track|complete|inactive> "<message>" \
+#   scripts/gh/project.sh status <issue> <todo|in-progress|done>  # move an issue's board Status
+#   scripts/gh/project.sh add    <issue>                          # add an issue to the board (auto-add normally does this)
+#   scripts/gh/project.sh show   <issue>                          # print the issue's current board Status
+#   scripts/gh/project.sh board                                   # print the whole board grouped by Status
+#   scripts/gh/project.sh url                                     # print the project URL
+#   scripts/gh/project.sh update <on-track|at-risk|off-track|complete|inactive> "<message>" \
 #                        [--start YYYY-MM-DD] [--target YYYY-MM-DD]
 #                                                                 # post a project status update (board
 #                                                                 # header/side panel; markdown body)
-#   scripts/gh-project.sh updates                                 # print recent status updates, newest first
-#   scripts/gh-project.sh sync-dates                              # derive every item's "Target date" from its
+#   scripts/gh/project.sh updates                                 # print recent status updates, newest first
+#   scripts/gh/project.sh sync-dates                              # derive every item's "Target date" from its
 #                                                                 # milestone's due date (the Roadmap view places
 #                                                                 # items by this field; milestones only draw markers)
 #

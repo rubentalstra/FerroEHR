@@ -25,7 +25,7 @@ workflow refuses a tag that has no matching section here.
 - Two new `[auth.oidc]` keys. `clock_skew_leeway_seconds` (default `60`, env `FERROEHR__AUTH__OIDC__CLOCK_SKEW_LEEWAY_SECONDS`) sets the leeway applied to the time-based token claims; values above `300` are refused at boot, because expiry leeway may be "no more than a few minutes" (RFC 9068 §4 step 6) and a large one silently extends every token's life. `allow_insecure_issuer` (default `false`) accepts a non-`https` issuer for development and test deployments only — it exposes token verification material to anyone on the network (RFC 8414 §6.2).
 - A new `[authz.abac]` key `check_directory` (default `false`): submits DIRECTORY (`FOLDER`) operations to the policy decision point. It replaces the old rule that inferred the opt-in from a `directory` entry in the remote-PDP policy map, so the check now works under the embedded Cedar engine too — previously a Cedar deployment could only enable it by inventing a policy name Cedar never reads. If you enabled DIRECTORY checks that way, set `check_directory = true`.
 - A CI guard that keeps the Compose files' default image tags pinned to the workspace version, so a downloaded quickstart file can never reference images from a different release.
-- The `openehr-lang` crate's `v1_0` generation is now the TRUE LANG Release-1.0.0 surface, not a copy of the development line: it is generated faithfully from the release's own machine-readable BMM, its vendored grammar set is the release's actual syntax-appendix files (`vendor/grammar/v1_0/`, incl. that era's `base_lexer.g4`), its lexer carries the ODIN reading alone (1.0.0 publishes no EL grammar and BEL first appears in 1.1.0), and its ODIN reader enforces the release's own syntax: lowercase-only attribute keys, ANY primitive comparable value as a container key (real/boolean/character/term-code/duration keys, signed numerics), whole-document plug-in fragments, comma-only fractional seconds on times and dot-only on durations. Under the `stable` spec profile these are the rules ODIN text is read by. The ADL/cADL grammar set is likewise version-scoped by AM generation (`crates/openehr-adl/vendor/grammar/{v1_4,v2_4}/`, vendored by the new `scripts/vendor-adl-grammars.sh`).
+- The `openehr-lang` crate's `v1_0` generation is now the TRUE LANG Release-1.0.0 surface, not a copy of the development line: it is generated faithfully from the release's own machine-readable BMM, its vendored grammar set is the release's actual syntax-appendix files (`vendor/grammar/v1_0/`, incl. that era's `base_lexer.g4`), its lexer carries the ODIN reading alone (1.0.0 publishes no EL grammar and BEL first appears in 1.1.0), and its ODIN reader enforces the release's own syntax: lowercase-only attribute keys, ANY primitive comparable value as a container key (real/boolean/character/term-code/duration keys, signed numerics), whole-document plug-in fragments, comma-only fractional seconds on times and dot-only on durations. Under the `stable` spec profile these are the rules ODIN text is read by. The ADL/cADL grammar set is likewise version-scoped by AM generation (`crates/openehr-adl/vendor/grammar/{v1_4,v2_4}/`, vendored by the new `scripts/vendor/adl-grammars.sh`).
 - The `openehr-rm` and `openehr-base` crates now ALSO emit the latest RELEASED specification generations beside the development pins — `openehr_rm::v1_1` (RM 1.1.0, resolving against BASE 1.2.0 per its own BMM `includes`) and `openehr_base::v1_2` (BASE 1.2.0) — each a complete peer: full type model, canonical-JSON codecs, RM attribute model, invariant cores, and validation behaviour. The served wire is unchanged (the current generations stay `v1_2`/`v1_3`); runtime selection between generations arrives with the `spec_profile` configuration key.
 
 
@@ -515,7 +515,7 @@ workflow refuses a tag that has no matching section here.
   codec's own output rather than a hand-typed approximation of it.
 
 - **Every figure the vendored specs reference is now vendored too.**
-  `scripts/vendor-spec-docs.sh` additionally fetches, from the same pinned
+  `scripts/vendor/spec-docs.sh` additionally fetches, from the same pinned
   commits, exactly the figures the vendored chapters reference: the 129 UML
   class-diagram SVGs (`{uml_diagrams_uri}`, under
   `docs/specs/openehr/<COMPONENT>/docs/UML/diagrams/`) plus the 200
@@ -948,7 +948,7 @@ workflow refuses a tag that has no matching section here.
 - **A vendored corpus that had no vendor script has one.** The real-world
   canonical-JSON corpus under `crates/openehr-its/tests/vendor/` was
   hand-downloaded; it is now reproduced byte-identically from its pinned
-  upstream commit by `scripts/vendor-openehr-sdk-json.sh` (with `--check` to
+  upstream commit by `scripts/vendor/openehr-sdk-json.sh` (with `--check` to
   report drift and write nothing). Its provenance record also named the wrong
   upstream repository — a product-rename sweep had rewritten `ehrbase/` to
   `ferroehr/` in the pin — which is corrected.
@@ -4065,7 +4065,7 @@ workflow refuses a tag that has no matching section here.
 - **`cnf-runner stress-compare`** — the cross-SUT stress overlay: both
   systems' latency-throughput curves on one canvas, rendered
   deterministically from the two committed `stress.json` reports (driven
-  by `scripts/render-comparison.sh`); both directions on equal footing.
+  by `scripts/render/comparison.sh`); both directions on equal footing.
 - **Measured runs record resource telemetry**: each measurement in
   `results.json` now carries an optional, schema-published `resources`
   block — per-container (server and database separately) CPU, resident
@@ -4103,14 +4103,14 @@ workflow refuses a tag that has no matching section here.
   explicitly as journey-catalogue gaps.
 - `scripts/generate-ckm-examples.sh` — regenerates the committed CKM
   example payload skeletons from a running SUT's example endpoint;
-  `scripts/vendor-ckm-templates.sh` now vendors the runner's journey
+  `scripts/vendor/ckm-templates.sh` now vendors the runner's journey
   template pack.
 - **Conformance visuals**: the capability-matrix heat grid (one cell per
   claimed capability, grouped by profile tier, evidence encoded as a
   CVD-safe color AND a glyph) and per-chapter outcome bars, rendered
   deterministically from the committed verdicts/results by the new
   `cnf-runner conformance-assets` subcommand
-  (`scripts/render-conformance-assets.sh`, CI regenerate-and-diff
+  (`scripts/render/conformance-assets.sh`, CI regenerate-and-diff
   guarded) and embedded on the book's conformance and comparison pages
   (both SUTs) and the landing page.
 
@@ -4313,7 +4313,7 @@ workflow refuses a tag that has no matching section here.
   as a pipeline stage; the earned classes flow into the verdicts, report,
   certificate, and a performance badge. Published SVG assets (the class
   ladder and per-class latency charts) plus a generated summary are rendered
-  from the committed measurement records by `scripts/render-perf-assets.sh`
+  from the committed measurement records by `scripts/render/perf-assets.sh`
   and guarded against drift in CI, and a new **Performance** chapter on the
   documentation website explains the class ladder, the floors' derivation
   from official activity statistics, how a coordinated-omission-free run

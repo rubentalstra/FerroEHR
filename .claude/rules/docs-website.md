@@ -1,5 +1,5 @@
 ---
-paths: ["website/**", "scripts/assemble-oas.sh", "scripts/build-site.sh", "scripts/cut-version.sh", ".github/workflows/docs.yml"]
+paths: ["website/**", "scripts/site/assemble-oas.sh", "scripts/site/build.sh", "scripts/site/cut-version.sh", ".github/workflows/docs.yml"]
 ---
 
 # The documentation website (`website/**`)
@@ -23,7 +23,7 @@ authority for layout, look & feel, and content.
 - `website/api/` — the OpenAPI endpoint reference (vendored Swagger UI + the
   served OAS copies).
 - Frozen versions live on the `docs-dist` orphan branch (generate once,
-  never rebuilt); `scripts/cut-version.sh vX.Y.Z` cuts one (CI does this on
+  never rebuilt); `scripts/site/cut-version.sh vX.Y.Z` cuts one (CI does this on
   every `v*` tag).
 
 ## The same-PR docs rule (mirror of the changelog rule)
@@ -55,7 +55,7 @@ The `/phase-done` checklist enforces it at phase close.
 
 ## Never hand-edit
 
-- `website/api/spec/**` — produced by `scripts/assemble-oas.sh` from the
+- `website/api/spec/**` — produced by `scripts/site/assemble-oas.sh` from the
   vendored ITS-REST bundles (CI drift gate `--check` fails otherwise).
 - `website/api/vendor/**`, `website/book/theme/mermaid*` — vendored assets.
 
@@ -66,6 +66,6 @@ lychee, Swagger UI). Bump only after live-verifying the new version.
 
 ## Local preview
 
-`bash scripts/build-site.sh` then serve `_site/`
+`bash scripts/site/build.sh` then serve `_site/`
 (`python3 -m http.server -d _site`). CI equivalence is the point — if it
 works locally it works deployed.

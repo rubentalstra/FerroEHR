@@ -7,7 +7,7 @@
 # run time; fairness across SUTs).
 #
 # Precondition: a running SUT (default: the dev compose stack). Re-run
-# after re-vendoring the pack (scripts/vendor-ckm-templates.sh).
+# after re-vendoring the pack (scripts/vendor/ckm-templates.sh).
 set -Eeuo pipefail
 
 BASE="${SUT_BASE:-http://localhost:8080/ferroehr/rest/openehr/v1}"

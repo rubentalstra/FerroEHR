@@ -30,7 +30,7 @@ everywhere else flag "no openEHR spec governs configuration — our own design".
   every value inline: no `#[serde(default = "path")]`, no `fn default_x()`
   helper, no single-reader `const DEFAULT_X` (the RFC 3681 shape;
   `rust-style.md` §Default values, guarded by
-  `scripts/checks/check-default-style.sh`). A per-field default attribute is the one
+  `scripts/checks/default-style.sh`). A per-field default attribute is the one
   way `Default::default()` and a deserialized value can disagree about the same
   key, which is exactly what a config loader must never allow.
   Loading happens once, in `ferroehr::config::assemble`

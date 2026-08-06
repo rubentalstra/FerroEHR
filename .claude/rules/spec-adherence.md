@@ -97,7 +97,7 @@ intuition.
   prior art; if it and the spec text disagree, the spec text wins and the
   divergence is worth a note.
 - **Never hand-edit `docs/specs/openehr/**`** (except its top-level README) —
-  re-vendor with `scripts/vendor-spec-docs.sh`; version pins live in that
+  re-vendor with `scripts/vendor/spec-docs.sh`; version pins live in that
   script and `docs/VERSIONS.md`.
 - Subagents doing spec-facing work must be handed the relevant
   `docs/specs/openehr/...` paths in their prompt, and reviewers verify claims

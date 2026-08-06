@@ -18,7 +18,7 @@ files — that is what this regenerates.
 ## Steps
 
 1. **Regenerate all targets, in this order** (the exact sequence
-   `scripts/checks/check-codegen-drift.sh` runs — spec crates first):
+   `scripts/checks/codegen-drift.sh` runs — spec crates first):
    ```
    cargo run -p openehr-codegen -- emit           # openehr-base/rm/am/term/lang (rm incl. src/model)
    cargo run -p openehr-codegen -- emit-xml        # openehr-its XML ToXml/FromXml
@@ -40,7 +40,7 @@ files — that is what this regenerates.
 3. **Drift check** — the generated output must be a pure function of the specs +
    emitter, so a clean tree regenerates byte-identically:
    ```
-   bash scripts/checks/check-codegen-drift.sh
+   bash scripts/checks/codegen-drift.sh
    ```
    (Also the CI `codegen-drift` job.) If it reports drift after *your* emitter
    change, that is expected — commit the emitter change **and** the regenerated

@@ -1601,7 +1601,7 @@ impl<'a> SpecIndex<'a> {
     /// authoritative first.
     ///
     /// Every component has exactly one — its vendored docs directory —
-    /// except **ITS-XML**, which has two. `scripts/vendor-spec-docs.sh`
+    /// except **ITS-XML**, which has two. `scripts/vendor/spec-docs.sh`
     /// vendors PROSE, so the docs tree's `ITS-XML/components/**` holds only
     /// the upstream `README.adoc` stubs; the released XSD bundles themselves
     /// are vendored ONCE, at `crates/openehr-its/schemas/xml/`, as the

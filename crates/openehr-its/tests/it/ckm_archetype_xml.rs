@@ -5,7 +5,7 @@
 )]
 //! Breadth gate over the AM 1.4 **archetype XML** twin of the CKM archetype
 //! pack (`tools/cnf-runner/artifacts/corpus/archetypes/ckm/xml/`, vendored by
-//! `scripts/vendor-ckm-archetypes.sh --with-xml`).
+//! `scripts/vendor/ckm-archetypes.sh --with-xml`).
 //!
 //! Two serializations of the same 944 archetypes are vendored: CKM's ADL 1.4
 //! text (gated in `openehr-adl` by `ckm_archetype_packs`) and CKM's AM 1.4
@@ -93,7 +93,7 @@ fn ckm_archetype_xml_pack_reads() {
     assert!(
         files.len() >= 900,
         "the CKM archetype XML pack is missing: found {} files in {} — re-run \
-         scripts/vendor-ckm-archetypes.sh --with-xml",
+         scripts/vendor/ckm-archetypes.sh --with-xml",
         files.len(),
         dir.display()
     );

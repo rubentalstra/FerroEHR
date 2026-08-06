@@ -6,7 +6,7 @@
 )]
 //! Breadth gate over the FULL vendored openEHR CKM template library
 //! (`tools/cnf-runner/artifacts/corpus/templates/ckm/full/`, vendored by
-//! `scripts/vendor-ckm-templates.sh`): every OPT the public CKM publishes
+//! `scripts/vendor/ckm-templates.sh`): every OPT the public CKM publishes
 //! must parse into the generated `opt14::OperationalTemplate`, build a
 //! WebTemplate, and generate RM-shape-valid examples at every detail level.
 //!
@@ -113,7 +113,7 @@ fn full_ckm_pack_parses_and_generates_valid_examples() {
     assert!(
         files.len() >= 300,
         "the full CKM pack is missing: found {} OPTs in {} — re-run \
-         scripts/vendor-ckm-templates.sh",
+         scripts/vendor/ckm-templates.sh",
         files.len(),
         dir.display()
     );

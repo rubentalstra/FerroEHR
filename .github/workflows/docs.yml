@@ -20,7 +20,7 @@ env:
   LYCHEE_VERSION: "0.24.2"
   SWAGGER_UI_VERSION: "5.32.8"
   # Custom domain (ferroehr.eu): the site is served at the apex root, so the
-  # base path is empty. Set explicitly so CI and scripts/build-site.sh agree.
+  # base path is empty. Set explicitly so CI and scripts/site/build.sh agree.
   SITE_ORIGIN: "https://ferroehr.eu"
   SITE_BASE: ""
 
@@ -43,16 +43,16 @@ jobs:
         with:
           tool: mdbook@${{ env.MDBOOK_VERSION }},mdbook-mermaid@${{ env.MDBOOK_MERMAID_VERSION }},mdbook-toc@${{ env.MDBOOK_TOC_VERSION }},mdbook-katex@${{ env.MDBOOK_KATEX_VERSION }},mdbook-lint@${{ env.MDBOOK_LINT_VERSION }},lychee@${{ env.LYCHEE_VERSION }}
       - name: OAS drift gate (docs copy == vendored ITS-REST)
-        run: bash scripts/assemble-oas.sh --check       # regenerate + git diff --exit-code
+        run: bash scripts/site/assemble-oas.sh --check       # regenerate + git diff --exit-code
       - name: Stale-numbers gate (no hand-typed conformance claims in site sources)
-        run: bash scripts/checks/check-conformance-numbers.sh
+        run: bash scripts/checks/conformance-numbers.sh
       - name: Render conformance stats + comparison + perf assets (the generated includes must exist before lint)
         run: |
-          bash scripts/render-conformance-stats.sh includes
-          bash scripts/render-comparison.sh
-          bash scripts/render-perf-assets.sh
-          bash scripts/render-conformance-assets.sh
-          CONF_SUT=ehrbase bash scripts/render-conformance-assets.sh
+          bash scripts/render/conformance-stats.sh includes
+          bash scripts/render/comparison.sh
+          bash scripts/render/perf-assets.sh
+          bash scripts/render/conformance-assets.sh
+          CONF_SUT=ehrbase bash scripts/render/conformance-assets.sh
       - name: Perf-assets drift gate (regenerated SVGs match the committed assets)
         run: git diff --exit-code website/book/src/perf-assets
       - name: Conformance-assets drift gate (regenerated SVGs match the committed assets)
@@ -62,7 +62,7 @@ jobs:
       - name: Markdown lint gate
         run: mdbook-lint lint website/book/src
       - name: Assemble _site (landing + api + /docs/dev/)
-        run: bash scripts/build-site.sh --dev-only       # writes ./_site
+        run: bash scripts/site/build.sh --dev-only       # writes ./_site
       - name: Link-check gate (built HTML + external links)
         # The deployed site is served at the ferroehr.eu apex ROOT, so absolute
         # /docs/... links resolve against _site itself — no prefixed check tree
@@ -94,7 +94,7 @@ jobs:
         with:
           tool: mdbook@${{ env.MDBOOK_VERSION }},mdbook-mermaid@${{ env.MDBOOK_MERMAID_VERSION }},mdbook-toc@${{ env.MDBOOK_TOC_VERSION }},mdbook-katex@${{ env.MDBOOK_KATEX_VERSION }}
       - name: Build frozen vX.Y.Z + push to docs-dist
-        run: bash scripts/cut-version.sh "${GITHUB_REF_NAME}"   # site-url, rsync into docs-dist, update versions.json, commit+push
+        run: bash scripts/site/cut-version.sh "${GITHUB_REF_NAME}"   # site-url, rsync into docs-dist, update versions.json, commit+push
 
   # ── Deploy the full site (develop push, tag, or manual) ─────────────────────
   deploy:
@@ -127,7 +127,7 @@ jobs:
           tool: mdbook@${{ env.MDBOOK_VERSION }},mdbook-mermaid@${{ env.MDBOOK_MERMAID_VERSION }},mdbook-toc@${{ env.MDBOOK_TOC_VERSION }},mdbook-katex@${{ env.MDBOOK_KATEX_VERSION }}
       - uses: actions/configure-pages@v6
       - name: Assemble full _site (landing + api + dev + frozen versions + latest + sitemap)
-        run: bash scripts/build-site.sh --full
+        run: bash scripts/site/build.sh --full
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site

@@ -10,7 +10,7 @@
 # this uses a plain word-list loop instead — behaviourally identical and portable
 # to any POSIX shell. Edit OAS_GROUPS to change the served set.
 set -euo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 SRC="crates/openehr-its/vendor/rest-oas"
 DST="website/api/spec"
 OAS_GROUPS="ehr definition query demographic admin system overview"
@@ -25,7 +25,7 @@ for group in $OAS_GROUPS; do
 done
 if [[ "${1:-}" == "--check" ]]; then
   if ! git diff --quiet -- "$DST"; then
-    echo "::error::website/api/spec is out of sync with the vendored ITS-REST OAS. Run scripts/assemble-oas.sh and commit." >&2
+    echo "::error::website/api/spec is out of sync with the vendored ITS-REST OAS. Run scripts/site/assemble-oas.sh and commit." >&2
     git diff --stat -- "$DST" >&2
     exit 1
   fi

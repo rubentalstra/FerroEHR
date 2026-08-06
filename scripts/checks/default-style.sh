@@ -30,7 +30,7 @@
 # like `service::DEFAULT_SYSTEM_ID`), referenced from inside a Default impl; and
 # `#[serde(default)]` with no path, which is the required form.
 #
-# Usage: scripts/checks/check-default-style.sh [--all | <file>...]
+# Usage: scripts/checks/default-style.sh [--all | <file>...]
 #   no args  → the files changed against origin/develop
 #   --all    → every tracked .rs file
 set -euo pipefail
@@ -69,7 +69,7 @@ for f in $files; do
     printf '%s' "$body" | grep -qE "$STD_PATHS" && continue
     report "$f:$line: \`#[serde(default = \"…\")]\` — put the value in the struct's \
 \`impl Default\` and use container-level \`#[serde(default)]\` instead \
-(scripts/checks/check-default-style.sh)"
+(scripts/checks/default-style.sh)"
   done < <(grep -nE '#\[serde\((.*, )?default = "' "$f" | sed 's/^\([0-9]*\):\(.*\)$/\1:\2/' || true)
 
   # (2) a helper function that exists to be one field's default. The signature
@@ -82,7 +82,7 @@ for f in $files; do
   while IFS=: read -r line _; do
     [ -n "${line:-}" ] || continue
     report "$f:$line: a zero-argument \`default_*\` constructor — inline the value \
-in the struct's \`impl Default\` (scripts/checks/check-default-style.sh)"
+in the struct's \`impl Default\` (scripts/checks/default-style.sh)"
   done < <(grep -nE '^[[:space:]]*(pub(\([^)]*\))?[[:space:]]+)?(const[[:space:]]+)?fn[[:space:]]+default_[a-z0-9_]*[[:space:]]*\(\)[[:space:]]*->' "$f" || true)
 done
 
@@ -112,7 +112,7 @@ if [ "${1:-}" = "--all" ]; then
     if [ "$readers" -le 1 ]; then
       report "$file:$line: \`const $name\` has $readers reader(s) — a constant \
 earns its name by being shared; inline the value in the \`impl Default\` that \
-reads it (scripts/checks/check-default-style.sh)"
+reads it (scripts/checks/default-style.sh)"
     fi
   done < <(git grep -nE 'const[[:space:]]+DEFAULT_[A-Z0-9_]+' -- '*.rs' || true)
 fi

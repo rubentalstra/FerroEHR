@@ -65,7 +65,7 @@ Every instrument seeds a freshly composed, empty server through the public
 API and the stack is torn down afterwards — there is no seed reuse, so no
 run ever measures another run's leftovers. Committed records land under
 `docs/conformance/<sut>/`; the published charts regenerate from them
-(`scripts/render-perf-assets.sh`, `scripts/render-comparison.sh`) and are
+(`scripts/render/perf-assets.sh`, `scripts/render/comparison.sh`) and are
 diff-guarded in CI.
 
 ## Fairness rules

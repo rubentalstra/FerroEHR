@@ -28,10 +28,10 @@
 # silently skipped.
 #
 # Usage:
-#   scripts/vendor-ckm-templates.sh              # curated pack + full library
-#   scripts/vendor-ckm-templates.sh --curated    # curated pack only
-#   scripts/vendor-ckm-templates.sh --full       # full library only
-#   CKM_JOBS=8 scripts/vendor-ckm-templates.sh   # parallel fetches (default 4)
+#   scripts/vendor/ckm-templates.sh              # curated pack + full library
+#   scripts/vendor/ckm-templates.sh --curated    # curated pack only
+#   scripts/vendor/ckm-templates.sh --full       # full library only
+#   CKM_JOBS=8 scripts/vendor/ckm-templates.sh   # parallel fetches (default 4)
 #
 # Example skeletons (`*.example.json`) for the curated pack are generated
 # separately against the composed SUT by scripts/generate-ckm-examples.sh.
@@ -120,7 +120,7 @@ if [[ "$MODE" != full ]]; then
     echo "# CKM template pack — provenance"
     echo
     echo "Vendored from the official openEHR CKM (\`$CKM\`) by"
-    echo "\`scripts/vendor-ckm-templates.sh\` on $STAMP."
+    echo "\`scripts/vendor/ckm-templates.sh\` on $STAMP."
     echo "Each file is CKM's own OPT export for the cited template, verbatim."
     echo "Example skeletons (\`*.example.json\`) are generated once against the"
     echo "composed SUT by \`scripts/generate-ckm-examples.sh\` and committed"
@@ -236,7 +236,7 @@ with open(prov_path, "w") as fh:
     w("# CKM template library (full pack) — provenance\n\n")
     w(f"Every template the official openEHR CKM (`{ckm}`) publishes, exported\n")
     w("by CKM itself as an Operational Template and vendored verbatim by\n")
-    w(f"`scripts/vendor-ckm-templates.sh` on {stamp}.\n\n")
+    w(f"`scripts/vendor/ckm-templates.sh` on {stamp}.\n\n")
     w("This is the BREADTH pack: real-world OPT 1.4 shapes for the reader /\n")
     w("WebTemplate builder gates. The curated hospital-simulation journey\n")
     w("pack is the parent directory (its own `PROVENANCE.md`); the slugs here\n")

@@ -15,9 +15,9 @@
 #                          description, or the tracker — not in code.
 #
 # Usage:
-#   scripts/checks/check-comment-style.sh --all               # whole tree
-#   scripts/checks/check-comment-style.sh --diff <base> [head]  # changed files only
-#   scripts/checks/check-comment-style.sh --files <f.rs>...   # named files (hook)
+#   scripts/checks/comment-style.sh --all               # whole tree
+#   scripts/checks/comment-style.sh --diff <base> [head]  # changed files only
+#   scripts/checks/comment-style.sh --files <f.rs>...   # named files (hook)
 #
 # Exit 0 = clean, 1 = violations (listed as file:line: message), 2 = usage.
 

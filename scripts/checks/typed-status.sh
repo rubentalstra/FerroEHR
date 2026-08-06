@@ -17,7 +17,7 @@
 # recorded wire outcome (`status.as_u16()` inside `format!`, a struct field, a
 # `/ 100` class bucket). Only COMPARISON against a numeric literal is refused.
 #
-# Usage: scripts/checks/check-typed-status.sh [--all | <file>...]
+# Usage: scripts/checks/typed-status.sh [--all | <file>...]
 #   no args  → the files changed against origin/develop
 #   --all    → every tracked .rs file
 set -euo pipefail
@@ -44,7 +44,7 @@ for f in $files; do
     [ -n "${line:-}" ] || continue
     printf '%s:%s: numeric status comparison (%s) — compare the typed \n' \
       "$f" "$line" "$(printf '%s' "$body" | sed 's/^[[:space:]]*//' | cut -c1-60)" >&2
-    printf '    `http::StatusCode` constant instead (scripts/checks/check-typed-status.sh)\n' >&2
+    printf '    `http::StatusCode` constant instead (scripts/checks/typed-status.sh)\n' >&2
     failures=$((failures + 1))
   done < <(grep -nE '(as_u16\(\)[[:space:]]*[=!]=)|(status\(\)[[:space:]]*[=!]=[[:space:]]*[0-9])' "$f" || true)
 done

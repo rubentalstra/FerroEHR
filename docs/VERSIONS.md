@@ -109,7 +109,7 @@ pin accepts every valid older-minor instance.
 **Spec text vendored in-repo:** the normative documentation for every
 component above — plus SM (platform service model / SDT) and **CNF (the
 conformance guide + Platform Conformance Test Schedule + Robot suite)** — is
-vendored at `docs/specs/openehr/` by `scripts/vendor-spec-docs.sh`, pinned to
+vendored at `docs/specs/openehr/` by `scripts/vendor/spec-docs.sh`, pinned to
 these same versions (exact commits in each component's `PROVENANCE.md` and in
 the script). It is the read/conformance oracle; codegen still consumes only
 `tools/openehr-codegen/vendor/**` and `crates/openehr-its/schemas/**`.

@@ -7,7 +7,7 @@ when implementing or reviewing anything spec-facing, read the relevant section
 *here* — do not rely on memory, EHRbase behaviour, or blog posts. EHRbase is
 prior art; these documents are the oracle.
 
-- Vendored by `scripts/vendor-spec-docs.sh` (re-run to refresh; pins live in
+- Vendored by `scripts/vendor/spec-docs.sh` (re-run to refresh; pins live in
   the script — keep `docs/VERSIONS.md` in sync).
 - Text formats only (`.adoc`, `.md`, `.txt`, `.csv`, `.json`, `.yaml`,
   `.robot`, `.xml`, `.opt`), **plus every figure the chapters actually

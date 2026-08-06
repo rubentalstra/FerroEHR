@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# scripts/gh-rel.sh — the deterministic GitHub issue-relationship helper.
+# scripts/gh/rel.sh — the deterministic GitHub issue-relationship helper.
 #
 # WHY THIS EXISTS: `gh` has NO native subcommand for sub-issues or issue
 # dependencies (verified against gh 2.88.1), so relationships can only be set
@@ -24,14 +24,14 @@
 # dependency direction.
 #
 # Usage:
-#   scripts/gh-rel.sh parent     <child> <parent> [--replace]  # child -> sub-issue of parent
-#   scripts/gh-rel.sh unparent   <child>                       # detach child from its parent
-#   scripts/gh-rel.sh blocked-by <n> <blocker>                # n is blocked by blocker
-#   scripts/gh-rel.sh unblock    <n> <blocker>                # remove "n blocked-by blocker"
-#   scripts/gh-rel.sh blocking   <n> <blocked>                # n blocks blocked
-#   scripts/gh-rel.sh unblocking <n> <blocked>                # remove "n blocking blocked"
-#   scripts/gh-rel.sh tree       <n>                          # print every relationship of n
-#   scripts/gh-rel.sh id         <n>                          # print the database id of n
+#   scripts/gh/rel.sh parent     <child> <parent> [--replace]  # child -> sub-issue of parent
+#   scripts/gh/rel.sh unparent   <child>                       # detach child from its parent
+#   scripts/gh/rel.sh blocked-by <n> <blocker>                # n is blocked by blocker
+#   scripts/gh/rel.sh unblock    <n> <blocker>                # remove "n blocked-by blocker"
+#   scripts/gh/rel.sh blocking   <n> <blocked>                # n blocks blocked
+#   scripts/gh/rel.sh unblocking <n> <blocked>                # remove "n blocking blocked"
+#   scripts/gh/rel.sh tree       <n>                          # print every relationship of n
+#   scripts/gh/rel.sh id         <n>                          # print the database id of n
 #
 # All commands act on the current repository (`gh repo view`).
 

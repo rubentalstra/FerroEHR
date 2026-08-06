@@ -16,9 +16,9 @@ language, ever.
 | `cargo run -p cnf-runner -- perf --root tools/cnf-runner/artifacts --ixit F --results F --class POC\|S\|L\|R [--hours 1\|2\|4\|6\|8\|12]` | the measured class run (conformance-by-measurement; merges into results.json) |
 | `cargo run -p cnf-runner -- stress --root tools/cnf-runner/artifacts --ixit F --out stress.json [--corpus-class POC] [--step-secs 120] [--bisections 3] [--max-rate 4096]` | the step-load stress ladder → maximum sustainable throughput (exploration only; NEVER touches results.json) |
 | `cargo run -p cnf-runner -- aql-probe --root tools/cnf-runner/artifacts --ixit F --out aql-probe.json [--corpus-class POC] [--requests 20]` | the seeded-corpus AQL optimization probe: wire percentiles + pg_stat_statements attribution (exploration only; NEVER touches results.json) |
-| `cargo run -p cnf-runner -- stress-compare --left F --left-label S --right F --right-label S --out F.svg` | the cross-SUT stress overlay FROM two committed stress.json reports (driven by scripts/render-comparison.sh) |
-| `bash scripts/render-perf-assets.sh` (env `CONF_SUT`) | regenerate the published SVGs + summary FROM committed artifacts (CI diffs them) |
-| `bash scripts/render-conformance-assets.sh` (env `CONF_SUT`) | regenerate the conformance visuals (capability heat grid + per-chapter outcome bars) FROM committed verdicts/results (CI diffs them) |
+| `cargo run -p cnf-runner -- stress-compare --left F --left-label S --right F --right-label S --out F.svg` | the cross-SUT stress overlay FROM two committed stress.json reports (driven by scripts/render/comparison.sh) |
+| `bash scripts/render/perf-assets.sh` (env `CONF_SUT`) | regenerate the published SVGs + summary FROM committed artifacts (CI diffs them) |
+| `bash scripts/render/conformance-assets.sh` (env `CONF_SUT`) | regenerate the conformance visuals (capability heat grid + per-chapter outcome bars) FROM committed verdicts/results (CI diffs them) |
 | `cargo run -p cnf-runner -- emit-schemas --out tools/cnf-runner/schemas` | regenerate the published JSON Schemas after a schema.rs change (drift-tested) |
 
 Every instrument seeds a freshly composed, empty SUT and the stack is torn
@@ -46,7 +46,7 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   `corpus/archetypes/adl2/` — upstream's ADL 2 archetypes with their 1.4
   twins) instead record inventory + adjudications in the pack's
   `PROVENANCE.md` and are driven by directory-walking gates. Every pack is
-  produced by a committed `scripts/vendor-*.sh` script, vendored verbatim, and
+  produced by a committed `scripts/vendor/*.sh` script, vendored verbatim, and
   must be 100% exercised with adjudicated skips only —
   `.claude/rules/vendored-corpora.md` (which also holds the CKM REST
   page/size pagination trap and the ADL 1.4-vs-2 sourcing law).
@@ -250,7 +250,7 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   escape the gate entirely. The sibling `reason` field stays free-text
   prose by design: `source` + `reason` are the citation/note split.
 - **ITS-XML citations resolve against TWO roots** (issue #1833):
-  `scripts/vendor-spec-docs.sh` vendors prose, so the docs tree's
+  `scripts/vendor/spec-docs.sh` vendors prose, so the docs tree's
   `ITS-XML/components/**` holds only upstream README stubs, while the
   released XSD bundles are vendored ONCE at `crates/openehr-its/schemas/xml/`
   as the canonical-XML codec's input. The gate learns the bundle as a second
@@ -310,7 +310,7 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   scale corpora + the standing ward seed strictly
   through the public API per `artifacts/corpus/recipes/scale_ladder.md`;
   published SVGs/summary tables render FROM committed results.json
-  (`scripts/render-perf-assets.sh`, CI regenerate-and-diff guarded). The
+  (`scripts/render/perf-assets.sh`, CI regenerate-and-diff guarded). The
   sustained window only extends (`--hours 1|2|4|6|8|12`; the case's
   normative hour is the floor; the diurnal arrival curve is valid only for
   the >= 8 h holds) — no shortened run exists, so nothing sub-normative

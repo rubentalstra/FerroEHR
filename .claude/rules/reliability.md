@@ -204,7 +204,7 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   (`unnecessary_safety_comment` guards misuse), and no unsanctioned marker
   vocabulary (the guard's list is the authority — only `TODO`, `NOTE`, and
   `SAFETY` are sanctioned).
-  Enforcement (tier 4): `scripts/checks/check-comment-style.sh` — per-edit
+  Enforcement (tier 4): `scripts/checks/comment-style.sh` — per-edit
   via the `rust_fmt_clippy.sh` hook, per-PR via the `comment-style` CI job
   (`--all`, the whole tree — the legacy sweep #1870 closed) — plus
   `clippy::too_long_first_doc_paragraph` (tier 3) for the RFC 1574 doc
@@ -215,7 +215,7 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   crate exists to provide, and `403` versus `404` is a one-character typo no
   compiler can catch. Rendering the number (a log field, a metric label, a
   recorded outcome) stays legal — only comparison against a literal is refused.
-  Enforcement (tier 4): `scripts/checks/check-typed-status.sh`, per-edit via the
+  Enforcement (tier 4): `scripts/checks/typed-status.sh`, per-edit via the
   hook and per-PR via CI at `--all`.
 - **A field's default value lives in its struct's `Default` impl, inline**
   (owner directive 2026-08-06; the shape of RFC 3681, whose own syntax is
@@ -227,7 +227,7 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   `fn default_x()` constructors, and single-reader `const DEFAULT_X`. A
   constant with several consumers stays a constant and may be read from inside
   the `Default` impl. Enforcement (tier 4):
-  `scripts/checks/check-default-style.sh` — per-edit via the `rust_fmt_clippy.sh`
+  `scripts/checks/default-style.sh` — per-edit via the `rust_fmt_clippy.sh`
   hook, per-PR via the `default-style` CI job (`--all`).
 
 ## Recorded deviations from the API Guidelines (deliberate, owner-adjudicated)

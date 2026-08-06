@@ -18,7 +18,7 @@
 # Scope is the access layer plus its configuration, because that is where the
 # stale attribution lived and where a rationale is most load-bearing.
 #
-# Usage: scripts/checks/check-access-provenance.sh
+# Usage: scripts/checks/access-provenance.sh
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 

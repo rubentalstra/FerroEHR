@@ -2553,7 +2553,7 @@ cnf.scale.10m:
 
 
 # ── the CKM hospital-simulation template pack (journey workload payload
-# carriers; vendored by scripts/vendor-ckm-templates.sh, provenance table
+# carriers; vendored by scripts/vendor/ckm-templates.sh, provenance table
 # in corpus/templates/ckm/PROVENANCE.md; all COMPOSITION-rooted) ──────
 cnf.ckm.breast_cancer_report:
   source: templates/ckm/bc-breast-cancer-report.opt
@@ -2561,7 +2561,7 @@ cnf.ckm.breast_cancer_report:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "British Columbia Cancer agency Breast Cancer Synoptic Report"
-  provenance: "openEHR CKM cid 1013.26.199 (British Columbia Cancer agency Breast Cancer Synoptic Report, status INITIAL, modified 2018-11-12T12:27:58+01:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor-ckm-templates.sh 2026-07-22; journey role: specialist_report (cancer synoptic report)"
+  provenance: "openEHR CKM cid 1013.26.199 (British Columbia Cancer agency Breast Cancer Synoptic Report, status INITIAL, modified 2018-11-12T12:27:58+01:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor/ckm-templates.sh 2026-07-22; journey role: specialist_report (cancer synoptic report)"
 cnf.ckm.breast_cancer_report.example:
   source: templates/ckm/bc-breast-cancer-report.example.json
   format: canonical-json
@@ -2575,7 +2575,7 @@ cnf.ckm.ccta_report:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "CCTA report"
-  provenance: "openEHR CKM cid 1013.26.386 (CCTA report, status INITIAL, modified 2021-08-02T07:29:55+02:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor-ckm-templates.sh 2026-07-22; journey role: imaging_pipeline (report)"
+  provenance: "openEHR CKM cid 1013.26.386 (CCTA report, status INITIAL, modified 2021-08-02T07:29:55+02:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor/ckm-templates.sh 2026-07-22; journey role: imaging_pipeline (report)"
 cnf.ckm.ccta_report.example:
   source: templates/ckm/ccta-report.example.json
   format: canonical-json
@@ -2589,7 +2589,7 @@ cnf.ckm.covid19_report:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "openEHR confirmed COVID-19 infection report.v0"
-  provenance: "openEHR CKM cid 1013.26.282 (openEHR confirmed COVID-19 infection report.v0, status DRAFT, modified 2020-08-07T07:19:11+02:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor-ckm-templates.sh 2026-07-22; journey role: public_health_notification (confirmed-case follow-up)"
+  provenance: "openEHR CKM cid 1013.26.282 (openEHR confirmed COVID-19 infection report.v0, status DRAFT, modified 2020-08-07T07:19:11+02:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor/ckm-templates.sh 2026-07-22; journey role: public_health_notification (confirmed-case follow-up)"
 cnf.ckm.covid19_report.example:
   source: templates/ckm/covid19-infection-report.example.json
   format: canonical-json
@@ -2603,7 +2603,7 @@ cnf.ckm.diphtheria_investigation:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "Diphtheria case investigation form"
-  provenance: "openEHR CKM cid 1013.26.980 (Diphtheria case investigation form, status INITIAL, modified 2024-12-30T01:55:25+01:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor-ckm-templates.sh 2026-07-22; journey role: case_investigation"
+  provenance: "openEHR CKM cid 1013.26.980 (Diphtheria case investigation form, status INITIAL, modified 2024-12-30T01:55:25+01:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor/ckm-templates.sh 2026-07-22; journey role: case_investigation"
 cnf.ckm.diphtheria_investigation.example:
   source: templates/ckm/diphtheria-case-investigation.example.json
   format: canonical-json
@@ -2617,7 +2617,7 @@ cnf.ckm.eprescription:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "ePrescription (FHIR)"
-  provenance: "openEHR CKM cid 1013.26.80 (ePrescription (FHIR), status DRAFT, modified 2016-05-23T23:01:02+02:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor-ckm-templates.sh 2026-07-22; journey role: medication_round (order + administrations)"
+  provenance: "openEHR CKM cid 1013.26.80 (ePrescription (FHIR), status DRAFT, modified 2016-05-23T23:01:02+02:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor/ckm-templates.sh 2026-07-22; journey role: medication_round (order + administrations)"
 cnf.ckm.eprescription.example:
   source: templates/ckm/eprescription-fhir.example.json
   format: canonical-json
@@ -2631,7 +2631,7 @@ cnf.ckm.ereferral:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "eReferral"
-  provenance: "openEHR CKM cid 1013.26.2 (eReferral, status DRAFT, modified 2010-03-25T07:26:15+01:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor-ckm-templates.sh 2026-07-22; journey role: lab_pipeline / imaging_pipeline (order)"
+  provenance: "openEHR CKM cid 1013.26.2 (eReferral, status DRAFT, modified 2010-03-25T07:26:15+01:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor/ckm-templates.sh 2026-07-22; journey role: lab_pipeline / imaging_pipeline (order)"
 cnf.ckm.ereferral.example:
   source: templates/ckm/ereferral.example.json
   format: canonical-json
@@ -2645,7 +2645,7 @@ cnf.ckm.lab_result:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "Generic lab test result example simple"
-  provenance: "openEHR CKM cid 1013.26.408 (Generic lab test result example simple, status DRAFT, modified 2021-10-18T11:28:46+02:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor-ckm-templates.sh 2026-07-22; journey role: lab_pipeline (result contribution)"
+  provenance: "openEHR CKM cid 1013.26.408 (Generic lab test result example simple, status DRAFT, modified 2021-10-18T11:28:46+02:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor/ckm-templates.sh 2026-07-22; journey role: lab_pipeline (result contribution)"
 cnf.ckm.lab_result.example:
   source: templates/ckm/generic-lab-test-result.example.json
   format: canonical-json
@@ -2659,7 +2659,7 @@ cnf.ckm.gp_data_set:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "GP data set"
-  provenance: "openEHR CKM cid 1013.26.191 (GP data set, status INITIAL, modified 2018-10-15T02:11:04+02:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor-ckm-templates.sh 2026-07-22; journey role: correction target (ward-seeded, amended)"
+  provenance: "openEHR CKM cid 1013.26.191 (GP data set, status INITIAL, modified 2018-10-15T02:11:04+02:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor/ckm-templates.sh 2026-07-22; journey role: correction target (ward-seeded, amended)"
 cnf.ckm.gp_data_set.example:
   source: templates/ckm/gp-data-set.example.json
   format: canonical-json
@@ -2673,7 +2673,7 @@ cnf.ckm.ips:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "International Patient Summary"
-  provenance: "openEHR CKM cid 1013.26.376 (International Patient Summary, status DRAFT, modified 2020-08-18T04:28:14+02:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor-ckm-templates.sh 2026-07-22; journey role: admission / discharge summary"
+  provenance: "openEHR CKM cid 1013.26.376 (International Patient Summary, status DRAFT, modified 2020-08-18T04:28:14+02:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor/ckm-templates.sh 2026-07-22; journey role: admission / discharge summary"
 cnf.ckm.ips.example:
   source: templates/ckm/international-patient-summary.example.json
   format: canonical-json
@@ -2687,7 +2687,7 @@ cnf.ckm.medicines_list:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "Medicines list item R1"
-  provenance: "openEHR CKM cid 1013.26.357 (Medicines list item R1, status INITIAL, modified 2020-07-22T09:13:37+02:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor-ckm-templates.sh 2026-07-22; journey role: medicines_reconciliation (ward-seeded, updated)"
+  provenance: "openEHR CKM cid 1013.26.357 (Medicines list item R1, status INITIAL, modified 2020-07-22T09:13:37+02:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor/ckm-templates.sh 2026-07-22; journey role: medicines_reconciliation (ward-seeded, updated)"
 cnf.ckm.medicines_list.example:
   source: templates/ckm/medicines-list.example.json
   format: canonical-json
@@ -2715,7 +2715,7 @@ cnf.ckm.poisoning_investigation:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "Accidental poisoning case investigation form"
-  provenance: "openEHR CKM cid 1013.26.988 (Accidental poisoning case investigation form, status INITIAL, modified 2024-12-30T03:35:42+01:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor-ckm-templates.sh 2026-07-22; journey role: case_investigation"
+  provenance: "openEHR CKM cid 1013.26.988 (Accidental poisoning case investigation form, status INITIAL, modified 2024-12-30T03:35:42+01:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor/ckm-templates.sh 2026-07-22; journey role: case_investigation"
 cnf.ckm.poisoning_investigation.example:
   source: templates/ckm/poisoning-case-investigation.example.json
   format: canonical-json
@@ -2729,7 +2729,7 @@ cnf.ckm.problem_list:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "Problem/Diagnosis list item R1"
-  provenance: "openEHR CKM cid 1013.26.360 (Problem/Diagnosis list item R1, status INITIAL, modified 2020-07-22T09:15:48+02:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor-ckm-templates.sh 2026-07-22; journey role: admission (problem list)"
+  provenance: "openEHR CKM cid 1013.26.360 (Problem/Diagnosis list item R1, status INITIAL, modified 2020-07-22T09:15:48+02:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor/ckm-templates.sh 2026-07-22; journey role: admission (problem list)"
 cnf.ckm.problem_list.example:
   source: templates/ckm/problem-list.example.json
   format: canonical-json
@@ -2743,7 +2743,7 @@ cnf.ckm.sars_notification:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "SARS event notification"
-  provenance: "openEHR CKM cid 1013.26.377 (SARS event notification, status DRAFT, modified 2020-10-13T06:36:16+02:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor-ckm-templates.sh 2026-07-22; journey role: public_health_notification (statutory notification)"
+  provenance: "openEHR CKM cid 1013.26.377 (SARS event notification, status DRAFT, modified 2020-10-13T06:36:16+02:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor/ckm-templates.sh 2026-07-22; journey role: public_health_notification (statutory notification)"
 cnf.ckm.sars_notification.example:
   source: templates/ckm/sars-event-notification.example.json
   format: canonical-json
@@ -2757,7 +2757,7 @@ cnf.ckm.treat_registry_report:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "TREAT Registry report"
-  provenance: "openEHR CKM cid 1013.26.40 (TREAT Registry report, status DRAFT, modified 2015-02-18T21:32:34+01:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor-ckm-templates.sh 2026-07-22; journey role: registry_submission (registry export)"
+  provenance: "openEHR CKM cid 1013.26.40 (TREAT Registry report, status DRAFT, modified 2015-02-18T21:32:34+01:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor/ckm-templates.sh 2026-07-22; journey role: registry_submission (registry export)"
 cnf.ckm.treat_registry_report.example:
   source: templates/ckm/treat-registry-report.example.json
   format: canonical-json
@@ -2771,7 +2771,7 @@ cnf.ckm.vital_signs:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "Vital signs"
-  provenance: "openEHR CKM cid 1013.26.380 (Vital signs, status DRAFT, modified 2021-03-08T13:30:44+01:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor-ckm-templates.sh 2026-07-22; journey role: vitals_round (full observation round)"
+  provenance: "openEHR CKM cid 1013.26.380 (Vital signs, status DRAFT, modified 2021-03-08T13:30:44+01:00) — CKM's own OPT 1.4 export vendored verbatim by scripts/vendor/ckm-templates.sh 2026-07-22; journey role: vitals_round (full observation round)"
 cnf.ckm.vital_signs.example:
   source: templates/ckm/vital-signs.example.json
   format: canonical-json
