@@ -99,6 +99,9 @@ sevenz-rust2.workspace = true
 # `rng: Rng + CryptoRng` from rand 0.8's rand_core 0.6; the workspace `rand`
 # pin (0.10) is a trait-incompatible major, so the `signing` module pins the
 # rand version pgp itself requires purely to name `OsRng` for that one call.
+# Pinned to pgp's rand generation ON PURPOSE, not stale: `versioning::signature`
+# hands `rand::rngs::OsRng` to `pgp`'s DetachedSignature signing call, so the
+# types must come from the same rand major. `pgp 0.20` requires rand 0.8.7.
 rand = "0.8"
 # `system_log` module (IHE ATNA audit trail, SM `I_SYSTEM_LOG`; moved from the
 # former ferroehr-audit crate): TLS syslog transport.
