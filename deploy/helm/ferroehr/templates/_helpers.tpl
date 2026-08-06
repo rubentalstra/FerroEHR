@@ -98,3 +98,24 @@ when there is at least one secret value to carry).
 true
 {{- end -}}
 {{- end }}
+
+{{/*
+Whether any secret is carried as a FILE rather than an env value. A secret whose
+config key has a `*_file` sibling is mounted from a read-only volume, which the
+OWASP Kubernetes Security Cheat Sheet prefers over an environment variable
+(https://cheatsheetseries.owasp.org/cheatsheets/Kubernetes_Security_Cheat_Sheet.html).
+*/}}
+{{- define "ferroehr.hasFileSecrets" -}}
+{{- if or .Values.secrets.authOidcHmacSecret .Values.secrets.signingKeyPassphrase .Values.secrets.multimediaSecretAccessKey -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
+The directory the file-borne secrets are mounted at. Deliberately NOT under
+/etc/ferroehr: that path is the config projection, and authz.abac.cedar.policy_dir
+commonly points at it, so a secrets subdirectory there would be walked as policy.
+*/}}
+{{- define "ferroehr.secretMountPath" -}}
+/etc/ferroehr-secrets
+{{- end }}

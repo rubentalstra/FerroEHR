@@ -72,6 +72,10 @@ assert_security() {
     "allowPrivilegeEscalation: false"
     "type: RuntimeDefault"
     "- ALL"
+    # Not cosmetic: the kubelet's Service link variables land in the server's
+    # reserved FERROEHR_ namespace and its strict env sweep then refuses to boot,
+    # so losing this line makes every install crash-loop.
+    "enableServiceLinks: false"
   )
   local missing=0
   for field in "${required[@]}"; do

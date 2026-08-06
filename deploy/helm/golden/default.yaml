@@ -4,12 +4,15 @@
 # API port (and the management port when it runs on its own listener). Every
 # other inbound port is denied. A PHI workload should never be reachable on
 # anything but its serving port.
+# The SOURCE is narrowed only when networkPolicy.ingressFrom is set: a rule with
+# no `from` admits every source, including other namespaces
+# (https://kubernetes.io/docs/concepts/services-networking/network-policies/).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-3.2.0
+    helm.sh/chart: ferroehr-3.3.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.3"
@@ -33,7 +36,7 @@ kind: PodDisruptionBudget
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-3.2.0
+    helm.sh/chart: ferroehr-3.3.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.3"
@@ -52,7 +55,7 @@ kind: ServiceAccount
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-3.2.0
+    helm.sh/chart: ferroehr-3.3.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.3"
@@ -66,7 +69,7 @@ kind: ConfigMap
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-3.2.0
+    helm.sh/chart: ferroehr-3.3.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.3"
@@ -76,7 +79,11 @@ data:
   # The whole server configuration as one ferroehr.toml, mounted at
   # /etc/ferroehr/ferroehr.toml (config search-order position 4). Rendered from
   # .Values.config (minus `files`, which is mounted separately). Secrets are NOT
-  # here — they are injected as FERROEHR_* env from the Secret and override the file.
+  # here — they are injected from the Secret and override the file.
+  # NOTE: Helm decodes values through JSON, so every number reaches a template as
+  # a float64 and `toToml` writes it back as a TOML float (`10.0`, `1.6777216e+07`)
+  # — the server's configuration layer coerces those onto integer keys, which is
+  # why the rendered file is accepted as written.
   ferroehr.toml: |
     spec_profile = "development"
     
@@ -105,6 +112,7 @@ data:
       acquire_timeout_secs = 30.0
       max_connections = 10.0
       min_connections = 0.0
+      statement_timeout_ms = 60000.0
     
     [events]
       enabled = false
@@ -144,6 +152,20 @@ data:
       bind = "0.0.0.0:8080"
       cors_permissive = false
       swagger_ui = true
+      [server.connection]
+        header_read_timeout_secs = 10.0
+        http2_keep_alive_interval_secs = 30.0
+        http2_keep_alive_timeout_secs = 10.0
+        max_concurrent_streams = 256.0
+      [server.limits]
+        body_bytes = 1.6777216e+07
+        bulk_body_bytes = 6.7108864e+07
+      [server.rate_limit]
+        address_burst = 4096.0
+        address_per_second = 2048.0
+        enabled = true
+        principal_burst = 2048.0
+        principal_per_second = 1024.0
     
     [signing]
       enabled = true
@@ -166,7 +188,7 @@ kind: Service
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-3.2.0
+    helm.sh/chart: ferroehr-3.3.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.3"
@@ -189,7 +211,7 @@ kind: Deployment
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-3.2.0
+    helm.sh/chart: ferroehr-3.3.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.3"
@@ -205,13 +227,19 @@ spec:
     metadata:
       annotations:
         # Roll pods when the rendered ferroehr.toml changes.
-        checksum/config: 9f2e16fa6cbda6145934e4505bafa6a1c93e195c8b31846cc243dd30c5aad80d
+        checksum/config: da778f71616538c3153d08ee7f1d6b625c319224d29c2e87a7573356ab7f002e
       labels:
         app.kubernetes.io/name: ferroehr
         app.kubernetes.io/instance: ferroehr
     spec:
       serviceAccountName: ferroehr
       automountServiceAccountToken: false
+      # NOT a tunable: the kubelet's per-Service link variables
+      # (<SVC>_SERVICE_HOST, <SVC>_PORT_8080_TCP_ADDR, …) land inside the
+      # server's reserved FERROEHR_ namespace for any Service named ferroehr*,
+      # and the strict boot-time env sweep then refuses to start
+      # (https://kubernetes.io/docs/concepts/services-networking/service/#environment-variables).
+      enableServiceLinks: false
       terminationGracePeriodSeconds: 30
       securityContext:
         fsGroup: 65532
@@ -244,6 +272,9 @@ spec:
           # The DSN comes from an existing Secret (preferred) or the chart Secret;
           # the env layer overrides the file, so each secret here wins over any
           # matching TOML key.
+          # A secret VALUE appears below only where the config key has no
+          # `*_file` sibling to point at the mounted volume instead; the rest are
+          # `*_FILE` paths, which are not themselves sensitive.
           env:
             - name: FERROEHR__DB__URL
               valueFrom:

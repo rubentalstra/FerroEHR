@@ -36,6 +36,12 @@ spec:
       {{- end }}
       serviceAccountName: {{ include "ferroehr.serviceAccountName" . }}
       automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+      # NOT a tunable: the kubelet's per-Service link variables
+      # (<SVC>_SERVICE_HOST, <SVC>_PORT_8080_TCP_ADDR, …) land inside the
+      # server's reserved FERROEHR_ namespace for any Service named ferroehr*,
+      # and the strict boot-time env sweep then refuses to start
+      # (https://kubernetes.io/docs/concepts/services-networking/service/#environment-variables).
+      enableServiceLinks: false
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
@@ -58,6 +64,9 @@ spec:
           # The DSN comes from an existing Secret (preferred) or the chart Secret;
           # the env layer overrides the file, so each secret here wins over any
           # matching TOML key.
+          # A secret VALUE appears below only where the config key has no
+          # `*_file` sibling to point at the mounted volume instead; the rest are
+          # `*_FILE` paths, which are not themselves sensitive.
           {{- if or (eq (include "ferroehr.hasChartSecret" .) "true") .Values.database.existingSecret .Values.extraEnv }}
           env:
             {{- if or .Values.database.existingSecret .Values.database.url }}
@@ -73,18 +82,12 @@ spec:
                   {{- end }}
             {{- end }}
             {{- if .Values.secrets.authOidcHmacSecret }}
-            - name: FERROEHR__AUTH__OIDC__HMAC_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "ferroehr.secretName" . }}
-                  key: FERROEHR__AUTH__OIDC__HMAC_SECRET
+            - name: FERROEHR__AUTH__OIDC__HMAC_SECRET_FILE
+              value: {{ printf "%s/auth.oidc.hmac_secret" (include "ferroehr.secretMountPath" .) | quote }}
             {{- end }}
             {{- if .Values.secrets.signingKeyPassphrase }}
-            - name: FERROEHR__SIGNING__KEY_PASSPHRASE
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "ferroehr.secretName" . }}
-                  key: FERROEHR__SIGNING__KEY_PASSPHRASE
+            - name: FERROEHR__SIGNING__KEY_PASSPHRASE_FILE
+              value: {{ printf "%s/signing.key_passphrase" (include "ferroehr.secretMountPath" .) | quote }}
             {{- end }}
             {{- if .Values.secrets.eventsUrl }}
             - name: FERROEHR__EVENTS__URL
@@ -108,11 +111,8 @@ spec:
                   key: FERROEHR__MULTIMEDIA__ACCESS_KEY_ID
             {{- end }}
             {{- if .Values.secrets.multimediaSecretAccessKey }}
-            - name: FERROEHR__MULTIMEDIA__SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "ferroehr.secretName" . }}
-                  key: FERROEHR__MULTIMEDIA__SECRET_ACCESS_KEY
+            - name: FERROEHR__MULTIMEDIA__SECRET_ACCESS_KEY_FILE
+              value: {{ printf "%s/multimedia.secret_access_key" (include "ferroehr.secretMountPath" .) | quote }}
             {{- end }}
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
@@ -182,6 +182,14 @@ spec:
             - name: config
               mountPath: /etc/ferroehr
               readOnly: true
+            {{- if eq (include "ferroehr.hasFileSecrets" .) "true" }}
+            # File-borne secrets, read-only. NOT a subPath mount: a subPath-mounted
+            # Secret never receives updates, so a rotation would not propagate
+            # (https://kubernetes.io/docs/concepts/storage/volumes/#using-subpath).
+            - name: secrets
+              mountPath: {{ include "ferroehr.secretMountPath" . }}
+              readOnly: true
+            {{- end }}
             {{- with .Values.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -200,6 +208,28 @@ spec:
               - secret:
                   name: {{ include "ferroehr.configSecretName" . }}
               {{- end }}
+        {{- if eq (include "ferroehr.hasFileSecrets" .) "true" }}
+        - name: secrets
+          secret:
+            secretName: {{ include "ferroehr.secretName" . }}
+            # Owner is root, group is fsGroup, so the group bit is what the
+            # non-root process reads through
+            # (https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod).
+            defaultMode: 0440
+            items:
+              {{- if .Values.secrets.authOidcHmacSecret }}
+              - key: auth.oidc.hmac_secret
+                path: auth.oidc.hmac_secret
+              {{- end }}
+              {{- if .Values.secrets.signingKeyPassphrase }}
+              - key: signing.key_passphrase
+                path: signing.key_passphrase
+              {{- end }}
+              {{- if .Values.secrets.multimediaSecretAccessKey }}
+              - key: multimedia.secret_access_key
+                path: multimedia.secret_access_key
+              {{- end }}
+        {{- end }}
         {{- with .Values.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
