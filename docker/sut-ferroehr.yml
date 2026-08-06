@@ -74,7 +74,7 @@ services:
     volumes:
       - ferroehr-pgdata:/var/lib/postgresql
     ports:
-      - "${FERROEHR_DB_PORT:-5432}:5432"
+      - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_DB_PORT:-5432}:5432"
     deploy:
       resources:
         limits:
@@ -125,7 +125,7 @@ services:
       # Auto-discovered at config search-order position 4 (no pointer needed).
       - ./docker/ferroehr.dev.toml:/etc/ferroehr/ferroehr.toml:ro
     ports:
-      - "${FERROEHR_PORT:-8080}:8080"
+      - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_PORT:-8080}:8080"
     deploy:
       resources:
         limits:
@@ -177,7 +177,7 @@ services:
       SPRING_JPA_PROPERTIES_HIBERNATE_SEARCH_BACKEND_DIRECTORY_ROOT: target/lucenefiles
       SPRING_JPA_PROPERTIES_HIBERNATE_SEARCH_BACKEND_LUCENE_VERSION: lucene_current
     ports:
-      - "${FERROEHR_TERMINOLOGY_PORT:-8090}:8080"
+      - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_TERMINOLOGY_PORT:-8090}:8080"
     deploy:
       resources:
         limits:

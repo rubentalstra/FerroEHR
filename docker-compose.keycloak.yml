@@ -66,7 +66,7 @@ services:
       - source: keycloak-realm
         target: /opt/keycloak/data/import/ferroehr-realm.json
     ports:
-      - "${KEYCLOAK_PORT:-8081}:8081"
+      - "${FERROEHR_BIND_HOST:-127.0.0.1}:${KEYCLOAK_PORT:-8081}:8081"
     deploy:
       resources:
         limits:

@@ -91,7 +91,7 @@ services:
     volumes:
       - ./docker/keycloak/import:/opt/keycloak/data/import:ro
     ports:
-      - "${KEYCLOAK_PORT:-8081}:8081"
+      - "${FERROEHR_BIND_HOST:-127.0.0.1}:${KEYCLOAK_PORT:-8081}:8081"
     deploy:
       resources:
         limits:
