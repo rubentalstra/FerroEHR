@@ -31,6 +31,17 @@ and revoke the ability to create objects in the public schema. **The running
 server connects as `ferroehr_app`** — its DSN should authenticate as that role,
 not the migrator or the owner.
 
+`ferroehr_app` holds `SELECT`/`INSERT`/`UPDATE`/`DELETE` on the clinical tables
+and `EXECUTE` on the `ext` helper functions, and nothing else: it is not a
+superuser, does not bypass row-level security, and cannot create, alter or drop
+a table, index, schema or role. That posture is only reachable when the
+migrations are applied out of band, because the server applies its embedded
+migrations on every boot (see the next section) and those are DDL — a
+self-migrating deployment necessarily runs as a role that can execute it. The
+single-container quickstart takes that path: its DSN authenticates as a
+non-superuser role that owns the database and is a member of both
+`ferroehr_migrator` and `ferroehr_app`.
+
 ## Applying migrations
 
 The binary applies its embedded migrations on boot, so you choose how
