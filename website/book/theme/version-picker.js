@@ -1,11 +1,20 @@
-// FerroEHR docs — version picker + API-reference link (docs/plans/w1-docs-website.md §2e).
+// FerroEHR docs — version picker + API-reference link.
 // Additive JS (additional-js), NOT an index.hbs fork — survives mdBook theme churn.
 // Fetches versions.json, builds a <select> pre-selected from the current path, and
 // injects it plus an "API Reference ↗" link into the mdBook top menu bar.
 (function () {
   "use strict";
 
-  var SITE_BASE = "/ferroehr";
+  // The site base is DERIVED from the page's own location, never hardcoded:
+  // every book page lives under `<base>/docs/<version>/`, so whatever precedes
+  // `/docs/` IS the base. That is "" at a domain root (ferroehr.eu) and
+  // "/<repo>" under a GitHub Pages project path — a hardcoded value goes stale
+  // the moment the site moves, which silently 404s the manifest and leaves the
+  // picker with nothing to offer.
+  var SITE_BASE = (function () {
+    var marker = window.location.pathname.indexOf("/docs/");
+    return marker === -1 ? "" : window.location.pathname.slice(0, marker);
+  })();
   var MANIFEST = SITE_BASE + "/versions.json";
   var API_HREF = SITE_BASE + "/api/";
 
