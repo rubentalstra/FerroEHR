@@ -29,7 +29,7 @@ use serde_json::json;
 use tower::ServiceExt;
 
 use ferroehr::config::auth::{AuthConfig, BasicConfig, BasicUser, OidcConfig};
-use ferroehr::config::server::{AdminConfig, ServerConfig};
+use ferroehr::config::server::{AdminConfig, BodyLimits, RateLimitConfig, ServerConfig};
 use ferroehr_rest::config::AppConfig;
 
 use crate::common;
@@ -838,4 +838,234 @@ async fn query_post_body_optionality_and_url_forms() {
         .unwrap();
     let (status, _h, body) = send(app.clone(), exec_equal).await;
     assert_eq!(status, StatusCode::OK, "equal values agree: {body}");
+}
+
+// ── Response security headers (OWASP HTTP Headers Cheat Sheet, issue #2015) ──
+
+/// Every response carries the header set, on a handler response and on a
+/// transport-layer one alike — the layer is outermost precisely so a `413` or a
+/// `408`, which never reach a handler, are covered too.
+#[tokio::test]
+async fn every_response_carries_the_security_headers() {
+    let (_pg, app) = app(false).await;
+    let req = Request::builder()
+        .uri(format!("{BASE}/ehr/{EHR}"))
+        .body(Body::empty())
+        .unwrap();
+    let (_status, headers, _body) = send(app, req).await;
+    for (name, expected) in [
+        ("cache-control", "no-store"),
+        ("x-content-type-options", "nosniff"),
+        ("referrer-policy", "strict-origin-when-cross-origin"),
+        ("cross-origin-resource-policy", "same-site"),
+        ("x-frame-options", "DENY"),
+        (
+            "content-security-policy",
+            "default-src 'none'; frame-ancestors 'none'",
+        ),
+    ] {
+        assert_eq!(
+            headers.get(name).map(|v| v.to_str().unwrap_or_default()),
+            Some(expected),
+            "{name} must be present with the audited value"
+        );
+    }
+}
+
+/// `Strict-Transport-Security` is deliberately NOT sent: RFC 6797 §7.2 requires
+/// a browser to ignore it over plain HTTP, which is how this server is commonly
+/// reached behind a terminating proxy, and the TLS edge owns the header. This
+/// asserts the deliberate absence so nobody "fixes" it by adding an inert
+/// header here.
+#[tokio::test]
+async fn hsts_is_deliberately_absent() {
+    let (_pg, app) = app(false).await;
+    let req = Request::builder()
+        .uri(format!("{BASE}/ehr/{EHR}"))
+        .body(Body::empty())
+        .unwrap();
+    let (_status, headers, _body) = send(app, req).await;
+    assert!(
+        !headers.contains_key("strict-transport-security"),
+        "HSTS belongs to the TLS edge, not this listener"
+    );
+}
+
+// ── Request-body limits (issue #2019; the chunked defect is issue #2045) ─────
+
+/// A body over the limit with NO `Content-Length` — a chunked upload — must be
+/// refused `413`. It used to reach the dispatcher as a silently emptied body and
+/// answer `400`, because the collector turned the limit error into a default
+/// value (issue #2045).
+#[tokio::test]
+async fn an_over_limit_chunked_body_is_413_not_400() {
+    let (pg, service) = common::test_service().await;
+    let mut cfg = config(false);
+    cfg.server.limits = BodyLimits {
+        body_bytes: 1024,
+        bulk_body_bytes: 1024,
+    };
+    let app = common::router_with(cfg, service);
+    let _keep = pg;
+
+    // A stream body has no Content-Length, so the declared-size check cannot
+    // fire and the limit must be enforced while reading.
+    let oversized = vec![b'x'; 4096];
+    let stream = futures::stream::once(async move { Ok::<_, std::io::Error>(oversized) });
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/ehr/{EHR}/composition"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from_stream(stream))
+        .unwrap();
+    let (status, headers, body) = send(app, req).await;
+    assert_eq!(
+        status,
+        StatusCode::PAYLOAD_TOO_LARGE,
+        "an over-limit chunked body must be 413, not a malformed-body 400: {body}"
+    );
+    assert_eq!(
+        headers.get(header::CONTENT_TYPE).unwrap(),
+        "application/json",
+        "the refusal keeps the openEHR error body"
+    );
+}
+
+/// The bulk tier really is more permissive than the clinical tier: the same
+/// payload that a clinical route refuses is accepted for reading on a bulk
+/// route (it then fails on its own merits, not on size).
+#[tokio::test]
+async fn the_bulk_tier_accepts_what_the_clinical_tier_refuses() {
+    let (pg, service) = common::test_service().await;
+    let mut cfg = config(false);
+    cfg.server.limits = BodyLimits {
+        body_bytes: 512,
+        bulk_body_bytes: 65536,
+    };
+    let app = common::router_with(cfg, service);
+    let _keep = pg;
+
+    let payload = vec![b'x'; 4096];
+    let clinical = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/ehr/{EHR}/composition"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(payload.clone()))
+        .unwrap();
+    let (status, _h, _b) = send(app.clone(), clinical).await;
+    assert_eq!(status, StatusCode::PAYLOAD_TOO_LARGE);
+
+    let bulk = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/definition/template/adl1.4"))
+        .header(header::CONTENT_TYPE, "application/xml")
+        .body(Body::from(payload))
+        .unwrap();
+    let (status, _h, _b) = send(app, bulk).await;
+    assert_ne!(
+        status,
+        StatusCode::PAYLOAD_TOO_LARGE,
+        "the bulk tier must not refuse this on size"
+    );
+}
+
+// ── Rate limiting (issue #2020) ─────────────────────────────────────────────
+
+/// Past its rate, a caller is refused `429` with `Retry-After` and the openEHR
+/// error body. Driven with a rate of one per second and a burst of one, so the
+/// second request is already over.
+#[tokio::test]
+async fn past_the_rate_a_caller_is_429_with_retry_after() {
+    let (pg, service) = common::test_service().await;
+    let mut cfg = config(false);
+    cfg.server.rate_limit = RateLimitConfig {
+        enabled: true,
+        principal_per_second: 1,
+        principal_burst: 1,
+        address_per_second: 1,
+        address_burst: 1,
+    };
+    let app = common::router_with(cfg, service);
+    let _keep = pg;
+
+    let mut refused = None;
+    for _ in 0..4 {
+        let req = Request::builder()
+            .uri(format!("{BASE}/ehr/{EHR}"))
+            .body(Body::empty())
+            .unwrap();
+        let (status, headers, body) = send(app.clone(), req).await;
+        if status == StatusCode::TOO_MANY_REQUESTS {
+            refused = Some((headers, body));
+            break;
+        }
+    }
+    let (headers, body) = refused.expect("a burst of 1 must produce a 429 within four requests");
+    assert!(
+        headers.contains_key(header::RETRY_AFTER),
+        "429 must tell the caller when to retry"
+    );
+    let v: serde_json::Value = serde_json::from_str(&body).expect("openEHR error body");
+    assert_eq!(v["error"], "Too Many Requests");
+    assert!(
+        v["message"]
+            .as_str()
+            .is_some_and(|m| m.contains("retry in")),
+        "the message states the delay: {body}"
+    );
+}
+
+/// Disabled, the limiter must produce zero wire drift — no refusal and no
+/// `x-ratelimit-*` headers at all.
+#[tokio::test]
+async fn a_disabled_limiter_leaves_no_trace_on_the_wire() {
+    let (pg, service) = common::test_service().await;
+    let mut cfg = config(false);
+    cfg.server.rate_limit = RateLimitConfig {
+        enabled: false,
+        principal_per_second: 1,
+        principal_burst: 1,
+        address_per_second: 1,
+        address_burst: 1,
+    };
+    let app = common::router_with(cfg, service);
+    let _keep = pg;
+
+    for _ in 0..4 {
+        let req = Request::builder()
+            .uri(format!("{BASE}/ehr/{EHR}"))
+            .body(Body::empty())
+            .unwrap();
+        let (status, headers, _body) = send(app.clone(), req).await;
+        assert_ne!(status, StatusCode::TOO_MANY_REQUESTS);
+        assert!(
+            headers
+                .keys()
+                .all(|k| !k.as_str().starts_with("x-ratelimit")),
+            "a disabled limiter must add no headers"
+        );
+    }
+}
+
+// ── Sensitive data in URLs (issue #2044) ────────────────────────────────────
+
+/// `subject_id` is an external patient identifier that the specification puts in
+/// a QUERY parameter, so the request span must not record the query string. The
+/// span is built by `router::path_only_span`; this asserts the endpoint still
+/// works while the span carries only the path — the unit-level guarantee is that
+/// no code path formats `uri()` in full.
+#[tokio::test]
+async fn subject_lookup_by_query_parameter_still_answers() {
+    let (_pg, app) = app(false).await;
+    let req = Request::builder()
+        .uri(format!(
+            "{BASE}/ehr?subject_id=patient-12345&subject_namespace=hospital"
+        ))
+        .body(Body::empty())
+        .unwrap();
+    let (status, _headers, _body) = send(app, req).await;
+    assert!(
+        status == StatusCode::NOT_FOUND || status == StatusCode::OK,
+        "subject lookup answers on its own merits, got {status}"
+    );
 }
