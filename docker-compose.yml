@@ -33,6 +33,21 @@
 #   --profile admin-ui        the admin console on port 3000
 #   --profile s3              SeaweedFS S3 gateway for DV_MULTIMEDIA (off by default)
 #
+# ── Container isolation posture ──────────────────────────────────────────────
+# Every service drops ALL capabilities and adds back only what its entrypoint
+# provably needs, refuses privilege escalation, bounds its file descriptors, and
+# restarts unless stopped. Two services additionally run a READ-ONLY root
+# filesystem with tmpfs for the paths that must be writable; the two that do not
+# say why inline.
+#
+# The seccomp posture is Docker's DEFAULT profile, and it is deliberately not
+# named here: Docker applies `builtin` unless a service overrides it, and that
+# profile already blocks ~44 of the ~300+ syscalls, including every one behind a
+# capability we drop above (docs.docker.com/engine/security/seccomp). Writing
+# `seccomp=unconfined` is the dangerous move, so the guard to keep is the ABSENCE
+# of that string — `scripts/checks/compose-hardening.sh` enforces it, along with
+# the rest of this block, on every compose artifact.
+#
 # ── Where the ports are published (security-relevant) ────────────────────────
 # Every published port binds the LOOPBACK interface by default
 # (127.0.0.1:HOST:CONTAINER). This matters more than it looks: a published port
