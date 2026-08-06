@@ -16,6 +16,7 @@
 use std::collections::BTreeMap;
 
 use base64::Engine as _;
+use reqwest::StatusCode;
 use serde_json::Value;
 
 use crate::artifacts::ArtifactSet;
@@ -40,7 +41,7 @@ pub struct Exchange {
     /// The absolute request URL.
     pub path: String,
     /// The status code the SUT answered with.
-    pub status: u16,
+    pub status: StatusCode,
     /// The response headers, lower-cased names.
     pub headers: BTreeMap<String, String>,
     /// The response body, parsed when it was JSON, else absent.
@@ -427,7 +428,7 @@ impl<'a> HttpDriver<'a> {
             };
         }
         let response = request.send().map_err(|e| format!("transport: {e}"))?;
-        let status = response.status().as_u16();
+        let status = response.status();
         let mut response_headers = BTreeMap::new();
         for (name, value) in response.headers() {
             if let Ok(v) = value.to_str() {
@@ -467,7 +468,7 @@ impl<'a> HttpDriver<'a> {
                     "[exchange] {} {} -> {} | {}",
                     exchange.method,
                     exchange.path,
-                    exchange.status,
+                    exchange.status.as_u16(),
                     exchange
                         .body
                         .as_ref()
@@ -714,13 +715,13 @@ impl<'a> HttpDriver<'a> {
         omits: Option<&str>,
     ) -> Result<(), AssertionFailure> {
         if let Some(Value::Bool(want)) = equals {
-            let observed = (200..300).contains(&exchange.status);
+            let observed = exchange.status.is_success();
             if observed == *want {
                 Ok(())
             } else {
                 Err(AssertionFailure(format!(
                     "returns: wire presence {observed} != expected {want} (status {})",
-                    exchange.status
+                    exchange.status.as_u16()
                 )))
             }
         } else {
@@ -2909,7 +2910,9 @@ impl HttpDriver<'_> {
         exchange: &Exchange,
         conflict_is_ground: bool,
     ) -> Option<String> {
-        if (200..300).contains(&exchange.status) || (conflict_is_ground && exchange.status == 409) {
+        if exchange.status.is_success()
+            || (conflict_is_ground && exchange.status == StatusCode::CONFLICT)
+        {
             return None;
         }
         let body_head: String = exchange
@@ -2923,7 +2926,7 @@ impl HttpDriver<'_> {
         Some(format!(
             "provisioning {what} refused: status {} — the case's required ground was never \
              established; the behaviour under test was not driven (body: {body_head})",
-            exchange.status
+            exchange.status.as_u16()
         ))
     }
 
@@ -3070,7 +3073,8 @@ impl StepDriver for HttpDriver<'_> {
 
         // Classify (law c) and bind captures.
         let selectors = self.set.selectors.as_ref().map(|(_, s)| s);
-        let observation = outcome::classify_status(binding, selectors, exchange.status, expected);
+        let observation =
+            outcome::classify_status(binding, selectors, exchange.status.as_u16(), expected);
         Self::bind_step_captures(step, binding, &exchange, &observation, sent_ms, vars);
         self.track_latest_version_uid(binding, &exchange, &observation, vars);
 
@@ -3340,6 +3344,45 @@ fn extract_list(body: &Value, path: &str) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A status a message RENDERS reaches the recorded artifacts as a bare
+    /// wire number (`docs/conformance/<sut>/results.json` carries
+    /// `status 406 maps to no outcome …` rows), so the rendering is pinned
+    /// independently of how the status is held in memory.
+    #[test]
+    fn rendered_statuses_stay_bare_wire_numbers() {
+        let refused = Exchange {
+            method: "POST".into(),
+            path: "/ehr".into(),
+            status: StatusCode::CONFLICT,
+            headers: BTreeMap::new(),
+            body: None,
+        };
+        let message = HttpDriver::provisioning_refusal("an EHR", &refused, false)
+            .expect("a 409 with conflict_is_ground=false is a refusal");
+        assert!(
+            message.starts_with("provisioning an EHR refused: status 409 —"),
+            "{message}"
+        );
+        assert!(HttpDriver::provisioning_refusal("an EHR", &refused, true).is_none());
+
+        let ok = Exchange {
+            status: StatusCode::OK,
+            ..refused
+        };
+        let failure = HttpDriver::eval_returns_assertion(
+            &ok,
+            &Value::Null,
+            Some(&Value::Bool(false)),
+            None,
+            None,
+        )
+        .expect_err("a 2xx exchange contradicts `returns: false`");
+        assert_eq!(
+            failure.0,
+            "returns: wire presence true != expected false (status 200)"
+        );
+    }
 
     /// Preconditions follow the DEPLOYMENT the flow addresses, and the
     /// discriminator is the origin — a party declares several instances per
@@ -4054,7 +4097,7 @@ mod tests {
         let exchange = Exchange {
             method: "POST".into(),
             path: "/ehr".into(),
-            status: 201,
+            status: StatusCode::CREATED,
             headers: BTreeMap::from([(
                 "etag".to_owned(),
                 "W/\"8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1\"".to_owned(),

@@ -12,6 +12,7 @@
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 
 use crate::perf_run::client::{PerfClient, location_last_segment, strip_weak_quotes};
@@ -104,8 +105,8 @@ pub struct SeededCorpus {
 /// No Content with the identifying headers (upstream `EHRbase`'s minimal
 /// create). The functional catalogue pins exact status codes; the seeder
 /// accepts either, then still demands the identifying header it needs.
-fn created(status: u16) -> bool {
-    matches!(status, 201 | 204)
+fn created(status: StatusCode) -> bool {
+    status == StatusCode::CREATED || status == StatusCode::NO_CONTENT
 }
 
 /// The volumetric shape of one `cnf.scale.*` corpus key per the
@@ -162,9 +163,11 @@ pub fn seed_scale_ladder(
         false,
         None,
     )?;
-    match upload.status {
-        201 | 409 => {}
-        other => return Err(format!("OPT upload returned {other} (expected 201/409)")),
+    if upload.status != StatusCode::CREATED && upload.status != StatusCode::CONFLICT {
+        return Err(format!(
+            "OPT upload returned {} (expected 201/409)",
+            upload.status.as_u16()
+        ));
     }
 
     let workers = workers.max(1);
@@ -180,8 +183,8 @@ pub fn seed_scale_ladder(
     let first = client
         .request(reqwest::Method::POST, "/ehr", None, true, None)
         .and_then(|reply| {
-            if reply.status != 201 {
-                return Err(format!("create_ehr returned {}", reply.status));
+            if reply.status != StatusCode::CREATED {
+                return Err(format!("create_ehr returned {}", reply.status.as_u16()));
             }
             reply
                 .location
@@ -209,8 +212,11 @@ pub fn seed_scale_ladder(
                     let outcome = client
                         .request(reqwest::Method::POST, "/ehr", None, true, None)
                         .and_then(|reply| {
-                            if reply.status != 201 {
-                                return Err(format!("create_ehr returned {}", reply.status));
+                            if reply.status != StatusCode::CREATED {
+                                return Err(format!(
+                                    "create_ehr returned {}",
+                                    reply.status.as_u16()
+                                ));
                             }
                             reply
                                 .location
@@ -302,7 +308,7 @@ pub fn seed_scale_ladder(
                             if !created(reply.status) {
                                 return Err(format!(
                                     "create_composition returned {}",
-                                    reply.status
+                                    reply.status.as_u16()
                                 ));
                             }
                             reply
@@ -406,13 +412,11 @@ pub fn seed_ward(
             false,
             None,
         )?;
-        match upload.status {
-            201 | 409 => {}
-            other => {
-                return Err(format!(
-                    "OPT upload for {key} returned {other} (expected 201/409)"
-                ));
-            }
+        if upload.status != StatusCode::CREATED && upload.status != StatusCode::CONFLICT {
+            return Err(format!(
+                "OPT upload for {key} returned {} (expected 201/409)",
+                upload.status.as_u16()
+            ));
         }
     }
     // PACK PREFLIGHT: every pack example must commit clean once (a
@@ -421,14 +425,17 @@ pub fn seed_ward(
     // loudly, never surface as silent error arrivals inside a measured
     // window.
     let scratch = client.request(reqwest::Method::POST, "/ehr", None, true, None)?;
-    let scratch_ehr = if scratch.status == 201 {
+    let scratch_ehr = if scratch.status == StatusCode::CREATED {
         scratch
             .location
             .as_deref()
             .and_then(location_last_segment)
             .ok_or_else(|| "preflight EHR: no Location ehr_id".to_owned())?
     } else {
-        return Err(format!("preflight EHR create returned {}", scratch.status));
+        return Err(format!(
+            "preflight EHR create returned {}",
+            scratch.status.as_u16()
+        ));
     };
     for (index, template) in journey_pack.templates.iter().enumerate() {
         let body = pack::composition_body(template, 0, u64::try_from(index).unwrap_or(0))?;
@@ -442,7 +449,8 @@ pub fn seed_ward(
         if !created(reply.status) {
             return Err(format!(
                 "pack preflight: template {} example returned {} — the committed payload                  ground is invalid for this SUT; fix the pack (or the SUT's validation)                  before measuring",
-                template.key, reply.status
+                template.key,
+                reply.status.as_u16()
             ));
         }
     }
@@ -464,7 +472,7 @@ pub fn seed_ward(
                 "pack preflight: the Simplified-FLAT payload returned {} — the committed payload \
                  ground is invalid for this SUT; fix the pack (or the SUT's validation) before \
                  measuring",
-                reply.status
+                reply.status.as_u16()
             ));
         }
     }
@@ -483,7 +491,7 @@ pub fn seed_ward(
             return Err(format!(
                 "pack preflight: the TDD payload returned {} — the committed payload ground is \
                  invalid for this SUT; fix the pack (or the SUT's validation) before measuring",
-                reply.status
+                reply.status.as_u16()
             ));
         }
     }
@@ -500,9 +508,14 @@ pub fn seed_ward(
         false,
         None,
     )?;
-    match stored.status {
-        200 | 201 | 409 => {}
-        other => return Err(format!("store_query returned {other} (expected 200)")),
+    if stored.status != StatusCode::OK
+        && stored.status != StatusCode::CREATED
+        && stored.status != StatusCode::CONFLICT
+    {
+        return Err(format!(
+            "store_query returned {} (expected 200)",
+            stored.status.as_u16()
+        ));
     }
 
     let gp_index = journey_pack
@@ -606,7 +619,8 @@ fn seed_one_patient(
         if !created(reply.status) {
             return Err(format!(
                 "ward commit ({}) returned {}",
-                template.key, reply.status
+                template.key,
+                reply.status.as_u16()
             ));
         }
         reply
@@ -628,7 +642,7 @@ fn seed_one_patient(
     if !created(directory.status) {
         return Err(format!(
             "ward directory create returned {}",
-            directory.status
+            directory.status.as_u16()
         ));
     }
     let directory_ovid = directory
@@ -653,7 +667,7 @@ fn seed_one_patient(
     if !created(contribution.status) {
         return Err(format!(
             "ward contribution returned {}",
-            contribution.status
+            contribution.status.as_u16()
         ));
     }
     let contribution_uid = contribution

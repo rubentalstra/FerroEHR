@@ -17,15 +17,52 @@
 # recorded wire outcome (`status.as_u16()` inside `format!`, a struct field, a
 # `/ 100` class bucket). Only COMPARISON against a numeric literal is refused.
 #
+# The three shapes below are all the same violation, and the guard has to see all
+# three or it reports OK on a tree containing the pattern it exists to ban (which
+# it did, on two live sites, until this was widened):
+#
+#     if status.as_u16() == 401 { … }                    // direct
+#     let status = resp.status().as_u16(); if status == 401 { … }   // via a local
+#     assert_eq!(resp.status(), 200);                    // via an assertion
+#
+# The second is caught by matching the COMPARISON of a status-named binding
+# against a literal, wherever it sits — not by flagging the `as_u16()` binding
+# itself, and not by flagging a `status: u16` parameter. Those two broader rules
+# were tried and rejected on merit: they fire on code that legitimately RECEIVES a
+# recorded wire number, which is the conformance runner's whole job (its catalogue
+# stores expected statuses as JSON numbers and compares recorded against expected
+# — a data-driven comparison with no literal in it, and correct as it stands).
+# What the rule forbids is a LITERAL in the comparison, so that is what the guard
+# looks for, in every form it can take: direct, through a local, in a `matches!`,
+# and in an assertion.
+#
 # Usage: scripts/checks/typed-status.sh [--all | <file>...]
 #   no args  → the files changed against origin/develop
 #   --all    → every tracked .rs file
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
+# The `--all` scope, and why it is not the whole tree yet.
+#
+# The rule is repo-wide, but two crates carry pre-existing violations of a shape
+# that cannot be fixed as a side effect of adding this guard, so `--all` covers
+# the server and the specification crates — where a mis-compared status IS a wire
+# defect — and the two sweeps are tracked instead of quietly excluded forever:
+#
+#   * `app/ferroehr-admin-ui` — the console's own DTOs, in a crate parked pending
+#     its full pass (#2055).
+#
+# `tools/cnf-runner` was the other one and is now clean (#2054): it holds
+# `StatusCode` in memory and applies `.as_u16()` only where a number is rendered
+# or serialized, with the committed artifacts proven byte-identical.
+#
+# Passing explicit paths (or `--all-really`) still checks anything, so the sweeps
+# can verify themselves as they land.
 collect() {
-  if [ "${1:-}" = "--all" ]; then
+  if [ "${1:-}" = "--all-really" ]; then
     git ls-files '*.rs'
+  elif [ "${1:-}" = "--all" ]; then
+    git ls-files '*.rs' | grep -v '^app/ferroehr-admin-ui/'
   elif [ "$#" -gt 0 ]; then
     printf '%s\n' "$@"
   else
@@ -46,7 +83,13 @@ for f in $files; do
       "$f" "$line" "$(printf '%s' "$body" | sed 's/^[[:space:]]*//' | cut -c1-60)" >&2
     printf '    `http::StatusCode` constant instead (scripts/checks/typed-status.sh)\n' >&2
     failures=$((failures + 1))
-  done < <(grep -nE '(as_u16\(\)[[:space:]]*[=!]=)|(status\(\)[[:space:]]*[=!]=[[:space:]]*[0-9])' "$f" || true)
+  done < <(grep -nE \
+    -e 'as_u16\(\)[[:space:]]*[=!]=' \
+    -e 'status\(\)[[:space:]]*[=!]=[[:space:]]*[0-9]' \
+    -e '\b[a-z_]*status[a-z_]*[[:space:]]*[=!]=[[:space:]]*[0-9]' \
+    -e 'matches!\([[:space:]]*[a-z_]*status[a-z_]*[[:space:]]*,[[:space:]]*[0-9]' \
+    -e 'assert(_eq|_ne)?!\([^,]*status\(\)[^,]*,[[:space:]]*[0-9]' \
+    "$f" || true)
 done
 
 if [ "$failures" -gt 0 ]; then
