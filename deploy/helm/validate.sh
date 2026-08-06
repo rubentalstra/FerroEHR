@@ -247,6 +247,62 @@ secret_leak_gate() {
 }
 secret_leak_gate
 
+# ── The live-test fixture must still track the chart ──────────────────────────
+# WHY a `.claude/` path appears in a deploy gate: `.claude/skills/k8s-test/` holds
+# the values overlay every cluster run installs with, so it is a consumer of this
+# chart exactly like the overlays in ci/ — and the only thing that ever exercised
+# it was a human running the skill, which happens when they are testing something
+# ELSE. That is how it broke: the secret-routing change made `password_hash` under
+# `config:` a refusal, the fixture still set it there, and nothing failed until the
+# next live run would have. Same shape as the golden gate that ran in no workflow.
+#
+# This RENDERS, it does not deep-verify. The property is "the fixture still tracks
+# the chart", not "the fixture is correct" — a live run checks the second.
+fixture_gate() {
+  bold "── live-test fixture ────────────────────────────────────"
+  local repo_root fixture
+  repo_root="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+  fixture="${repo_root}/.claude/skills/k8s-test/test-values.yaml"
+  if [[ ! -f "$fixture" ]]; then
+    red "  missing: .claude/skills/k8s-test/test-values.yaml — the k8s-test skill installs with it"
+    FAIL=1
+    return
+  fi
+  local rendered out
+  rendered="$(mktemp)"
+  if ! out="$(helm template "$RELEASE_NAME" "$CHART_DIR" -n "$NAMESPACE" -f "$fixture" 2>&1)"; then
+    red "  the k8s-test fixture NO LONGER RENDERS against this chart."
+    red "  This is the FIXTURE being stale, not your chart change being wrong:"
+    red "  .claude/skills/k8s-test/test-values.yaml needs the same edit your values change implies."
+    printf '%s
+' "$out" | head -6
+    FAIL=1
+    rm -f "$rendered"
+    return
+  fi
+  printf '%s' "$out" > "$rendered"
+  # The objects a live run actually drives; a fixture that renders but produces no
+  # Deployment would pass a bare render check and fail the run.
+  local missing=0 kind
+  for kind in Deployment Service ServiceAccount NetworkPolicy; do
+    grep -qE "^kind: ${kind}$" "$rendered" || { red "  fixture renders no ${kind}"; missing=1; }
+  done
+  # The live run authenticates, so the fixture must still configure a usable
+  # mechanism — and the hash must arrive by the mounted route, not in the ConfigMap.
+  grep -q 'password_hash_file' "$rendered" || { red "  fixture configures no Basic user via the mounted route (password_hash_file absent)"; missing=1; }
+  if grep -A200 '^kind: ConfigMap$' "$rendered" | grep -q 'argon2id'; then
+    red "  fixture puts an Argon2id hash in the ConfigMap"
+    missing=1
+  fi
+  if [[ "$missing" -eq 0 ]]; then
+    echo "  the k8s-test fixture still renders a Deployment/Service/SA/NetworkPolicy with a mounted hash"
+  else
+    FAIL=1
+  fi
+  rm -f "$rendered"
+}
+fixture_gate
+
 for case in "${CASES[@]}"; do
   label="${case%%:*}"
   values="${case##*:}"
