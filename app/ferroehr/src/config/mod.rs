@@ -328,8 +328,8 @@ fn validate_terminology(
 /// Assemble the configuration from explicit inputs — the pure seam every test
 /// drives.
 ///
-/// Runs the alias sweep (warning once per set legacy var), the strict env +
-/// file passes, the layered merge, and `*_file` secret resolution.
+/// Runs the strict env + file passes, the conventional-alias layering, the
+/// layered merge, and `*_file` secret resolution.
 ///
 /// # Errors
 /// [`ConfigErrors`] aggregating unknown-key, type, and file-resolution errors.
@@ -577,10 +577,10 @@ mod tests {
     }
 
     #[test]
-    fn retired_config_pointer_is_a_boot_error() {
-        // The per-subsystem `*_CONFIG` file pointers are gone (greenfield —
-        // no legacy special-casing): the spelling fails as an unknown
-        // reserved-namespace variable.
+    fn per_subsystem_config_pointer_is_a_boot_error() {
+        // There is ONE configuration file. A per-subsystem `*_CONFIG` pointer
+        // is not a recognized name, so it fails as an unknown
+        // reserved-namespace variable rather than being read and ignored.
         let err = assemble(None, &env(&[("FERROEHR_SIGNING_CONFIG", "/x.toml")]), &[])
             .expect_err("retired pointer must fail");
         let msg = err.to_string();
@@ -594,14 +594,15 @@ mod tests {
         assert!(err.to_string().contains("max_conections"), "{err}");
     }
 
-    // ── 4. No legacy (greenfield, owner ruling 2026-07-15) ──────────────────
+    // ── 4. One grammar, no synonyms ─────────────────────────────────────────
 
     #[test]
-    fn legacy_spellings_are_boot_errors_with_the_uniform_suggestion() {
-        // A pre-redesign spelling is never silently honoured or remapped —
-        // it fails at boot naming the exact uniform replacement.
+    fn single_separator_spelling_is_a_boot_error_naming_the_uniform_form() {
+        // A single `_` where the grammar wants `__` is the easiest operator
+        // mistake to make, so it fails at boot naming the exact spelling
+        // meant — never silently honoured, and never set-but-unread.
         let err = assemble(None, &env(&[("FERROEHR_DB_MAX_CONNECTIONS", "7")]), &[])
-            .expect_err("legacy spelling must fail");
+            .expect_err("a single-separator spelling must fail");
         let msg = err.to_string();
         assert!(msg.contains("FERROEHR_DB_MAX_CONNECTIONS"), "{msg}");
         assert!(msg.contains("FERROEHR__DB__MAX_CONNECTIONS"), "{msg}");

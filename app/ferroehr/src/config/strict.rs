@@ -10,10 +10,8 @@ use super::loader::ConfigError;
 /// Sweep the reserved `FERROEHR_` namespace: every such variable must be an
 /// allowlisted non-config name or a known-section uniform key — anything else
 /// is a boot error (with a did-you-mean), which is what makes a
-/// set-but-never-read variable impossible. There is no legacy remapping (greenfield, owner ruling
-/// 2026-07-15): a pre-redesign spelling fails here with the exact uniform
-/// suggestion. Deeper key typos inside a known section are caught at
-/// deserialize by `deny_unknown_fields`.
+/// set-but-never-read variable impossible. Deeper key typos inside a known
+/// section are caught at deserialize by `deny_unknown_fields`.
 #[must_use]
 pub(super) fn strict_env<S: std::hash::BuildHasher>(
     env: &HashMap<String, String, S>,
@@ -45,14 +43,14 @@ pub(super) fn strict_env<S: std::hash::BuildHasher>(
             }
             continue;
         }
-        // `FERROEHR_` but not `FERROEHR__`, and not allowlisted: a near-miss for
-        // the uniform grammar (including every pre-redesign legacy spelling —
-        // there is no alias layer, greenfield). Repair the spelling
-        // mechanically: (a) insert the missing prefix separator; if the first
-        // `__`-segment then names a known section, suggest that verbatim;
-        // (b) else, for a flat legacy tail (`DB_MAX_CONNECTIONS`), match the
-        // leading word against the known sections and double that boundary
-        // too. Otherwise fall back to a section did-you-mean.
+        // `FERROEHR_` but not `FERROEHR__`, and not allowlisted: a near-miss
+        // for the uniform grammar — a single separator where the grammar wants
+        // two is the easiest mistake to make. Repair it mechanically:
+        // (a) insert the missing prefix separator; if the first `__`-segment
+        // then names a known section, suggest that verbatim; (b) else, for a
+        // flat tail (`DB_MAX_CONNECTIONS`), match the leading word against the
+        // known sections and double that boundary too. Otherwise fall back to
+        // a section did-you-mean.
         let tail = key.strip_prefix("FERROEHR_").unwrap_or_default();
         let first = tail.split("__").next().unwrap_or_default();
         let section = first.to_ascii_lowercase();
@@ -153,11 +151,11 @@ mod tests {
     }
 
     #[test]
-    fn sweep_flags_unknown_and_legacy_and_passes_known() {
+    fn sweep_flags_unknown_and_near_miss_and_passes_allowlisted() {
         let mut env = HashMap::new();
         env.insert("FERROEHR__SERVER__BIND".to_owned(), "0.0.0.0:9".to_owned());
         env.insert("FERROEHR__SIGNIN__ENABLED".to_owned(), "true".to_owned());
-        // Pre-redesign spellings are NOT aliased (greenfield) — both fail:
+        // Single-separator near-misses are never aliased — both fail:
         env.insert("FERROEHR_SIGNING_CONFIG".to_owned(), "/x.toml".to_owned());
         env.insert("FERROEHR_DB_MAX_CONNECTIONS".to_owned(), "5".to_owned());
         env.insert("FERROEHR_CONFIG".to_owned(), "/e.toml".to_owned()); // allowlisted
@@ -171,7 +169,7 @@ mod tests {
         assert!(joined.contains("signing"), "did-you-mean: {joined}");
         assert!(joined.contains("FERROEHR_SIGNING_CONFIG"), "{joined}");
         assert!(joined.contains("FERROEHR_DB_MAX_CONNECTIONS"), "{joined}");
-        assert_eq!(errs.len(), 3, "the typo + both legacy spellings: {joined}");
+        assert_eq!(errs.len(), 3, "the typo + both near-misses: {joined}");
     }
 
     #[test]

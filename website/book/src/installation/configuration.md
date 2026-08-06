@@ -100,39 +100,78 @@ server refuses to start on any error:
 ## `spec_profile`
 
 ```toml
-spec_profile = "development"
+# The openEHR specification generation set the server runs.
+spec_profile = "development"   # or "stable"
 ```
 
-Which openEHR specification generation set the server runs — **one coupled
-choice**, because the components' generations are modelled against each
-other and never vary independently:
+openEHR publishes released specification versions and keeps developing the
+next ones. FerroEHR generates **both** — each generation is a complete peer,
+with its own type model, canonical JSON and XML codecs, Reference Model
+attribute model, invariant cores and validation behaviour — and this key
+decides which set the running server serves.
 
-| value | RM | BASE | LANG | meaning |
+| value | RM | BASE | LANG | Choose it when |
 |---|---|---|---|---|
-| `development` *(default)* | 1.2.0 | 1.3.0 | 1.1.0 | the pre-release generations this build is developed against |
-| `stable` | 1.1.0 | 1.2.0 | 1.0.0 | the latest RELEASED openEHR generations |
+| `development` *(default)* | 1.2.0 | 1.3.0 | 1.1.0 | You want the generations this build is developed against. This is today's behaviour and the default for every existing deployment. |
+| `stable` | 1.1.0 | 1.2.0 | 1.0.0 | Your governance requires running on RELEASED openEHR specifications only. |
 
-The active profile is visible on the boot banner and `/management/info`.
-Under `stable`, requests that address specification surface the released
-generations do not define are refused with an error naming the profile —
-never answered as if the surface existed. The reverse also holds: released
-surface that the development generations later dropped stays accepted under
-`stable` — a demographic party carrying the RM 1.1.0
-`reverse_relationships` attribute is validated and accepted (the attribute
-is derived data the server recomputes, so its inbound copy is not stored),
-while `development` refuses it as undeclared.
+Environment form: `FERROEHR__SPEC_PROFILE=stable`. The key is a top-level
+scalar, not a section — there is no `[spec_profile]` table.
 
-**Changing the profile on an existing deployment:**
+### Why it is one key and not three
 
-- `stable` → `development` is always safe: openEHR minor releases are
-  additive, so everything stored under the released generations is valid
-  under the development ones.
-- `development` → `stable` is supported **only** for data that never used
-  development-only constructs. Stored objects that did are refused loudly at
-  read, with an error naming the profile conflict — they are never silently
-  down-converted or hidden. Treat the profile as a deployment commitment:
-  choose `stable` from day one if you need to stay on released
-  specifications.
+The components' generations are modelled against each other, not
+independently: RM 1.1.0's own machine-readable model declares that it
+includes BASE 1.2.0. Letting you pick RM 1.1.0 with BASE 1.3.0 would offer a
+combination openEHR never published, so the profile is a single coupled
+choice and incoherent sets are unrepresentable rather than merely
+discouraged.
+
+### Seeing which profile is active
+
+The profile and the exact generation versions it selects appear in three
+places, so it is never a guess:
+
+- the **boot banner**, on every start;
+- **`GET /management/info`**, alongside the build provenance;
+- the **openEHR system identity** the server reports for conformance.
+
+### What changes on the wire
+
+Under `stable`, a request that addresses specification surface the released
+generations do not define is **refused with an error naming the active
+profile** — never answered as though the surface existed. That boundary is
+exact in both directions, which is the part most implementations get wrong:
+released surface the development line later dropped **stays accepted** under
+`stable`. Concretely, a demographic party carrying the RM 1.1.0
+`PARTY.reverse_relationships` attribute is validated and accepted under
+`stable` (the attribute is derived data the server recomputes, so the copy
+you send is not stored), while `development` refuses it as undeclared —
+because RM 1.2.0 removed it.
+
+The generation delta is machine-pinned in the build, so a future openEHR
+re-vendoring cannot silently widen or narrow what a profile accepts.
+
+### Changing the profile on an existing deployment
+
+Treat the profile as a deployment commitment. Both directions are defined,
+but they are not symmetric:
+
+| Direction | Supported? | Why |
+|---|---|---|
+| `stable` → `development` | **Always safe** | openEHR minor releases are additive by the Foundation's own release strategy, so every object stored under the released generations is valid under the development ones. |
+| `development` → `stable` | **Only for data that never used a development-only construct** | Stored objects that did are refused **loudly at read**, with an error naming the profile conflict. They are never silently down-converted, and never hidden from a query. |
+
+If you need to stay on released specifications, choose `stable` on day one
+rather than migrating into it later. There is no in-place down-conversion
+tool, by design: silently rewriting stored clinical content to fit an older
+generation would be data loss disguised as a setting.
+
+> [!NOTE]
+> No openEHR specification governs runtime version selection — this key is
+> FerroEHR's own design. What the specifications do govern is the
+> compatibility direction it relies on: minor releases within a major line
+> are additive supersets.
 
 ## `[server]`
 
@@ -860,49 +899,15 @@ Basic-auth user store), read the configuration carried inline in the quickstart
 `docker/ferroehr.dev.toml`, used by the from-source development stack, is a
 fuller one with three users and RBAC enabled.
 
-## Migrating from 3.x environment variables
-
-The pre-redesign layout used ~14 independent loaders, several env-name
-grammars, and nine `FERROEHR_*_CONFIG` file pointers. Every old server variable
-now **fails at boot** with the exact uniform replacement suggested — there is
-no legacy alias layer (greenfield: nothing was deployed to migrate). The table
-below maps every old spelling to its replacement.
-
-| Old variable | New key (env form) | Fate |
-|---|---|---|
-| `FERROEHR_DB_URL` | `db.url` (`FERROEHR__DB__URL`) | **boot error** — use the new spelling |
-| `DATABASE_URL` | `db.url` | kept permanently |
-| `FERROEHR_DB_MAX_CONNECTIONS` / `_MIN_CONNECTIONS` / `_ACQUIRE_TIMEOUT_SECS` | `db.*` (`FERROEHR__DB__*`) | **boot error** — use the new spelling |
-| `FERROEHR_LOG_FORMAT` / `FERROEHR_LOG_FILTER` | `log.*` (`FERROEHR__LOG__*`) | **boot error** — use the new spelling |
-| `RUST_LOG` | `log.filter` | kept permanently |
-| `FERROEHR_OTEL_*` | `telemetry.*` | **boot error** — use the new spelling |
-| `FERROEHR_REST_CONFIG` | `--config` / `FERROEHR_CONFIG` + `ferroehr.toml` | **removed** — merge the file into `ferroehr.toml` |
-| `FERROEHR_REST_BIND` / `_BASE_PATH` / `_SWAGGER_UI` / `_CORS_PERMISSIVE` | `server.*` (`FERROEHR__SERVER__*`) | **boot error** — use the new spelling |
-| `FERROEHR_REST_MAX_IN_FLIGHT` | `server.max_in_flight` (`FERROEHR__SERVER__MAX_IN_FLIGHT`) | **boot error** — use the new spelling |
-| `FERROEHR_REST_SYSTEM__*` | `server.identity.*` | **boot error** — use the new spelling |
-| `FERROEHR_REST_AUTH__ENABLED` / `_VERIFIED_CACHE_TTL_SECONDS` | `auth.*` (`FERROEHR__AUTH__*`) | **boot error** — use the new spelling |
-| `FERROEHR_REST_AUTH__OIDC__*` | `auth.oidc.*` (`FERROEHR__AUTH__OIDC__*`) | **boot error** — use the new spelling |
-| `FERROEHR_REST_AUTH__BASIC__USERS` | `[[auth.basic.users]]` (file-only) | **removed** — set in the file |
-| `FERROEHR_REST_AUTH__ADMIN_SCOPE` | — (subsumed by `authz.rbac.admin_role`) | **removed** |
-| `FERROEHR_REST_ADMIN__ENABLED` | `admin.enabled` | **boot error** — use the new spelling |
-| `FERROEHR_REST_TENANCY__*` | `tenancy.*` | **boot error** — use the new spelling |
-| `FERROEHR_REST_TERMINOLOGY__ENABLED` | `terminology.api_enabled` | **boot error** — use the new spelling |
-| `FERROEHR_REST_EVENT_SUBSCRIPTION__ENABLED` | `events.admin_api` | **boot error** — use the new spelling |
-| `FERROEHR_REST_FHIR__ENABLED` | `fhir.api_enabled` | **boot error** — use the new spelling |
-| `FERROEHR_REST_SMART__*` | `smart.*` (`FERROEHR__SMART__*`) | **boot error** — use the new spelling |
-| `FERROEHR_MANAGEMENT_*` | `management.*` (`FERROEHR__MANAGEMENT__*`) | **boot error** — use the new spelling |
-| `FERROEHR_MANAGEMENT_ENDPOINTS_<EP>` | `management.endpoints.<ep>` (`FERROEHR__MANAGEMENT__ENDPOINTS__<EP>`) | **boot error** — use the new spelling |
-| `FERROEHR_AUTHZ_RBAC__*` / `FERROEHR_AUTHZ_ABAC__*` | `authz.rbac.*` / `authz.abac.*` (`FERROEHR__AUTHZ__…`) | **boot error** — use the new spelling |
-| `FERROEHR_ATNA_<KEY>` | `audit.<key>` (`FERROEHR__AUDIT__<KEY>`) | **boot error** — use the new spelling |
-| `FERROEHR_SIGNING_<KEY>` | `signing.<key>` (`FERROEHR__SIGNING__<KEY>`) | **boot error** — use the new spelling |
-| `FERROEHR_EVENTS_<KEY>` | `events.<key>` (`FERROEHR__EVENTS__<KEY>`) | **boot error** — use the new spelling |
-| `FERROEHR_FHIR_OUTBOUND_<KEY>` | `fhir.outbound.<key>` (`FERROEHR__FHIR__OUTBOUND__<KEY>`) | **boot error** — use the new spelling |
-| `FERROEHR_MULTIMEDIA_<KEY>` | `multimedia.<key>` (`FERROEHR__MULTIMEDIA__<KEY>`) | **boot error** — use the new spelling |
-| `FERROEHR_VALIDATION_EXTERNAL_TERMINOLOGY_*` | `terminology.external.*` | **boot error** — use the new spelling |
-| `FERROEHR__SUBJECT_PROXY__SYSTEMS__*` | `subject_proxy.systems.*` — same spelling, now actually binds | binds for the first time |
-| `FERROEHR__QUERY__PLAN_CACHE_CAPACITY` / `_TIMEOUT_MS` | `query.*` — same spelling, now strict-parsed | behaviour change (bad values now error) |
-| the nine `FERROEHR_*_CONFIG` file pointers | — | **removed** — merge each file's contents into `ferroehr.toml` under its `[section]` |
+## Variables outside the server's namespace
 
 The `PostgreSQL init` container variables are `PG_INIT_USER` / `_PASSWORD` /
 `_DB` — they configure the database container, not the server, and sit
 outside the server's reserved `FERROEHR_` namespace.
+
+Inside that namespace, a handful of names are deliberately **not**
+configuration keys and pass the strict sweep untouched: `FERROEHR_CONFIG`
+(the config-file pointer), `FERROEHR_HEALTHCHECK_URL` (the container
+healthcheck), the build-stamp variables, and the Compose parameterization
+(image tags, host ports, CPU/memory limits). They keep a single `_` by
+design, which is exactly what distinguishes them from configuration keys.

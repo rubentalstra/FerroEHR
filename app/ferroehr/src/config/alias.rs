@@ -2,17 +2,18 @@
 //! conventional aliases, and the list-typed key registry. No openEHR spec governs
 //! configuration — our own design.
 //!
-//! There is deliberately NO legacy-variable remapping here (greenfield, owner
-//! ruling 2026-07-15): a pre-redesign spelling is an unknown variable and
-//! fails at boot with the exact uniform suggestion (`strict`), never a
-//! silently-honoured alias.
+//! There is deliberately NO alias-remapping layer here: an unrecognized
+//! variable in the reserved namespace is a boot error carrying the uniform
+//! spelling it should have had (`strict`), never a silently-honoured
+//! synonym.
 
 /// Reserved-namespace names that are NOT configuration keys and must pass the
 /// strict env sweep untouched: the config-file pointer, the healthcheck arg,
 /// the build-time vars, and the compose/infra parameterization that can leak
-/// into the container environment. These keep their historical single-`_`
-/// spelling by design — `FERROEHR_CONFIG` is a file pointer, not a config key,
-/// so it never joins the uniform `FERROEHR__` grammar.
+/// into the container environment. These keep a single `_` by design, which is
+/// what distinguishes them from configuration keys — `FERROEHR_CONFIG` is a
+/// file pointer, not a config key, so it never joins the uniform `FERROEHR__`
+/// grammar.
 pub(super) const ALLOWLIST: &[&str] = &[
     "FERROEHR_CONFIG",
     "FERROEHR_HEALTHCHECK_URL",
@@ -65,8 +66,9 @@ pub(super) const SECTIONS: &[&str] = &[
     "subject_proxy",
 ];
 
-/// The two PERMANENT conventional aliases — 12-factor ecosystem names,
-/// not legacy: they sit BELOW their `FERROEHR__` forms within the env layer.
+/// The two PERMANENT conventional aliases — 12-factor ecosystem names every
+/// deployment platform already sets; they sit BELOW their `FERROEHR__` forms
+/// within the env layer.
 /// `(external_name, canonical FERROEHR__ env form)`.
 pub(super) const CONVENTIONAL: &[(&str, &str)] = &[
     ("DATABASE_URL", "FERROEHR__DB__URL"),
