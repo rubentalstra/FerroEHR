@@ -104,35 +104,70 @@ migrations:
   runByMigratorRole: true
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Secret values injected as FERROEHR_* env from a chart-managed Secret. Anything
-# set here is rendered from values (keep it out of committed values — prefer an
-# external secret store / IRSA, or set these via `helm --set`/a values overlay
-# from your secret manager). Each maps to the matching in-TOML key but wins over
-# the file (env layer). Empty = not injected (the ConfigMap value, if any, stands).
+# Secret values carried by a chart-managed Secret. Anything set here is rendered
+# from values (keep it out of committed values — prefer an external secret store
+# / IRSA, or set these via `helm --set`/a values overlay from your secret
+# manager). Each maps to the matching in-TOML key and wins over the file layer;
+# empty = not supplied (the ConfigMap value, if any, stands).
+#
+# HOW each one reaches the process differs, and the reason is a security one: a
+# secret mounted as a read-only FILE is preferred over an environment variable,
+# which is readable through /proc/<pid>/environ and inherited by every child
+# process (OWASP Kubernetes Security Cheat Sheet,
+# https://cheatsheetseries.owasp.org/cheatsheets/Kubernetes_Security_Cheat_Sheet.html).
+# So every value whose config key has a `*_file` sibling is MOUNTED at
+# /etc/ferroehr-secrets/<config.path> and the chart passes only the PATH as env.
+# The three that have no `*_file` sibling (db.url, events.url,
+# fhir.outbound.url) still pass their value as env — that is a config-tree gap,
+# not a chart choice.
 # ─────────────────────────────────────────────────────────────────────────────
 secrets:
-  # -- Symmetric HS256 secret for [auth.oidc] (dev/test) → FERROEHR__AUTH__OIDC__HMAC_SECRET.
+  # -- Symmetric HS256 secret for [auth.oidc] (dev/test). MOUNTED as
+  # /etc/ferroehr-secrets/auth.oidc.hmac_secret (auth.oidc.hmac_secret_file).
   authOidcHmacSecret: ""
-  # -- PGP key passphrase (config.signing.mode=pgp) → FERROEHR__SIGNING__KEY_PASSPHRASE.
+  # -- PGP key passphrase (config.signing.mode=pgp). MOUNTED as
+  # /etc/ferroehr-secrets/signing.key_passphrase (signing.key_passphrase_file).
   signingKeyPassphrase: ""
-  # -- AMQP broker URL for [events] (carries credentials) → FERROEHR__EVENTS__URL.
+  # -- AMQP broker URL for [events] (carries credentials) → FERROEHR__EVENTS__URL
+  # env: events.url has no `*_file` sibling to point at a mounted file.
   eventsUrl: ""
-  # -- AMQP broker URL for [fhir.outbound] (carries credentials) → FERROEHR__FHIR__OUTBOUND__URL.
+  # -- AMQP broker URL for [fhir.outbound] (carries credentials) →
+  # FERROEHR__FHIR__OUTBOUND__URL env: fhir.outbound.url has no `*_file` sibling.
   fhirOutboundUrl: ""
-  # -- S3 access key id for [multimedia] → FERROEHR__MULTIMEDIA__ACCESS_KEY_ID.
-  # Prefer IRSA/Workload-Identity (leave empty) on cloud.
+  # -- S3 access key id for [multimedia] → FERROEHR__MULTIMEDIA__ACCESS_KEY_ID
+  # env. Not a secret in the server's own model (it is reported unredacted by
+  # /management/env); prefer IRSA/Workload-Identity (leave empty) on cloud.
   multimediaAccessKeyId: ""
-  # -- S3 secret access key for [multimedia] → FERROEHR__MULTIMEDIA__SECRET_ACCESS_KEY.
+  # -- S3 secret access key for [multimedia]. MOUNTED as
+  # /etc/ferroehr-secrets/multimedia.secret_access_key
+  # (multimedia.secret_access_key_file).
   multimediaSecretAccessKey: ""
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Prometheus scraping. When enabled the chart adds the prometheus.io scrape pod
-# annotations (requires config.management.enabled). Set the endpoint itself to
-# `public` via config.management.endpoints.prometheus.
+# Prometheus scraping. Whichever mechanism you use, the endpoint itself must be
+# opened with config.management.endpoints.prometheus (requires
+# config.management.enabled) — the chart only arranges DISCOVERY.
+#
+# Two mechanisms, and they are not interchangeable: the prometheus.io/* pod
+# annotations work with a Prometheus that does kubernetes_sd discovery in its own
+# scrape config, while an operator-managed Prometheus (kube-prometheus-stack)
+# ignores them entirely and selects targets through ServiceMonitor objects
+# (https://prometheus-operator.dev/docs/developer/getting-started/).
 # ─────────────────────────────────────────────────────────────────────────────
 metrics:
-  # -- Add prometheus.io scrape annotations.
+  # -- Add prometheus.io scrape annotations to the pods.
   enabled: false
+  serviceMonitor:
+    # -- Render a Prometheus Operator ServiceMonitor. Needs the
+    # monitoring.coreos.com CRDs installed, or the install fails on an unknown kind.
+    enabled: false
+    # -- Namespace for the ServiceMonitor; empty = the release namespace.
+    namespace: ""
+    # -- Extra labels, for the `serviceMonitorSelector` your Prometheus matches on.
+    labels: {}
+    # -- Scrape interval / timeout.
+    interval: 30s
+    scrapeTimeout: 10s
 
 # ═════════════════════════════════════════════════════════════════════════════
 # ferroehr.toml — rendered VERBATIM into the ConfigMap as /etc/ferroehr/ferroehr.toml
@@ -359,9 +394,13 @@ networkPolicy:
   # -- Install a default-deny-ingress NetworkPolicy that only admits traffic to
   # the API (and management) port. Strongly recommended for a PHI workload.
   enabled: true
-  # -- Additional ingress `from` selectors admitted to the API port. Empty =
-  # admit from any pod in the namespace to the API port only (still default-deny
-  # for every other port). Tighten to your ingress-controller namespace/pods.
+  # -- Ingress `from` selectors admitted to the API port. Empty means the rule
+  # carries no `from` at all, and a NetworkPolicy ingress rule without `from`
+  # admits EVERY source — other namespaces and off-cluster clients included, not
+  # just this namespace
+  # (https://kubernetes.io/docs/concepts/services-networking/network-policies/).
+  # Only the port list is narrowed in that state, so SET this to your
+  # ingress-controller namespace/pods for a PHI workload.
   ingressFrom: []
   # -- Restrict egress too (default-deny egress except DNS + the DB/broker/TS).
   # Off by default because egress targets are deployment-specific; see the doc.

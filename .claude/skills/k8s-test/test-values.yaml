@@ -1,0 +1,41 @@
+# Values for a cluster test of the chart — the smallest overlay that produces a
+# SERVING deployment, and nothing that weakens the security posture.
+#
+# Why each key is here:
+#   database.existingSecret  the chart never ships a database; postgres.yaml
+#                            creates this Secret
+#   config.auth.basic.users  the chart's own default is auth on with NO mechanism,
+#                            so every request 401s and no openEHR call can be
+#                            proven. This is the published quickstart credential
+#                            (ferroehr/ferroehr, Argon2id) — dev only.
+#
+# A password HASH in `config` lands in the ConfigMap, not a Secret, because the
+# server has no `password_hash_file` indirection. Fine for a test; for anything
+# real use config.auth.oidc.
+replicaCount: 2
+
+database:
+  existingSecret: ferroehr-db
+  existingSecretKey: FERROEHR__DB__URL
+
+config:
+  # ── Version-skew block: DELETE these once `appVersion` names an image that has
+  # the keys. They exist only because the chart's `config:` defaults track the
+  # develop tree while `image.tag` here is the last PUBLISHED release, which
+  # rejects a key it does not know. Confirm the current set against the image
+  # itself with `ferroehr config default` (the command is in the skill), rather
+  # than trusting this list.
+  spec_profile: null
+  db:
+    statement_timeout_ms: null
+  server:
+    limits: null
+    rate_limit: null
+    connection: null
+  auth:
+    enabled: true
+    basic:
+      users:
+        - username: ferroehr
+          password_hash: '$argon2id$v=19$m=19456,t=2,p=1$ZmVycm9laHJEZXZTYWx0$be5nPwWjfUl1qvSrvkvqvdMOuCgM0VFcN/VN4MFLjT8'
+          roles: [ADMIN, USER]
