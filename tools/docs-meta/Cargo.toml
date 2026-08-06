@@ -1,0 +1,23 @@
+[package]
+name = "docs-meta"
+version.workspace = true
+description = "Injects per-page search metadata (canonical, description, Open Graph, BreadcrumbList) into the assembled documentation site"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+documentation.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories.workspace = true
+publish = false
+
+# Deliberately dependency-free (std only): this runs inside the docs workflow,
+# which installs the Rust toolchain but keeps the site render free of any other
+# build step, so every dependency here is one more thing that can break a
+# documentation deploy.
+[dependencies]
+
+[lints]
+workspace = true
