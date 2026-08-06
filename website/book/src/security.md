@@ -418,11 +418,18 @@ Two properties worth knowing because they are not obvious:
 
 ## Verifying what you pulled
 
-Every published artifact carries **signed** build provenance and an SBOM, so you
-can establish that a binary or image came from this repository's build and see
-what went into it. Provenance was already being generated before — BuildKit's
-SLSA statement on each image index — but unsigned, which means readable and not
-verifiable. It is signed through Sigstore now.
+Artifacts published from `3.17.4` onward carry **signed** build provenance and an
+SBOM, so you can establish that a binary or image came from this repository's
+build and see what went into it. Provenance was already being generated before —
+BuildKit's SLSA statement on each image index — but unsigned, which means readable
+and not verifiable. It is signed through Sigstore from this release on.
+
+> [!IMPORTANT]
+> Signing landed in the publishing lanes during the `3.17.4` cycle, so **`3.17.3`
+> and every earlier tag carry no attestation**: the commands below answer `no
+> attestations found` for them. That is the honest state, not a verification
+> failure — there is nothing to verify, because those artifacts were built before
+> the lane signed anything.
 
 **An image:**
 

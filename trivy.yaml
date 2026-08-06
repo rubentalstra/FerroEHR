@@ -3,12 +3,19 @@
 #
 # Two deliberate choices, both stated rather than implied:
 #
-#   * `ignore-unfixed` on the IMAGE scans. A CVE in an upstream base image with
-#     no fix available is not something a merge can resolve, and a gate that
-#     fails on it stops being a gate within a week — it becomes a thing people
-#     re-run until it passes. Unfixed findings still appear in the job log;
-#     they just do not block. Fixed ones do block, because those we can act on
-#     by rebuilding.
+#   * `ignore-unfixed` on the IMAGE scans (set below under `vulnerability:`). A
+#     CVE in an upstream base image with no fix available is not something a
+#     merge can resolve, and a gate that fails on it stops being a gate within a
+#     week — it becomes a thing people re-run until it passes. Unfixed findings
+#     still appear in the job log; they just do not block. Fixed ones do block,
+#     because those we can act on by rebuilding.
+#     It lives HERE rather than only as a workflow input because a lane that
+#     forgets the flag silently changes what the gate means: measured 2026-08-06
+#     on the published `ferroehr-postgres:latest`, the same scan reports **55**
+#     HIGH/CRITICAL findings without it and **0** with it. The `severity` floor
+#     was already shared this way; this key was not, and the scheduled
+#     published-image scan (image-scan.yml) would have fired on unfixed findings
+#     every Monday until someone stopped reading it.
 #   * HIGH and CRITICAL only. MEDIUM on a distroless image plus a Postgres base
 #     is noise at a volume that hides the two severities that matter.
 #
@@ -18,6 +25,12 @@
 severity:
   - HIGH
   - CRITICAL
+
+vulnerability:
+  # Only findings we can actually act on by rebuilding. The nesting is
+  # load-bearing: a top-level `ignore-unfixed` key is silently ignored by Trivy
+  # (verified — the same scan still returned every unfixed finding).
+  ignore-unfixed: true
 
 scan:
   skip-dirs:
@@ -37,3 +50,7 @@ scan:
 # The adjudicated-exception file. Each entry there carries its reason; see its
 # header for the policy.
 ignorefile: .trivyignore.yaml
+
+# NOTE: the OpenVEX documents under security/vex/ are NOT listed here — Trivy
+# takes VEX sources only as `--vex` arguments, so each lane passes them
+# explicitly (image-scan.yml does).

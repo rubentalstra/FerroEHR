@@ -1,0 +1,173 @@
+# .github/workflows/image-scan.yml
+#
+# Scheduled vulnerability scan of the PUBLISHED container images (issue #2086;
+# OWASP Kubernetes Security Cheat Sheet §4.3 "Implement continuous security
+# vulnerability scanning").
+#
+# WHY this is not the same as the scan in containers.yml. That one scans an image
+# the run just BUILT, which catches what was known at build time and nothing
+# after. A CVE published the week after a release applies to the image people are
+# actually running, and until this lane existed nothing in the repository looked
+# again. The three images are scanned where a user pulls them — at their released
+# tag on GHCR — not from a local build.
+#
+# `ferroehr-postgres` is the image this will actually fire on: it is built on the
+# upstream `postgres` image, so its OS package set is not ours and its CVEs arrive
+# on someone else's schedule. The distroless app and console images carry almost
+# no OS surface by comparison.
+#
+# The adjudicated exceptions carry over rather than being re-argued: `trivy.yaml`
+# brings `.trivyignore.yaml`, `ignore-unfixed` and the HIGH/CRITICAL floor, and
+# `--vex` applies the OpenVEX documents under `security/vex/`.
+#
+# NOTE: the VEX documents bind here even though `.trivyignore.yaml` records that
+# they do not bind in the build-time lane — measured 2026-08-06: the `pkg:oci/…`
+# products match a PUBLISHED reference (by tag and by digest), and the build lane
+# scans `ferroehr-postgres` under a local tag, which is what fails to match.
+name: Published image scan
+
+on:
+  schedule:
+    # Mondays 07:13 UTC — off the hour, and clear of the other scheduled lanes
+    # (codeql 05:23, latest-deps 05:17, scorecard 05:37, spec watchers 06:17/06:47).
+    - cron: "13 7 * * 1"
+  workflow_dispatch:
+    inputs:
+      report_only:
+        description: "Report findings without filing or updating an issue"
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: image-scan
+  cancel-in-progress: false
+
+permissions: {}
+
+env:
+  # `latest` is set only on a `v*` tag push (containers.yml), so it tracks
+  # releases and is what an operator following the quickstart pulls. The resolved
+  # digest is recorded in the run summary so a finding is attributable to exact
+  # bytes rather than to a moving tag.
+  SCAN_TAG: latest
+  TRIVY_VERSION: "0.73.0"
+
+jobs:
+  scan:
+    name: scan published images
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: read # pull the published images
+      issues: write # file/update the one tracking issue below
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # No build cache is restored in this lane at all: it decides whether
+      # published artifacts are safe, so nothing a run could have poisoned
+      # should influence its answer.
+      - uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # v0.3.1
+        with:
+          version: v${{ env.TRIVY_VERSION }}
+          cache: false
+
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Scan every published image
+        id: scan
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          # Every VEX document under security/vex/, passed as repeated --vex flags.
+          vex_args=()
+          for doc in security/vex/*.json; do
+            [ -e "$doc" ] || continue
+            vex_args+=(--vex "$doc")
+          done
+          echo "VEX documents applied: ${#vex_args[@]} (2 args per document)"
+
+          total=0
+          : > findings.md
+          for image in ferroehr ferroehr-postgres ferroehr-admin-ui; do
+            ref="ghcr.io/${OWNER}/${image}:${SCAN_TAG}"
+            digest=$(docker buildx imagetools inspect "$ref" --format '{{.Manifest.Digest}}')
+            echo "::group::${image} (${digest})"
+            trivy image --config trivy.yaml --scanners vuln \
+              "${vex_args[@]}" -f json -o "${image}.json" "$ref"
+            count=$(jq '[.Results[]?.Vulnerabilities // [] | .[]] | length' "${image}.json")
+            trivy image --config trivy.yaml --scanners vuln \
+              "${vex_args[@]}" -f table "$ref" || true
+            echo "::endgroup::"
+            echo "| \`${image}\` | \`${digest}\` | ${count} |" >> findings.md
+            total=$((total + count))
+          done
+          echo "total=$total" >> "$GITHUB_OUTPUT"
+          {
+            printf '## Published image scan\n\n'
+            printf 'Tag `%s`, Trivy %s, HIGH/CRITICAL with a fix available, VEX applied.\n\n' \
+              "$SCAN_TAG" "$TRIVY_VERSION"
+            printf '| image | digest | findings |\n|---|---|---|\n'
+            cat findings.md
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "total findings: $total"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: image-scan-reports
+          path: "*.json"
+          if-no-files-found: warn
+          retention-days: 30
+
+      # A finding does TWO things, because either alone fails quietly. A red
+      # scheduled run is invisible to anyone not looking at the Actions tab, and
+      # an issue with no failing check can be closed without the finding being
+      # addressed. So: one tracking issue (updated by comment on later runs, never
+      # duplicated — the same dedup-by-searching-the-board approach as the spec
+      # watchers) AND a non-zero exit.
+      - name: File or update the tracking issue
+        if: steps.scan.outputs.total != '0' && !inputs.report_only
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TOTAL: ${{ steps.scan.outputs.total }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          title="security(images): published images carry fixable HIGH/CRITICAL findings"
+          existing=$(gh issue list --repo "$REPO" --state open --search "in:title \"$title\"" \
+                       --json number --jq '.[0].number // empty')
+          {
+            printf 'A scheduled scan of the PUBLISHED images found **%s** fixable HIGH/CRITICAL findings.\n\n' "$TOTAL"
+            printf '| image | digest | findings |\n|---|---|---|\n'
+            cat findings.md
+            printf '\nFull reports are attached to the run as `image-scan-reports`: %s\n' "$RUN_URL"
+            printf '\nThese are findings **with a fix available**, so the remedy is a rebuild and'
+            printf ' re-release of the affected image — not a VEX statement. A finding that is'
+            printf ' genuinely unreachable in our usage belongs in `security/vex/` with its'
+            printf ' argument, per `security/vex/README.md`.\n'
+          } > body.md
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "$REPO" --body-file body.md
+            echo "commented on #$existing"
+          else
+            gh issue create --repo "$REPO" --title "$title" \
+              --label bug --label P1 --body-file body.md
+          fi
+
+      - name: Fail when the published images carry fixable findings
+        if: steps.scan.outputs.total != '0'
+        env:
+          TOTAL: ${{ steps.scan.outputs.total }}
+        run: |
+          echo "::error::${TOTAL} fixable HIGH/CRITICAL findings in the published images — see the run summary and the tracking issue."
+          exit 1

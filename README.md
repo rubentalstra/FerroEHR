@@ -474,9 +474,10 @@ helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
 
 There is no HTTP chart repository, so `helm repo add` does not apply — OCI is the
 only publication path. The chart version and the image tag are separate SemVer
-lines: `--version` pins the chart, `--set image.tag=` pins the server. Both the
-chart and the images carry signed keyless provenance
-(`gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:4.0.0 -R rubentalstra/FerroEHR`).
+lines: `--version` pins the chart, `--set image.tag=` pins the server. The chart
+and the images are published with signed keyless provenance
+(`gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:<chart-version> -R rubentalstra/FerroEHR`);
+signing landed in the 3.17.4 cycle, so tags built before it carry none.
 
 See the [Kubernetes chapter](https://ferroehr.eu/docs/latest/installation/kubernetes.html)
 and the [documentation website](https://ferroehr.eu/)
