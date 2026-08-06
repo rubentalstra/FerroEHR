@@ -229,6 +229,97 @@ async fn every_documented_path_routes() {
     assert!(checked >= 40, "drove only {checked} documented operations");
 }
 
+/// The Swagger UI mount path must land somewhere its RELATIVE asset URLs
+/// resolve, and must not loop doing it.
+///
+/// The dist `index.html` references its bundle relatively (`./swagger-ui.css`,
+/// `./swagger-ui-bundle.js`). Served at the slash-less mount path, a browser
+/// resolves those against the PARENT directory — every one `404`s and the page
+/// renders empty with nothing a user can see. So the assertion is not "the mount
+/// path answers 200": it is that following the mount path reaches a document
+/// whose relative references resolve to routes that exist. The redirect target
+/// also may not be the trailing-slash form, which `NormalizePathLayer` strips
+/// straight back here.
+#[tokio::test]
+async fn the_swagger_mount_path_lands_where_its_relative_assets_resolve() {
+    let app = full_app().await;
+    let mount = "/ferroehr/rest/swagger-ui";
+
+    let resp = app.clone().oneshot(get(mount)).await.expect("response");
+    assert_eq!(
+        resp.status(),
+        StatusCode::TEMPORARY_REDIRECT,
+        "the mount path must redirect rather than serve a body whose assets cannot resolve"
+    );
+    let location = resp
+        .headers()
+        .get(http::header::LOCATION)
+        .expect("a redirect must carry Location")
+        .to_str()
+        .expect("ascii Location")
+        .to_owned();
+    assert_eq!(location, format!("{mount}/index.html"));
+    assert!(
+        !location.ends_with('/'),
+        "a trailing-slash target is stripped by NormalizePathLayer back to {mount} — an \
+         infinite loop, which is the bug this replaced: {location}"
+    );
+
+    // Following it once must terminate in the document itself, never another
+    // redirect.
+    let page = app.clone().oneshot(get(&location)).await.expect("response");
+    assert_eq!(
+        page.status(),
+        StatusCode::OK,
+        "{location} must serve the UI"
+    );
+    let html = page.into_body().collect().await.expect("body").to_bytes();
+    let html = String::from_utf8_lossy(&html).into_owned();
+    assert!(html.contains("swagger-ui"), "not the Swagger UI: {html}");
+
+    // Every relative reference in that document, resolved against the directory
+    // the redirect target sits in, must be a route that exists. This is the
+    // assertion that actually catches the blank page.
+    let dir = location
+        .rsplit_once('/')
+        .map(|(head, _)| head)
+        .expect("the target has a directory");
+    let mut resolved = 0usize;
+    for reference in relative_references(&html) {
+        let asset = format!("{dir}/{}", reference.trim_start_matches("./"));
+        let resp = app.clone().oneshot(get(&asset)).await.expect("response");
+        assert_eq!(
+            resp.status(),
+            StatusCode::OK,
+            "the UI references {reference}, which resolves to {asset} and does not serve"
+        );
+        resolved += 1;
+    }
+    assert!(
+        resolved >= 4,
+        "expected the UI to reference its CSS and JS bundle; found {resolved} relative references"
+    );
+}
+
+/// Every `href`/`src` in `html` that is relative (not absolute, not a URL).
+fn relative_references(html: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    for attribute in ["href=\"", "src=\""] {
+        let mut rest = html;
+        while let Some(at) = rest.find(attribute) {
+            rest = &rest[at + attribute.len()..];
+            let Some(end) = rest.find('"') else { break };
+            let value = &rest[..end];
+            rest = &rest[end..];
+            let absolute = value.starts_with('/') || value.contains("://");
+            if !absolute && !value.is_empty() && !value.starts_with('#') {
+                out.push(value.to_owned());
+            }
+        }
+    }
+    out
+}
+
 // ── Test 3: every spec-selector family document is non-empty ──────────────────
 
 /// Every family the Swagger spec-selector offers must serve a non-empty

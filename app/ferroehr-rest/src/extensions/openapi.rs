@@ -36,10 +36,15 @@
 //! endpoints) carry no requirement.
 //!
 //! The UI assets are served through [`utoipa_swagger_ui::serve`] directly rather
-//! than [`utoipa_swagger_ui::SwaggerUi`]'s router: the router answers the bare
-//! mount path with a `303` to the trailing-slash form, which the serve-time
-//! `NormalizePathLayer` strips again before routing — an infinite redirect loop.
-//! Serving `index.html` for the bare path outright has no redirect to fight.
+//! than [`utoipa_swagger_ui::SwaggerUi`]'s router, and the mount path redirects
+//! to `index.html` UNDER the mount. Both halves are load-bearing. The dist
+//! `index.html` references its assets relatively (`./swagger-ui.css`), so a body
+//! served at the slash-less mount path renders empty — the browser resolves them
+//! against the parent directory and every one `404`s. And the redirect target
+//! cannot be the trailing-slash form, which is what `SwaggerUi`'s own router
+//! answers with: the serve-time `NormalizePathLayer` strips the slash before
+//! routing, so that is an infinite loop. `index.html` has no trailing slash to
+//! strip.
 
 use std::sync::Arc;
 
@@ -353,25 +358,42 @@ async fn openapi_json(State(state): State<AppState>) -> Response {
     ([(header::CONTENT_TYPE, "application/json")], body).into_response()
 }
 
-/// The Swagger UI index (`GET /ferroehr/rest/swagger-ui`).
+/// The Swagger UI mount path (`GET /ferroehr/rest/swagger-ui`).
 ///
 /// No openEHR spec governs a Swagger UI — our own discoverability surface.
 /// Public (no auth requirement); config-gated by the Swagger UI (absent — a
-/// router `404` — when disabled). Serves the embedded `index.html`
-/// (`200 text/html`); the sibling asset route (`{*file}`, a plain route, not
-/// documented here) answers `404` for an unknown asset. The spec selector
-/// offers one document per API family — the standardised ITS-REST groups
-/// (`openEHR — …`, selected by resource path) and the server's own extensions
-/// (`FerroEHR — …`, selected by tag) — each filtered from the one
+/// router `404` — when disabled). Answers `307` to `index.html` under the mount;
+/// the sibling asset route (`{*file}`, a plain route, not documented here)
+/// serves the UI bundle and answers `404` for an unknown asset. The spec
+/// selector offers one document per API family — the standardised ITS-REST
+/// groups (`openEHR — …`, selected by resource path) and the server's own
+/// extensions (`FerroEHR — …`, selected by tag) — each filtered from the one
 /// server-generated composed document, plus that complete document last.
 /// Nothing vendored is served.
 #[utoipa::path(
     get, path = "/ferroehr/rest/swagger-ui", tag = "openapi",
-    responses((status = 200, description = "The Swagger UI index page.", content_type = "text/html"))
+    responses((status = 307, description = "Redirect to `index.html` under the mount path, \
+        which is where the UI's relative asset URLs resolve."))
 )]
 async fn swagger_ui_index(State(state): State<AppState>) -> Response {
-    let config = swagger_config(state.config());
-    serve_ui_file("", &config)
+    redirect_to_index(&state.config().server.swagger_ui_path())
+}
+
+/// The mount path's redirect target: `index.html` under the mount.
+///
+/// The dist `index.html` references its assets RELATIVELY (`./swagger-ui.css`,
+/// `./swagger-ui-bundle.js`), so serving it at the slash-less mount path renders
+/// an empty page: the browser resolves those against the parent directory and
+/// every one of them `404`s. The target deliberately names `index.html` rather
+/// than the trailing-slash form, which `NormalizePathLayer` would strip straight
+/// back to this route
+/// (<https://docs.rs/tower-http/latest/tower_http/normalize_path/index.html>).
+fn redirect_to_index(ui_path: &str) -> Response {
+    (
+        StatusCode::TEMPORARY_REDIRECT,
+        [(header::LOCATION, format!("{ui_path}/index.html"))],
+    )
+        .into_response()
 }
 
 /// One spec-selector family document
@@ -809,13 +831,13 @@ pub(crate) fn swagger_router(cfg: &AppConfig) -> Router<AppState> {
     // mount path (index.html; serve() maps "" to it — no redirect, no loop) and
     // the asset path.
     let config = swagger_config(cfg);
-    let index_config = Arc::clone(&config);
+    let redirect_target = ui_path.clone();
     router
         .route(
             &ui_path,
             get(move || {
-                let config = Arc::clone(&index_config);
-                async move { serve_ui_file("", &config) }
+                let target = redirect_target.clone();
+                async move { redirect_to_index(&target) }
             }),
         )
         .route(

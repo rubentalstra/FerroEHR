@@ -893,7 +893,7 @@ async fn app_with_swagger() -> (testkit::TestDb, Router) {
 async fn swagger_ui_gets_a_policy_it_can_run_under() {
     let (_pg, app) = app_with_swagger().await;
     let req = Request::builder()
-        .uri("/ferroehr/rest/swagger-ui")
+        .uri("/ferroehr/rest/swagger-ui/index.html")
         .body(Body::empty())
         .unwrap();
     let (status, headers, _body) = send(app, req).await;
@@ -923,7 +923,7 @@ async fn swagger_ui_gets_a_policy_it_can_run_under() {
 async fn the_swagger_page_needs_no_inline_allowance() {
     let (_pg, app) = app_with_swagger().await;
     let req = Request::builder()
-        .uri("/ferroehr/rest/swagger-ui")
+        .uri("/ferroehr/rest/swagger-ui/index.html")
         .body(Body::empty())
         .unwrap();
     let (status, headers, body) = send(app, req).await;
