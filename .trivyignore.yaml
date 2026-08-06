@@ -1,0 +1,98 @@
+# Adjudicated scanner exceptions (Trivy ignore file).
+#
+# Every entry states WHAT is exempt and WHY. There is no blanket suppression and
+# no lowered severity threshold standing in for one.
+
+misconfigurations:
+  # AVD-DS-0002 "specify at least 1 USER command with a non-root user".
+  #
+  # The app and console images state `USER nonroot:nonroot` explicitly, so this
+  # exception is for the PostgreSQL image alone — where satisfying the check
+  # would break the container. The upstream `postgres` entrypoint must start as
+  # root: it initializes or chowns the data directory and only then drops to the
+  # `postgres` user itself. A `USER postgres` line would make initialization fail
+  # on a fresh volume, so the check's advice is simply wrong for this image.
+  #
+  # The privilege is constrained where it actually can be: every deployment path
+  # runs this container with `cap_drop: [ALL]` plus only the five capabilities
+  # its privilege drop needs (CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID) and
+  # `no-new-privileges:true` — verified on the running container, not just
+  # asserted in a file.
+  - id: AVD-DS-0002
+    paths:
+      - docker/postgres/Dockerfile
+    statement: >-
+      The upstream postgres entrypoint requires root to initialize the data
+      directory and drops privileges itself; capabilities are dropped at the
+      deployment layer instead.
+
+# No secret exceptions. The deliberate development credentials (the quickstart's
+# Argon2id hash, the development HMAC secrets) were checked against the secret
+# scanner and are NOT flagged, so listing them here would be inventing
+# exceptions for findings that do not exist.
+secrets: []
+
+# Go standard-library advisories in `/usr/local/bin/gosu` — the privilege-dropping
+# helper the upstream `docker-library/postgres` image ships and which this image
+# inherits unchanged. Every one has a fix available (in Go, not in gosu), so
+# `ignore-unfixed` does not cover them: upstream has to rebuild the binary, and
+# FerroEHR adds no Go code to this image.
+#
+# The ARGUMENT lives in `security/vex/postgres-gosu.openvex.json` as an OpenVEX
+# `not_affected` / `vulnerable_code_not_in_execute_path` statement per CVE, with
+# the reachability reasoning: gosu sets uid/gid and execs, so it opens no socket
+# and parses no untrusted input, and the `net`, `net/http`, `net/mail`, `mime`
+# and `os.Root` packages these advisories concern are linked but never reached.
+# Making that document drive the gate directly requires purl matching that does
+# not bind for a locally-tagged image — tracked in #1990.
+#
+# The entries are per-CVE and path-scoped ON PURPOSE. A NEW advisory in gosu, or
+# any advisory in any other package of this image, still fails the gate; only
+# these fifteen, in this one binary, are adjudicated. Re-check on every
+# base-image bump: when upstream rebuilds gosu, these entries go.
+vulnerabilities:
+  - id: CVE-2025-61726
+    paths:
+      - usr/local/bin/gosu
+  - id: CVE-2025-61729
+    paths:
+      - usr/local/bin/gosu
+  - id: CVE-2025-68121
+    paths:
+      - usr/local/bin/gosu
+  - id: CVE-2026-25679
+    paths:
+      - usr/local/bin/gosu
+  - id: CVE-2026-27145
+    paths:
+      - usr/local/bin/gosu
+  - id: CVE-2026-32280
+    paths:
+      - usr/local/bin/gosu
+  - id: CVE-2026-32281
+    paths:
+      - usr/local/bin/gosu
+  - id: CVE-2026-32283
+    paths:
+      - usr/local/bin/gosu
+  - id: CVE-2026-33811
+    paths:
+      - usr/local/bin/gosu
+  - id: CVE-2026-33814
+    paths:
+      - usr/local/bin/gosu
+  - id: CVE-2026-39820
+    paths:
+      - usr/local/bin/gosu
+  - id: CVE-2026-39822
+    paths:
+      - usr/local/bin/gosu
+  - id: CVE-2026-39836
+    paths:
+      - usr/local/bin/gosu
+  - id: CVE-2026-42499
+    paths:
+      - usr/local/bin/gosu
+  - id: CVE-2026-42504
+    paths:
+      - usr/local/bin/gosu
