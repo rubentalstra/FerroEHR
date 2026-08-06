@@ -176,7 +176,7 @@ mod tests {
         fn assert_signature(
             _f: fn(
                 &std::path::Path,
-                Option<&crate::config::secret::Secret>,
+                Option<&Secret>,
             ) -> Result<
                 crate::versioning::signature::key::PgpKey,
                 crate::versioning::signature::key::KeyError,

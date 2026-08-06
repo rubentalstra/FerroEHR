@@ -80,10 +80,9 @@ impl AuditStore {
         .bind(event.tenant_id)
         .bind(fhir.clone())
         .fetch_one(&self.pool)
-        .await
-        .map_err(|e| AuditError::Store(e.to_string()))?
+        .await?
         .try_get::<Uuid, _>("id")
-        .map_err(|e| AuditError::Store(e.to_string()))
+        .map_err(AuditError::Store)
     }
 
     /// Persist a whole drained batch in ONE multi-row `INSERT` (UNNEST over
@@ -162,8 +161,7 @@ impl AuditStore {
         .bind(tenant_ids)
         .bind(fhir_docs)
         .execute(&self.pool)
-        .await
-        .map_err(|e| AuditError::Store(e.to_string()))?;
+        .await?;
         Ok(())
     }
 
@@ -211,15 +209,12 @@ impl AuditStore {
         )
         .bind(limit.max(1))
         .fetch_all(&self.pool)
-        .await
-        .map_err(|e| AuditError::Store(e.to_string()))?;
+        .await?;
         rows.into_iter()
             .map(|row| {
                 Ok((
-                    row.try_get::<Uuid, _>("id")
-                        .map_err(|e| AuditError::Store(e.to_string()))?,
-                    row.try_get::<serde_json::Value, _>("fhir")
-                        .map_err(|e| AuditError::Store(e.to_string()))?,
+                    row.try_get::<Uuid, _>("id")?,
+                    row.try_get::<serde_json::Value, _>("fhir")?,
                 ))
             })
             .collect()
@@ -240,8 +235,7 @@ impl AuditStore {
         )
         .bind(i32::try_from(retention_days).unwrap_or(i32::MAX))
         .execute(&self.pool)
-        .await
-        .map_err(|e| AuditError::Store(e.to_string()))?;
+        .await?;
         Ok(result.rows_affected())
     }
 
@@ -258,18 +252,16 @@ impl AuditStore {
         let (count_sql, count_values, sql, values) = build_search_statements(filter);
         let total: i64 = sqlx::query_scalar_with(sqlx::AssertSqlSafe(count_sql), count_values)
             .fetch_one(&self.pool)
-            .await
-            .map_err(|e| AuditError::Store(e.to_string()))?;
+            .await?;
 
         let rows = sqlx::query_with(sqlx::AssertSqlSafe(sql), values)
             .fetch_all(&self.pool)
-            .await
-            .map_err(|e| AuditError::Store(e.to_string()))?;
+            .await?;
         let documents = rows
             .into_iter()
             .map(|row| {
                 row.try_get::<serde_json::Value, _>("fhir")
-                    .map_err(|e| AuditError::Store(e.to_string()))
+                    .map_err(AuditError::Store)
             })
             .collect::<Result<Vec<_>, _>>()?;
         Ok((total, documents))
@@ -484,7 +476,10 @@ mod tests {
         let (baseline_count, _, baseline_page, _) = build_search_statements(&filter_with("benign"));
 
         for payload in HOSTILE {
-            let (count_sql, count_values, sql, values) =
+            // The page statement's own values are not inspected: both statements
+            // bind from the same condition, so asserting the count's bindings
+            // covers both, and the page text is compared byte for byte below.
+            let (count_sql, count_values, sql, _page_values) =
                 build_search_statements(&filter_with(payload));
             assert_eq!(
                 count_sql, baseline_count,
