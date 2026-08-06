@@ -3,7 +3,10 @@
 FerroEHR is open source (MIT; vendored openEHR artifacts remain Apache-2.0) and welcomes contributions. This
 chapter is a short orientation for anyone who wants to file an issue, report a
 vulnerability, or open a pull request; the authoritative documents live in the
-repository and are linked below.
+repository and are linked below. There is no contributor licence agreement and
+no copyright assignment — you keep your copyright, and the licence stays MIT
+for everyone. [Why FerroEHR exists](why-ferroehr.md) explains what the project
+asks of the companies that build on it, and why.
 
 ## Where to start
 

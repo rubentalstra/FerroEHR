@@ -23,7 +23,7 @@ ITS-REST 1.1.0 &nbsp;·&nbsp; AQL 1.1 &nbsp;·&nbsp; RM 1.2.0 **+ 1.1.0** &nbsp;
 [![openEHR CNF conformance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fdevelop%2Fdocs%2Fconformance%2Fferroehr%2Fbadge.json)](docs/conformance/ferroehr/CONFORMANCE_REPORT.md)
 [![CNF performance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fdevelop%2Fdocs%2Fconformance%2Fferroehr%2Fbadge-performance.json)](docs/conformance/ferroehr/CONFORMANCE_CERTIFICATE.md)
 
-[**Documentation**](https://ferroehr.eu/) · [Quick start](#quick-start) · [Features](#features) · [Spec versions](#choose-your-openehr-specification-generation) · [Rust crates](#the-openehr-specification-layer-as-rust-crates) · [Architecture](#architecture) · [Conformance](#conformance-measured-not-asserted) · [Deployment](#deployment) · [Roadmap](https://github.com/users/rubentalstra/projects/4) · [Contributing](#contributing-and-security)
+[**Documentation**](https://ferroehr.eu/) · [Why this exists](#why-this-project-exists) · [Quick start](#quick-start) · [Features](#features) · [Spec versions](#choose-your-openehr-specification-generation) · [Rust crates](#the-openehr-specification-layer-as-rust-crates) · [Architecture](#architecture) · [Conformance](#conformance-measured-not-asserted) · [Deployment](#deployment) · [Roadmap](https://github.com/users/rubentalstra/projects/4) · [Contributing](#contributing-and-security)
 
 </div>
 
@@ -39,7 +39,42 @@ compliance claim it makes is **machine-verified**: each release runs the full
 conformance catalogue against the live server and generates its own
 Conformance Statement and Certificate.
 
-## Why FerroEHR
+## Why this project exists
+
+openEHR is one of the few places in health IT where clinical meaning is
+written down as a shared, computable, vendor-neutral model — which is what
+lets a record outlive the application, the vendor and the procurement cycle
+that produced it. A specification that good deserves an implementation anyone
+can actually run: complete, openly developed, permissively licensed, and
+measured against the specification rather than asserted to match it. That is
+what FerroEHR is for.
+
+So the whole thing is MIT, with no open-core tier — multi-tenancy, RBAC/ABAC,
+ATNA audit, signatures, FHIR, events and the admin console are all in this
+repository under the same licence, and nothing is held back to be sold back
+to you. **Build on it, ship it, sell it: that is the point.** Integrate it,
+embed it, host it, white-label it, build closed products on top and charge
+for them. There is no contributor licence agreement, no copyright assignment
+and no "commercial licence" conversation to have — contributors keep their
+copyright, and what you build stays yours.
+
+What we ask in return — and cannot require — is that improvements come back.
+A private fork inherits the entire maintenance surface (spec releases,
+advisories, database upgrades, conformance re-runs, a re-merge every release)
+and pays for it alone; upstreamed, the same work is maintained once for
+everyone. In clinical software a defect found once should be fixed
+everywhere, and interoperability is a property of the *population* of
+implementations, not of any one of them. When the same fix is made privately
+in five places, the standard is no stronger and five teams have paid for it.
+
+Contributions are not only code: a reproducing bug report, a conformance case
+for uncovered behaviour, a specification ambiguity you had to resolve (we
+report the genuine ones upstream), documentation, or measurement from your
+own hardware all count. The full statement is
+[**Why FerroEHR exists**](https://ferroehr.eu/docs/latest/why-ferroehr.html)
+on the documentation site.
+
+## What makes it different
 
 - **Compliance you can verify, not just read.** The built-in CNF 2.0
   conformance runner executes the complete machine-readable catalogue across
