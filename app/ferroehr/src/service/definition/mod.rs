@@ -12,7 +12,7 @@
 //!   `specialize` edges), memoised for the AQL archetype predicate.
 //! - `opt14_convert` — the OPT-1.4 → ADL2 decomposition front end (a
 //!   service-only capability, no wire): reads a stored OPT's `opt14` model,
-//!   decomposes it into one 1.4-shaped `am24` source per embedded archetype
+//!   decomposes it into one 1.4-shaped `v2_4` source per embedded archetype
 //!   root, and runs each through the `openehr_adl::adl14` converter.
 //! - `query` — `I_DEFINITION_QUERY` (`i_definition_query.adoc`) +
 //!   `QUERY_DESCRIPTOR` + the stored-query CRUD. DEFINITION *owns* query

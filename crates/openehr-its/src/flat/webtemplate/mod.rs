@@ -11,14 +11,14 @@
 //! per-RM-type input mapping.
 
 mod builder;
-mod builder_am24;
+mod builder_v2_4;
 mod id;
 mod inputs;
 mod model;
 mod shape;
 
 pub use builder::build_web_template;
-pub use builder_am24::build_web_template_am24;
+pub use builder_v2_4::build_web_template_v2_4;
 pub(crate) use inputs::PROPORTION_KINDS;
 pub use model::{
     CodedName, WebTemplate, WebTemplateArchetypeSlot, WebTemplateBindingCodedValue,

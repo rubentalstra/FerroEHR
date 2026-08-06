@@ -117,7 +117,7 @@ impl FerroEhrService {
     }
 
     /// `GET /definition/template/adl2/{template_id}/example` — an example
-    /// COMPOSITION built from the ADL2 template's `WebTemplate` (the am24 front
+    /// COMPOSITION built from the ADL2 template's `WebTemplate` (the `v2_4` front
     /// end feeding the shared example generator). `kind`/`detail_level` are the
     /// `example_type`/`example_detail_level` query enums.
     ///

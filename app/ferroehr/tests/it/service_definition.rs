@@ -430,8 +430,7 @@ async fn opt_delete_refuses_while_referenced() {
 /// `parameters/query/filter_template_id.yaml` — "supports wildcards `*`";
 /// `master02-overview.adoc` §List Handling). Two OPTs are uploaded through the
 /// wire-shaped `DefinitionAdapter`; the list must honour the `template_id` glob
-/// and the `offset`/`fetch` window (previously every param was
-/// dropped and the full set returned).
+/// and the `offset`/`fetch` window rather than returning the full set.
 #[tokio::test]
 async fn template_adl14_list_filters_and_paginates() {
     let db = testkit::db().await.expect("testkit database");
@@ -1200,7 +1199,7 @@ async fn adl2_template_upload_wire_conflicts_on_duplicate() {
 ///
 /// Validation runs through the same choke point every commit uses
 /// (`content_valid` → `validate_for_commit` → `web_template_for` →
-/// `validate_archetype_conformance`), so this also exercises the am24
+/// `validate_archetype_conformance`), so this also exercises the `v2_4`
 /// archetype-conformance capture end-to-end.
 #[tokio::test]
 async fn adl2_template_resolves_on_the_commit_path_and_validates() {
@@ -1224,7 +1223,7 @@ async fn adl2_template_resolves_on_the_commit_path_and_validates() {
     assert_eq!(
         wt.sem_ver.as_deref(),
         Some("1.0.0"),
-        "resolved through the am24 (OPT2) front end, which carries semVer"
+        "resolved through the v2_4 (OPT2) front end, which carries semVer"
     );
 
     // A composition declaring that template validates end-to-end through the same

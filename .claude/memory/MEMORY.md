@@ -25,3 +25,4 @@
 - [Published crates cite specs only](published-crates-cite-specs-only.md) — openehr-* sources never reference AMB ids/cnf-runner; adjudications state decision + released ground in place
 - [BMM v3 on hold](bmm3-on-hold.md) — record #1920; v3-only issues get on-hold + blocked-by #1920, never the worklist; tracker-state only, landed code stays
 - [Multi-gen refactor: no legacy carried](multi-generation-refactor-no-legacy.md) — residue found under #1936 is removed or filed as a sub-issue of #1936, never kept
+- [No worktrees — one checkout](no-worktrees-single-checkout.md) — every change in the main tree on the current branch; one worker at a time with explicit fences, never `isolation: worktree`

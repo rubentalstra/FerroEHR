@@ -28,16 +28,16 @@
 //! # NOTE: `opt14` is a deliberately-separate OPT-XML wire adapter
 //!
 //! This module re-generates the AOM 1.4 `C_*` constraint tree that
-//! `openehr-am::am14` (BMM-generated) already carries. That duplication is
+//! `openehr-am::v1_4` (BMM-generated) already carries. That duplication is
 //! **intentional and scoped**, not an oversight — the two models are *not*
 //! structurally reconcilable. In summary, the Ocean **OPT-XML** wire shape
 //! (`Template.xsd` + `OpenehrProfile.xsd`, the codegen input here) diverges from
-//! the **AOM 1.4 BMM** logical model that drives `am14`:
+//! the **AOM 1.4 BMM** logical model that drives `v1_4`:
 //!
 //! - **Different domain-type sets.** OPT-XML has `C_CODE_PHRASE`,
 //!   `C_CODE_REFERENCE`, `C_DV_ORDINAL`, `C_DV_QUANTITY`, `C_DV_STATE`; the BMM
 //!   `openehr_archetype_profile` has `C_CODED_TEXT`, `C_ORDINAL`, `C_QUANTITY`.
-//!   `C_DV_STATE` and `C_CODE_REFERENCE` have no `am14` counterpart at all.
+//!   `C_DV_STATE` and `C_CODE_REFERENCE` have no `v1_4` counterpart at all.
 //! - **Different leaf shapes.** OPT-XML carries typed `assumed_value`
 //!   (`DV_QUANTITY`/`DV_ORDINAL`/`DV_STATE`/`CODE_PHRASE`) and `C_DV_ORDINAL.list`
 //!   of `DV_ORDINAL`; the BMM has `assumed_value: Any` (monomorphized to
@@ -49,16 +49,16 @@
 //!   (`OPERATIONAL_TEMPLATE`, `C_ARCHETYPE_ROOT`, `T_COMPLEX_OBJECT`,
 //!   `T_ATTRIBUTE`, `T_CONSTRAINT`, `FLAT_ARCHETYPE_ONTOLOGY`, `STATE_MACHINE`).
 //!
-//! Resolving the shared `C_*` to `am14` (the way RM leaves resolve to
+//! Resolving the shared `C_*` to `v1_4` (the way RM leaves resolve to
 //! `openehr_rm`/`openehr_base`) would force lossy mapping in both directions and
 //! would require synthesizing an XML codec against types whose shapes do not
 //! match the XSD element order / attribute split — the exact lossy shortcut
 //! the wire model rejects. So `opt14` stays a standalone XSD-shaped wire adapter.
 //!
 //! **Drift guard:** because the two models are generated independently (BMM →
-//! `am14`, XSD → `opt14`), an AOM-1.4 spec bump could silently drift them. The
+//! `v1_4`, XSD → `opt14`), an AOM-1.4 spec bump could silently drift them. The
 //! compile-time inventory sentinel in
-//! `crates/openehr-its/tests/opt14_am14_divergence.rs` fails the build if either
+//! `crates/openehr-its/tests/opt14_v1_4_divergence.rs` fails the build if either
 //! model gains or loses a constraint type, forcing a reconciliation + a design-record
 //! update.
 

@@ -256,7 +256,8 @@ async fn import_ehr_clone_into_fresh_target_reuses_source_id() {
     let extract = export_one(&source, ehr).await;
     target.import_ehr(None, extract).await.expect("import_ehr");
 
-    // The clone exists under the *same* EHR id in the (previously empty) target.
+    // The clone exists under the *same* EHR id in the target, which holds no
+    // other EHR.
     let target_status = target
         .get_ehr_status_at_time(ehr, None)
         .await

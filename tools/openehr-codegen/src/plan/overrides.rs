@@ -988,7 +988,7 @@ pub(crate) const BACK_REFERENCES: &[BackReference] = &[
         class: "ARCHETYPE_ONTOLOGY",
         field: "parent_archetype",
         citation: "AM AOM14 archetype_ontology (parent_archetype: Archetype which owns this terminology)",
-        reason: "The ADL 1.4 owner back-reference (am14 analogue of am24 owner_archetype), with \
+        reason: "The ADL 1.4 owner back-reference (v1_4 analogue of v2_4 owner_archetype), with \
                  the invariant parent_archetype.ontology = Current; forms the ARCHETYPE ↔ \
                  ARCHETYPE_ONTOLOGY cycle. \
                  (docs/specs/openehr/AM/docs/UML/classes/\

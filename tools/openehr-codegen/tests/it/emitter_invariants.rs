@@ -2,7 +2,7 @@
 //! **real** vendored BMM inputs (design doc §1). Each test drives
 //! `openehr_codegen::testsupport`, which runs the same LOAD → ANALYZE → PLAN →
 //! RENDER stages `cli.rs` drives. These are the machine-checked replacements for
-//! the emitter's formerly review-enforced or panic-only guarantees:
+//! the emitter's guarantees that no other check enforces:
 //! completeness, constructibility, byte-determinism, source-package mirroring,
 //! downstream-closure correctness, and decision-map integrity.
 
@@ -223,7 +223,7 @@ fn determinism_render_is_byte_identical_across_runs() {
 /// the SAME package path it occupies in its upstream source schema (BASE/LANG).
 #[test]
 fn mirroring_reemitted_classes_land_at_source_package_path() {
-    let mirrors = testsupport::am24_reemit_mirrors().unwrap();
+    let mirrors = testsupport::v2_4_reemit_mirrors().unwrap();
     assert!(!mirrors.is_empty(), "empty re-emission closure");
     for m in &mirrors {
         assert!(
@@ -250,7 +250,7 @@ fn mirroring_reemitted_classes_land_at_source_package_path() {
 /// into the AM 2.4 output.
 #[test]
 fn downstream_closure_contains_the_beom_bmm3_resource_set() {
-    let closure = testsupport::am24_reemit_closure().unwrap();
+    let closure = testsupport::v2_4_reemit_closure().unwrap();
     // beom expression/statement subtree (LANG-origin, extended by AM's rules):
     for expected in [
         "EXPRESSION",

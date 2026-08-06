@@ -1,5 +1,5 @@
-//! The am24 (ADL2 / OPT2) → Web Template front end
-//! ([`openehr_its::flat::webtemplate::build_web_template_am24`]).
+//! The `v2_4` (ADL2 / OPT2) → Web Template front end
+//! ([`openehr_its::flat::webtemplate::build_web_template_v2_4`]).
 //!
 //! Every case compiles a **real** ADL2 corpus source to its operational
 //! template (`openehr_adl::opt::create_opt`) and drives it through the same
@@ -7,7 +7,7 @@
 //! dialect-neutral seam of `ITS-REST simplified_formats master04 §"Web Template
 //! Metadata"`. The corpus lives in the sibling `openehr-adl` crate
 //! (`tests/corpus/adl2-reference`); `openehr-adl` is a dev-only dependency here
-//! (the production am24 front end takes an already-created OPT as input).
+//! (the production `v2_4` front end takes an already-created OPT as input).
 
 #![allow(
     clippy::expect_used,
@@ -35,7 +35,7 @@ use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
 use openehr_its::flat::example::{DetailLevel, ExampleType, example_composition};
 use openehr_its::flat::validation::validate_archetype_conformance;
 use openehr_its::flat::webtemplate::{
-    WebTemplate, WebTemplateCardinality, WebTemplateNode, build_web_template_am24,
+    WebTemplate, WebTemplateCardinality, WebTemplateNode, build_web_template_v2_4,
 };
 use openehr_its::rm_instance::{ValidationKind, validate_rm_and_terminology};
 
@@ -78,11 +78,11 @@ fn corpus_repo() -> ArchetypeRepository {
     repo
 }
 
-/// Compile a corpus source to its WebTemplate through the am24 front end.
+/// Compile a corpus source to its WebTemplate through the `v2_4` front end.
 fn web_template(rel: &str) -> WebTemplate {
     let archetype = parse_artefact(&read(rel), Dialect::Adl2).expect("parse ADL2");
     let opt = create_opt(&archetype, &corpus_repo()).expect("create_opt");
-    build_web_template_am24(&opt).expect("build am24 web template")
+    build_web_template_v2_4(&opt).expect("build v2_4 web template")
 }
 
 fn rm_types(node: &WebTemplateNode) -> Vec<String> {
@@ -175,8 +175,8 @@ fn synthesizes_the_composition_in_context_children() {
 
 #[test]
 fn example_generation_validates_at_every_level() {
-    // The validation bar for am24 examples: RM class invariants + RM-mandated
-    // terminology, template-independent (module NOTE — no am24 structural
+    // The validation bar for v2_4 examples: RM class invariants + RM-mandated
+    // terminology, template-independent (module NOTE — no v2_4 structural
     // conformance walk). Every detail level must be clean.
     let wt = web_template(COMP_ANNOTATIONS);
     for level in [
@@ -215,7 +215,7 @@ fn example_generation_is_deterministic() {
     );
 }
 
-// ── the am24 inputs mapping (C_ATTRIBUTE_TUPLE / C_TERMINOLOGY_CODE) ──────────
+// ── the v2_4 inputs mapping (C_ATTRIBUTE_TUPLE / C_TERMINOLOGY_CODE) ──────────
 
 #[test]
 fn quantity_units_come_from_the_magnitude_units_tuple() {
@@ -350,7 +350,7 @@ fn collect_ids(node: &WebTemplateNode, out: &mut Vec<String>) {
     }
 }
 
-// ── archetype-conformance validation (#269): the am24 builder now populates the
+// ── archetype-conformance validation (#269): the v2_4 builder now populates the
 //    validation-only constraint fields the walk reads, symmetric with OPT 1.4 ──
 
 /// Every `card_all` entry in the tree (depth-first).
@@ -391,9 +391,9 @@ fn pad_items(v: &mut serde_json::Value) {
 }
 
 #[test]
-fn am24_populates_archetype_conformance_constraints() {
+fn v2_4_populates_archetype_conformance_constraints() {
     // The apgar OBSERVATION source carries `events cardinality {1..*}` and
-    // `items cardinality {1..6}` (AOM2 §C_ATTRIBUTE cardinality). The am24 front
+    // `items cardinality {1..6}` (AOM2 §C_ATTRIBUTE cardinality). The v2_4 front
     // end now captures EVERY constraining cardinality into `card_all` for the
     // validation walk, exactly as the OPT-1.4 front end does — so
     // `validate_archetype_conformance` runs identically for both dialects.
@@ -413,7 +413,7 @@ fn am24_populates_archetype_conformance_constraints() {
 }
 
 #[test]
-fn am24_archetype_conformance_walk_enforces_cardinality() {
+fn v2_4_archetype_conformance_walk_enforces_cardinality() {
     let wt = web_template(OBS_APGAR);
     // A self-consistent example carries no cardinality violation against its own
     // ADL2 template (symmetric with the OPT-1.4 front end, whose generated
@@ -525,12 +525,12 @@ terminology
 "#;
 
 #[test]
-fn am24_template_filler_subtree_reaches_the_web_template() {
+fn v2_4_template_filler_subtree_reaches_the_web_template() {
     let mut repo = ArchetypeRepository::new();
     repo.insert(parse_artefact(FILLER_ARCHETYPE, Dialect::Adl2).expect("parse filler archetype"));
     let template = parse_artefact(FILLER_TEMPLATE, Dialect::Adl2).expect("parse template");
     let opt = create_opt(&template, &repo).expect("create_opt inlines the filler");
-    let wt = build_web_template_am24(&opt).expect("build am24 web template");
+    let wt = build_web_template_v2_4(&opt).expect("build v2_4 web template");
 
     let mut observations = Vec::new();
     collect_typed(&wt.tree, "OBSERVATION", &mut observations);
@@ -603,14 +603,14 @@ terminology
 "#;
 
 #[test]
-fn am24_slot_patterns_come_from_the_assertion_tree() {
+fn v2_4_slot_patterns_come_from_the_assertion_tree() {
     let archetype = parse_artefact(SLOT_ARCHETYPE, Dialect::Adl2).expect("parse ADL2");
     let mut opt = create_opt(&archetype, &ArchetypeRepository::new()).expect("create_opt");
     // Strip every `string_expression`: the attribute is optional in the model
     // and only a serialisation of the tree, so a probe reading the tree is
     // unaffected while a string scan goes blind.
     strip_string_expressions(&mut opt.definition);
-    let wt = build_web_template_am24(&opt).expect("build am24 web template");
+    let wt = build_web_template_v2_4(&opt).expect("build v2_4 web template");
 
     let mut includes: Vec<String> = wt
         .tree

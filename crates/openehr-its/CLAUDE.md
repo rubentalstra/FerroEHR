@@ -1,7 +1,15 @@
 # `openehr-its` — canonical JSON/XML + the ITS-REST contract + Simplified Formats (MIXED)
 
 Four ITS surfaces in one crate, with a strict generated/hand-written split.
-Know which half you are touching before editing anything:
+Know which half you are touching before editing anything.
+
+**ITS-BMM is deliberately NOT here.** The vendored BMM meta-model that drives
+code generation lives at `tools/openehr-codegen/vendor/bmm/` (read by the
+generator's own loader), and the runtime BMM/P_BMM object model is
+`openehr-lang`. This crate carries no BMM module — an empty one existed as a
+placeholder and was removed, because a published module that promises future
+surface is API nobody can use.
+
 
 | Part | Status | To change it |
 |---|---|---|

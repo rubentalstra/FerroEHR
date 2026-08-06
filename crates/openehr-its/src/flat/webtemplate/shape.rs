@@ -1,14 +1,14 @@
 //! Dialect-neutral Web-Template tree shaping.
 //!
 //! Everything here operates on the already-built [`WebTemplateNode`] tree and is
-//! therefore **independent of the source dialect** (OPT 1.4 or the am24 OPT2):
-//! both the [`super::builder`] (opt14) and [`super::builder_am24`] (am24) front
+//! therefore **independent of the source dialect** (OPT 1.4 or the `v2_4` OPT2):
+//! both the [`super::builder`] (opt14) and [`super::builder_v2_4`] (`v2_4`) front
 //! ends produce the same [`WebTemplateNode`] tree and hand it to these shared
 //! passes, so the level-removal + in-context + post-process semantics are
 //! written once and never forked.
 //!
 //! The three passes, in the order [`super::build_web_template`] /
-//! [`super::build_web_template_am24`] run them:
+//! [`super::build_web_template_v2_4`] run them:
 //!
 //! 1. [`compact`] — master04 §"Level Removal": elide container attribute names,
 //!    collapse the always-collapsed wrapper types (`ITEM_*`/`ITEM_STRUCTURE`/
