@@ -1233,6 +1233,56 @@ fn profile_generation_delta_is_pinned() {
     assert_eq!(base.attributes_removed, Vec::<String>::new());
 }
 
+/// The generations of one crate realize the SAME BMM-declared functions.
+///
+/// Templates give every generation one hand-written source, so a class both
+/// generations declare must expose the same accessors in both. A divergence is a
+/// per-generation override that drifted, or a re-vendored rename only one
+/// generation followed.
+#[test]
+fn generation_function_realization_agrees() {
+    for key in ["base", "rm", "am", "term", "lang"] {
+        let divergent =
+            testsupport::generation_function_divergence(key).expect("crate tree readable");
+        assert_eq!(
+            divergent,
+            Vec::<String>::new(),
+            "{key}: a BMM-declared function is realized in one generation and not another — \
+             the template (or its per-generation override) drifted",
+        );
+    }
+}
+
+/// Every BMM-declared function on a class with a hand-written behaviour sibling
+/// is realized, ratcheted against the committed list of gaps.
+///
+/// The BMM declares functions by name and result type only, so their bodies are
+/// hand-written. This asserts the unrealized set equals
+/// `unrealized_bmm_functions.txt` EXACTLY: a new gap fails, and implementing a
+/// listed one fails until the line is deleted. The list only shrinks; the
+/// burn-down is issue #2030.
+#[test]
+fn unrealized_bmm_functions_match_the_ratchet() {
+    let recorded: Vec<String> = include_str!("unrealized_bmm_functions.txt")
+        .lines()
+        .filter(|l| !l.starts_with('#') && !l.trim().is_empty())
+        .map(str::to_owned)
+        .collect();
+    let mut actual = Vec::new();
+    for key in ["base", "rm", "am", "term", "lang"] {
+        for entry in testsupport::unrealized_bmm_functions(key).expect("crate tree readable") {
+            actual.push(format!("{key}/{entry}"));
+        }
+    }
+    actual.sort();
+    assert_eq!(
+        actual, recorded,
+        "the unrealized-function set moved: implement the accessor (and delete its line from \
+         tools/openehr-codegen/tests/it/unrealized_bmm_functions.txt), or — for a NEW entry — \
+         realize it rather than recording it; the list only shrinks (#2030)",
+    );
+}
+
 /// Generation-twin discipline (#1964): a hand-written file that is
 /// byte-identical across a crate's generations modulo generation tokens MUST
 /// be a template (`tools/openehr-codegen/templates/<crate>/…`) — one source,

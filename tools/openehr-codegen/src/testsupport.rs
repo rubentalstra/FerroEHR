@@ -1509,3 +1509,149 @@ fn hand_written_files(dir: &std::path::Path) -> Result<BTreeMap<String, String>,
     }
     Ok(out)
 }
+
+/// BMM-declared functions whose realization DIFFERS between two generations of
+/// one crate, as `<CLASS>.<function>: realized in <gen>, missing in <gen>`
+/// (#2029).
+///
+/// The staleness this catches: the generation-twin templates give every
+/// generation one source, so a class both generations declare must realize the
+/// same accessors in both. A divergence means a per-generation override drifted,
+/// or a re-vendor renamed a function and only one generation followed.
+///
+/// A function only the newer BMM declares is NOT a divergence when the older
+/// generation realizes it anyway — a superset is permitted by the direction
+/// contract (`docs/VERSIONS.md` §Spec version policy). The reverse, realized in
+/// the older generation but not the newer, IS reported.
+///
+/// # Errors
+/// Returns an error if the composition fails to load or a crate tree cannot be
+/// read.
+pub fn generation_function_divergence(key: &str) -> Result<Vec<String>, Error> {
+    let comp = compose(key)?;
+    let src = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../crates")
+        .join(comp.comp.crate_name)
+        .join("src");
+    let mut realized: Vec<(&str, BTreeMap<String, BTreeSet<String>>)> = Vec::new();
+    for generation in &comp.generations {
+        let bodies = rust_bodies_by_stem(&src.join(generation.spec.module))?;
+        let mut per_class: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+        for unit in &generation.units {
+            for (name, class) in &unit.schema.classes {
+                let stem = name.to_lowercase();
+                let Some(sibling) = bodies.get(&format!("{stem}_impl")) else {
+                    continue;
+                };
+                let own = bodies.get(&stem).map(String::as_str).unwrap_or_default();
+                let found = class
+                    .functions
+                    .iter()
+                    .filter(|f| {
+                        let item = format!("fn {f}(");
+                        sibling.contains(&item) || own.contains(&item)
+                    })
+                    .cloned()
+                    .collect();
+                per_class.insert(name.clone(), found);
+            }
+        }
+        realized.push((generation.spec.module, per_class));
+    }
+    let mut divergent = Vec::new();
+    for (i, (module, classes)) in realized.iter().enumerate() {
+        for (other_module, other_classes) in realized.iter().skip(i + 1) {
+            for (class, functions) in classes {
+                let Some(other) = other_classes.get(class) else {
+                    continue;
+                };
+                for f in functions.difference(other) {
+                    divergent.push(format!(
+                        "{class}.{f}: realized in {module}, missing in {other_module}"
+                    ));
+                }
+            }
+        }
+    }
+    divergent.sort();
+    divergent.dedup();
+    Ok(divergent)
+}
+
+/// BMM-declared functions of `key`'s crate that no Rust method realizes, as
+/// `<generation>/<CLASS>.<function>` (#2029).
+///
+/// The BMM declares functions by name and result type only, so their bodies are
+/// hand-written in a `*_impl.rs` sibling. This projection reports, per
+/// generation, every declared function of a class that HAS such a sibling but
+/// whose name appears as no `fn` item in that class's module files — the
+/// staleness a re-vendor introduces when upstream renames or removes an
+/// accessor.
+///
+/// Classes with no behaviour sibling are out of scope: a plain record realizes
+/// its functions as struct fields, and the emitter has no body to write.
+///
+/// # Errors
+/// Returns an error if the composition fails to load or a crate tree cannot be
+/// read.
+pub fn unrealized_bmm_functions(key: &str) -> Result<Vec<String>, Error> {
+    let comp = compose(key)?;
+    let src = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../crates")
+        .join(comp.comp.crate_name)
+        .join("src");
+    let mut missing = Vec::new();
+    for generation in &comp.generations {
+        let bodies = rust_bodies_by_stem(&src.join(generation.spec.module))?;
+        for unit in &generation.units {
+            for (name, class) in &unit.schema.classes {
+                if class.functions.is_empty() {
+                    continue;
+                }
+                let stem = name.to_lowercase();
+                let Some(sibling) = bodies.get(&format!("{stem}_impl")) else {
+                    continue;
+                };
+                let own = bodies.get(&stem).map(String::as_str).unwrap_or_default();
+                for function in &class.functions {
+                    let item = format!("fn {function}(");
+                    if !sibling.contains(&item) && !own.contains(&item) {
+                        missing.push(format!("{}/{name}.{function}", generation.spec.module));
+                    }
+                }
+            }
+        }
+    }
+    missing.sort();
+    missing.dedup();
+    Ok(missing)
+}
+
+/// Every `.rs` file under `dir` as file-stem → body, generated and hand-written
+/// alike (the realization check reads both: an accessor may be emitted on the
+/// struct or written in its behaviour sibling).
+fn rust_bodies_by_stem(dir: &std::path::Path) -> Result<BTreeMap<String, String>, Error> {
+    let mut out = BTreeMap::new();
+    if !dir.exists() {
+        return Ok(out);
+    }
+    let mut stack = vec![dir.to_path_buf()];
+    while let Some(d) = stack.pop() {
+        for entry in std::fs::read_dir(&d).map_err(|e| Error::from(e.to_string()))? {
+            let path = entry.map_err(|e| Error::from(e.to_string()))?.path();
+            if path.is_dir() {
+                stack.push(path);
+                continue;
+            }
+            if path.extension().and_then(|e| e.to_str()) != Some("rs") {
+                continue;
+            }
+            let Some(stem) = path.file_stem().and_then(|s| s.to_str()) else {
+                continue;
+            };
+            let body = std::fs::read_to_string(&path).map_err(|e| Error::from(e.to_string()))?;
+            out.insert(stem.to_owned(), body);
+        }
+    }
+    Ok(out)
+}
