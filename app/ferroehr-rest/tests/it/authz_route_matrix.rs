@@ -43,6 +43,7 @@ use axum::body::Body;
 use ferroehr::config::auth::{AuthConfig, OidcConfig};
 use ferroehr::config::authz::AuthzConfig;
 use ferroehr::config::server::{AdminConfig, ServerConfig};
+use ferroehr::config::smart::SmartConfig;
 use ferroehr_rest::config::AppConfig;
 use ferroehr_rest::extensions::access::authz::{AuthzHandle, AuthzResolvers, ResolveError};
 use http::{Request, StatusCode};
@@ -274,8 +275,6 @@ const CLINICAL_WRITE: &[(&str, &str)] = &[
     ("POST", "/definition/template/adl1.4"),
     ("POST", "/definition/template/adl2"),
     ("POST", "/definition/archetype/adl1.4"),
-    ("DELETE", "/definition/archetype/adl1.4/{archetype_id}"),
-    ("DELETE", "/definition/artefact/adl2/{artefact_id}"),
     ("POST", "/demographic/contribution"),
     ("POST", "/demographic/agent"),
     ("PUT", "/demographic/agent/{uid_based_id}"),
@@ -336,6 +335,13 @@ const ADMIN_WRITE: &[(&str, &str)] = &[
     ("DELETE", "/admin/ehr/all"),
     ("DELETE", "/admin/ehr/{ehr_id}"),
     ("DELETE", "/admin/template/{template_id}"),
+    // The other two destructive shared-definition routes. They do not sit under
+    // /admin/, and they used to take Clinical from that fallback — so the
+    // privilege depended on the path prefix rather than on the blast radius
+    // (issue #2071). SM master04 puts removal of archetypes AND templates in one
+    // clause and one pair of interfaces, so the three must match.
+    ("DELETE", "/definition/archetype/adl1.4/{archetype_id}"),
+    ("DELETE", "/definition/artefact/adl2/{artefact_id}"),
     ("DELETE", "/admin/query/{qualified_query_name}/{version}"),
     ("POST", "/admin/archive/ehrs"),
     ("POST", "/admin/archive/parties"),
@@ -423,7 +429,10 @@ fn mounted(cfg: &AppConfig) -> Vec<(String, String)> {
 fn matrix_config() -> AppConfig {
     AppConfig {
         server: ServerConfig {
-            swagger_ui: false,
+            // ON: the PUBLIC table declares the OAS/Swagger routes, and they are
+            // mounted only when this is set — with it off the coverage assertion
+            // reports them as declared-but-unmounted.
+            swagger_ui: true,
             ..Default::default()
         },
         auth: AuthConfig {
@@ -442,6 +451,12 @@ fn matrix_config() -> AppConfig {
             ..AuthConfig::default()
         },
         admin: AdminConfig { enabled: true },
+        // ON for the same reason as the Swagger pair: the PUBLIC table declares
+        // the discovery document, and it is mounted only when SMART is enabled.
+        smart: SmartConfig {
+            enabled: true,
+            ..SmartConfig::default()
+        },
         ..Default::default()
     }
 }
