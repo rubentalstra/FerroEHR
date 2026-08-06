@@ -46,7 +46,7 @@ openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 \
 Cases that declare `scopes:` on a flow step — and every case anchored on the
 `I_ITS_REST_SMART` pseudo-interface — are **not-applicable** when a party's
 ixit declares no `smart` block (ISO/IEC 9646 test selection): a SUT that
-does not claim the capability is never driven against a guess (ehrbase-java).
+does not claim the capability is never driven against a guess (ehrbase).
 
 Spec: `docs/specs/openehr/ITS-REST/docs/smart_app_launch/` —
 `master04-service_discovery.adoc` (the discovery document),

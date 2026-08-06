@@ -960,9 +960,14 @@ jobs:
           if ! echo "$changed" | grep -qE '^(app/|crates/|deploy/|docker/|docker-compose|Cargo\.toml|Cargo\.lock)'; then
             echo "No user-visible surface touched — guard not required."; exit 0
           fi
+          # grep -c, never grep -q: -q exits at the first match, git diff then
+          # dies of SIGPIPE, and `pipefail` turns that into a failed pipeline —
+          # so a LARGE changelog diff was reported as "no entry" (this PR).
+          # -c reads the whole diff, so the pipeline always exits cleanly.
           if echo "$changed" | grep -qx 'CHANGELOG.md'; then
-            if git diff "$BASE" "$HEAD" -- CHANGELOG.md | grep -q '^+.*[^[:space:]]'; then
-              echo "CHANGELOG.md updated — OK."; exit 0
+            added=$(git diff "$BASE" "$HEAD" -- CHANGELOG.md | grep -c '^+.*[^[:space:]]' || true)
+            if [ "${added:-0}" -gt 0 ]; then
+              echo "CHANGELOG.md updated ($added added lines) — OK."; exit 0
             fi
           fi
           echo "::error::This PR changes user-visible surfaces (app/, crates/, deploy/, docker/, manifests) but does not add a CHANGELOG.md [Unreleased] entry (Keep a Changelog 1.1.0). Add one, or apply the 'no-changelog' label if truly invisible." >&2

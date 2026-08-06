@@ -1,11 +1,11 @@
 ---
-name: upstream-ehrbase-java-nonconformance
-description: EHRbase Java 2.34.0 (comparison SUT) upstream divergences, all reproduced on the wire 2026-07-28 against the full catalogue
+name: upstream-ehrbase-nonconformance
+description: upstream EHRbase 2.34.0 (comparison SUT) upstream divergences, all reproduced on the wire 2026-07-28 against the full catalogue
 metadata:
   type: project
 ---
 
-Reproduced first-hand against `docker/sut-ehrbase-java.yml` (2.34.0, declares
+Reproduced first-hand against `docker/sut-ehrbase.yml` (2.34.0, declares
 ITS-REST 1.0.3). Each is a divergence from a RELEASED source at or below the
 party's own declared version unless marked otherwise. Never "fix" our
 pack/catalogue toward any of these.

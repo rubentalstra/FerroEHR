@@ -1572,13 +1572,13 @@ mod tests {
         };
         let ours = report(256.0);
         let theirs = report(512.0); // the comparison side winning is drawn plainly
-        let svg = stress_compare_svg(("ferroehr", &ours), ("EHRbase (Java)", &theirs)).unwrap();
+        let svg = stress_compare_svg(("ferroehr", &ours), ("EHRbase", &theirs)).unwrap();
         assert_eq!(
             svg,
-            stress_compare_svg(("ferroehr", &ours), ("EHRbase (Java)", &theirs)).unwrap()
+            stress_compare_svg(("ferroehr", &ours), ("EHRbase", &theirs)).unwrap()
         );
         assert!(svg.contains("ferroehr max sustainable 256/s"));
-        assert!(svg.contains("EHRbase (Java) max sustainable 512/s"));
+        assert!(svg.contains("EHRbase max sustainable 512/s"));
         assert!(svg.contains("class=\"curve\"") && svg.contains("class=\"cmp\""));
         assert!(svg.contains("prefers-color-scheme: dark"));
     }

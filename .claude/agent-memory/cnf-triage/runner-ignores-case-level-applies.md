@@ -12,7 +12,7 @@ extension-family × unclaimed capability, `case.option` vs `statement.options`,
 `verdict.rs::select` (`applies_satisfied`, verdict.rs:509) filters on it.
 
 **Why it matters:** the #635 floor triage put the ITS-REST 1.1.0 floors on the
-CASE, not the binding. On the 2026-07-28 ehrbase-java record (party declares
+CASE, not the binding. On the 2026-07-28 ehrbase record (party declares
 `its_rest: 1.0.3`) **127 red rows** sat on cases carrying
 `applies: { its_rest: ">=1.1.0" }` — 57 SF, 27 item tags, 16 demographic,
 8 composition, 7 admin, … They are excluded from the verdict, but they are

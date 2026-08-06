@@ -15,7 +15,7 @@ metadata:
   proceeds as if the template exists — downstream commits then fail on
   "validation_failed"/"template_not_found" and read as SUT defects.
   The comment only sanctions tolerating **409 already-provisioned**.
-- **MEASURED BLAST RADIUS (ehrbase-java, 2026-07-28): 197 of 294 in-scope red
+- **MEASURED BLAST RADIUS (ehrbase, 2026-07-28): 197 of 294 in-scope red
   rows** — the whole 123-row CONT battery plus most of composition/contribution
   — came from ONE swallowed 406. Reproduced: provisioning POSTs the OPT with
   `Accept: application/json` (the binding's declared header, now shared with the

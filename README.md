@@ -429,13 +429,13 @@ glyph):
 
 ![FerroEHR capability conformance](website/book/src/conformance-assets/conformance-heat-grid.svg)
 
-![EHRbase capability conformance](website/book/src/comparison-assets/conformance-heat-grid-java.svg)
+![EHRbase capability conformance](website/book/src/comparison-assets/conformance-heat-grid-ehrbase.svg)
 
 And the per-chapter outcomes side by side:
 
 ![FerroEHR outcomes by chapter](website/book/src/conformance-assets/conformance-chapter-bars.svg)
 
-![EHRbase outcomes by chapter](website/book/src/comparison-assets/conformance-chapter-bars-java.svg)
+![EHRbase outcomes by chapter](website/book/src/comparison-assets/conformance-chapter-bars-ehrbase.svg)
 
 The full, generated comparison — profile verdicts, capability-by-capability
 evidence, failures in both directions, and the stress overlay once both
@@ -444,7 +444,7 @@ committed reports exist — is the
 on the website and [`docs/conformance/COMPARISON.md`](docs/conformance/COMPARISON.md)
 in the repo, with each system's committed measurement records under
 [`docs/conformance/`](docs/conformance/). Reproduce either side with the
-built-in instruments: `bash scripts/conformance.sh` (`CONF_SUT=ehrbase-java`
+built-in instruments: `bash scripts/conformance.sh` (`CONF_SUT=ehrbase`
 for EHRbase) and `cnf-runner stress` / `cnf-runner aql-probe`
 (`tools/cnf-runner/`).
 

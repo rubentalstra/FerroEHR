@@ -20,7 +20,7 @@ CATALOGUE over-reach candidate, confirmed first-hand 2026-07-28 against
 So the `W/` MUST binds the FORM given the header is sent; PRESENCE is SHOULD.
 A `pattern:` matcher asserts presence too, so a server that omits the header on
 a query 200 fails a row grounded on a SHOULD (5 rows, AqlBasic/QueryApi, in the
-ehrbase-java record).
+ehrbase record).
 
 **How to apply:** on any header matcher, ask whether the released text makes
 PRESENCE mandatory. If not, the matcher must be presence-optional (the

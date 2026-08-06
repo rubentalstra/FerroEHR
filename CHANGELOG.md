@@ -15,6 +15,7 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+
 ### Added
 
 - New top-level configuration key `spec_profile` (`development` | `stable`, default `development`; env `FERROEHR__SPEC_PROFILE`): selects the openEHR specification generation set the server runs as ONE coupled choice — `development` = RM 1.2.0 + BASE 1.3.0 + LANG 1.1.0 (today's behaviour), `stable` = the latest RELEASED generations, RM 1.1.0 + BASE 1.2.0 + LANG 1.0.0. The active profile and its generation versions appear on the boot banner and `GET /management/info`. Under `stable`, AQL that addresses specification surface the released generation does not define is refused with an error naming the active profile. Profile-change contract: `stable` → `development` is always safe (openEHR minor releases are additive); `development` → `stable` is supported only for data that never used development-only constructs — such stored objects are refused loudly at read, never silently down-converted.
@@ -26,7 +27,10 @@ workflow refuses a tag that has no matching section here.
 - The `openehr-lang` crate's `v1_0` generation is now the TRUE LANG Release-1.0.0 surface, not a copy of the development line: it is generated faithfully from the release's own machine-readable BMM, its vendored grammar set is the release's actual syntax-appendix files (`vendor/grammar/v1_0/`, incl. that era's `base_lexer.g4`), its lexer carries the ODIN reading alone (1.0.0 publishes no EL grammar and BEL first appears in 1.1.0), and its ODIN reader enforces the release's own syntax: lowercase-only attribute keys, ANY primitive comparable value as a container key (real/boolean/character/term-code/duration keys, signed numerics), whole-document plug-in fragments, comma-only fractional seconds on times and dot-only on durations. Under the `stable` spec profile these are the rules ODIN text is read by. The ADL/cADL grammar set is likewise version-scoped by AM generation (`crates/openehr-adl/vendor/grammar/{v1_4,v2_4}/`, vendored by the new `scripts/vendor-adl-grammars.sh`).
 - The `openehr-rm` and `openehr-base` crates now ALSO emit the latest RELEASED specification generations beside the development pins — `openehr_rm::v1_1` (RM 1.1.0, resolving against BASE 1.2.0 per its own BMM `includes`) and `openehr_base::v1_2` (BASE 1.2.0) — each a complete peer: full type model, canonical-JSON codecs, RM attribute model, invariant cores, and validation behaviour. The served wire is unchanged (the current generations stay `v1_2`/`v1_3`); runtime selection between generations arrives with the `spec_profile` configuration key.
 
+
 ### Changed
+
+- The conformance comparison lane is named for the system it composes: `CONF_SUT=ehrbase` (was `ehrbase-java`), with its Compose file, party set and committed artifacts under the same name, and the two environment knobs `FERROEHR_EHRBASE_IMAGE` / `FERROEHR_EHRBASE_PORT` (was `FERROEHR_JAVA_*`). Committed measurement records keep the container names and topology they observed — a rename never restamps a measured run.
 - The `openehr-its` Web Template builder for ADL2 sources is renamed to match the generation modules: `build_web_template_am24` becomes `build_web_template_v2_4` (the `am14`/`am24` module names became `v1_4`/`v2_4` in the multi-generation refactor, and the retired spelling survived in this API, two file names and their prose). A crate-API change with no behaviour change.
 - Snapshot tests now resolve their workspace root from a pinned `INSTA_WORKSPACE_ROOT` rather than a runtime lookup, so cargo-lock contention can no longer make stored snapshots appear missing or write pending snapshots to a doubled path.
 - Dependency updates: `base64` 0.23, `fancy-regex` 0.19, `jsonschema` 0.49 and `jsonwebtoken` 11. No behaviour change — each was checked against its upstream changelog and then against this workspace's own call sites, including that `jsonschema`'s new single-error `validate` signature does not reduce our error reporting (both call sites already collect every error).
@@ -40,23 +44,6 @@ workflow refuses a tag that has no matching section here.
 - The vendored openEHR specification tree no longer carries upstream's own dependency manifests (the CNF Robot harness's `requirements.txt`, the ITS-REST and TERM PHP tooling's `composer.json`). They are upstream build tooling, not specification text, and their presence made this repository's dependency graph claim Python and PHP ecosystems it does not use — raising advisories against pinned third-party versions nothing here installs. The vendoring script now excludes dependency manifests across the common ecosystems, so a future re-vendor cannot reintroduce them; the vendored spec text itself is unchanged.
 - Hand-written spec-behaviour files that were byte-identical across the `openehr-rm`/`openehr-base` generation modules (89 twin families, ~29k lines of duplicated source) are now generation-twin TEMPLATES: one hand-written source under the code generator's `templates/` tree, with the per-generation copies stamped by `emit` under an `@generated-from-template` header — generation divergence becomes impossible instead of policed, and an emitter invariant refuses any new unconverted twin. The one genuinely generation-specific file (`ITEM_TAG`'s construction under RM 1.1.0's field order) is an explicit per-generation override carrying its adjudication. Crate behaviour is unchanged; the packaged sources now say which file is stamped from which template.
 
-### Removed
-
-- `openehr-rm`'s `ehr-extract` cargo feature, which gated nothing (the EHR Extract modules were always compiled), and `openehr-its`'s empty `bmm` placeholder module — a published module that promised future surface nobody could use.
-
-### Fixed
-
-- Under `spec_profile = stable`, a demographic party body carrying the RM 1.1.0 `PARTY.reverse_relationships` attribute is now accepted: the payload is validated by the released generation's own strict reader and the attribute — derived data the development line removed as redundant (upstream SPECRM-124) — is dropped on ingress rather than stored. Previously the stable server refused a valid instance of its own advertised generation with `400`. The `development` profile still refuses the attribute as undeclared, and the generation delta ledger now pins the REMOVED direction too, so a future spec re-vendor changing either direction fails the build until adjudicated.
-- An ODIN integer container key whose lexeme cannot be evaluated (an out-of-`i64`-range magnitude, an inexact negative exponent) is now a parse refusal; previously it silently became the key `0`, so two such keys collided as duplicates and stored data could be mis-keyed. Signed integer keys (`[-1]`, `[+2]`) and exponent forms (`[29e2]`) now parse per the grammar's `integer_value : ('+'|'-')? INTEGER`. ODIN parse errors also now report the position of the real defect instead of the first backtracked branch failure.
-- A bearer token whose `sub` claim is missing or blank is now refused with `401`. Previously a validated token without a subject authenticated as a principal literally named `unknown`, and that fabricated identity was stamped into the audit trail; an unattributable caller is now rejected instead of silently mis-attributed.
-- Configuring both a symmetric secret (`auth.oidc.hmac_secret`/`_file`) and a static JWKS (`auth.oidc.jwks_json`/`_file`) is now a boot-time configuration error naming both keys. Previously the server silently used the symmetric secret and ignored the JWKS.
-- An unreachable or unresponsive OAuth2/OIDC issuer no longer stalls bearer-token requests or hammers the issuer with outbound connections. The client that fetches the issuer's discovery document and JWKS now carries explicit timeouts, and a failed fetch is remembered briefly, so bearer requests during an issuer outage are refused fast instead of each one opening a fresh connection and waiting for the operating system's TCP timeout. Three new `[auth.oidc]` keys tune this (they apply only when signing keys come from discovery — that is, when neither `hmac_secret` nor `jwks_json` is set): `connect_timeout_ms` (default `3000`), `request_timeout_ms` (default `5000`), and `negative_cache_ttl_seconds` (default `10`, `0` disables). Successfully fetched keys keep their existing five-minute lifetime, and recovery is automatic once the negative entry expires.
-
-### Removed
-
-- The generated `openehr-*` spec crates no longer carry a crate-level `SPEC_VERSION` constant: a multi-generation crate has no single implemented spec version, and a fixed crate-root pin would contradict a configured non-current generation. The ONLY pin authority is the emitted `Generation` enum (per-variant `const fn spec_version()`; the derived `Default` variant is the current generation) — the generation modules carry no version constant either; the hand-written single-spec crates (`openehr-its`, `openehr-query`, `openehr-adl`) keep their literal constant.
-
-### Changed
 
 - **The Docker Compose quickstart is now a standalone, zero-configuration file.** `docker-compose.yml` pulls the published images (pinned to the release it shipped with) instead of building, and carries the server configuration inline, so `docker compose up` works in any empty directory — no repository checkout, no bind mounts, no environment variables. It needs Docker Compose 2.23.1 or newer.
 - The admin console moved behind the `admin-ui` Compose profile: it is opt-in (`docker compose --profile admin-ui up`, then <http://localhost:3000>) rather than started by every `docker compose up`. As a side effect, the observability overlay's Grafana no longer collides with it on port 3000.
@@ -64,6 +51,25 @@ workflow refuses a tag that has no matching section here.
 - The conformance stack composes its own self-contained `docker/sut-ferroehr.yml` instead of overlaying the root Compose file, so the end-user quickstart and the conformance instrument evolve independently. Starting the development FHIR terminology server is now `docker compose -p ferroehr-cnf --project-directory . --profile terminology -f docker/sut-ferroehr.yml -f docker/sut-terminology.yml up -d --wait ferroehr` from a repository checkout.
 - `openehr-lang` now models generations by COMPONENT VERSION like every other spec crate: one `openehr_lang::v1_1` generation holding the version's published specifications side by side — the STABLE, tool-implemented BMM v2.x model (`bmm`/`bmm_persistence`/`beom`, on the prelude) beside the PAUSED BMM3 model (`bmm3`, full-path only) — together with the hand-written ODIN/BEL/EL readers and the shared lexer for that version's notations (all previously crate-root modules). The released LANG 1.0.0 machine-readable BMM is recorded as unusable for code generation (no `includes`, unnamed `BMM_CLASS`/`BMM_PACKAGE`, an explicitly obsolete package; BMM is TRIAL in that release), so no 1.0.0 generation exists until upstream republishes usable artifacts.
 - The published `openehr-*` spec crates now expose every BMM generation under a version-named top module — `openehr_base::v1_3`, `openehr_rm::v1_2`, `openehr_lang::v2`/`v3` (replacing `bmm`/`bmm_persistence`/`beom` and `bmm3` at the crate root), `openehr_am::v1_4`/`v2_4` (replacing `am14`/`am24`), `openehr_term::v3_1` — with a new per-crate `Generation` enum (derived `Default` marking the current generation, `spec_version()`/`as_str()`, `FromStr`/`Display`) and the crate prelude re-exporting the current generation only. Import paths into these crates change accordingly; the served wire formats are unchanged.
+
+
+### Removed
+
+- `openehr-rm`'s `ehr-extract` cargo feature, which gated nothing (the EHR Extract modules were always compiled), and `openehr-its`'s empty `bmm` placeholder module — a published module that promised future surface nobody could use.
+
+
+- The generated `openehr-*` spec crates no longer carry a crate-level `SPEC_VERSION` constant: a multi-generation crate has no single implemented spec version, and a fixed crate-root pin would contradict a configured non-current generation. The ONLY pin authority is the emitted `Generation` enum (per-variant `const fn spec_version()`; the derived `Default` variant is the current generation) — the generation modules carry no version constant either; the hand-written single-spec crates (`openehr-its`, `openehr-query`, `openehr-adl`) keep their literal constant.
+
+
+### Fixed
+
+- The upstream-EHRbase comparison lane could not boot. A product-wide rename had swept the upstream image's OWN contract along with our own names: the database container's `EHRBASE_USER*`/`EHRBASE_PASSWORD*` init variables, the database name baked into that image's init script, and EHRbase's `/ehrbase/rest/...` base path (in both the party ixit and the readiness probe). The lane composes, becomes ready and drives cases again; only the strings upstream owns were restored, and the credentials we choose are unchanged.
+
+- Under `spec_profile = stable`, a demographic party body carrying the RM 1.1.0 `PARTY.reverse_relationships` attribute is now accepted: the payload is validated by the released generation's own strict reader and the attribute — derived data the development line removed as redundant (upstream SPECRM-124) — is dropped on ingress rather than stored. Previously the stable server refused a valid instance of its own advertised generation with `400`. The `development` profile still refuses the attribute as undeclared, and the generation delta ledger now pins the REMOVED direction too, so a future spec re-vendor changing either direction fails the build until adjudicated.
+- An ODIN integer container key whose lexeme cannot be evaluated (an out-of-`i64`-range magnitude, an inexact negative exponent) is now a parse refusal; previously it silently became the key `0`, so two such keys collided as duplicates and stored data could be mis-keyed. Signed integer keys (`[-1]`, `[+2]`) and exponent forms (`[29e2]`) now parse per the grammar's `integer_value : ('+'|'-')? INTEGER`. ODIN parse errors also now report the position of the real defect instead of the first backtracked branch failure.
+- A bearer token whose `sub` claim is missing or blank is now refused with `401`. Previously a validated token without a subject authenticated as a principal literally named `unknown`, and that fabricated identity was stamped into the audit trail; an unattributable caller is now rejected instead of silently mis-attributed.
+- Configuring both a symmetric secret (`auth.oidc.hmac_secret`/`_file`) and a static JWKS (`auth.oidc.jwks_json`/`_file`) is now a boot-time configuration error naming both keys. Previously the server silently used the symmetric secret and ignored the JWKS.
+- An unreachable or unresponsive OAuth2/OIDC issuer no longer stalls bearer-token requests or hammers the issuer with outbound connections. The client that fetches the issuer's discovery document and JWKS now carries explicit timeouts, and a failed fetch is remembered briefly, so bearer requests during an issuer outage are refused fast instead of each one opening a fresh connection and waiting for the operating system's TCP timeout. Three new `[auth.oidc]` keys tune this (they apply only when signing keys come from discovery — that is, when neither `hmac_secret` nor `jwks_json` is set): `connect_timeout_ms` (default `3000`), `request_timeout_ms` (default `5000`), and `negative_cache_ttl_seconds` (default `10`, `0` disables). Successfully fetched keys keep their existing five-minute lifetime, and recovery is automatic once the negative entry expires.
 
 ## [3.17.3] - 2026-08-05
 
@@ -4190,13 +4196,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
-- The conformance pipeline assesses **upstream EHRbase (Java)** as a second
-  system under test: `CONF_SUT=ehrbase-java scripts/conformance.sh` composes
+- The conformance pipeline assesses **upstream EHRbase** as a second
+  system under test: `CONF_SUT=ehrbase scripts/conformance.sh` composes
   the official `ehrbase/ehrbase:2.34.0` + `ehrbase-v2-postgres` images on
-  fresh volumes (`docker/sut-ehrbase-java.yml`, readiness probed externally
+  fresh volumes (`docker/sut-ehrbase.yml`, readiness probed externally
   — the official image carries no in-container health tooling) and runs the
   same committed catalogue with upstream's own committed party set
-  (`tools/cnf-runner/party/ehrbase-java/`). The public comparison
+  (`tools/cnf-runner/party/ehrbase/`). The public comparison
   (`docs/conformance/COMPARISON.md` + the website comparison page) is fully
   generated from the two committed results/verdicts sets — profile verdicts,
   the 39-capability evidence matrix, and failure tables in both directions.
@@ -4307,7 +4313,7 @@ workflow refuses a tag that has no matching section here.
   harness (`tools/conformance`) is retired — its final inventory is
   preserved at `tools/cnf-runner/comparison/ecc-catalog.tsv` and the
   reviewed cutover record is `docs/conformance/cnf-comparison.md`; the
-  previous ehrbase-java comparison artifacts are frozen as historical data.
+  previous ehrbase comparison artifacts are frozen as historical data.
   Committed per-SUT party sets (ixit + statement) live under
   `tools/cnf-runner/party/`.
 - Verdict semantics: a REQUIRED capability whose every selected case is
@@ -5085,8 +5091,8 @@ workflow refuses a tag that has no matching section here.
   receive the full spec-cited artefact set — `results.json`, a conformance
   report, a Conformance Statement, a Conformance **Certificate** (a
   machine-computed framework assessment, explicitly not an official openEHR
-  certification), and badges, written per SUT. Upstream EHRbase (Java) is a
-  built-in target (`CONF_SUT=ehrbase-java`) with a committed fairness
+  certification), and badges, written per SUT. Upstream EHRbase is a
+  built-in target (`CONF_SUT=ehrbase`) with a committed fairness
   register; a cross-SUT comparison matrix can be rendered from two or more
   runs (`conformance compare`). Assertions carry a **spec-edition ladder**:
   the runner tries the newest edition form first (weak `W/"…"` ETags,

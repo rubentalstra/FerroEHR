@@ -10,7 +10,7 @@ metadata:
 (b) `applies_satisfied(case, statement.spec_versions)`. So a case the party
 never claimed still lands in `results.json` as `failed`.
 
-Measured on the 2026-07-28 ehrbase-java record: 752 outcomes, 444 failed + 98
+Measured on the 2026-07-28 ehrbase record: 752 outcomes, 444 failed + 98
 errored = 542 red — but only **227 of those 542 are in verdict scope**
 (151 excluded as unclaimed-capability, 164 as version-excluded). `verdicts.json`
 `coverage.selected` was 313, `driven` 291.

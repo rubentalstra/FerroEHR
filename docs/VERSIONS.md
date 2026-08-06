@@ -65,7 +65,7 @@ escape with `cargo build --ignore-rust-version`.
 | Required extensions | `uuid-ossp`, `pgcrypto`, `pg_trgm` |
 
 PostgreSQL is the only component in the stack with a meaningful version delta
-(EHRbase Java targets PG 15/16; we target PG 18). PG 18 brings asynchronous I/O,
+(upstream EHRbase targets PG 15/16; we target PG 18). PG 18 brings asynchronous I/O,
 native `uuidv7()`, B-tree skip scan, temporal `PRIMARY KEY`/`UNIQUE`/`FOREIGN
 KEY`, `RETURNING OLD/NEW`, virtual generated columns, self-join elimination, and
 OR-to-`ANY` planning, plus `JSON_TABLE()` + the SQL/JSON functions inherited
