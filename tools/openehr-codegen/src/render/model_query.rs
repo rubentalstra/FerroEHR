@@ -102,7 +102,7 @@ impl Format {
 /// The report's filters; `None` everywhere reports the whole loaded model.
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct Query<'a> {
-    /// Restrict to one composition key (`base`, `rm`, `lang`, `am14`, `am24`,
+    /// Restrict to one composition key (`base`, `rm`, `lang`, `v1_4`, `v2_4`,
     /// `term`).
     pub component: Option<&'a str>,
     /// Restrict to one BMM class name (exact, as the BMM spells it).

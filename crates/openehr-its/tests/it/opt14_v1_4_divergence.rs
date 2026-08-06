@@ -5,7 +5,7 @@
     let_underscore_drop,
     reason = "test assertions/diagnostics/fixtures"
 )]
-//! opt14 ↔ am14 constraint-model divergence sentinel.
+//! opt14 ↔ `v1_4` constraint-model divergence sentinel.
 //!
 //! The AOM 1.4 constraint model exists twice by design: BMM-generated
 //! `openehr_am::v1_4` (the canonical logical model, canonical-JSON codec) and
@@ -82,12 +82,12 @@ mod opt14_inventory {
     }
 }
 
-/// The am14 (BMM/AOM 1.4) polymorphic constraint inventories, same mechanism.
+/// The `v1_4` (BMM/AOM 1.4) polymorphic constraint inventories, same mechanism.
 #[expect(
     dead_code,
     reason = "the inventory fns exist for their exhaustive wildcard-free matches, which are the compile-time drift guard; nothing calls them"
 )]
-mod am14_inventory {
+mod v1_4_inventory {
     use openehr_am::v1_4::prelude as am;
 
     fn c_object_variants(v: &am::CObject) -> &'static str {
@@ -138,7 +138,7 @@ mod am14_inventory {
 /// revisited — that is the point of the failure.
 #[test]
 fn documented_divergence_is_stable() {
-    // OPT-XML-only constraint types (no am14 counterpart).
+    // OPT-XML-only constraint types (no v1_4 counterpart).
     let opt_only = [
         "C_ARCHETYPE_ROOT", // OPT envelope root (Template.xsd)
         "C_CODE_PHRASE",    // OpenehrProfile.xsd shape of C_CODED_TEXT
@@ -148,7 +148,7 @@ fn documented_divergence_is_stable() {
         "C_DV_STATE",       // OpenehrProfile.xsd only (no BMM class)
         "T_COMPLEX_OBJECT", // Template.xsd default_value overlay node
     ];
-    // BMM/am14-only constraint types (no OPT-XML counterpart).
+    // BMM/v1_4-only constraint types (no OPT-XML counterpart).
     let am_only = ["C_CODED_TEXT", "C_ORDINAL", "C_QUANTITY"];
 
     // Pin both lists; a regenerated model that gains/loses a type will already

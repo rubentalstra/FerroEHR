@@ -10,7 +10,7 @@
 //! one archetype is impossible: the component code spaces collide (every
 //! embedded archetype re-uses `at0000`, `at0001`, …).
 //!
-//! This front end therefore **decomposes** the OPT into one 1.4-shaped `am24`
+//! This front end therefore **decomposes** the OPT into one 1.4-shaped `v2_4`
 //! source archetype per embedded `C_ARCHETYPE_ROOT` (the top root plus each
 //! nested one), each with its own scoped at-code space, and converts each
 //! through the existing converter core. At every embedded-root boundary the
@@ -122,7 +122,7 @@ pub(crate) struct OptConversion {
 /// Convert a parsed OPT-1.4 into one ADL2 source per embedded archetype root.
 ///
 /// Each embedded `C_ARCHETYPE_ROOT` is decomposed into a scoped 1.4-shaped
-/// `am24` source archetype and run through the `openehr_adl::adl14` converter
+/// `v2_4` source archetype and run through the `openehr_adl::adl14` converter
 /// core; embedded children are replaced by open slots in their parent and the
 /// fill edges recorded in [`OptConversion::structure`].
 ///
@@ -147,7 +147,7 @@ pub(crate) fn convert_opt_to_adl2(
 }
 
 /// The conversion core: decompose the OPT and convert each embedded root,
-/// returning the converted `am24` archetypes (id + object) and the recovered
+/// returning the converted `v2_4` archetypes (id + object) and the recovered
 /// fill structure. [`convert_opt_to_adl2`] prints these to ADL2 text; tests
 /// validate the objects directly (the converter's `validate_integrity` oracle).
 ///
@@ -771,7 +771,7 @@ fn at_num(node_id: &str) -> i64 {
     }
 }
 
-// ── object constructors (the 1.4-shaped `am24` common fields) ────────────────
+// ── object constructors (the 1.4-shaped `v2_4` common fields) ────────────────
 
 fn complex(
     rm_type_name: &str,
@@ -817,7 +817,7 @@ fn terminology_code(
     })
 }
 
-/// Map a `C_PRIMITIVE_OBJECT` (its wrapped `C_PRIMITIVE`) to the matching `am24`
+/// Map a `C_PRIMITIVE_OBJECT` (its wrapped `C_PRIMITIVE`) to the matching `v2_4`
 /// primitive constraint node. The converter passes primitive nodes through
 /// untouched; phase-1 (no RM repo) does not validate primitive-constraint
 /// internals, so a faithful-but-minimal mapping is sufficient and safe.

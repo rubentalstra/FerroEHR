@@ -1,0 +1,18 @@
+# Workspace cargo configuration.
+#
+# `INSTA_WORKSPACE_ROOT` — insta resolves the workspace root by shelling out at
+# TEST RUNTIME, so under cargo-lock contention that lookup can fail and fall
+# back to the crate directory. The effect is not a clean error: insta then
+# looks for snapshots in the wrong place (reporting a stored snapshot as
+# missing) and writes pending `.snap.new` files to a DOUBLED path
+# (`app/ferroehr/app/ferroehr/src/…`), which is untracked pollution a
+# `git add -A` will stage. Observed 2026-08-06: 20 spurious failures in one
+# full-workspace run, none reproducible in isolation.
+#
+# Pinning the root here removes the runtime lookup from the picture for every
+# runner (`cargo test`, `cargo nextest`, an IDE) rather than for one of them.
+# `relative = true` resolves the value against THIS config file's parent
+# directory, so it stays correct whatever the invocation's working directory is
+# — https://doc.rust-lang.org/cargo/reference/config.html#env
+[env]
+INSTA_WORKSPACE_ROOT = { value = ".", relative = true, force = false }

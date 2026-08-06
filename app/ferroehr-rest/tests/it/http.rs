@@ -648,11 +648,10 @@ async fn demographic_group_is_mounted() {
 
 #[tokio::test]
 async fn implemented_groups_are_reachable() {
-    // RE-TARGET: this test previously asserted a uniform `501 Not Implemented`
-    // from the Mock's not-implemented default for the demographic / query /
-    // admin groups. Those groups are all real implementations now, so the probe
-    // is re-targeted to the real per-endpoint behaviour on a fresh database:
-    // a missing agent → 404, an invalid AQL → 400, a missing admin EHR → 404.
+    // The demographic / query / admin groups are real implementations, so this
+    // probes their per-endpoint behaviour on a fresh database rather than a
+    // uniform status: a missing agent → 404, an invalid AQL → 400, a missing
+    // admin EHR → 404.
     // The POST case carries a well-formed JSON body so body deserialization
     // (which runs before dispatch) does not short-circuit to a 400.
     let cases: [(&str, String, &str, Option<&str>, StatusCode); 3] = [

@@ -183,7 +183,7 @@ pub(super) async fn example_get(
     match negotiate::resolve_accept(h, EXAMPLE_FORMATS, WireFormat::CanonicalJson) {
         Some(WireFormat::Flat) => {
             // The ADL2 template's WebTemplate is not in the ADL 1.4 store, so it
-            // is resolved via the am24 front end (not the generic resolver).
+            // is resolved via the v2_4 front end (not the generic resolver).
             let wt = state.backend().web_template_adl2(&p.template_id).await?;
             crate::formats::dispatch::composition_flat_response_with(StatusCode::OK, &comp, &wt)
         }
@@ -212,7 +212,7 @@ pub(super) async fn example_get(
 }
 
 /// Set the weak `ETag` of a served ADL2 template. The value is the artefact's
-/// **resolved** `ARCHETYPE_HRID` (AM `am24` — the HRID carries the artefact's
+/// **resolved** `ARCHETYPE_HRID` (AM `v2_4` — the HRID carries the artefact's
 /// SEMVER `release_version`, so it changes whenever the served artefact does),
 /// mirroring the ADL 1.4 sibling's `template_id` `ETag`.
 ///

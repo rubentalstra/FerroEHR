@@ -68,7 +68,7 @@ pub enum Evidence {
     /// (#626, the final #610 ratchet) because the states they excused are
     /// unrepresentable now — the claim-completeness gate refuses a claimed
     /// capability with zero verdict-bearing cases before any SUT composes,
-    /// and every formerly-excused claim is realized or corrected. The
+    /// and every excused claim is realized or corrected. The
     /// accepted consequence is absolute: a party claiming a tier whose
     /// required capability it cannot evidence FAILS that tier — the upstream
     /// Java product included; no excuse arm survives in

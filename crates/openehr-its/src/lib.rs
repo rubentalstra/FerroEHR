@@ -29,9 +29,9 @@
 //! - [`rest`] — **ITS-REST**: the openEHR REST API contract. The machine-readable
 //!   OpenAPI specs are vendored (`vendor/rest-oas/`); the server that implements
 //!   them is `ferroehr-rest` (P6).
-//! - [`bmm`] — **ITS-BMM**: BMM serialization. The vendored BMM meta-model that
-//!   drives code generation lives in `openehr-codegen/vendor/bmm`; the generated
-//!   runtime BMM object model is `openehr-lang`.
+//! - **ITS-BMM** has no module here: the vendored BMM meta-model that drives
+//!   code generation lives in `openehr-codegen/vendor/bmm`, and the runtime
+//!   BMM object model is `openehr-lang`.
 //! - [`flat`] — **ITS-REST Formats**: openEHR Simplified Formats
 //!   (FLAT / STRUCTURED data instances + the Web Template model). The
 //!   *Formats* specification is a STABLE ITS-REST 1.1.0 sub-specification
@@ -59,8 +59,6 @@
 pub mod aom2;
 #[cfg(feature = "full")]
 pub mod aom2_model;
-#[cfg(feature = "full")]
-pub mod bmm;
 #[cfg(feature = "full")]
 pub mod flat;
 #[cfg(feature = "full")]

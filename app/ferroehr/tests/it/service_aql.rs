@@ -127,17 +127,15 @@ fn composition(name: &str, magnitude: f64) -> Value {
 }
 
 async fn create_ehr(svc: &FerroEhrService) -> String {
-    // NOTE: the SM `create_ehr` returns the new `UUID`, not the
-    // old `ServiceResponse` RM `EHR` envelope; the EHR's `ehr_id.value` is that
-    // uuid, so the string form is the same id the old test read from `.body`.
+    // NOTE: the SM `create_ehr` returns the new EHR's `UUID`; `ehr_id.value`
+    // IS that uuid, so its string form is the id every assertion here uses.
     svc.create_ehr(None).await.expect("create_ehr").to_string()
 }
 
 /// Create a composition in `ehr_id`, returning its `OBJECT_VERSION_ID`.
 async fn create_comp(svc: &FerroEhrService, ehr_id: &str, name: &str, magnitude: f64) -> String {
-    // NOTE: the SM `create_composition` returns the new
-    // `version_uid` directly (what the old test extracted from `.body.uid.value`
-    // / `.meta.uid`).
+    // NOTE: the SM `create_composition` returns the new `version_uid`
+    // directly — the same value the composition's `uid` carries.
     svc.create_composition(
         ehr_id.parse().expect("ehr_id uuid"),
         uv(&composition(name, magnitude), "249", None),
@@ -1131,9 +1129,8 @@ async fn ehr_status_on_ehr_variable() {
         "default EHR_STATUS is queryable: {status:?}"
     );
 
-    // (2) The exact A/106 SELECT list resolves (previously a 400 reject). The
-    // golden's column metadata (name `#i` + path) is the data-independent
-    // oracle.
+    // (2) The exact A/106 SELECT list resolves. The golden's column metadata
+    // (name `#i` + path) is the data-independent oracle.
     let r = run_aql(
         &svc,
         "SELECT e/ehr_id, e/time_created, e/system_id, e/ehr_status FROM EHR e",
@@ -1204,8 +1201,8 @@ async fn ehr_status_query_empty_db() {
 }
 
 /// The single-row function set executes end-to-end on PostgreSQL (QUERY
-/// master03 §Functions: string, numeric, date/time) — chapter-16 audit: these
-/// were previously represented in the IR but rejected at SQL generation.
+/// master03 §Functions: string, numeric, date/time) — each represented in the
+/// IR and executed through to SQL, not merely parsed.
 #[tokio::test]
 async fn scalar_functions_execute() {
     let db = testkit::db().await.expect("testkit database");

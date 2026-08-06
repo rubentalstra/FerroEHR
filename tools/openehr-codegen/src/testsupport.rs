@@ -671,19 +671,19 @@ fn find_generation<'a>(
 ///
 /// # Errors
 /// Returns an error if the AM/BASE/LANG BMM files cannot be loaded.
-pub fn am24_reemit_mirrors() -> Result<Vec<Mirror>, Error> {
+pub fn v2_4_reemit_mirrors() -> Result<Vec<Mirror>, Error> {
     let am = compose("am")?;
-    let am24 = find_generation(&am, "v2_4")?;
-    let unit = am24.unit()?;
+    let v2_4 = find_generation(&am, "v2_4")?;
+    let unit = v2_4.unit()?;
     let reemit = cross_schema_reemit(&unit.model, &unit.schema);
-    let dep_refs: Vec<&BmmSchema> = am24.dep_schemas.iter().collect();
+    let dep_refs: Vec<&BmmSchema> = v2_4.dep_schemas.iter().collect();
     let aug = augment_with_reemit(&unit.schema, &unit.model, &reemit, &dep_refs);
     let aug_paths = class_paths(&aug);
 
     // Source package path per class, first-wins across the dependency schemas
     // (BASE before LANG — the same order `augment_with_reemit` grafts).
     let mut source_paths: BTreeMap<String, String> = BTreeMap::new();
-    for dep in &am24.dep_schemas {
+    for dep in &v2_4.dep_schemas {
         for (cls, path) in class_paths(dep) {
             source_paths.entry(cls).or_insert(path);
         }
@@ -703,7 +703,7 @@ pub fn am24_reemit_mirrors() -> Result<Vec<Mirror>, Error> {
 ///
 /// # Errors
 /// Returns an error if the AM/BASE/LANG BMM files cannot be loaded.
-pub fn am24_reemit_closure() -> Result<BTreeSet<String>, Error> {
+pub fn v2_4_reemit_closure() -> Result<BTreeSet<String>, Error> {
     reemit_closure("am", "v2_4")
 }
 

@@ -27,6 +27,8 @@ workflow refuses a tag that has no matching section here.
 - The `openehr-rm` and `openehr-base` crates now ALSO emit the latest RELEASED specification generations beside the development pins — `openehr_rm::v1_1` (RM 1.1.0, resolving against BASE 1.2.0 per its own BMM `includes`) and `openehr_base::v1_2` (BASE 1.2.0) — each a complete peer: full type model, canonical-JSON codecs, RM attribute model, invariant cores, and validation behaviour. The served wire is unchanged (the current generations stay `v1_2`/`v1_3`); runtime selection between generations arrives with the `spec_profile` configuration key.
 
 ### Changed
+- The `openehr-its` Web Template builder for ADL2 sources is renamed to match the generation modules: `build_web_template_am24` becomes `build_web_template_v2_4` (the `am14`/`am24` module names became `v1_4`/`v2_4` in the multi-generation refactor, and the retired spelling survived in this API, two file names and their prose). A crate-API change with no behaviour change.
+- Snapshot tests now resolve their workspace root from a pinned `INSTA_WORKSPACE_ROOT` rather than a runtime lookup, so cargo-lock contention can no longer make stored snapshots appear missing or write pending snapshots to a doubled path.
 - Dependency updates: `base64` 0.23, `fancy-regex` 0.19, `jsonschema` 0.49 and `jsonwebtoken` 11. No behaviour change — each was checked against its upstream changelog and then against this workspace's own call sites, including that `jsonschema`'s new single-error `validate` signature does not reduce our error reporting (both call sites already collect every error).
 
 - The documentation site's search metadata is produced by a small Rust tool (`tools/docs-meta`) rather than a Python script — the docs workflow is Rust-only by design, and this repository ships no Python.
@@ -37,6 +39,10 @@ workflow refuses a tag that has no matching section here.
 - The project README now documents the two selectable openEHR specification generations (the `spec_profile` key, with the change contract in both directions) and the eight `openehr-*` specification crates published on crates.io — neither was mentioned before, and the architecture diagram, CI-gate list and roadmap link are corrected to current reality.
 - The vendored openEHR specification tree no longer carries upstream's own dependency manifests (the CNF Robot harness's `requirements.txt`, the ITS-REST and TERM PHP tooling's `composer.json`). They are upstream build tooling, not specification text, and their presence made this repository's dependency graph claim Python and PHP ecosystems it does not use — raising advisories against pinned third-party versions nothing here installs. The vendoring script now excludes dependency manifests across the common ecosystems, so a future re-vendor cannot reintroduce them; the vendored spec text itself is unchanged.
 - Hand-written spec-behaviour files that were byte-identical across the `openehr-rm`/`openehr-base` generation modules (89 twin families, ~29k lines of duplicated source) are now generation-twin TEMPLATES: one hand-written source under the code generator's `templates/` tree, with the per-generation copies stamped by `emit` under an `@generated-from-template` header — generation divergence becomes impossible instead of policed, and an emitter invariant refuses any new unconverted twin. The one genuinely generation-specific file (`ITEM_TAG`'s construction under RM 1.1.0's field order) is an explicit per-generation override carrying its adjudication. Crate behaviour is unchanged; the packaged sources now say which file is stamped from which template.
+
+### Removed
+
+- `openehr-rm`'s `ehr-extract` cargo feature, which gated nothing (the EHR Extract modules were always compiled), and `openehr-its`'s empty `bmm` placeholder module — a published module that promised future surface nobody could use.
 
 ### Fixed
 

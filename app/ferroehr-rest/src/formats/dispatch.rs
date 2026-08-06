@@ -193,7 +193,7 @@ pub(crate) async fn composition_flat_response(
 
 /// Render a COMPOSITION as a FLAT response using an **already-resolved**
 /// `WebTemplate` — the seam for surfaces whose template is not in the ADL 1.4
-/// store (e.g. an ADL2 example, whose Web Template the am24 front end built).
+/// store (e.g. an ADL2 example, whose Web Template the `v2_4` front end built).
 pub(crate) fn composition_flat_response_with(
     status: StatusCode,
     comp: &Value,

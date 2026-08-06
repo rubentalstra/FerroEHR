@@ -199,7 +199,7 @@ async fn reap_deletes_only_rows_past_the_horizon() {
         .expect("count");
     assert_eq!(count, 2);
 
-    // 30-day horizon reaps exactly the old row.
+    // A 30-day horizon reaps exactly the row older than the horizon.
     assert_eq!(store.reap(30).await.expect("reap 30"), 1);
     let remaining: i64 = sqlx::query_scalar("SELECT count(*) FROM audit.audit_event")
         .fetch_one(&pool)

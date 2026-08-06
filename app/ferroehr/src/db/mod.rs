@@ -298,9 +298,9 @@ pub fn migration_fingerprint() -> String {
 /// Each migrator runs on a connection whose `search_path` starts with its
 /// target schema, so the unqualified DDL and that set's `_sqlx_migrations`
 /// bookkeeping table land in the right schema (two independent bookkeeping
-/// tables, one per set). Safe to call repeatedly: already-applied migrations
-/// are skipped, and previously applied migrations are checksum-validated
-/// against the embedded sources.
+/// tables, one per set). Safe to call repeatedly: an already-applied migration
+/// is skipped, and its recorded checksum is validated against the embedded
+/// source.
 ///
 /// The sequence runs on a connection **detached** from the pool and closed
 /// afterwards: the migrators mutate the session `search_path`, and a
