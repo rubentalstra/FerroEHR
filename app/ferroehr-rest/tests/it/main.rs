@@ -30,6 +30,7 @@ mod audit_e2e;
 mod audit_iti81;
 mod authz_cedar_engine;
 mod authz_remote_pdp;
+mod authz_route_matrix;
 mod composition_validation_http;
 mod definition_adl2_http;
 mod definition_archetype_http;

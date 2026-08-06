@@ -872,6 +872,105 @@ async fn every_response_carries_the_security_headers() {
     }
 }
 
+/// A router with the Swagger UI mounted — the shared fixture turns it off, and
+/// these two tests are about the page it serves.
+async fn app_with_swagger() -> (testkit::TestDb, Router) {
+    let (pg, service) = common::test_service().await;
+    let mut cfg = config(false);
+    cfg.server.swagger_ui = true;
+    (pg, common::router_with(cfg, service))
+}
+
+/// Swagger UI must get a policy it can actually run under.
+///
+/// The API's `default-src 'none'` is right for JSON and fatal for the one surface
+/// on this origin that is rendered: the vendored bundle's own same-origin scripts
+/// and styles would be blocked and the page would come up blank. Under the
+/// default configuration `swagger_ui` is ON, so this was a shipped regression
+/// waiting to be reported as "the docs are broken".
+#[tokio::test]
+async fn swagger_ui_gets_a_policy_it_can_run_under() {
+    let (_pg, app) = app_with_swagger().await;
+    let req = Request::builder()
+        .uri("/ferroehr/rest/swagger-ui")
+        .body(Body::empty())
+        .unwrap();
+    let (status, headers, _body) = send(app, req).await;
+    assert_eq!(status, StatusCode::OK);
+    let csp = headers
+        .get(header::CONTENT_SECURITY_POLICY)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or_default();
+    assert!(
+        csp.contains("script-src 'self'"),
+        "the rendered surface needs its own script policy, got {csp:?}"
+    );
+    assert!(
+        !csp.contains("default-src 'none'"),
+        "the API policy would blank the page: {csp:?}"
+    );
+}
+
+/// The Swagger CSP carries NO inline allowance, and the served page needs none.
+///
+/// This asserts both halves, because the second is what makes the first safe: if
+/// the vendored distribution ever starts inlining a script or a style, this test
+/// fails and says so — rather than the page silently coming up blank in a
+/// CSP-enforcing browser, which is the failure mode that gets "fixed" by adding
+/// `'unsafe-inline'` back.
+#[tokio::test]
+async fn the_swagger_page_needs_no_inline_allowance() {
+    let (_pg, app) = app_with_swagger().await;
+    let req = Request::builder()
+        .uri("/ferroehr/rest/swagger-ui")
+        .body(Body::empty())
+        .unwrap();
+    let (status, headers, body) = send(app, req).await;
+    assert_eq!(status, StatusCode::OK);
+
+    let csp = headers
+        .get(header::CONTENT_SECURITY_POLICY)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or_default();
+    assert!(
+        !csp.contains("'unsafe-inline'"),
+        "the policy must not permit inline: {csp:?}"
+    );
+
+    assert!(
+        !body.contains("<style"),
+        "an inline <style> would need style-src 'unsafe-inline'"
+    );
+    for (index, _) in body.match_indices("<script") {
+        let rest = &body[index..];
+        let Some(tag_end) = rest.find('>') else { continue };
+        let after = &rest[tag_end + 1..];
+        let Some(close) = after.find("</script>") else {
+            continue;
+        };
+        assert!(
+            after[..close].trim().is_empty(),
+            "an inline <script> body would need script-src 'unsafe-inline'"
+        );
+    }
+}
+
+/// And the JSON surface keeps the strict policy — the Swagger exception must not
+/// leak onto the API responses next to it.
+#[tokio::test]
+async fn the_api_keeps_the_strict_policy() {
+    let (_pg, app) = app(false).await;
+    let req = Request::builder()
+        .uri(format!("{BASE}/ehr/{EHR}"))
+        .body(Body::empty())
+        .unwrap();
+    let (_status, headers, _body) = send(app, req).await;
+    assert_eq!(
+        headers.get(header::CONTENT_SECURITY_POLICY).unwrap(),
+        "default-src 'none'; frame-ancestors 'none'"
+    );
+}
+
 /// Two properties the header audit asked about explicitly.
 ///
 /// No `Server` header: `hyper` emits none, and nothing in the stack adds one, so

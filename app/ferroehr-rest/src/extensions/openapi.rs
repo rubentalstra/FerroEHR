@@ -49,6 +49,7 @@ use axum::http::{StatusCode, header};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use bytes::Bytes;
+use tower_http::set_header::SetResponseHeaderLayer;
 use utoipa::OpenApi;
 use utoipa::openapi::security::{
     Http, HttpAuthScheme, HttpBuilder, SecurityRequirement, SecurityScheme,
@@ -814,7 +815,40 @@ pub(crate) fn swagger_router(cfg: &AppConfig) -> Router<AppState> {
                 async move { serve_ui_file(&file, &config) }
             }),
         )
+        // Swagger UI is the one surface on this origin that is genuinely
+        // rendered, so it needs a policy derived from what it loads rather than
+        // the API's `default-src 'none'` — which would block the vendored
+        // bundle's own same-origin scripts and styles and leave a blank page.
+        //
+        // Everything it needs is same-origin (the bundle is vendored, not from a
+        // CDN), so `'self'` alone covers scripts, styles, fonts and images —
+        // with NO inline allowance. That was measured rather than assumed: the
+        // served page carries no inline `<script>` and no inline `<style>` (the
+        // distribution puts its configuration in a separate
+        // `swagger-initializer.js` asset), and a test pins that, so if the
+        // upstream bundle ever inlines something the test says so instead of the
+        // page silently breaking. `connect-src 'self'` keeps Try-It-Out pointed
+        // at this server and nowhere else.
+        //
+        // Set here rather than centrally, and the outer layer uses
+        // `if_not_present`, so this narrower policy survives instead of being
+        // overwritten on the way out.
+        .layer(SetResponseHeaderLayer::if_not_present(
+            header::CONTENT_SECURITY_POLICY,
+            http::HeaderValue::from_static(SWAGGER_UI_CSP),
+        ))
 }
+
+/// The Content-Security-Policy for the Swagger UI surface.
+const SWAGGER_UI_CSP: &str = "default-src 'self'; \
+     script-src 'self'; \
+     style-src 'self'; \
+     img-src 'self' data:; \
+     font-src 'self'; \
+     connect-src 'self'; \
+     object-src 'none'; \
+     base-uri 'self'; \
+     frame-ancestors 'none'";
 
 /// The `api-docs` directory the documents live under (the parent of the
 /// configured `openapi.json` path).

@@ -200,6 +200,10 @@ pub struct FerroEhrService {
     /// query is reported as `408`. No openEHR spec governs a query timeout —
     /// our own extension.
     query_timeout: Option<Duration>,
+    /// The row ceiling applied to a query that neither the AQL nor the request
+    /// bounds; `None` leaves such a query unbounded. See
+    /// [`QueryConfig::max_result_rows`](crate::service::query::config::QueryConfig::max_result_rows).
+    query_result_ceiling: Option<i64>,
     /// Whether the transactional event outbox is written on every commit. The
     /// outbox feeds the eventing extensions (AMQP publisher + FHIR outbound
     /// emitter) — no openEHR spec governs eventing (our own extension). When no
@@ -243,6 +247,7 @@ impl FerroEhrService {
             plan_cache: PlanCache::default(),
             archetype_lineage: archetype_lineage_cache(),
             query_timeout: None,
+            query_result_ceiling: None,
             outbox_enabled: true,
             created_ehr_repr: moka::future::Cache::builder()
                 .max_capacity(4096)
@@ -381,6 +386,7 @@ impl FerroEhrService {
     pub fn with_query_config(mut self, query: &QueryConfig) -> Self {
         self.plan_cache = PlanCache::new(query.plan_cache_capacity);
         self.query_timeout = query.timeout();
+        self.query_result_ceiling = query.result_ceiling();
         self
     }
 

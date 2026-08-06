@@ -55,6 +55,23 @@ pub struct DbConfig {
     pub min_connections: u32,
     /// Seconds to wait for a free connection before failing.
     pub acquire_timeout_secs: u64,
+    /// `statement_timeout` applied to every pooled connection, in
+    /// milliseconds; `0` leaves the server default (usually unlimited).
+    ///
+    /// This is the backstop the request timeout cannot be. A request that
+    /// exceeds the HTTP timeout is answered `408` by dropping the handler
+    /// future — which does not cancel the statement PostgreSQL is running
+    /// (<https://www.postgresql.org/docs/18/runtime-config-client.html>). Without
+    /// this, a handful of expensive queries can hold every pooled connection
+    /// while every one of their clients has already been given up on: the
+    /// clients see timeouts, the server looks idle, and the database is
+    /// saturated by work nobody is waiting for.
+    ///
+    /// Set ABOVE the AQL engine's own budget
+    /// ([`crate::service::query::config::QueryConfig::timeout_ms`]) so the
+    /// engine's typed refusal fires first and this only catches what the engine
+    /// does not govern. No openEHR spec governs it — our own design.
+    pub statement_timeout_ms: u64,
 }
 
 impl Default for DbConfig {
@@ -66,6 +83,9 @@ impl Default for DbConfig {
             max_connections: 20,
             min_connections: 2,
             acquire_timeout_secs: 30,
+            // Twice the engine's own 30 s budget, so the engine refuses first
+            // and this remains a backstop rather than the primary control.
+            statement_timeout_ms: 60_000,
         }
     }
 }
@@ -121,6 +141,11 @@ const SET_SEARCH_PATH_SQL: &str = "SET search_path TO ehr, ext, public";
 /// on the `sqlx` defaults (idle reap + bounded lifetime — infinite-lived
 /// connections are discouraged by the driver, so we do not disable them).
 fn pool_options(settings: &DbConfig) -> PgPoolOptions {
+    // Rendered once here rather than per connection. The value is an integer
+    // from our own configuration, never client input, and it is bound as a
+    // literal because PostgreSQL's `SET` takes no parameter placeholder.
+    let statement_timeout = (settings.statement_timeout_ms > 0)
+        .then(|| format!("SET statement_timeout = {}", settings.statement_timeout_ms));
     PgPoolOptions::new()
         .max_connections(settings.max_connections)
         .min_connections(settings.min_connections)
@@ -129,9 +154,25 @@ fn pool_options(settings: &DbConfig) -> PgPoolOptions {
         // adds one round trip to EVERY acquisition; a broken connection is
         // detected by its first real statement and retried by the pool.
         .test_before_acquire(false)
-        .after_connect(|conn, _meta| {
+        .after_connect(move |conn, _meta| {
+            // Cloned per call: `after_connect` takes an `Fn`, so the captured
+            // value cannot be moved out of it.
+            let statement_timeout = statement_timeout.clone();
             Box::pin(async move {
                 sqlx::query(SET_SEARCH_PATH_SQL).execute(&mut *conn).await?;
+                if let Some(statement_timeout) = statement_timeout {
+                    // `SET LOCAL` would last only the current transaction, so
+                    // this is a session-level SET on the physical connection —
+                    // it survives every checkout of that connection.
+                    // `AssertSqlSafe` because PostgreSQL's `SET` takes no bind
+                    // placeholder, so the value has to be rendered into the
+                    // statement. Audited: it is a `u64` from our own
+                    // configuration formatted with `{}`, never client input, so
+                    // no string can reach here that is not decimal digits.
+                    sqlx::query(sqlx::AssertSqlSafe(statement_timeout))
+                        .execute(&mut *conn)
+                        .await?;
+                }
                 Ok(())
             })
         })

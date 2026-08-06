@@ -81,6 +81,113 @@ pub struct ServerConfig {
     pub limits: BodyLimits,
     /// `[server.rate_limit]` — per-caller request rates.
     pub rate_limit: RateLimitConfig,
+    /// `[server.connection]` — connection-level bounds, before a request exists.
+    pub connection: ConnectionConfig,
+}
+
+/// `[server.connection]` — the bounds that apply BEFORE a request exists.
+///
+/// Every other limit in this configuration engages once a request has been
+/// parsed and dispatched: the body limit, the request timeout, the rate limiter,
+/// the in-flight shed. A client that opens a socket and then trickles request
+/// headers reaches none of them, and costs itself almost nothing while holding a
+/// connection — the slow-HTTP shape the OWASP Denial of Service Cheat Sheet
+/// names under "minimum ingress rate threshold". This block is where that is
+/// bounded.
+///
+/// No openEHR spec governs connection handling — our own design.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct ConnectionConfig {
+    /// How long a connection may take to deliver its complete request head, in
+    /// seconds; `0` disables the bound (hyper's default — no limit).
+    ///
+    /// Applies to both listeners. Ten seconds is far longer than any real client
+    /// needs to write a request head on a working link, and short enough that a
+    /// stalled connection is reclaimed rather than parked.
+    ///
+    /// HTTP/1 only, because it is an HTTP/1 concept — an HTTP/2 request head
+    /// arrives in HEADERS frames on a multiplexed connection. The HTTP/2 side is
+    /// bounded by [`Self::max_concurrent_streams`] and the keep-alive pair below.
+    pub header_read_timeout_secs: u64,
+    /// The most HTTP/2 streams one connection may have open at once; `0` leaves
+    /// hyper's default.
+    ///
+    /// This is HTTP/2's equivalent exposure, and a sharper one: a peer that opens
+    /// streams and immediately cancels them makes the server do request setup
+    /// work at almost no cost to itself — the amplification behind CVE-2023-44487
+    /// ("HTTP/2 Rapid Reset"). Bounding concurrency bounds the work in flight per
+    /// connection.
+    pub max_concurrent_streams: u32,
+    /// Interval between HTTP/2 keep-alive PINGs, in seconds; `0` disables them.
+    ///
+    /// Without a ping, a connection whose peer has vanished without a FIN is held
+    /// until the OS notices, which can be a very long time. With one, a dead peer
+    /// is detected in [`Self::http2_keep_alive_timeout_secs`] and the connection
+    /// released.
+    pub http2_keep_alive_interval_secs: u64,
+    /// How long to wait for a keep-alive PING response before closing the
+    /// connection, in seconds.
+    pub http2_keep_alive_timeout_secs: u64,
+}
+
+impl Default for ConnectionConfig {
+    fn default() -> Self {
+        Self {
+            header_read_timeout_secs: 10,
+            // 256 concurrent streams per connection: two orders of magnitude
+            // above what a real client multiplexes, and a hard bound on the
+            // rapid-reset amplification. hyper's own default is 200 for
+            // comparison; this is set explicitly so it is a decision rather
+            // than an inherited value.
+            max_concurrent_streams: 256,
+            http2_keep_alive_interval_secs: 30,
+            http2_keep_alive_timeout_secs: 10,
+        }
+    }
+}
+
+impl ConnectionConfig {
+    /// The header-read bound as a [`std::time::Duration`], or `None` when
+    /// disabled.
+    #[must_use]
+    pub const fn header_read_timeout(&self) -> Option<std::time::Duration> {
+        if self.header_read_timeout_secs > 0 {
+            Some(std::time::Duration::from_secs(
+                self.header_read_timeout_secs,
+            ))
+        } else {
+            None
+        }
+    }
+
+    /// The HTTP/2 stream-concurrency bound, or `None` to leave hyper's default.
+    #[must_use]
+    pub const fn stream_cap(&self) -> Option<u32> {
+        if self.max_concurrent_streams > 0 {
+            Some(self.max_concurrent_streams)
+        } else {
+            None
+        }
+    }
+
+    /// The HTTP/2 keep-alive interval, or `None` when disabled.
+    #[must_use]
+    pub const fn http2_keep_alive_interval(&self) -> Option<std::time::Duration> {
+        if self.http2_keep_alive_interval_secs > 0 {
+            Some(std::time::Duration::from_secs(
+                self.http2_keep_alive_interval_secs,
+            ))
+        } else {
+            None
+        }
+    }
+
+    /// The HTTP/2 keep-alive response deadline.
+    #[must_use]
+    pub const fn http2_keep_alive_timeout(&self) -> std::time::Duration {
+        std::time::Duration::from_secs(self.http2_keep_alive_timeout_secs)
+    }
 }
 
 /// `[server.rate_limit]` — the two-tier request-rate ceiling.
@@ -237,6 +344,37 @@ pub struct TlsConfig {
     /// (`FERROEHR__SERVER__TLS__CLIENT_CA_FILE`). Required when `client_auth`
     /// is not `off` — an explicit trust anchor, never the web PKI.
     pub client_ca_file: Option<String>,
+    /// The lowest TLS version this listener will negotiate
+    /// (`FERROEHR__SERVER__TLS__MIN_VERSION`): `"1.3"` (default) or `"1.2"`.
+    pub min_version: TlsVersion,
+}
+
+/// The TLS protocol floor for the native listener.
+///
+/// Defaults to **1.3**, with 1.2 available for compatibility — the OWASP
+/// Transport Layer Security Cheat Sheet's own position: "web applications must
+/// default to TLS 1.3 and may support TLS 1.2 for compatibility."
+///
+/// 1.0 and 1.1 are not representable here at all, which is deliberate: they are
+/// formally deprecated by RFC 8996 (March 2021), forbidden by PCI DSS,
+/// disallowed by NIST SP 800-52 Rev. 2, and removed from every mainstream
+/// browser. A configuration key that could select them would be a footgun with
+/// no legitimate use, so the type has no variant for them and the rustls
+/// provider offers none either. SSLv2 and SSLv3 likewise do not exist in
+/// `rustls`.
+///
+/// Choose `V1_2` only when a real client requires it — an older integration
+/// engine or a pinned Java runtime. It is a deliberate widening, and naming it
+/// in configuration is what makes it visible.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum TlsVersion {
+    /// TLS 1.3 only (RFC 8446) — the default.
+    #[default]
+    #[serde(rename = "1.3")]
+    V1_3,
+    /// TLS 1.2 and 1.3, for clients that cannot do 1.3.
+    #[serde(rename = "1.2")]
+    V1_2,
 }
 
 impl Default for ServerConfig {
@@ -258,6 +396,7 @@ impl Default for ServerConfig {
             tls: TlsConfig::default(),
             limits: BodyLimits::default(),
             rate_limit: RateLimitConfig::default(),
+            connection: ConnectionConfig::default(),
         }
     }
 }
