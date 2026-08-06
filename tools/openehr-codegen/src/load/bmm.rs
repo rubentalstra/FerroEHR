@@ -89,6 +89,11 @@ pub(crate) struct BmmClass {
     /// openEHR terminology-group / code-set identifier strings), in declaration
     /// order. Verbatim — the render stage decodes the literal `value`.
     pub constants: Vec<BmmConstant>,
+    /// Declared function names (`BMM_CLASS.functions`), in file order. The BMM
+    /// carries functions by NAME + result type only (no body), so the loader
+    /// keeps just the names: they are what a hand-written behaviour sibling must
+    /// realize, per generation.
+    pub functions: Vec<String>,
     /// Class invariants (`BMM_CLASS.invariants`): a map from invariant name to
     /// its assertion-expression text (the Eiffel/UML assertion dialect), verbatim.
     /// The `analyze` stage parses + classifies these; the loader keeps them raw.
@@ -410,6 +415,7 @@ fn parse_class(node: &Value) -> BmmClass {
     let enumeration = parse_enumeration(node);
     let constants = parse_constants(node);
     let invariants = parse_invariants(node);
+    let functions = parse_function_names(node);
 
     BmmClass {
         name,
@@ -420,8 +426,18 @@ fn parse_class(node: &Value) -> BmmClass {
         properties,
         enumeration,
         constants,
+        functions,
         invariants,
     }
+}
+
+/// Parse the class node's `functions` object into its declaration-ordered name
+/// list (`serde_json`'s `preserve_order` keeps file order). Absent → empty.
+fn parse_function_names(node: &Value) -> Vec<String> {
+    node.get("functions")
+        .and_then(Value::as_object)
+        .map(|m| m.keys().cloned().collect())
+        .unwrap_or_default()
 }
 
 /// Parse the class's `constants` object (name → `{type, value, documentation}`)
