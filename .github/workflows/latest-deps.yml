@@ -15,6 +15,11 @@ on:
     - cron: "17 5 * * 1" # Mondays 05:17 UTC
   workflow_dispatch:
 
+# A scheduled probe: only the newest run is interesting, so cancel freely.
+concurrency:
+  group: latest-deps-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions: {}
 
 jobs:

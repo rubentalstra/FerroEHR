@@ -6,7 +6,6 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-authors.workspace = true
 documentation = "https://docs.rs/openehr-query"
 readme = "README.md"
 keywords = ["openehr", "aql", "query", "parser", "healthcare"]

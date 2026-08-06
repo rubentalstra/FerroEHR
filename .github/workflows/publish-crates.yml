@@ -31,6 +31,13 @@ on:
         default: false
         type: boolean
 
+# Two concurrent `cargo publish --workspace` runs over the same versions produce
+# one success and one confusing part-way failure across the eight crates, and a
+# published version is immutable. Queue, never cancel.
+concurrency:
+  group: publish-crates-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions: {}
 
 jobs:

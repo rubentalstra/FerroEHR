@@ -17,7 +17,6 @@ edition = "2024"
 rust-version = "1.96"
 license = "MIT"
 repository = "https://github.com/rubentalstra/FerroEHR"
-authors = ["Ruben Talstra <14235001+rubentalstra@users.noreply.github.com>"]
 # C-METADATA (https://rust-lang.github.io/api-guidelines/documentation.html#c-metadata):
 # members inherit via `<key>.workspace = true`; `readme` resolves from this root.
 documentation = "https://ferroehr.eu/"
