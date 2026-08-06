@@ -1,7 +1,7 @@
 # PostgreSQL 17 + 18 features FerroEHR leverages
 
 **Pin: PostgreSQL 18, target 18.4+** (`docs/VERSIONS.md`; CI runs `postgres:18.4`).
-EHRbase (Java) targets **PG 15/16**; we target **18** to exploit two major
+Upstream EHRbase targets **PG 15/16**; we target **18** to exploit two major
 releases of new capability for a JSONB-heavy openEHR CDR. This file is the
 reference the persistence, AQL-engine, and auth subsystems build against —
 "the best possible system" means using these, not the PG-16 subset.

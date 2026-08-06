@@ -7,7 +7,7 @@
 #
 #   CONF_SUT=ferroehr  (default)  → website/book/src/conformance-assets/
 #                                     + the landing page's committed copy
-#   CONF_SUT=ehrbase-java           → website/book/src/comparison-assets/
+#   CONF_SUT=ehrbase           → website/book/src/comparison-assets/
 #                                     (file stems suffixed -java)
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -26,9 +26,9 @@ ferroehr)
   OUT="website/book/src/conformance-assets"
   SUFFIX=""
   ;;
-ehrbase-java)
+ehrbase)
   OUT="website/book/src/comparison-assets"
-  SUFFIX="-java"
+  SUFFIX="-ehrbase"
   ;;
 *)
   OUT="docs/conformance/$SUT/conformance-assets"

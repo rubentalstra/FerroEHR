@@ -1,5 +1,5 @@
-# Upstream EHRbase (Java) as a CNF system-under-test — composed ONLY by
-# `CONF_SUT=ehrbase-java scripts/conformance.sh` (issue #232: the public CDR
+# Upstream EHRbase as a CNF system-under-test — composed ONLY by
+# `CONF_SUT=ehrbase scripts/conformance.sh` (issue #232: the public CDR
 # comparison re-based on the CNF 2.0 pipeline). Fresh volumes per run (the
 # exclusive-server ground), its own project network, host port 8091 so it can
 # coexist with the ferroehr stack on 8080.
@@ -11,8 +11,8 @@
 # overwrite allowed for idempotent re-provisioning, and the Admin API active
 # (the catalogue's ADMIN chapter drives it).
 services:
-  ehrbase-java-db:
-    image: ${FERROEHR_JAVA_POSTGRES_IMAGE:-ehrbase/ehrbase-v2-postgres:16.2}
+  ehrbase-db:
+    image: ${FERROEHR_EHRBASE_POSTGRES_IMAGE:-ehrbase/ehrbase-v2-postgres:16.2}
     # The same /dev/shm floor as the rs stack (docker/sut-ferroehr.yml
     # ferroehr-postgres) — Docker's default 64MB starves PostgreSQL's dynamic
     # shared memory (`could not resize shared memory segment … No space left
@@ -22,27 +22,29 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      FERROEHR_USER_ADMIN: ferroehr
-      FERROEHR_PASSWORD_ADMIN: ferroehr
-      FERROEHR_USER: ferroehr_restricted
-      FERROEHR_PASSWORD: ferroehr_restricted
+      # The image's own contract: its baked createdb.sql reads these EHRBASE_ keys
+      # and creates the database `ehrbase` — neither is ours to rename.
+      EHRBASE_USER_ADMIN: ehrbase
+      EHRBASE_PASSWORD_ADMIN: ehrbase
+      EHRBASE_USER: ehrbase_restricted
+      EHRBASE_PASSWORD: ehrbase_restricted
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 24
 
-  ehrbase-java:
-    image: ${FERROEHR_JAVA_IMAGE:-ehrbase/ehrbase:2.34.0}
+  ehrbase:
+    image: ${FERROEHR_EHRBASE_IMAGE:-ehrbase/ehrbase:2.34.0}
     depends_on:
-      ehrbase-java-db:
+      ehrbase-db:
         condition: service_healthy
     environment:
-      DB_URL: jdbc:postgresql://ehrbase-java-db:5432/ferroehr
-      DB_USER_ADMIN: ferroehr
-      DB_PASS_ADMIN: ferroehr
-      DB_USER: ferroehr_restricted
-      DB_PASS: ferroehr_restricted
+      DB_URL: jdbc:postgresql://ehrbase-db:5432/ehrbase
+      DB_USER_ADMIN: ehrbase
+      DB_PASS_ADMIN: ehrbase
+      DB_USER: ehrbase_restricted
+      DB_PASS: ehrbase_restricted
       SECURITY_AUTHTYPE: BASIC
       SECURITY_AUTHUSER: ferroehr
       SECURITY_AUTHPASSWORD: ferroehr
@@ -60,7 +62,7 @@ services:
       SYSTEM_ALLOWTEMPLATEOVERWRITE: "false"
       LOGGING_LEVEL_ROOT: ${LOGGING_LEVEL_ROOT:-INFO}
     ports:
-      - "${FERROEHR_JAVA_PORT:-8091}:8080"
+      - "${FERROEHR_EHRBASE_PORT:-8091}:8080"
     # NO container healthcheck: the official image ships no wget/curl, so an
     # in-container probe can never pass and `up --wait` hangs on
     # health:starting forever. Readiness is probed EXTERNALLY by

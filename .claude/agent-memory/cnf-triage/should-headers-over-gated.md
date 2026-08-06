@@ -18,7 +18,7 @@ So on those two, PRESENCE is a SHOULD; only the FORM (`W/"…"`, 1.1.0-dated) is
 MUST. The runner supports exactly this via `HeaderExpectation.optional` (authored
 `present?`). But ~20 bindings declare bare `Last-Modified: present` and the 412
 outcomes declare bare `ETag: latest-version-uid` — gating assertions. That cost
-8 in-scope red rows on the 2026-07-28 ehrbase-java record
+8 in-scope red rows on the 2026-07-28 ehrbase record
 (`I_EHR_DIRECTORY.delete_directory-*`, `get_directory*-deleted*`,
 `I_EHR_STATUS.get_versioned_ehr_status-*`,
 `I_EHR_DIRECTORY.update_directory-stale_if_match`).

@@ -97,10 +97,10 @@ under test, into its own directory:
 - **FerroEHR** (the default) — the composed stack built from the current
   sources. This is the project's own gate: a phase can only close on a run
   with zero drift against the committed baseline.
-- **EHRbase** — `CONF_SUT=ehrbase-java` composes the
+- **EHRbase** — `CONF_SUT=ehrbase` composes the
   official `ehrbase/ehrbase` image (with its companion PostgreSQL) on fresh
   volumes and runs the same catalogue with EHRbase's own committed party
-  set. Its measured artifacts live under `docs/conformance/ehrbase-java/`
+  set. Its measured artifacts live under `docs/conformance/ehrbase/`
   and feed the [comparison page](comparison.md).
 - **Bring your own endpoint** — point the runner at any deployed CDR by URL
   and credentials, with its own party set (an `ixit.json` naming the
@@ -130,7 +130,7 @@ available:
 bash scripts/conformance.sh
 
 # EHRbase, from the official images
-CONF_SUT=ehrbase-java bash scripts/conformance.sh
+CONF_SUT=ehrbase bash scripts/conformance.sh
 
 # any deployed CDR, by URL (credentials via the SUT_* variables the
 # ixit references)

@@ -1,5 +1,5 @@
 # The ferroehr CNF SUT stack (compose BASE — self-contained, like
-# docker/sut-ehrbase-java.yml): the conformance lanes compose THIS file, never
+# docker/sut-ehrbase.yml): the conformance lanes compose THIS file, never
 # the end-user quickstart docker-compose.yml, so the quickstart artifact and
 # the conformance instrument evolve independently.
 #
@@ -13,7 +13,7 @@
 #   |-----------|----------------------------------------------|-------------------|
 #   | CNF (rs)  | scripts/conformance.sh                       | ferroehr-cnf      |
 #   | CNF (pgp) | (same run — the parallel signing posture)    | ferroehr-cnf-pgp  |
-#   | CNF(java) | CONF_SUT=ehrbase-java scripts/conformance.sh | cnf-ehrbase-java  |
+#   | CNF(java) | CONF_SUT=ehrbase scripts/conformance.sh | cnf-ehrbase  |
 #
 # The CNF (rs) run brings up BOTH of its projects: this stack and a second
 # deployment of the same image in the openPGP version-signing posture
@@ -48,7 +48,7 @@ services:
     # Docker's default 64MB /dev/shm starves PostgreSQL's dynamic shared
     # memory under load (parallel workers error `could not resize shared
     # memory segment … No space left on device`); measured runs share this
-    # floor with the upstream comparison stack (docker/sut-ehrbase-java.yml).
+    # floor with the upstream comparison stack (docker/sut-ehrbase.yml).
     shm_size: ${BENCH_PG_SHM_SIZE:-1gb}
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}

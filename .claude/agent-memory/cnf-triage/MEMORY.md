@@ -19,7 +19,7 @@
 - [ctx/ never creates an EVENT_CONTEXT](ctx-event-context-synthesis.md) — ctx defaults FILL rm-tree nodes; `context/start_time` assertions need an event-context ctx key in the fixture
 - [XML offering is a service choice](xml-offering-is-a-service-choice.md) — AMB-167 "DOCUMENTED" ≠ mandatory offering; a 406 on Accept: application/xml is always conformant
 - [Runner masking mechanisms](runner-masking-mechanisms.md) — patched_body's RM-invalid EHR_STATUS fallback, `errored` contributing no capability evidence, report_only de-gating
-- [Upstream EHRbase Java non-conformance (#266)](upstream-ehrbase-java-nonconformance.md) — EHRbase 2.34.0 400s the spec-standard QUOTED If-Match (composition/ehr_status update classes) + 404s the STABLE item-tag surface; our driver/pack spec-valid, outcome (b), record stands
+- [Upstream upstream EHRbase non-conformance (#266)](upstream-ehrbase-nonconformance.md) — EHRbase 2.34.0 400s the spec-standard QUOTED If-Match (composition/ehr_status update classes) + 404s the STABLE item-tag surface; our driver/pack spec-valid, outcome (b), record stands
 - [ETag `W/` is 1.1.0-scoped](etag-weak-indicator-is-1-1-0-scoped.md) — form=MUST from 1.1.0, presence=SHOULD always; the catalogue applies the `its_rest` floor inconsistently (141 in-scope vs 108 out-of-scope rows, same matcher)
 - [Query ETag presence is a SHOULD](query-etag-presence-is-should.md) — no released source requires the header on a query 200; the `pattern:` matcher over-gates presence
 - [results.json records out-of-scope rows](results-json-records-out-of-scope-rows.md) — 542 red vs 227 in verdict scope on the java record; `binding.applies` is dead metadata

@@ -182,7 +182,7 @@ impl<'a> Shape<'a> {
 /// Emit one specification unit under its generation's version-named top
 /// module. Produces the type files and the `mod.rs` tree; the caller
 /// assembles the generation prelude, the crate prelude and `lib.rs`. The
-/// generation's spec version lives ONLY on the [`Generation`] enum (owner
+/// generation's spec version lives ONLY on the `Generation` enum (owner
 /// ruling 2026-08-05: no version constants anywhere — a second copy of the
 /// same fact can only drift, and `spec_version()` is a `const fn`, so even
 /// const contexts need no constant).
@@ -497,10 +497,10 @@ fn emit_lib(top: &BTreeSet<String>, comp: &CrateComposition) -> GenFile {
     b.push_str("pub mod prelude;\n");
     // No crate-level SPEC_VERSION const (owner ruling 2026-08-05, #1942): a
     // multi-generation crate has no single implemented spec version — the
-    // [`Generation`] enum is the authority (per-variant `spec_version()`,
-    // `CURRENT` for the default surface), and each generation module carries
-    // its own `SPEC_VERSION`. A fixed crate-root pin would contradict the
-    // selected generation the moment a consumer configures a non-current one.
+    // `Generation` enum is the authority (per-variant `spec_version()`, the
+    // derived `Default` marking the current generation). A fixed crate-root
+    // pin would contradict the selected generation the moment a consumer
+    // configures a non-current one.
     b.push_str(&emit_generation_enum(comp));
     GenFile {
         path: "lib.rs".to_string(),

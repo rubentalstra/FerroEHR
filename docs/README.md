@@ -55,7 +55,7 @@ externalization; acceptance is the openEHR conformance suite. See
   wins for those).
 - `postgres-features.md` — the PG 17/18 feature delta this CDR exploits.
 - `conformance/` — CNF 2.0 pipeline artifacts, one directory per SUT
-  (`ferroehr/`: `results.json`, `verdicts.json`). `ehrbase-java/` +
+  (`ferroehr/`: `results.json`, `verdicts.json`). `ehrbase/` +
   `COMPARISON.md` are frozen comparison data until the CNF pipeline re-bases
   the public comparison. Numbers live ONLY in these committed artifacts.
 - `profiles/` — per-statement profiling captures (`scripts/profile.sh`),

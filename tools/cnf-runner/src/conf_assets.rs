@@ -743,7 +743,7 @@ fn cases_phrase(total: u64) -> String {
 ///
 /// Every declared band renders — a band with no case for this SUT becomes an
 /// explicit "no cases" row rather than vanishing — so the ferroehr and
-/// ehrbase-java charts read band-for-band.
+/// ehrbase charts read band-for-band.
 ///
 /// Pure over its inputs: [`TAXONOMY`] order, no timestamps, no randomness.
 #[must_use]

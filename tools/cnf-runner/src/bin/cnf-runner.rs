@@ -40,7 +40,7 @@
 //!                                       render the published SVGs + summary
 //!                                       FROM committed artifacts
 //! cnf-runner conformance-assets --root DIR --results FILE --verdicts FILE
-//!                               --out DIR [--suffix=-java]
+//!                               --out DIR [--suffix=-ehrbase]
 //!                                       render the capability heat grid +
 //!                                       per-chapter outcome bars FROM the
 //!                                       committed party artifacts
@@ -283,7 +283,7 @@ enum Command {
         /// Output directory for the SVG files.
         #[arg(long)]
         out: PathBuf,
-        /// A suffix appended to the SVG file stems (`-java` for the
+        /// A suffix appended to the SVG file stems (`-ehrbase` for the
         /// comparison SUT's copies).
         #[arg(long, default_value = "")]
         suffix: String,

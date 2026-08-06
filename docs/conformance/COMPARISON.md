@@ -19,10 +19,10 @@
 
 | | ferroehr | EHRbase |
 |---|---|---|
-| Product | ferroehr 3.17.3 | ehrbase-java 2.34.0 |
+| Product | ferroehr 3.17.3 | ehrbase 2.34.0 |
 | Run date | 2026-08-05 | 2026-07-28 |
-| Party statement | `tools/cnf-runner/party/ferroehr/` | `tools/cnf-runner/party/ehrbase-java/` |
-| Stack | root compose, built from the current sources | `docker/sut-ehrbase-java.yml` (official images) |
+| Party statement | `tools/cnf-runner/party/ferroehr/` | `tools/cnf-runner/party/ehrbase/` |
+| Stack | root compose, built from the current sources | `docker/sut-ehrbase.yml` (official images) |
 
 ## Methodology
 

@@ -154,9 +154,8 @@ pub(crate) struct GenerationSpec {
     /// component version the generation's files self-identify as.
     pub module: &'static str,
     /// The openEHR specification version this generation implements (the
-    /// vendored files' pin) — emitted as the generation module's
-    /// `SPEC_VERSION` constant and the [`Generation`] enum's
-    /// `spec_version()` value.
+    /// vendored files pin), emitted as the crate `Generation` enum variant's
+    /// `spec_version()` value — the only place it appears.
     pub spec_version: &'static str,
     /// The vendored spec files composing this component version, in
     /// declaration order. Their emitted package paths must be disjoint
@@ -681,7 +680,7 @@ pub(crate) fn compose(key: &str) -> Result<Composed, Box<dyn std::error::Error>>
     Ok(Composed { comp, generations })
 }
 
-/// The Rust identifier of a generation's [`Generation`]-enum variant
+/// The Rust identifier of a generation's `Generation`-enum variant
 /// (`v1_2` → `V1_2`) — the module token upper-cased with its underscores
 /// KEPT: collapsing them (`V12`) would make `v1_2` and a future `v12`
 /// indistinguishable.
