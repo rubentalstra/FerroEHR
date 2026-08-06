@@ -41,6 +41,12 @@
 
 services:
   ferroehr-postgres:
+    cap_drop: [ALL]
+    # The entrypoint starts as root to chown the data directory, then drops to
+    # `postgres` — these five are what that needs, against the default fourteen.
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    security_opt:
+      - no-new-privileges:true
     image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:local}
     build:
       context: ./docker/postgres
@@ -88,6 +94,9 @@ services:
       start_period: 10s
 
   ferroehr:
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
     image: ${FERROEHR_IMAGE:-ghcr.io/rubentalstra/ferroehr:local}
     build:
       context: .
@@ -157,6 +166,9 @@ services:
   # systems shaped like SNOMED CT and LOINC, under the reserved example.test
   # domain. No licensed terminology content is distributed with this repo.
   terminology:
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
     profiles: [terminology]
     # Digest-pinned hapiproject/hapi:v8.10.0-3 (current release), resolved
     # 2026-07-29; no `:latest` (docs.docker.com/build/building/best-practices).
@@ -193,6 +205,9 @@ services:
   # `$validate-code` + `$expand` before exiting so a misconfigured server fails
   # here instead of inside a conformance run.
   terminology-seed:
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
     profiles: [terminology]
     # Digest-pinned curlimages/curl:8.19.0, resolved 2026-07-29.
     image: curlimages/curl:8.19.0@sha256:c03110c736db81bbe1be0296f1f1608c81b954b01626bdfb0a8f84e5bd00ff3c

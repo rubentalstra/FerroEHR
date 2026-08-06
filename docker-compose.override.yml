@@ -67,6 +67,9 @@ services:
   # [auth.oidc] block points at the realm below, and the OIDC lanes start it
   # with `docker compose --profile keycloak up`.
   keycloak:
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
     profiles: [keycloak]
     # Digest-pinned quay.io/keycloak/keycloak:26.7.0 (current release), resolved
     # 2026-07-24 (docs.docker.com/build/building/best-practices).
