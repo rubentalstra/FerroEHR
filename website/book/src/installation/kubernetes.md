@@ -67,16 +67,23 @@ artifact.
 
 ### Verifying what you installed
 
-Both the chart and the images carry **signed, keyless
+The chart and the images are published with **signed, keyless
 [Sigstore](https://docs.sigstore.dev/) provenance**, bound to this repository's
 build identity, so every claim here is checkable rather than asserted:
 
 ```shell
 # the chart
-gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:4.0.0 -R rubentalstra/FerroEHR
+gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:<chart-version> -R rubentalstra/FerroEHR
 # the images it deploys
-gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:3.17.3 -R rubentalstra/FerroEHR
+gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:<tag> -R rubentalstra/FerroEHR
 ```
+
+> [!IMPORTANT]
+> Signing was added to the publishing lanes **after** `3.17.3` was built, so that
+> tag and everything before it carry no attestation and the command above answers
+> `no attestations found` for them. Attestations exist from the first release
+> published by the signing lane onward. If you are pinning an older tag and need
+> provenance, pin a newer one.
 
 > [!NOTE]
 > `helm install --verify` and `helm verify` do **not** apply: they check a PGP

@@ -40,6 +40,14 @@ Claims on this page about the running deployment come from `kubectl`, `crictl` o
 | Cluster RBAC (`Node,RBAC`, `NodeRestriction`) | operator | [below](#cluster-rbac-and-why-this-chart-needs-none) |
 | The workload's own RBAC | **chart** — deliberately none | [below](#cluster-rbac-and-why-this-chart-needs-none) |
 | Kubelet authentication/authorization | operator | [below](#kubelet-access) |
+| Minimal, current, authorized images | **chart/CI** | [below](#the-build-phase-and-what-distroless-costs) |
+| Namespace isolation | **chart** (namespace-scoped by construction) | [below](#namespaces-and-the-two-tenant-models) |
+| Image provenance at admission | operator (we publish the attestations) | [below](#image-provenance-at-admission) |
+| Continuous scanning of published images | **CI** | [below](#continuous-scanning-of-published-images) |
+| Pod/container security context | **chart** | [below](#the-security-context-and-what-keeps-it-true) |
+| Pod Security Admission enforcement | operator (one `kubectl label`) | [below](#pod-security-admission-complying-versus-being-refused) |
+| Service mesh | neither — recorded decision | [below](#service-mesh-a-recorded-decision) |
+| Centralized policy management | operator, for admission only | [below](#centralized-policy-and-which-engine) |
 
 ## Host hardening and the version window
 
@@ -162,7 +170,10 @@ the confidentiality boundary of the credentials that reach PHI.
 Two mitigations you can apply without touching etcd's network posture:
 
 1. **Encryption at rest for Secrets** — not on by default in Kubernetes. See
-   [Secrets at rest](#secrets-are-not-encrypted-at-rest-by-default).
+   Kubernetes'
+   [encryption-at-rest
+   configuration](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/),
+   which is a cluster-level setting an operator applies once.
 2. **An external secret manager**, which removes the credential from etcd
    entirely: every secret this chart carries has a `*_file` route or an
    `existingSecret` route, so the value can arrive from a CSI driver or an
@@ -283,3 +294,344 @@ entry.
 
 This is a cluster-configuration control, and it is worth confirming rather than
 assuming — an exposed `10250` is a routine finding in real clusters.
+
+## The build phase, and what distroless costs
+
+**Ours, and this is the section with the most evidence behind it.** Each
+build-phase control and what actually satisfies it:
+
+| Control | Satisfied by |
+|---|---|
+| Minimal image (§3.4, §3.4.1 distroless) | `gcr.io/distroless/cc-debian13:nonroot` — no shell, no package manager, no libc tooling |
+| Image currency (§3.1.1) | base images and CI job containers pinned **by digest**, not tag, so a rebuild cannot silently change bytes |
+| Vulnerability identification in CI (§3.3) | Trivy on every published image, hadolint on every Dockerfile, plus secret and misconfiguration scanning over the tree |
+| Continuous scanning after release (§4.3) | a scheduled scan of the *published* tags — [below](#continuous-scanning-of-published-images) |
+| Authorized images only (§3.2) | signed provenance published; **enforcement is the operator's** — [below](#image-provenance-at-admission) |
+| Non-root by construction | the image declares `USER nonroot`, and the pod pins `runAsNonRoot` + uid 65532 independently |
+
+**What distroless costs, stated before an incident rather than during one: there
+is no shell in the image, so `kubectl exec … -- sh` does not work.** That is the
+security property working as intended — an attacker who achieves command
+execution finds no interpreter, no `curl`, no package manager — but it changes how
+you debug. Use instead:
+
+- `kubectl logs` (the server logs JSON by default, for a collector),
+- the always-on `/health/readiness` body, which names the failing dependency,
+- `/management/*` for the effective configuration, live log filters and an
+  on-demand CPU flamegraph,
+- `kubectl debug -it <pod> --image=busybox:1.37 --target=ferroehr` — an ephemeral
+  container shares the target's namespaces without adding a shell to the image
+  that ships.
+
+The registry posture: the images are **public** on GHCR, so a pull needs no
+credential and there is nothing to leak. Public does not mean trusted, which is
+the point of the next section — nothing about a public registry stops a cluster
+pulling a *different* image with the same name from somewhere else.
+
+## Namespaces and the two tenant models
+
+**Ours, and satisfied by construction.** Every object the chart renders is
+namespace-scoped — Deployment, Service, ConfigMap, Secret, ServiceAccount,
+NetworkPolicy, PodDisruptionBudget, HorizontalPodAutoscaler, Ingress,
+ServiceMonitor. There is **no ClusterRole, no ClusterRoleBinding, no
+CustomResourceDefinition, no cluster-scoped object of any kind**, and no template
+hard-codes a namespace: every reference is `.Release.Namespace` or a bare name
+resolved within the release's own namespace. So two releases in two namespaces
+cannot collide, and neither can reach the other's Secrets.
+
+Two ways to isolate tenants, with genuinely different blast radii — choose
+deliberately:
+
+| | Namespace per tenant | In-process multi-tenancy (`config.tenancy`) |
+|---|---|---|
+| Isolation boundary | Kubernetes: separate Secrets, NetworkPolicies, quotas, RBAC | one process, one database; tenant from a JWT claim, enforced by PostgreSQL row-level security |
+| Blast radius of an application-level bug | one tenant | potentially all tenants in the release |
+| Blast radius of a compromised database credential | one tenant's database | every tenant in that database |
+| Cost | one Deployment, one connection pool, one image pull per tenant | one deployment for all |
+
+The stronger boundary is a namespace and a database per tenant; the cheaper one is
+the tenancy feature. A deployment holding data for organizations that must not be
+able to reach each other under any single failure should prefer the first, and
+should not treat the second as equivalent because the wire behaviour looks the
+same.
+
+## Image provenance at admission
+
+**The operator's — and this is provenance nobody currently checks.**
+
+The publishing lanes attest both the images and the chart through **keyless
+Sigstore**, which means a verifier can establish that an artifact came from this
+repository's build. Nothing in a cluster *requires* that check before running one,
+and a signature nobody verifies changes nothing about what actually runs.
+
+> [!WARNING]
+> **No published artifact carries an attestation yet, so the policies below are
+> written from the workflow definitions and have not been verified against a live
+> attestation.** The signing step was added after the most recent release, and no
+> publishing run has executed since: `gh attestation verify` on the current
+> `ferroehr:3.17.3` and `ferroehr:develop` images both return HTTP 404, and the
+> repository's attestation list is empty. Before relying on either policy, confirm
+> the identity it trusts against a real artifact:
+>
+> ```shell
+> gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:<tag> \
+>   -R rubentalstra/FerroEHR --format json | jq '.[0].verificationResult.signature.certificate'
+> ```
+>
+> and reconcile `certificateIdentity` / `certificateOidcIssuer` with the values
+> below. A `--certificate-identity` that does not match what the lane issues fails
+> **closed** — it blocks a legitimate image — which is worse than no policy.
+
+The identity to trust, derived from the lanes themselves: GitHub's OIDC issuer,
+and a subject that is the publishing workflow's own ref.
+
+| Artifact | Built by | Certificate identity (SAN) |
+|---|---|---|
+| the three images | `.github/workflows/containers.yml` | `https://github.com/rubentalstra/FerroEHR/.github/workflows/containers.yml@refs/tags/vX.Y.Z` |
+| the chart | `.github/workflows/publish-chart.yml` | `https://github.com/rubentalstra/FerroEHR/.github/workflows/publish-chart.yml@refs/tags/vX.Y.Z` |
+
+with issuer `https://token.actions.githubusercontent.com` in both cases.
+
+**Kyverno** (`verifyImages`, keyless) — the engine [chosen
+below](#centralized-policy-and-which-engine):
+
+```yaml
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: ferroehr-image-provenance
+spec:
+  validationFailureAction: Enforce
+  rules:
+    - name: verify-ferroehr-images
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [ferroehr]
+      verifyImages:
+        - imageReferences:
+            - "ghcr.io/rubentalstra/ferroehr*"
+          attestors:
+            - entries:
+                - keyless:
+                    subject: "https://github.com/rubentalstra/FerroEHR/.github/workflows/containers.yml@refs/tags/*"
+                    issuer: "https://token.actions.githubusercontent.com"
+                    rekor:
+                      url: https://rekor.sigstore.dev
+```
+
+**sigstore-policy-controller**, if you already run it:
+
+```yaml
+apiVersion: policy.sigstore.dev/v1beta1
+kind: ClusterImagePolicy
+metadata:
+  name: ferroehr-image-provenance
+spec:
+  images:
+    - glob: "ghcr.io/rubentalstra/ferroehr**"
+  authorities:
+    - keyless:
+        url: https://fulcio.sigstore.dev
+        identities:
+          - issuer: https://token.actions.githubusercontent.com
+            subjectRegExp: "^https://github\\.com/rubentalstra/FerroEHR/\\.github/workflows/containers\\.yml@refs/tags/v.*$"
+```
+
+**Should the chart ship one? No, and the reason is structural:** an admission
+policy is cluster-scoped and governs workloads the chart knows nothing about,
+while the chart deliberately renders no cluster-scoped object at all (see
+[namespaces](#namespaces-and-the-two-tenant-models)). A `ClusterPolicy` in this
+chart would mean `helm uninstall` removing a control that other releases had come
+to depend on. The chart's contribution is the policy *document*, here, versioned
+with the lanes whose identity it encodes.
+
+**Without an admission controller**, the manual equivalent is a release-time
+check rather than a per-pod one:
+
+```shell
+gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:3.17.3 -R rubentalstra/FerroEHR
+gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:4.0.0 -R rubentalstra/FerroEHR
+```
+
+Then deploy **by digest** (`image.digest`), so what you verified is what runs — a
+tag can be moved afterwards, a digest cannot.
+
+## Continuous scanning of published images
+
+**Ours.** CI scans images at build time, which catches what was known when they
+were built and nothing after. A CVE published the week after a release applies to
+the image people are running, so the published tags are re-scanned on a schedule
+(`.github/workflows/image-scan.yml`, Mondays): all three images at the tag a user
+pulls, with the same `trivy.yaml` floor and the same adjudicated exceptions, and
+the OpenVEX documents under `security/vex/` applied so an accepted finding stays
+accepted with its argument attached.
+
+A finding does two things, because either alone fails quietly: it opens (or
+comments on) a tracking issue, **and** it fails the run. A red scheduled run
+nobody looks at is not a control, and an issue with no failing check can be closed
+without the finding being addressed.
+
+`ferroehr-postgres` is the image this exists for — it is built on the upstream
+`postgres` image, so its OS package set is not ours and its CVEs arrive on
+someone else's schedule. Measured when the lane was written: **0** fixable
+HIGH/CRITICAL findings across all three published images.
+
+## The security context, and what keeps it true
+
+**Ours, and settled.** Read from the *running container* via `crictl`, not from
+`values.yaml`:
+
+```text
+process.user     : {'additionalGids': [65532], 'gid': 65532, 'uid': 65532}
+noNewPrivileges  : True
+capabilities.bnd : None            ← an EMPTY bounding set, not "default minus ours"
+root.readonly    : True
+seccomp default  : SCMP_ACT_ERRNO  (13 rule groups)
+RW mounts        : /tmp  (plus the kernel/kubelet-managed /proc, /dev/*, /etc/hosts)
+RO mounts        : /etc/ferroehr  /etc/ferroehr-secrets  /sys  /sys/fs/cgroup
+```
+
+Three things worth drawing out. The capability bounding set is **empty**, so the
+drop is total at the kernel level rather than a subtraction from a runtime's
+default set. `readOnlyRootFilesystem: true` needed exactly **one** writable
+path — the chart's own `/tmp` emptyDir — and no per-integration surprise, which
+is what makes it safe to keep rather than the setting an operator relaxes during
+the first incident. And there are no init containers and no sidecars, so the
+context above is the whole pod.
+
+What keeps it true is not this page: `deploy/helm/validate.sh` asserts every one
+of these fields on every render and the golden files pin the exact bytes, and both
+run in CI on any change to the chart. A template edit that drops
+`readOnlyRootFilesystem` or `allowPrivilegeEscalation: false` fails a job, not a
+review.
+
+## Pod Security Admission: complying versus being refused
+
+Meeting the Restricted profile and being *refused* when you stop meeting it are
+different properties, and only the first is ours.
+
+**Restricted compliance, field by field**, so the claim is checkable against the
+[standard](https://kubernetes.io/docs/concepts/security/pod-security-standards/)
+rather than asserted:
+
+| Restricted requires | The chart sets |
+|---|---|
+| `hostNetwork`/`hostPID`/`hostIPC` unset | none set |
+| no privileged containers | `privileged: false` |
+| `allowPrivilegeEscalation: false` | set |
+| capabilities dropped to `ALL` (only `NET_BIND_SERVICE` may be added) | `drop: [ALL]`, none added |
+| `runAsNonRoot: true` | set, pod and container, uid/gid 65532 |
+| `seccompProfile.type` `RuntimeDefault` or `Localhost` | `RuntimeDefault`, pod and container |
+| no hostPath volumes | only `emptyDir`, `projected`, `secret` |
+| `readOnlyRootFilesystem` (hardening beyond Restricted) | `true` |
+
+**The enforcement half is the operator's, and it is one command:**
+
+```shell
+kubectl label namespace ferroehr \
+  pod-security.kubernetes.io/enforce=restricted \
+  pod-security.kubernetes.io/audit=restricted \
+  pod-security.kubernetes.io/warn=restricted
+```
+
+**Why the chart does not do this itself**, recorded so it is not re-litigated:
+Helm installs *into* a namespace that already exists (or one `helm
+--create-namespace` creates, which is the CLI's action and not a template), so a
+chart that declared its own release namespace would fight the tool — and
+`helm uninstall` would then delete a namespace holding objects the release does
+not own. More fundamentally, a PSA label is **namespace-wide policy**: it governs
+every workload in that namespace, including backup jobs, sidecars and any database
+an operator colocates. A single application chart is the wrong scope to claim it.
+
+Verified on a live cluster, in a namespace labelled `enforce=restricted`, with the
+database genuinely external to it:
+
+- **the chart installs and serves unchanged** — both replicas `1/1 Running`, zero
+  restarts, readiness `UP`, `POST /ehr` → `201`. No warnings for its pods.
+- **a regression of the chart's own pod spec is refused.** Upgrading with
+  `--set securityContext.privileged=true --set allowPrivilegeEscalation=true`
+  produced a ReplicaSet with `DESIRED 1, CURRENT 0` and:
+
+  ```text
+  Error creating: pods "ferroehr-…" is forbidden: violates PodSecurity
+  "restricted:latest": privileged (container "ferroehr" must not set
+  securityContext.privileged=true), allowPrivilegeEscalation != false
+  ```
+
+  while the healthy ReplicaSet stayed at **2/2** — because `maxUnavailable: 0`
+  means the rollout cannot retire a good pod before a replacement is ready. The
+  two controls compose: the label refuses the regression, and the strategy means
+  the refusal costs no availability.
+
+**What you get by not applying the label:** the chart still complies, but nothing
+*enforces* it. A future chart change, a stray `--set securityContext.privileged=true`,
+or a sidecar injected by other tooling would be admitted, and the first sign would
+be a running privileged container in the namespace holding your PHI.
+
+One practical note from that test: a colocated database fixture is unlikely to be
+Restricted-compliant (the upstream `postgres` entrypoint must start as root), so
+labelling a namespace that contains one will refuse it. That is another reason the
+production posture puts the database outside the cluster.
+
+## Service mesh: a recorded decision
+
+**Not adopted, deliberately.** The cheat sheet presents a mesh as a trade-off, not
+a requirement, and for this workload the trade lands clearly.
+
+What a mesh would provide, and what already provides it:
+
+| Mesh benefit | Already covered by |
+|---|---|
+| mTLS between services | the server terminates TLS natively (`[server.tls]`), including mutual TLS for the IHE ATNA ITI-19 posture; the database connection uses `sslmode=verify-full` |
+| East-west traffic restriction | the shipped NetworkPolicy, proven enforcing on this cluster |
+| Request-level observability | OTLP traces and Prometheus metrics from the application, which sees openEHR operations rather than an L7 proxy's view of opaque HTTP |
+| An audit trail of access | the ATNA/BALP audit trail, which records *who read which patient's record* — a property no proxy can reconstruct |
+
+Against that: a mesh is a second control plane, a sidecar in every pod (which the
+Restricted profile and the empty capability set then have to accommodate), and an
+opinionated platform to upgrade in lockstep. For **one workload plus an external
+database**, the lateral-movement problem a mesh exists to solve barely exists.
+
+**A genuine gap, named rather than glossed:** a mesh would give *workload
+identity* — SPIFFE-style cryptographic identity per pod, so the database could
+authenticate the client workload rather than a shared password held in a Secret.
+Nothing in this deployment provides that; the DSN is a bearer credential, and any
+process that can read the Secret can use it. The mitigations available without a
+mesh are an external secret manager plus short-lived credentials (for example
+cloud IAM database authentication, where the DSN carries a rotating token rather
+than a password). If you run a mesh anyway, expect the overlaps above rather than
+double-implementing them — and note that its sidecar will need its own PSA
+accommodation.
+
+## Centralized policy, and which engine
+
+**Operator's, and only for one of OPA's three use cases.**
+
+- **Application authorization — already solved, do not add a second engine.** This
+  server ships a policy-driven authorization layer: RBAC, plus ABAC with an
+  embedded Cedar engine or an external PDP. Adding OPA for application decisions
+  would mean two policy engines disagreeing about one question, and the one that
+  loses is whichever is consulted second.
+- **Service-mesh authorization — moot**, no mesh ([above](#service-mesh-a-recorded-decision)).
+- **Admission control — applies**, and it is the same lever image provenance and
+  Pod Security enforcement need.
+
+**Decision: Kyverno**, chosen for what it must enforce rather than on general
+merit. It is the only one of the three candidates that covers **both** levers with
+one controller: `verifyImages` does keyless signature and attestation
+verification, and its policies can enforce pod-security constraints beyond what
+namespace labels express. `sigstore-policy-controller` does provenance only, so it
+would have to be paired with something else. Kubernetes' built-in
+**ValidatingAdmissionPolicy** (CEL, no external controller) is attractive for pod
+shape and is the right tool for cheap structural rules — but it **cannot verify
+signatures at all**, because CEL evaluation makes no network calls and cannot
+reach a transparency log, so it cannot be the answer to the control that matters
+most here.
+
+If you already run OPA/Gatekeeper for other reasons, keep it and add
+`sigstore-policy-controller` alongside for provenance; do not run two general
+admission engines. The copyable provenance policy is
+[above](#image-provenance-at-admission), and Pod Security enforcement needs no
+engine at all — it is the namespace label in the previous section.
