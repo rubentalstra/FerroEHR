@@ -9,11 +9,22 @@ operator's and integrator's point of view: what it does, how to turn it on, and
 how to consume it.
 
 > [!IMPORTANT]
-> **Every capability in this section is off by default.** The bare server starts
+> **Every switch in this section is off by default.** The bare server starts
 > with all of them disabled, and its behaviour is byte-identical to a
 > single-tenant, integration-free openEHR CDR until you explicitly enable one.
 > Enabling any of them is a deliberate, auditable configuration decision — and
-> some of them carry PHI, which each chapter calls out.
+> some of them carry PHI, which each chapter calls out. (The bundled openEHR
+> terminology is the one thing always available: it needs no configuration and
+> has no external dependency. What is opt-in there is its REST surface and
+> external terminology servers.)
+
+Three of these — [FHIR connectors](fhir.md), [change events](amqp.md), and
+[S3 multimedia](s3-multimedia.md) — are also **cargo features** of the server
+build (`fhir`, `events`, `multimedia`), all on in the published images and any
+default build. A `--no-default-features` build leaves their code out entirely
+and then **refuses to boot** if the configuration enables one it was built
+without, rather than starting up quietly without the capability. See
+[From source → Build features](../installation/from-source.md#build-features).
 
 ## The capability set
 

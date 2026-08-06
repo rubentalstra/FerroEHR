@@ -109,9 +109,8 @@ rejected.
 
 These keys live in the `[subject_proxy]` section of `ferroehr.toml`; each can
 be overridden with the shown `FERROEHR__SUBJECT_PROXY__*` environment variable,
-nested keys separated by `__`. (This env form now binds — before the
-configuration redesign it was documented but inert.) Systems are a map keyed
-by the name frames use as `system_id` (shown as `<NAME>`):
+nested keys separated by `__`. Systems are a map keyed by the name frames use as
+`system_id` (shown as `<NAME>`):
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|

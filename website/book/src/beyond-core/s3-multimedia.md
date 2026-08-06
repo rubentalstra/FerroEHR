@@ -67,6 +67,14 @@ If both the access key and secret are unset, the client runs unsigned
 (anonymous) — the mode a local development SeaweedFS accepts with no
 credentials. Set both to use signed requests against a real store.
 
+> [!NOTE]
+> Externalization is also a **cargo feature** (`multimedia`), on in the
+> published images and any default build. A slim `--no-default-features` build
+> contains none of the object-store code and refuses to boot with
+> `multimedia.enabled = true` rather than silently storing every blob inline —
+> see
+> [From source → Build features](../installation/from-source.md#build-features).
+
 > [!WARNING]
 > Offloaded blobs are PHI. In production the bucket must be private, encrypted,
 > and reached over HTTPS (`FERROEHR__MULTIMEDIA__ALLOW_HTTP=false`). Prefer

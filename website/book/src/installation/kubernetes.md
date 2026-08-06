@@ -24,13 +24,21 @@ kubectl -n ferroehr create secret generic ferroehr-db \
 
 helm install ferroehr deploy/helm/ferroehr -n ferroehr \
   --set database.existingSecret=ferroehr-db \
-  --set image.tag=3.5.0
+  --set image.tag=3.17.3
 ```
 
 Always pin `image.tag` to an immutable version or, better, a `@sha256` digest —
-never `latest`. Every `values.yaml` key documents the exact `FERROEHR_*`
-environment variable it maps to; the [configuration reference](configuration.md)
-is the full list.
+never `latest`; the chart's `appVersion` is the release it was cut with.
+
+The chart carries the server's whole configuration under one key, **`config`**,
+which is rendered **verbatim into a `ferroehr.toml`** ConfigMap mounted at
+`/etc/ferroehr/ferroehr.toml`. Its keys are therefore exactly the TOML keys of
+the [configuration reference](configuration.md) — `config.server.bind`,
+`config.authz.rbac.enabled`, `config.spec_profile`, and so on — so anything
+that reference documents can be set without waiting for a bespoke chart key.
+Secret-bearing scalars are the exception: they live under `secrets:` and are
+injected as `FERROEHR_*` environment (which overrides the file). `extraEnv` is
+the escape hatch for anything neither surfaces.
 
 ## Database roles — who runs migrations
 
@@ -58,14 +66,17 @@ informational marker surfaced in the install NOTES.
 
 ## Secrets and mounted config
 
-Some settings do not fit cleanly in environment variables — the Basic-auth user
-store, a full OIDC block, RBAC role-claim lists, ABAC policies, the external
-terminology provider map, ATNA TLS certificates, and the PGP signing key. Supply
-these as files via `config.files`, which the chart mounts read-only from a
-Secret at `/etc/ferroehr/<key>`; point the matching in-TOML `*_file` /
-`*_path` key (or its `FERROEHR__…` env override) at the mounted path. Secret-bearing scalar values
-(DB DSN, HMAC secret, broker URLs, S3 keys, PGP passphrase) go into the chart's
-Secret, never the ConfigMap.
+Some material is file-shaped rather than a value — ABAC policy files, ATNA TLS
+certificates, terminology-server client certificates, a JWKS blob, and the PGP
+signing key. Supply these under `config.files`, whose entries the chart mounts
+read-only from a Secret at `/etc/ferroehr/<key>` (and which is deliberately
+*not* part of the rendered TOML); point the matching in-TOML `*_file` /
+`*_path` key at the mounted path. Secret-bearing scalar values go under
+`secrets:` — `authOidcHmacSecret`, `signingKeyPassphrase`, `eventsUrl`,
+`fhirOutboundUrl`, `multimediaAccessKeyId`, `multimediaSecretAccessKey` — and
+the database DSN comes from `database.existingSecret` (key
+`database.existingSecretKey`, default `FERROEHR__DB__URL`). None of these ever
+reach the ConfigMap.
 
 ## Security posture
 
@@ -108,36 +119,41 @@ loop). If the kubelet cannot reach the HTTP port, set `probes.exec.enabled=true`
 to use the binary's `healthcheck` subcommand instead.
 
 The management surface is independent of the probes and stays ops-only
-(`/management/info`, `/prometheus`, `/metrics`, `/env`, `/loggers`). Set
-`metrics.enabled=true` to expose `{management.basePath}/prometheus` (access
-level `public`) with the `prometheus.io/*` scrape annotations; the other
-endpoints stay `admin_only` or off unless you opt in. Set `management.port` to
-serve the surface on its own internal listener, so `/management` is never
-reachable on the clinical API port — the health probes stay on the main port
-regardless.
+(`/management/info`, `/prometheus`, `/metrics`, `/env`, `/loggers`,
+`/flamegraph`). Unlike the bare binary, the chart ships
+`config.management.enabled: true` with **every endpoint off**, so nothing is
+exposed until you opt one in. Set
+`config.management.endpoints.prometheus: public` plus `metrics.enabled=true`
+to add the `prometheus.io/*` scrape annotations; set `config.management.port`
+to serve the surface on its own internal listener, so `/management` is never
+reachable on the clinical API port. The health probes stay on the main port
+regardless of all of this.
 
 ## Optional integrations
 
-Every integration is **off by default**, matching the binary — enabling one is
-an explicit, auditable decision. Each has a `values.yaml` switch and maps to a
-config env prefix:
+Every switch below lives in the chart's `config` tree, so its key *is* the
+TOML key from the [configuration reference](configuration.md). Most are **off
+by default**; the ones that ship on are marked, and enabling any of the others
+is an explicit, auditable decision:
 
-| Integration | Values key | Notes |
-|---|---|---|
-| ADMIN API | `rest.adminEnabled` | Physical, irreversible delete. Gate behind admin RBAC. |
-| Terminology extension API | `rest.terminologyEnabled` | 404 when off. |
-| Event-subscription API | `rest.eventSubscriptionEnabled` | Admin CRUD over event filters. |
-| Multi-tenancy | `tenancy.enabled` | Tenant from a JWT claim; leave `tenancy.header` unset in prod. Pairs with PG row-level security. |
-| OAuth2/OIDC auth | `auth.oidc.*` | Prefer JWKS/discovery over an HS256 secret. |
-| ABAC | `authz.abac.enabled` | Cedar or a remote policy decision point; policies via a mounted TOML. |
-| Eventing → AMQP | `events.enabled` | Envelopes are **PHI-free** by design. Use `amqps://`/`tls=true`. |
-| FHIR inbound/façade | `rest.fhirEnabled` | Read façade + inbound mapping. |
-| FHIR outbound → AMQP | `fhirOutbound.enabled` | ⚠ **Carries PHI** (the mapped FHIR resource). Separate exchange; TLS broker only. |
-| S3 multimedia | `multimedia.enabled` | ⚠ Offloaded blobs are PHI. Private, encrypted, HTTPS bucket. |
-| External terminology | `externalTerminology.enabled` | FHIR terminology server; provider map via a mounted TOML. |
-| ATNA system log | `audit.enabled` | Use `audit.syslog.transport: tls` for PHI-adjacent audit. |
-| Version signing | `signing.*` | On by default (`digest`). `pgp` mode fails closed at boot without a usable key. |
-| OTLP telemetry | `telemetry.otel.*` | Unset endpoint ⇒ the OTel layer is not installed (zero overhead). |
+| Integration | Chart key | Default | Notes |
+|---|---|---|---|
+| Specification generation | `config.spec_profile` | `development` | One coupled choice; `stable` runs the released generations. |
+| ADMIN API | `config.admin.enabled` | off | Physical, irreversible delete. Gate behind admin RBAC. |
+| Terminology extension API | `config.terminology.api_enabled` | off | 404 when off. |
+| Event-subscription API | `config.events.admin_api` | off | Admin CRUD over event filters. |
+| Multi-tenancy | `config.tenancy.enabled` | off | Tenant from a JWT claim (`config.tenancy.claim`); never set `tenancy.header` in production. Pairs with PG row-level security. |
+| OAuth2/OIDC auth | `config.auth.oidc.*` | unset | Prefer JWKS/discovery over the HS256 `secrets.authOidcHmacSecret`. |
+| RBAC | `config.authz.rbac.enabled` | **on** | The coarse role gate (active while `config.auth.enabled`). |
+| ABAC | `config.authz.abac.enabled` | off | Cedar (policies via a `config.files` mount) or a remote policy decision point. |
+| Eventing → AMQP | `config.events.enabled` | off | Envelopes are **PHI-free** by design. Use `config.events.tls: true`; URL via `secrets.eventsUrl`. |
+| FHIR inbound/façade | `config.fhir.api_enabled` | off | Read façade + inbound mapping. |
+| FHIR outbound → AMQP | `config.fhir.outbound.enabled` | off | ⚠ **Carries PHI** (the mapped FHIR resource). Separate exchange; TLS broker only; URL via `secrets.fhirOutboundUrl`. |
+| S3 multimedia | `config.multimedia.enabled` | off | ⚠ Offloaded blobs are PHI. Private, encrypted, HTTPS bucket; keys via `secrets.multimedia*`. |
+| External terminology | `config.terminology.external.enabled` | off | FHIR terminology server; the provider map is more `config.terminology.external.providers.*` keys. |
+| ATNA audit trail | `config.audit.enabled` | **on** | On with the local store only; forwarding (`config.audit.syslog`, `config.audit.fhir_feed`) is opt-in per sink. |
+| Version signing | `config.signing.*` | **on** (`digest`) | `mode: pgp` needs a `config.files` key plus `secrets.signingKeyPassphrase`, and fails closed at boot without a usable key. |
+| OTLP telemetry | `FERROEHR__TELEMETRY__*` via `extraEnv` | unset | The chart surfaces no telemetry key of its own; an unset endpoint means the OTel layer is not installed (zero overhead). |
 
 Full detail on each is in [Beyond the core](../beyond-core/index.md),
 [Security & multi-tenancy](../security.md), and [Operations](../operations.md).

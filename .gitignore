@@ -68,3 +68,6 @@ docs/conformance/*/perf-corpus-*.json
 /admin-ui-groups.json
 /admin-ui-folder-templates.json
 /admin-ui-*.json.tmp
+
+# insta pending snapshots — never committed (see the snapshot-root issue)
+**/*.snap.new

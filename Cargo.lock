@@ -2347,6 +2347,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "docs-meta"
+version = "3.17.3"
+
+[[package]]
 name = "dotenvy"
 version = "0.15.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"

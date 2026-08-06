@@ -142,9 +142,6 @@ pub fn assemble<S: std::hash::BuildHasher>(
 
     // The two permanent conventional aliases (DATABASE_URL, RUST_LOG) —
     // layered BELOW the canonical source so an `FERROEHR__` form always wins.
-    // There is no legacy remapping (greenfield, owner ruling 2026-07-15):
-    // pre-redesign spellings fail the strict sweep above with the exact
-    // uniform suggestion.
     let mut alias_map: HashMap<String, String> = HashMap::new();
     for (external, canonical) in CONVENTIONAL {
         if let Some(value) = env.get(*external) {
