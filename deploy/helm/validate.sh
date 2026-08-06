@@ -266,6 +266,39 @@ for case in "${CASES[@]}"; do
   rm -f "$rendered"
 done
 
+# ── the chart README is GENERATED, so it is drift-checked, not reviewed ───────
+# helm-docs renders README.md from README.md.gotmpl + the `# --` comments in
+# values.yaml. A hand-edited README, or a new value documented nowhere, is drift:
+# the values table is the chart's published reference (it is the front page on a
+# registry and on Artifact Hub), and a table that disagrees with values.yaml is
+# worse than no table. Skipped with a note when helm-docs is absent, so the rest
+# of this script still runs locally.
+echo
+if command -v helm-docs >/dev/null 2>&1; then
+  README="${CHART_DIR}/README.md"
+  if [[ -f "$README" ]]; then
+    before="$(mktemp)"; cp "$README" "$before"
+    helm-docs --chart-search-root "$CHART_DIR" --template-files README.md.gotmpl \
+      >/dev/null 2>&1
+    if diff -u "$before" "$README" > /tmp/readme.diff 2>&1; then
+      green "chart README matches values.yaml"
+    else
+      red "chart README DRIFT — README.md is generated; regenerate it with:"
+      red "  helm-docs --chart-search-root ${CHART_DIR} --template-files README.md.gotmpl"
+      head -40 /tmp/readme.diff
+      cp "$before" "$README"
+      FAIL=1
+    fi
+    rm -f "$before"
+  else
+    red "chart README missing: ${README} — it is published metadata, and Artifact"
+    red "Hub renders it as the listing body; generate it with helm-docs."
+    FAIL=1
+  fi
+else
+  printf '%s\n' "helm-docs: not installed — skipping the chart README drift check"
+fi
+
 echo
 if [[ "$FAIL" -eq 0 ]]; then
   green "ALL CHECKS PASSED"
