@@ -23,7 +23,7 @@ itself says.
 
 **Therefore the assertion is version-scoped and needs `applies: { its_rest:
 ">=1.1.0" }` on the case.** The catalogue applies that floor inconsistently: in
-the 2026-07-28 ehrbase-java run the SAME `pattern:W/"…"` matcher produced 141
+the 2026-07-28 ehrbase run the SAME `pattern:W/"…"` matcher produced 141
 in-verdict-scope failures (cases with no its_rest floor) and 108 out-of-scope
 ones (cases carrying the floor). The matcher lives in the BINDING outcome
 headers, so it rides into every case realizing the operation regardless of the

@@ -20,7 +20,7 @@
 # FILTER (optional) is passed to the runner's --filter (an id substring).
 #
 # Env:
-#   CONF_SUT        ferroehr (default) | ehrbase-java | byo.
+#   CONF_SUT        ferroehr (default) | ehrbase | byo.
 #                   ferroehr: builds + composes the self-contained SUT stack
 #                     docker/sut-ferroehr.yml (the current sources — the
 #                     phase-gate zero-drift run), PLUS a second
@@ -28,8 +28,8 @@
 #                     version-signing posture on its own project/ports, so
 #                     both claimed signing modes are exercised in the one
 #                     record (the ixit's `sut_pgp` instance).
-#                   ehrbase-java: composes upstream EHRbase from
-#                     docker/sut-ehrbase-java.yml (official images, fresh
+#                   ehrbase: composes upstream EHRbase from
+#                     docker/sut-ehrbase.yml (official images, fresh
 #                     volumes, host port 8091) — the #232 comparison target
 #                     with its committed party set.
 #                   byo: no compose management — point CONF_BASE_URL at any
@@ -69,7 +69,7 @@ IXIT="${CONF_IXIT:-$PARTY/ixit.json}"
 STATEMENT="${CONF_STATEMENT:-$PARTY/statement.json}"
 
 # The SUT stack is docker/sut-ferroehr.yml — SELF-CONTAINED, like the
-# ehrbase-java lane's docker/sut-ehrbase-java.yml. The root docker-compose.yml
+# ehrbase lane's docker/sut-ehrbase.yml. The root docker-compose.yml
 # is the END-USER quickstart (published images, inline config) and is not part
 # of any conformance lane. All paths inside the sut-*.yml files are
 # repo-root-relative, hence `--project-directory "$REPO_ROOT"`
@@ -153,21 +153,21 @@ PY
   IXIT="$TMP_IXIT"
 fi
 
-if [ "$SUT" = "ehrbase-java" ]; then
+if [ "$SUT" = "ehrbase" ]; then
   # The upstream image tag is the SUT version (default pinned in the compose).
-  JAVA_IMAGE="${FERROEHR_JAVA_IMAGE:-ehrbase/ehrbase:2.34.0}"
-  SUT_VERSION="${JAVA_IMAGE#*:}"
+  EHRBASE_IMAGE="${FERROEHR_EHRBASE_IMAGE:-ehrbase/ehrbase:2.34.0}"
+  SUT_VERSION="${EHRBASE_IMAGE#*:}"
 else
   SUT_VERSION="$(grep -m1 '^version' "$REPO_ROOT/Cargo.toml" | sed 's/.*"\(.*\)"/\1/')"
 fi
 
-# ehrbase-java composes as its own project so it can coexist with (and never
+# ehrbase composes as its own project so it can coexist with (and never
 # tear down) the ferroehr stack.
-JAVA_COMPOSE=(docker compose -p cnf-ehrbase-java -f "$REPO_ROOT/docker/sut-ehrbase-java.yml")
+EHRBASE_COMPOSE=(docker compose -p cnf-ehrbase -f "$REPO_ROOT/docker/sut-ehrbase.yml")
 
 compose_down() {
-  if [ "$SUT" = "ehrbase-java" ]; then
-    "${JAVA_COMPOSE[@]}" down -v || true
+  if [ "$SUT" = "ehrbase" ]; then
+    "${EHRBASE_COMPOSE[@]}" down -v || true
   else
     (cd "$REPO_ROOT" && "${FERROEHR_RS_COMPOSE[@]}" down -v) || true
     (cd "$REPO_ROOT" && "${FERROEHR_RS_PGP_COMPOSE[@]}" down -v) || true
@@ -177,17 +177,17 @@ compose_down() {
 if [ -z "${CONF_NO_COMPOSE:-}" ] && [ "$SUT" != "byo" ]; then
   trap compose_down EXIT
   echo "==> Composing $SUT on fresh volumes (the exclusive-server ground)"
-  if [ "$SUT" = "ehrbase-java" ]; then
-    "${JAVA_COMPOSE[@]}" down -v || true
-    "${JAVA_COMPOSE[@]}" up -d
+  if [ "$SUT" = "ehrbase" ]; then
+    "${EHRBASE_COMPOSE[@]}" down -v || true
+    "${EHRBASE_COMPOSE[@]}" up -d
     # The official EHRbase image has no in-container health tooling (no
     # wget/curl), so poll the status endpoint EXTERNALLY: any HTTP answer
     # (200 with credentials, 401 without) means the server is serving.
-    echo "==> Waiting for upstream EHRbase on :${FERROEHR_JAVA_PORT:-8091}"
+    echo "==> Waiting for upstream EHRbase on :${FERROEHR_EHRBASE_PORT:-8091}"
     ready=""
     for _ in $(seq 1 60); do
       code=$(curl -s -o /dev/null -w '%{http_code}' \
-        "http://localhost:${FERROEHR_JAVA_PORT:-8091}/ferroehr/rest/status" || true)
+        "http://localhost:${FERROEHR_EHRBASE_PORT:-8091}/ferroehr/rest/status" || true)
       case "$code" in
         200|401|403) ready=1; break ;;
       esac

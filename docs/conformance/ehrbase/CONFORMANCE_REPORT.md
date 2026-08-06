@@ -1,6 +1,6 @@
 # Conformance Report
 
-SUT: ehrbase-java 2.34.0 · schedule cnf-2.0-w2 · ITS its-rest
+SUT: ehrbase 2.34.0 · schedule cnf-2.0-w2 · ITS its-rest
 Runner: cnf-runner 3.11.0 · verification pack: passed
 
 ## Summary

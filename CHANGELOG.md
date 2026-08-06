@@ -4190,13 +4190,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
-- The conformance pipeline assesses **upstream EHRbase (Java)** as a second
-  system under test: `CONF_SUT=ehrbase-java scripts/conformance.sh` composes
+- The conformance pipeline assesses **upstream EHRbase** as a second
+  system under test: `CONF_SUT=ehrbase scripts/conformance.sh` composes
   the official `ehrbase/ehrbase:2.34.0` + `ehrbase-v2-postgres` images on
-  fresh volumes (`docker/sut-ehrbase-java.yml`, readiness probed externally
+  fresh volumes (`docker/sut-ehrbase.yml`, readiness probed externally
   — the official image carries no in-container health tooling) and runs the
   same committed catalogue with upstream's own committed party set
-  (`tools/cnf-runner/party/ehrbase-java/`). The public comparison
+  (`tools/cnf-runner/party/ehrbase/`). The public comparison
   (`docs/conformance/COMPARISON.md` + the website comparison page) is fully
   generated from the two committed results/verdicts sets — profile verdicts,
   the 39-capability evidence matrix, and failure tables in both directions.
@@ -4307,7 +4307,7 @@ workflow refuses a tag that has no matching section here.
   harness (`tools/conformance`) is retired — its final inventory is
   preserved at `tools/cnf-runner/comparison/ecc-catalog.tsv` and the
   reviewed cutover record is `docs/conformance/cnf-comparison.md`; the
-  previous ehrbase-java comparison artifacts are frozen as historical data.
+  previous ehrbase comparison artifacts are frozen as historical data.
   Committed per-SUT party sets (ixit + statement) live under
   `tools/cnf-runner/party/`.
 - Verdict semantics: a REQUIRED capability whose every selected case is
@@ -5085,8 +5085,8 @@ workflow refuses a tag that has no matching section here.
   receive the full spec-cited artefact set — `results.json`, a conformance
   report, a Conformance Statement, a Conformance **Certificate** (a
   machine-computed framework assessment, explicitly not an official openEHR
-  certification), and badges, written per SUT. Upstream EHRbase (Java) is a
-  built-in target (`CONF_SUT=ehrbase-java`) with a committed fairness
+  certification), and badges, written per SUT. Upstream EHRbase is a
+  built-in target (`CONF_SUT=ehrbase`) with a committed fairness
   register; a cross-SUT comparison matrix can be rendered from two or more
   runs (`conformance compare`). Assertions carry a **spec-edition ladder**:
   the runner tries the newest edition form first (weak `W/"…"` ETags,

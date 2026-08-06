@@ -38,7 +38,7 @@ how to read the grid):
 
 ![FerroEHR capability conformance](conformance-assets/conformance-heat-grid.svg)
 
-![EHRbase capability conformance](comparison-assets/conformance-heat-grid-java.svg)
+![EHRbase capability conformance](comparison-assets/conformance-heat-grid-ehrbase.svg)
 
 And the per-chapter outcomes side by side. Both charts render the same
 chapter-and-band taxonomy, so they read band-for-band: a band EHRbase did
@@ -48,7 +48,7 @@ to its own widest band, and the legend states that scale.
 
 ![FerroEHR outcomes by chapter and band](conformance-assets/conformance-chapter-bars.svg)
 
-![EHRbase outcomes by chapter and band](comparison-assets/conformance-chapter-bars-java.svg)
+![EHRbase outcomes by chapter and band](comparison-assets/conformance-chapter-bars-ehrbase.svg)
 
 Reading the EHRbase results honestly: the failures concentrate where the
 catalogue pins strict specification behaviour — archetype-constraint
@@ -71,7 +71,7 @@ never on a FerroEHR-only extension.
 Each of these was reproduced live against the composed EHRbase stack during
 triage of the committed record, and each is grounded at or below EHRbase's
 own declared ITS-REST 1.0.3 unless marked; the full wire evidence lives in
-the committed `docs/conformance/ehrbase-java/results.json`.
+the committed `docs/conformance/ehrbase/results.json`.
 
 - A **quoted `If-Match` value is rejected** (`400 "UUID string too large"`)
   — including the server's own echoed `ETag` — while only the non-standard
@@ -140,7 +140,7 @@ question is with openEHR, not with either implementation.
 The conformance instrument derives every expected outcome from the openEHR
 specifications — never from either server's observed behaviour — and runs
 against real composed deployments of both systems (`scripts/conformance.sh`,
-`CONF_SUT=ehrbase-java` for the EHRbase side). The stress instrument drives
+`CONF_SUT=ehrbase` for the EHRbase side). The stress instrument drives
 the same hospital-simulation workload (admissions, observations, medication
 rounds, lab contributions, chart reviews, corrections, discharges) built
 from official CKM templates with seeded determinism, so both servers receive

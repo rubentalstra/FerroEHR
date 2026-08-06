@@ -4,7 +4,7 @@
 
 | Field | Value |
 | --- | --- |
-| Solution | ehrbase-java 2.34.0 |
+| Solution | ehrbase 2.34.0 |
 | Vendor | EHRbase (vitagroup / upstream open-source project) |
 | Runner | cnf-runner 3.11.0 |
 | Infrastructure | — |

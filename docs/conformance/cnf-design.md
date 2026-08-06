@@ -1923,7 +1923,7 @@ parameters. Corpus sizes are the 2017 D-row scale ladder. Feasibility is
 evidenced by the committed measurement artifacts (`docs/benchmarks/`,
 regenerated per release, never hand-typed): FerroEHR sustains a
 631.5 req/s knee at p99 204.7 ms and upstream EHRbase 475.0 req/s
-(`ferroehr/KNEE.md`, `ehrbase-java/KNEE.md`) on 8-core consumer hardware —
+(`ferroehr/KNEE.md`, `ehrbase/KNEE.md`) on 8-core consumer hardware —
 the class-L floor (150/s) is comfortably attainable — a consumer laptop
 already sustains 4× it — and the class-R floor (1,500/s) is a
 server/scaled-deployment target bracketed by NHS Spine's published peak,
