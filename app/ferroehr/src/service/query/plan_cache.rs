@@ -81,7 +81,7 @@ impl Default for PlanCache {
     /// queries cannot grow the cache without limit.
     ///
     /// The effective capacity comes from `[query].plan_cache_capacity`
-    /// ([`super::QueryConfig`]), applied when the binary builds the service; a
+    /// ([`super::config::QueryConfig`]), applied when the binary builds the service; a
     /// bare service (tests/embeddings) uses this default. No openEHR spec
     /// governs this — our own tuning knob.
     fn default() -> Self {

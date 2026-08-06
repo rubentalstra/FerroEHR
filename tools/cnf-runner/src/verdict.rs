@@ -731,11 +731,11 @@ fn evidence_of(caps: &[(CapabilityName, Evidence)], name: &CapabilityName) -> Op
 /// cumulative, and both were individually correct.
 ///
 /// - `CORE` / `STANDARD`: the CUMULATIVE required Platform capabilities
-///   (`STANDARD` = CORE + STANDARD), matching [`required_all_passed`].
+///   (`STANDARD` = CORE + STANDARD), matching `required_all_passed`.
 /// - `OPTIONS`: the optional Platform capabilities, matching the any-passes
-///   rule in [`platform_profiles`].
+///   rule in `platform_profiles`.
 /// - `SEC-BASIC`: the required Security-family capabilities, matching
-///   [`security_verdict`].
+///   `security_verdict`.
 /// - The Enterprise tiers have no verdict rule, so they have no member set.
 #[must_use]
 pub fn tier_members(tier: Tier, matrix: &CapabilityMatrix) -> Vec<CapabilityName> {
