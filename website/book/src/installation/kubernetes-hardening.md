@@ -56,6 +56,11 @@ Claims on this page about the running deployment come from `kubectl`, `crictl` o
 | Container sandboxing | neither — recorded decision | [below](#sandboxing-is-not-tenant-isolation) |
 | Kernel-module loading | **satisfied by the chart** | [below](#kernel-modules-already-impossible) |
 | Replica behavioural deviation | operator (from metrics we publish) | [below](#replica-deviation-and-the-outbound-inventory) |
+| Breach containment + credential rotation | operator (procedure is ours) | [below](#breach-containment-and-rotating-credentials) |
+| Cluster API audit logging | operator | [below](#logging-two-streams-that-are-not-interchangeable) |
+| Container logging | **chart/app** | [below](#logging-two-streams-that-are-not-interchangeable) |
+| Managed control plane | provider | [below](#on-a-managed-control-plane) |
+| Supply chain | **CI**, with two gaps | [below](#the-supply-chain-map) |
 
 ## Host hardening and the version window
 
@@ -1018,3 +1023,284 @@ egress policy tractable — the base allowance is two rules, and every addition 
 named, configured endpoint rather than an open range. Compare live traffic against
 the policy periodically: a connection the policy permits and nothing makes is a
 rule to remove.
+
+## Breach containment and rotating credentials
+
+**Scaling to zero is a clinical-safety decision, and it should be made before you
+need it.** `kubectl scale deploy/ferroehr --replicas=0` is the Kubernetes-native
+containment action, and for this workload it means **clinical access stops
+immediately** — no reads, no commits, for everyone. That is the point during a
+breach, and it is also an outage of a system clinicians may be depending on at
+that moment. Decide in advance who is authorized to make that call.
+
+What scaling to zero **does**:
+
+- stops all new requests, including whatever the attacker is doing through the API;
+- leaves the database untouched — it is external, so its data, its contents and
+  its own access controls are unaffected;
+- preserves the pod's evidence if you scale rather than delete... **only
+  partially**: scaling to zero terminates the pods, so anything in memory is gone.
+  To preserve a pod for forensics, cordon its node and remove the pod from the
+  Service by editing its labels instead — the ReplicaSet then creates a
+  replacement while the original keeps running, detached from traffic.
+
+What it does **not** do:
+
+- **it does not undo committed data.** openEHR change control is append-only, so a
+  malicious commit is a new version, not an overwrite. The prior version is still
+  there and still retrievable.
+- **it does not stop an attacker who has the DSN.** The database is reachable
+  independently of these pods; a leaked DSN is used from anywhere the database
+  admits, which is why rotating it (below) — not scaling — is the containment
+  action for that particular compromise.
+- **it does not truncate the audit trail.** Records already written to the local
+  store, or already forwarded to an external repository, survive. Records still in
+  the outbox at termination are drained during the grace period, so a scale-to-zero
+  loses less than a `kill -9`; forwarding to an external repository
+  (`audit.syslog`, `audit.fhir_feed`) is what makes the trail survive the pods
+  entirely.
+
+### Rotating each credential
+
+Every secret except two is a mounted file, so rotation is: update the Secret, then
+**restart the pods**. The restart is not optional — configuration is read at boot,
+and Kubernetes propagating a new Secret into the volume does not make a running
+process re-read it:
+
+```shell
+kubectl -n ferroehr create secret generic ferroehr-db \
+  --from-literal=FERROEHR__DB__URL='postgres://…new…' --dry-run=client -o yaml \
+  | kubectl apply -f -
+kubectl -n ferroehr rollout restart deploy/ferroehr
+```
+
+| Credential | Rotation | Notes |
+|---|---|---|
+| Database DSN | update the Secret → `rollout restart` | rotate the **database** password too, or the old one still works; `maxUnavailable: 0` keeps the old pods serving on the old credential until the new ones are ready, so grant both briefly or accept a gap |
+| OIDC HMAC secret | update → restart | invalidates every token signed with the old secret; prefer JWKS/discovery, where the issuer rotates for you and no secret lives here |
+| Terminology `client_secret` | update → restart | rotate at the IdP in the same window |
+| AMQP broker URLs | update → restart | the credential is inside the URL |
+| S3 credentials | update → restart | or remove them entirely with IRSA/Workload Identity |
+| Audit repository URL | update → restart | still an environment value (no `*_file` sibling) |
+| Basic user password hash | update → restart | rotate the password, re-hash at the OWASP floor |
+| **Version signing key** | **read the next section first** | not a restart-and-forget operation |
+
+### The signing key is the one that does not simply rotate
+
+In the default `digest` mode there is no key: `VERSION.signature` is
+`sha256:` + the hash of the canonical form, recomputed at read time. Nothing to
+rotate, and nothing breaks.
+
+In `pgp` mode, rotation has a consequence the other credentials do not:
+
+> [!WARNING]
+> **Replacing the PGP key makes every previously-signed version fail
+> verification.** The stored signature carries no key identifier — the schema
+> holds `signature text` and nothing else — so read-time verification checks an
+> armored PGP signature against *the currently configured key*, and there is only
+> one (`signing.key_path`; the chart mounts a single key, and there is no
+> keyring). After a rotation, versions signed by the old key verify as
+> `pgp_invalid`, which with the default `verify_on_read: strict` is an **integrity
+> failure served as a 5xx** on reading historical data.
+
+The signatures themselves cannot be re-issued: a `VERSION`'s signature is an
+immutable, committed fact — re-signing would mean rewriting change-controlled
+history, which openEHR's append-only model does not permit and which would destroy
+the property the signature exists to provide.
+
+So the options, none of which is "rotate and move on":
+
+1. **Treat the PGP signing key as long-lived**, protected accordingly (an HSM or a
+   secret manager rather than a chart value), and rotate it only when it is
+   actually compromised.
+2. **If you must rotate**, set `signing.verify_on_read: warn` before doing so.
+   Verification failures are then logged and metered
+   (`version_signature_invalid_total{verdict="pgp_invalid"}`) rather than
+   returned as 5xx, so historical reads keep working while remaining visible. This
+   is a deliberate, recorded reduction in an integrity guarantee — not a setting
+   to leave on by default and forget.
+3. **Use `digest` mode** where the requirement is tamper-evidence rather than
+   attributable authorship. It detects modification of stored content, needs no
+   key, and has no rotation problem.
+
+There is no multi-key or keyring support, so "verify old signatures with the old
+public key while signing new ones with the new key" is not currently expressible.
+If your governance requires periodic signing-key rotation with historical
+verifiability, that is a gap to raise before choosing `pgp` mode.
+
+## Logging: two streams that are not interchangeable
+
+**Container logging is ours, and already the right shape.** The server writes to
+stdout/stderr and never to a file inside the container — which is both the
+[Kubernetes logging
+architecture](https://kubernetes.io/docs/concepts/cluster-administration/logging/)'s
+expectation and a requirement of `readOnlyRootFilesystem: true`: there is nowhere
+to write a log file, and a build that tried would fail rather than silently filling
+a writable layer. Set `config.log.format: json` (the chart's default) for a
+collector; `pretty` is for a terminal.
+
+**The distinction that matters, because getting it wrong loses the accountability
+record:**
+
+| | Application log | ATNA audit trail |
+|---|---|---|
+| Purpose | diagnostics: what the process is doing | **accountability**: who accessed which patient's record |
+| Destination | stdout/stderr → node → your collector | its own store in the database (`audit` schema), plus optional forwarding to an external repository |
+| Format | JSON lines, ours | DICOM PS3.15 + FHIR `AuditEvent` (IHE BALP), standardised |
+| Retrieval | your log tool | the ITI-81 FHIR `AuditEvent` search endpoint |
+| Retention | your collector's policy | `audit.store.retention_days` (`0` = keep forever) |
+| May it be sampled or dropped? | **yes** — it is diagnostics | **no** |
+
+> [!IMPORTANT]
+> **Do not treat the audit trail as "logs".** A collector configured to sample a
+> noisy stream, or to drop under volume, is a reasonable policy for diagnostics and
+> a compliance failure for the audit trail — it silently discards the record of who
+> read which patient's data. The two travel by different paths precisely so that
+> one can be lossy: the audit trail does not go through stdout at all. If you also
+> ship audit records to your log platform for convenience, that copy is a
+> convenience, not the record.
+
+The audit trail's own failure behaviour is configurable, and the default is worth
+knowing rather than inheriting: **`audit.fail_mode` defaults to `open`**, so an
+operation whose audit record cannot be written still proceeds, and the failure is
+metered rather than refused. `closed` answers `503` instead — the stronger
+compliance posture, and one that turns an audit outage into a clinical outage. Which
+is correct depends on whether your regulatory position can tolerate an unaudited
+access more or less than a refused one; it is a policy choice either way, and the
+shipped default chooses availability.
+
+**Cluster API audit logging is the operator's.** Enable it on the API server with
+an audit policy (`None` / `Metadata` / `Request` / `RequestResponse` per rule).
+`Metadata` for most resources with `Request`-level detail for Secret and RBAC
+changes is a reasonable starting shape. Two things worth alerting on specifically:
+**authorization failures** (`Forbidden` responses — a principal probing what it can
+reach), and any read of Secrets in this namespace by a principal that is not the
+kubelet, since that is what reading the DSN looks like from the API side.
+
+**Kubernetes `Events` are a third source**, and distinct from both: they are the
+cluster's account of what happened to your objects, they expire (typically an hour),
+and they are where this chart's failures show up first —
+`Readiness probe failed: HTTP probe failed with statuscode: 503` when a dependency
+is down, `FailedCreate … violates PodSecurity "restricted:latest"` when a pod spec
+regresses under enforcement, `Unhealthy` and `Killing` during a rollout. Check
+`kubectl get events --sort-by=.lastTimestamp` before the application log when a pod
+will not start: the reason is usually there, and it is usually not in the log,
+because the container never ran.
+
+## On a managed control plane
+
+On EKS, GKE, AKS or an equivalent, **several controls in this audit stop being
+yours** — you cannot set API-server flags, reach etcd, or configure kubelet
+authentication. In exchange you inherit the provider's defaults, which may be
+stronger or weaker than this sheet assumes, and which you should verify rather
+than assume.
+
+| Control | On a managed cluster |
+|---|---|
+| Host hardening, node OS patching | provider's, though **node images and upgrades are usually still yours to trigger** |
+| API-server flags, authorization mode | provider's (RBAC is on by default everywhere mainstream) |
+| etcd access + encryption at rest | provider's — but **envelope encryption with your own KMS key is usually opt-in**, and it is the control [our Secrets need](#secrets-at-rest-and-what-ours-contain) |
+| Kubelet authentication | provider's |
+| Control-plane audit logging | provider's to enable, **often off or short-retention by default**, and usually billed |
+| Pod Security Admission | yours (namespace labels) |
+| NetworkPolicy | yours to write — **enforcement depends on the CNI** |
+| Everything the chart sets | unchanged: it is a workload |
+
+**Check the CNI before relying on the shipped NetworkPolicy.** This is the item
+that varies most and fails most silently: a NetworkPolicy on a cluster whose
+network plugin does not enforce it is an object the API accepts, stores and
+displays, with no effect and no warning. Provider defaults differ, versions change
+them, and some require enabling enforcement at cluster creation — which cannot be
+changed afterwards on some platforms. Do not read your provider's documentation
+and conclude; **test it**, the way this audit did:
+
+```shell
+kubectl -n ferroehr-probe run probe --image=busybox:1.37 --restart=Never --command -- sleep 600
+kubectl -n ferroehr-probe exec probe -- nc -w3 -z <ferroehr-pod-ip> 5432   # must fail
+kubectl -n ferroehr-probe exec probe -- nc -w3 -z <ferroehr-pod-ip> 8080   # must succeed
+```
+
+If the first command succeeds, the policy is decoration and every claim in this
+chapter that rests on it is void for your cluster.
+
+Provider audit tooling exists — for EKS, [hardeneks](https://github.com/aws-samples/hardeneks)
+and MKAD are the commonly cited ones. **We have not run them**, so they are named
+as a starting point rather than a recommendation: treat their output as input to
+the same ownership question this page asks, not as a verdict.
+
+## The supply-chain map
+
+Each cheat-sheet supply-chain control, and the artifact that satisfies it — so a
+reader can check rather than trust:
+
+| Control | Satisfied by | Check it yourself |
+|---|---|---|
+| Trusted, minimal base images | `gcr.io/distroless/cc-debian13:nonroot`, **digest-pinned**; build stages pinned by digest too | `grep FROM docker/Dockerfile` |
+| Vulnerability scanning in CI | Trivy on every published image, HIGH/CRITICAL with a fix | the `containers.yml` run log |
+| Scanning after release | scheduled weekly scan of the published tags | `.github/workflows/image-scan.yml` |
+| Dockerfile linting | hadolint, with adjudicated exceptions in `.hadolint.yaml` | the `Dockerfile lint` job |
+| Secret + misconfiguration scanning | Trivy `secret` and `misconfig` over the tree | the `tree-scan` job |
+| Dependency advisories | `cargo deny` on every change; a scheduled latest-deps lane | `cargo deny check` |
+| Signed images | Sigstore keyless SLSA provenance + SBOM attestations | `gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:<tag> -R rubentalstra/FerroEHR` |
+| Signed chart | the same, on the chart artifact | `gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:<version> -R rubentalstra/FerroEHR` |
+| SBOM | SPDX on the image index; a CycloneDX cargo-graph SBOM attached per release | `docker buildx imagetools inspect <image> --format '{{json .SBOM}}'` |
+| Adjudicated findings carry their argument | OpenVEX under `security/vex/`, applied by the scheduled scan | read the `impact_statement` in the document |
+| Secured CI/CD | every `uses:` digest-pinned, `permissions: {}` by default, no context interpolated into shells, zizmor + CodeQL over the workflows | the `zizmor` job |
+| No long-lived registry token | crates.io Trusted Publishing (OIDC); GHCR uses the ephemeral workflow token | `.github/workflows/publish-crates.yml` |
+| Independent grade | OpenSSF Scorecard, computed by someone other than us | the Scorecard badge |
+
+**Two gaps remain, stated here rather than left out of a page that otherwise reads
+as complete:**
+
+1. **Nothing verifies the signatures at admission.** We sign; no cluster is
+   required to check before running an image. The policy to close it is
+   [above](#image-provenance-at-admission) — and it is not yet verified against a
+   live attestation, because none is published yet (issues #2085, #2120).
+2. **Provenance exists only from this release onward.** Images published before
+   the signing lane landed — `3.17.3` and earlier — carry no attestation and never
+   will. `gh attestation verify` on those returns a 404, which is the correct
+   answer and not a verification failure to work around.
+
+## Final thoughts: the three practices, checked
+
+The cheat sheet closes with three practices rather than controls. Checking them
+against this repository rather than claiming them:
+
+**"Embed security into the container lifecycle as early as possible" — evidenced.**
+Security here is CI, not a review checklist: the golden-render gate asserts every
+Restricted field on every chart change, the secret-leak gate refuses a credential
+that would reach a ConfigMap, the image scanners run at build and weekly after
+release, `cargo deny` runs on every change, zizmor and CodeQL read the workflows,
+and the guards refuse a merge rather than filing a comment. The test of this claim
+is whether any of them has been *watched* to fail, and each of the chart-side ones
+has, deliberately, with the failure recorded.
+
+**"Use Kubernetes-native controls to reduce operational risk" — evidenced.** The
+chart's controls are the platform's own: a NetworkPolicy rather than an in-app
+firewall, a security context and the Restricted profile rather than a hardening
+sidecar, resource limits rather than in-process throttling alone, probes rather
+than an external watchdog, and [no service mesh](#service-mesh-a-recorded-decision)
+because what one would add is either already provided or not needed at this shape.
+The one place we did *not* take a native control is Pod Security Admission, and
+that is because [labelling a namespace is not a chart's
+call](#pod-security-admission-complying-versus-being-refused) — stated as the
+operator's rather than quietly skipped.
+
+**"Leverage the context Kubernetes provides to prioritize remediation" — partly,
+and here is the honest version.** The generic form of this practice is to rank
+findings by whether the affected code is reachable in your deployment. This
+project's answer is the **OpenVEX documents**: when a scanner reports fifteen Go
+advisories in a privilege-dropping helper that opens no socket and parses no
+untrusted input, the response is a machine-readable `not_affected` statement with a
+controlled-vocabulary justification and an `impact_statement` a reader can check —
+not a silenced ignore list, and not a rebuild that fixes nothing.
+
+That mechanism has a cost, and stating it is what makes the claim honest: **a VEX
+statement is a claim about today's binary, and it must be re-checked on every
+base-image bump.** When upstream rebuilds that helper, statements about it become
+obsolete, and a stale `not_affected` is worse than no VEX at all — it is an
+argument that has quietly stopped being true while still suppressing its finding.
+The obligation is written into `security/vex/README.md`, and the scheduled scan is
+what surfaces a finding whose statement no longer matches. The prioritisation
+practice is only as good as that re-check, and it is a human obligation, not an
+automated one.
