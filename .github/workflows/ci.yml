@@ -195,6 +195,41 @@ jobs:
           fi
           echo "OK: no attribution found."
 
+  # ── Always required: the workflows audit themselves ─────────────────────────
+  # zizmor (docs.zizmor.sh) is static analysis for GitHub Actions, named by the
+  # OWASP GitHub Actions Security Cheat Sheet as the defence-in-depth tool for
+  # this layer. It is the machine check behind three hard properties here: every
+  # `uses:` hash-pinned (unpinned-uses, blanket policy by default), no checkout
+  # persisting credentials without a recorded exception (artipacked), and no
+  # context value spliced into a shell (template-injection).
+  #
+  # Ungated on the `changes` filter on purpose: that filter excludes `.github/`,
+  # so a workflow-only pull request would otherwise skip the one check that reads
+  # workflows.
+  workflow-audit:
+    name: zizmor
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2.85.9
+        with:
+          tool: zizmor@1.29.0
+      - name: Audit .github/workflows
+        # GH_TOKEN enables the ONLINE audits, which is the point of running this
+        # beside SHA pinning: impostor-commit verifies that a pinned commit
+        # really belongs to the repository named in front of it, and it cannot
+        # do that offline. --min-severity=low gates on every actionable tier
+        # (artipacked is Low) and leaves the informational tier advisory; zizmor
+        # exits non-zero when anything at or above the floor is found.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: zizmor --min-severity=low .github/workflows/
+
   # Comment-style guard (.claude/rules/comments.md, RFC 505/1574): block
   # comments, TODO(#N) form, NOTE/essay line budgets — over the WHOLE tree
   # hand-written .rs files. Diff-scoped until the legacy essay sweep (#1870)
@@ -847,7 +882,10 @@ jobs:
       # keeps just the registry (nextest resolves no dependencies here, but
       # setup-rust-toolchain's default cache would archive an empty target).
       - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
-        with:
+        # This workflow publishes nothing releasable — the artifacts here are
+        # screenshots and short-lived test inputs, so the restored registry
+        # cache is not release input.
+        with: # zizmor: ignore[cache-poisoning]
           cache-targets: false
       - uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2.85.9
         with:
@@ -1144,6 +1182,7 @@ jobs:
       - changes
       - fmt
       - no-attribution
+      - workflow-audit
       - comment-style
       - deny
       - clippy
