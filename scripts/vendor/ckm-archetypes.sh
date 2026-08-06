@@ -74,48 +74,40 @@ echo "==> listing the full CKM archetype library (page/size pagination)"
 curl -fsS "$CKM/archetypes?page=0&size=10000" -H "Accept: application/json" \
   -o "$WORK/archetypes.json"
 
-python3 - "$WORK/archetypes.json" "$WORK/jobs_adl.txt" "$WORK/jobs_xml.txt" \
-  "$WORK/rows.tsv" "$ADL_DIR" "$XML_DIR" <<'PY'
-import collections
-import json
-import sys
+# The list is turned into two job files and a provenance TSV with jq. The
+# duplicate-HRID suffix (`__2`, `__3`) is the one piece of real logic: CKM can
+# publish the same resourceMainId twice, and two rows writing one file name would
+# silently vendor only the last. `group_by` + the within-group index reproduces
+# the previous counter exactly, on the same `resourceMainId` sort order.
+published=$(jq 'length' "$WORK/archetypes.json")
+if [ "$published" -le 20 ]; then
+  echo "::error::the list endpoint returned only $published rows — CKM ignored the" \
+       "pagination parameters (use ?page=N&size=M)" >&2
+  exit 1
+fi
 
-src, jobs_adl, jobs_xml, rows_path, adl_dir, xml_dir = sys.argv[1:7]
-archetypes = json.load(open(src))
-if len(archetypes) <= 20:
-    raise SystemExit(
-        f"::error::the list endpoint returned only {len(archetypes)} rows — "
-        "CKM ignored the pagination parameters (use ?page=N&size=M)"
-    )
-
-# the archetype HRID is the natural, stable file name (openEHR-EHR-*.v1) —
-# unlike templates, CKM archetypes carry it in resourceMainId
-seen = collections.Counter()
-adl, xml, rows = [], [], []
-for a in sorted(archetypes, key=lambda x: x["resourceMainId"]):
-    hrid = a["resourceMainId"]
-    seen[hrid] += 1
-    name = hrid if seen[hrid] == 1 else f"{hrid}__{seen[hrid]}"
-    adl.append(f"{a['cid']} {adl_dir}/{name}.adl")
-    xml.append(f"{a['cid']} {xml_dir}/{name}.xml")
-    rows.append(
-        "\t".join(
-            (
-                a["cid"],
-                name,
-                a["resourceMainDisplayName"].replace("|", "/"),
-                a["status"],
-                a["modificationTime"],
-                str(a.get("revisionLatest") or ""),
-            )
-        )
-    )
-
-open(jobs_adl, "w").write("\n".join(adl) + "\n")
-open(jobs_xml, "w").write("\n".join(xml) + "\n")
-open(rows_path, "w").write("\n".join(rows) + "\n")
-print(f"==> {len(rows)} archetypes published by CKM")
-PY
+jq -r --arg adl "$ADL_DIR" --arg xml "$XML_DIR" '
+  # Stable name per archetype: the HRID, suffixed only for a repeat of it.
+  [ .[] | { cid, hrid: .resourceMainId, display: .resourceMainDisplayName,
+            status, modified: .modificationTime, rev: (.revisionLatest // "") } ]
+  | sort_by(.hrid)
+  | group_by(.hrid)
+  | map(to_entries | map(.value + { n: (.key + 1) }))
+  | flatten
+  | .[]
+  | . + { name: (if .n == 1 then .hrid else .hrid + "__" + (.n | tostring) end) }
+  | [ (.cid + " " + $adl + "/" + .name + ".adl"),
+      (.cid + " " + $xml + "/" + .name + ".xml"),
+      ([ .cid, .name, (.display | gsub("\\|"; "/")), .status, .modified,
+         (.rev | tostring) ] | @tsv) ]
+  | @tsv
+  ' "$WORK/archetypes.json" \
+  | awk -F'\t' -v adl="$WORK/jobs_adl.txt" -v xml="$WORK/jobs_xml.txt" \
+        -v rows="$WORK/rows.tsv" '
+      { print $1 > adl; print $2 > xml
+        # The TSV row arrives tab-escaped inside one field; unescape it.
+        gsub(/\\t/, "\t", $3); print $3 > rows }'
+printf '==> %s archetypes published by CKM\n' "$published"
 
 echo "==> fetching ADL 1.4 texts (jobs=$JOBS)"
 find "$ADL_DIR" -name '*.adl' -delete
