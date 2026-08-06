@@ -215,9 +215,9 @@ is admitted there as an additional, non-conflicting code, and is what RFC 9110
 §15.5.14 defines for this refusal.
 
 The defaults are sized against measured payloads rather than chosen as round
-numbers: the largest operational template in the vendored CKM corpus is 5.4 MB
-and the largest example composition 526 KB, so the clinical tier clears the
-largest real template roughly threefold. **Raise `body_bytes` if your
+numbers: the clinical tier was set to clear the largest operational template in
+the vendored CKM corpus several times over, with the measurement recorded beside
+the constant it justifies (`BodyLimits` in `app/ferroehr/src/config/server.rs`). **Raise `body_bytes` if your
 compositions embed large `DV_MULTIMEDIA` data** — a base64 radiology image can
 exceed either tier on its own, and that is a deliberate operator decision rather
 than a default.

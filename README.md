@@ -10,14 +10,17 @@
 ITS-REST 1.1.0 &nbsp;·&nbsp; AQL 1.1 &nbsp;·&nbsp; RM 1.2.0 **+ 1.1.0** &nbsp;·&nbsp; ADL 1.4 + 2.4 &nbsp;·&nbsp; PostgreSQL 18 &nbsp;·&nbsp; Rust 1.96
 
 [![CI](https://github.com/rubentalstra/FerroEHR/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/FerroEHR/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fbadges%2Fcoverage.json)](https://github.com/rubentalstra/FerroEHR/actions/workflows/ci.yml)
-[![openEHR CNF conformance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fdevelop%2Fdocs%2Fconformance%2Fferroehr%2Fbadge.json)](docs/conformance/ferroehr/CONFORMANCE_REPORT.md)
-[![CNF performance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fdevelop%2Fdocs%2Fconformance%2Fferroehr%2Fbadge-performance.json)](docs/conformance/ferroehr/CONFORMANCE_CERTIFICATE.md)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/rubentalstra/FerroEHR/badge)](https://scorecard.dev/viewer/?uri=github.com/rubentalstra/FerroEHR)
-[![CodeQL](https://github.com/rubentalstra/FerroEHR/actions/workflows/codeql.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/FerroEHR/actions/workflows/codeql.yml)
 [![Containers](https://github.com/rubentalstra/FerroEHR/actions/workflows/containers.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/FerroEHR/actions/workflows/containers.yml)
+[![CodeQL](https://github.com/rubentalstra/FerroEHR/actions/workflows/codeql.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/FerroEHR/actions/workflows/codeql.yml)
+[![GitHub Release](https://img.shields.io/github/release/rubentalstra/FerroEHR.svg?logo=github)](https://github.com/rubentalstra/FerroEHR/releases/latest)
+
+[![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fbadges%2Fcoverage.json)](https://github.com/rubentalstra/FerroEHR/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/rubentalstra/FerroEHR/badge)](https://scorecard.dev/viewer/?uri=github.com/rubentalstra/FerroEHR)
 [![GHCR](https://img.shields.io/badge/ghcr.io-ferroehr-2496ED.svg?logo=docker&logoColor=white)](https://github.com/rubentalstra/FerroEHR/pkgs/container/ferroehr)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+[![openEHR CNF conformance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fdevelop%2Fdocs%2Fconformance%2Fferroehr%2Fbadge.json)](docs/conformance/ferroehr/CONFORMANCE_REPORT.md)
+[![CNF performance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fdevelop%2Fdocs%2Fconformance%2Fferroehr%2Fbadge-performance.json)](docs/conformance/ferroehr/CONFORMANCE_CERTIFICATE.md)
 
 [**Documentation**](https://ferroehr.eu/) · [Quick start](#quick-start) · [Features](#features) · [Spec versions](#choose-your-openehr-specification-generation) · [Rust crates](#the-openehr-specification-layer-as-rust-crates) · [Architecture](#architecture) · [Conformance](#conformance-measured-not-asserted) · [Deployment](#deployment) · [Roadmap](https://github.com/users/rubentalstra/projects/4) · [Contributing](#contributing-and-security)
 
