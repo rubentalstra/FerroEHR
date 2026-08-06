@@ -159,7 +159,7 @@ impl FerroEhrService {
     /// `C_ARCHETYPE_ROOT` tree with the component archetypes embedded as nested
     /// `C_ARCHETYPE_ROOT` nodes, each with its own at-code space. The
     /// `super::opt14_convert` front end decomposes it into one scoped
-    /// 1.4-shaped `am24` source per embedded root and converts each; the
+    /// 1.4-shaped `v2_4` source per embedded root and converts each; the
     /// recovered composition structure is available on the front end's result
     /// (not surfaced here — this method returns the converted sources).
     ///

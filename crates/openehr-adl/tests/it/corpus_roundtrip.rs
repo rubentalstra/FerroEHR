@@ -2,7 +2,7 @@
 //! assembles, `parse_artefact → print → parse_artefact` must reconstruct a
 //! **structurally equal** [`openehr_adl::assemble`] `Archetype`.
 //!
-//! The generated `am24` model derives `PartialEq`, so the two artefacts are
+//! The generated `v2_4` model derives `PartialEq`, so the two artefacts are
 //! compared directly. The inclusion set mirrors the definition-parse gate: a
 //! file whose intended failure is a cADL-syntax fixture (or a semantic
 //! `V*`-code file whose *assembly* legitimately errors) is excluded with a

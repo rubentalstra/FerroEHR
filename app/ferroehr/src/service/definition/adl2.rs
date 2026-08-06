@@ -34,7 +34,7 @@ use openehr_am::v2_4::aom2::archetype::authored_archetype::AuthoredArchetype;
 use openehr_am::v2_4::aom2::archetype::operational_template::OperationalTemplate;
 use openehr_base::validate::InvariantViolation;
 use openehr_its::flat::example::{DetailLevel, ExampleType, apply_output_uid, example_composition};
-use openehr_its::flat::webtemplate::{WebTemplate, build_web_template_am24};
+use openehr_its::flat::webtemplate::{WebTemplate, build_web_template_v2_4};
 use serde_json::Value;
 use sqlx::Row;
 
@@ -557,8 +557,8 @@ impl FerroEhrService {
     ///
     /// The stored source is resolved (`template_id` → HRID), parsed, compiled to
     /// its operational template (`create_opt`), turned into a `WebTemplate` by
-    /// the am24 front end
-    /// ([`openehr_its::flat::webtemplate::build_web_template_am24`]),
+    /// the v2_4 front end
+    /// ([`openehr_its::flat::webtemplate::build_web_template_v2_4`]),
     /// and walked into a canonical example COMPOSITION at the requested
     /// [`DetailLevel`] — the same shared generator the ADL 1.4 example endpoint
     /// uses (`ITS-REST simplified_formats master04 §"Web Template Metadata"` is
@@ -594,8 +594,8 @@ impl FerroEhrService {
 
     /// The [`WebTemplate`] of a stored ADL2 template: resolve `template_id` →
     /// HRID, fetch the source, compile it to its operational template, and build
-    /// the Web Template with the am24 front end
-    /// ([`build_web_template_am24`]).
+    /// the Web Template with the v2_4 front end
+    /// ([`build_web_template_v2_4`]).
     /// The ADL2 twin of [`web_template`](Self::web_template) (which reads the
     /// ADL 1.4 OPT store), used by the example endpoint's FLAT/STRUCTURED
     /// negotiation.
@@ -608,7 +608,7 @@ impl FerroEhrService {
     ///   built into a `WebTemplate`.
     pub async fn web_template_adl2(&self, template_id: &str) -> Result<WebTemplate, ServiceError> {
         let opt = self.adl2_operational_template_for(template_id).await?;
-        build_web_template_am24(&opt).map_err(|e| {
+        build_web_template_v2_4(&opt).map_err(|e| {
             ServiceError::Unprocessable(Violation::new(format!(
                 "ADL2 template {template_id} could not be built into a WebTemplate: {e}"
             )))
@@ -620,7 +620,7 @@ impl FerroEhrService {
     /// [`web_template_for`](crate::service::FerroEhrService::web_template_for)'s OPT
     /// 1.4 resolution, reached as its fallback when a template id is not an ADL 1.4
     /// template. The resulting Web Template carries the AOM2 archetype-conformance
-    /// constraints ([`build_web_template_am24`]), so a FLAT/STRUCTURED commit
+    /// constraints ([`build_web_template_v2_4`]), so a FLAT/STRUCTURED commit
     /// against an ADL2 template is archetype-constraint-checked exactly as an OPT
     /// 1.4 commit is.
     ///
@@ -668,7 +668,7 @@ impl FerroEhrService {
             Err(e) => return Err(e),
         };
         self.web_templates
-            .get_or_build(&key, || build_web_template_am24(&opt))
+            .get_or_build(&key, || build_web_template_v2_4(&opt))
             .await
             .map_err(|e| {
                 ServiceError::Unprocessable(Violation::new(format!(

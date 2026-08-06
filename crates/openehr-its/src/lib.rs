@@ -60,8 +60,6 @@ pub mod aom2;
 #[cfg(feature = "full")]
 pub mod aom2_model;
 #[cfg(feature = "full")]
-pub mod bmm;
-#[cfg(feature = "full")]
 pub mod flat;
 #[cfg(feature = "full")]
 pub mod json;

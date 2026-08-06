@@ -50,7 +50,7 @@ pub struct SpecVersions {
     /// BASE version.
     pub base: &'static str,
     /// Archetype Model versions — both extant generations, rendered as
-    /// `"<am14> + <am24>"`.
+    /// `"<v1_4> + <v2_4>"`.
     pub am: String,
     /// Terminology version.
     pub term: &'static str,

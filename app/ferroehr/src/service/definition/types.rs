@@ -37,7 +37,7 @@ pub struct TemplateListFilter {
 /// `Requests_and_responses.md` §"`ETag` and Last-Modified": both headers
 /// "SHOULD be included in responses for VERSION, `VERSIONED_OBJECT`, or other
 /// resources that have versioning or unique state identifiers", and an ADL2
-/// artefact's unique state identifier is its versioned HRID (AM `am24`
+/// artefact's unique state identifier is its versioned HRID (AM `v2_4`
 /// `ARCHETYPE_HRID`, whose `release_version` is the artefact's SEMVER).
 /// Returning the addressed string instead would keep one `ETag` across two
 /// different served versions.

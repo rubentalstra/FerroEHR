@@ -1,11 +1,11 @@
-//! am24 OPT2 → Web Template walk (the ADL2 front end).
+//! v2_4 OPT2 → Web Template walk (the ADL2 front end).
 //!
 //! The dialect-neutral seam is the Web Template layer: `ITS-REST
 //! simplified_formats master04-basic_concepts.adoc` §"Web Template Metadata"
 //! defines a Web Template as "a processed representation of an openEHR
-//! Operational Template" — dialect-neutral, and an am24 OPT2
+//! Operational Template" — dialect-neutral, and an v2_4 OPT2
 //! ([`openehr_am::v2_4::aom2::archetype::operational_template::OperationalTemplate`])
-//! *is* an Operational Template. [`build_web_template_am24`] walks the am24
+//! *is* an Operational Template. [`build_web_template_v2_4`] walks the v2_4
 //! constraint tree into the **same** [`WebTemplate`] model the OPT-1.4 front end
 //! ([`super::builder`]) produces, then hands it to the shared dialect-neutral
 //! passes ([`super::shape`]: level removal, in-context synthesis, post-process)
@@ -20,9 +20,9 @@
 //! `[magnitude, units]` for `DV_QUANTITY`, `[value, symbol]` for `DV_ORDINAL`),
 //! and coded constraints are `C_TERMINOLOGY_CODE` (an at-code, or an ac-code
 //! resolving to an archetype-local value set). This module carries the
-//! am24-specific `build`/`inputs` half; the tree shaping is shared.
+//! v2_4-specific `build`/`inputs` half; the tree shaping is shared.
 //!
-//! NOTE: the am24 front end populates the node **shape** + `inputs` the example
+//! NOTE: the v2_4 front end populates the node **shape** + `inputs` the example
 //! generator and FLAT/STRUCTURED codecs consume **and** the validation-only
 //! constraint fields (`existence`/`card_all`/`closed_attributes`/
 //! `structural_stubs`; the hoisted-wrapper `slots` are added by the shared
@@ -75,7 +75,7 @@ use super::model::{
 };
 use super::shape;
 
-/// Build a [`WebTemplate`] from a parsed am24 operational template (OPT2).
+/// Build a [`WebTemplate`] from a parsed v2_4 operational template (OPT2).
 ///
 /// The document shape (`tree`/`children`, `inputs`, `aqlPath`), the node-id
 /// derivation, and the compaction are governed by `ITS-REST simplified_formats
@@ -87,7 +87,7 @@ use super::shape;
 /// # Errors
 /// [`crate::flat::error::FlatError::InvalidTemplate`] if the template lacks an
 /// archetype id.
-pub fn build_web_template_am24(
+pub fn build_web_template_v2_4(
     opt: &OperationalTemplate,
 ) -> Result<WebTemplate, crate::flat::error::FlatError> {
     let template_id = template_id_of(&opt.archetype_id);
@@ -126,7 +126,7 @@ pub fn build_web_template_am24(
     shape::synthesize_in_context(&mut tree);
     super::id::build_ids(&mut tree);
     // Parse the (empty, for this front end) archetype-conformance walk plan so
-    // the WebTemplate is uniform with the OPT-1.4 form; the am24 example is
+    // the WebTemplate is uniform with the OPT-1.4 form; the v2_4 example is
     // validated by RM invariants + terminology, not this walk (module NOTE).
     crate::flat::validation::prepare_walk(&mut tree);
 
@@ -164,7 +164,7 @@ fn collect_languages(opt: &OperationalTemplate, default_language: &str) -> Vec<S
     langs
 }
 
-/// Build context shared across the am24 walk.
+/// Build context shared across the v2_4 walk.
 struct Ctx<'a> {
     default_language: String,
     languages: Vec<String>,
@@ -223,7 +223,7 @@ fn rubric_text(term: &ArchetypeTerminology, code: &str, lang: &str) -> Option<St
 }
 
 /// The external term bindings for `code` in `term` (master04 §"Web Template
-/// Metadata": a `termBindings` map). am24 `term_bindings` maps terminology →
+/// Metadata": a `termBindings` map). v2_4 `term_bindings` maps terminology →
 /// code → target URI (`ARCHETYPE_TERMINOLOGY.term_bindings`); the bound URI is
 /// surfaced as the coded value.
 fn term_bindings_of(
@@ -429,7 +429,7 @@ fn is_leaf_ignored(co: &CObject) -> bool {
 }
 
 /// Whether a node of this RM type is a web-template LEAF — one that carries
-/// `inputs` rather than child nodes. The am24 twin of the ADL 1.4 builder's
+/// `inputs` rather than child nodes. The v2_4 twin of the ADL 1.4 builder's
 /// rule, including the PARTY arm: master05 §§PARTY_SELF, PARTY_IDENTIFIED,
 /// PARTY_RELATED each get their own mapping table and share the party suffix
 /// rows, so a slot narrowed to `PARTY_RELATED` is a party leaf like the other
@@ -442,7 +442,7 @@ fn has_inputs(rm_type: &str) -> bool {
         || rm_type == "TERMINOLOGY_CODE"
 }
 
-/// The `PARTY_PROXY` family (the am24 twin of the ADL 1.4 builder's rule).
+/// The `PARTY_PROXY` family (the v2_4 twin of the ADL 1.4 builder's rule).
 fn is_party(rm_type: &str) -> bool {
     matches!(
         rm_type,
@@ -450,7 +450,7 @@ fn is_party(rm_type: &str) -> bool {
     )
 }
 
-// ── inputs (the am24 RM-type → inputs mapping) ───────────────────────────────
+// ── inputs (the v2_4 RM-type → inputs mapping) ───────────────────────────────
 
 fn build_inputs(
     ctx: &Ctx,
@@ -802,9 +802,9 @@ fn temporal_input(co: &CObject, ty: WebTemplateInputType) -> WebTemplateInput {
 /// string listing the allowed fields). No openEHR spec governs the per-field
 /// split — our own design/extension, matching the OPT-1.4 front end.
 fn duration_input(co: &CObject) -> WebTemplateInput {
-    // The am24 `DV_DURATION` value is a single Duration input; the field split
+    // The v2_4 `DV_DURATION` value is a single Duration input; the field split
     // the OPT-1.4 form uses is not reconstructed here (the example generator
-    // honours `duration_range` when present, which am24 leaves on the leaf's
+    // honours `duration_range` when present, which v2_4 leaves on the leaf's
     // pattern). A single Duration input keeps the leaf committable.
     let mut input = WebTemplateInput::new(WebTemplateInputType::Duration, None);
     if let Some(pattern) = cduration_pattern(co) {
@@ -910,7 +910,7 @@ fn requires_cardinality(card: &Cardinality, children_count: usize) -> bool {
 
 // ── archetype-conformance constraint capture (validation-only fields) ─────────
 //
-// The am24 front end fills the same validation-only constraint fields the
+// The v2_4 front end fills the same validation-only constraint fields the
 // OPT-1.4 one does, so the archetype-conformance walk runs identically for both
 // dialects. AOM2 expresses them as `C_ATTRIBUTE.existence`/`.cardinality`,
 // node-identified `C_OBJECT` alternatives, and `ARCHETYPE_SLOT` (AOM2
@@ -1170,7 +1170,7 @@ fn structural_stubs(
     out
 }
 
-// ── am24 C_OBJECT navigation ─────────────────────────────────────────────────
+// ── v2_4 C_OBJECT navigation ─────────────────────────────────────────────────
 
 fn co_attributes(co: &CObject) -> &[CAttribute] {
     match co {
@@ -1495,7 +1495,7 @@ fn delimited_regex(s: &str) -> Option<&str> {
 
 // ── archetype id helpers ────────────────────────────────────────────────────
 
-/// The `template_id` served for an am24 OPT: the full HRID string
+/// The `template_id` served for an v2_4 OPT: the full HRID string
 /// (`master07.05`).
 fn template_id_of(h: &ArchetypeHrid) -> String {
     let base = format!(
