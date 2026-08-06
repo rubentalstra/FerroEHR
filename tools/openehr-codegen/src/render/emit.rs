@@ -497,10 +497,10 @@ fn emit_lib(top: &BTreeSet<String>, comp: &CrateComposition) -> GenFile {
     b.push_str("pub mod prelude;\n");
     // No crate-level SPEC_VERSION const (owner ruling 2026-08-05, #1942): a
     // multi-generation crate has no single implemented spec version — the
-    // `Generation` enum is the authority (per-variant `spec_version()`,
-    // `CURRENT` for the default surface), and each generation module carries
-    // its own `SPEC_VERSION`. A fixed crate-root pin would contradict the
-    // selected generation the moment a consumer configures a non-current one.
+    // `Generation` enum is the authority (per-variant `spec_version()`, the
+    // derived `Default` marking the current generation). A fixed crate-root
+    // pin would contradict the selected generation the moment a consumer
+    // configures a non-current one.
     b.push_str(&emit_generation_enum(comp));
     GenFile {
         path: "lib.rs".to_string(),
@@ -593,7 +593,7 @@ fn emit_generation_enum(comp: &CrateComposition) -> String {
          impl std::fmt::Display for Generation {{\n    \
          fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {{\n        \
          f.write_str(self.as_str())\n    }}\n}}\n\n\
-         /// Error returned when parsing a `Generation` from an unknown token.\n\
+         /// Error returned when parsing a [`Generation`] from an unknown token.\n\
          ///\n\
          /// The valid tokens are the generation-module names (`{tokens}`).\n\
          #[derive(Debug, Clone, PartialEq, Eq)]\n\
