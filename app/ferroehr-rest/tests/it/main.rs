@@ -39,6 +39,7 @@ mod demographic_http;
 mod demographic_tags_http;
 mod directory_http;
 mod ehr_access_gate;
+mod error_chain;
 mod event_subscription_http;
 mod example_http;
 mod extensions_openapi;

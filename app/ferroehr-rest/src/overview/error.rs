@@ -32,7 +32,7 @@ use axum::response::{IntoResponse, Response};
 use http::{HeaderValue, StatusCode, header};
 use serde::Serialize;
 
-use ferroehr::service::error::ServiceError;
+use ferroehr::service::error::{ErrorChain, ServiceError};
 use ferroehr::service::status::{CallStatusType, QUERY_TIMEOUT_TAG, SmError};
 use ferroehr::versioning::object_version_id::VersionIdError;
 use openehr_its::rest::runtime::ApiError;
@@ -59,6 +59,31 @@ pub(crate) const INTERNAL_MESSAGE: &str = "the server encountered an internal er
 /// — which is written to `tracing` and NEVER to the wire.
 pub(crate) fn internal_fault(context: &'static str, detail: &dyn std::fmt::Display) -> ApiError {
     tracing::error!(context, error = %detail, "protocol adapter: internal fault → 500");
+    ApiError::Internal(INTERNAL_MESSAGE.to_owned())
+}
+
+/// Record an adapter-side fault AND its whole cause chain on the trace record,
+/// and return the curated opaque `500` [`ApiError`] its body carries.
+///
+/// The sibling of [`internal_fault`] for a fault that carries a
+/// [`std::error::Error`] source: the `cause` field is the walked
+/// [`std::error::Error::source`] chain ([`ErrorChain`]), which is the only place
+/// the underlying driver/codec diagnosis is readable — it never reaches the
+/// wire.
+pub(crate) fn internal_fault_caused(
+    context: &'static str,
+    error: &(dyn std::error::Error + 'static),
+) -> ApiError {
+    if let Some(cause) = error.source() {
+        tracing::error!(
+            context,
+            error = %error,
+            cause = %ErrorChain::new(cause),
+            "protocol adapter: internal fault → 500"
+        );
+    } else {
+        tracing::error!(context, error = %error, "protocol adapter: internal fault → 500");
+    }
     ApiError::Internal(INTERNAL_MESSAGE.to_owned())
 }
 

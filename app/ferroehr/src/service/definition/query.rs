@@ -445,6 +445,9 @@ impl FerroEhrService {
         // stored-query table only holds AQL (`query_type = 'AQL'`), so a non-AQL
         // or syntactically-invalid body is a `400 Bad Request`
         // (`definition_query_store` lists only `200`/`400`).
+        // NOTE: `openehr_query::parser::parse_str` reports a located grammar
+        // diagnostic as a `String`, so there is no cause to carry — the
+        // diagnostic IS the answer the client acts on.
         if let Err(err) = openehr_query::parser::parse_str(&query_text) {
             return Err(ServiceError::BadRequest(format!(
                 "stored query text is not valid AQL: {err}"

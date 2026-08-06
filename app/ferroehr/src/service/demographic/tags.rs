@@ -247,7 +247,7 @@ fn party_item_tag(system_id: &str, row: &tag_repo::TagRow) -> Result<ItemTag, Se
         row.target_path.clone(),
         party_owner_ref(system_id)?,
     )
-    .map_err(|e| ServiceError::Internal(format!("stored ITEM_TAG row: {e}")))
+    .map_err(|e| ServiceError::internal("stored ITEM_TAG row", e))
 }
 
 /// The `ITEM_TAG.owner_id` of a demographic (ehr-less) tag — the `OBJECT_REF`
