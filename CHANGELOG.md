@@ -106,6 +106,7 @@ workflow refuses a tag that has no matching section here.
 ### Security
 
 - Every one of the 20 GitHub Actions referenced by the build, test, release and publish pipelines is now pinned to a full commit SHA instead of a mutable tag, so a retagged or compromised upstream release can no longer change what runs against the tokens that publish this project's releases, container images and crates. Each pin carries its human-readable version in a trailing comment and was verified to belong to the named repository.
+- 38 of the 40 repository checkouts in CI no longer leave the job's API token in `.git/config` for the rest of the job (`persist-credentials: false`), so a later step — a third-party action, a build script, an uploaded artifact — can no longer pick it up and push with it. The two exceptions are the documentation jobs that genuinely use git against the remote, and both are now annotated with the reason.
 
 ## [3.17.3] - 2026-08-05
 
