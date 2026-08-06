@@ -46,7 +46,7 @@ Systematic conformance audit: our code vs the normative text. The output is a
 5. **Record**: for real divergences AND coverage gaps, offer to file them as
    tracker issues (`gh issue create`, typed + `spec:*`/`spec:CNF`-labelled per
    the CLAUDE.md issue workflow; link them into the relevant program with
-   `scripts/gh-rel.sh`) — never silently fix-and-forget; for spec-silent
+   `scripts/gh/rel.sh`) — never silently fix-and-forget; for spec-silent
    findings, suggest the `// NOTE:` text.
 
 ## Rules

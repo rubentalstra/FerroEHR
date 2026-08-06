@@ -10,7 +10,7 @@ Owner rulings 2026-08-04: code comments follow the official Rust conventions
 (≤3 lines), plain `//` runs ≤8 lines, block comments banned, every TODO is
 `TODO(#NNNN):`. Adjudication essays and change-narration live on the PR/issue,
 never in source. Full guide: `.claude/rules/comments.md`; enforced by
-`scripts/check-comment-style.sh` (edit hook + `comment-style` CI job) and
+`scripts/checks/comment-style.sh` (edit hook + `comment-style` CI job) and
 `clippy::too_long_first_doc_paragraph`.
 
 **Why:** comments are the fastest-rotting artifact in the repo — 30-line

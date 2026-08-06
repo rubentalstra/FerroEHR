@@ -1,11 +1,11 @@
 ---
-paths: ["scripts/vendor-*.sh", "tools/cnf-runner/artifacts/corpus/**", "crates/openehr-adl/tests/corpus/**"]
+paths: ["scripts/vendor/*.sh", "tools/cnf-runner/artifacts/corpus/**", "crates/openehr-adl/tests/corpus/**"]
 ---
 
 # Vendoring external corpora (CKM, ADL libraries, upstream test material)
 
 Every externally-sourced corpus in this repo is fetched by a **committed
-`scripts/vendor-*.sh` script**, vendored **verbatim**, and stamped with a
+`scripts/vendor/*.sh` script**, vendored **verbatim**, and stamped with a
 `PROVENANCE.md` that records the source, the pin, **and the upstream
 license** (with the upstream `LICENSE` file vendored alongside where the
 source publishes one — issue #1883). Never hand-download into the tree,
@@ -15,10 +15,10 @@ commit the result.
 
 | corpus | script | destination |
 |---|---|---|
-| openEHR spec text + CNF schedule | `scripts/vendor-spec-docs.sh` | `docs/specs/openehr/` |
-| CKM templates (OPT 1.4) — curated journey pack + full library | `scripts/vendor-ckm-templates.sh` | `tools/cnf-runner/artifacts/corpus/templates/ckm/{,full/}` |
-| CKM archetypes (**ADL 1.4**) | `scripts/vendor-ckm-archetypes.sh` | `tools/cnf-runner/artifacts/corpus/archetypes/ckm/adl14/` |
-| ADL **2** archetypes + their 1.4 twins | `scripts/vendor-adl2-archetypes.sh` | `crates/openehr-adl/tests/corpus/adl2-reference/`, `tools/cnf-runner/artifacts/corpus/archetypes/adl2/` |
+| openEHR spec text + CNF schedule | `scripts/vendor/spec-docs.sh` | `docs/specs/openehr/` |
+| CKM templates (OPT 1.4) — curated journey pack + full library | `scripts/vendor/ckm-templates.sh` | `tools/cnf-runner/artifacts/corpus/templates/ckm/{,full/}` |
+| CKM archetypes (**ADL 1.4**) | `scripts/vendor/ckm-archetypes.sh` | `tools/cnf-runner/artifacts/corpus/archetypes/ckm/adl14/` |
+| ADL **2** archetypes + their 1.4 twins | `scripts/vendor/adl2-archetypes.sh` | `crates/openehr-adl/tests/corpus/adl2-reference/`, `tools/cnf-runner/artifacts/corpus/archetypes/adl2/` |
 | CKM example skeletons (generated once vs a composed SUT) | `scripts/generate-ckm-examples.sh` | `…/templates/ckm/*.example.json` |
 
 ## The openEHR CKM REST API — facts, verified 2026-08-01
@@ -73,7 +73,7 @@ negotiable:
   same archetypes — that pairing is the independent conversion reference.
 - The `openehr-adl` ADL 2 regression library
   (`tests/corpus/adl2-reference/`) is vendored from the same pinned commit;
-  `scripts/vendor-adl2-archetypes.sh --check` proves the script still
+  `scripts/vendor/adl2-archetypes.sh --check` proves the script still
   reproduces the committed tree byte-for-byte. Its provenance record stays
   `crates/openehr-adl/tests/corpus/PROVENANCE.md`.
 

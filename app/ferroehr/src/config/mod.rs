@@ -124,13 +124,45 @@ impl FerroEhrConfig {
             )));
         }
 
+        // Authentication rules: the RFC-grounded shape of each configured
+        // mechanism (issuer, audience, leeway, key entropy, KDF cost floor).
+        if let Err(e) = self.auth.validate() {
+            errors.push(ConfigError::semantic(format!("auth: {e}")));
+        }
         // Authorization rules (moved verbatim from the old AuthzConfig::validate).
         if let Err(e) = self.authz.validate() {
             errors.push(ConfigError::semantic(format!("authz: {e}")));
         }
-        // SMART deprecated-grant rule.
+        // SMART: the deprecated-grant rule plus everything the discovery
+        // document publishes (endpoint scheme, the RFC 8414 §2 required fields,
+        // PKCE).
         if let Err(e) = self.smart.validate() {
             errors.push(ConfigError::semantic(format!("smart: {e}")));
+        }
+        // The two issuers must agree. `smart.endpoints.issuer` tells third-party
+        // applications where to OBTAIN a token; `auth.oidc.issuer` is what this
+        // server will ACCEPT one from. Configured independently and left
+        // unchecked, a mismatch is silently broken in the most confusing way
+        // available: every app obtains a valid token and every request is
+        // refused as an invalid one. Both values are known here, so it is a boot
+        // error.
+        if self.smart.enabled {
+            match (&self.smart.endpoints.issuer, &self.auth.oidc) {
+                (_, None) => errors.push(ConfigError::semantic(
+                    "smart.enabled = true requires an [auth.oidc] issuer: the CDR directs                      applications to an authorization server, so it must be able to validate                      the tokens they come back with"
+                        .to_owned(),
+                )),
+                (Some(advertised), Some(oidc))
+                    if advertised.trim().trim_end_matches('/')
+                        != oidc.issuer.trim().trim_end_matches('/') =>
+                {
+                    errors.push(ConfigError::semantic(format!(
+                        "smart.endpoints.issuer ({advertised:?}) and auth.oidc.issuer ({:?})                          name different authorization servers: applications would obtain tokens                          from the first and every request would be refused by the second",
+                        oidc.issuer
+                    )));
+                }
+                _ => {}
+            }
         }
         // signing.mode = pgp ⇒ key_path set.
         if matches!(
@@ -372,6 +404,22 @@ pub fn load(
             crate::db::DEFAULT_URL,
         );
     }
+
+    // RFC 8725 §2.2: a symmetric signing key is shared with the authorization
+    // server, so this resource server could mint the very tokens it accepts.
+    if config
+        .auth
+        .oidc
+        .as_ref()
+        .is_some_and(auth::OidcConfig::uses_symmetric_key)
+    {
+        tracing::warn!(
+            "auth.oidc uses a SYMMETRIC signing key (hmac_secret): a DEVELOPMENT posture. The \
+             key is shared with the authorization server, so this server can mint the tokens it \
+             accepts, and it cannot rotate without a restart. Use the issuer's OIDC discovery \
+             document or auth.oidc.jwks_json for any non-dev deployment."
+        );
+    }
     Ok(config)
 }
 
@@ -508,6 +556,38 @@ mod tests {
             c.subject_proxy.systems.get("pas").expect("pas").base_url,
             "https://pas/r4"
         );
+    }
+
+    /// The `[auth.oidc]` RFC-posture keys and the ABAC directory switch are
+    /// reachable through the one env grammar — a documented env spelling that
+    /// binds nothing would ship dead.
+    #[test]
+    fn env_mapping_auth_and_authz_posture_keys() {
+        let c = assemble_ok(
+            None,
+            &env(&[
+                ("FERROEHR__AUTH__OIDC__ISSUER", "https://idp"),
+                ("FERROEHR__AUTH__OIDC__AUDIENCES", "ferroehr"),
+                ("FERROEHR__AUTH__OIDC__CLOCK_SKEW_LEEWAY_SECONDS", "120"),
+                ("FERROEHR__AUTH__OIDC__ALLOW_INSECURE_ISSUER", "true"),
+                ("FERROEHR__AUTHZ__ABAC__CHECK_DIRECTORY", "true"),
+            ]),
+            &[],
+        );
+        let oidc = c.auth.oidc.expect("oidc table materialised from env");
+        assert_eq!(oidc.clock_skew_leeway_seconds, 120);
+        assert!(oidc.allow_insecure_issuer);
+        assert!(c.authz.abac.check_directory);
+
+        // Unset, both carry their documented defaults.
+        let d = assemble_ok(None, &env(&[]), &[]);
+        assert!(!d.authz.abac.check_directory);
+        assert_eq!(
+            auth::OidcConfig::default().clock_skew_leeway_seconds,
+            60,
+            "the default leeway is the conventional 60 s"
+        );
+        assert!(!auth::OidcConfig::default().allow_insecure_issuer);
     }
 
     /// `[server] system_id` — the CDR's own openEHR system identifier (stamped
@@ -751,12 +831,83 @@ mod tests {
         assert!(c.validate().is_ok());
     }
 
+    /// `smart.endpoints.issuer` tells applications where to OBTAIN a token;
+    /// `auth.oidc.issuer` is what this server will ACCEPT one from. A mismatch is
+    /// silently broken in the most confusing way available — every app obtains a
+    /// valid token and every request is refused as invalid — so it is a boot
+    /// error naming both keys.
+    #[test]
+    fn a_smart_issuer_that_disagrees_with_the_oidc_issuer_is_refused() {
+        let publishable_smart = |issuer: &str| smart::SmartConfig {
+            enabled: true,
+            public_base_url: Some("https://cdr.example.com".to_owned()),
+            endpoints: smart::SmartEndpoints {
+                issuer: Some(issuer.to_owned()),
+                authorization_endpoint: Some("https://as.example/authorize".to_owned()),
+                token_endpoint: Some("https://as.example/token".to_owned()),
+                response_types_supported: vec!["code".to_owned()],
+                token_endpoint_auth_methods_supported: vec!["client_secret_basic".to_owned()],
+                code_challenge_methods_supported: vec!["S256".to_owned()],
+                ..smart::SmartEndpoints::default()
+            },
+            ..smart::SmartConfig::default()
+        };
+        let oidc = |issuer: &str| auth::OidcConfig {
+            issuer: issuer.to_owned(),
+            audiences: vec!["ferroehr".to_owned()],
+            jwks_json: Some("{\"keys\":[]}".to_owned()),
+            ..auth::OidcConfig::default()
+        };
+
+        let tree = |smart_issuer: &str, oidc_issuer: Option<&str>| FerroEhrConfig {
+            smart: publishable_smart(smart_issuer),
+            auth: auth::AuthConfig {
+                oidc: oidc_issuer.map(oidc),
+                ..auth::AuthConfig::default()
+            },
+            ..FerroEhrConfig::default()
+        };
+
+        // Disagreeing issuers.
+        let err = tree(
+            "https://as.example/realms/ferroehr",
+            Some("https://other-as.example/realms/ferroehr"),
+        )
+        .validate()
+        .expect_err("two different authorization servers must be refused");
+        let text = format!("{err:?}");
+        assert!(text.contains("smart.endpoints.issuer"), "{text}");
+        assert!(text.contains("auth.oidc.issuer"), "{text}");
+
+        // Agreeing issuers — a trailing slash is the same identity.
+        assert!(
+            tree(
+                "https://as.example/realms/ferroehr/",
+                Some("https://as.example/realms/ferroehr"),
+            )
+            .validate()
+            .is_ok(),
+            "a trailing slash is not a mismatch",
+        );
+
+        // SMART enabled with no bearer validation at all: the CDR would send apps
+        // to an authorization server whose tokens it cannot check.
+        let err = tree("https://as.example/realms/ferroehr", None)
+            .validate()
+            .expect_err("SMART without [auth.oidc] must refuse");
+        assert!(format!("{err:?}").contains("auth.oidc"), "{err:?}");
+    }
+
     #[test]
     fn validate_hmac_and_jwks_together_is_refused() {
         let mut c = FerroEhrConfig::default();
         c.auth.oidc = Some(auth::OidcConfig {
             issuer: "https://idp.example.test".to_owned(),
-            hmac_secret: Some(Secret::new("topsecret")),
+            audiences: vec!["ferroehr".to_owned()],
+            // `HS256`, because the fixture carries a symmetric secret and the
+            // algorithm set is boot-bound to its key source.
+            algorithms: vec!["HS256".to_owned()],
+            hmac_secret: Some(Secret::new("0123456789abcdef0123456789abcdef")),
             jwks_json: Some("{\"keys\":[]}".to_owned()),
             ..auth::OidcConfig::default()
         });
@@ -765,6 +916,32 @@ mod tests {
         // Each source alone stays valid.
         if let Some(oidc) = c.auth.oidc.as_mut() {
             oidc.jwks_json = None;
+        }
+        assert!(c.validate().is_ok());
+    }
+
+    /// The `[auth.oidc]` boot rules reach the aggregated tree validation, so
+    /// `ferroehr config check` and the boot path refuse the same shapes the
+    /// section's own unit tests pin (RFC 7519 §4.1.3, RFC 8414 §2,
+    /// RFC 8725 §3.5, RFC 9068 §4 step 6).
+    #[test]
+    fn validate_reports_auth_section_errors() {
+        let mut c = FerroEhrConfig::default();
+        c.auth.oidc = Some(auth::OidcConfig {
+            issuer: "http://idp.example.test".to_owned(),
+            ..auth::OidcConfig::default()
+        });
+        let err = c.validate().expect_err("an http issuer must refuse");
+        assert!(err.to_string().contains("auth: auth.oidc.issuer"), "{err}");
+
+        if let Some(oidc) = c.auth.oidc.as_mut() {
+            oidc.issuer = "https://idp.example.test".to_owned();
+        }
+        let err = c.validate().expect_err("no audiences must refuse");
+        assert!(err.to_string().contains("auth.oidc.audiences"), "{err}");
+
+        if let Some(oidc) = c.auth.oidc.as_mut() {
+            oidc.audiences = vec!["ferroehr".to_owned()];
         }
         assert!(c.validate().is_ok());
     }

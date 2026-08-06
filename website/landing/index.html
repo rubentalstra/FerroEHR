@@ -140,15 +140,15 @@
           <p>Every release runs the complete conformance catalogue against the live server, in JSON and XML, and computes the openEHR profile verdicts.</p>
         </div>
         <!-- Conformance numbers/verdicts are DERIVED AT BUILD TIME from
-             docs/conformance/ferroehr/ by scripts/render-conformance-stats.sh
+             docs/conformance/ferroehr/ by scripts/render/conformance-stats.sh
              (fill-html). Never hand-type a number here — CI's stale-numbers
-             gate (scripts/check-conformance-numbers.sh) fails the build. -->
+             gate (scripts/checks/conformance-numbers.sh) fails the build. -->
         <div class="proof-nums">
           <div class="proof-num"><span class="n" data-cnf="executed">—</span><span class="l">cases executed</span></div>
           <div class="proof-num"><span class="n" data-cnf="passed">—</span><span class="l">passed</span></div>
           <div class="proof-num"><span class="n zero" data-cnf="failed">—</span><span class="l">failed</span></div>
         </div>
-        <!-- The heat grid is GENERATED output (scripts/render-conformance-assets.sh,
+        <!-- The heat grid is GENERATED output (scripts/render/conformance-assets.sh,
              regenerate-and-diff guarded) — its labels are rendered, never hand-typed. -->
         <a class="proof-grid" href="./docs/latest/conformance.html">
           <img src="./docs/latest/conformance-assets/conformance-heat-grid.svg" alt="Capability conformance heat grid: every claimed capability grouped by profile tier, marked passed, failed, not evidenced, excused or no-cases" loading="lazy">

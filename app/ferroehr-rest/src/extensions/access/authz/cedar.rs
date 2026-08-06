@@ -15,9 +15,10 @@
 //!
 //! ## Attribute model
 //! - **principal** `User { organization?, patient?, roles, scopes }` — the
-//!   caller. `roles`/`scopes` are declared for advanced policies but left empty
-//!   here (the [`AuthzRequest`] carries only the v1 wire attributes, so the
-//!   example policies stay wire-equivalent with the remote PDP).
+//!   caller, carrying the subject's roles and scopes so a policy can reason
+//!   about them. The shipped example policies deliberately use only the
+//!   attributes the flat PDP body also carries, which is what keeps the two
+//!   engines interchangeable on the same request corpus.
 //! - **resource** (one entity type per [`ResourceKind`]) carries the
 //!   per-combination candidate `patient?` and `template?`.
 //! - **action** `"<kind>.<mode>"` (e.g. `composition.create`, `query.execute`).
@@ -96,7 +97,8 @@ fn schema_src() -> String {
         for mode in MODES {
             let _ = writeln!(
                 s,
-                "action \"{}\" appliesTo {{ principal: [User], resource: [{}] }};",
+                "action \"{}\" appliesTo {{ principal: [User], resource: [{}], \
+             context: {{ operation_id: String }} }};",
                 action_id(kind, mode),
                 entity_type(kind)
             );
@@ -162,16 +164,42 @@ impl CedarEngine {
         let resource_uid = resource.uid();
         let entities = Entities::from_entities([principal, resource], Some(&self.schema))
             .map_err(|e| AuthzError::Evaluation(format!("entities: {e}")))?;
+        // The operation id travels as request context so a policy can key on the
+        // specific operation, not only on the resource family and access mode.
+        let context = Context::from_pairs([(
+            "operation_id".to_owned(),
+            RestrictedExpression::new_string(req.operation_id.to_owned()),
+        )])
+        .map_err(|e| AuthzError::Evaluation(format!("request context: {e}")))?;
         let request = Request::new(
             principal_uid,
             action,
             resource_uid,
-            Context::empty(),
+            context,
             Some(&self.schema),
         )
         .map_err(|e| AuthzError::Evaluation(format!("request: {e}")))?;
         let policies = self.policies.load();
         let response = Authorizer::new().is_authorized(&request, &policies, &entities);
+        // Cedar SKIPS a policy that errors during evaluation and reports it in
+        // the diagnostics rather than failing the request
+        // (<https://docs.cedarpolicy.com/auth/authorization.html>). Discarding
+        // them means an erroring `forbid` silently stops forbidding — the
+        // decision then reflects only the policies that happened to evaluate.
+        // A policy set that cannot be evaluated is not a decision, so it is a
+        // fail-closed 500 at the PEP.
+        let errors: Vec<String> = response
+            .diagnostics()
+            .errors()
+            .map(ToString::to_string)
+            .collect();
+        if !errors.is_empty() {
+            return Err(AuthzError::Evaluation(format!(
+                "policy evaluation errors ({}): {}",
+                errors.len(),
+                errors.join("; ")
+            )));
+        }
         Ok(response.decision() == CedarDecision::Allow)
     }
 }
@@ -207,8 +235,17 @@ fn build_schema() -> Result<Schema, AuthzError> {
 }
 
 /// The principal entity for a combination.
+///
+/// The uid names the authenticated subject rather than a constant, so a policy
+/// can be written about a specific caller and a decision log identifies who was
+/// asking (NIST SP 800-162 §2.2: subject attributes are half of an ABAC
+/// decision).
 fn build_principal(combo: &Combination<'_>) -> Result<Entity, AuthzError> {
-    let uid: EntityUid = "User::\"caller\""
+    // Cedar entity ids are quoted strings; escape the two characters that would
+    // otherwise terminate or continue the literal, so a subject carrying them
+    // cannot forge a different uid.
+    let escaped = combo.subject.replace('\\', "\\\\").replace('"', "\\\"");
+    let uid: EntityUid = format!("User::\"{escaped}\"")
         .parse()
         .map_err(|e| AuthzError::Evaluation(format!("principal uid: {e}")))?;
     let mut attrs: HashMap<String, RestrictedExpression> = HashMap::new();
@@ -224,14 +261,23 @@ fn build_principal(combo: &Combination<'_>) -> Result<Entity, AuthzError> {
             RestrictedExpression::new_string(patient.to_owned()),
         );
     }
-    // Declared for advanced policies; empty under the v1 wire attribute model.
     attrs.insert(
         "roles".to_owned(),
-        RestrictedExpression::new_set(std::iter::empty()),
+        RestrictedExpression::new_set(
+            combo
+                .roles
+                .iter()
+                .map(|r| RestrictedExpression::new_string(r.clone())),
+        ),
     );
     attrs.insert(
         "scopes".to_owned(),
-        RestrictedExpression::new_set(std::iter::empty()),
+        RestrictedExpression::new_set(
+            combo
+                .scopes
+                .iter()
+                .map(|s| RestrictedExpression::new_string(s.clone())),
+        ),
     );
     Entity::new(uid, attrs, HashSet::new())
         .map_err(|e| AuthzError::Evaluation(format!("principal entity: {e}")))
@@ -333,10 +379,154 @@ mod tests {
             operation_id: "composition_create",
             kind: ResourceKind::Composition,
             access: AccessMode::Create,
+            subject: "test-subject",
+            roles: &[],
+            scopes: &[],
             organization: Some("org1".to_owned()),
             patient,
             template,
         }
+    }
+
+    /// A request built from a principal carrying roles, for the role-aware tests.
+    fn req_with<'a>(
+        subject: &'a str,
+        roles: &'a [String],
+        scopes: &'a [String],
+    ) -> AuthzRequest<'a> {
+        AuthzRequest {
+            operation_id: "composition_create",
+            kind: ResourceKind::Composition,
+            access: AccessMode::Create,
+            subject,
+            roles,
+            scopes,
+            organization: Some("org1".to_owned()),
+            patient: Some(Attr::One("p-1".to_owned())),
+            template: None,
+        }
+    }
+
+    /// A policy keyed on a ROLE must be able to decide, which it cannot when the
+    /// principal ships with an empty role set (NIST SP 800-162 §2.2: subject
+    /// attributes are half of an ABAC decision).
+    #[tokio::test]
+    async fn role_aware_policy_permits() {
+        let engine = CedarEngine::from_policy_src(
+            r#"permit(principal, action, resource) when { principal.roles.contains("CLINICIAN") };"#,
+        )
+        .expect("policy loads");
+        let roles = vec!["CLINICIAN".to_owned()];
+        assert_eq!(
+            engine
+                .decide(&req_with("dr-a", &roles, &[]))
+                .await
+                .expect("decides"),
+            Decision::Permit,
+        );
+        // The same policy denies a caller without the role.
+        assert_eq!(
+            engine
+                .decide(&req_with("dr-b", &[], &[]))
+                .await
+                .expect("decides"),
+            Decision::Deny,
+        );
+    }
+
+    /// A policy keyed on a SCOPE likewise sees the caller's scopes.
+    #[tokio::test]
+    async fn scope_aware_policy_denies() {
+        let engine = CedarEngine::from_policy_src(
+            r#"permit(principal, action, resource) when { principal.scopes.contains("openehr/*.w") };"#,
+        )
+        .expect("policy loads");
+        let scopes = vec!["openehr/*.r".to_owned()];
+        assert_eq!(
+            engine
+                .decide(&req_with("app-1", &[], &scopes))
+                .await
+                .expect("decides"),
+            Decision::Deny,
+        );
+    }
+
+    /// The subject names the principal, so a policy can be written about one
+    /// caller and a decision log identifies who asked.
+    #[tokio::test]
+    async fn principal_uid_names_the_subject() {
+        let engine =
+            CedarEngine::from_policy_src(r#"permit(principal == User::"dr-a", action, resource);"#)
+                .expect("policy loads");
+        assert_eq!(
+            engine
+                .decide(&req_with("dr-a", &[], &[]))
+                .await
+                .expect("decides"),
+            Decision::Permit,
+        );
+        assert_eq!(
+            engine
+                .decide(&req_with("dr-b", &[], &[]))
+                .await
+                .expect("decides"),
+            Decision::Deny,
+        );
+    }
+
+    /// A subject carrying Cedar's own quoting characters must not be able to
+    /// forge a different principal uid.
+    #[tokio::test]
+    async fn a_quoting_subject_cannot_forge_another_principal() {
+        let engine = CedarEngine::from_policy_src(
+            r#"permit(principal == User::"admin", action, resource);"#,
+        )
+        .expect("policy loads");
+        // A subject that would close the literal and name `admin` instead.
+        let forged = r#"x", action, resource); permit(principal == User::"admin"#;
+        assert_eq!(
+            engine
+                .decide(&req_with(forged, &[], &[]))
+                .await
+                .expect("decides"),
+            Decision::Deny,
+        );
+    }
+
+    /// Cedar SKIPS a policy that errors and reports it in the diagnostics
+    /// (<https://docs.cedarpolicy.com/auth/authorization.html>), so discarding
+    /// them lets an erroring `forbid` silently stop forbidding. A policy set
+    /// that cannot be evaluated is not a decision — it is a fail-closed error.
+    ///
+    /// Two layers protect this, and the test exercises the second. Schema
+    /// validation at LOAD refuses the common shapes outright — an unsafe read of
+    /// an optional attribute (`principal.patient` on a principal that may carry
+    /// none) never reaches evaluation, it fails `from_policy_src` with
+    /// `PolicyLoad`. Arithmetic overflow is not caught there, so it is the honest
+    /// probe for the runtime backstop.
+    #[tokio::test]
+    async fn erroring_forbid_policy_is_a_fail_closed_error() {
+        let engine = CedarEngine::from_policy_src(
+            r"permit(principal, action, resource);
+               forbid(principal, action, resource) when { 9223372036854775807 + 1 > 0 };",
+        )
+        .expect("policy loads");
+        let no_attrs = AuthzRequest {
+            operation_id: "composition_create",
+            kind: ResourceKind::Composition,
+            access: AccessMode::Create,
+            subject: "dr-a",
+            roles: &[],
+            scopes: &[],
+            organization: None,
+            patient: None,
+            template: None,
+        };
+        let outcome = engine.decide(&no_attrs).await;
+        assert!(
+            matches!(outcome, Err(AuthzError::Evaluation(_))),
+            "an erroring forbid must surface, not be skipped: {outcome:?}",
+        );
     }
 
     #[test]

@@ -28,7 +28,7 @@ does not decide the work is done on your behalf.
    reflect real, verified state (e.g. "workspace builds" means someone
    actually ran `cargo build --workspace` and it succeeded). Tick verified
    boxes in the issue body via `gh issue edit <n> --body-file`.
-2a. **Relationships check** (`scripts/gh-rel.sh tree <n>`;
+2a. **Relationships check** (`scripts/gh/rel.sh tree <n>`;
    `.claude/rules/issue-relationships.md`): if the issue is a **parent** with
    **open sub-issues**, do NOT close it — finish or re-parent the children
    first (a parent's job is done only when its decomposition is). Closing this
@@ -49,7 +49,7 @@ does not decide the work is done on your behalf.
 3b. **User docs + changelog updated?** If this work changed a user-visible
    surface (REST, configuration, CLI, deployment artifacts), confirm BOTH:
    the matching `website/book/src` page was updated in-branch (and
-   `scripts/assemble-oas.sh` re-run if the REST contract changed —
+   `scripts/site/assemble-oas.sh` re-run if the REST contract changed —
    `.claude/rules/docs-website.md`), AND a `CHANGELOG.md [Unreleased]` entry
    exists (`.claude/rules/changelog.md`; CI `changelog-guard` enforces it).
    If not, stop: both are part of the deliverable.
@@ -79,8 +79,8 @@ does not decide the work is done on your behalf.
    permanent CNF 2.0 design record, owner ruling 2026-07-22).
 8. **Roadmap-board check** (`.claude/rules/project-board.md`): `Done` is set
    by the built-in workflow when the merge closes the issue — never by hand.
-   After the merge, `scripts/gh-project.sh show <n>` should say `Done`; if
-   the issue is missing from the board entirely, `scripts/gh-project.sh add
+   After the merge, `scripts/gh/project.sh show <n>` should say `Done`; if
+   the issue is missing from the board entirely, `scripts/gh/project.sh add
    <n>` and let the closed→Done workflow settle it. Do not archive or delete
    board items.
 9. **Remind the user to commit** the close on the current

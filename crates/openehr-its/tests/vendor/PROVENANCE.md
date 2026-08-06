@@ -15,14 +15,14 @@ re-vendor from upstream and update the pin below.
 | Ref      | branch `develop`, commit `22b01e0c99b53669394e56da29c2410838b5cf7e`                                 |
 | Path     | `test-data/src/main/resources/{composition,contribution,ehr,folder,item_structure}/canonical_json/` |
 | License  | Apache-2.0 (see the upstream `LICENSE.md`)                                                          |
-| Script   | `scripts/vendor-openehr-sdk-json.sh` (`--check` proves the committed tree is what the pin produces)  |
+| Script   | `scripts/vendor/openehr-sdk-json.sh` (`--check` proves the committed tree is what the pin produces)  |
 | Fetched  | 2026-07-03; reproduced byte-identically from the pin 2026-08-03                                     |
 
 `ehrbase/openEHR_SDK` is the serialization library EHRbase itself uses, so its
 `canonical_json` corpus is the closest available match to our parity baseline
 (EHRbase v2.33.0). The tree is vendored verbatim from the pinned commit by
-**`scripts/vendor-openehr-sdk-json.sh`**, preserving the upstream
-sub-directory layout; `scripts/vendor-openehr-sdk-json.sh --check` reports
+**`scripts/vendor/openehr-sdk-json.sh`**, preserving the upstream
+sub-directory layout; `scripts/vendor/openehr-sdk-json.sh --check` reports
 drift and writes nothing. Never hand-edit a vendored fixture and never
 hand-download into this tree — change the script, bump the pin, re-run it
 (`.claude/rules/vendored-corpora.md`).

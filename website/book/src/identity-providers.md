@@ -41,7 +41,8 @@ Two configuration groups do all the work:
    bearer token's signature, `iss`, and (when configured) `aud` — see the
    [OIDC settings table](security.md#authentication).
 2. **Role mining** (`[authz.rbac]`): `FERROEHR__AUTHZ__RBAC__ROLE_CLAIMS`
-   (default `["realm_access.roles","scope"]` — the Keycloak shape) names the
+   (default `["roles","groups","entitlements","realm_access.roles"]` — the RFC 9068
+   §2.2.3.1 carriers, then the Keycloak shape) names the
    JWT claim paths whose values become the caller's roles for the
    [role layer](security.md#authorization).
 
@@ -68,8 +69,18 @@ Entra ID exposes a standards-compliant OIDC issuer per tenant.
    ```
 
 5. **Verify**: request a token for the app (any OAuth2 client credential or
-   auth-code flow) and call the API. A valid token without a required role
-   must get `403`; no token, `401`.
+   auth-code flow) and call the API. A valid token without a required role must
+   get `403`; no token, `401`. If you instead get `400`, the header itself is
+   malformed rather than the credential rejected; a `503` means the CDR could not
+   reach your issuer's JWKS, so the token was never judged.
+
+> [!IMPORTANT]
+> A role must arrive in a **role claim**, not in `scope`. The OAuth2 `scope`
+> claim grants a client delegated authority
+> ([RFC 6749 §3.3](https://www.rfc-editor.org/rfc/rfc6749#section-3.3)) and says
+> nothing about the subject's roles, so it is not a role source. If your IdP is
+> configured to put role names in `scope`, map them into `roles` (or another
+> entry of `ROLE_CLAIMS`) instead.
 
 > [!TIP]
 > Group-based deployments can emit the `groups` claim instead and list it in

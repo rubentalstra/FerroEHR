@@ -139,6 +139,52 @@ surface, item tags (there is no EhrScape surface). **Auth:** Basic +
 OAuth2/OIDC via `argon2`/`jsonwebtoken`/`oauth2`/`openidconnect`; authorization is the
 shipped RBAC/ABAC `access` module in `ferroehr-rest`.
 
+### The access layer (`ferroehr-rest::extensions::access`) — our own design
+
+ITS-REST makes authentication a `SHOULD` and mandates no scheme, and the SM
+places authorization out of band, so **only the 401-vs-403 split is
+spec-grounded**: a missing or rejected credential is `401` with a
+`WWW-Authenticate` challenge, an authenticated-but-refused caller is `403`.
+Everything finer is our own design, built to the IETF OAuth2/JOSE RFCs and
+expressed in the vocabulary of NIST SP 800-162 (ABAC) and ANSI/INCITS 359
+(Core RBAC).
+
+**Evaluation order** — each stage can only narrow what the previous one allowed,
+which is what makes an optional stage safe to disable:
+
+1. **Authentication** — Basic (Argon2id PHC, verified-credential cache) or
+   OAuth2/OIDC bearer. Produces a `Principal` (subject, roles, scopes, the
+   validated claim set) or a typed refusal. A malformed `Authorization` header is
+   a `400`, not a `401`: the server never read a credential.
+2. **`EHR_ACCESS`** — always on and unconditional, from the RM's own gateway
+   clause ("All access decisions to data in the EHR must be made in accordance
+   with the policies and rules in this object").
+3. **RBAC** — the coarse operation class (public / clinical / admin /
+   management) against the caller's roles, plus the read-only restriction, which
+   overrides any grant. Roles come from the RFC 9068 §2.2.3.1 claim carriers; an
+   OAuth2 scope is NOT a role (RFC 6749 §3.3).
+4. **ABAC** — off by default. A policy engine (embedded Cedar, or an external
+   PDP) decides over subject attributes (subject, roles, scopes, organization,
+   patient) and resource attributes (patient, template), fanned out over
+   multi-valued attributes as a cartesian product with **all-must-permit** and
+   short-circuit deny.
+5. **SMART scopes** — off by default, AND-composed onto the ABAC decision, so it
+   can only narrow. Disabled SMART produces zero wire drift.
+
+**Deny-by-default and fail-closed, in both senses.** No stage permits by
+omission: a gate reached without a principal refuses; an unconfigured resource
+kind on the external PDP denies (and the missing rule is a boot error); Cedar is
+deny-by-default with `forbid` overriding `permit`. And a stage that cannot
+DECIDE is never read as a decision — an unreachable token issuer is `503`, a
+policy server answering `5xx` or a Cedar policy that errors during evaluation is
+a fail-closed `500`. Silence is never consent, and a broken control never looks
+like a policy outcome.
+
+Configuration is boot-validated rather than degraded at the first request: a
+mandatory audience list, an `https` issuer, an algorithm set bound to its key
+source, an HMAC entropy floor, the OWASP Argon2id parameter floor, and a policy
+rule per resource kind the PEP consults.
+
 ## Templates, validation, FLAT
 
 OPT 1.4 XML ingestion → `openehr-am`; WebTemplate builder (`moka`-cached);
@@ -276,6 +322,6 @@ design. The build record is the closed issues + PR descriptions.
   the separate step-load exploration instrument (maximum sustainable
   throughput, `stress.json`, never a conformance record). Published SVGs +
   summaries regenerate FROM the committed artifacts
-  (`scripts/render-perf-assets.sh`, CI diff-guarded).
-- **Drift check** (`scripts/check-codegen-drift.sh` + CI): the generated layer
+  (`scripts/render/perf-assets.sh`, CI diff-guarded).
+- **Drift check** (`scripts/checks/codegen-drift.sh` + CI): the generated layer
   is always in sync with the vendored specs.

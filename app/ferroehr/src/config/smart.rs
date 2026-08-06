@@ -14,6 +14,7 @@
 //! `ferroehr_rest::extensions::access::pep`.
 
 use serde::{Deserialize, Serialize};
+use url::Url;
 
 /// SMART App Launch resource-server configuration.
 ///
@@ -49,13 +50,11 @@ pub struct SmartConfig {
     /// The token claim carrying the resolved openEHR `EHR` id for the launch
     /// context (master07 §Context Selection token-response table: `ehrId`).
     /// Default `ehrId`.
-    #[serde(default = "default_ehr_id_claim")]
     pub ehr_id_claim: String,
 
     /// The fallback launch-context claim when [`Self::ehr_id_claim`] is absent
     /// (the standard SMART `patient` context attribute, master07). Default
     /// `patient`.
-    #[serde(default = "default_patient_claim")]
     pub patient_claim: String,
 
     /// Fail-closed switch (master08 §Scopes ¶2: the Platform must validate
@@ -153,6 +152,15 @@ pub struct SmartEndpoints {
     /// list reflecting the scopes the CDR actually enforces.
     #[serde(default)]
     pub scopes_supported: Vec<String>,
+    /// Accept `http://` (or otherwise non-absolute-`https`) advertised endpoints
+    /// and `public_base_url`.
+    ///
+    /// DEVELOPMENT AND TEST ONLY, and named rather than silent for the same
+    /// reason `auth.oidc.allow_insecure_issuer` is: this document tells
+    /// third-party applications where to obtain tokens, so a plaintext endpoint
+    /// exposes an authorization code or an access token to anyone on the path.
+    #[serde(default)]
+    pub allow_insecure_endpoints: bool,
     /// `capabilities` the operator additionally advertises (the HL7-defined base
     /// capabilities — `launch-ehr`, `sso-openid-connect`, `client-public`, … —
     /// live in the external SMART App Launch framework; master04 §Capabilities:
@@ -169,8 +177,8 @@ impl Default for SmartConfig {
             enabled: false,
             platform_base_url: None,
             public_base_url: None,
-            ehr_id_claim: default_ehr_id_claim(),
-            patient_claim: default_patient_claim(),
+            ehr_id_claim: "ehrId".to_owned(),
+            patient_claim: "patient".to_owned(),
             require_smart_scopes: false,
             episode: EpisodeConfig::default(),
             launch_base64_json: false,
@@ -225,6 +233,124 @@ impl SmartConfig {
                         .to_owned(),
                 );
             }
+            self.validate_published_endpoints()?;
+            self.validate_published_metadata()?;
+        }
+        Ok(())
+    }
+
+    /// Every endpoint the discovery document publishes is an absolute `https`
+    /// URL.
+    ///
+    /// This document is read by third-party applications to decide where to send
+    /// an authorization request and where to exchange a code, so a relative path
+    /// is unusable and a plaintext one exposes the code and the resulting access
+    /// token (RFC 8414 §2 requires `https` for the issuer; §6.2 states the
+    /// transport requirement for the metadata itself; RFC 6749 §3.1.2.1 requires
+    /// `https` for the redirection and endpoint URIs). `public_base_url` is held
+    /// to the same bar, because the `services` map's `baseUrl` is built from it.
+    ///
+    /// # Errors
+    /// A message naming the offending key and what it must be.
+    fn validate_published_endpoints(&self) -> Result<(), String> {
+        let e = &self.endpoints;
+        let candidates: [(&str, Option<&String>); 9] = [
+            ("smart.public_base_url", self.public_base_url.as_ref()),
+            ("smart.endpoints.issuer", e.issuer.as_ref()),
+            ("smart.endpoints.jwks_uri", e.jwks_uri.as_ref()),
+            (
+                "smart.endpoints.authorization_endpoint",
+                e.authorization_endpoint.as_ref(),
+            ),
+            ("smart.endpoints.token_endpoint", e.token_endpoint.as_ref()),
+            (
+                "smart.endpoints.registration_endpoint",
+                e.registration_endpoint.as_ref(),
+            ),
+            (
+                "smart.endpoints.introspection_endpoint",
+                e.introspection_endpoint.as_ref(),
+            ),
+            (
+                "smart.endpoints.revocation_endpoint",
+                e.revocation_endpoint.as_ref(),
+            ),
+            (
+                "smart.endpoints.management_endpoint",
+                e.management_endpoint.as_ref(),
+            ),
+        ];
+        for (key, value) in candidates {
+            let Some(raw) = value else { continue };
+            let url = Url::parse(raw.trim())
+                .map_err(|err| format!("{key} is not an absolute URL: {err} (RFC 8414 §2)"))?;
+            if url.scheme() != "https" && !e.allow_insecure_endpoints {
+                return Err(format!(
+                    "{key} must use the https scheme: this document tells third-party \
+                     applications where to obtain tokens, so a plaintext endpoint exposes the \
+                     authorization code and the access token (RFC 6749 §3.1.2.1, RFC 8414 §6.2); \
+                     set smart.endpoints.allow_insecure_endpoints = true for a development \
+                     authorization server"
+                ));
+            }
+        }
+        // The issuer additionally carries RFC 8414 §2's structural rules — the
+        // same ones `auth.oidc.issuer` is held to, since it is the same identity.
+        if let Some(issuer) = &e.issuer {
+            let url = Url::parse(issuer.trim())
+                .map_err(|err| format!("smart.endpoints.issuer is not an absolute URL: {err}"))?;
+            if url.query().is_some() || url.fragment().is_some() {
+                return Err(
+                    "smart.endpoints.issuer must have no query and no fragment component \
+                     (RFC 8414 §2)"
+                        .to_owned(),
+                );
+            }
+        }
+        Ok(())
+    }
+
+    /// The metadata arrays the document publishes must describe a usable, current
+    /// authorization server.
+    ///
+    /// An empty array is not silence — it is a positive claim that the server
+    /// supports none of that thing, and an app that believes it complies. The two
+    /// that matter are `response_types_supported`, which RFC 8414 §2 marks
+    /// REQUIRED, and `code_challenge_methods_supported`: SMART App Launch requires
+    /// PKCE (RFC 7636) and publishing an empty list tells every app not to use it.
+    ///
+    /// # Errors
+    /// A message naming the offending key and the clause requiring it.
+    fn validate_published_metadata(&self) -> Result<(), String> {
+        let e = &self.endpoints;
+        if e.response_types_supported.is_empty() {
+            return Err(
+                "smart.endpoints.response_types_supported must list at least one response type \
+                 (RFC 8414 §2 marks the field REQUIRED); SMART App Launch uses the \
+                 authorization-code flow, so `code` is the usual value"
+                    .to_owned(),
+            );
+        }
+        if e.token_endpoint_auth_methods_supported.is_empty() {
+            return Err(
+                "smart.endpoints.token_endpoint_auth_methods_supported must list at least one \
+                 method: an empty list advertises an authorization server that authenticates no \
+                 client at all"
+                    .to_owned(),
+            );
+        }
+        let advertises_pkce = e
+            .code_challenge_methods_supported
+            .iter()
+            .any(|m| m.trim().eq_ignore_ascii_case("S256"));
+        if !advertises_pkce {
+            return Err(
+                "smart.endpoints.code_challenge_methods_supported must include \"S256\": SMART \
+                 App Launch requires PKCE (RFC 7636), and publishing a list without it tells \
+                 every app that this authorization server cannot do it — a downgrade we would \
+                 be asking clients to accept. `plain` alone is not sufficient (RFC 7636 §7.2)"
+                    .to_owned(),
+            );
         }
         Ok(())
     }
@@ -242,14 +368,6 @@ impl SmartConfig {
             );
         }
     }
-}
-
-fn default_ehr_id_claim() -> String {
-    "ehrId".to_owned()
-}
-
-fn default_patient_claim() -> String {
-    "patient".to_owned()
 }
 
 #[cfg(test)]
@@ -297,9 +415,95 @@ mod tests {
         assert!(c.validate().is_err());
         c.endpoints.authorization_endpoint = Some("https://as.example/authorize".to_owned());
         c.endpoints.token_endpoint = Some("https://as.example/token".to_owned());
+        // Endpoints alone still do not make a publishable document: the metadata
+        // arrays below are what an app reads to decide HOW to talk to them.
+        assert!(c.validate().is_err());
+        c.endpoints.response_types_supported = vec!["code".to_owned()];
+        c.endpoints.token_endpoint_auth_methods_supported = vec!["client_secret_basic".to_owned()];
+        c.endpoints.code_challenge_methods_supported = vec!["S256".to_owned()];
         assert!(c.validate().is_ok());
         // A relative origin is not an absolute URL.
         c.public_base_url = Some("/ferroehr".to_owned());
         assert!(c.validate().is_err());
+    }
+
+    /// A publishable `[smart]` table: the endpoints plus the metadata an app
+    /// needs to use them.
+    fn publishable() -> SmartConfig {
+        SmartConfig {
+            enabled: true,
+            public_base_url: Some("https://cdr.example.com".to_owned()),
+            endpoints: SmartEndpoints {
+                issuer: Some("https://as.example/realms/ferroehr".to_owned()),
+                authorization_endpoint: Some("https://as.example/authorize".to_owned()),
+                token_endpoint: Some("https://as.example/token".to_owned()),
+                response_types_supported: vec!["code".to_owned()],
+                token_endpoint_auth_methods_supported: vec!["client_secret_basic".to_owned()],
+                code_challenge_methods_supported: vec!["S256".to_owned()],
+                ..SmartEndpoints::default()
+            },
+            ..SmartConfig::default()
+        }
+    }
+
+    /// This document tells third-party applications where to send an
+    /// authorization request and where to exchange a code, so a plaintext
+    /// endpoint exposes the code and the access token (RFC 6749 §3.1.2.1,
+    /// RFC 8414 §6.2). The opt-out is explicit, mirroring
+    /// `auth.oidc.allow_insecure_issuer`.
+    #[test]
+    fn a_plaintext_advertised_endpoint_is_a_boot_error() {
+        let mut c = publishable();
+        c.endpoints.token_endpoint = Some("http://as.example/token".to_owned());
+        let err = c
+            .validate()
+            .expect_err("plaintext endpoint must be refused");
+        assert!(err.contains("token_endpoint"), "{err}");
+        assert!(err.contains("https"), "{err}");
+
+        c.endpoints.allow_insecure_endpoints = true;
+        assert!(
+            c.validate().is_ok(),
+            "the development opt-out must be honoured once set explicitly",
+        );
+    }
+
+    /// RFC 8414 §2 gives the issuer identifier structural rules — the same ones
+    /// `auth.oidc.issuer` is held to, because it is the same identity.
+    #[test]
+    fn an_advertised_issuer_with_query_or_fragment_is_a_boot_error() {
+        for bad in [
+            "https://as.example/realms/ferroehr?tenant=a",
+            "https://as.example/realms/ferroehr#frag",
+        ] {
+            let mut c = publishable();
+            c.endpoints.issuer = Some(bad.to_owned());
+            assert!(
+                c.validate().is_err(),
+                "`{bad}` must be refused (RFC 8414 §2)",
+            );
+        }
+    }
+
+    /// An empty array is not silence — it is a claim that the authorization
+    /// server supports none of that thing, and an app that reads it complies.
+    #[test]
+    fn published_metadata_must_describe_a_usable_server() {
+        // RFC 8414 §2 marks `response_types_supported` REQUIRED.
+        let mut c = publishable();
+        c.endpoints.response_types_supported.clear();
+        assert!(c.validate().is_err());
+
+        // An authorization server that authenticates no client at all.
+        let mut c = publishable();
+        c.endpoints.token_endpoint_auth_methods_supported.clear();
+        assert!(c.validate().is_err());
+
+        // SMART App Launch requires PKCE, and `plain` alone is not sufficient
+        // (RFC 7636 §7.2).
+        let mut c = publishable();
+        c.endpoints.code_challenge_methods_supported = vec!["plain".to_owned()];
+        let err = c.validate().expect_err("PKCE S256 must be advertised");
+        assert!(err.contains("S256"), "{err}");
     }
 }

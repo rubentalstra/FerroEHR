@@ -383,7 +383,7 @@ cargo run -p cnf-runner -- stress --root tools/cnf-runner/artifacts \
 
 The published performance visuals — the class ladder, per-operation latency
 percentiles, and the latency-throughput stress curve — regenerate from the
-committed records (`bash scripts/render-perf-assets.sh`) and are diff-guarded
+committed records (`bash scripts/render/perf-assets.sh`) and are diff-guarded
 in CI, exactly like the conformance numbers.
 
 The committed stress run's latency-throughput curve — the knee, the p99

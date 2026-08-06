@@ -8,7 +8,7 @@ reason: **outward transparency** — anyone can see what is planned, in
 progress, and shipped, without reading the raw issue list. It is a **VIEW over
 the tracker, never a second tracker.** This file is the policy (what the board
 may and may not carry) and the canonical commands (the one sanctioned write
-path is `scripts/gh-project.sh`).
+path is `scripts/gh/project.sh`).
 
 ## The one-datum rule
 
@@ -36,7 +36,7 @@ ISSUE (label, milestone, native edge) and let the board filter/group on it.
 places items only by date/iteration fields — milestone due dates draw
 timeline markers, never item bars (roadmap-layout docs, read 2026-08-04) — so
 `Target date` exists as a machine-derived mirror of the item's milestone due
-date. It is written ONLY by `scripts/gh-project.sh sync-dates` (re-run after
+date. It is written ONLY by `scripts/gh/project.sh sync-dates` (re-run after
 changing a milestone due date or re-milestoning issues; the release
 procedure's cut steps re-run it), never by hand — a hand-set date is the
 duplication this file bans.
@@ -57,7 +57,7 @@ label/edge layer stays the source.)
 
 - **`Todo`** — every open issue starts here (the auto-add workflow sets it).
 - **`In Progress`** — set at pickup, when work on the issue actually starts
-  in a session: `scripts/gh-project.sh status <n> in-progress`. `/next-task`
+  in a session: `scripts/gh/project.sh status <n> in-progress`. `/next-task`
   does this as its final step. This is the ONE manual move in the lifecycle —
   GitHub has no built-in "branch/PR opened → In Progress" workflow.
 - **`Done`** — never set by hand. The issue closes via the PR's `Closes #N`
@@ -67,7 +67,7 @@ label/edge layer stays the source.)
 An issue abandoned mid-flight (session ended, work parked) goes back to
 `todo` explicitly — a stale `In Progress` column is a false public claim.
 
-## The one sanctioned command surface — `scripts/gh-project.sh`
+## The one sanctioned command surface — `scripts/gh/project.sh`
 
 Projects v2 writes (`gh project item-edit`) take four opaque GraphQL node ids
 (project, field, option, item) — never the issue `#number`. The helper
@@ -76,14 +76,14 @@ Requires the `project` token scope (`gh auth refresh -s project`).
 
 | Intent | Command |
 |---|---|
-| Start work on #n | `scripts/gh-project.sh status <n> in-progress` |
-| Park #n (work stopped, not done) | `scripts/gh-project.sh status <n> todo` |
-| Put #n on the board (auto-add missed it) | `scripts/gh-project.sh add <n>` |
-| Read #n's board status | `scripts/gh-project.sh show <n>` |
-| Print the whole board by column | `scripts/gh-project.sh board` |
-| Print the project URL | `scripts/gh-project.sh url` |
-| Post a status update | `scripts/gh-project.sh update <on-track\|at-risk\|off-track\|complete\|inactive> "<markdown>" [--start YYYY-MM-DD] [--target YYYY-MM-DD]` |
-| Read recent status updates | `scripts/gh-project.sh updates` |
+| Start work on #n | `scripts/gh/project.sh status <n> in-progress` |
+| Park #n (work stopped, not done) | `scripts/gh/project.sh status <n> todo` |
+| Put #n on the board (auto-add missed it) | `scripts/gh/project.sh add <n>` |
+| Read #n's board status | `scripts/gh/project.sh show <n>` |
+| Print the whole board by column | `scripts/gh/project.sh board` |
+| Print the project URL | `scripts/gh/project.sh url` |
+| Post a status update | `scripts/gh/project.sh update <on-track\|at-risk\|off-track\|complete\|inactive> "<markdown>" [--start YYYY-MM-DD] [--target YYYY-MM-DD]` |
+| Read recent status updates | `scripts/gh/project.sh updates` |
 
 Never move `Done` by hand, never `gh project item-edit` raw, and never
 `item-archive`/`item-delete` — closed items stay visible as the shipped
@@ -94,7 +94,7 @@ record (the built-in auto-archive workflow stays OFF).
 GitHub project **status updates** (shown in the board header + side panel;
 `createProjectV2StatusUpdate` — verified live in the GraphQL schema
 2026-08-04, the concept docs describe the UI only) are the outward progress
-narrative. Post one via `scripts/gh-project.sh update …`:
+narrative. Post one via `scripts/gh/project.sh update …`:
 
 - **At every release cut** (part of the release procedure,
   `.claude/rules/changelog.md`): status `on-track` (or the honest
@@ -162,7 +162,7 @@ secret.) Visibility: public.
   accepted and work starts.
 - **`/phase-done`** verifies the closing issue lands in `Done` (the merge +
   workflow do it; the skill only checks).
-- **`/phase-status`** may cite `scripts/gh-project.sh board` for the public
+- **`/phase-status`** may cite `scripts/gh/project.sh board` for the public
   view, but the issue list stays the working ground truth.
 - The **board readme** (`gh project edit --readme`) is the ONE home of the
   durable direction themes (owner ruling 2026-08-04, issue #1867): never

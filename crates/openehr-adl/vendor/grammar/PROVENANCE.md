@@ -3,7 +3,7 @@
 - Source: https://github.com/openEHR/adl-antlr (Apache-2.0; `LICENSE`
   vendored alongside)
 - Commit: `8db091ec3d810371cc41cd072fee81ce893fea47` (2024-04-06)
-- Vendored by: `scripts/vendor-adl-grammars.sh` (re-run it to refresh;
+- Vendored by: `scripts/vendor/adl-grammars.sh` (re-run it to refresh;
   never hand-edit a grammar file)
 - Layout: **version-scoped by AM generation** (#1936/#1946), mirroring the
   `openehr-am` generation modules:

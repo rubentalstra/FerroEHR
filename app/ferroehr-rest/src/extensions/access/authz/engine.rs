@@ -1,11 +1,12 @@
 //! The policy-decision-point (PDP) seam: one async trait behind which the embedded [`CedarEngine`] and the
-//! v1-compatible [`RemotePdp`] are interchangeable.
+//! [`RemotePdp`] are interchangeable.
 //!
 //! The engine **owns** the multi-valued fan-out semantics: given an
 //! [`AuthzRequest`] whose `patient`/`template` may be sets, it evaluates every
 //! [`Combination`] (the cartesian product), requires **all** to permit, and
 //! short-circuits on the first deny. Errors are **fail-closed**: the PEP maps
-//! any [`AuthzError`] to `500` (v1 parity) — never to a permit.
+//! any [`AuthzError`] to `500` — fail-closed: an engine that cannot decide must
+//! never be read as a permit.
 //!
 //! [`CedarEngine`]: crate::extensions::access::authz::cedar::CedarEngine
 //! [`RemotePdp`]: crate::extensions::access::authz::remote::RemotePdp

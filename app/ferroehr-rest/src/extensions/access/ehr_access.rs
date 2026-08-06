@@ -35,11 +35,12 @@
 //! design — no openEHR spec governs it;
 //! the parsed [`EhrAccessSettings`] live in `ferroehr-sm`.
 //!
-//! # v1 scope boundary
+//! # Scope boundary
 //!
-//! AQL result filtering by privacy level is **not** evaluated in v1 (query
-//! execution carries no principal context yet); the per-EHR gate still applies
-//! to the REST query surface where an `ehr_id` is bound.
+//! Privacy-level filtering of AQL RESULT ROWS is not evaluated: query execution
+//! carries no principal context, so the gate cannot see individual rows. The
+//! per-EHR gate does apply to the REST query surface wherever an `ehr_id` is
+//! bound, which is every query addressing a single EHR.
 //!
 //! The PEP returns `Result<(), Response>` — the deny path is a ready `403`.
 

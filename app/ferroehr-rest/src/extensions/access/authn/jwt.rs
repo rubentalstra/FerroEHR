@@ -36,10 +36,22 @@ pub(super) struct JwtValidator {
     audiences: Vec<String>,
     algorithms: Vec<Algorithm>,
     keys: KeySource,
-    /// Dotted JWT claim paths mined for RBAC roles (default
-    /// `["realm_access.roles", "scope"]`); configurable via `authz.rbac.role_claims`.
+    /// Dotted JWT claim paths mined for RBAC roles; configurable via
+    /// `authz.rbac.role_claims`.
     role_claims: Vec<String>,
+    /// Accepted clock skew on the time-based claims, in seconds
+    /// (`auth.oidc.clock_skew_leeway_seconds`).
+    leeway_seconds: u64,
+    /// Require every token to claim the RFC 9068 access-token profile
+    /// (`typ: at+jwt`); `auth.oidc.require_at_jwt`.
+    require_at_jwt: bool,
 }
+
+/// The RFC 9068 §2.1 media type for a JWT access token, as it appears in the
+/// `typ` header. The RFC admits the `application/` prefix being omitted
+/// ("`at+jwt`" and "`application/at+jwt`" are the same media type), and matching
+/// is case-insensitive.
+const AT_JWT_TYP: &str = "at+jwt";
 
 // The role model (default claim paths + extraction algorithm) lives in the leaf
 // `access::authz` module so the REST layer and the RBAC gate share one
@@ -98,6 +110,8 @@ impl JwtValidator {
             algorithms,
             keys,
             role_claims,
+            leeway_seconds: cfg.clock_skew_leeway_seconds,
+            require_at_jwt: cfg.require_at_jwt,
         })
     }
 
@@ -114,18 +128,50 @@ impl JwtValidator {
             )));
         }
 
+        // RFC 9068 §4 step 1 / RFC 8725 §3.11: verify the media type BEFORE any
+        // claim is read, so a token minted for another purpose (an ID token, a
+        // refresh token) can never be spent here as an access token.
+        let typ = header.typ.as_deref().map(str::trim);
+        let claims_at_jwt_profile = match typ {
+            Some(t) if t.eq_ignore_ascii_case(AT_JWT_TYP) => true,
+            Some(t) if t.eq_ignore_ascii_case("application/at+jwt") => true,
+            // RFC 7519 §5.1 makes the generic `JWT` type legal; RFC 8725 §3.11
+            // only requires that a type, if present, is one this server accepts.
+            Some(t) if t.eq_ignore_ascii_case("jwt") => false,
+            Some(other) => {
+                return Err(AuthError::InvalidToken(format!(
+                    "token type `{other}` is not an access token"
+                )));
+            }
+            None => false,
+        };
+        if self.require_at_jwt && !claims_at_jwt_profile {
+            return Err(AuthError::InvalidToken(
+                "the token does not claim the RFC 9068 `at+jwt` profile, which \
+                 auth.oidc.require_at_jwt demands"
+                    .to_owned(),
+            ));
+        }
+
         let mut validation = Validation::new(header.alg);
         validation.algorithms = self.algorithms.clone();
         validation.set_issuer(&[&self.issuer]);
-        if self.audiences.is_empty() {
-            validation.validate_aud = false;
-        } else {
-            validation.set_audience(&self.audiences);
-        }
+        // `audiences` is boot-guaranteed non-empty whenever `[auth.oidc]` is
+        // present, so there is no audience-less branch: a token minted for a
+        // different resource server must never authenticate here
+        // (RFC 7519 §4.1.3; RFC 9068 §4 step 4).
+        validation.set_audience(&self.audiences);
+        // RFC 7519 §4.1.5: `nbf` is a "MUST NOT be accepted before" claim, and
+        // the crate does not check it unless asked.
+        validation.validate_nbf = true;
+        // RFC 9068 §2.2 requires `iss`, `exp`, `aud` and `sub` on an access
+        // token; the crate's default requires only `exp`.
+        validation.set_required_spec_claims(&["exp", "iss", "aud", "sub"]);
+        validation.leeway = self.leeway_seconds;
 
-        let key = self.decoding_key(header.kid.as_deref()).await?;
+        let key = self.decoding_key(header.kid.as_deref(), header.alg).await?;
         // Decode into the full claim map so the validated claim set is retained
-        // for the RBAC role extraction and the Stage-2 ABAC attribute resolution;
+        // for RBAC role extraction and ABAC attribute resolution;
         // `jsonwebtoken` still validates `exp`/`iss`/`aud` from the raw payload
         // independent of the deserialize target.
         let data = decode::<serde_json::Map<String, serde_json::Value>>(token, &key, &validation)
@@ -149,6 +195,21 @@ impl JwtValidator {
             })?
             .to_owned();
 
+        // RFC 9068 §4 step 1: a token that CLAIMS the profile is held to the
+        // whole of §2.2 — `iat`, `jti` and `client_id` alongside the four the
+        // `Validation` above requires. A token that does not claim it is
+        // validated under the general JWT rules only, because the RFC
+        // prescribes nothing for it.
+        if claims_at_jwt_profile {
+            for required in ["iat", "jti", "client_id"] {
+                if !claims.contains_key(required) {
+                    return Err(AuthError::InvalidToken(format!(
+                        "an `at+jwt` access token must carry `{required}` (RFC 9068 §2.2)"
+                    )));
+                }
+            }
+        }
+
         // Scopes: the space-delimited `scope` string plus the `scp` array,
         // preserved verbatim on the principal for ABAC/diagnostic consumers.
         let mut scopes: Vec<String> = claims
@@ -160,8 +221,9 @@ impl JwtValidator {
             scopes.extend(scp.iter().filter_map(|v| v.as_str().map(str::to_owned)));
         }
 
-        // Roles from the configured claim paths (default `realm_access.roles` +
-        // `scope`), normalized to upper-case (mirrors EHRbase v1's authority converter).
+        // Roles from the configured claim paths, normalized to upper-case. The
+        // defaults are the RFC 9068 §2.2.3.1 carriers; `scope` is not among them
+        // (an OAuth2 scope is a client grant, RFC 6749 §3.3, not a role).
         let roles = extract_roles(&claims, &self.role_claims);
 
         Ok(Principal {
@@ -173,25 +235,81 @@ impl JwtValidator {
         })
     }
 
-    async fn decoding_key(&self, kid: Option<&str>) -> Result<DecodingKey, AuthError> {
+    async fn decoding_key(
+        &self,
+        kid: Option<&str>,
+        alg: Algorithm,
+    ) -> Result<DecodingKey, AuthError> {
         match &self.keys {
             KeySource::Hmac(key) => Ok(key.clone()),
-            KeySource::Static(set) => jwk_to_key(set, kid),
+            KeySource::Static(set) => jwk_to_key(set, kid, alg),
             KeySource::Remote(remote) => {
                 let set = remote.jwks().await?;
-                jwk_to_key(&set, kid)
+                jwk_to_key(&set, kid, alg)
             }
         }
     }
 }
 
-fn jwk_to_key(set: &JwkSet, kid: Option<&str>) -> Result<DecodingKey, AuthError> {
-    let jwk = match kid {
-        Some(kid) => set.find(kid),
-        // No `kid`: only unambiguous when the set has exactly one key.
-        None => set.keys.first(),
-    }
-    .ok_or_else(|| AuthError::InvalidToken("no matching signing key for token".to_owned()))?;
+/// Select the signing key for a token, honouring the JWK usage facets.
+///
+/// A `kid` names the key outright (RFC 7515 §4.1.4). Without one the candidate
+/// set is narrowed by the facets RFC 7517 defines for exactly this purpose —
+/// `use` §4.2 (`sig` for signature keys), `key_ops` §4.3 (`verify`), and `alg`
+/// §4.4 (the algorithm the key is intended for) — and an ambiguous remainder is
+/// REFUSED rather than resolved by position. Taking `keys.first()` would let a
+/// key rotation, or an encryption key sharing the document, silently decide
+/// which key verifies a clinical request (RFC 8725 §3.1 on algorithm/key
+/// confusion).
+///
+/// # Errors
+/// [`AuthError::InvalidToken`] when no key matches, when more than one remains
+/// after narrowing, or when the selected JWK cannot be turned into a key.
+fn jwk_to_key(set: &JwkSet, kid: Option<&str>, alg: Algorithm) -> Result<DecodingKey, AuthError> {
+    let jwk = if let Some(kid) = kid {
+        set.find(kid).ok_or_else(|| {
+            AuthError::InvalidToken(format!("the issuer's JWKS carries no key `{kid}`"))
+        })?
+    } else {
+        let candidates: Vec<_> = set
+            .keys
+            .iter()
+            .filter(|jwk| {
+                let common = &jwk.common;
+                let usable_for_signing = common
+                    .public_key_use
+                    .as_ref()
+                    .is_none_or(|u| matches!(u, jsonwebtoken::jwk::PublicKeyUse::Signature));
+                let permits_verify = common.key_operations.as_ref().is_none_or(|ops| {
+                    ops.iter()
+                        .any(|op| matches!(op, jsonwebtoken::jwk::KeyOperations::Verify))
+                });
+                let matches_alg = common.key_algorithm.as_ref().is_none_or(|declared| {
+                    declared
+                        .to_string()
+                        .eq_ignore_ascii_case(&format!("{alg:?}"))
+                });
+                usable_for_signing && permits_verify && matches_alg
+            })
+            .collect();
+        match candidates.as_slice() {
+            [single] => *single,
+            [] => {
+                return Err(AuthError::InvalidToken(
+                    "the token carries no `kid` and the issuer's JWKS holds no key usable for \
+                     verifying this algorithm"
+                        .to_owned(),
+                ));
+            }
+            many => {
+                return Err(AuthError::InvalidToken(format!(
+                    "the token carries no `kid` and {} keys in the issuer's JWKS could verify \
+                     it — the issuer must identify the key",
+                    many.len()
+                )));
+            }
+        }
+    };
     DecodingKey::from_jwk(jwk).map_err(|e| AuthError::InvalidToken(format!("invalid JWK: {e}")))
 }
 
@@ -294,7 +412,6 @@ impl RemoteJwks {
 
 #[cfg(test)]
 mod tests {
-    use crate::extensions::access::authz::roles::default_role_claims;
     use jsonwebtoken::{EncodingKey, Header, encode};
 
     use super::*;
@@ -302,6 +419,10 @@ mod tests {
 
     const SECRET: &str = "test-signing-secret";
     const ISSUER: &str = "https://issuer.example";
+    /// The audience every fixture token is minted for. `audiences` is mandatory
+    /// whenever `[auth.oidc]` is present (a token for another resource server
+    /// must never authenticate here), so there is no audience-less fixture.
+    const AUDIENCE: &str = "ferroehr";
 
     fn now() -> u64 {
         // Test-only wall clock; jiff is a workspace dep.
@@ -309,16 +430,21 @@ mod tests {
     }
 
     fn validator(audiences: &[&str]) -> JwtValidator {
+        let audiences: Vec<String> = if audiences.is_empty() {
+            vec![AUDIENCE.to_owned()]
+        } else {
+            audiences.iter().map(|s| (*s).to_owned()).collect()
+        };
         JwtValidator::with_role_claims(
             &OidcConfig {
                 issuer: ISSUER.to_owned(),
-                audiences: audiences.iter().map(|s| (*s).to_owned()).collect(),
+                audiences,
                 algorithms: vec!["HS256".to_owned()],
                 hmac_secret: Some(ferroehr::config::secret::Secret::new(SECRET.to_owned())),
                 jwks_json: None,
                 ..OidcConfig::default()
             },
-            default_role_claims(),
+            ferroehr::config::authz::RbacConfig::default().role_claims,
         )
         .expect("validator")
     }
@@ -336,6 +462,7 @@ mod tests {
         json!({
             "sub": "alice",
             "iss": ISSUER,
+            "aud": AUDIENCE,
             "exp": now() + 3600,
             "scope": "openid profile",
         })
@@ -438,20 +565,131 @@ mod tests {
         assert!(matches!(err, AuthError::InvalidToken(_)));
     }
 
+    /// RFC 7519 §4.1.5: `nbf` is a "MUST NOT be accepted before" claim, and the
+    /// crate does not check it unless asked.
+    #[tokio::test]
+    async fn not_yet_valid_token_rejected() {
+        let mut c = base_claims();
+        c["nbf"] = json!(now() + 3_600);
+        let err = validator(&[])
+            .validate(&token(&c))
+            .await
+            .expect_err("a token not yet valid must be refused");
+        assert!(matches!(err, AuthError::InvalidToken(_)), "got {err:?}");
+    }
+
+    /// RFC 9068 §2.2 requires `iss` on an access token; the crate's default
+    /// required-claim set is `exp` alone, so an issuer-less token would have
+    /// authenticated without this.
+    #[tokio::test]
+    async fn token_without_iss_rejected() {
+        let mut c = base_claims();
+        c.as_object_mut().expect("object").remove("iss");
+        let err = validator(&[])
+            .validate(&token(&c))
+            .await
+            .expect_err("a token without `iss` must be refused");
+        assert!(matches!(err, AuthError::InvalidToken(_)), "got {err:?}");
+    }
+
+    /// RFC 7519 §4.1.3 / RFC 9068 §4 step 4: a token minted for a different
+    /// resource server must never authenticate here.
+    #[tokio::test]
+    async fn token_for_another_audience_rejected() {
+        let mut c = base_claims();
+        c["aud"] = json!("some-other-resource-server");
+        let err = validator(&[])
+            .validate(&token(&c))
+            .await
+            .expect_err("a token for another audience must be refused");
+        assert!(matches!(err, AuthError::InvalidToken(_)), "got {err:?}");
+    }
+
+    /// RFC 9068 §2.1 + §4 step 1: a token CLAIMING the `at+jwt` profile is held
+    /// to the whole of §2.2, so `iat`/`jti`/`client_id` become mandatory for it.
+    #[tokio::test]
+    async fn typ_at_jwt_enforces_the_profile_claims() {
+        let mut header = Header::new(Algorithm::HS256);
+        header.typ = Some("at+jwt".to_owned());
+        let mint = |claims: &Value| {
+            encode(
+                &header,
+                claims,
+                &EncodingKey::from_secret(SECRET.as_bytes()),
+            )
+            .expect("encode")
+        };
+
+        // Profile claimed but incomplete → refused.
+        let err = validator(&[])
+            .validate(&mint(&base_claims()))
+            .await
+            .expect_err("an at+jwt token without iat/jti/client_id must be refused");
+        assert!(matches!(err, AuthError::InvalidToken(_)), "got {err:?}");
+
+        // Profile claimed and complete → accepted.
+        let mut complete = base_claims();
+        complete["iat"] = json!(now());
+        complete["jti"] = json!("token-id-1");
+        complete["client_id"] = json!("some-client");
+        let p = validator(&[])
+            .validate(&mint(&complete))
+            .await
+            .expect("a complete at+jwt access token authenticates");
+        assert_eq!(p.subject, "alice");
+
+        // A token that does NOT claim the profile is validated under the general
+        // JWT rules — the RFC prescribes nothing more for it.
+        assert!(
+            validator(&[])
+                .validate(&token(&base_claims()))
+                .await
+                .is_ok(),
+            "an untyped token must still authenticate by default",
+        );
+    }
+
+    /// RFC 8725 §3.12: an ID token is not an access token. Refusing an
+    /// unexpected `typ` outright stops one being spent here.
+    #[tokio::test]
+    async fn id_token_typ_rejected() {
+        let mut header = Header::new(Algorithm::HS256);
+        header.typ = Some("JWT+ID".to_owned());
+        let raw = encode(
+            &header,
+            &base_claims(),
+            &EncodingKey::from_secret(SECRET.as_bytes()),
+        )
+        .expect("encode");
+        let err = validator(&[])
+            .validate(&raw)
+            .await
+            .expect_err("a non-access-token type must be refused");
+        assert!(matches!(err, AuthError::InvalidToken(_)), "got {err:?}");
+    }
+
     #[tokio::test]
     async fn keycloak_realm_access_roles_extracted() {
-        // Keycloak-shaped token: roles live under `realm_access.roles` and are
-        // upper-cased; the `scope` claim also contributes roles.
+        // Roles live under `realm_access.roles` and surface upper-cased. The
+        // `scope` claim is NOT a role source: an OAuth2 scope grants a client
+        // delegated authority (RFC 6749 §3.3) and asserts nothing about the
+        // subject's roles — mining it made the at-least-one-role gate vacuous
+        // for every OIDC token, since `openid` alone satisfied it.
         let mut c = base_claims();
         c["realm_access"] = json!({ "roles": ["user", "ferroehr-admin"] });
         c["scope"] = json!("openid EHR_READ");
         let p = validator(&[]).validate(&token(&c)).await.expect("ok");
         assert!(p.roles.contains(&"USER".to_owned()));
         assert!(p.roles.contains(&"FERROEHR-ADMIN".to_owned()));
-        // Scope tokens are mined into roles too (upper-cased).
-        assert!(p.roles.contains(&"OPENID".to_owned()));
-        assert!(p.roles.contains(&"EHR_READ".to_owned()));
-        // Scopes stay verbatim (not upper-cased) for the deprecated seam.
+        assert!(
+            !p.roles.contains(&"OPENID".to_owned()),
+            "`openid` is a scope, not a role",
+        );
+        assert!(
+            !p.roles.contains(&"EHR_READ".to_owned()),
+            "a scope must not become a role",
+        );
+        // Scopes stay on the principal verbatim for SMART enforcement.
         assert!(p.scopes.contains(&"openid".to_owned()));
     }
 
@@ -464,21 +702,26 @@ mod tests {
         .as_object()
         .cloned()
         .unwrap();
-        let roles = extract_roles(&claims, &default_role_claims());
-        assert_eq!(
-            roles,
-            vec![
-                "ADMIN".to_owned(),
-                "USER".to_owned(),
-                "OFFLINE_ACCESS".to_owned()
-            ]
+        let roles = extract_roles(
+            &claims,
+            &ferroehr::config::authz::RbacConfig::default().role_claims,
         );
+        // `admin`/`Admin` collapse; `user` stays once. `OFFLINE_ACCESS` is a
+        // SCOPE and never becomes a role (RFC 6749 §3.3), so it is absent even
+        // though the token carries it.
+        assert_eq!(roles, vec!["ADMIN".to_owned(), "USER".to_owned()]);
     }
 
     #[test]
     fn extract_roles_missing_paths_yields_empty() {
         let claims = json!({ "sub": "x" }).as_object().cloned().unwrap();
-        assert!(extract_roles(&claims, &default_role_claims()).is_empty());
+        assert!(
+            extract_roles(
+                &claims,
+                &ferroehr::config::authz::RbacConfig::default().role_claims
+            )
+            .is_empty()
+        );
     }
 
     #[test]
@@ -513,6 +756,9 @@ mod tests {
         ) -> OidcConfig {
             OidcConfig {
                 issuer: issuer.to_owned(),
+                // Mandatory whenever `[auth.oidc]` is present, so the discovery
+                // fixtures declare it like any real deployment.
+                audiences: vec![AUDIENCE.to_owned()],
                 algorithms: vec!["HS256".to_owned()],
                 request_timeout_ms,
                 negative_cache_ttl_seconds,
@@ -623,8 +869,11 @@ mod tests {
                 .await;
 
             let cfg = oidc(&server.uri(), 1, 5_000);
-            let validator =
-                JwtValidator::with_role_claims(&cfg, default_role_claims()).expect("validator");
+            let validator = JwtValidator::with_role_claims(
+                &cfg,
+                ferroehr::config::authz::RbacConfig::default().role_claims,
+            )
+            .expect("validator");
             let mut claims = base_claims();
             claims["iss"] = json!(server.uri());
             let token = token(&claims);

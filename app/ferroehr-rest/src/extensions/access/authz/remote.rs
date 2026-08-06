@@ -1,13 +1,20 @@
-//! [`RemotePdp`] — the v1-compatible external policy-server client.
+//! [`RemotePdp`] — the external policy-decision-point client.
 //!
-//! Byte-compatible with `EHRbase` v1: `POST {server}{policy-name}` with a **flat**
-//! JSON body carrying only the configured, resolved keys
-//! (`organization`/`patient`/`template`); HTTP **200 = permit**, any other
-//! status = deny; the response body is ignored. Connection/IO failure is
-//! fail-closed ([`AuthzError::Unreachable`] → 500 at the PEP). Multi-valued
-//! attributes fan out as the full cartesian product with all-must-permit and
-//! short-circuit deny. The client has explicit connect/request timeouts
-//! (EHRbase v1 had none, so a blackholed PDP parked the request).
+//! The wire contract is deliberately minimal, in the NIST SP 800-162 sense of a
+//! PDP the PEP consults: `POST {server}{policy-name}` with a **flat** JSON body
+//! carrying only the configured, resolved attribute keys
+//! (`organization`/`patient`/`template`); HTTP **200 = permit**, any 4xx =
+//! deny, and the response body is ignored so no policy language is imposed on
+//! the deployment. A 5xx or an IO failure is not a decision at all: it is
+//! fail-closed as [`AuthzError::Unreachable`], which the PEP renders 500 rather
+//! than a silent permit or a misleading 403. Multi-valued attributes fan out as
+//! the full cartesian product, all-must-permit, first deny short-circuits.
+//! Connect and request timeouts are explicit — without them a blackholed PDP
+//! parks the request until the client gives up.
+//!
+//! NOTE: no openEHR spec governs external authorization — our own
+//! design/extension; the SM places authorization out of band
+//! (SM `openehr_platform/master02-overview.adoc` §General Assumptions).
 
 #![expect(
     clippy::disallowed_types,
@@ -26,7 +33,7 @@ use crate::extensions::access::authz::engine::{AuthzError, PolicyEngine};
 use crate::extensions::access::authz::request::{AuthzRequest, Combination, Decision};
 use ferroehr::config::authz::{AbacConfig, AbacParam, PolicyRule};
 
-/// The v1-compatible remote policy-decision-point client.
+/// The remote policy-decision-point client.
 #[derive(Debug)]
 pub struct RemotePdp {
     client: reqwest::Client,
@@ -81,7 +88,21 @@ impl RemotePdp {
         Value::Object(map)
     }
 
-    /// POST one combination and return whether the PDP permitted it (HTTP 200).
+    /// POST one combination and return whether the PDP permitted it.
+    ///
+    /// `200` is a permit and a `4xx` is a deny — both are DECISIONS the policy
+    /// server made. A `5xx` is not: it says the PDP failed, so it produced no
+    /// decision at all, and reading it as a deny would let a broken policy
+    /// server silently refuse clinical access while looking like policy. It
+    /// becomes [`AuthzError::Unreachable`], which the PEP renders `500`
+    /// (RFC 9110 §15.6: a 5xx means "the server is aware that it has erred").
+    /// A `3xx` is equally not a decision: an authorization endpoint that
+    /// redirects is misconfigured, and following it would send the attribute
+    /// body somewhere the deployment did not name.
+    ///
+    /// # Errors
+    /// [`AuthzError::Unreachable`] when the request fails, or when the PDP
+    /// answers with any status that is not a decision.
     async fn permits(
         &self,
         rule: &PolicyRule,
@@ -96,16 +117,32 @@ impl RemotePdp {
             .send()
             .await
             .map_err(|e| AuthzError::Unreachable(format!("POST {url}: {e}")))?;
-        Ok(response.status().as_u16() == 200)
+        let status = response.status();
+        if status == reqwest::StatusCode::OK {
+            return Ok(true);
+        }
+        if status.is_client_error() {
+            return Ok(false);
+        }
+        Err(AuthzError::Unreachable(format!(
+            "POST {url}: the policy server answered {status}, which is not an \
+             authorization decision"
+        )))
     }
 }
 
 #[async_trait]
 impl PolicyEngine for RemotePdp {
     async fn decide(&self, req: &AuthzRequest<'_>) -> Result<Decision, AuthzError> {
-        // An unconfigured kind is unchecked (EHRbase v1 parity for `directory`).
         let Some(rule) = self.policies.get(req.kind.config_key()) else {
-            return Ok(Decision::Permit);
+            // NOTE: no openEHR spec governs authorization — our own fail-closed
+            // design; config boot validation makes this unreachable.
+            tracing::error!(
+                kind = req.kind.config_key(),
+                operation_id = req.operation_id,
+                "no remote PDP policy is configured for this resource kind — denying"
+            );
+            return Ok(Decision::Deny);
         };
         for combo in req.combinations() {
             if !self.permits(rule, &combo).await? {

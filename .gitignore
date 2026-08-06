@@ -42,7 +42,7 @@ lcov.info
 
 .claude/worktrees
 
-# Docs website build artifacts (assembled by scripts/build-site.sh; never committed)
+# Docs website build artifacts (assembled by scripts/site/build.sh; never committed)
 /_site
 /website/book/book
 /docs-dist

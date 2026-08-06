@@ -45,6 +45,9 @@ fn composition_req<'a>(patient: Option<Attr>, template: Option<Attr>) -> AuthzRe
         operation_id: "composition_create",
         kind: ResourceKind::Composition,
         access: AccessMode::Create,
+        subject: "test-subject",
+        roles: &[],
+        scopes: &[],
         organization: Some("org-7".to_owned()),
         patient,
         template,
@@ -81,9 +84,10 @@ async fn url_is_base_plus_policy_name_and_body_has_exactly_configured_keys() {
     assert_eq!(pdp.decide(&req).await.unwrap(), Decision::Permit);
 }
 
+/// A 4xx is the policy server DECIDING to refuse, so it denies.
 #[tokio::test]
-async fn non_200_denies() {
-    for status in [401u16, 403, 404, 500] {
+async fn client_error_denies() {
+    for status in [401u16, 403, 404, 422] {
         let server = MockServer::start().await;
         Mock::given(method("POST"))
             .respond_with(ResponseTemplate::new(status))
@@ -100,6 +104,33 @@ async fn non_200_denies() {
     }
 }
 
+/// A 5xx is NOT a decision — the policy server says it failed. Reading it as a
+/// deny would let a broken PDP silently refuse clinical access while looking
+/// like policy, so it is a fail-closed error the PEP renders 500
+/// (RFC 9110 §15.6: a 5xx means the server "is aware that it has erred").
+///
+/// A 3xx is equally not a decision: an authorization endpoint that redirects is
+/// misconfigured, and following it would send the attribute body somewhere the
+/// deployment never named.
+#[tokio::test]
+async fn a_server_error_is_not_a_decision() {
+    for status in [500u16, 502, 503, 504, 301, 302] {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .respond_with(ResponseTemplate::new(status))
+            .mount(&server)
+            .await;
+        let base = format!("{}/", server.uri());
+        let pdp = RemotePdp::new(&config(&base, "p", vec![AbacParam::Patient])).expect("build");
+        let req = composition_req(Some(Attr::One("p-1".to_owned())), None);
+        let outcome = pdp.decide(&req).await;
+        assert!(
+            matches!(outcome, Err(AuthzError::Unreachable(_))),
+            "status {status} must be a fail-closed error, not a deny: {outcome:?}"
+        );
+    }
+}
+
 #[tokio::test]
 async fn connection_failure_is_fail_closed_error() {
     // A port nothing listens on → connect error → AuthzError (→ 500 at the PEP).
@@ -110,21 +141,28 @@ async fn connection_failure_is_fail_closed_error() {
     assert!(matches!(err, AuthzError::Unreachable(_)), "got {err:?}");
 }
 
+/// A resource kind with no configured policy DENIES: there is no policy to ask,
+/// so the only safe answer is refusal. Boot validation requires a policy per
+/// kind under `engine = remote`, making this branch unreachable in a booted
+/// server — it is the fail-closed floor, not a routine path. No openEHR spec
+/// governs authorization — our own design/extension.
 #[tokio::test]
-async fn unconfigured_kind_is_unchecked() {
-    // A query request against a config with only a `composition` policy is
-    // unchecked (v1 parity) — no HTTP call is made.
+async fn unconfigured_kind_denies() {
+    // Port 1 is reliably refused, so a deny here also proves no HTTP call is made.
     let base = "http://127.0.0.1:1/";
     let pdp = RemotePdp::new(&config(base, "p", vec![AbacParam::Patient])).expect("build");
     let req = AuthzRequest {
         operation_id: "query_execute_adhoc_query",
         kind: ResourceKind::Query,
         access: AccessMode::Execute,
+        subject: "test-subject",
+        roles: &[],
+        scopes: &[],
         organization: None,
         patient: Some(Attr::One("p-1".to_owned())),
         template: None,
     };
-    assert_eq!(pdp.decide(&req).await.unwrap(), Decision::Permit);
+    assert_eq!(pdp.decide(&req).await.unwrap(), Decision::Deny);
 }
 
 #[tokio::test]

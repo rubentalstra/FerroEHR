@@ -54,6 +54,10 @@ use crate::common;
 const BASE: &str = "/ferroehr/rest/openehr/v1";
 const HMAC_SECRET: &str = "abac-test-secret";
 const ISSUER: &str = "https://issuer.example";
+/// The audience every fixture token is minted for: `audiences` is mandatory
+/// whenever `[auth.oidc]` is present, so a token for another resource server
+/// can never authenticate here.
+const AUDIENCE: &str = "ferroehr";
 // Two EHRs with distinct subjects (the resolver maps them below).
 const EHR_OWN: &str = "3fa85f64-5717-4562-b3fc-2c963f66afa6";
 const EHR_OTHER: &str = "11111111-2222-3333-4444-555555555555";
@@ -122,7 +126,7 @@ fn rest_config() -> AppConfig {
             basic: None,
             oidc: Some(OidcConfig {
                 issuer: ISSUER.to_owned(),
-                audiences: vec![],
+                audiences: vec![AUDIENCE.to_owned()],
                 algorithms: vec!["HS256".to_owned()],
                 hmac_secret: Some(ferroehr::config::secret::Secret::new(
                     HMAC_SECRET.to_owned(),
@@ -306,11 +310,21 @@ async fn drain_audit(socket: &UdpSocket) -> Vec<String> {
 
 // ── credentials + requests ────────────────────────────────────────────────────
 
-/// A bearer token with a `USER` role (via `scope`) and, optionally, a
-/// `patient_id` claim.
+/// A bearer token carrying the `USER` role and, optionally, a `patient_id`
+/// claim.
+///
+/// The role travels in the `roles` claim — an RFC 9068 §2.2.3.1 carrier — not in
+/// `scope`: an OAuth2 scope grants a client delegated authority (RFC 6749 §3.3)
+/// and never becomes a role.
 fn bearer(patient: Option<&str>) -> String {
     let exp = u64::try_from(jiff::Timestamp::now().as_second()).unwrap() + 3600;
-    let mut claims = json!({ "sub": "svc", "iss": ISSUER, "exp": exp, "scope": "USER" });
+    let mut claims = json!({
+        "sub": "svc",
+        "iss": ISSUER,
+        "aud": AUDIENCE,
+        "exp": exp,
+        "roles": ["USER"],
+    });
     if let Some(p) = patient {
         claims["patient_id"] = json!(p);
     }

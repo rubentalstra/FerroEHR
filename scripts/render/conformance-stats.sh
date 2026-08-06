@@ -2,15 +2,15 @@
 # Derive every website conformance claim from the committed CNF artifacts
 # (docs/conformance/ferroehr/: results.json + verdicts.json) at BUILD time —
 # the site sources carry no hand-typed conformance numbers (enforced by
-# scripts/check-conformance-numbers.sh in CI), so the stale-numbers failure
+# scripts/checks/conformance-numbers.sh in CI), so the stale-numbers failure
 # mode is impossible by construction.
 #
 #   render-conformance-stats.sh includes          write website/book/generated/*.md
 #   render-conformance-stats.sh fill-html FILE    fill data-cnf markers in FILE in place
 #
-# Consumed by scripts/build-site.sh; runnable standalone for local previews.
+# Consumed by scripts/site/build.sh; runnable standalone for local previews.
 set -euo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 
 ART="docs/conformance/ferroehr"
 command -v jq >/dev/null 2>&1 || {

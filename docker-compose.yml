@@ -13,7 +13,7 @@
 # credentials, NOT for production (see the config block for the ways out).
 #
 # The image tags below are bumped at every release cut (the Helm appVersion
-# treatment); scripts/check-compose-image-tags.sh guards them against the
+# treatment); scripts/checks/compose-image-tags.sh guards them against the
 # workspace version in CI.
 #
 # ── The two quickstart variants ───────────────────────────────────────────────
@@ -240,7 +240,7 @@ configs:
       # before exposing the server to anything real.
       [[auth.basic.users]]
       username = "ferroehr"
-      password_hash = "$$argon2id$$v=19$$m=4096,t=2,p=1$$ZmVycm9laHJEZXZTYWx0$$Q0QFn5AN9941PDEcY+c9oKApFK7oGnhig+JpIwZkLWc"
+      password_hash = "$$argon2id$$v=19$$m=19456,t=2,p=1$$ZmVycm9laHJEZXZTYWx0$$be5nPwWjfUl1qvSrvkvqvdMOuCgM0VFcN/VN4MFLjT8"
       roles = ["ADMIN", "USER"]
 
       # Quickstart: authentication only, no role gate — the one user above can

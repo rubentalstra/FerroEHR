@@ -2,7 +2,7 @@
 # spec-update-watcher.yml: that workflow tracks individual completed spec
 # changes; this one guarantees a component RELEASE is never missed (the
 # ITS-REST 1.1.0 release was discovered by hand — never again). Mechanism
-# notes live in scripts/spec-release-watcher.sh.
+# notes live in scripts/watch/spec-release.sh.
 name: Spec-release watcher
 
 on:
@@ -33,4 +33,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           DRY_RUN: ${{ inputs.dry_run == true && '1' || '0' }}
-        run: bash scripts/spec-release-watcher.sh
+        run: bash scripts/watch/spec-release.sh

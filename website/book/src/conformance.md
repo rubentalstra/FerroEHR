@@ -78,8 +78,8 @@ cited-N/A so it reads as neither a pass nor a failure:
 The published run against FerroEHR reports:
 
 <!-- Generated at build time from docs/conformance/ferroehr/results.json by
-     scripts/render-conformance-stats.sh — never hand-type numbers here (CI:
-     scripts/check-conformance-numbers.sh). -->
+     scripts/render/conformance-stats.sh — never hand-type numbers here (CI:
+     scripts/checks/conformance-numbers.sh). -->
 {{#include ../generated/conformance-stats.md}}
 
 Cases that did not execute are not-applicable with a machine-readable
@@ -252,7 +252,7 @@ picture.
 profile verdicts, the capability-by-capability evidence matrix, and failure
 tables in both directions, derived from the two committed
 results/verdicts sets (ours and EHRbase's) by
-`scripts/render-comparison.sh` — measured numbers only, no editorial
+`scripts/render/comparison.sh` — measured numbers only, no editorial
 adjustment, both directions always published. The same content renders as
 the [comparison page](comparison.md).
 

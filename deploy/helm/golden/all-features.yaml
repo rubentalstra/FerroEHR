@@ -175,7 +175,7 @@ data:
       [auth.basic]
     
         [[auth.basic.users]]
-          password_hash = "$argon2id$v=19$m=4096,t=2,p=1$c2FsdA$hash"
+          password_hash = "$argon2id$v=19$m=19456,t=2,p=1$c2FsdA$hash"
           roles = ["USER"]
           username = "clinician"
       [auth.oidc]
@@ -336,7 +336,7 @@ spec:
     metadata:
       annotations:
         # Roll pods when the rendered ferroehr.toml changes.
-        checksum/config: a2d63efe8ec551019dc4cff32f34360d2d33457a271779d2564428e23eb5a7b2
+        checksum/config: 09484edeb3d823180cf1101cab73c0c4288bcdc463998e1b0d53bf6f91ae1031
         prometheus.io/scrape: "true"
         prometheus.io/port: "9100"
         prometheus.io/path: "/management/prometheus"
