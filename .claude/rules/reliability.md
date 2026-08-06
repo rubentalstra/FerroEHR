@@ -95,6 +95,17 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   — never rely on it inside `else`; rewrite as `match` when the guard must
   span both arms. Tail-expression temporaries drop at end of block, before
   locals (temporary-tail-expr-scope.html) — same discipline.
+- **`#[source]` over an `Option<Arc<…>>` or `Option<Box<…>>` yields the SMART
+  POINTER as the source hop, not the error inside it** (verified first-hand on
+  the pinned 1.96.1 toolchain against this workspace's `thiserror` 2, while
+  landing #2115). The failure is invisible in a log — `Display` forwards, so the
+  chain reads correctly — and `downcast_ref::<sqlx::Error>()` returns `None`,
+  which is the entire point of carrying a cause, silently lost. A non-`Option`
+  `Box<dyn Error + Send + Sync>` derives correctly; the optional form must
+  hand-write `Display` + `Error` and return `self.source.as_deref()`. There is no
+  lint for this: the only thing that catches it is a test that DOWNCASTS to the
+  concrete error type rather than asserting `source().is_some()`, so a new
+  source-carrying error type gets one.
 - **`Result → Option` inside a chain is a DECISION, and it carries NO
   automated guard** (review-enforced; the honest no-guard record, issue
   #1733). `.filter_map(|x| f(x).ok())`, `.and_then(|x| f(x).ok())` and
