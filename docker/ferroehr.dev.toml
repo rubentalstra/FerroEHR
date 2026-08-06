@@ -65,6 +65,13 @@ loggers = "admin_only"
 # query it. Do NOT copy into production; configure your real issuer instead.
 [auth.oidc]
 issuer = "http://keycloak:8081/auth/realms/ferroehr"
+# The dev realm is served over plain HTTP inside the compose network, which
+# RFC 8414 §6.2 forbids for a real issuer — hence the explicit dev-only opt-in.
+allow_insecure_issuer = true
+# Required: the audience this CDR answers to. A resource server that declares
+# none cannot reject a token minted for a different one (RFC 7519 §4.1.3), so
+# the dev realm's `ferroehr` client id is named here.
+audiences = ["ferroehr"]
 algorithms = ["RS256"]
 
 # External terminology servers for the `terminology` compose profile —
@@ -126,7 +133,7 @@ cache_ttl_secs = 0
 [[auth.basic.users]]
 username = "ferroehr"
 # Argon2id hash of the password "ferroehr".
-password_hash = "$argon2id$v=19$m=4096,t=2,p=1$ZmVycm9laHJEZXZTYWx0$Q0QFn5AN9941PDEcY+c9oKApFK7oGnhig+JpIwZkLWc"
+password_hash = "$argon2id$v=19$m=19456,t=2,p=1$ZmVycm9laHJEZXZTYWx0$be5nPwWjfUl1qvSrvkvqvdMOuCgM0VFcN/VN4MFLjT8"
 
 # Dev-only ADMIN account for the admin API (`DELETE /admin/...`) and the
 # conformance suite's AdminApi cases (scripts/conformance.sh CONF_ADMIN_AUTH
@@ -134,7 +141,7 @@ password_hash = "$argon2id$v=19$m=4096,t=2,p=1$ZmVycm9laHJEZXZTYWx0$Q0QFn5AN9941
 # roles. Do NOT use in production.
 [[auth.basic.users]]
 username = "ferroehr-admin"
-password_hash = "$argon2id$v=19$m=4096,t=2,p=1$ZmVycm9laHJEZXZTYWx0$Q0QFn5AN9941PDEcY+c9oKApFK7oGnhig+JpIwZkLWc"
+password_hash = "$argon2id$v=19$m=19456,t=2,p=1$ZmVycm9laHJEZXZTYWx0$be5nPwWjfUl1qvSrvkvqvdMOuCgM0VFcN/VN4MFLjT8"
 roles = ["ADMIN", "USER"]
 
 # Dev-only READ-ONLY account for the conformance suite's authorization-
@@ -142,5 +149,5 @@ roles = ["ADMIN", "USER"]
 # refused by the RBAC read-only gate. Do NOT use in production.
 [[auth.basic.users]]
 username = "ferroehr-readonly"
-password_hash = "$argon2id$v=19$m=4096,t=2,p=1$ZmVycm9laHJEZXZTYWx0$Q0QFn5AN9941PDEcY+c9oKApFK7oGnhig+JpIwZkLWc"
+password_hash = "$argon2id$v=19$m=19456,t=2,p=1$ZmVycm9laHJEZXZTYWx0$be5nPwWjfUl1qvSrvkvqvdMOuCgM0VFcN/VN4MFLjT8"
 roles = ["READONLY"]

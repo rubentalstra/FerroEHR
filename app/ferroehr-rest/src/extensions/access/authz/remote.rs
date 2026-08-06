@@ -103,9 +103,15 @@ impl RemotePdp {
 #[async_trait]
 impl PolicyEngine for RemotePdp {
     async fn decide(&self, req: &AuthzRequest<'_>) -> Result<Decision, AuthzError> {
-        // An unconfigured kind is unchecked (EHRbase v1 parity for `directory`).
         let Some(rule) = self.policies.get(req.kind.config_key()) else {
-            return Ok(Decision::Permit);
+            // NOTE: no openEHR spec governs authorization — our own fail-closed
+            // design; config boot validation makes this unreachable.
+            tracing::error!(
+                kind = req.kind.config_key(),
+                operation_id = req.operation_id,
+                "no remote PDP policy is configured for this resource kind — denying"
+            );
+            return Ok(Decision::Deny);
         };
         for combo in req.combinations() {
             if !self.permits(rule, &combo).await? {

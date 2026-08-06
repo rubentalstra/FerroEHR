@@ -209,8 +209,9 @@ pub(crate) struct AbacGate {
     /// The JWT claim carrying the patient id; its presence enables the subject
     /// gate.
     pub(crate) patient_claim: Option<String>,
-    /// Whether a `directory` policy is configured (v1 parity: DIRECTORY is
-    /// unchecked unless opted in).
+    /// Whether DIRECTORY (FOLDER) operations reach the PDP — the
+    /// `abac.check_directory` switch, so the opt-in is engine-independent
+    /// rather than inferred from a remote-PDP-shaped policy map.
     pub(crate) directory_checked: bool,
 }
 
@@ -231,7 +232,7 @@ impl AbacGate {
             resolvers,
             organization_claim: config.organization_claim().map(str::to_owned),
             patient_claim: config.patient_claim().map(str::to_owned),
-            directory_checked: config.policy.contains_key("directory"),
+            directory_checked: config.check_directory,
         }
     }
 }
@@ -517,6 +518,72 @@ mod tests {
             !default.abac_active(),
             "no engine supplied → no ABAC gate on the handle"
         );
+    }
+
+    /// DIRECTORY gating reads `abac.check_directory`, so it works identically
+    /// under both engines and is not inferred from the remote-PDP policy map (a
+    /// Cedar deployment would otherwise need a policy name its engine never
+    /// reads). No openEHR spec governs authorization — our own design.
+    #[test]
+    fn directory_checked_is_engine_independent() {
+        let engine: Arc<dyn PolicyEngine> = Arc::new(InertEngine);
+
+        for kind in [AbacEngineKind::Cedar, AbacEngineKind::Remote] {
+            let off = AbacConfig {
+                enabled: true,
+                engine: kind,
+                ..AbacConfig::default()
+            };
+            let gate = AbacGate::new(&off, Arc::clone(&engine), inert_resolvers());
+            assert!(
+                !gate.directory_checked,
+                "{kind:?}: DIRECTORY gating is off by default"
+            );
+
+            let on = AbacConfig {
+                check_directory: true,
+                ..off
+            };
+            let gate = AbacGate::new(&on, Arc::clone(&engine), inert_resolvers());
+            assert!(
+                gate.directory_checked,
+                "{kind:?}: check_directory alone enables DIRECTORY gating"
+            );
+        }
+
+        // A `directory` entry in the remote-PDP policy map no longer enables it.
+        let mut policy = std::collections::BTreeMap::new();
+        policy.insert(
+            "directory".to_owned(),
+            ferroehr::config::authz::PolicyRule {
+                name: "directory-access".to_owned(),
+                parameters: vec![],
+            },
+        );
+        let map_only = AbacConfig {
+            enabled: true,
+            policy,
+            ..AbacConfig::default()
+        };
+        let gate = AbacGate::new(&map_only, engine, inert_resolvers());
+        assert!(
+            !gate.directory_checked,
+            "the wire policy map is not the opt-in switch"
+        );
+    }
+
+    /// A PDP stand-in for gate-shape tests (never consulted).
+    #[derive(Debug)]
+    struct InertEngine;
+
+    #[async_trait::async_trait]
+    impl PolicyEngine for InertEngine {
+        async fn decide(
+            &self,
+            _req: &request::AuthzRequest<'_>,
+        ) -> Result<request::Decision, AuthzError> {
+            Ok(request::Decision::Permit)
+        }
     }
 
     #[test]

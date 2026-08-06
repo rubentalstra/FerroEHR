@@ -2675,6 +2675,7 @@ checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
 name = "ferroehr"
 version = "3.17.3"
 dependencies = [
+ "argon2",
  "assert_fs",
  "async-trait",
  "axum",
@@ -2735,6 +2736,7 @@ dependencies = [
  "tracing-flame",
  "tracing-opentelemetry",
  "tracing-subscriber",
+ "url",
  "urlencoding",
  "uuid",
  "wiremock",

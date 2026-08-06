@@ -110,10 +110,14 @@ async fn connection_failure_is_fail_closed_error() {
     assert!(matches!(err, AuthzError::Unreachable(_)), "got {err:?}");
 }
 
+/// A resource kind with no configured policy DENIES: there is no policy to ask,
+/// so the only safe answer is refusal. Boot validation requires a policy per
+/// kind under `engine = remote`, making this branch unreachable in a booted
+/// server — it is the fail-closed floor, not a routine path. No openEHR spec
+/// governs authorization — our own design/extension.
 #[tokio::test]
-async fn unconfigured_kind_is_unchecked() {
-    // A query request against a config with only a `composition` policy is
-    // unchecked (v1 parity) — no HTTP call is made.
+async fn unconfigured_kind_denies() {
+    // Port 1 is reliably refused, so a deny here also proves no HTTP call is made.
     let base = "http://127.0.0.1:1/";
     let pdp = RemotePdp::new(&config(base, "p", vec![AbacParam::Patient])).expect("build");
     let req = AuthzRequest {
@@ -124,7 +128,7 @@ async fn unconfigured_kind_is_unchecked() {
         patient: Some(Attr::One("p-1".to_owned())),
         template: None,
     };
-    assert_eq!(pdp.decide(&req).await.unwrap(), Decision::Permit);
+    assert_eq!(pdp.decide(&req).await.unwrap(), Decision::Deny);
 }
 
 #[tokio::test]

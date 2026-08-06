@@ -33,8 +33,20 @@ each by the presence of its configuration block:
   is a list of users, the Basic block is normally supplied through the TOML
   configuration file rather than environment variables.
 - **OAuth2/OIDC bearer tokens** are active when an `oidc` block is configured.
-  The server validates the token's signature, issuer, and (optionally)
-  audience.
+  The server validates the token's signature, issuer, and audience.
+
+Both mechanisms are validated at startup, and a configuration the server cannot
+honour **refuses to boot** rather than degrading at the first request:
+
+| Configuration | Boot outcome |
+|---|---|
+| `auth.enabled = true` with no mechanism | error — a `401` challenge must name a scheme the server implements (RFC 9110 §11.6.1) |
+| `[auth.oidc]` with no `audiences` | error — a server with no declared audience cannot reject another server's token (RFC 7519 §4.1.3) |
+| `[auth.oidc] issuer` not `https`, or carrying a query/fragment | error — RFC 8414 §2, §6.2 (`allow_insecure_issuer = true` opts a dev issuer out of the scheme rule only) |
+| `[auth.oidc] clock_skew_leeway_seconds` above `300` | error — leeway may be "no more than a few minutes" (RFC 9068 §4 step 6) |
+| `[auth.oidc] hmac_secret` under 32 bytes | error — RFC 8725 §3.5 forbids memorizable passwords as keyed-MAC keys |
+| `[auth.oidc] hmac_secret` set at all | boot **warning** — a symmetric key is a development posture (see below) |
+| a `password_hash` below `m=19456,t=2,p=1` argon2id | error — the OWASP Argon2id floor |
 
 Successfully verified Basic credentials are cached for
 `FERROEHR__AUTH__VERIFIED_CACHE_TTL_SECONDS` (default `60`; `0` disables
@@ -49,10 +61,12 @@ The OIDC settings:
 
 | Environment variable | Default | Meaning |
 |---|---|---|
-| `FERROEHR__AUTH__OIDC__ISSUER` | — (required to enable OIDC) | expected `iss`, and the OIDC discovery base |
-| `FERROEHR__AUTH__OIDC__AUDIENCES` | empty (not checked) | accepted `aud` values |
+| `FERROEHR__AUTH__OIDC__ISSUER` | — (required to enable OIDC) | expected `iss`, and the OIDC discovery base; an `https` URL with no query/fragment |
+| `FERROEHR__AUTH__OIDC__AUDIENCES` | — (**required, non-empty**) | accepted `aud` values |
 | `FERROEHR__AUTH__OIDC__ALGORITHMS` | `["RS256"]` | accepted signing algorithms |
-| `FERROEHR__AUTH__OIDC__HMAC_SECRET` | unset | an HS256 symmetric secret (development/testing) |
+| `FERROEHR__AUTH__OIDC__CLOCK_SKEW_LEEWAY_SECONDS` | `60` | leeway on `exp`/`nbf`; capped at `300` |
+| `FERROEHR__AUTH__OIDC__ALLOW_INSECURE_ISSUER` | `false` | accept a non-`https` issuer (development/testing only) |
+| `FERROEHR__AUTH__OIDC__HMAC_SECRET` | unset | an HS256 symmetric secret, min. 32 bytes (development/testing) |
 | `FERROEHR__AUTH__OIDC__JWKS_JSON` | unset | a static JWKS document |
 
 There is no separate JWKS or discovery URL to set: the server discovers the
@@ -77,6 +91,28 @@ a static `JWKS_JSON` (preferred when present) or an `HMAC_SECRET`.
 
 An unauthenticated request to a protected route is refused with `401`; an
 authenticated request that lacks the required role is refused with `403`.
+
+### Two limits worth planning around
+
+**A symmetric `hmac_secret` is a development posture, not a production one.**
+The key is shared with the authorization server, so this CDR holds everything
+needed to *mint* the tokens it accepts — an asymmetric key source never gives it
+that power — and it cannot be rotated without a restart. The server logs a
+warning at boot whenever one is configured. Use the issuer's OIDC discovery
+document (the default when no static key material is set) or `jwks_json`.
+
+**Revocation latency equals the access-token lifetime.** Tokens are validated
+offline against the issuer's published keys; the CDR does not call an
+introspection endpoint (RFC 7662 defines that mechanism but does not require a
+resource server to use it), so a token revoked at the identity provider stays
+acceptable here until its `exp` passes. This is deliberate: introspecting on
+every request would put the identity provider's availability directly in the
+request path, and caching introspection results only trades the lag for a
+shorter one. **The control is therefore the token lifetime, which your
+authorization server owns** — keep access-token lifetimes short (minutes, not
+hours) if prompt revocation matters, and use refresh tokens for session length.
+`clock_skew_leeway_seconds` (default `60`, capped at `300`) adds at most its own
+value on top of `exp`.
 
 ## Authorization
 
