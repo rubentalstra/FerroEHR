@@ -941,15 +941,17 @@ async fn the_swagger_page_needs_no_inline_allowance() {
         !body.contains("<style"),
         "an inline <style> would need style-src 'unsafe-inline'"
     );
-    for (index, _) in body.match_indices("<script") {
-        let rest = &body[index..];
-        let Some(tag_end) = rest.find('>') else { continue };
-        let after = &rest[tag_end + 1..];
-        let Some(close) = after.find("</script>") else {
+    // Split rather than slice: `clippy::string_slice` is denied workspace-wide
+    // because a byte range can land mid-character, and this walks HTML.
+    for fragment in body.split("<script").skip(1) {
+        let Some((_attributes, rest)) = fragment.split_once('>') else {
+            continue;
+        };
+        let Some((inline_body, _)) = rest.split_once("</script>") else {
             continue;
         };
         assert!(
-            after[..close].trim().is_empty(),
+            inline_body.trim().is_empty(),
             "an inline <script> body would need script-src 'unsafe-inline'"
         );
     }

@@ -19,6 +19,19 @@
 //! and escaping them would mangle every message. ANSI/C1 escapes are
 //! `tracing_subscriber`'s own concern (`Writer::sanitizes_ansi_escapes`).
 //!
+//! **Scope: the text layer only.** [`crate::telemetry::layers`] wraps the
+//! `pretty`/`auto`-text `fmt` layer with [`LineSafe`] and leaves the `json`
+//! layer unwrapped, so a JSON record keeps its own single `\n` escape rather
+//! than gaining a second, doubly-escaped one.
+//!
+//! **A genuine line break in a VALUE is escaped, never dropped and never a
+//! reason to refuse the record**: a multi-line clinical text logged into a
+//! field appears as `line one\nline two` on one physical line, with every
+//! character preserved. So an absent line break in a text log is always this
+//! sanitizer and never missing data — at the cost that a value which literally
+//! contained the two characters `\` and `n` reads the same as an escaped break.
+//! The `json` format is the one that keeps values byte-exact.
+//!
 //! No openEHR spec governs logging — our own design/extension.
 
 use std::borrow::Cow;
@@ -126,7 +139,10 @@ mod tests {
 
     impl Capture {
         fn contents(&self) -> String {
-            let guard = self.0.lock().unwrap_or_else(|e| e.into_inner());
+            let guard = self
+                .0
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
             String::from_utf8_lossy(&guard).into_owned()
         }
     }
@@ -140,7 +156,10 @@ mod tests {
 
     impl std::io::Write for Capture {
         fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-            let mut guard = self.0.lock().unwrap_or_else(|e| e.into_inner());
+            let mut guard = self
+                .0
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
             guard.extend_from_slice(buf);
             Ok(buf.len())
         }
