@@ -299,14 +299,6 @@ fn file_sys_loc(body: &Value) -> Result<String, RestError> {
 
 /// The `EXPORT_SPEC` default `segment_split_size` in kb.
 ///
-/// NOTE (`export_spec.adoc` makes `segment_split_size: Integer [1..1]`
-/// mandatory but names no default, and no openEHR spec governs this wire —
-/// our own design/extension): an omitted size takes 1024 kb rather than
-/// failing, so the common "just dump it" call needs no tuning knob, and any
-/// PRESENT value is honoured exactly (a non-positive one is refused by the
-/// service).
-const DEFAULT_SEGMENT_SPLIT_KB: i64 = 1024;
-
 /// Build the SM `EXPORT_SPEC` from the request body.
 fn export_spec(body: &Value) -> Result<ExportSpec, RestError> {
     // `ENCODING_FORMAT` (encoding_format.adoc) is an enumeration with NO
@@ -322,7 +314,10 @@ fn export_spec(body: &Value) -> Result<ExportSpec, RestError> {
     let compression_format =
         enum_member::<CompressionFormat>(body, "compression_format", "COMPRESSION_FORMAT")?;
     let segment_split_size = match body.get("segment_split_size") {
-        None | Some(Value::Null) => DEFAULT_SEGMENT_SPLIT_KB,
+        // NOTE: `export_spec.adoc` makes `segment_split_size` mandatory but names
+        // no default, and no openEHR spec governs this wire — our own extension:
+        // an omitted size takes 1024 kb so "just dump it" needs no tuning knob.
+        None | Some(Value::Null) => 1024,
         Some(value) => value.as_i64().ok_or_else(|| {
             RestError(ApiError::BadRequest(format!(
                 "`segment_split_size` is the EXPORT_SPEC Integer size in kb, got {value}"

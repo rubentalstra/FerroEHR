@@ -41,9 +41,6 @@ use ferroehr::telemetry::{self, indicators};
 /// How long to wait for the audit queue to flush on shutdown.
 const AUDIT_DRAIN_TIMEOUT: Duration = Duration::from_secs(5);
 
-/// The default endpoint the `healthcheck` subcommand probes.
-const DEFAULT_HEALTHCHECK_URL: &str = "http://127.0.0.1:8080/ferroehr/rest/status";
-
 /// `FerroEHR` server command-line interface.
 #[derive(Debug, Parser)]
 #[command(name = "ferroehr", version, about = "openEHR-conformant CDR server")]
@@ -66,7 +63,11 @@ pub enum Command {
     /// Probe the running server's status endpoint; exit 0 on 2xx, 1 otherwise.
     Healthcheck {
         /// The status URL to probe.
-        #[arg(long, env = "FERROEHR_HEALTHCHECK_URL", default_value = DEFAULT_HEALTHCHECK_URL)]
+        #[arg(
+            long,
+            env = "FERROEHR_HEALTHCHECK_URL",
+            default_value = "http://127.0.0.1:8080/ferroehr/rest/status"
+        )]
         url: String,
     },
     /// Configuration utilities (validate / print the annotated default).

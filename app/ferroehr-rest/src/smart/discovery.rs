@@ -403,6 +403,13 @@ async fn smart_configuration(State(state): State<AppState>) -> Json<SmartConfigu
 /// `FERROEHR_REST_SMART__ENABLED`. Served pre-auth. Spec: ITS-REST
 /// `smart_app_launch/master04`.
 pub(crate) fn openapi(cfg: &AppConfig, rest_root: &str) -> utoipa::openapi::OpenApi {
+    // Disabled → declare nothing, mirroring [`router`], which returns an empty
+    // router in the same case. The served document's whole value is that it
+    // describes the LIVE router; advertising a path that answers `404` breaks
+    // exactly the property this project serves its own document to guarantee.
+    if !cfg.smart.enabled {
+        return utoipa::openapi::OpenApiBuilder::new().build();
+    }
     let mut doc = OpenApiRouter::<AppState>::new()
         .routes(routes!(smart_configuration))
         .into_openapi();

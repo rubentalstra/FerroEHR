@@ -45,6 +45,10 @@ pub fn parse(tokens: &[Token]) -> Result<SelectQuery, Vec<Simple<'_, Token>>> {
 ///
 /// # Errors
 /// Returns a human-readable message on a lex or parse failure.
+///
+/// NOTE: the lexer and parser diagnostics stay flattened into that message
+/// rather than carried as a source (RFC 0201) — a positional AQL diagnostic IS
+/// the answer, and `chumsky`'s error type is deliberately not in this API.
 pub fn parse_str(src: &str) -> Result<SelectQuery, String> {
     let tokens = crate::lexer::lex(src).map_err(|e| e.to_string())?;
     parse(&tokens).map_err(|errs| {

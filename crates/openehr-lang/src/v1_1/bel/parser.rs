@@ -582,6 +582,11 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
         self.err("unterminated '{ … }' constraint after 'matches'")
     }
 
+    /// A positional parse diagnostic at the current token.
+    ///
+    /// NOTE: a `FromStr` failure folded into `message` by a caller stays
+    /// flattened rather than carried as a source (RFC 0201) — the located
+    /// message IS the answer a grammar diagnostic exists to give.
     fn parse_err(&self, message: impl Into<String>) -> BelError {
         BelError::Parse {
             at: self.at(),

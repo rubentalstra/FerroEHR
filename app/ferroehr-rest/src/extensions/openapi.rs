@@ -423,6 +423,16 @@ fn meta_openapi(cfg: &AppConfig) -> utoipa::openapi::OpenApi {
     #[openapi(paths(family_openapi_json))]
     struct FamilyDocs;
 
+    // These paths exist only when the Swagger surface is mounted
+    // (`crate::router::mount_public_surface` merges `swagger_router` behind the
+    // same flag). Declaring them unconditionally advertised the document's own
+    // URL, the per-family documents and the UI to a client that would get `404`
+    // from all three — inside the generator whose documented property is that
+    // every path it lists is one the live router mounts.
+    if !cfg.server.swagger_ui {
+        return utoipa::openapi::OpenApiBuilder::new().build();
+    }
+
     let mut doc = OpenApiRouter::<AppState>::new()
         .routes(routes!(openapi_json))
         .routes(routes!(swagger_ui_index))
@@ -815,24 +825,12 @@ pub(crate) fn swagger_router(cfg: &AppConfig) -> Router<AppState> {
                 async move { serve_ui_file(&file, &config) }
             }),
         )
-        // Swagger UI is the one surface on this origin that is genuinely
-        // rendered, so it needs a policy derived from what it loads rather than
-        // the API's `default-src 'none'` — which would block the vendored
-        // bundle's own same-origin scripts and styles and leave a blank page.
-        //
-        // Everything it needs is same-origin (the bundle is vendored, not from a
-        // CDN), so `'self'` alone covers scripts, styles, fonts and images —
-        // with NO inline allowance. That was measured rather than assumed: the
-        // served page carries no inline `<script>` and no inline `<style>` (the
-        // distribution puts its configuration in a separate
-        // `swagger-initializer.js` asset), and a test pins that, so if the
-        // upstream bundle ever inlines something the test says so instead of the
-        // page silently breaking. `connect-src 'self'` keeps Try-It-Out pointed
-        // at this server and nowhere else.
-        //
-        // Set here rather than centrally, and the outer layer uses
-        // `if_not_present`, so this narrower policy survives instead of being
-        // overwritten on the way out.
+        // Swagger UI is the one surface here that is genuinely RENDERED, so the
+        // API's `default-src 'none'` would blank it. Everything it loads is
+        // same-origin (the bundle is vendored), so `'self'` suffices with NO
+        // inline allowance — measured, not assumed, and pinned by a test.
+        // Set here with the outer layer using `if_not_present`, so this narrower
+        // policy survives instead of being overwritten on the way out.
         .layer(SetResponseHeaderLayer::if_not_present(
             header::CONTENT_SECURITY_POLICY,
             http::HeaderValue::from_static(SWAGGER_UI_CSP),
