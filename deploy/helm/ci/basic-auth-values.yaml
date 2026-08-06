@@ -1,0 +1,27 @@
+# A Basic-auth deployment, which is the mount-heavy shape: the user's Argon2id hash
+# arrives through `secrets:` and the chart injects `password_hash_file` into the
+# rendered TOML, so the hash is in neither the ConfigMap nor the environment.
+#
+# This replaced an earlier "config-in-secret" case. That case existed because
+# `password_hash` had no `*_file` sibling and therefore forced the whole rendered
+# ferroehr.toml into the Secret; with `password_hash_file` in the server, no secret
+# the chart models is unroutable any more, so that branch has no reachable input.
+# It is still exercised — by the secret-leak gate in validate.sh, which probes it
+# with a secret-shaped key that does not exist in the config tree at all.
+database:
+  existingSecret: ferroehr-db
+  existingSecretKey: FERROEHR__DB__URL
+
+secrets:
+  basicUserPasswordHashes:
+    clinician: "$argon2id$v=19$m=19456,t=2,p=1$c2FsdA$hash"
+
+config:
+  auth:
+    enabled: true
+    basic:
+      users:
+        # No password_hash here — only the identity and the roles. The hash is a
+        # secret and lives in `secrets:` above.
+        - username: clinician
+          roles: [USER]

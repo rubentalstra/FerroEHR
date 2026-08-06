@@ -148,12 +148,14 @@ Error: execution error at (ferroehr/templates/deployment.yaml:18:28):
   - config.auth.oidc.hmac_secret: set `secrets.authOidcHmacSecret` instead
 ```
 
-**A secret the chart cannot route** — today only a Basic user's
-`auth.basic.users[].password_hash`, whose config key has no `password_hash_file`
-sibling to point at a mounted file — moves the **whole rendered `ferroehr.toml`
-into the chart's Secret, and no ConfigMap is created at all**. The install notes
-say which object your release used, and so does the projected volume. Read the
-effective configuration in that mode with:
+**A secret the chart cannot route** moves the **whole rendered `ferroehr.toml` into
+the chart's Secret, and no ConfigMap is created at all** — the safe direction,
+taken automatically. **No key reaches that branch today**: every credential the
+server models now has either a `*_file` sibling or a Secret-borne environment
+route. The branch exists for the next one that does not, so that a secret key
+added upstream fails safe instead of landing in a ConfigMap. When it is taken, the
+install notes say which object your release used, and the configuration is read
+with:
 
 ```shell
 kubectl -n ferroehr get secret ferroehr-config \
@@ -202,10 +204,12 @@ read-only from a Secret at `/etc/ferroehr/<key>` (and which is deliberately
 *not* part of the rendered TOML); point the matching in-TOML `*_file` /
 `*_path` key at the mounted path. Secret-bearing scalar values go under
 `secrets:` — `authOidcHmacSecret`, `signingKeyPassphrase`, `eventsUrl`,
-`fhirOutboundUrl`, `auditFhirFeedUrl`, `multimediaAccessKeyId`,
-`multimediaSecretAccessKey`, `terminologyOauth2ClientSecrets` — and the database
-DSN comes from `database.existingSecret` (key `database.existingSecretKey`,
-default `FERROEHR__DB__URL`). None of these ever reach the ConfigMap.
+`fhirOutboundUrl`, `auditFhirFeedUrl`, `basicUserPasswordHashes`,
+`multimediaAccessKeyId`, `multimediaSecretAccessKey`,
+`terminologyOauth2ClientSecrets` — and the database DSN comes from
+`database.existingSecret` (key `database.existingSecretKey`, default
+`FERROEHR__DB__URL`). None of these ever reach the ConfigMap, and all but two are
+delivered as mounted files rather than environment values.
 
 How a secret reaches the process differs by whether the configuration key has a
 `*_file` sibling, and the difference is a security one: an environment variable
@@ -220,8 +224,10 @@ asks for a read-only volume instead.
 | `secrets.signingKeyPassphrase` | mounted at `/etc/ferroehr-secrets/signing.key_passphrase` |
 | `secrets.multimediaSecretAccessKey` | mounted at `/etc/ferroehr-secrets/multimedia.secret_access_key` |
 | `secrets.terminologyOauth2ClientSecrets.<name>` | mounted at `/etc/ferroehr-secrets/terminology.external.oauth2_clients.<name>.client_secret`; the chart injects the matching `client_secret_file` into the rendered TOML |
-| the database DSN | `FERROEHR__DB__URL` env — `db.url` has no `*_file` sibling |
-| `secrets.eventsUrl`, `secrets.fhirOutboundUrl`, `secrets.auditFhirFeedUrl` | env — no `*_file` sibling |
+| the database DSN | mounted at `/etc/ferroehr-secrets/db.url` (`db.url_file`) — projected from `database.existingSecret` when you supply one, so **the credential that reaches patient data never enters the pod's environment** |
+| `secrets.basicUserPasswordHashes.<username>` | mounted at `/etc/ferroehr-secrets/auth.basic.users.<username>.password_hash`; the chart injects the matching `password_hash_file` |
+| `secrets.eventsUrl`, `secrets.fhirOutboundUrl` | mounted at `/etc/ferroehr-secrets/events.url` and `…/fhir.outbound.url` (`events.url_file`, `fhir.outbound.url_file`) |
+| `secrets.auditFhirFeedUrl` | env — `audit.fhir_feed.url` is now the only credential-bearing key with no `*_file` sibling |
 | `secrets.multimediaAccessKeyId` | env — an access key *id* is not secret (it is reported unredacted by `/management/env`) |
 
 The mount is read-only, `0440`, owned `root:65532` so the non-root process reads
@@ -230,15 +236,16 @@ because a `subPath`-mounted Secret never receives updates and a rotation would
 not propagate.
 
 > [!NOTE]
-> A Basic user is the one secret with no `*_file` route: the server has no
-> `password_hash_file`, so an Argon2id hash cannot be delivered as a mounted file.
-> Configuring `config.auth.basic.users` therefore switches the whole configuration
-> into the Secret (above) rather than leaving the hash in a ConfigMap. It is still
-> not as good as a mounted file — the value sits in the pod's configuration object
-> instead of a rotatable secret path — so prefer `config.auth.oidc` where the
-> choice exists. An Argon2id hash is not a plaintext password, but it is an offline
-> cracking target, which is exactly what the boot-time OWASP parameter floor exists
-> to make expensive.
+> A Basic user's Argon2id hash is delivered as a mounted file like the others: put
+> it in `secrets.basicUserPasswordHashes.<username>` and declare only the
+> `username` and `roles` under `config.auth.basic.users`. The chart mounts the hash
+> and injects `password_hash_file`, so it reaches neither the ConfigMap nor the
+> environment. Setting `password_hash` under `config:` is refused, and the error
+> names this key. (Before the server had `password_hash_file`, configuring a Basic
+> user moved the whole rendered configuration into the Secret; that is no longer
+> necessary and no longer happens.) An Argon2id hash is not a plaintext password,
+> but it is an offline cracking target, which is what the boot-time OWASP parameter
+> floor exists to make expensive.
 
 ## Security posture
 

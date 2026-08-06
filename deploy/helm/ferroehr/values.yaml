@@ -4,9 +4,10 @@
 # chart renders that file from the `config:` block below (typed values mapped
 # 1:1 onto the ferroehr.toml schema) into a ConfigMap mounted at
 # /etc/ferroehr/ferroehr.toml — the server's config search order discovers it
-# automatically. Secrets never go in the ConfigMap: they are injected as
-# `FERROEHR_*` env from a Secret (see `secrets:` and `database:`), and the env
-# layer overrides the file. `config.files` mounts genuinely file-shaped material
+# automatically. Secrets never go in the ConfigMap: they come from a Secret (see
+# `secrets:` and `database:`) — mounted as read-only FILES wherever the config key
+# has a `*_file` sibling, which is now everything except `audit.fhir_feed.url` and
+# `multimedia.access_key_id`; only the mounted PATH is passed as env. `config.files` mounts genuinely file-shaped material
 # (Cedar policies, ATNA PEMs, the PGP key, JWKS) that in-TOML `*_path`/`*_file`
 # keys point at. `extraEnv` is the escape hatch for anything not surfaced here.
 #
@@ -91,8 +92,11 @@ serviceAccount:
 # LOGIN role granted the DML privileges the runtime needs and none of the DDL
 # ones, so a compromised app process cannot alter the schema (PostgreSQL 18
 # docs, "Database Roles": https://www.postgresql.org/docs/18/user-manag.html).
-# The DSN is a SECRET: it is injected as FERROEHR__DB__URL env from a
-# Secret (never the ConfigMap). The non-secret pool bounds live in
+# The DSN is a SECRET, and the credential that reaches patient data: it is MOUNTED
+# from a Secret as /etc/ferroehr-secrets/db.url and reached through
+# `FERROEHR__DB__URL_FILE`, so it never enters the pod's environment (an env value
+# is readable through /proc/<pid>/environ and inherited by every child process).
+# Never the ConfigMap. The non-secret pool bounds live in
 # config.db.{max_connections,min_connections,acquire_timeout_secs}.
 # ─────────────────────────────────────────────────────────────────────────────
 database:
@@ -101,7 +105,11 @@ database:
   # secret's value must be a full `postgres://ferroehr_app:...@host:5432/ferroehr`
   # (optionally `?sslmode=verify-full`).
   existingSecret: ""
-  # -- Key within existingSecret holding the DSN (the env var name the server reads).
+  # -- Key WITHIN existingSecret that holds the DSN. This is a Secret key name,
+  # not an environment variable name: the chart mounts that key as a file and
+  # passes only its PATH as `FERROEHR__DB__URL_FILE`, so the DSN never enters the
+  # pod's environment. The default spelling is kept for compatibility with
+  # existing Secrets created for the older env-borne arrangement.
   existingSecretKey: FERROEHR__DB__URL
   # -- Inline DSN (DEV/TEST ONLY — lands in a chart-managed Secret). Leave empty
   # and use existingSecret in production. Ignored when existingSecret is set.
@@ -156,12 +164,19 @@ secrets:
   # -- PGP key passphrase (config.signing.mode=pgp). MOUNTED as
   # /etc/ferroehr-secrets/signing.key_passphrase (signing.key_passphrase_file).
   signingKeyPassphrase: ""
-  # -- AMQP broker URL for [events] (carries credentials) → FERROEHR__EVENTS__URL
-  # env: events.url has no `*_file` sibling to point at a mounted file.
+  # -- AMQP broker URL for [events] (carries credentials). MOUNTED as
+  # /etc/ferroehr-secrets/events.url (events.url_file).
   eventsUrl: ""
-  # -- AMQP broker URL for [fhir.outbound] (carries credentials) →
-  # FERROEHR__FHIR__OUTBOUND__URL env: fhir.outbound.url has no `*_file` sibling.
+  # -- AMQP broker URL for [fhir.outbound] (carries credentials). MOUNTED as
+  # /etc/ferroehr-secrets/fhir.outbound.url (fhir.outbound.url_file).
   fhirOutboundUrl: ""
+  # -- Argon2id password hashes for [[auth.basic.users]], keyed by username. Each
+  # is MOUNTED as /etc/ferroehr-secrets/auth.basic.users.<username>.password_hash
+  # and the chart injects the matching `password_hash_file` into the rendered TOML.
+  # Declare the user itself — `username`, `roles` — under
+  # config.auth.basic.users; a username with no matching entry is a render error.
+  # A hash under `config:` is refused: it would reach the ConfigMap.
+  basicUserPasswordHashes: {}
   # -- FHIR base URL of the external Audit Record Repository for
   # [audit.fhir_feed] (may carry basic-auth credentials in its userinfo) →
   # FERROEHR__AUDIT__FHIR_FEED__URL env: audit.fhir_feed.url has no `*_file`
@@ -443,11 +458,38 @@ networkPolicy:
   # Only the port list is narrowed in that state, so SET this to your
   # ingress-controller namespace/pods for a PHI workload.
   ingressFrom: []
-  # -- Restrict egress too (default-deny egress except DNS + the DB/broker/TS).
-  # Off by default because egress targets are deployment-specific; see the doc.
+  # ── Egress ────────────────────────────────────────────────────────────────
+  # Default-deny egress: everything outbound is refused except what is listed
+  # here. Off by default, and that is a deliberate choice rather than laziness —
+  # every destination below the database is OPTIONAL and switched on by a
+  # configuration key, and most are off-cluster, where a NetworkPolicy can only
+  # name an `ipBlock` CIDR because **the API has no way to match a DNS name**
+  # (https://kubernetes.io/docs/concepts/services-networking/network-policies/
+  # — "you cannot … target Services or Pods by name"). So the destination set is
+  # deployment-specific by construction, and shipping it on with a guessed set
+  # would break features in a way that looks like the feature being broken.
+  #
+  # The full config-key-to-destination table, with the port each needs and the
+  # order to add them in, is in the book: installation/kubernetes-hardening.md
+  # §Egress. Read it before enabling this.
+  #
+  # DNS is always allowed when this is on — without it nothing resolves and
+  # every destination below fails regardless of its own rule.
   egress:
+    # -- Refuse all outbound traffic except DNS, `database` and `rules`.
     enabled: false
-    # Extra egress `to`/`ports` rules (raw NetworkPolicyEgressRule entries).
+    # -- The database, which is NOT optional: the server cannot pass readiness
+    # without it. Rendering an egress policy with no database destination is a
+    # refusal, not a warning (see the template) — an egress policy that forgets
+    # the DSN is a total outage that looks like a database failure.
+    # `to` takes raw NetworkPolicyPeer entries: a `podSelector`/
+    # `namespaceSelector` for an in-cluster database, or an `ipBlock` for a
+    # managed one. `port` is the DSN's port.
+    database:
+      to: []
+      port: 5432
+    # -- Every other destination, as raw NetworkPolicyEgressRule entries — one
+    # per integration you have switched on. See the book's table.
     rules: []
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -238,7 +238,7 @@ spec:
         # secret values. Hashing the ConfigMap template alone missed the last two,
         # so a rotated passphrase or an edited Cedar policy propagated into the
         # volume while every pod kept running on the value it read at startup.
-        checksum/config: 23e41c3bac412bc42639db0401ae1a43fcc8ac96e9b9f1bd2138560c6a7c2745
+        checksum/config: 56b27677dacb10e12e8d9eb5499de9c36f77975a644aeb63d03b6c19eea478d8
       labels:
         app.kubernetes.io/name: ferroehr
         app.kubernetes.io/instance: ferroehr
@@ -287,11 +287,8 @@ spec:
           # `*_file` sibling to point at the mounted volume instead; the rest are
           # `*_FILE` paths, which are not themselves sensitive.
           env:
-            - name: FERROEHR__DB__URL
-              valueFrom:
-                secretKeyRef:
-                  name: ferroehr-db
-                  key: FERROEHR__DB__URL
+            - name: FERROEHR__DB__URL_FILE
+              value: "/etc/ferroehr-secrets/db.url"
           livenessProbe:
             httpGet:
               path: /health/liveness
@@ -331,6 +328,12 @@ spec:
             - name: config
               mountPath: /etc/ferroehr
               readOnly: true
+            # File-borne secrets, read-only. NOT a subPath mount: a subPath-mounted
+            # Secret never receives updates, so a rotation would not propagate
+            # (https://kubernetes.io/docs/concepts/storage/volumes/#using-subpath).
+            - name: secrets
+              mountPath: /etc/ferroehr-secrets
+              readOnly: true
       volumes:
         - name: tmp
           emptyDir: {}
@@ -342,3 +345,22 @@ spec:
                   items:
                     - key: ferroehr.toml
                       path: ferroehr.toml
+        # File-borne secrets. A projected volume rather than a plain secret volume
+        # because the DSN may live in an EXTERNAL Secret the operator created,
+        # which has to be projected beside the chart's own — both under one mount,
+        # and not a subPath mount, so a rotated Secret still propagates.
+        - name: secrets
+          projected:
+            # Owner is root, group is fsGroup, so the group bit is what the
+            # non-root process reads through
+            # (https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod).
+            defaultMode: 0440
+            sources:
+              # The operator's Secret, projected as the file FERROEHR__DB__URL_FILE
+              # points at. Its key name is theirs (database.existingSecretKey);
+              # only the mounted PATH is fixed.
+              - secret:
+                  name: ferroehr-db
+                  items:
+                    - key: FERROEHR__DB__URL
+                      path: db.url

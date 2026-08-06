@@ -94,7 +94,7 @@ when there is at least one secret value to carry).
 */}}
 {{- define "ferroehr.hasChartSecret" -}}
 {{- $inlineDb := and (not .Values.database.existingSecret) .Values.database.url }}
-{{- if or $inlineDb .Values.secrets.authOidcHmacSecret .Values.secrets.signingKeyPassphrase .Values.secrets.eventsUrl .Values.secrets.fhirOutboundUrl .Values.secrets.auditFhirFeedUrl .Values.secrets.multimediaAccessKeyId .Values.secrets.multimediaSecretAccessKey .Values.secrets.terminologyOauth2ClientSecrets -}}
+{{- if or $inlineDb .Values.secrets.basicUserPasswordHashes .Values.secrets.authOidcHmacSecret .Values.secrets.signingKeyPassphrase .Values.secrets.eventsUrl .Values.secrets.fhirOutboundUrl .Values.secrets.auditFhirFeedUrl .Values.secrets.multimediaAccessKeyId .Values.secrets.multimediaSecretAccessKey .Values.secrets.terminologyOauth2ClientSecrets -}}
 true
 {{- end -}}
 {{- end }}
@@ -106,7 +106,20 @@ OWASP Kubernetes Security Cheat Sheet prefers over an environment variable
 (https://cheatsheetseries.owasp.org/cheatsheets/Kubernetes_Security_Cheat_Sheet.html).
 */}}
 {{- define "ferroehr.hasFileSecrets" -}}
-{{- if or .Values.secrets.authOidcHmacSecret .Values.secrets.signingKeyPassphrase .Values.secrets.multimediaSecretAccessKey .Values.secrets.terminologyOauth2ClientSecrets -}}
+{{- if or (eq (include "ferroehr.hasChartFileSecrets" .) "true") .Values.database.existingSecret -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
+Whether the CHART-MANAGED Secret carries any file-borne key. Distinct from
+`hasFileSecrets`: an operator-supplied `database.existingSecret` puts a file in the
+mount without the chart's own Secret existing at all, and projecting a source that
+names a Secret nothing created makes the pod fail to mount.
+*/}}
+{{- define "ferroehr.hasChartFileSecrets" -}}
+{{- $inlineDb := and (not .Values.database.existingSecret) .Values.database.url -}}
+{{- if or $inlineDb .Values.secrets.authOidcHmacSecret .Values.secrets.signingKeyPassphrase .Values.secrets.multimediaSecretAccessKey .Values.secrets.terminologyOauth2ClientSecrets .Values.secrets.basicUserPasswordHashes .Values.secrets.eventsUrl .Values.secrets.fhirOutboundUrl -}}
 true
 {{- end -}}
 {{- end }}
@@ -145,10 +158,16 @@ Recursive scan of a config subtree for secret-bearing keys, emitting one
 Two classes, because there are two right answers. `routed` = the chart already
 carries this secret through a `secrets:` key, so a value under `config:` is an
 operator mistake and the render fails naming the key that belongs there.
-`unrouted` = no route exists (today only a Basic user's Argon2id hash, whose
-config key has no `*_file` sibling to point at a mounted file), so the whole
-rendered ferroehr.toml moves into the chart Secret and no ConfigMap is created —
-the safe direction, taken automatically, for a key nobody has routed yet.
+`unrouted` = no `secrets:` route exists, so the whole rendered ferroehr.toml moves
+into the chart Secret and no ConfigMap is created — the safe direction, taken
+automatically, for a key nobody has routed yet.
+
+NOTE: the `unrouted` class currently has NO members — every secret the server
+models now has either a `*_file` sibling or a Secret-borne env route, including a
+Basic user's hash since `password_hash_file` landed. The branch is kept precisely
+because that can change: a secret key added upstream with no file sibling must
+fail safe by default rather than land in a ConfigMap, and deleting the branch is
+what would make the next one leak.
 
 The four SecretUrl leaves are matched by PATH because their name (`url`) carries
 no shape a classifier can see — a URL's userinfo component is the credential.
@@ -180,7 +199,7 @@ key, keyed on its leaf name. Unknown ⇒ `unrouted`, which is what makes a secre
 key added upstream tomorrow move to the Secret instead of leaking.
 */}}
 {{- define "ferroehr.secretClass" -}}
-{{- if has . (list "url" "hmac_secret" "key_passphrase" "secret_access_key" "client_secret") -}}
+{{- if has . (list "url" "hmac_secret" "key_passphrase" "secret_access_key" "client_secret" "password_hash") -}}
 routed
 {{- else -}}
 unrouted
@@ -192,11 +211,12 @@ The `secrets:` key that carries a routed secret, keyed on its leaf name.
 */}}
 {{- define "ferroehr.secretRemedy" -}}
 {{- $routes := dict
-  "url" "route it through the matching `secrets:` key (`eventsUrl`, `fhirOutboundUrl`, `auditFhirFeedUrl`, or `database.existingSecret` for the DSN)"
+  "url" "route it through the matching `secrets:` key — `eventsUrl` or `fhirOutboundUrl` (mounted as files via events.url_file / fhir.outbound.url_file), `auditFhirFeedUrl` (env; that key still has no `*_file` sibling), or `database.existingSecret` for the DSN (mounted via db.url_file)"
   "hmac_secret" "set `secrets.authOidcHmacSecret` instead"
   "key_passphrase" "set `secrets.signingKeyPassphrase` instead"
   "secret_access_key" "set `secrets.multimediaSecretAccessKey` instead"
   "client_secret" "set `secrets.terminologyOauth2ClientSecrets.<client name>` instead"
+  "password_hash" "set `secrets.basicUserPasswordHashes.<username>` instead, and leave only `username`/`roles` under `config:` (the chart mounts the hash and injects password_hash_file)"
 -}}
 {{- get $routes . | default "no `secrets:` route exists for this key" -}}
 {{- end }}
@@ -233,6 +253,19 @@ secret VALUE refused outright.
 {{- fail (printf "refusing to render a secret into the ConfigMap (a ConfigMap is not a sensitive object — it is readable with namespace read, collected by tooling that skips Secrets, and not covered by Secret encryption at rest):\n%s" (join "\n" $lines)) -}}
 {{- end -}}
 {{- $rendered := deepCopy $config -}}
+{{- range $user, $hash := .Values.secrets.basicUserPasswordHashes -}}
+{{- $users := dig "auth" "basic" "users" (list) $rendered -}}
+{{- $matched := false -}}
+{{- range $entry := $users -}}
+{{- if eq (get $entry "username") $user -}}
+{{- $_ := set $entry "password_hash_file" (printf "%s/auth.basic.users.%s.password_hash" (include "ferroehr.secretMountPath" $) $user) -}}
+{{- $matched = true -}}
+{{- end -}}
+{{- end -}}
+{{- if not $matched -}}
+{{- fail (printf "secrets.basicUserPasswordHashes.%s has no matching entry at config.auth.basic.users[] with username: %s (declare the username and roles there; only the hash belongs in secrets:)" $user $user) -}}
+{{- end -}}
+{{- end -}}
 {{- range $name, $value := .Values.secrets.terminologyOauth2ClientSecrets -}}
 {{- $clients := dig "terminology" "external" "oauth2_clients" (dict) $rendered -}}
 {{- if not (hasKey $clients $name) -}}

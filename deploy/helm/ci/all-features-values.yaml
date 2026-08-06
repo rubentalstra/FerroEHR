@@ -177,13 +177,38 @@ networkPolicy:
           kubernetes.io/metadata.name: ingress-nginx
   egress:
     enabled: true
+    # The mandatory destination, through the typed key.
+    database:
+      to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgres
+      port: 5432
+    # One raw rule per enabled integration — this overlay turns everything on, so
+    # it carries the OTLP collector, the AMQP broker and the outbound HTTPS
+    # destinations (OIDC issuer, terminology server, S3, the FHIR audit feed).
     rules:
       - to:
           - podSelector:
               matchLabels:
-                app.kubernetes.io/name: postgres
+                app.kubernetes.io/name: otel-collector
         ports:
-          - port: 5432
+          - port: 4317
+            protocol: TCP
+      - to:
+          - podSelector:
+              matchLabels:
+                app.kubernetes.io/name: rabbitmq
+        ports:
+          - port: 5671
+            protocol: TCP
+      - to:
+          - ipBlock:
+              cidr: 203.0.113.0/24
+        ports:
+          - port: 443
+            protocol: TCP
+          - port: 6514
             protocol: TCP
 
 autoscaling:
