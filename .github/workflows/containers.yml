@@ -139,6 +139,14 @@ jobs:
             exit 1
           fi
 
+      # This lane publishes images, so a restored cache is release input — kept
+      # only because no untrusted run can write these keys: the workflow has no
+      # `pull_request` trigger at all, and a cache created on a child branch is
+      # unreadable from the default branch anyway
+      # (docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching
+      # — "Workflow runs cannot restore caches created for child branches or
+      # sibling branches"). The tag/publish lanes that lack that property
+      # (release.yml, publish-crates.yml) build cold instead.
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           shared-key: containers-${{ matrix.platform }}
@@ -274,6 +282,7 @@ jobs:
             exit 1
           fi
 
+      # Same publishing-lane reasoning as the app binary job above.
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           shared-key: containers-admin-ui-${{ matrix.platform }}

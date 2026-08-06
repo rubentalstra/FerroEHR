@@ -133,7 +133,12 @@ jobs:
         with:
           persist-credentials: false
           ref: ${{ needs.publish-release.outputs.tag }}
+      # Cold by construction, not by hope: setup-rust-toolchain restores a
+      # Swatinem/rust-cache entry unless told otherwise, so the published
+      # tarballs were being linked from cached bytes this job did not build.
       - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        with:
+          cache: false
       - name: Build server
         # `ferroehr-server` is the binary-producing crate (bin name stays
         # `ferroehr`) since the crate consolidation; `-p ferroehr` is the
