@@ -61,7 +61,7 @@ use std::net::SocketAddr;
 use axum::extract::{ConnectInfo, Request, State};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
-use http::{HeaderValue, header};
+use http::{HeaderValue, StatusCode, header};
 use openehr_its::rest::runtime::ApiError;
 
 use ferroehr::system_log::event::{
@@ -111,7 +111,7 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
     let timestamp = jiff::Timestamp::now();
 
     let resp = next.run(req).await;
-    let status = resp.status().as_u16();
+    let status = resp.status();
 
     let op = resp.extensions().get::<AuditOpId>().copied();
     let principal = resp.extensions().get::<Principal>().cloned();
@@ -162,7 +162,7 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
     //    record marks an authentication, and a cache hit / Bearer request
     //    continues an event that already occurred. It is additionally gated by
     //    `suppress_login_events` (default on).
-    if status == 401 || status == 403 {
+    if status == StatusCode::UNAUTHORIZED || status == StatusCode::FORBIDDEN {
         // A rejected access attempt is a failed user-authentication event —
         // DICOM EventID 110114 "User Authentication" with EventTypeCode
         // 110122 "Login" (DICOM PS3.15 §A.5.1).
@@ -213,11 +213,13 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
 /// failure (the action failed), 5xx → `8` serious failure (the action was not
 /// performed). `12` major failure denotes a system-level abnormal termination
 /// and is not inferable from an HTTP status, so it is never emitted here.
-const fn outcome_from_status(status: u16) -> EventOutcome {
-    match status {
-        100..=399 => EventOutcome::Success,
-        500..=599 => EventOutcome::SeriousFailure,
-        _ => EventOutcome::MinorFailure,
+fn outcome_from_status(status: StatusCode) -> EventOutcome {
+    if status.is_informational() || status.is_success() || status.is_redirection() {
+        EventOutcome::Success
+    } else if status.is_server_error() {
+        EventOutcome::SeriousFailure
+    } else {
+        EventOutcome::MinorFailure
     }
 }
 
@@ -322,17 +324,41 @@ mod tests {
 
     #[test]
     fn outcome_codes_track_http_status() {
-        assert_eq!(outcome_from_status(200), EventOutcome::Success);
-        assert_eq!(outcome_from_status(204), EventOutcome::Success);
+        assert_eq!(outcome_from_status(StatusCode::OK), EventOutcome::Success);
+        assert_eq!(
+            outcome_from_status(StatusCode::NO_CONTENT),
+            EventOutcome::Success
+        );
         // 304 Not Modified is a successful conditional read (RFC 9110 §15.4.5);
         // redirection is not a failed action.
-        assert_eq!(outcome_from_status(304), EventOutcome::Success);
-        assert_eq!(outcome_from_status(400), EventOutcome::MinorFailure);
-        assert_eq!(outcome_from_status(401), EventOutcome::MinorFailure);
-        assert_eq!(outcome_from_status(403), EventOutcome::MinorFailure);
-        assert_eq!(outcome_from_status(404), EventOutcome::MinorFailure);
-        assert_eq!(outcome_from_status(500), EventOutcome::SeriousFailure);
-        assert_eq!(outcome_from_status(503), EventOutcome::SeriousFailure);
+        assert_eq!(
+            outcome_from_status(StatusCode::NOT_MODIFIED),
+            EventOutcome::Success
+        );
+        assert_eq!(
+            outcome_from_status(StatusCode::BAD_REQUEST),
+            EventOutcome::MinorFailure
+        );
+        assert_eq!(
+            outcome_from_status(StatusCode::UNAUTHORIZED),
+            EventOutcome::MinorFailure
+        );
+        assert_eq!(
+            outcome_from_status(StatusCode::FORBIDDEN),
+            EventOutcome::MinorFailure
+        );
+        assert_eq!(
+            outcome_from_status(StatusCode::NOT_FOUND),
+            EventOutcome::MinorFailure
+        );
+        assert_eq!(
+            outcome_from_status(StatusCode::INTERNAL_SERVER_ERROR),
+            EventOutcome::SeriousFailure
+        );
+        assert_eq!(
+            outcome_from_status(StatusCode::SERVICE_UNAVAILABLE),
+            EventOutcome::SeriousFailure
+        );
     }
 
     #[test]
