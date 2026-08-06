@@ -150,15 +150,10 @@ export SUT_RO_PASS="${SUT_RO_PASS:-ferroehr}"
 # byo: rewrite the ixit's base URLs into a temp copy.
 if [ "$SUT" = "byo" ] && [ -n "${CONF_BASE_URL:-}" ]; then
   TMP_IXIT="$(mktemp -t cnf-ixit.XXXXXX)"
-  python3 - "$IXIT" "$CONF_BASE_URL" "$TMP_IXIT" <<'PY'
-import json
-import sys
-
-ixit = json.load(open(sys.argv[1]))
-for inst in ixit["instances"].values():
-    inst["base_url"] = sys.argv[2].rstrip("/")
-json.dump(ixit, open(sys.argv[3], "w"), indent=2)
-PY
+  # jq, not python: this is a two-key JSON edit, and jq is the tool for it.
+  jq --arg url "${CONF_BASE_URL%/}" \
+    '.instances |= map_values(.base_url = $url)' \
+    "$IXIT" > "$TMP_IXIT"
   IXIT="$TMP_IXIT"
 fi
 
