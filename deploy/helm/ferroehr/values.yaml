@@ -174,12 +174,26 @@ config:
       principal_burst: 2048
       address_per_second: 2048
       address_burst: 4096
+    # [server.connection] — the bounds that apply BEFORE a request exists. Every
+    # other limit engages after a request head is parsed, so a client that opens a
+    # socket and trickles headers reaches none of them. h1 and h2 differ: h1
+    # streams a request head (trickle-able), h2 multiplexes streams (so the
+    # exposure is concurrency — the rapid-reset class).
+    connection:
+      header_read_timeout_secs: 10
+      max_concurrent_streams: 256
+      http2_keep_alive_interval_secs: 30
+      http2_keep_alive_timeout_secs: 10
 
   # [db] — pool bounds (the DSN itself is the FERROEHR__DB__URL secret, above).
   db:
     max_connections: 10
     min_connections: 0
     acquire_timeout_secs: 30
+    # The backstop the HTTP request timeout cannot be: dropping a handler future
+    # does not cancel the statement PostgreSQL is running. Above query.timeout_ms
+    # so the engine's typed 408 fires first.
+    statement_timeout_ms: 60000
 
   # [log] — logging. json is correct for cluster log collectors.
   log:

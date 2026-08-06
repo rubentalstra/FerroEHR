@@ -335,7 +335,12 @@ fn with_security_headers(app: Router) -> Router {
                 header::X_FRAME_OPTIONS,
                 HeaderValue::from_static("DENY"),
             ))
-            .layer(SetResponseHeaderLayer::overriding(
+            // `if_not_present`, not `overriding`: a surface on this origin that
+            // is actually RENDERED needs its own policy, and being outermost
+            // this layer would otherwise erase it on the way out. Swagger UI
+            // sets one (`crate::extensions::openapi`); everything else gets this
+            // default, which says nothing loads and nothing frames.
+            .layer(SetResponseHeaderLayer::if_not_present(
                 header::CONTENT_SECURITY_POLICY,
                 HeaderValue::from_static("default-src 'none'; frame-ancestors 'none'"),
             )),
