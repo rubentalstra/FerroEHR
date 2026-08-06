@@ -1,5 +1,5 @@
 //! Request-rate limiting — the two tiers described by
-//! [`RateLimitConfig`](ferroehr::config::server::RateLimitConfig).
+//! [`ferroehr::config::server::RateLimitConfig`].
 //!
 //! Built on `tower_governor` over `governor`'s GCRA cell-rate limiter
 //! (<https://docs.rs/tower_governor/>), never hand-rolled. Both tiers render

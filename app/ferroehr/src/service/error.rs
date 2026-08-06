@@ -429,7 +429,7 @@ impl ServiceError {
     /// A server-side fault (`500`) that carries the failure which caused it.
     ///
     /// `context` names the step that failed and is a LOG detail: the client
-    /// body is [`INTERNAL_MESSAGE`] on both bridges, never this text and never
+    /// body is the fixed internal message on both bridges, never this text and never
     /// the cause. The cause is reachable through
     /// [`std::error::Error::source`], which is what lets an operator read the
     /// `sqlx`/codec diagnosis the flat [`ServiceError::Internal`] string

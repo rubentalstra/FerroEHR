@@ -6,7 +6,7 @@
 //! whatever publishes it.
 //!
 //! The count a badge shows quantifies over
-//! [`tier_members`](crate::verdict::tier_members), the same capability set its
+//! [`crate::verdict::tier_members`], the same capability set its
 //! verdict is judged on, with the same `Passed` evidence predicate. That is what
 //! makes a badge like `FAIL 5/5 capabilities` unrepresentable rather than merely
 //! guarded against: there is one rule, so there is nothing for a second
