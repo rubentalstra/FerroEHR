@@ -43,14 +43,12 @@ else
 fi
 
 # 2. Guard: never rebuild an existing frozen version.
-if [[ -d "$WT/docs/$VER" ]] || python3 - "$WT/versions.json" "$VER" <<'PY'
-import json, sys
-try:
-    m = json.load(open(sys.argv[1]))
-except Exception:
-    sys.exit(1)
-sys.exit(0 if any(v.get("id") == sys.argv[2] for v in m.get("versions", [])) else 1)
-PY
+# An unreadable or absent manifest is NOT an existing version — the guard must
+# fire only on a version that is genuinely already frozen, so a malformed file
+# fails open here and is replaced below rather than blocking the cut forever.
+if [[ -d "$WT/docs/$VER" ]] \
+  || jq -e --arg ver "$VER" 'any(.versions[]?; .id == $ver)' \
+       "$WT/versions.json" >/dev/null 2>&1
 then
   echo "::error::version $VER already exists in docs-dist — frozen versions are never rebuilt." >&2
   exit 1
@@ -64,25 +62,31 @@ MDBOOK_OUTPUT__HTML__SITE_URL="$SITE_BASE/docs/$VER/" mdbook build "$ROOT/websit
 
 # 4. Update versions.json: prepend the version, re-point `latest`.
 log "updating versions.json"
-python3 - "$WT/versions.json" "$VER" "$SITE_BASE" <<'PY'
-import datetime, json, sys
-path, ver, base = sys.argv[1], sys.argv[2], sys.argv[3]
-try:
-    m = json.load(open(path))
-except Exception:
-    m = {"latest": None, "versions": []}
-today = datetime.date.today().isoformat()
-vers = [v for v in m.get("versions", []) if v.get("id") not in (ver, "latest", "dev")]
-
-dev = {"id": "dev", "label": "dev (develop)", "path": f"{base}/docs/dev/", "released": None, "prerelease": True}
-latest = {"id": "latest", "label": f"latest ({ver})", "path": f"{base}/docs/latest/", "released": today, "aliasOf": ver}
-frozen = {"id": ver, "label": ver, "path": f"{base}/docs/{ver}/", "released": today}
-
-m["latest"] = ver
-m["versions"] = [dev, latest, frozen] + vers
-json.dump(m, open(path, "w"), indent=2)
-open(path, "a").write("\n")
-PY
+# The manifest rewrite, in jq. An unreadable manifest starts from empty as it did
+# before — the cut must not be blocked by a corrupt file it is about to replace.
+# `dev`, `latest` and the version being cut are dropped from the carried-over list
+# and re-added at the front, so the order is deterministic and re-cutting the same
+# version is idempotent.
+TODAY="$(date -u +%Y-%m-%d)"
+if ! jq -e . "$WT/versions.json" >/dev/null 2>&1; then
+  printf '%s\n' '{ "latest": null, "versions": [] }' > "$WT/versions.json"
+fi
+jq --arg ver "$VER" --arg base "$SITE_BASE" --arg today "$TODAY" '
+  ((.versions // []) | map(select(.id != $ver and .id != "latest" and .id != "dev")))
+  as $carried
+  | {
+      latest: $ver,
+      versions: ([
+        { id: "dev", label: "dev (develop)", path: ($base + "/docs/dev/"),
+          released: null, prerelease: true },
+        { id: "latest", label: ("latest (" + $ver + ")"),
+          path: ($base + "/docs/latest/"), released: $today, aliasOf: $ver },
+        { id: $ver, label: $ver, path: ($base + "/docs/" + $ver + "/"),
+          released: $today }
+      ] + $carried)
+    }
+  ' "$WT/versions.json" > "$WT/versions.json.new"
+mv "$WT/versions.json.new" "$WT/versions.json"
 
 # 5. Commit + push docs-dist. CI runners have no git identity configured —
 # without this the commit dies with `fatal: empty ident name` (v3.0.1 cut).
