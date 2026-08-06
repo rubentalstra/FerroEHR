@@ -123,6 +123,19 @@ pub enum DbError {
     /// A schema migration failed to apply.
     #[error("migration: {0}")]
     Migrate(#[from] sqlx::migrate::MigrateError),
+
+    /// The cold archival tier outlived the primary tier it mirrors.
+    #[error(
+        "the cold archival tier (schema `cold`) is present but the primary tier \
+         (`ehr.vo_version`) is not: the two are one repository and have been wiped \
+         apart. The cold tables still hold clinical content, and their column shape \
+         was copied from the primary tables as they stood before the wipe — so this \
+         server will not adopt them: a re-adopted mirror can differ in shape from the \
+         tier it mirrors, and the rows belong to a repository that no longer exists. \
+         Restore the whole database from backup (both schemas together), or, if the \
+         wipe was intended, `DROP SCHEMA cold CASCADE` and start again"
+    )]
+    OrphanedArchiveTier,
 }
 
 // ---------------------------------------------------------------------------
@@ -376,6 +389,8 @@ async fn apply_migrations(conn: &mut PgConnection) -> Result<(), DbError> {
         .await?;
     EXT_MIGRATOR.run(&mut *conn).await?;
 
+    guard_orphaned_archive_tier(&mut *conn).await?;
+
     sqlx::query("SET search_path TO ehr, ext")
         .execute(&mut *conn)
         .await?;
@@ -385,6 +400,40 @@ async fn apply_migrations(conn: &mut PgConnection) -> Result<(), DbError> {
         .execute(&mut *conn)
         .await?;
     AUDIT_MIGRATOR.run(&mut *conn).await?;
+    Ok(())
+}
+
+/// Refuse to migrate a database whose cold archival tier outlived its primary
+/// tier.
+///
+/// `0007_cold_archive_tier` is the only migration in the `ehr` set whose objects
+/// live outside the `ehr` schema, so a `DROP SCHEMA ehr CASCADE` — a restore gone
+/// wrong, a recreated volume, a wiped test database — leaves the `cold` tables
+/// standing while the bookkeeping that records them goes away. Re-applying then
+/// hits `relation "vo_version" already exists`, which is a permanent boot loop
+/// with no error naming the cause.
+///
+/// Making the migration re-runnable is the wrong repair: those mirrors were built
+/// with `CREATE TABLE … (LIKE …)` against the primary tables as they stood at the
+/// time, so adopting a surviving one silently accepts a mirror that may no longer
+/// match the tier it mirrors — and it re-attaches clinical rows to a repository
+/// that no longer exists. The refusal is the answer, with the remedy in the
+/// message.
+///
+/// `to_regclass` is used rather than a catalog join because it answers `NULL` for
+/// a missing relation instead of failing
+/// (<https://www.postgresql.org/docs/18/functions-info.html>), so one statement
+/// covers both a fresh database and a healthy one.
+async fn guard_orphaned_archive_tier(conn: &mut PgConnection) -> Result<(), DbError> {
+    let orphaned: bool = sqlx::query_scalar(
+        "SELECT to_regclass('cold.vo_version') IS NOT NULL
+            AND to_regclass('ehr.vo_version') IS NULL",
+    )
+    .fetch_one(&mut *conn)
+    .await?;
+    if orphaned {
+        return Err(DbError::OrphanedArchiveTier);
+    }
     Ok(())
 }
 
