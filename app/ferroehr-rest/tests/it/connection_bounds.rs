@@ -12,7 +12,9 @@
 
 #![allow(
     clippy::panic_in_result_fn,
+    clippy::panic,
     clippy::unwrap_used,
+    clippy::expect_used,
     reason = "test assertions and fixtures"
 )]
 
