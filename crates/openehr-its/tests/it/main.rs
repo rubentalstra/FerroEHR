@@ -62,6 +62,7 @@ mod xml_ehrbase;
 mod xml_hash;
 mod xml_locatable_attr;
 mod xml_namespace;
+mod xml_hostile_input;
 mod xml_roundtrip;
 mod xml_smoke;
 mod xml_xsd_validity;
