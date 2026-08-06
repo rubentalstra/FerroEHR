@@ -1055,6 +1055,10 @@ fn stress_command(
             return ExitCode::from(2);
         }
     };
+    if perf_run::rate_limited_observed() {
+        eprintln!("{}", perf_run::rate_limited_refusal("stress"));
+        return ExitCode::from(2);
+    }
     match serde_json::to_string_pretty(&report) {
         Ok(mut text) => {
             text.push('\n');
@@ -1497,6 +1501,12 @@ fn perf_command(
         println!("  {}", cnf_runner::perf::verdict_evidence(&measurement));
         if measurement.verdict != cnf_runner::perf::ClassVerdict::Earned {
             earned_all = false;
+        }
+        // A limiter-shaped window is not a measurement of this server, so it
+        // never reaches results.json (`crate::perf_run::rate_limited_observed`).
+        if perf_run::rate_limited_observed() {
+            eprintln!("{}", perf_run::rate_limited_refusal("perf"));
+            return ExitCode::from(2);
         }
         // Merge into results.json (replace any prior record for the case).
         let mut results: Results =

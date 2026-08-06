@@ -97,6 +97,15 @@ FERROEHR_RS_COMPOSE=(docker compose -p ferroehr-cnf \
   -f "$REPO_ROOT/docker/sut-ferroehr.yml" \
   -f "$REPO_ROOT/docker/sut-smart.yml" \
   -f "$REPO_ROOT/docker/sut-terminology.yml")
+# A measurement lane composes one more overlay: docker/sut-measurement.yml turns
+# the rate limiter off for the run, because the instruments offer load past the
+# server's knee on purpose and a 429 would measure the limiter instead of the
+# server. Declared as a file rather than an exported variable so the posture of
+# a recorded run is readable after the fact.
+if [ -n "${CONF_PERF_CLASS:-}" ] || [ -n "${CONF_STRESS:-}" ]; then
+  FERROEHR_RS_COMPOSE+=(-f "$REPO_ROOT/docker/sut-measurement.yml")
+  echo "==> Measurement lane: composing docker/sut-measurement.yml (rate limiting off)"
+fi
 # BOTH claimed version-signing modes are exercised in the ONE record: a SECOND
 # deployment of the SAME image runs the openPGP posture in its own compose
 # project on remapped host ports (docker/sut-pgp-parallel.yml), and the ixit

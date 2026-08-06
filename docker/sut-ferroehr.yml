@@ -123,6 +123,13 @@ services:
       # the same failure mode as upstream's Tomcat admission window — instead
       # of shed errors tripping the stress envelope's error-rate arm.
       FERROEHR__SERVER__MAX_IN_FLIGHT: ${FERROEHR__SERVER__MAX_IN_FLIGHT:-256}
+      # Per-caller request-rate limiting. On by default, exactly as a
+      # production deployment runs it, so the functional catalogue exercises the
+      # real posture. The MEASUREMENT lanes turn it off (scripts/conformance.sh
+      # exports it when CONF_PERF_CLASS/CONF_STRESS is set): those instruments
+      # offer load past the knee on purpose, and a 429 there would measure the
+      # limiter instead of the server.
+      FERROEHR__SERVER__RATE_LIMIT__ENABLED: ${FERROEHR__SERVER__RATE_LIMIT__ENABLED:-true}
       # Version-signing toggle pass-through (measured comparison runs disable
       # it for throughput parity — upstream has no signing.)
       FERROEHR__SIGNING__ENABLED: ${FERROEHR__SIGNING__ENABLED:-true}
