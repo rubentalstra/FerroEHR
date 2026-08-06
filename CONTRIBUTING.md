@@ -2,7 +2,16 @@
 
 Thank you for your interest in contributing. This document covers the practical
 rules; the architectural ground rules live in
-[`docs/architecture.md`](docs/architecture.md) and the root `CLAUDE.md`.
+[`docs/architecture.md`](docs/architecture.md) and the root `CLAUDE.md`, and
+the project's position — why it exists, and what it asks of the companies that
+build on it — is
+[Why FerroEHR exists](https://ferroehr.eu/docs/latest/why-ferroehr.html).
+
+There is no contributor licence agreement and no copyright assignment: you keep
+your copyright, and the licence stays MIT for everyone. Contributions are not
+only code — a bug report with a reproducing request, a conformance case for
+uncovered behaviour, a specification ambiguity you had to resolve, a
+documentation correction, or measurement from your own hardware all count.
 
 ## Before you start
 

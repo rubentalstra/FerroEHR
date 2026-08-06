@@ -2,6 +2,7 @@
 
 [Introduction](introduction.md)
 
+- [Why FerroEHR exists](why-ferroehr.md)
 - [Getting started](getting-started.md)
 - [Installation](installation/index.md)
   - [Docker Compose](installation/compose.md)
