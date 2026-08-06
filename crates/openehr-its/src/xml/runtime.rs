@@ -630,7 +630,35 @@ pub enum XmlEvent {
 /// expanded to Start+End so callers only handle those four cases.
 pub struct XmlReader<'a> {
     r: Reader<&'a [u8]>,
+    /// Current element nesting depth, so a document cannot recurse the reader's
+    /// consumers off the stack. See [`MAX_DEPTH`].
+    depth: u32,
 }
+
+/// The deepest element nesting a document may reach.
+///
+/// This is a memory-safety bound, not a style preference. The generated
+/// `FromXml` impls descend one Rust stack frame per nesting level, and the RM is
+/// genuinely recursive — `CLUSTER.items` holds `Item`, which includes `CLUSTER`;
+/// `FOLDER` holds folders; `SECTION` holds sections — so a document of nested
+/// `<items xsi:type="CLUSTER">` elements recurses without bound. Depth was
+/// otherwise limited only by the accepted body size, which admits hundreds of
+/// thousands of levels: far past any thread stack.
+///
+/// A stack overflow in Rust is a guard-page fault that **aborts the process**.
+/// It is not an unwind, so `std::panic::catch_unwind` — and therefore the
+/// `tower-http` catch-panic layer this server relies on for its clean `500` —
+/// cannot intercept it. One request would take the process down for every
+/// caller. That is what makes a bound obligatory rather than defensive.
+///
+/// 256 is chosen against the model rather than picked: the deepest structure the
+/// RM composes — COMPOSITION → CONTENT_ITEM → SECTION → ENTRY → ITEM_STRUCTURE →
+/// CLUSTER → ELEMENT → DATA_VALUE, plus nested clusters — is tens of levels in
+/// the most elaborate real templates, and the canonical-JSON reader's own
+/// equivalent bound (`serde_json`'s 128) sits in the same order of magnitude.
+///
+/// No openEHR spec bounds document nesting — our own design.
+pub const MAX_DEPTH: u32 = 256;
 
 impl std::fmt::Debug for XmlReader<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -644,7 +672,7 @@ impl<'a> XmlReader<'a> {
     pub fn new(xml: &'a str) -> Self {
         let mut r = Reader::from_str(xml);
         r.config_mut().expand_empty_elements = true;
-        Self { r }
+        Self { r, depth: 0 }
     }
 
     /// Read the next meaningful event.
@@ -658,8 +686,19 @@ impl<'a> XmlReader<'a> {
                 .read_event()
                 .map_err(|e| XmlError::Parse(e.to_string()))?;
             match ev {
-                Event::Start(e) => return Ok(XmlEvent::Start(to_start_tag(&e)?)),
-                Event::End(_) => return Ok(XmlEvent::End),
+                Event::Start(e) => {
+                    self.depth = self.depth.saturating_add(1);
+                    if self.depth > MAX_DEPTH {
+                        return Err(XmlError::Parse(format!(
+                            "element nesting exceeds the {MAX_DEPTH}-level limit"
+                        )));
+                    }
+                    return Ok(XmlEvent::Start(to_start_tag(&e)?));
+                }
+                Event::End(_) => {
+                    self.depth = self.depth.saturating_sub(1);
+                    return Ok(XmlEvent::End);
+                }
                 Event::Text(t) => {
                     let raw = t.decode().map_err(|e| XmlError::Parse(e.to_string()))?;
                     let s = quick_xml::escape::unescape(&raw)
@@ -690,7 +729,24 @@ impl<'a> XmlReader<'a> {
                     };
                     return Ok(XmlEvent::Text(resolved.to_string()));
                 }
-                // Decl / Comment / PI / CData / DocType: skip.
+                // A DOCTYPE is REFUSED, not skipped.
+                //
+                // It is inert today — quick-xml declares that it does not parse
+                // DTDs (<https://docs.rs/quick-xml/>), so no entity declaration
+                // is ever recorded and the entity arm above rejects anything
+                // beyond the five predefined names and character references.
+                // That makes XXE and entity-expansion attacks impossible by
+                // CONSTRUCTION rather than by configuration — and a property
+                // held by a dependency's current behaviour is exactly the kind
+                // that changes without anyone noticing. Refusing the declaration
+                // outright means this reader does not depend on that behaviour
+                // at all: canonical openEHR XML has no use for a DOCTYPE.
+                Event::DocType(_) => {
+                    return Err(XmlError::Parse(
+                        "a DOCTYPE declaration is not accepted".into(),
+                    ));
+                }
+                // Decl / Comment / PI / CData: skip.
                 _ => {}
             }
         }
