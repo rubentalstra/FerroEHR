@@ -24,6 +24,13 @@ on:
         required: true
         type: string
 
+# A release must never be cancelled part-way through publishing: a half-created
+# release with some assets attached is worse than a queued second run. So a second
+# tag push QUEUES behind the first rather than replacing it.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions: {}
 
 jobs:

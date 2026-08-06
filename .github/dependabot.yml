@@ -5,6 +5,18 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    # A delay between a release being published and this bot proposing it, so a
+    # compromised or yanked release has a window to be caught before it reaches a
+    # pull request (the OWASP CI/CD Security Cheat Sheet's third-party-code
+    # control). Longer for cargo than for actions: a compromised crate executes
+    # in the build AND ships in the binary, which is the higher-consequence case.
+    #
+    # SECURITY updates are exempt by design — Dependabot applies no cooldown to
+    # advisory-driven bumps, so an advisory still arrives immediately. That is
+    # what makes a cooldown safe rather than a delay on getting fixes.
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
     open-pull-requests-limit: 10
     groups:
       # Batch related ecosystems so lockstep crates bump together.
@@ -24,5 +36,9 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    # Shorter than cargo: an action runs in CI but does not ship in the product,
+    # and these are digest-pinned, so a bump is a reviewed change of digest.
+    cooldown:
+      default-days: 3
     commit-message:
       prefix: "ci"

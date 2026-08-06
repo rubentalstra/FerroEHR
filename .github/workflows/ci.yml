@@ -479,7 +479,7 @@ jobs:
       contents: read
     services:
       postgres:
-        image: postgres:18.4
+        image: postgres:18.4@sha256:3a82e1f56c8f0f5616a11103ac3d47e632c3938698946a7ad26da0df1334744a
         env:
           POSTGRES_USER: openehr
           POSTGRES_PASSWORD: openehr
@@ -563,7 +563,7 @@ jobs:
       contents: write
     services:
       postgres:
-        image: postgres:18.4
+        image: postgres:18.4@sha256:3a82e1f56c8f0f5616a11103ac3d47e632c3938698946a7ad26da0df1334744a
         env:
           POSTGRES_USER: openehr
           POSTGRES_PASSWORD: openehr
@@ -711,7 +711,7 @@ jobs:
     # runner: glibc compatibility runs forward only, so a runner image with a
     # newer glibc than the runtime image ships yields a binary that image
     # cannot load.
-    container: rust:1.96.1-slim-trixie
+    container: rust:1.96.1-slim-trixie@sha256:31ee7fc65186be7e0e0ccb3f2ca305f14e4739e7642a1ae65753aa5d7b874523
     env:
       # Fixed build timestamp — reproducible, and the precondition for the
       # compile to be cacheable at all (see the block above; build.rs honours

@@ -6,7 +6,6 @@ edition.workspace = true
 rust-version.workspace = true
 license = "MIT AND Apache-2.0"
 repository.workspace = true
-authors.workspace = true
 documentation = "https://docs.rs/openehr-lang"
 readme = "README.md"
 keywords = ["openehr", "bmm", "odin", "metamodel", "parser"]
