@@ -360,7 +360,7 @@ pub struct TlsConfig {
 /// disallowed by NIST SP 800-52 Rev. 2, and removed from every mainstream
 /// browser. A configuration key that could select them would be a footgun with
 /// no legitimate use, so the type has no variant for them and the rustls
-/// provider offers none either. SSLv2 and SSLv3 likewise do not exist in
+/// provider offers none either. `SSLv2` and `SSLv3` likewise do not exist in
 /// `rustls`.
 ///
 /// Choose `V1_2` only when a real client requires it — an older integration
