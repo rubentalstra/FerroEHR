@@ -34,6 +34,7 @@ jobs:
       contents: write # create or update the GitHub release
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
+      sha: ${{ steps.rev.outputs.sha }}
     steps:
       - id: tag
         name: Resolve the release tag
@@ -59,6 +60,12 @@ jobs:
         with:
           persist-credentials: false
           ref: ${{ steps.tag.outputs.tag }}
+      # Pin the rest of the pipeline to the commit this job actually read. The
+      # tag is the only handle a dispatch gives us, but it stays movable, so
+      # build-binaries checks out this SHA rather than resolving the tag again.
+      - id: rev
+        name: Resolve the tag to its commit
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - name: Extract the changelog section for this tag
         run: |
           set -euo pipefail
@@ -132,7 +139,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          ref: ${{ needs.publish-release.outputs.tag }}
+          ref: ${{ needs.publish-release.outputs.sha }}
       # Cold by construction, not by hope: setup-rust-toolchain restores a
       # Swatinem/rust-cache entry unless told otherwise, so the published
       # tarballs were being linked from cached bytes this job did not build.
@@ -148,8 +155,9 @@ jobs:
         shell: bash
         env:
           TAG: ${{ needs.publish-release.outputs.tag }}
+          TARGET: ${{ matrix.target }}
         run: |
-          out="ferroehr-${TAG}-${{ matrix.target }}.tar.gz"
+          out="ferroehr-${TAG}-${TARGET}.tar.gz"
           strip target/release/ferroehr
           tar -C target/release -czf "$out" ferroehr
           echo "ASSET=$out" >> "$GITHUB_ENV"

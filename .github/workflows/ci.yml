@@ -166,15 +166,27 @@ jobs:
           fetch-depth: 0
       - name: Scan commit messages for attribution
         shell: bash
+        # Context reaches the shell through env, never `${{ }}`-inline: the
+        # expression is substituted into the script BEFORE bash parses it, so an
+        # inline expansion is executable text (the `changes` job above is the
+        # pattern). Same discipline as the other guards in this workflow.
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            range="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            range="$PR_BASE..$PR_HEAD"
+            base="$PR_BASE"
           else
-            range="${{ github.event.before }}..${{ github.sha }}"
+            range="$PUSH_BEFORE..$PUSH_SHA"
+            base="$PUSH_BEFORE"
           fi
           # Handle first-push / shallow edge cases.
-          git rev-parse "${{ github.event.pull_request.base.sha || github.event.before || 'HEAD~1' }}" >/dev/null 2>&1 || range="HEAD"
+          git rev-parse "${base:-HEAD~1}" >/dev/null 2>&1 || range="HEAD"
           echo "Scanning range: $range"
           if git log --format='%B' "$range" 2>/dev/null | grep -iEn \
              'co-authored-by:.*(claude|anthropic|\[bot\])|generated[[:space:]]+(with|by)[[:space:]]+.*claude|claude[[:space:]]+code|🤖|assisted-by:.*claude'; then
