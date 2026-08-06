@@ -64,6 +64,18 @@ credit costs you nothing and changes nothing about how the report is handled.
   statement you can check. If you think one of those arguments is wrong, that is
   a valid report.
 
+### Reporting a vulnerability in Kubernetes itself
+
+A vulnerability in the Kubernetes platform — the API server, kubelet, etcd, a CNI
+or a container runtime — is reported to Kubernetes, not here:
+<https://kubernetes.io/docs/reference/issues-security/security/>. Advisories are
+published on `kubernetes-announce` and the [official CVE
+feed](https://kubernetes.io/docs/reference/issues-security/official-cve-feed/);
+following them is the cluster operator's responsibility, as recorded in the
+[cluster-hardening chapter](website/book/src/installation/kubernetes-hardening.md).
+A vulnerability in FerroEHR — including in the Helm chart — comes to us through
+the process above.
+
 ## Machine-readable policy
 
 This policy is also published as
