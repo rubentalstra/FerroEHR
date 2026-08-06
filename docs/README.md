@@ -35,7 +35,7 @@ externalization; acceptance is the openEHR conformance suite. See
 
 - **`specs/openehr/`** — the vendored normative openEHR spec text + the CNF
   Platform Conformance Test Schedule. **The conformance oracle.** Never
-  hand-edit; refreshed only by `scripts/vendor-spec-docs.sh`. Use `/spec-lookup`
+  hand-edit; refreshed only by `scripts/vendor/spec-docs.sh`. Use `/spec-lookup`
   / `/spec-audit`. Pins recorded in `VERSIONS.md`.
 
 ## Plans

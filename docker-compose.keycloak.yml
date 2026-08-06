@@ -36,6 +36,11 @@ services:
       # is the canonical KC_HOSTNAME below: token `iss` claims match it no
       # matter which host the token was requested from.
       FERROEHR__AUTH__OIDC__ISSUER: http://keycloak:8081/auth/realms/ferroehr
+      # The demo realm speaks plain HTTP inside the compose network, which
+      # RFC 8414 §6.2 forbids for a real issuer — a dev-only opt-in. The
+      # audience is required (RFC 7519 §4.1.3): it is the realm's client id.
+      FERROEHR__AUTH__OIDC__ALLOW_INSECURE_ISSUER: "true"
+      FERROEHR__AUTH__OIDC__AUDIENCES: ferroehr
       FERROEHR__AUTH__OIDC__ALGORITHMS: RS256
 
   keycloak:

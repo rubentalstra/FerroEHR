@@ -115,7 +115,11 @@ async fn create_bucket(endpoint: &str, bucket: &str) {
     let url = format!("{endpoint}/{bucket}");
     for attempt in 0..90 {
         match client.put(&url).send().await {
-            Ok(resp) if resp.status().is_success() || resp.status().as_u16() == 409 => return,
+            Ok(resp)
+                if resp.status().is_success() || resp.status() == reqwest::StatusCode::CONFLICT =>
+            {
+                return;
+            }
             _ => tokio::time::sleep(Duration::from_millis(500)).await,
         }
         assert!(attempt < 89, "seaweedfs bucket creation never succeeded");

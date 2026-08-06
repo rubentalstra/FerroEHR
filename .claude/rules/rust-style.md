@@ -43,8 +43,125 @@ The comment/doc-comment discipline lives in **`comments.md`** (RFC 505 +
 RFC 1574): line comments only, `// TODO(#NNNN):` / `// NOTE:` / `// SAFETY:`
 as the only markers, NOTE = citation + one sentence (≤3 lines), `//` runs
 ≤8 lines, doc-comment summary-line + section conventions. Enforced by
-`scripts/check-comment-style.sh` (hook + CI) and
+`scripts/checks/comment-style.sh` (hook + CI) and
 `clippy::too_long_first_doc_paragraph`.
+
+## Default values live in the struct's `Default` impl (owner directive 2026-08-06)
+
+The shape is RFC 3681's
+(<https://rust-lang.github.io/rfcs/3681-default-field-values.html>), written by
+hand: **one** `impl Default` per struct, every default value inline, and
+container-level `#[serde(default)]` so serde fills omitted fields from it.
+
+```rust
+#[derive(Debug, Clone, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct OidcConfig {
+    pub issuer: String,
+    pub clock_skew_leeway_seconds: u64,
+}
+
+impl Default for OidcConfig {
+    fn default() -> Self {
+        Self {
+            issuer: String::new(),
+            clock_skew_leeway_seconds: 60,
+        }
+    }
+}
+```
+
+The RFC's own syntax (`clock_skew_leeway_seconds: u64 = 60`) is **nightly-only**
+— feature `default_field_values`, tracking issue
+<https://github.com/rust-lang/rust/issues/132162>, implemented with no
+stabilization PR — and this project pins stable (`docs/VERSIONS.md`), so the
+expansion above is the form we write. When the feature stabilizes, the
+declaration replaces the `impl` block and the guard's rules stop mattering; do
+not adopt it before then, and do not reach for nightly to get it.
+
+Three forms are banned, because each one puts a field's default value somewhere
+other than the field's own struct:
+
+- **`#[serde(default = "path")]`** — the per-field path form. The default then
+  lives in a function, so `Default::default()` and a deserialized value can
+  silently disagree about the same field. Container-level `#[serde(default)]`
+  (no path) is the required form and reads the one `Default` impl.
+- **`fn default_x() -> T`** — a zero-argument constructor that exists to be one
+  field's default. (A function that takes arguments and happens to start with
+  the word — `default_provider(&self)`, `default_committer(&self)` — is an
+  ordinary domain function and is fine.)
+- **`const DEFAULT_X` with a single reader** — a constant that nothing shares is
+  a default value spelled far from its struct.
+
+A `const` with MORE THAN ONE consumer stays a constant and may be referenced
+from inside the `Default` impl: a spec-fixed value with several readers
+(`service::DEFAULT_SYSTEM_ID`) is a single source of truth, which is the
+opposite of the problem above.
+
+Enforcement (tier 4): `scripts/checks/default-style.sh` — per-edit via the
+`rust_fmt_clippy.sh` hook, per-PR via the `default-style` CI job (`--all`).
+
+## HTTP statuses are compared as types (owner directive 2026-08-06)
+
+An HTTP status is a `StatusCode`, and it is compared as one:
+
+```rust
+if status == StatusCode::OK { … }          // yes
+if status.as_u16() == 200 { … }            // no
+```
+
+`http::StatusCode` names every registered code
+(<https://docs.rs/http/latest/http/status/struct.StatusCode.html>), so there is
+always a constant. A numeric comparison throws away the type the crate exists to
+provide, and a bare literal tells a reader nothing about which member of a family
+was meant — `403` versus `404` is a one-character typo the compiler cannot catch.
+
+Rendering the number stays legal, because that is not a comparison: a log field, a
+metric label, a recorded wire outcome, a `/ 100` class bucket. Only comparison
+against a numeric literal is refused.
+
+Enforcement (tier 4): `scripts/checks/typed-status.sh` — per-edit via the
+`rust_fmt_clippy.sh` hook, per-PR via the `default-style` CI job (`--all`, since
+the tree has no violations).
+
+## RFC-grounded conventions and where each one is enforced
+
+Surveyed 2026-08-06 against the accepted-RFC corpus (<https://github.com/rust-lang/rfcs/tree/master/text>),
+each item's stabilization status verified first-hand. The point of the table is
+that a convention with no check is labelled as such rather than assumed.
+
+| RFC | The rule | Enforcement |
+|---|---|---|
+| 0505 + 1574 | comment/doc conventions | `comments.md` + `scripts/checks/comment-style.sh` + `too_long_first_doc_paragraph` |
+| 3681 | a field's default lives inline in its `Default` impl | §Default values above + `scripts/checks/default-style.sh` |
+| 3107 | `#[derive(Default)]` + `#[default]` where the default is a VARIANT | `clippy::derivable_impls` (deny) — hand-write `impl Default` only for VALUES |
+| 0199 / 0344 / 0430 | `as_`/`to_`/`into_` cost conventions, naming | `clippy::wrong_self_convention` (`clippy::all`, deny) + rustc naming lints |
+| 1940 | `#[must_use]` on functions whose result is the point | `clippy::must_use_candidate` (pedantic → deny) |
+| 2383 | every suppression carries `reason = "…"` | `clippy::allow_attributes_without_reason` (deny) |
+| 1946 | intra-doc links over bare paths | `rustdoc::broken_intra_doc_links` (deny) + the CI doc job |
+| 3013 | no typo'd `cfg` predicates | `unexpected_cfgs` (deny) |
+| 3373 | no `impl` inside a fn body | `non_local_definitions` (deny) |
+| 3389 | lints configured in the manifest, not `#![allow]` sprinkles | the `[workspace.lints]` table IS this |
+| 0201 + 0236 | **an error carries its cause** (`Error::source`) | no lint exists; grep-gateable — the sweep is tracker work, see below |
+| 2294 | `if let` guards on match arms (stable 1.95.0, one release under our MSRV) | review-only — a genuine wish, labelled as one |
+
+**Rejected on merit, so nobody re-files them as gaps:**
+
+- `clippy::self_named_module_files` (RFC 2126 module conventions) — 25 files
+  match, ALL generated. `composition/composition.rs` is the emitter mirroring
+  the BMM package `composition` and its class `COMPOSITION`; converting it to
+  `mod.rs` would merge the class module into the package module and change
+  published paths (`openehr_rm::v1_2::composition::composition::Composition`).
+  The spec-mirroring layout wins.
+- `clippy::exhaustive_enums` (RFC 2008) and RFC 0356 — both adjudicated in
+  `reliability.md` §Recorded deviations.
+
+**The one real gap: error chaining.** RFC 0201 makes the cause chain part of
+the `Error` contract, and 109 `map_err(|e| Variant(e.to_string()))` sites
+flatten it against 48 that carry `#[source]`/`#[from]`. A stringified cause
+cannot be walked, matched, or logged structurally — the same silent-context-loss
+class `reliability.md` legislates for `Result → Option`, except this one CAN be
+checked. New code carries the source; the sweep is tracked.
 
 ## Type and error conventions
 

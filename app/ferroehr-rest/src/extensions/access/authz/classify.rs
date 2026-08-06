@@ -125,7 +125,7 @@ pub fn class_of(op: &str) -> Option<OperationClass> {
         | "definition_query_version_get"
         | "definition_query_version_store.yaml" => Clinical,
 
-        // ── DEMOGRAPHIC (v1 ABAC never covered these; coarse RBAC only) ──────
+        // ── DEMOGRAPHIC (coarse RBAC only — no ABAC resource kind) ──────────
         "agent_create" | "agent_get" | "agent_update" | "agent_delete" => Clinical,
         "group_create" | "group_get" | "group_update" | "group_delete" => Clinical,
         "organisation_create"

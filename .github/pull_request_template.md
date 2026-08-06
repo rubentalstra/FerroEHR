@@ -11,7 +11,7 @@ Closes #<!-- tracker issue number — the merge into develop auto-closes it -->
 - [ ] User-visible change → `CHANGELOG.md [Unreleased]` entry (else the `no-changelog` label)
 - [ ] REST/config/CLI/deployment change → matching `website/book/src` page updated
 - [ ] Implemented `docs/plans/*.md` plan file deleted (unless another open issue still consumes it)
-- [ ] New issues opened from this work are linked as GitHub relationships (sub-issue / blocked-by via `scripts/gh-rel.sh`), not prose (`.claude/rules/issue-relationships.md`)
+- [ ] New issues opened from this work are linked as GitHub relationships (sub-issue / blocked-by via `scripts/gh/rel.sh`), not prose (`.claude/rules/issue-relationships.md`)
 
 <!--
 HARD RULE: this PR description, its title, and all commits must contain NO

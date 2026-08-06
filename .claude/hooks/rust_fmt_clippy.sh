@@ -34,8 +34,27 @@ rustfmt --edition 2024 "$file_path" >/dev/null 2>&1 || true
 # Comment-style guard (.claude/rules/comments.md): block comments, TODO(#N)
 # form, NOTE/essay budgets. Exit 2 feeds the findings back as a correction.
 repo_root="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
-if [ -x "$repo_root/scripts/check-comment-style.sh" ]; then
-  findings="$("$repo_root/scripts/check-comment-style.sh" --files "$file_path" 2>&1)" || {
+if [ -x "$repo_root/scripts/checks/comment-style.sh" ]; then
+  findings="$("$repo_root/scripts/checks/comment-style.sh" --files "$file_path" 2>&1)" || {
+    printf '%s\n' "$findings" >&2
+    exit 2
+  }
+fi
+
+# Default-value style guard (.claude/rules/rust-style.md §Default values): the
+# default belongs inline in the struct's own `Default` impl. Per-file mode only
+# — the single-reader `const` check needs the whole tree and runs in CI.
+if [ -x "$repo_root/scripts/checks/default-style.sh" ]; then
+  findings="$("$repo_root/scripts/checks/default-style.sh" "$file_path" 2>&1)" || {
+    printf '%s\n' "$findings" >&2
+    exit 2
+  }
+fi
+
+# Typed-status guard (.claude/rules/rust-style.md §HTTP statuses): a status is
+# compared as a `StatusCode`, never against a numeric literal.
+if [ -x "$repo_root/scripts/checks/typed-status.sh" ]; then
+  findings="$("$repo_root/scripts/checks/typed-status.sh" "$file_path" 2>&1)" || {
     printf '%s\n' "$findings" >&2
     exit 2
   }

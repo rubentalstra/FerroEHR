@@ -345,30 +345,79 @@ algorithms = ["RS256"]
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `enabled` | bool | `true` | Master switch. `false` = all requests pass unauthenticated (dev only). With `true` and no mechanism configured, every API request 401s (fail-closed). |
+| `enabled` | bool | `true` | Master switch. `false` = all requests pass unauthenticated (dev only). With `true` and **no mechanism configured the server refuses to start** — see below. |
 | `verified_cache_ttl_seconds` | int | `60` | Verified Basic-credential cache TTL (`0` disables); bounds Argon2 cost per busy client and revocation lag alike. |
+
+> [!IMPORTANT]
+> **`auth.enabled = true` with no mechanism is a boot error.** Such a server
+> could only refuse every request while advertising an authentication scheme it
+> does not implement, which RFC 9110 §11.6.1 forbids (a `401` challenge must
+> name a scheme applicable to the target resource). Configure
+> `[[auth.basic.users]]`, configure `[auth.oidc]`, or set
+> `auth.enabled = false` for a development server.
 
 `[[auth.basic.users]]` — the Basic-auth user store (array of tables,
 **file-only**):
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `username` | string | required | Principal name. |
-| `password_hash` | secret | required | Argon2 PHC hash (`$argon2id$v=19$…`), never a plaintext password. |
+| `username` | string | required | Principal name. A blank or missing one is a boot error. |
+| `password_hash` | secret | required | Argon2**id** PHC hash (`$argon2id$v=19$…`), never a plaintext password. Boot-validated against the OWASP floor — see below. |
 | `roles` | list of string | `["USER"]` | Roles granted (upper-cased on authentication). |
+
+> [!IMPORTANT]
+> **Every `password_hash` must meet the OWASP Argon2id floor: `m>=19456`
+> (19 MiB), `t>=2`, `p>=1`, algorithm `argon2id`.** Anything weaker — or a
+> non-`argon2id` PHC string, or an unparsable one — is a boot error naming the
+> user. This is checked at startup because the verifier takes its cost
+> parameters *from the stored hash*, so a deliberately cheap hash would
+> otherwise verify happily and silently weaken every password in the store.
+> The floor is the
+> [OWASP Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)
+> §Argon2id minimum.
 
 `[auth.oidc]` — bearer validation (absent table ⇒ bearer disabled):
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `issuer` | string | required when present | Expected `iss`; also the OIDC discovery base. |
-| `audiences` | list of string | `[]` | Accepted `aud` (empty = not checked). |
-| `algorithms` | list of string | `["RS256"]` | Accepted signature algorithms. |
-| `hmac_secret` / `hmac_secret_file` | secret / path | unset | Symmetric HS256 secret (dev/test). At most one of the pair. |
+| `issuer` | string | required when present | Expected `iss`; also the OIDC discovery base. Must be an `https` URL with no query and no fragment (RFC 8414 §2) — boot-validated. |
+| `audiences` | list of string | **required, non-empty** | Accepted `aud`. An empty list is a boot error. |
+| `algorithms` | list of string | `["RS256"]` | Accepted signature algorithms. Boot-bound to the key source: `HS*` requires `hmac_secret`, `RS*`/`ES*`/`PS*` require a JWKS (static or discovered). `none` is refused. |
+| `require_at_jwt` | bool | `false` | Refuse a token that does not carry `typ: at+jwt`. A token that DOES carry it is held to RFC 9068 §2.2 either way (`iat`, `jti`, `client_id` become mandatory). |
+| `clock_skew_leeway_seconds` | int | `60` | Leeway on the time-based claims (`exp`/`nbf`). Capped at `300`; above that is a boot error. |
+| `allow_insecure_issuer` | bool | `false` | Accept a non-`https` `issuer`. **Development and test only.** |
+| `hmac_secret` / `hmac_secret_file` | secret / path | unset | Symmetric HS256 secret (dev/test), minimum 32 bytes. At most one of the pair. |
 | `jwks_json` / `jwks_json_file` | string / path | unset | Static JWKS document. At most one of the pair. |
 | `connect_timeout_ms` | int | `3000` | TCP connect timeout for the discovery + JWKS fetches. |
 | `request_timeout_ms` | int | `5000` | Whole-request timeout for the discovery + JWKS fetches (connect, TLS, body read). |
 | `negative_cache_ttl_seconds` | int | `10` | How long a *failed* discovery/JWKS fetch is remembered (`0` disables). |
+
+The `[auth.oidc]` boot rules, and what each one prevents:
+
+- **`audiences` must name at least one audience.** RFC 7519 §4.1.3 obliges a
+  recipient that does not identify itself with a value in a present `aud` claim
+  to reject the JWT, and RFC 9068 §4 step 4 makes the check unconditional for an
+  access token. A resource server that declares no audience cannot reject a
+  token minted for a *different* resource server, and cannot tell an OpenID
+  Connect ID token (whose `aud` is a client id) from an access token
+  (RFC 8725 §3.9, §3.12). Set it to whatever your identity provider puts in
+  `aud` for this CDR.
+- **`issuer` must be an `https` URL with no query or fragment.** That is the
+  RFC 8414 §2 definition of an issuer identifier, and §6.2 requires TLS for
+  issuer metadata — over plain HTTP an attacker on the network can serve their
+  own signing keys. A development issuer (a Keycloak on the compose network,
+  say) is opted in explicitly with `allow_insecure_issuer = true`; the
+  no-query/no-fragment rules still apply, since those are structural.
+- **`clock_skew_leeway_seconds` is capped at 300.** RFC 7519 §4.1.4 allows
+  "some small leeway, usually no more than a few minutes, to account for clock
+  skew", and RFC 9068 §4 step 6 repeats the bound. A large leeway silently
+  extends the life of *every* token past its `exp`, so the key is capped rather
+  than free.
+- **`hmac_secret` must be at least 32 bytes.** RFC 8725 §3.5: "Human-memorizable
+  passwords MUST NOT be directly used as the key to a keyed-MAC algorithm such
+  as `HS256`". A symmetric key is also shared with the authorization server —
+  meaning this server could mint the very tokens it accepts — so the boot log
+  warns that it is a development posture. Prefer discovery or `jwks_json`.
 
 The signing-key source is exactly one of: the symmetric secret, the static
 JWKS, or (when neither is set) the issuer's OIDC discovery document.
@@ -399,7 +448,7 @@ RBAC + ABAC.
 | `admin_role` | string | `ADMIN` | Role required for admin-class operations. |
 | `user_role` | string | `USER` | Baseline clinical role. |
 | `readonly_role` | string | `READONLY` | Role marking a principal read-only: refused on every write operation (create/update/delete/upload), even alongside granting roles. Reads and AQL queries are still allowed. |
-| `role_claims` | list of string | `["realm_access.roles","scope"]` | JWT claim paths mined for roles. |
+| `role_claims` | list of string | `["roles","groups","entitlements","realm_access.roles"]` | JWT claim paths mined for roles, in order. Dotted paths walk nested claims. **`scope` is not a role source** — see [Security](../security.md#roles). |
 | `management_access` | enum{admin_only,private,public} | `admin_only` | Access level for the management surface. |
 
 `[authz.abac]`:
@@ -410,6 +459,7 @@ RBAC + ABAC.
 | `engine` | enum{cedar,remote} | `cedar` | Embedded Cedar or a remote decision point. |
 | `organization_claim` | string | `organization_id` | JWT claim carrying the caller's organization. |
 | `patient_claim` | string | `patient_id` | JWT claim carrying the patient id. |
+| `check_directory` | bool | `false` | Submit DIRECTORY (`FOLDER`) operations to the decision point. Engine-independent, so it works under Cedar as well as a remote PDP. |
 
 `[authz.abac.cedar]`: `policy_dir` (path — required when `engine=cedar` and ABAC
 on), `reload_secs` (int, unset — optional hot-reload interval).
@@ -419,6 +469,16 @@ end `/`), `connect_timeout_ms` (int, `2000`), `request_timeout_ms` (int,
 `[authz.abac.policy.<kind>]` (kind ∈ `ehr`, `ehr_status`, `composition`,
 `contribution`, `query`, `directory`): `name` (string), `parameters` (list of
 enum{organization,patient,template}).
+
+> [!IMPORTANT]
+> **With `engine = remote`, every resource kind the enforcement point consults
+> needs a policy entry: `ehr`, `ehr_status`, `composition`, `contribution`,
+> `query`** (plus `directory` when `check_directory = true`). A missing one is a
+> boot error. At runtime a kind with no policy can only be **denied** — there is
+> no policy to ask, and permitting would be a silent hole — so the
+> misconfiguration is caught at startup rather than turning into blanket `403`s
+> on live traffic. The Cedar engine reads its policies from
+> `abac.cedar.policy_dir` and needs no entries here.
 
 ## `[admin]`
 
@@ -459,9 +519,24 @@ the discovery document); `token_endpoint_auth_methods_supported`,
 `code_challenge_methods_supported`, `scopes_supported`, `capabilities` (all
 list of string, `[]` — `capabilities` appends operator-advertised HL7 base
 capabilities such as `launch-ehr`/`sso-openid-connect` to the derived openEHR
-set). Deprecated grant types (`implicit`/password) are rejected at boot;
-`enabled = true` additionally requires `public_base_url`,
-`authorization_endpoint`, and `token_endpoint` at boot.
+set); `allow_insecure_endpoints` (bool, `false`).
+
+Everything in `[smart.endpoints]` is **published** at
+`/.well-known/smart-configuration` for third-party applications to act on, so
+`smart.enabled = true` boot-validates it rather than relaying whatever is
+configured:
+
+| Rule | Why |
+|---|---|
+| Deprecated grant types (`implicit`, password) rejected | master06 §Deprecated Flows |
+| `public_base_url`, `authorization_endpoint`, `token_endpoint` required | an enabled Platform without them publishes an unusable document |
+| Every advertised endpoint an absolute `https` URL | the document tells apps where to send an authorization request and exchange a code, so a plaintext endpoint exposes the code and the access token ([RFC 6749 §3.1.2.1](https://www.rfc-editor.org/rfc/rfc6749#section-3.1.2.1), [RFC 8414 §6.2](https://www.rfc-editor.org/rfc/rfc8414#section-6.2)). `allow_insecure_endpoints = true` opts out for development |
+| `issuer` has no query and no fragment | [RFC 8414 §2](https://www.rfc-editor.org/rfc/rfc8414#section-2) — the same rule `auth.oidc.issuer` follows, because it is the same identity |
+| `response_types_supported` non-empty | RFC 8414 §2 marks the field **REQUIRED** |
+| `token_endpoint_auth_methods_supported` non-empty | an empty list advertises a server that authenticates no client |
+| `code_challenge_methods_supported` includes `S256` | SMART App Launch requires PKCE ([RFC 7636](https://www.rfc-editor.org/rfc/rfc7636)); publishing a list without it tells every app the server cannot do PKCE, and `plain` alone is not sufficient (§7.2) |
+| `smart.endpoints.issuer` equals `auth.oidc.issuer` | one says where apps **obtain** tokens, the other which tokens this server **accepts**. A mismatch means every app gets a valid token and every request is refused |
+| `smart.enabled` requires `[auth.oidc]` | the CDR cannot validate the tokens it directs applications to obtain |
 
 ## `[management]`
 
@@ -861,12 +936,19 @@ touches no database — use it in CI and before a rollout.
 
 ## Zero-config boot and the production checklist
 
-With no file and no environment, the server boots as: listener `0.0.0.0:8080`
-at the ITS-REST base path with Swagger UI; DB at the compose-dev DSN; auth
-**enabled with no mechanism ⇒ every API request 401s** (fail-closed; the server
-logs a prominent warning at startup naming the two ways out — add
-`[[auth.basic.users]]` / `[auth.oidc]`, or set `auth.enabled = false` for dev);
-RBAC on; signing on (digest); log `auto`/`info`; **everything else off**.
+With no file and no environment the server boots as: listener `0.0.0.0:8080`
+at the ITS-REST base path with Swagger UI; DB at the compose-dev DSN; RBAC on;
+signing on (digest); log `auto`/`info`; **everything else off**.
+
+`auth.enabled` defaults to `true`, and **authentication enabled with no
+mechanism configured is a boot error**, not a running server that refuses
+everything: RFC 9110 §11.6.1 requires a `401` challenge to name a scheme
+applicable to the resource, and a server with no mechanism has none — it could
+only refuse every request while advertising a scheme it does not implement. The
+error names the three ways out: add `[[auth.basic.users]]`, add an `[auth.oidc]`
+issuer, or set `auth.enabled = false` for development. So a bare `docker run` of
+the image with no configuration stops at startup with that message; the
+downloadable Compose quickstart ships a user, which is why it boots.
 
 For production, set at least:
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # openEHR RELEASE watcher (tracker issue #179) — the companion of
-# scripts/spec-update-watcher.sh: that one tracks individual completed spec
+# scripts/watch/spec-update.sh: that one tracks individual completed spec
 # CHANGES; this one makes sure a component RELEASE event is never missed
 # again (ITS-REST 1.1.0 shipped 19-Jul-2026 and was discovered by hand).
 #
@@ -25,7 +25,7 @@
 #
 # Env: DRY_RUN=1 (report, create nothing) · GH_TOKEN/GITHUB_TOKEN for gh.
 set -euo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 
 DRY_RUN="${DRY_RUN:-0}"
 for bin in jq gh; do
@@ -101,7 +101,7 @@ Upstream published a new **$comp** release: **Release-$latest**
 ### Checklist
 
 - [ ] Read the release notes / amendment records for the delta vs our pin
-- [ ] Re-vendor at the release tag (\`scripts/vendor-spec-docs.sh\` + codegen inputs where applicable) — or record the generation decision if this is a major
+- [ ] Re-vendor at the release tag (\`scripts/vendor/spec-docs.sh\` + codegen inputs where applicable) — or record the generation decision if this is a major
 - [ ] Regenerate + implement behaviour deltas; update \`docs/VERSIONS.md\` (pin + release ladder)
 - [ ] ECC zero-drift run at close
 
@@ -121,6 +121,6 @@ EOF
     echo "created: $title"
   fi
   filed=$((filed + 1))
-done < <(grep -E '^  "[A-Z-]+\|' scripts/vendor-spec-docs.sh | tr -d '"' | sed 's/^  //')
+done < <(grep -E '^  "[A-Z-]+\|' scripts/vendor/spec-docs.sh | tr -d '"' | sed 's/^  //')
 
 echo "spec-release-watcher: done — $filed new release(s) filed, $skipped already covered/current."

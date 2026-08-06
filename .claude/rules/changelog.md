@@ -26,7 +26,7 @@ optional:
   `date-released` (the `citation-guard` CI job enforces the version match),
   + the default image tags in `docker-compose.yml` — the `ghcr.io/…:X.Y.Z`
   fallbacks the standalone quickstart pulls, guarded by
-  `scripts/check-compose-image-tags.sh` / the `compose-version-guard` CI
+  `scripts/checks/compose-image-tags.sh` / the `compose-version-guard` CI
   job), merge the release PR, then tag
   `vX.Y.Z` on the merge commit. The release workflow publishes the GitHub
   Release from the matching changelog section and **fails if the section or
@@ -37,11 +37,11 @@ optional:
   -f state=closed`) and make sure the NEXT milestone exists so triage always
   has a target. The milestone's closed-issue list + the changelog section
   together are the release's record. Then post a **status update on the
-  public roadmap board** (`scripts/gh-project.sh update on-track "…"` —
+  public roadmap board** (`scripts/gh/project.sh update on-track "…"` —
   policy + honesty rules in `.claude/rules/project-board.md`): what the
   release shipped, what the next milestone targets, `--target` only from a
   real milestone due date. Give the next milestone its due date, then
-  `scripts/gh-project.sh sync-dates` so the board's Roadmap timeline
+  `scripts/gh/project.sh sync-dates` so the board's Roadmap timeline
   follows the re-milestoned issues.
 - **Versioning split:** the product (workspace, `ferroehr-*`, tools, codegen
   tooling) follows the product SemVer (3.x line). The `openehr-*` **spec

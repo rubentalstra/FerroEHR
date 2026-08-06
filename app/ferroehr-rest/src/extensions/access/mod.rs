@@ -11,17 +11,18 @@
 //!   the service MUST use `WWW-Authenticate` and return `401`/`403` as
 //!   applicable: `401 Unauthorized` = missing/invalid credentials,
 //!   `403 Forbidden` = authenticated but refused, valid credentials → the
-//!   request proceeds to resource logic. This is the whole Stage-1 conformance
-//!   bar for the security surface.
+//!   request proceeds to resource logic. That is the whole of what the released
+//!   specification requires of this surface.
 //! - **Fine-grained RBAC/ABAC is NOT spec-mandated.** No CNF profile
 //!   (CORE/STANDARD/OPTIONS) carries any authentication/authorization/roles
 //!   requirement, and the SM treats authorization as an out-of-band
-//!   precondition. RBAC + ABAC here are therefore the **Stage-2 enterprise**
-//!   layer (`CLAUDE.md`: "RBAC is a Stage-2 concern"), kept working but clearly
-//!   separated from the spec-grounded authn core.
+//!   precondition. The RBAC and ABAC layers here are therefore **our own
+//!   design**, in the vocabulary of NIST SP 800-162 (ABAC) and ANSI/INCITS
+//!   359 Core RBAC, kept structurally separate from the spec-grounded
+//!   authentication core so the boundary between the two is legible.
 //!
 //! Layout:
-//! - [`authn`] — Stage-1 authentication: Basic (`argon2`) + OAuth2/OIDC bearer
+//! - [`authn`] — authentication: Basic (`argon2`) + OAuth2/OIDC bearer
 //!   (`jsonwebtoken`/`openidconnect`), producing a [`authn::Principal`].
 //! - [`ehr_access`] — the **spec-grounded** access-decision layer, built on the
 //!   `EHR_ACCESS` gateway clause ("All access decisions to data in the EHR must
@@ -63,4 +64,4 @@ pub mod tenant;
 
 // The spec-grounded EHR_ACCESS gate (the foundational access-decision layer).
 
-// The authz surface (the Stage-2 RBAC/ABAC handle + its config/engine seams).
+// The authorization surface: the RBAC/ABAC handle and its config/engine seams.

@@ -22,7 +22,7 @@
 # Apache-2.0 upstream (LICENSE vendored alongside).
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)/crates/openehr-adl/vendor/grammar"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)/crates/openehr-adl/vendor/grammar"
 
 ADL_ANTLR_REPO="openEHR/adl-antlr"
 ADL_ANTLR_COMMIT="8db091ec3d810371cc41cd072fee81ce893fea47" # 2024-04-06

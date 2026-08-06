@@ -256,7 +256,7 @@ cnf-runner aql-probe --root tools/cnf-runner/artifacts \
 ```
 
 The published assets are rendered from the committed `results.json` by
-`cnf-runner perf-assets` (wrapped by `scripts/render-perf-assets.sh`); the
+`cnf-runner perf-assets` (wrapped by `scripts/render/perf-assets.sh`); the
 docs CI job re-renders and `git diff`s them, so a hand-edited or stale asset
 fails the build.
 

@@ -122,12 +122,18 @@ pub struct TlsConfig {
 impl Default for ServerConfig {
     fn default() -> Self {
         Self {
-            bind: default_bind(),
-            base_path: default_base_path(),
-            max_in_flight: default_max_in_flight(),
+            bind: "0.0.0.0:8080".to_owned(),
+            base_path: "/ferroehr/rest/openehr/v1".to_owned(),
+            // 256 bounds the worst-case buffered-request memory to a sane
+            // envelope (the knee ladder OOM-killed the container at 1024
+            // in-flight clinical commits) while still permitting ~10k req/s at
+            // 25 ms latency (throughput = in-flight / latency, Little's law).
+            max_in_flight: 256,
             swagger_ui: true,
             cors_permissive: false,
-            system_id: default_system_id(),
+            // The service layer's own default, so an unset `[server] system_id`
+            // boots exactly as the service does.
+            system_id: crate::service::DEFAULT_SYSTEM_ID.to_owned(),
             identity: SystemOptionsConfig::default(),
             tls: TlsConfig::default(),
         }
@@ -155,29 +161,6 @@ impl ServerConfig {
             .unwrap_or(&self.base_path)
             .to_owned()
     }
-}
-
-fn default_bind() -> String {
-    "0.0.0.0:8080".to_owned()
-}
-
-fn default_base_path() -> String {
-    "/ferroehr/rest/openehr/v1".to_owned()
-}
-
-/// The default openEHR system identifier — a single source of truth shared with
-/// the service layer's [`crate::service::DEFAULT_SYSTEM_ID`], so an unset
-/// `[server] system_id` boots exactly as the service's own default.
-fn default_system_id() -> String {
-    crate::service::DEFAULT_SYSTEM_ID.to_owned()
-}
-
-const fn default_max_in_flight() -> usize {
-    // 256 bounds the worst-case buffered-request memory to a sane envelope
-    // (the knee ladder OOM-killed the container at 1024 in-flight clinical
-    // commits) while still permitting ~10k req/s at 25 ms latency
-    // (throughput = in-flight / latency, Little's law).
-    256
 }
 
 /// Multi-tenancy configuration (`[tenancy]`).

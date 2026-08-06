@@ -2,7 +2,7 @@
 
 Vendored verbatim from `https://github.com/openEHR/adl-archetypes`
 (`Reference/CKM_2013_12_09/`) at commit `093c77ea003742b9540e3dd377d615e2b26f2996` by
-`scripts/vendor-adl2-archetypes.sh` on 2026-08-01T12:30:22Z.
+`scripts/vendor/adl2-archetypes.sh` on 2026-08-01T12:30:22Z.
 
 Upstream describes the tree as archetypes exported from the Clinical
 Knowledge Manager (export time Mon Dec 09 15:42:23 CET 2013).

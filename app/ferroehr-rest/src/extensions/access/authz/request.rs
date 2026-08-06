@@ -7,7 +7,8 @@
 //! Attributes (`organization`, `patient`, `template`) are resolved by the PEP
 //! before the engine is called; `patient`/`template` may be *sets* (query,
 //! contribution), which the engine fans out over as a full cartesian product,
-//! **all-must-permit** (EHRbase v1 parity).
+//! **all-must-permit**: a request touching several resources is permitted only
+//! if every one of them is, and the first deny short-circuits.
 
 /// The resource family a clinical operation acts on. Derived from the
 /// operation-id prefix by [`crate::extensions::access::authz::classify::kind_of`].
@@ -23,7 +24,8 @@ pub enum ResourceKind {
     Contribution,
     /// An AQL query execution (ad-hoc or stored).
     Query,
-    /// A DIRECTORY/FOLDER (our extension over v1 — unchecked unless configured).
+    /// A DIRECTORY/FOLDER. Gated only when `abac.check_directory` is set, so a
+    /// deployment opts into it explicitly.
     Directory,
 }
 
@@ -80,8 +82,12 @@ impl AccessMode {
 pub enum Attr {
     /// Exactly one value.
     One(String),
-    /// A set of values (the engine fans out over it; an **empty** set yields no
-    /// combinations, i.e. a vacuous permit — EHRbase v1's empty-result behaviour).
+    /// A set of values the engine fans out over.
+    ///
+    /// An empty set yields no combinations, so nothing is asked and nothing
+    /// denies. Both builders map an empty attribute to `None` rather than to
+    /// this variant, so a vacuous permit is unreachable by construction — do not
+    /// introduce a path that constructs `Set(vec![])`.
     Set(Vec<String>),
 }
 
@@ -96,6 +102,21 @@ pub struct AuthzRequest<'a> {
     pub kind: ResourceKind,
     /// The access mode (the action axis).
     pub access: AccessMode,
+    /// The authenticated caller's subject identifier (`sub` / Basic username).
+    ///
+    /// NIST SP 800-162 §2.2 makes subject attributes one half of an ABAC
+    /// decision, so a policy must be able to name WHO is asking, not only which
+    /// organization and patient are in play. It also gives the decision an
+    /// identity to log.
+    pub subject: &'a str,
+    /// The caller's roles, upper-cased as the RBAC gate sees them.
+    ///
+    /// A policy engine that cannot see roles can only express attribute rules,
+    /// which makes the coarse RBAC tier and the fine ABAC tier unable to reason
+    /// about the same caller.
+    pub roles: &'a [String],
+    /// The caller's OAuth2 scopes, verbatim.
+    pub scopes: &'a [String],
     /// The caller's organization (resolved `abac.organization_claim`), if any.
     pub organization: Option<String>,
     /// The patient attribute (single for non-query, a set for query).
@@ -108,6 +129,12 @@ pub struct AuthzRequest<'a> {
 /// template) tuple an engine evaluates in isolation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Combination<'a> {
+    /// The authenticated caller's subject identifier.
+    pub subject: &'a str,
+    /// The caller's roles.
+    pub roles: &'a [String],
+    /// The caller's OAuth2 scopes.
+    pub scopes: &'a [String],
     /// The caller's organization for this evaluation.
     pub organization: Option<&'a str>,
     /// The single candidate patient for this evaluation.
@@ -130,6 +157,9 @@ impl AuthzRequest<'_> {
         for &patient in &patients {
             for &template in &templates {
                 out.push(Combination {
+                    subject: self.subject,
+                    roles: self.roles,
+                    scopes: self.scopes,
                     organization: org,
                     patient,
                     template,
@@ -168,6 +198,9 @@ mod tests {
             operation_id: "composition_create",
             kind: ResourceKind::Composition,
             access: AccessMode::Create,
+            subject: "test-subject",
+            roles: &[],
+            scopes: &[],
             organization: Some("org1".to_owned()),
             patient,
             template,

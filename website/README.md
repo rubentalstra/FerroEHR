@@ -21,8 +21,8 @@ The build needs a Rust-only toolchain: `mdbook`, `mdbook-mermaid`, `mdbook-toc`
 (pins in `docs.yml` / the phase file §1). Then:
 
 ```shell
-bash scripts/assemble-oas.sh          # copy the 7 vendored OAS bundles into api/spec/
-bash scripts/build-site.sh --dev-only # assemble ./_site (landing + /docs/dev/ + /api/)
+bash scripts/site/assemble-oas.sh          # copy the 7 vendored OAS bundles into api/spec/
+bash scripts/site/build.sh --dev-only # assemble ./_site (landing + /docs/dev/ + /api/)
 # serve _site/ with any static server, e.g.:  python3 -m http.server -d _site
 ```
 
@@ -32,7 +32,7 @@ branch plus `/docs/latest/`, exactly as CI does before deploy.
 ## Rules
 
 - Never hand-edit `api/spec/**` or the vendored `api/vendor/swagger-ui/**` —
-  run `scripts/assemble-oas.sh` (the served OAS is a byte copy of the vendored
+  run `scripts/site/assemble-oas.sh` (the served OAS is a byte copy of the vendored
   ITS-REST bundles, drift-gated in CI).
 - Authoring voice is end-user and task-first; never publish internal trees
   (plans, rules, the vendored spec oracle).

@@ -2,7 +2,7 @@
 
 Every template the official openEHR CKM (`https://ckm.openehr.org/ckm/rest/v1`) publishes, exported
 by CKM itself as an Operational Template and vendored verbatim by
-`scripts/vendor-ckm-templates.sh` on 2026-08-01T15:09:43Z.
+`scripts/vendor/ckm-templates.sh` on 2026-08-01T15:09:43Z.
 
 This is the BREADTH pack: real-world OPT 1.4 shapes for the reader /
 WebTemplate builder gates. The curated hospital-simulation journey

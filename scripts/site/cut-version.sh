@@ -2,21 +2,21 @@
 # Cut a frozen documentation version onto the docs-dist orphan branch.
 # "generate once, never rebuild".
 #
-# Usage: scripts/cut-version.sh vX.Y.Z
+# Usage: scripts/site/cut-version.sh vX.Y.Z
 #
 # Builds the book once with site-url=/docs/vX.Y.Z/, rsyncs it into a
 # docs-dist worktree under docs/vX.Y.Z/, prepends the version to versions.json,
 # re-points the `latest` alias, then commits + pushes docs-dist. Refuses if the
 # version already exists (frozen trees are never rebuilt).
 set -euo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 ROOT="$PWD"
 # Served from the ferroehr.eu apex, so the book lives at the domain root.
 SITE_BASE="${SITE_BASE:-}"
 
 VER="${1:-}"
 if [[ -z "$VER" ]]; then
-  echo "usage: scripts/cut-version.sh vX.Y.Z" >&2
+  echo "usage: scripts/site/cut-version.sh vX.Y.Z" >&2
   exit 2
 fi
 if [[ ! "$VER" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then

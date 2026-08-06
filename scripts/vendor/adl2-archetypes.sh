@@ -7,7 +7,7 @@
 # answers `adl_version=1.4`; `/adl2`, `/adl14`, `/adl2.4`, `/opt2` and
 # `/source` all 404; `?format=ADL2` / `?version=2` are silently ignored and
 # return byte-identical 1.4 text. So the ADL 1.4 corpus comes from the live
-# CKM (`scripts/vendor-ckm-archetypes.sh`) and the ADL 2 corpus comes from
+# CKM (`scripts/vendor/ckm-archetypes.sh`) and the ADL 2 corpus comes from
 # here — the openEHR ADL archetype repository, pinned by commit.
 #
 # NEVER fill the ADL 2 side by running our own ADL 1.4->2 converter
@@ -39,9 +39,9 @@
 # CC-BY-SA 3.0 where stated). Recorded as-is, provenance retained.
 #
 # Usage:
-#   scripts/vendor-adl2-archetypes.sh            # vendor at the pin below
-#   ADL2_PIN=<sha> scripts/vendor-adl2-archetypes.sh
-#   scripts/vendor-adl2-archetypes.sh --check    # report drift, write nothing
+#   scripts/vendor/adl2-archetypes.sh            # vendor at the pin below
+#   ADL2_PIN=<sha> scripts/vendor/adl2-archetypes.sh
+#   scripts/vendor/adl2-archetypes.sh --check    # report drift, write nothing
 set -Eeuo pipefail
 
 REPO="openEHR/adl-archetypes"
@@ -116,7 +116,7 @@ with open(pathlib.Path(dest) / "PROVENANCE.md", "w") as fh:
     w("# ADL 2 archetype pack (with ADL 1.4 twins) — provenance\n\n")
     w(f"Vendored verbatim from `https://github.com/{repo}`\n")
     w(f"(`Reference/CKM_2013_12_09/`) at commit `{pin}` by\n")
-    w(f"`scripts/vendor-adl2-archetypes.sh` on {stamp}.\n\n")
+    w(f"`scripts/vendor/adl2-archetypes.sh` on {stamp}.\n\n")
     w("Upstream describes the tree as archetypes exported from the Clinical\n")
     w("Knowledge Manager (export time Mon Dec 09 15:42:23 CET 2013).\n\n")
     w("## Why this source and not CKM\n\n")

@@ -48,6 +48,10 @@ use tower::ServiceExt;
 const BASE: &str = "/ferroehr/rest/openehr/v1";
 const HMAC_SECRET: &str = "rbac-test-secret";
 const ISSUER: &str = "https://issuer.example";
+/// The audience every fixture token is minted for: `audiences` is mandatory
+/// whenever `[auth.oidc]` is present, so a token for another resource server
+/// can never authenticate here.
+const AUDIENCE: &str = "ferroehr";
 const EHR_ID: &str = "3fa85f64-5717-4562-b3fc-2c963f66afa6";
 
 // ── config + app assembly ─────────────────────────────────────────────────────
@@ -85,7 +89,7 @@ fn rest_config() -> AppConfig {
             }),
             oidc: Some(OidcConfig {
                 issuer: ISSUER.to_owned(),
-                audiences: vec![],
+                audiences: vec![AUDIENCE.to_owned()],
                 algorithms: vec!["HS256".to_owned()],
                 hmac_secret: Some(ferroehr::config::secret::Secret::new(
                     HMAC_SECRET.to_owned(),
@@ -185,9 +189,31 @@ fn basic(name: &str) -> String {
 }
 
 /// A `Bearer` HMAC token carrying the given `scope` claim.
+/// A bearer token carrying `scope` and no role claim.
 fn bearer(scope: &str) -> String {
     let exp = u64::try_from(jiff::Timestamp::now().as_second()).unwrap() + 3600;
-    let claims: Value = json!({ "sub": "svc", "iss": ISSUER, "exp": exp, "scope": scope });
+    let claims: Value =
+        json!({ "sub": "svc", "iss": ISSUER, "aud": AUDIENCE, "exp": exp, "scope": scope });
+    let token = encode(
+        &Header::new(Algorithm::HS256),
+        &claims,
+        &EncodingKey::from_secret(HMAC_SECRET.as_bytes()),
+    )
+    .expect("encode");
+    format!("Bearer {token}")
+}
+
+/// A bearer token carrying `roles` — the RFC 9068 §2.2.3.1 carrier — and no
+/// scope, which is how a role actually reaches the RBAC gate.
+fn bearer_with_roles(roles: &[&str]) -> String {
+    let exp = u64::try_from(jiff::Timestamp::now().as_second()).unwrap() + 3600;
+    let claims: Value = json!({
+        "sub": "svc",
+        "iss": ISSUER,
+        "aud": AUDIENCE,
+        "exp": exp,
+        "roles": roles,
+    });
     let token = encode(
         &Header::new(Algorithm::HS256),
         &claims,
@@ -277,13 +303,32 @@ async fn rbac_disabled_restores_admin_access() {
     assert_ne!(s, StatusCode::FORBIDDEN);
 }
 
+/// A ROLE clears the admin gate; a SCOPE never does.
+///
+/// An OAuth2 scope grants a client delegated authority (RFC 6749 §3.3) and
+/// asserts nothing about the subject's roles. Mining `scope` for roles made the
+/// gate satisfiable by any caller who could name it — and made the
+/// at-least-one-role check vacuous for every OIDC token, since `openid` alone
+/// passed it. Roles come from the RFC 9068 §2.2.3.1 carriers instead.
 #[tokio::test]
-async fn scope_role_extraction_clears_admin_gate() {
-    // Scope→role extraction: a token whose `scope`
-    // carries `ADMIN` surfaces role `ADMIN` and clears the admin gate, while a
-    // non-admin scope is rejected — the automatic migration path.
+async fn a_scope_never_clears_the_admin_gate_but_a_role_does() {
     let (_pg, app) = app(true, None).await;
-    let denied = status(
+
+    // A scope naming the admin role is still only a scope.
+    let by_scope = status(
+        &app,
+        req("DELETE", &format!("/admin/ehr/{EHR_ID}"), &bearer("ADMIN")),
+    )
+    .await;
+    assert_eq!(
+        by_scope,
+        StatusCode::FORBIDDEN,
+        "`scope: ADMIN` must not grant the ADMIN role",
+    );
+
+    // And a token whose only "roles" were scopes has no roles at all, so it
+    // fails even the clinical at-least-one-role check.
+    let clinical_by_scope = status(
         &app,
         req(
             "DELETE",
@@ -292,16 +337,22 @@ async fn scope_role_extraction_clears_admin_gate() {
         ),
     )
     .await;
-    assert_eq!(denied, StatusCode::FORBIDDEN);
-    let allowed = status(
+    assert_eq!(clinical_by_scope, StatusCode::FORBIDDEN);
+
+    // The role carrier does clear it.
+    let by_role = status(
         &app,
-        req("DELETE", &format!("/admin/ehr/{EHR_ID}"), &bearer("ADMIN")),
+        req(
+            "DELETE",
+            &format!("/admin/ehr/{EHR_ID}"),
+            &bearer_with_roles(&["ADMIN"]),
+        ),
     )
     .await;
     assert_ne!(
-        allowed,
+        by_role,
         StatusCode::FORBIDDEN,
-        "scope ADMIN → role ADMIN clears the gate"
+        "the `roles` claim must clear the admin gate",
     );
 }
 
@@ -323,7 +374,7 @@ async fn oauth2_committer_identifier_names_the_token_issuer() {
             Request::builder()
                 .method("POST")
                 .uri(format!("{BASE}/ehr"))
-                .header("authorization", bearer("USER"))
+                .header("authorization", bearer_with_roles(&["USER"]))
                 .body(Body::empty())
                 .expect("request"),
         )
@@ -347,7 +398,7 @@ async fn oauth2_committer_identifier_names_the_token_issuer() {
                 .uri(format!(
                     "{BASE}/ehr/{ehr_id}/versioned_ehr_status/revision_history"
                 ))
-                .header("authorization", bearer("USER"))
+                .header("authorization", bearer_with_roles(&["USER"]))
                 .header("accept", "application/json")
                 .body(Body::empty())
                 .expect("request"),

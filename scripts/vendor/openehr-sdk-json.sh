@@ -15,9 +15,9 @@
 # bump the pin and re-run this script (`.claude/rules/vendored-corpora.md`).
 #
 # Usage:
-#   scripts/vendor-openehr-sdk-json.sh            # vendor at the pin below
-#   SDK_PIN=<sha> scripts/vendor-openehr-sdk-json.sh
-#   scripts/vendor-openehr-sdk-json.sh --check    # report drift, write nothing
+#   scripts/vendor/openehr-sdk-json.sh            # vendor at the pin below
+#   SDK_PIN=<sha> scripts/vendor/openehr-sdk-json.sh
+#   scripts/vendor/openehr-sdk-json.sh --check    # report drift, write nothing
 set -Eeuo pipefail
 
 REPO="ehrbase/openEHR_SDK"

@@ -5,7 +5,7 @@
 # enforcement of the repo's "never hand-edit" hard rules (CLAUDE.md):
 #
 #   1. docs/specs/openehr/**            — vendored upstream openEHR spec text
-#      (the conformance oracle); refreshed only by scripts/vendor-spec-docs.sh.
+#      (the conformance oracle); refreshed only by scripts/vendor/spec-docs.sh.
 #      Exception: the top-level README.md (our own index).
 #   2. tools/openehr-codegen/vendor/** — vendored BMM codegen inputs
 #      crates/openehr-its/vendor/**     — vendored REST OAS
@@ -13,7 +13,7 @@
 #      (re-vendor on a pin bump; never edit).
 #   3. crates/openehr-its/src/**/generated/** — generator-owned output trees.
 #   4. website/api/spec/** + website/api/vendor/** — assembled/vendored site
-#      assets (scripts/assemble-oas.sh owns spec/; CI drift-gates it).
+#      assets (scripts/site/assemble-oas.sh owns spec/; CI drift-gates it).
 #   5. ANY existing file whose head carries an `@generated` marker — the
 #      generated spec crates (openehr-base/rm/am, generated impls). Change
 #      the emitter (tools/openehr-codegen) and regenerate (/regen-codegen);
@@ -45,7 +45,7 @@ case "$path" in
     exit 0
     ;;
   */docs/specs/openehr/* | docs/specs/openehr/*)
-    block "docs/specs/openehr/** is vendored upstream openEHR spec text (the conformance oracle) and must never be hand-edited. Re-vendor with scripts/vendor-spec-docs.sh; pins live in that script + docs/VERSIONS.md."
+    block "docs/specs/openehr/** is vendored upstream openEHR spec text (the conformance oracle) and must never be hand-edited. Re-vendor with scripts/vendor/spec-docs.sh; pins live in that script + docs/VERSIONS.md."
     ;;
   # PROVENANCE.md files inside vendored trees are REPO-AUTHORED records (the
   # very files a pin bump updates) — never upstream content; exempt them.
@@ -63,7 +63,7 @@ case "$path" in
     ;;
   */website/api/spec/*   | website/api/spec/*   | \
   */website/api/vendor/* | website/api/vendor/*)
-    block "website/api/{spec,vendor}/** is generated/vendored (scripts/assemble-oas.sh; CI drift gate). Never hand-edit; regenerate instead."
+    block "website/api/{spec,vendor}/** is generated/vendored (scripts/site/assemble-oas.sh; CI drift gate). Never hand-edit; regenerate instead."
     ;;
 esac
 

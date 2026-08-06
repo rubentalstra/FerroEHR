@@ -2,7 +2,7 @@
 
 Every archetype the official openEHR CKM (`https://ckm.openehr.org/ckm/rest/v1`) publishes, exported
 by CKM itself and vendored verbatim by
-`scripts/vendor-ckm-archetypes.sh` on 2026-08-01T13:01:54Z.
+`scripts/vendor/ckm-archetypes.sh` on 2026-08-01T13:01:54Z.
 
 ## Dialect
 
@@ -10,7 +10,7 @@ by CKM itself and vendored verbatim by
 text (`adl_version=1.4`). CKM publishes NO ADL 2 export (`/adl2`,
 `/adl14`, `/opt2` 404; `?format=ADL2` is ignored and returns the same
 1.4 bytes), so the **ADL 2.4 half of the corpus comes from
-`scripts/vendor-adl2-archetypes.sh`** (openEHR/adl-archetypes). A CKM
+`scripts/vendor/adl2-archetypes.sh`** (openEHR/adl-archetypes). A CKM
 export is never labelled ADL 2, and the ADL 2 side is never produced by
 running our own 1.4->2 converter over these files — that would test the
 converter against itself.

@@ -32,7 +32,7 @@
 # ref below (keep docs/VERSIONS.md in sync).
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 DEST="$REPO_ROOT/docs/specs/openehr"
 INCLUDE_EXT=(adoc md txt csv json yaml yml robot xml opt g4)
 
@@ -193,7 +193,7 @@ for entry in "${COMPONENTS[@]}"; do
 - License: $license — the upstream \`LICENSE\` is vendored verbatim alongside
   this file, from the same pinned commit. Root reference copies:
   \`LICENSE-CC-BY-SA-3.0\` / \`LICENSE-APACHE-2.0\`.
-- Vendored by: \`scripts/vendor-spec-docs.sh\` (text formats only: ${INCLUDE_EXT[*]})
+- Vendored by: \`scripts/vendor/spec-docs.sh\` (text formats only: ${INCLUDE_EXT[*]})
 $diagram_note
 $figure_note
 - Unreferenced figures, UML \`.xmi\`/\`.mdzip\`, XSDs and other binaries
@@ -236,7 +236,7 @@ non-commercial reference basis, with the required acknowledgement:
 > © Copyright openEHR Foundation 2001-2006. All rights reserved.
 > www.openEHR.org
 
-Do not hand-edit files under this directory; re-run scripts/vendor-spec-docs.sh.
+Do not hand-edit files under this directory; re-run scripts/vendor/spec-docs.sh.
 EOF
 echo "    $(find "$REQ_OUT" -type f | wc -l | tr -d ' ') files"
 

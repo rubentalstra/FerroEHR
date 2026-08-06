@@ -16,19 +16,14 @@ use serde_json::{Map, Value};
 use crate::extensions::access::authz::classify::OperationClass;
 use ferroehr::config::authz::{ManagementAccess, RbacConfig};
 
-/// The default RBAC role-claim paths (Keycloak `realm_access.roles` + the
-/// `OAuth2` `scope` claim), matching the EHRbase v1 authorities converter.
-#[must_use]
-pub fn default_role_claims() -> Vec<String> {
-    vec!["realm_access.roles".to_owned(), "scope".to_owned()]
-}
-
 /// Extract roles from a validated JWT claim map given dotted claim paths.
 ///
 /// A path resolves through nested JSON objects (`realm_access.roles`). The value
-/// at a path is normalized to a role list: an array yields each string element;
-/// a plain string is split on whitespace (the `scope` claim). Every role is
-/// trimmed, upper-cased, and de-duplicated with first-seen order preserved.
+/// at a path is normalized to a role list: an array yields each string element
+/// (the RFC 9068 §2.2.3.1 / RFC 7643 §4.1.2 shape); a plain string is split on
+/// whitespace, for issuers that carry a single space-delimited role list. Every
+/// role is trimmed, upper-cased, and de-duplicated with first-seen order
+/// preserved.
 #[must_use]
 pub fn extract_roles(claims: &Map<String, Value>, paths: &[String]) -> Vec<String> {
     let mut roles: Vec<String> = Vec::new();
@@ -168,25 +163,52 @@ mod tests {
         v.as_object().cloned().expect("object")
     }
 
+    /// An OAuth2 scope grants a CLIENT delegated authority (RFC 6749 §3.3); it
+    /// asserts nothing about the subject's roles. Mining it made the
+    /// at-least-one-role gate vacuous for every OIDC token, since `openid`
+    /// alone satisfied it.
     #[test]
-    fn keycloak_realm_access_and_scope() {
+    fn scope_claim_does_not_grant_roles() {
         let c = claims(&json!({
             "realm_access": { "roles": ["user", "ferroehr-admin"] },
             "scope": "openid EHR_READ",
         }));
-        let roles = extract_roles(&c, &default_role_claims());
+        let roles = extract_roles(&c, &RbacConfig::default().role_claims);
         assert!(roles.contains(&"USER".to_owned()));
         assert!(roles.contains(&"FERROEHR-ADMIN".to_owned()));
-        assert!(roles.contains(&"OPENID".to_owned()));
-        assert!(roles.contains(&"EHR_READ".to_owned()));
+        assert!(
+            !roles.contains(&"OPENID".to_owned()),
+            "`openid` is a scope, not a role",
+        );
+        assert!(
+            !roles.contains(&"EHR_READ".to_owned()),
+            "a scope must not become a role",
+        );
+    }
+
+    /// The RFC 9068 §2.2.3.1 carriers are read in order, so an issuer using the
+    /// flat `roles`/`groups`/`entitlements` shape needs no configuration.
+    #[test]
+    fn rfc9068_role_claims_extracted() {
+        for carrier in ["roles", "groups", "entitlements"] {
+            let c = claims(&json!({ carrier: ["clinician"] }));
+            assert_eq!(
+                extract_roles(&c, &RbacConfig::default().role_claims),
+                vec!["CLINICIAN".to_owned()],
+                "the `{carrier}` claim must carry roles",
+            );
+        }
     }
 
     #[test]
     fn dedups_preserving_order() {
-        let c =
-            claims(&json!({ "realm_access": { "roles": ["admin", "Admin"] }, "scope": "admin" }));
+        // The same role from two configured carriers collapses to one entry.
+        let c = claims(&json!({
+            "roles": ["admin", "Admin"],
+            "realm_access": { "roles": ["ADMIN"] },
+        }));
         assert_eq!(
-            extract_roles(&c, &default_role_claims()),
+            extract_roles(&c, &RbacConfig::default().role_claims),
             vec!["ADMIN".to_owned()]
         );
     }
@@ -194,7 +216,7 @@ mod tests {
     #[test]
     fn missing_paths_yield_empty() {
         let c = claims(&json!({ "sub": "x" }));
-        assert!(extract_roles(&c, &default_role_claims()).is_empty());
+        assert!(extract_roles(&c, &RbacConfig::default().role_claims).is_empty());
     }
 
     #[test]

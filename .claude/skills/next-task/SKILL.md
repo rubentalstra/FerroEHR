@@ -26,7 +26,7 @@ separate step the caller takes after seeing the plan.
    instead); for a parent issue, point at its next open child rather than the
    parent itself. Then `gh issue view <n> --comments` for the full contract
    (the opening summary + `## Acceptance criteria`) and the running discussion, and
-   `scripts/gh-rel.sh tree <n>` for its parent/children/blockers. If the issue
+   `scripts/gh/rel.sh tree <n>` for its parent/children/blockers. If the issue
    links a plan file (`docs/plans/*.md`), read that too; its unchecked
    (`- [ ]`) tasks are the queue.
 2. **Turn the task into a plan**, stating:
@@ -56,10 +56,10 @@ separate step the caller takes after seeing the plan.
      `verdicts.json`), the `openehr-its` fidelity gates, or corpus tests.
 3. **When work on the picked issue actually starts** (the plan is accepted
    and the session proceeds), move it to `In Progress` on the public roadmap
-   board: `scripts/gh-project.sh status <n> in-progress` — the one manual
+   board: `scripts/gh/project.sh status <n> in-progress` — the one manual
    board move in the lifecycle (`.claude/rules/project-board.md`). If the
    session parks the issue unfinished, move it back
-   (`scripts/gh-project.sh status <n> todo`) — a stale In Progress column is
+   (`scripts/gh/project.sh status <n> todo`) — a stale In Progress column is
    a false public claim.
 4. **Do not edit the issue or commit** — recording progress happens after
    the work is actually done, not as part of planning it.

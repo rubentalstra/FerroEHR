@@ -1,6 +1,6 @@
 # Scheduled openEHR spec-update watcher (tracker issue #137; the full
 # live-verified design dossier is recorded on that issue — the mechanism
-# notes live in scripts/spec-update-watcher.sh itself).
+# notes live in scripts/watch/spec-update.sh itself).
 #
 # Twice weekly it polls the public openEHR Jira for newly COMPLETED SPEC*
 # changes and diffs the upstream amendment records against the vendored spec
@@ -47,4 +47,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           DRY_RUN: ${{ inputs.dry_run == true && '1' || '0' }}
           WINDOW_DAYS: ${{ inputs.window_days || '14' }}
-        run: bash scripts/spec-update-watcher.sh
+        run: bash scripts/watch/spec-update.sh

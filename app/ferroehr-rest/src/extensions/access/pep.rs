@@ -53,11 +53,6 @@
     reason = "the Err variant of every decision point in this module is a \
               ready-to-return axum `Response`, which is large by nature"
 )]
-#![expect(
-    clippy::disallowed_types,
-    reason = "owner-approved 2026-08-03 (#1694 family 7): RFC 7519 leaves the claim set open; \
-              decided-on claims lift into typed fields"
-)]
 
 use axum::response::{IntoResponse, Response};
 
@@ -136,7 +131,9 @@ pub(crate) fn query_pre(
     if kind_of(op) != Some(ResourceKind::Query) {
         return Ok((None, false));
     }
-    let principal = current_principal().unwrap_or_else(fallback_principal);
+    let principal = current_principal().ok_or_else(|| {
+        forbidden_unauthenticated("authentication required for attribute-based access control")
+    })?;
     let patient = resolve_patient_claim(abac, &principal)?;
     // Collect attributes whenever ABAC is on so the post-check has the touched
     // template set; the subject scope pre-filters rows to the caller's patient.
@@ -144,7 +141,8 @@ pub(crate) fn query_pre(
 }
 
 /// The ABAC post-check for a query execution: the PDP fan-out over the
-/// touched template set. An empty result permits (v1 parity). The patient gate
+/// touched template set: a query touching no template asks nothing of the PDP
+/// and is therefore not denied by it. The patient gate
 /// is already enforced by the subject-scope pre-filter (rows outside the
 /// caller's patient are never fetched), so it is not re-run per EHR here.
 pub(crate) async fn query_post(
@@ -165,12 +163,17 @@ pub(crate) async fn query_post(
     if outcome.ehr_ids.is_empty() && outcome.template_ids.is_empty() {
         return Ok(());
     }
-    let principal = current_principal().unwrap_or_else(fallback_principal);
+    let principal = current_principal().ok_or_else(|| {
+        forbidden_unauthenticated("authentication required for attribute-based access control")
+    })?;
     let patient = resolve_patient_claim(abac, &principal)?;
     let template =
         (!outcome.template_ids.is_empty()).then(|| Attr::Set(outcome.template_ids.clone()));
     let req = AuthzRequest {
         operation_id: op,
+        subject: &principal.subject,
+        roles: &principal.roles,
+        scopes: &principal.scopes,
         kind: ResourceKind::Query,
         access: AccessMode::Execute,
         organization: organization(abac, &principal),
@@ -206,13 +209,15 @@ pub(crate) async fn pre_check(
     let Some(kind) = kind_of(op) else {
         return Ok(());
     };
-    // DIRECTORY is unchecked unless a directory policy is configured (v1 parity).
+    // DIRECTORY is gated only when `abac.check_directory` says so — engine-
+    // independent, so a Cedar deployment can enable it too.
     if kind == ResourceKind::Directory && !abac.directory_checked {
         return Ok(());
     }
 
-    let principal = current_principal()
-        .ok_or_else(|| forbidden(&fallback_principal(), "authentication required for ABAC"))?;
+    let principal = current_principal().ok_or_else(|| {
+        forbidden_unauthenticated("authentication required for attribute-based access control")
+    })?;
 
     let patient = resolve_patient_claim(abac, &principal)?;
     let ehr_id = parts.path.get("ehr_id").cloned();
@@ -233,6 +238,9 @@ pub(crate) async fn pre_check(
 
     let req = AuthzRequest {
         operation_id: op,
+        subject: &principal.subject,
+        roles: &principal.roles,
+        scopes: &principal.scopes,
         kind,
         access: access_of(op).unwrap_or(AccessMode::Read),
         organization: organization(abac, &principal),
@@ -297,6 +305,9 @@ pub(crate) async fn post_check(state: &AppState, op: &'static str, resp: Respons
 
     let req = AuthzRequest {
         operation_id: op,
+        subject: &principal.subject,
+        roles: &principal.roles,
+        scopes: &principal.scopes,
         kind,
         access: access_of(op).unwrap_or(AccessMode::Read),
         organization: organization(abac, &principal),
@@ -316,8 +327,12 @@ pub(crate) async fn post_check(state: &AppState, op: &'static str, resp: Respons
     }
 }
 
-/// Resolve the patient claim, if the gate is configured. A configured-but-missing
-/// claim is a 403 (v1 threw 500 — NOTE: the improvement).
+/// Resolve the patient claim, if the gate is configured.
+///
+/// A configured-but-missing claim is a 403: the deployment asked for patient
+/// scoping and the token does not carry it, so no decision can permit the
+/// request. It is not a 500 — the server is working correctly and the caller's
+/// token is the thing that is insufficient.
 fn resolve_patient_claim(
     abac: &AbacGate,
     principal: &Principal,
@@ -341,8 +356,19 @@ fn organization(abac: &AbacGate, principal: &Principal) -> Option<String> {
         .and_then(|c| crate::extensions::access::authz::roles::claim_string(&principal.claims, c))
 }
 
-/// The full pre-check patient gate: the subject match for target-EHR ops,
-/// plus the by-subject special case (compare the claim to the request subject).
+/// The full pre-check patient gate: the subject match for target-EHR ops, plus
+/// the by-subject special case, where the request parameter IS the subject.
+///
+/// For `ehr_get_by_subject` an ABSENT `subject_id` deliberately passes this gate
+/// so the route answers `400`, not `403`. The released specification declares the
+/// parameter required (`specifications/parameters/query/subject_id.yaml`:
+/// `required: true`), so such a request is invalid for EVERY caller and no
+/// authorization decision could make it succeed — RFC 9110 §15.5.1's
+/// client-error case. Answering `403` would assert something false, that
+/// permission is the obstacle, and send an integrator hunting entitlements for a
+/// malformed request. The typed parameter
+/// (`EhrGetBySubjectParams::subject_id`, a non-optional `String`) is what
+/// produces the `400`.
 async fn patient_gate(
     abac: &AbacGate,
     principal: &Principal,
@@ -352,14 +378,13 @@ async fn patient_gate(
     parts: &RequestParts,
 ) -> Result<(), Response> {
     if op == "ehr_get_by_subject" {
-        // The request param IS the subject (v1); compare the claim to it.
-        if let Some(patient) = patient {
-            let subject = params::query_param(parts.query.as_deref(), "subject_id");
-            if let Some(subject) = subject
-                && subject != patient
-            {
-                return Err(forbidden(principal, "patient scope (subject mismatch)"));
-            }
+        // Here the request parameter IS the subject, so the gate compares the
+        // caller's patient claim to it directly rather than resolving an EHR.
+        if let Some(patient) = patient
+            && let Some(subject) = params::query_param(parts.query.as_deref(), "subject_id")
+            && subject != patient
+        {
+            return Err(forbidden(principal, "patient scope (subject mismatch)"));
         }
         return Ok(());
     }
@@ -471,21 +496,36 @@ fn contribution_templates(
     let mut out = Vec::new();
     if let Some(versions) = value.get("versions").and_then(|v| v.as_array()) {
         for version in versions {
-            let data = version.get("data");
-            let is_composition =
-                data.and_then(|d| d.get("_type")).and_then(|t| t.as_str()) == Some("COMPOSITION");
-            if is_composition {
-                match data
-                    .and_then(|d| d.pointer("/archetype_details/template_id/value"))
-                    .and_then(|v| v.as_str())
-                {
-                    Some(t) => out.push(t.to_owned()),
-                    None => {
-                        return Err(forbidden(
-                            principal,
-                            "contribution COMPOSITION version has no template id",
-                        ));
-                    }
+            let Some(data) = version.get("data") else {
+                continue;
+            };
+            if data.get("_type").and_then(|t| t.as_str()) != Some("COMPOSITION") {
+                continue;
+            }
+            // A CONTRIBUTION body is a wrapper (a version set + audit) with no
+            // canonical RM type of its own, so the enclosing value stays JSON —
+            // but each `versions[i].data` IS a canonical COMPOSITION, and the
+            // template id is read off the typed value's own
+            // `ARCHETYPED.template_id`, the same way `composition_template`
+            // does. A JSON pointer would keep compiling while silently matching
+            // nothing if the canonical shape moved.
+            let Ok(composition) = openehr_its::json::from_canonical_value::<Composition>(data)
+            else {
+                // Undecodable: the dispatch answers 400 for this body, so there
+                // is nothing here to authorize.
+                return Ok(Vec::new());
+            };
+            match composition
+                .archetype_details
+                .and_then(|a| a.template_id)
+                .map(|id| id.value)
+            {
+                Some(t) => out.push(t),
+                None => {
+                    return Err(forbidden(
+                        principal,
+                        "contribution COMPOSITION version has no template id",
+                    ));
                 }
             }
         }
@@ -547,6 +587,17 @@ fn forbidden(principal: &Principal, detail: &str) -> Response {
     resp
 }
 
+/// A 403 for a request that reached a gate with NO authenticated principal.
+///
+/// Nothing is attached to the response extensions because there is no principal
+/// to attribute: the ATNA layer records the denial from the request itself. This
+/// replaces a fabricated `UNKNOWN` principal — attributing a denial to an
+/// identity that never authenticated writes a false subject into the audit
+/// trail, which is worse than recording an unattributed denial.
+fn forbidden_unauthenticated(detail: &str) -> Response {
+    RestError(ApiError::Forbidden(format!("access denied: {detail}"))).into_response()
+}
+
 /// A 500 (fail-closed) carrying the principal. `detail` names why the policy
 /// engine could not decide — server-internal, so it goes to the trace record
 /// and the body carries the curated opaque message.
@@ -558,17 +609,6 @@ fn engine_error(principal: &Principal, detail: &str) -> Response {
     .into_response();
     resp.extensions_mut().insert(principal.clone());
     resp
-}
-
-/// A principal placeholder for the (unreachable) no-principal path.
-fn fallback_principal() -> Principal {
-    Principal {
-        subject: "UNKNOWN".to_owned(),
-        scopes: Vec::new(),
-        roles: Vec::new(),
-        claims: serde_json::Map::new(),
-        method: crate::extensions::access::authn::AuthMethod::Bearer,
-    }
 }
 
 /// The single value of a resolved attribute, or `None` for an absent/multi-valued
@@ -704,7 +744,20 @@ fn smart_skip_family_gate(
     ) {
         return Ok(());
     }
-    let principal = current_principal().unwrap_or_else(fallback_principal);
+    // No principal means no token, and therefore no SMART scopes — which is a
+    // state the configuration already has an answer for. Advisory mode
+    // (`smart.require_smart_scopes = false`) defers to the RBAC/ABAC tiers, so
+    // it defers here too; fail-closed mode refuses. Refusing unconditionally
+    // would brick `auth.enabled = false`, where the absence of a principal is
+    // the operator's explicit choice rather than a missing credential.
+    let Some(principal) = current_principal() else {
+        if cfg.require_smart_scopes {
+            return Err(forbidden_unauthenticated(
+                "smart.require_smart_scopes demands a token carrying SMART resource scopes",
+            ));
+        }
+        return Ok(());
+    };
     let resource_id = parts
         .path
         .get("template_id")
@@ -720,6 +773,12 @@ fn smart_skip_family_gate(
 
 #[cfg(test)]
 mod tests {
+    #![expect(
+        clippy::disallowed_types,
+        reason = "a test builds the Principal's claim map directly; the claim set \
+                  is RFC 7519-open, so the fixtures name serde_json's types"
+    )]
+
     use std::sync::Arc;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -805,7 +864,9 @@ mod tests {
 
     #[tokio::test]
     async fn null_subject_passes_gate() {
-        // A subject-less EHR is not patient-scoped (EHRbase v1 parity).
+        // A caller with no patient scope is unaffected by the subject gate, so
+        // an anonymous EHR stays fully operable for it (RM ehr
+        // `master04-ehr_package.adoc` §EHR Status).
         let calls = Arc::new(AtomicUsize::new(0));
         let gate = gate_with_subject(None, calls);
         let principal = principal_with_patient("P1");
@@ -857,13 +918,30 @@ mod tests {
         assert_eq!(mode_of("definition_template_adl1.4_upload"), Mode::Skip);
     }
 
+    /// A minimal authenticated principal for the pure-function tests below.
+    ///
+    /// Deliberately built HERE rather than in production code: the gates now
+    /// refuse when no principal is present, so production has no reason to
+    /// construct one, and a shared fabricated principal is exactly what #1963
+    /// removed (attributing a denial to an identity that never authenticated
+    /// writes a false subject into the audit trail).
+    fn test_principal() -> Principal {
+        Principal {
+            subject: "test-subject".to_owned(),
+            scopes: Vec::new(),
+            roles: Vec::new(),
+            claims: serde_json::Map::new(),
+            method: AuthMethod::Bearer,
+        }
+    }
+
     /// The PEP reads a resource id through this adapter's one strict
     /// decoder (BASE `base_types` `master05-identification_package.adoc`
     /// §Syntaxes), so a well-formed id decomposes and a malformed one is
     /// DENIED rather than degraded into a whole-string `vo_id`.
     #[test]
     fn object_version_id_parsing() {
-        let principal = fallback_principal();
+        let principal = test_principal();
         let ok = |uid: &str| resolve_target(&principal, uid).map_err(|_resp| "denied");
 
         let uid = "0197f1c2-3aa0-7000-8000-000000000001::ferroehr.local::2";
@@ -895,7 +973,7 @@ mod tests {
     /// whole-string `vo_id` degradation.
     #[test]
     fn malformed_resource_ids_are_denied() {
-        let principal = fallback_principal();
+        let principal = test_principal();
         for bad in [
             // not a UUID at all
             "abc",

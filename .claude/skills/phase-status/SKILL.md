@@ -37,7 +37,7 @@ cd "${CLAUDE_PROJECT_DIR}" && git status --short | head -40 && echo "---" && git
    milestone-assigned / the one the branch implements) and what its stated
    next action is. For the in-flight issue, run
    `gh issue view <n> --comments` and report the latest status comment and
-   the unchecked `## Acceptance criteria` boxes, plus `scripts/gh-rel.sh tree <n>`
+   the unchecked `## Acceptance criteria` boxes, plus `scripts/gh/rel.sh tree <n>`
    for its parent/children/blockers. **Flag any open issue shown `BLOCKED-by`
    an open blocker** — it is stuck until the blocker closes and is not a
    pickup candidate (`.claude/rules/issue-relationships.md`).
@@ -47,7 +47,7 @@ cd "${CLAUDE_PROJECT_DIR}" && git status --short | head -40 && echo "---" && git
 3. Summarize the git state from the injected output: current branch work,
    uncommitted files, last commits — flag uncommitted work that looks
    finished (the owner rule: never leave finished work sitting unmerged).
-4. If the user asks how things look publicly, `scripts/gh-project.sh board`
+4. If the user asks how things look publicly, `scripts/gh/project.sh board`
    prints the public roadmap board grouped by Status — a presentation VIEW
    over the same issues, never a second source of truth
    (`.claude/rules/project-board.md`); the issue list above stays the

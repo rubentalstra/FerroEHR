@@ -1,7 +1,7 @@
 # CKM template pack — provenance
 
 Vendored from the official openEHR CKM (`https://ckm.openehr.org/ckm/rest/v1`) by
-`scripts/vendor-ckm-templates.sh` on 2026-08-01T15:09:43Z.
+`scripts/vendor/ckm-templates.sh` on 2026-08-01T15:09:43Z.
 Each file is CKM's own OPT export for the cited template, verbatim.
 Example skeletons (`*.example.json`) are generated once against the
 composed SUT by `scripts/generate-ckm-examples.sh` and committed

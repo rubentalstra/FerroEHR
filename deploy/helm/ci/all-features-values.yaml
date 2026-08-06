@@ -40,7 +40,7 @@ config:
     basic:
       users:
         - username: clinician
-          password_hash: "$argon2id$v=19$m=4096,t=2,p=1$c2FsdA$hash"
+          password_hash: "$argon2id$v=19$m=19456,t=2,p=1$c2FsdA$hash"
           roles: [USER]
     oidc:
       issuer: https://keycloak.example.com/realms/ferroehr

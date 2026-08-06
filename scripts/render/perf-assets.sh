@@ -14,7 +14,7 @@
 #   $1  output dir override
 #   $2  Markdown summary path override
 set -euo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 
 SUT="${CONF_SUT:-ferroehr}"
 if [ "$SUT" = "ferroehr" ]; then

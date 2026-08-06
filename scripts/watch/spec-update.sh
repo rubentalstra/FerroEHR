@@ -13,7 +13,7 @@
 #   B. Amendment-record cross-check — the Jira keys present in each upstream
 #      amendment record (default branch) but absent from the vendored copy
 #      under docs/specs/openehr/ (paths mirror the upstream repos 1:1; pins
-#      live in scripts/vendor-spec-docs.sh).
+#      live in scripts/vendor/spec-docs.sh).
 #   C. Commits-ahead cross-check — per MASTER-pinned component repo, the
 #      default branch's distance ahead of the vendored pin commit. A and B are
 #      key-granular and blind to raw commits (a key adopted once dedups away
@@ -36,7 +36,7 @@
 # Env: DRY_RUN=1 (report, create nothing) · WINDOW_DAYS (default 14 — the scheduled cadence; run manually with a wide window, e.g. 365, to catch any backlog: dedup + the vendored baseline make that safe) ·
 #      GH_TOKEN/GITHUB_TOKEN for gh. Requires curl, jq, gh.
 set -euo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 
 JIRA="https://openehr.atlassian.net"
 WINDOW_DAYS="${WINDOW_DAYS:-14}"
@@ -89,7 +89,7 @@ label_for_component() { # vendored component dir -> label
 # newer version still get an issue.
 pin_for_component() {
   local comp="$1" line ref sha ver
-  line=$(grep -E "^  \"${comp}\|" scripts/vendor-spec-docs.sh | head -1 | tr -d '"') || true
+  line=$(grep -E "^  \"${comp}\|" scripts/vendor/spec-docs.sh | head -1 | tr -d '"') || true
   [ -n "$line" ] || { echo "unpinned"; return 0; }
   ref=$(echo "$line" | awk -F'|' '{print $3}')
   sha=$(echo "$line" | awk -F'|' '{printf "%.9s", $4}')
@@ -100,7 +100,7 @@ pin_for_component() {
 }
 repo_for_component() {
   local comp="$1" line
-  line=$(grep -E "^  \"${comp}\|" scripts/vendor-spec-docs.sh | head -1 | tr -d '"') || true
+  line=$(grep -E "^  \"${comp}\|" scripts/vendor/spec-docs.sh | head -1 | tr -d '"') || true
   [ -n "$line" ] || return 1
   echo "$line" | awk -F'|' '{print $2}'
 }
@@ -300,7 +300,7 @@ Upstream \`openEHR/$repo\` ($comp) has moved past our vendored pin — commit-de
 
 $count_line
 - **Compare:** https://github.com/openEHR/$repo/compare/${sha}...${default}
-- **Vendored pin:** \`scripts/vendor-spec-docs.sh\` (docs text); where this component feeds codegen, also the machine-readable vendor dirs (\`tools/openehr-codegen/vendor/bmm/\`, \`crates/openehr-its/{vendor,schemas}/\`)
+- **Vendored pin:** \`scripts/vendor/spec-docs.sh\` (docs text); where this component feeds codegen, also the machine-readable vendor dirs (\`tools/openehr-codegen/vendor/bmm/\`, \`crates/openehr-its/{vendor,schemas}/\`)
 
 ### Triage checklist
 
@@ -346,7 +346,7 @@ EOF
     fi
     ahead_closed=$((ahead_closed + 1))
   fi
-done < <(grep -E '^  "[A-Z-]+\|' scripts/vendor-spec-docs.sh | sed -e 's/^  "//' -e 's/"$//')
+done < <(grep -E '^  "[A-Z-]+\|' scripts/vendor/spec-docs.sh | sed -e 's/^  "//' -e 's/"$//')
 echo "spec-update-watcher: commits-ahead — $ahead_created created, $ahead_updated updated, $ahead_closed closed"
 
 # ── D. Dedup by key against the issue board (open AND closed), create ───────
@@ -415,7 +415,7 @@ Upstream openEHR spec change completed — conformance-impact triage needed.
 - **Lands in upstream version:** $fixv
 - **Jira component(s):** $comps
 - **Detected via:** $source poll
-- **What we currently have vendored (the baseline this is newer than):** ${component:-n/a} ${pin} (\`docs/VERSIONS.md\` / \`scripts/vendor-spec-docs.sh\`)
+- **What we currently have vendored (the baseline this is newer than):** ${component:-n/a} ${pin} (\`docs/VERSIONS.md\` / \`scripts/vendor/spec-docs.sh\`)
 
 ### Upstream summary
 
@@ -425,7 +425,7 @@ $([ -n "$descr" ] && printf '<details><summary>Upstream description (excerpt)</s
 
 ### Triage checklist
 
-- [ ] Re-vendor the affected spec (\`scripts/vendor-spec-docs.sh\` — bump the pin + SHA)
+- [ ] Re-vendor the affected spec (\`scripts/vendor/spec-docs.sh\` — bump the pin + SHA)
 - [ ] Regenerate if BMM/OAS/XSD changed (\`/regen-codegen\`)
 - [ ] Assess behaviour impact — add exactly one \`spec-impact:*\` label
 - [ ] Implement where behaviour changes; update \`docs/VERSIONS.md\`

@@ -168,9 +168,13 @@ config:
   log:
     format: json
 
-  # [auth] — authentication (Basic + OAuth2/OIDC bearer). Enabled by default. A
-  # server with auth.enabled=true but no mechanism 401s every request — add an
-  # [auth.oidc] issuer, an [[auth.basic.users]] entry, or set enabled=false (dev).
+  # [auth] — authentication (Basic + OAuth2/OIDC bearer). Enabled by default.
+  # auth.enabled=true with NO mechanism REFUSES TO BOOT (RFC 9110 §11.6.1: a 401
+  # challenge must name a scheme the server implements) — add an [auth.oidc]
+  # issuer, an [[auth.basic.users]] entry, or set enabled=false (dev only).
+  # An [auth.oidc] table additionally requires `audiences` (at least one) and an
+  # https `issuer` with no query/fragment; every [[auth.basic.users]]
+  # password_hash must be argon2id at m>=19456,t=2,p=1. All checked at boot.
   auth:
     enabled: true
 

@@ -27,6 +27,12 @@ ferroehr-ext = { path = "../ferroehr-ext", optional = true }
 http.workspace = true
 secrecy.workspace = true
 urlencoding.workspace = true
+# `config::auth` boot validation: the OWASP Argon2id cost floor is judged by
+# parsing each configured PHC string through the same `argon2` seam the Basic
+# verifier uses, and `url` judges the `[auth.oidc] issuer` against the RFC 8414
+# §2 issuer-identifier rules.
+argon2.workspace = true
+url.workspace = true
 async-trait.workspace = true
 config.workspace = true
 jiff.workspace = true

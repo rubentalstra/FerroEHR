@@ -10,7 +10,7 @@
 #   CONF_SUT=ehrbase           → website/book/src/comparison-assets/
 #                                     (file stems suffixed -java)
 set -euo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 
 SUT="${CONF_SUT:-ferroehr}"
 ART="docs/conformance/$SUT"

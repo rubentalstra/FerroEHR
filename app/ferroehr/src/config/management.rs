@@ -102,7 +102,6 @@ pub struct ManagementConfig {
     #[serde(default)]
     pub enabled: bool,
     /// The base path the management endpoints hang off.
-    #[serde(default = "defaults::base_path")]
     pub base_path: String,
     /// When set, the management surface is served from its **own** listener on
     /// this port (a separate axum server task in the binary) instead of the main
@@ -111,7 +110,6 @@ pub struct ManagementConfig {
     pub port: Option<u16>,
     /// The global default access level (documented fallback; the concrete
     /// per-endpoint level in [`Self::endpoints`] wins).
-    #[serde(default = "defaults::access_default")]
     pub access_default: AccessLevel,
     /// Per-endpoint access levels.
     #[serde(default)]
@@ -125,23 +123,12 @@ impl Default for ManagementConfig {
     fn default() -> Self {
         Self {
             enabled: false,
-            base_path: defaults::base_path(),
+            base_path: "/management".to_owned(),
             port: None,
-            access_default: defaults::access_default(),
+            access_default: AccessLevel::AdminOnly,
             endpoints: EndpointLevels::default(),
             profiling: ProfilingConfig::default(),
         }
-    }
-}
-
-mod defaults {
-    use super::AccessLevel;
-
-    pub(super) fn base_path() -> String {
-        "/management".to_owned()
-    }
-    pub(super) const fn access_default() -> AccessLevel {
-        AccessLevel::AdminOnly
     }
 }
 

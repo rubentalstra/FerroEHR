@@ -1,7 +1,7 @@
 //! HTTP Basic authentication against an Argon2 PHC password store.
 //!
-//! Basic is one of the two Stage-1 mechanisms; the CNF security suites exercise
-//! the Basic flow's 401/403 behaviour
+//! Basic is one of the two authentication mechanisms; the CNF security suites
+//! exercise the Basic flow's 401/403 behaviour
 //! (`docs/specs/openehr/CNF/tests/platform/robot/SECURITY_TESTS/`), which the
 //! authn middleware ([`super`]) enforces per ITS-REST §Authentication and
 //! authorization. Password verification uses `argon2` (never a hand-rolled
@@ -24,14 +24,38 @@ use super::{AuthError, AuthMethod, Principal};
 use ferroehr::config::auth::BasicConfig;
 
 /// RFC 4648 standard-alphabet decoder for the RFC 7617 `Basic` credential,
-/// padding-indifferent: canonical padded output is the RFC form, but clients
-/// that omit padding are accepted (the previous decoder did, and RFC 7617
-/// gives no reason to reject them). Non-alphabet bytes, interior padding,
-/// and non-canonical trailing bits are rejected.
+/// **padded only**: RFC 7617 §2 defers to RFC 4648 §4, and RFC 4648 §3.2
+/// requires the pad characters "unless the specification referring to this
+/// document explicitly states otherwise" — RFC 7617 does not. Non-alphabet
+/// bytes, interior padding, and non-canonical trailing bits are rejected too.
 static BASIC_B64: GeneralPurpose = GeneralPurpose::new(
     &alphabet::STANDARD,
-    GeneralPurposeConfig::new().with_decode_padding_mode(DecodePaddingMode::Indifferent),
+    GeneralPurposeConfig::new().with_decode_padding_mode(DecodePaddingMode::RequireCanonical),
 );
+
+/// The PHC verified when no configured user matches the presented name.
+///
+/// Without it the unknown-user path returns before the KDF runs, so its
+/// response time distinguishes "no such user" from "wrong password" — an
+/// account-enumeration oracle. It is DERIVED rather than a hardcoded digest: a
+/// literal that failed to parse would make the defence silently free, and the
+/// parameters must track the floor the configured hashes are validated against
+/// (<https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html>
+/// §Argon2id) so the work performed matches a real verification.
+static ENUMERATION_DEFENCE_PHC: std::sync::LazyLock<Option<String>> =
+    std::sync::LazyLock::new(|| {
+        let params = argon2::Params::new(19_456, 2, 1, None).ok()?;
+        let argon2 = Argon2::new(argon2::Algorithm::Argon2id, argon2::Version::V0x13, params);
+        let salt =
+            argon2::password_hash::SaltString::from_b64("ZmVycm9lanItZW51bS1kZWZlbmNl").ok()?;
+        argon2::password_hash::PasswordHasher::hash_password(
+            &argon2,
+            b"no-such-user-placeholder",
+            &salt,
+        )
+        .ok()
+        .map(|hash| hash.to_string())
+    });
 
 /// Verify a `Basic <base64>` credential against the configured user store.
 ///
@@ -58,11 +82,17 @@ pub(super) fn verify(header: &HeaderValue, cfg: &BasicConfig) -> Result<Principa
         .split_once(':')
         .ok_or(AuthError::InvalidCredentials)?;
 
-    let user = cfg
-        .users
-        .iter()
-        .find(|u| u.username == username)
-        .ok_or(AuthError::InvalidCredentials)?;
+    // An unknown user still pays the KDF, against a fixed hash, so the response
+    // time carries no account-existence signal.
+    let Some(user) = cfg.users.iter().find(|u| u.username == username) else {
+        if let Some(phc) = ENUMERATION_DEFENCE_PHC.as_deref()
+            && let Ok(decoy) = PasswordHash::new(phc)
+        {
+            // The outcome is discarded deliberately — only the work matters.
+            let _outcome = Argon2::default().verify_password(password.as_bytes(), &decoy);
+        }
+        return Err(AuthError::InvalidCredentials);
+    };
 
     let parsed = PasswordHash::new(user.password_hash.expose())
         .map_err(|_| AuthError::InvalidCredentials)?;
@@ -164,17 +194,61 @@ mod tests {
         assert!(matches!(err, AuthError::InvalidCredentials));
     }
 
-    // Decode-boundary pins for the RFC 7617 credential (401 in every reject
-    // case — the opaque-outcome discipline of `verify`).
-
+    /// An unknown user must pay the KDF, or the response time says whether the
+    /// account exists. Asserted on WORK, not on a wall-clock threshold: a
+    /// timing assertion is flaky under load, while the derived decoy hash is
+    /// either parseable-and-verified or the defence is silently free.
     #[test]
-    fn unpadded_credential_accepted() {
-        // "alice:s3cret" canonical is "YWxpY2U6czNjcmV0" (len % 4 == 0, no
-        // padding involved); "alice:s3cret1" pads to "…MQ==" — strip it.
-        let padded = base64::engine::general_purpose::STANDARD.encode("alice:s3cret");
-        let unpadded = padded.trim_end_matches('=').to_owned();
-        let p = verify(&raw_header(&unpadded), &store()).expect("unpadded canonical accepted");
-        assert_eq!(p.subject, "alice");
+    fn unknown_user_pays_the_kdf() {
+        let phc = ENUMERATION_DEFENCE_PHC
+            .as_deref()
+            .expect("the decoy PHC should be derivable at the OWASP floor");
+        let parsed = PasswordHash::new(phc).expect("the decoy PHC should parse");
+        assert_eq!(
+            parsed.algorithm.as_str(),
+            "argon2id",
+            "the decoy must use the same algorithm as a real verification",
+        );
+        // The floor the configured hashes are boot-validated against
+        // (OWASP Password Storage §Argon2id), so the work matches.
+        let params = argon2::Params::try_from(&parsed).expect("params");
+        assert_eq!(params.m_cost(), 19_456);
+        assert_eq!(params.t_cost(), 2);
+        assert_eq!(params.p_cost(), 1);
+        // And the placeholder password must not verify against it, so the decoy
+        // can never authenticate anyone.
+        assert!(
+            verify(
+                &header("no-such-user", "no-such-user-placeholder"),
+                &store()
+            )
+            .is_err(),
+            "the decoy hash must never authenticate",
+        );
+    }
+
+    /// The canonical padded form IS the credential: RFC 7617 §2 defers to
+    /// RFC 4648 §4, and RFC 4648 §3.2 requires the pad characters "unless the
+    /// specification referring to this document explicitly states otherwise" —
+    /// RFC 7617 states no such thing.
+    ///
+    /// The fixture must be a credential whose encoding actually pads:
+    /// `alice:s3cret` is 12 bytes, so it encodes to 16 characters with no
+    /// padding at all, and stripping `=` from it changes nothing.
+    #[test]
+    fn unpadded_credential_refused() {
+        let padded = base64::engine::general_purpose::STANDARD.encode("alice:s3cre");
+        assert!(
+            padded.ends_with('='),
+            "fixture must exercise padding, else the assertion is vacuous",
+        );
+        let err = verify(&raw_header(padded.trim_end_matches('=')), &store())
+            .expect_err("the unpadded form is not an RFC 7617 credential");
+        assert!(matches!(err, AuthError::InvalidCredentials));
+        // The padded form of a WRONG password still reaches the KDF and fails
+        // there, so the refusal above is about the encoding, not the password.
+        let wrong = verify(&raw_header(&padded), &store()).expect_err("wrong password");
+        assert!(matches!(wrong, AuthError::InvalidCredentials));
     }
 
     #[test]

@@ -127,6 +127,9 @@ fn run_config(
         ConfigCmd::Check => {
             let cfg = ferroehr::config::load(config, set).map_err(|e| anyhow::anyhow!("{e}"))?;
             cfg.validate().map_err(|e| anyhow::anyhow!("{e}"))?;
+            cfg.auth
+                .require_mechanism()
+                .map_err(|e| anyhow::anyhow!("{e}"))?;
             let rendered = cfg.to_redacted_toml().map_err(|e| anyhow::anyhow!("{e}"))?;
             println!("{rendered}");
             if cfg.db.is_dev_default() {
@@ -397,13 +400,12 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         spec_profile: config.spec_profile,
     };
 
-    if app_config.auth.enabled && !app_config.auth.has_mechanism() {
-        tracing::warn!(
-            "authentication is enabled but NO mechanism is configured — every API request \
-             will be refused with 401; add [[auth.basic.users]] entries or an [auth.oidc] \
-             issuer to the config, or set auth.enabled = false"
-        );
-    }
+    // RFC 9110 §11.6.1: a 401 challenge must name a scheme applicable to the
+    // target resource, and a server with no mechanism has none to name.
+    app_config
+        .auth
+        .require_mechanism()
+        .map_err(|e| anyhow::anyhow!("{e}"))?;
     tracing::info!(
         bind = %app_config.server.bind,
         base_path = %app_config.server.base_path,
