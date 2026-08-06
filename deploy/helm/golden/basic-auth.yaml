@@ -64,13 +64,25 @@ metadata:
 automountServiceAccountToken: false
 ---
 # Source: ferroehr/templates/secret.yaml
-# Mounted config files (TOML/PEM) at /etc/ferroehr — file-shaped material an
-# in-TOML `*_path`/`*_file` key points at: the PGP key, Cedar/ABAC policies,
-# ATNA PEMs, a JWKS blob. Mounted alongside ferroehr.toml.
+# Chart-managed Secret. In production prefer database.existingSecret (and an
+# external secret store / IRSA for the rest); anything set here is rendered from
+# values, so keep it out of committed values.
+#
+# Two key shapes live here, and the difference is deliberate. A key spelled
+# `<config.path>` is MOUNTED as a read-only file and reached through the config
+# tree's `*_file` sibling — the posture the OWASP Kubernetes Security Cheat Sheet
+# asks for, since an environment variable is readable through /proc/<pid>/environ
+# and inherited by every child process
+# (https://cheatsheetseries.owasp.org/cheatsheets/Kubernetes_Security_Cheat_Sheet.html).
+# A key spelled `FERROEHR__…` is injected as an environment VALUE. Only two are
+# left in that form — `audit.fhir_feed.url` and `multimedia.access_key_id`, the
+# remaining config keys with no `*_file` sibling. The DSN and the two AMQP URLs
+# moved to files once the server gained `db.url_file`, `events.url_file` and
+# `fhir.outbound.url_file`.
 apiVersion: v1
 kind: Secret
 metadata:
-  name: ferroehr-config
+  name: ferroehr-env
   labels:
     helm.sh/chart: ferroehr-4.0.0
     app.kubernetes.io/name: ferroehr
@@ -80,10 +92,31 @@ metadata:
     app.kubernetes.io/part-of: ferroehr
 type: Opaque
 stringData:
-  # ferroehr.toml lives HERE rather than in a ConfigMap because the configuration
-  # carries a secret the chart has no `secrets:` route for — today only a Basic
-  # user's Argon2id hash, whose config key has no `*_file` sibling. No ConfigMap
-  # is rendered in this mode; this is the file the pod reads.
+  auth.basic.users.clinician.password_hash: "$argon2id$v=19$m=19456,t=2,p=1$c2FsdA$hash"
+---
+# Source: ferroehr/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ferroehr
+  labels:
+    helm.sh/chart: ferroehr-4.0.0
+    app.kubernetes.io/name: ferroehr
+    app.kubernetes.io/instance: ferroehr
+    app.kubernetes.io/version: "3.17.3"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: ferroehr
+data:
+  # The whole server configuration as one ferroehr.toml, mounted at
+  # /etc/ferroehr/ferroehr.toml (config search-order position 4). Rendered by
+  # `ferroehr.configToml`, never from .Values.config verbatim: a ConfigMap is not
+  # a sensitive object, so a secret-bearing key is either refused (when a
+  # `secrets:` key carries it) or moves this whole file into the Secret, in which
+  # case this ConfigMap is not created at all.
+  # NOTE: Helm decodes values through JSON, so every number reaches a template as
+  # a float64 and `toToml` writes it back as a TOML float (`10.0`, `1.6777216e+07`)
+  # — the server's configuration layer coerces those onto integer keys, which is
+  # why the rendered file is accepted as written.
   ferroehr.toml: |
     spec_profile = "development"
     
@@ -101,7 +134,7 @@ stringData:
       [auth.basic]
     
         [[auth.basic.users]]
-          password_hash = "$argon2id$v=19$m=19456,t=2,p=1$c2FsdA$hash"
+          password_hash_file = "/etc/ferroehr-secrets/auth.basic.users.clinician.password_hash"
           roles = ["USER"]
           username = "clinician"
     
@@ -242,7 +275,7 @@ spec:
         # secret values. Hashing the ConfigMap template alone missed the last two,
         # so a rotated passphrase or an edited Cedar policy propagated into the
         # volume while every pod kept running on the value it read at startup.
-        checksum/config: 98cdf99ac1b523394ee5bee658557eb7b70335b172b6e2866dfa9a9f0be0487a
+        checksum/config: e34520697a2234e54ea2295b6ea425d93e699736cff3d583583e93e235426109
       labels:
         app.kubernetes.io/name: ferroehr
         app.kubernetes.io/instance: ferroehr
@@ -291,11 +324,8 @@ spec:
           # `*_file` sibling to point at the mounted volume instead; the rest are
           # `*_FILE` paths, which are not themselves sensitive.
           env:
-            - name: FERROEHR__DB__URL
-              valueFrom:
-                secretKeyRef:
-                  name: ferroehr-db
-                  key: FERROEHR__DB__URL
+            - name: FERROEHR__DB__URL_FILE
+              value: "/etc/ferroehr-secrets/db.url"
           livenessProbe:
             httpGet:
               path: /health/liveness
@@ -335,14 +365,44 @@ spec:
             - name: config
               mountPath: /etc/ferroehr
               readOnly: true
+            # File-borne secrets, read-only. NOT a subPath mount: a subPath-mounted
+            # Secret never receives updates, so a rotation would not propagate
+            # (https://kubernetes.io/docs/concepts/storage/volumes/#using-subpath).
+            - name: secrets
+              mountPath: /etc/ferroehr-secrets
+              readOnly: true
       volumes:
         - name: tmp
           emptyDir: {}
         - name: config
           projected:
             sources:
-              # Carries ferroehr.toml itself when the configuration holds a
-              # secret the chart cannot route elsewhere (then no ConfigMap
-              # exists), plus every config.files entry.
+              - configMap:
+                  name: ferroehr
+                  items:
+                    - key: ferroehr.toml
+                      path: ferroehr.toml
+        # File-borne secrets. A projected volume rather than a plain secret volume
+        # because the DSN may live in an EXTERNAL Secret the operator created,
+        # which has to be projected beside the chart's own — both under one mount,
+        # and not a subPath mount, so a rotated Secret still propagates.
+        - name: secrets
+          projected:
+            # Owner is root, group is fsGroup, so the group bit is what the
+            # non-root process reads through
+            # (https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod).
+            defaultMode: 0440
+            sources:
+              # The operator's Secret, projected as the file FERROEHR__DB__URL_FILE
+              # points at. Its key name is theirs (database.existingSecretKey);
+              # only the mounted PATH is fixed.
               - secret:
-                  name: ferroehr-config
+                  name: ferroehr-db
+                  items:
+                    - key: FERROEHR__DB__URL
+                      path: db.url
+              - secret:
+                  name: ferroehr-env
+                  items:
+                    - key: auth.basic.users.clinician.password_hash
+                      path: auth.basic.users.clinician.password_hash

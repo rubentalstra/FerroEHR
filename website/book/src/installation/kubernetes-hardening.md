@@ -48,6 +48,14 @@ Claims on this page about the running deployment come from `kubectl`, `crictl` o
 | Pod Security Admission enforcement | operator (one `kubectl label`) | [below](#pod-security-admission-complying-versus-being-refused) |
 | Service mesh | neither — recorded decision | [below](#service-mesh-a-recorded-decision) |
 | Centralized policy management | operator, for admission only | [below](#centralized-policy-and-which-engine) |
+| Container resource bounds | **chart** | [below](#resource-bounds-four-layers) |
+| Namespace `ResourceQuota`/`LimitRange` | operator | [below](#resource-bounds-four-layers) |
+| Egress restriction | **chart** (mechanism) + operator (destinations) | [below](#egress-deny-by-default-and-what-it-breaks) |
+| Secrets encrypted at rest | operator | [below](#secrets-at-rest-and-what-ours-contain) |
+| Runtime/syscall detection | operator (unusually cheap here) | [below](#runtime-detection-on-a-shell-less-image) |
+| Container sandboxing | neither — recorded decision | [below](#sandboxing-is-not-tenant-isolation) |
+| Kernel-module loading | **satisfied by the chart** | [below](#kernel-modules-already-impossible) |
+| Replica behavioural deviation | operator (from metrics we publish) | [below](#replica-deviation-and-the-outbound-inventory) |
 
 ## Host hardening and the version window
 
@@ -635,3 +643,378 @@ If you already run OPA/Gatekeeper for other reasons, keep it and add
 admission engines. The copyable provenance policy is
 [above](#image-provenance-at-admission), and Pod Security enforcement needs no
 engine at all — it is the namespace label in the previous section.
+
+## Resource bounds: four layers
+
+**Split exactly.** Container requests and limits are the chart's; namespace
+`ResourceQuota` and `LimitRange` are cluster-admin objects, and a workload chart
+that created one would be claiming the whole namespace for itself — wrong the
+moment anything else shares it.
+
+The chart's bounds, and where the numbers come from:
+
+| | Value | Derivation |
+|---|---|---|
+| `requests.cpu` | `250m` | the scheduling floor: enough to boot, run migrations and serve steady traffic. Measured steady-state use on an idle-but-serving pod is **2m**, so this is deliberately generous rather than tuned to the floor — a request is what the scheduler reserves, and a too-tight one gets the pod placed on a node with nothing left for a traffic spike. |
+| `requests.memory` | `256Mi` | measured steady-state **33Mi** resident, plus room for the connection pool, the template/WebTemplate cache and per-request AQL working set. |
+| `limits.cpu` | `2` | AQL execution is the CPU-heavy path and is bounded per query by `query.timeout_ms`; two cores lets a query and normal traffic proceed without throttling. CPU limits throttle rather than kill, so this trades latency, not availability. |
+| `limits.memory` | `1Gi` | a **hard** ceiling: exceeding it is an OOM kill, so it sits well above observed use. The application-level body and result limits below are what keep a single request from approaching it. |
+
+Those numbers are for a modest replica. Tune them from your own metrics rather than
+treating them as a recommendation — and remember that raising `replicaCount`
+multiplies the request, which is what a namespace quota will notice first.
+
+**The layering is the point**, and an operator should see it as one story — four
+nested bounds, each catching what the next cannot:
+
+1. **Per request** — `server.limits.body_bytes` (413 on an over-large body),
+   `query.timeout_ms` and `query.max_result_rows` (a query cannot return an
+   unbounded row set), `db.statement_timeout_ms` as the backstop the HTTP timeout
+   cannot be.
+2. **Per connection / per caller** — `server.connection.*` bounds a socket before
+   a request exists; `server.rate_limit` refuses `429`; the in-flight shed answers
+   `503` when the server is full.
+3. **Per container** — the requests and limits above.
+4. **Per namespace** — the operator's, and the only layer that protects *other*
+   workloads from this one:
+
+```yaml
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: ferroehr
+  namespace: ferroehr
+spec:
+  hard:
+    requests.cpu: "2"
+    requests.memory: 4Gi
+    limits.cpu: "12"
+    limits.memory: 8Gi
+    pods: "12"
+    count/services: "4"
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: ferroehr-defaults
+  namespace: ferroehr
+spec:
+  limits:
+    - type: Container
+      # A pod that arrives with no limits gets these, so nothing in the namespace
+      # can be unbounded by omission.
+      default: {cpu: "1", memory: 512Mi}
+      defaultRequest: {cpu: 100m, memory: 128Mi}
+      max: {cpu: "4", memory: 2Gi}
+```
+
+Size the quota above `replicaCount × requests` with headroom for a rolling
+upgrade — `maxSurge: 1` means one extra pod exists mid-rollout, and a quota with
+no room for it makes upgrades stall rather than fail, which looks like a hung
+deployment.
+
+## Egress: deny by default, and what it breaks
+
+**The mechanism is the chart's; the destinations are yours** — and this is the
+control where a NetworkPolicy stops being free.
+
+Enabling `networkPolicy.egress.enabled` refuses **all** outbound traffic except
+what is listed. DNS is always included, and the database is a first-class value
+because it is the only destination that is never optional:
+
+```yaml
+networkPolicy:
+  egress:
+    enabled: true
+    database:
+      to:
+        - ipBlock: {cidr: 10.0.12.7/32}     # a managed database
+        # or, in-cluster:
+        # - podSelector: {matchLabels: {app.kubernetes.io/name: postgres}}
+      port: 5432
+    rules: []                                # one entry per integration, below
+```
+
+> [!IMPORTANT]
+> Enabling egress with **no** database destination is refused at render time
+> rather than at rollout, because that mistake presents as a database fault:
+> readiness reports the DB down, the log shows a connect timeout, and nothing
+> mentions the network policy.
+
+**The destination set, derived from the configuration tree rather than from what a
+default install happens to use.** Every row is off unless its key is set, so add
+only the rows you have switched on:
+
+| Destination | Turned on by | Port | Typically |
+|---|---|---|---|
+| Cluster DNS | always | UDP+TCP 53 | in-cluster (always allowed) |
+| PostgreSQL | `db.url` — **never optional** | the DSN's (5432) | off-cluster (managed) |
+| OTLP collector | `telemetry.otlp_endpoint` | 4317 gRPC / 4318 HTTP | in-cluster |
+| OIDC issuer (discovery + JWKS) | `auth.oidc.issuer`, **unless** `auth.oidc.jwks_json`/`jwks_json_file` is supplied | 443 | off-cluster |
+| External policy decision point | `authz.abac.engine: remote` + `authz.abac.remote.server` | the URL's (3001) | in-cluster |
+| FHIR terminology server(s) | `terminology.external.enabled` + `…providers.<name>.url` | 443 | off-cluster |
+| Terminology token endpoint | `…oauth2_clients.<name>.token_url` | 443 | off-cluster |
+| AMQP broker (events) | `events.enabled` + `secrets.eventsUrl` | 5672, or 5671 with `events.tls` | in-cluster |
+| AMQP broker (FHIR outbound) | `fhir.outbound.enabled` + `secrets.fhirOutboundUrl` | 5672 / 5671 | in-cluster |
+| Object store | `multimedia.enabled` + `multimedia.endpoint` (unset ⇒ AWS regional resolution) | 443, or the endpoint's | off-cluster |
+| Syslog audit repository | `audit.syslog.enabled` | 514 UDP, or 6514 TCP with `transport: tls` | off-cluster |
+| FHIR audit repository | `audit.fhir_feed.enabled` + `secrets.auditFhirFeedUrl` | 443 | off-cluster |
+| Subject-proxy source system | `subject_proxy.systems.<name>.base_url` | 443 | off-cluster |
+
+> [!WARNING]
+> **A NetworkPolicy cannot match a DNS name.** The API selects peers by pod,
+> namespace or `ipBlock` CIDR only, so every off-cluster row above needs a CIDR
+> you supply and keep current. A managed database that moves IP, or a terminology
+> server behind a rotating CDN address, will break under a CIDR that was correct
+> when written. Where a provider publishes no stable range, the honest options are
+> an egress gateway with a fixed address, or leaving egress off and accepting that
+> outbound traffic is unrestricted — not a `0.0.0.0/0` rule that pretends to be a
+> policy.
+
+**Two failure modes worth knowing before you tighten this.**
+
+**An over-tight policy silently stops observability.** A blocked OTLP exporter
+does **not** fail the request that generated the span — it drops the span, with no
+log line and no error. So a policy that forgets the collector produces a server
+that is healthy by every check and has quietly stopped being observable. If you
+enable egress and traces disappear, look at the policy before the collector.
+
+**Tightening egress under a running pod appears to work when it has not.** A
+NetworkPolicy is enforced on new connections; existing conntrack flows survive. So
+a pod whose connection pool is already established keeps serving after you remove
+its database rule — and fails at the next restart, which may be a node drain at
+3am. Measured on this cluster:
+
+```text
+policy: DNS + database  → readiness 200 {"status":"UP", db UP, migrations UP}, POST /ehr 201
+remove the database rule (DNS only), pod untouched
+                        → readiness STILL 200, db STILL "UP"   ← the pool survives
+delete the pods so a fresh one must connect
+                        → readiness 503, both replicas unavailable
+                          kubelet: Readiness probe failed: HTTP probe failed with statuscode: 503
+restore the rule        → 2/2 ready again, with no restart
+```
+
+So: **verify an egress policy by restarting a pod, not by watching the one that is
+already running.** (The recovery in the last line needing no restart is the
+readiness check re-testing its dependencies on every probe — the same property
+described for [migrations](kubernetes.md#health-probes).)
+
+## Secrets at rest, and what ours contain
+
+**Operator's** — encryption at rest is an API-server flag
+(`--encryption-provider-config`), and **Kubernetes does not encrypt Secrets by
+default**. A `Secret` is base64-encoded, which is an encoding and not a
+protection: without that configuration, everything below sits readable in etcd,
+which is why [the etcd section](#etcd-and-what-our-secrets-contain) is the other
+half of this one.
+
+**The useful half is ours: exactly what this deployment's Secrets contain**, so
+you can judge the exposure rather than reading "secrets" generically.
+
+| Secret content | Present when | What it gets an attacker |
+|---|---|---|
+| **The database DSN** | always | **direct read/write access to all patient data**, bypassing the API, its authorization and its audit trail entirely |
+| The whole rendered `ferroehr.toml` | a Basic user is configured (it moves to a Secret) | the configuration, including that user's Argon2id hash |
+| A Basic user's Argon2id hash | as above | an offline cracking target, not a usable password |
+| The OIDC HMAC secret | `secrets.authOidcHmacSecret` (HS256 development setups) | the ability to **mint valid tokens** for any user and role |
+| The version-signing passphrase (+ the PGP key via `config.files`) | `signing.mode: pgp` | the ability to forge version signatures, breaking the integrity guarantee |
+| Terminology `client_secret` | `secrets.terminologyOauth2ClientSecrets.*` | access to that terminology server as this client |
+| AMQP broker URLs | `secrets.eventsUrl`, `secrets.fhirOutboundUrl` | the FHIR outbound stream **carries PHI**; the events stream is PHI-free by design |
+| The audit repository URL | `secrets.auditFhirFeedUrl` | the ability to read or forge audit records at the ARR |
+| S3 credentials | `secrets.multimedia*` | offloaded `DV_MULTIMEDIA` blobs, which **are PHI** |
+
+The first row is the one that matters most, and it has a property worth naming:
+**the DSN is a bearer credential.** Any process that can read it can use it, from
+anywhere the database is reachable — there is no binding to the workload that was
+issued it. That is the same gap named under
+[service mesh](#service-mesh-a-recorded-decision) (workload identity), reached
+from the other direction, and the mitigation is the same: a credential that is
+short-lived and issued to a workload identity rather than a long-lived password in
+an object.
+
+**Enable encryption at rest** with an
+[`EncryptionConfiguration`](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/)
+on every API server. Prefer a KMS provider over `aescbc`/`secretbox` with a local
+key: a key sitting in a file on the control-plane node is protected by the same
+boundary as the etcd data it encrypts. On a managed cluster this is usually one
+setting (envelope encryption with the provider's KMS) — check whether it is on,
+because it generally is not by default. Existing Secrets are only re-encrypted
+when rewritten, so follow the docs' `kubectl get secrets --all-namespaces -o json |
+kubectl replace -f -` step, or the encryption applies to new writes only.
+
+**Or remove them from etcd entirely.** Every secret this chart carries has a
+`*_file` route or an `existingSecret` route, so no code change is needed to source
+them from a secret manager:
+
+- **A CSI driver** ([Secrets Store CSI
+  Driver](https://secrets-store-csi-driver.sigs.k8s.io/) with the Vault, AWS,
+  Azure or GCP provider) mounts the value as a file. Point `extraVolumes` /
+  `extraVolumeMounts` at it and set the matching `*_file` configuration key —
+  `auth.oidc.hmac_secret_file`, `signing.key_passphrase_file`,
+  `multimedia.secret_access_key_file`, a terminology client's
+  `client_secret_file`. Nothing reaches a Kubernetes Secret at all.
+- **An operator that syncs into a Secret** (External Secrets Operator, Vault
+  Agent Injector) still lands in etcd, so it buys rotation rather than removal —
+  worth having, but pair it with encryption at rest.
+- **The DSN** is mounted too, from `database.existingSecret` via `db.url_file`, so
+  a CSI-provided Secret carries it like any other. What a mount does **not** fix is
+  that the DSN remains a *bearer* credential: cloud IAM database authentication is
+  the route that removes the standing password (the DSN then carries a short-lived
+  token), and `serviceAccount.annotations` exists for the IRSA/Workload-Identity
+  binding that needs.
+- **`audit.fhir_feed.url`** is now the only credential-bearing key with no `*_file`
+  sibling, so it is the one value still passed as environment.
+
+**Finding exposed secrets** (§4.10.4) is already covered in CI rather than left to
+an operator: Trivy's `secret` scanner runs over the whole tree and over every
+published image, so a credential committed to the repository or baked into a layer
+fails a job. The deliberate development credentials were checked against it and are
+not flagged, so nothing is exempted to make it pass.
+
+The volume-versus-environment half of this control — mounting secrets as read-only
+files rather than passing them as environment variables — is
+[covered on the Kubernetes page](kubernetes.md#secrets-and-mounted-config) and is
+already the chart's behaviour for every secret whose configuration key has a
+`*_file` sibling.
+
+## Runtime detection on a shell-less image
+
+**Operator's tooling** (Falco, Tetragon, or a managed equivalent), but the signals
+are unusually high-confidence here, and that is what makes it worth more than a
+recommendation.
+
+The runtime image is **distroless and shell-less**. There is no `sh`, no `bash`,
+no `curl`, no package manager, and the container runs one process. So the usual
+heuristics stop being heuristics:
+
+| Signal | Why it is unambiguous for this image |
+|---|---|
+| **Any `execve` of anything other than `/usr/local/bin/ferroehr`** | the image contains no other executable to run — a second process means one arrived from outside |
+| **A shell process in the container** | impossible under normal operation; there is no shell in the filesystem |
+| **A write outside `/tmp`** | the root filesystem is read-only and `/tmp` is the only declared writable mount — verified on the running container |
+| **An outbound connection to anything not in the egress table** | the [inventory](#egress-deny-by-default-and-what-it-breaks) is complete and small |
+| **Any attempt to load a kernel module, mount, or change namespaces** | the capability bounding set is empty, so these cannot succeed — an *attempt* is still a signal |
+
+A starter Falco rule set exploiting exactly that:
+
+```yaml
+- macro: ferroehr_container
+  condition: container.image.repository endswith "/ferroehr"
+
+- rule: FerroEHR unexpected process
+  desc: Any process other than the server binary in a shell-less image
+  condition: spawned_process and ferroehr_container and proc.exepath != "/usr/local/bin/ferroehr"
+  output: Unexpected process in FerroEHR container (proc=%proc.exepath parent=%proc.pname container=%container.id)
+  priority: CRITICAL
+
+- rule: FerroEHR write outside tmp
+  desc: The root filesystem is read-only; /tmp is the only writable mount
+  condition: open_write and ferroehr_container and not fd.name startswith "/tmp/"
+  output: Write outside /tmp in FerroEHR container (file=%fd.name proc=%proc.exepath container=%container.id)
+  priority: CRITICAL
+
+- rule: FerroEHR unexpected outbound connection
+  desc: Outbound to a destination outside the configured inventory
+  condition: >
+    outbound and ferroehr_container and
+    not fd.sport in (53) and not fd.sport in (5432, 4317, 4318, 443, 5671, 5672, 6514)
+  output: Unexpected egress from FerroEHR container (dest=%fd.rip:%fd.rport proc=%proc.exepath)
+  priority: WARNING
+```
+
+Tune the port list to the destinations you actually enabled; the point of the
+third rule is that the list is short enough to be worth writing.
+
+**What each layer sees, and cannot.** The syscall layer sees process execution,
+file writes and raw connections — a compromise of the *container* — but it has no
+idea which patient's record was read, because to it every request is bytes on an
+established socket. The **ATNA audit trail** sees exactly that: which subject
+accessed which EHR, through which operation, under which authenticated identity —
+but it is emitted *by* the application, so a compromise deep enough to control the
+process can stop or falsify it. They are complementary and neither substitutes:
+runtime detection is how you learn the process is not itself any more; the audit
+trail is how you answer what was accessed while it still was. Forwarding audit
+records **off-box** to an external repository (`audit.syslog`, `audit.fhir_feed`)
+is what keeps the second answer available after the first alarm.
+
+## Sandboxing is not tenant isolation
+
+**Not required, and the reason matters more than the conclusion.** The cheat sheet
+scopes sandboxing (Kata, gVisor, Firecracker) to clusters running *untrusted*
+workloads. This is our own code, so the threat it addresses — a container escape
+by hostile software you chose to run — is not the one in front of us.
+
+> [!IMPORTANT]
+> **A container sandbox does nothing for this server's multi-tenancy**, and that
+> is the misreading worth preventing. Tenants of a single release share **one
+> process and one database**; they are separated by PostgreSQL row-level security
+> and a per-request session GUC — *inside* the container. A sandbox draws a
+> stronger boundary around the whole container, which both tenants are already on
+> the same side of. Hardening the sandbox changes nothing about tenant isolation;
+> only the [namespace-per-tenant model](#namespaces-and-the-two-tenant-models)
+> moves that boundary.
+
+A sandbox is worth considering in one case: a cluster where this workload runs
+**beside** third-party or customer-supplied code, and you want to protect this
+workload's node from *that*. Note the cost first — a sandboxed runtime changes the
+syscall surface and the performance profile of a database-bound server, and the
+gVisor/Kata runtimes need a `RuntimeClass` the chart does not set (add it through
+your platform's pod defaults if you adopt one).
+
+## Kernel modules: already impossible
+
+**Satisfied by the chart's own posture**, which is unusual for a host-side control
+and worth recording precisely rather than deferring.
+
+Loading a kernel module requires **`CAP_SYS_MODULE`**. The container's capability
+bounding set is **empty** — verified on the running container via `crictl`
+(`capabilities.bnd: None`), not merely requested in the manifest — and
+`allowPrivilegeEscalation: false` with `noNewPrivileges` set means no
+`setuid` binary can regain it. So this container cannot trigger a module load at
+all, whatever `/etc/modprobe.d/` on the host says. An *attempt* would still be a
+[runtime-detection signal](#runtime-detection-on-a-shell-less-image); it just
+cannot succeed.
+
+Host-side blacklisting remains good practice **for the node**, and stays the
+operator's: it constrains every other workload on that node, including ones with
+capabilities this one does not have, and a privileged pod anywhere on the node can
+still load modules that affect this container's kernel.
+
+## Replica deviation and the outbound inventory
+
+**Operator's practice, from material the server already publishes** — which makes
+it more actionable here than the generic advice.
+
+Replicas of this Deployment are interchangeable: same image, same configuration,
+traffic distributed by the Service. So a metric that differs *per pod* is a signal,
+and the Prometheus surface is already per-pod (each pod is its own scrape target).
+Worth alerting on a divergence between pods rather than on an absolute value:
+
+| Comparison across pods | What a deviation suggests |
+|---|---|
+| request rate per pod | a load-balancing fault, or one pod being addressed directly, bypassing the Service |
+| error ratio (5xx / total) per pod | a pod-local fault: a broken database connection, an exhausted pool, a failing dependency one pod reaches and others do not |
+| p99 latency per pod | a throttled pod (CPU limit), a noisy neighbour, or a degraded node |
+| authentication-failure rate per pod | credential stuffing aimed at one endpoint — or a token-validation path failing on one pod (an unreachable JWKS endpoint) |
+| resident memory slope per pod | a leak or an unbounded working set on one replica only |
+| database pool acquire-wait per pod | that pod's pool is starved while others are not |
+
+The `/management/prometheus` endpoint (opened with
+`config.management.endpoints.prometheus`) is the source, and
+`metrics.serviceMonitor.enabled` is how an operator-managed Prometheus discovers
+it. Two things worth knowing: the ATNA audit trail gives a second, independent
+view — an access pattern that deviates per pod is visible there at
+patient-and-operation granularity — and a pod that fails readiness leaves the
+Service, so "one pod has zero traffic" can mean it is unready rather than
+unreachable.
+
+**The outbound inventory** the traffic half of this control asks for is the
+[egress table above](#egress-deny-by-default-and-what-it-breaks), derived from the
+configuration tree. In the chart's default posture, measured from node conntrack on
+a running pod, the complete set is **two destinations**: TCP 5432 to the database
+and UDP 53 to cluster DNS. Nothing else. That is what makes a deny-by-default
+egress policy tractable — the base allowance is two rules, and every addition is a
+named, configured endpoint rather than an open range. Compare live traffic against
+the policy periodically: a connection the policy permits and nothing makes is a
+rule to remove.

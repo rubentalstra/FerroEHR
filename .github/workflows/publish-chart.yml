@@ -162,14 +162,49 @@ jobs:
             --show-only templates/configmap.yaml \
             | sed -n '/ferroehr.toml: |/,$p' | sed '1d;s/^    //' > rendered.toml
           test -s rendered.toml
+
+          # The TOML is only half of what the chart hands the server: it also sets
+          # FERROEHR__* environment, and the strict boot-time sweep REFUSES an
+          # unknown one. Checking the file alone missed exactly that — measured on
+          # a live cluster, the chart's `FERROEHR__DB__URL_FILE` (added when the
+          # server gained `db.url_file`) crash-loops a 3.17.3 pod with
+          # `unknown configuration key url_file` while the rendered TOML checks out
+          # clean. So the env the Deployment declares is replayed here too, with a
+          # real file behind every `*_FILE` path.
+          mkdir -p envfiles
+          : > envargs
+          helm template ferroehr "$CHART_DIR" -f deploy/helm/ci/default-values.yaml \
+            --show-only templates/deployment.yaml \
+            | awk '/^            - name: FERROEHR__/ {n=$3} /^              value: / && n {v=$2; gsub(/"/,"",v); print n"="v; n=""}' \
+            > declared-env
+          cat declared-env
+          while IFS='=' read -r name value; do
+            [ -n "$name" ] || continue
+            case "$name" in
+              *_FILE)
+                f="envfiles/$(basename "$value")"
+                # A DSN-shaped file for the DSN, a token for everything else; the
+                # point is that the KEY is understood, not the value's content.
+                case "$name" in
+                  *DB__URL_FILE) printf 'postgres://u:p@db:5432/ferroehr' > "$f" ;;
+                  *) printf 'x' > "$f" ;;
+                esac
+                printf -- '-e\n%s=/etc/ferroehr-secrets/%s\n' "$name" "$(basename "$value")" >> envargs ;;
+              *) printf -- '-e\n%s=%s\n' "$name" "$value" >> envargs ;;
+            esac
+          done < declared-env
+          # No FERROEHR__DB__URL fallback when the chart supplies a file route.
+          grep -q 'DB__URL_FILE' declared-env || printf -- '-e\nFERROEHR__DB__URL=postgres://u:p@db:5432/ferroehr\n' >> envargs
+          # shellcheck disable=SC2046
           if ! docker run --rm -v "$PWD/rendered.toml:/etc/ferroehr/ferroehr.toml:ro" \
-               -e FERROEHR__DB__URL=postgres://u:p@db:5432/ferroehr \
+               -v "$PWD/envfiles:/etc/ferroehr-secrets:ro" \
+               $(tr '\n' ' ' < envargs) \
                --entrypoint /usr/local/bin/ferroehr "$image" config check > check.log 2>&1; then
             echo "::error::the chart's default configuration is not accepted by ${image} — a plain 'helm install' would crash-loop."
             cat check.log
             exit 1
           fi
-          echo "${image} accepts the chart's rendered default configuration."
+          echo "${image} accepts the chart's rendered default configuration and declared environment."
 
       # The per-release Artifact Hub annotations, derived from CHANGELOG.md so
       # there is one changelog rather than two (#2107). Injected at package time

@@ -37,20 +37,44 @@ spec:
             matchLabels:
               kubernetes.io/metadata.name: ingress-nginx
   egress:
-    # DNS is always required.
+    # DNS is always required: without it every destination below fails name
+    # resolution regardless of its own rule.
     - to: []
       ports:
         - port: 53
           protocol: UDP
         - port: 53
           protocol: TCP
+    # The database (never optional — the server cannot pass readiness without it).
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgres
+      ports:
+        - port: 5432
+          protocol: TCP
     - ports:
-      - port: 5432
+      - port: 4317
         protocol: TCP
       to:
       - podSelector:
           matchLabels:
-            app.kubernetes.io/name: postgres
+            app.kubernetes.io/name: otel-collector
+    - ports:
+      - port: 5671
+        protocol: TCP
+      to:
+      - podSelector:
+          matchLabels:
+            app.kubernetes.io/name: rabbitmq
+    - ports:
+      - port: 443
+        protocol: TCP
+      - port: 6514
+        protocol: TCP
+      to:
+      - ipBlock:
+          cidr: 203.0.113.0/24
 ---
 # Source: ferroehr/templates/poddisruptionbudget.yaml
 apiVersion: policy/v1
@@ -98,9 +122,11 @@ automountServiceAccountToken: false
 # asks for, since an environment variable is readable through /proc/<pid>/environ
 # and inherited by every child process
 # (https://cheatsheetseries.owasp.org/cheatsheets/Kubernetes_Security_Cheat_Sheet.html).
-# A key spelled `FERROEHR__…` is injected as an environment VALUE, which is the
-# honest interim for the three secrets whose config keys have no `*_file` sibling
-# (db.url, events.url, fhir.outbound.url).
+# A key spelled `FERROEHR__…` is injected as an environment VALUE. Only two are
+# left in that form — `audit.fhir_feed.url` and `multimedia.access_key_id`, the
+# remaining config keys with no `*_file` sibling. The DSN and the two AMQP URLs
+# moved to files once the server gained `db.url_file`, `events.url_file` and
+# `fhir.outbound.url_file`.
 apiVersion: v1
 kind: Secret
 metadata:
@@ -118,8 +144,8 @@ stringData:
   signing.key_passphrase: "dev-passphrase"
   multimedia.secret_access_key: "s3-secret"
   terminology.external.oauth2_clients.tx.client_secret: "tx-client-secret"
-  FERROEHR__EVENTS__URL: "amqps://user:pass@rabbitmq:5671/%2f"
-  FERROEHR__FHIR__OUTBOUND__URL: "amqps://user:pass@rabbitmq:5671/%2f"
+  events.url: "amqps://user:pass@rabbitmq:5671/%2f"
+  fhir.outbound.url: "amqps://user:pass@rabbitmq:5671/%2f"
   FERROEHR__AUDIT__FHIR_FEED__URL: "https://arr:arr-password@arr.example.com/fhir"
   FERROEHR__MULTIMEDIA__ACCESS_KEY_ID: "AKIAEXAMPLE"
 ---
@@ -380,7 +406,7 @@ spec:
         # secret values. Hashing the ConfigMap template alone missed the last two,
         # so a rotated passphrase or an edited Cedar policy propagated into the
         # volume while every pod kept running on the value it read at startup.
-        checksum/config: 3547eeb8daa0f72760d23751ba27f9f967b269aee518c959523f908670fe5fa8
+        checksum/config: a165250dd7f8359264f7760c12f03dad3a89fdb2e09b95517b2a5b17b8b24674
         prometheus.io/scrape: "true"
         prometheus.io/port: "9100"
         prometheus.io/path: "/management/prometheus"
@@ -435,25 +461,16 @@ spec:
           # `*_file` sibling to point at the mounted volume instead; the rest are
           # `*_FILE` paths, which are not themselves sensitive.
           env:
-            - name: FERROEHR__DB__URL
-              valueFrom:
-                secretKeyRef:
-                  name: ferroehr-db
-                  key: FERROEHR__DB__URL
+            - name: FERROEHR__DB__URL_FILE
+              value: "/etc/ferroehr-secrets/db.url"
             - name: FERROEHR__AUTH__OIDC__HMAC_SECRET_FILE
               value: "/etc/ferroehr-secrets/auth.oidc.hmac_secret"
             - name: FERROEHR__SIGNING__KEY_PASSPHRASE_FILE
               value: "/etc/ferroehr-secrets/signing.key_passphrase"
-            - name: FERROEHR__EVENTS__URL
-              valueFrom:
-                secretKeyRef:
-                  name: ferroehr-env
-                  key: FERROEHR__EVENTS__URL
-            - name: FERROEHR__FHIR__OUTBOUND__URL
-              valueFrom:
-                secretKeyRef:
-                  name: ferroehr-env
-                  key: FERROEHR__FHIR__OUTBOUND__URL
+            - name: FERROEHR__EVENTS__URL_FILE
+              value: "/etc/ferroehr-secrets/events.url"
+            - name: FERROEHR__FHIR__OUTBOUND__URL_FILE
+              value: "/etc/ferroehr-secrets/fhir.outbound.url"
             - name: FERROEHR__AUDIT__FHIR_FEED__URL
               valueFrom:
                 secretKeyRef:
@@ -527,22 +544,40 @@ spec:
               # exists), plus every config.files entry.
               - secret:
                   name: ferroehr-config
+        # File-borne secrets. A projected volume rather than a plain secret volume
+        # because the DSN may live in an EXTERNAL Secret the operator created,
+        # which has to be projected beside the chart's own — both under one mount,
+        # and not a subPath mount, so a rotated Secret still propagates.
         - name: secrets
-          secret:
-            secretName: ferroehr-env
+          projected:
             # Owner is root, group is fsGroup, so the group bit is what the
             # non-root process reads through
             # (https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod).
             defaultMode: 0440
-            items:
-              - key: auth.oidc.hmac_secret
-                path: auth.oidc.hmac_secret
-              - key: signing.key_passphrase
-                path: signing.key_passphrase
-              - key: multimedia.secret_access_key
-                path: multimedia.secret_access_key
-              - key: terminology.external.oauth2_clients.tx.client_secret
-                path: terminology.external.oauth2_clients.tx.client_secret
+            sources:
+              # The operator's Secret, projected as the file FERROEHR__DB__URL_FILE
+              # points at. Its key name is theirs (database.existingSecretKey);
+              # only the mounted PATH is fixed.
+              - secret:
+                  name: ferroehr-db
+                  items:
+                    - key: FERROEHR__DB__URL
+                      path: db.url
+              - secret:
+                  name: ferroehr-env
+                  items:
+                    - key: events.url
+                      path: events.url
+                    - key: fhir.outbound.url
+                      path: fhir.outbound.url
+                    - key: auth.oidc.hmac_secret
+                      path: auth.oidc.hmac_secret
+                    - key: signing.key_passphrase
+                      path: signing.key_passphrase
+                    - key: multimedia.secret_access_key
+                      path: multimedia.secret_access_key
+                    - key: terminology.external.oauth2_clients.tx.client_secret
+                      path: terminology.external.oauth2_clients.tx.client_secret
 ---
 # Source: ferroehr/templates/hpa.yaml
 apiVersion: autoscaling/v2

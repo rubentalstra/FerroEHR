@@ -60,25 +60,50 @@ fi
 declare -a CASES=(
   "default:${CI_DIR}/default-values.yaml"
   "all-features:${CI_DIR}/all-features-values.yaml"
-  "config-in-secret:${CI_DIR}/config-in-secret-values.yaml"
+  "basic-auth:${CI_DIR}/basic-auth-values.yaml"
 )
 
-# ── YAML validity check (PyYAML if present, else a helm re-parse) ─────────────
+# ── Rendered-manifest structure check (awk; there is no Python in this repo) ───
+# WELL-FORMEDNESS is not checked here because it is already checked twice, by
+# tools that must be present anyway — verified by feeding a deliberately broken
+# template through both: `helm template` exits 1, and `helm lint` reports
+# "unable to parse YAML: error converting YAML to JSON". Both run above.
+#
+# What those do NOT catch is a document that is valid YAML but not a Kubernetes
+# object: a template rendering a bare map produces only a helm-lint WARNING and a
+# successful `helm template` (verified the same way). So that is what this checks,
+# and it is the coverage the previous PyYAML implementation uniquely added — kept
+# rather than narrowed: every rendered document must carry a top-level
+# `apiVersion` and `kind`, and at least one document must exist.
 yaml_ok() {
   local file="$1"
-  if command -v python3 >/dev/null 2>&1 && python3 -c "import yaml" >/dev/null 2>&1; then
-    python3 - "$file" <<'PY'
-import sys, yaml
-docs = list(yaml.safe_load_all(open(sys.argv[1])))
-docs = [d for d in docs if d]
-assert docs, "no YAML documents rendered"
-for d in docs:
-    assert "kind" in d and "apiVersion" in d, f"doc missing kind/apiVersion: {d.get('metadata', {})}"
-print(f"  parsed {len(docs)} valid YAML document(s)")
-PY
-  else
-    echo "  (PyYAML absent — YAML validity implied by successful helm render)"
-  fi
+  awk '
+    function flush() {
+      if (has_content) {
+        docs++
+        if (!has_api || !has_kind) {
+          printf "  document %d (ending line %d) is missing %s%s\n", docs, NR,
+                 (has_api ? "" : "apiVersion "), (has_kind ? "" : "kind") > "/dev/stderr"
+          bad++
+        }
+      }
+      has_content = 0; has_api = 0; has_kind = 0
+    }
+    /^---[[:space:]]*$/ { flush(); next }
+    # A top-level key has no leading whitespace; comments and blanks are neither
+    # content nor keys.
+    /^[[:space:]]*$/ { next }
+    /^[[:space:]]*#/ { next }
+    { has_content = 1 }
+    /^apiVersion:/ { has_api = 1 }
+    /^kind:/       { has_kind = 1 }
+    END {
+      flush()
+      if (docs == 0) { print "  no YAML documents rendered" > "/dev/stderr"; exit 1 }
+      if (bad > 0)   { printf "  %d document(s) are not Kubernetes objects\n", bad > "/dev/stderr"; exit 1 }
+      printf "  %d rendered document(s), each with apiVersion + kind\n", docs
+    }
+  ' "$file"
 }
 
 # ── Security-field gate: every Restricted-profile field must be present ──────
@@ -162,6 +187,7 @@ secret_leak_gate() {
     "signing.key_passphrase"
     "multimedia.secret_access_key"
     "terminology.external.oauth2_clients.tx.client_secret"
+    "auth.basic.users[0].password_hash"
   )
   local refused=0
   for path in "${routed_paths[@]}"; do
@@ -187,8 +213,10 @@ secret_leak_gate() {
   # must move into the Secret and NO ConfigMap may exist. The second path is not
   # a real server key at all — it is the deny-by-default probe, and it is what
   # proves the guard classifies by name shape rather than from a fixed list.
+  # Nothing the server models is unroutable any more, so the only input that
+  # reaches this branch is a secret-shaped key the config tree does not define —
+  # which is exactly the deny-by-default case the branch exists for.
   local -a unrouted_paths=(
-    "auth.basic.users[0].password_hash"
     "server.future_api_key"
   )
   local moved=0

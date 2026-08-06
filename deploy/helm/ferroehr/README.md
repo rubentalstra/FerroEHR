@@ -183,7 +183,7 @@ Kubernetes: `>=1.25.0-0`
 | config.terminology.external.enabled | bool | `false` |  |
 | config.terminology.external.fail_on_error | bool | `false` |  |
 | database.existingSecret | string | `""` | Reference an existing Secret holding the app-role DSN (STRONGLY preferred for production — keeps the credential out of chart values and git). The secret's value must be a full `postgres://ferroehr_app:...@host:5432/ferroehr` (optionally `?sslmode=verify-full`). |
-| database.existingSecretKey | string | `"FERROEHR__DB__URL"` | Key within existingSecret holding the DSN (the env var name the server reads). |
+| database.existingSecretKey | string | `"FERROEHR__DB__URL"` | Key WITHIN existingSecret that holds the DSN. This is a Secret key name, not an environment variable name: the chart mounts that key as a file and passes only its PATH as `FERROEHR__DB__URL_FILE`, so the DSN never enters the pod's environment. The default spelling is kept for compatibility with existing Secrets created for the older env-borne arrangement. |
 | database.url | string | `""` | Inline DSN (DEV/TEST ONLY — lands in a chart-managed Secret). Leave empty and use existingSecret in production. Ignored when existingSecret is set. |
 | extraEnv | list | `[]` | Extra raw env vars (list of {name,value} or {name,valueFrom}). Escape hatch for anything not surfaced above (array-valued keys via comma-separated values, one-off FERROEHR_* overrides). |
 | extraEnvFrom | list | `[]` | Extra envFrom sources (configMapRef/secretRef). |
@@ -209,7 +209,9 @@ Kubernetes: `>=1.25.0-0`
 | metrics.serviceMonitor.scrapeTimeout | string | `"10s"` |  |
 | migrations.runByMigratorRole | bool | `true` | Purely informational marker rendered into NOTES for the operator; the chart never runs migrations itself. |
 | nameOverride | string | `""` | Override the chart name portion of resource names. |
-| networkPolicy.egress | object | `{"enabled":false,"rules":[]}` | Restrict egress too (default-deny egress except DNS + the DB/broker/TS). Off by default because egress targets are deployment-specific; see the doc. |
+| networkPolicy.egress.database | object | `{"port":5432,"to":[]}` | The database, which is NOT optional: the server cannot pass readiness without it. Rendering an egress policy with no database destination is a refusal, not a warning (see the template) — an egress policy that forgets the DSN is a total outage that looks like a database failure. `to` takes raw NetworkPolicyPeer entries: a `podSelector`/ `namespaceSelector` for an in-cluster database, or an `ipBlock` for a managed one. `port` is the DSN's port. |
+| networkPolicy.egress.enabled | bool | `false` | Refuse all outbound traffic except DNS, `database` and `rules`. |
+| networkPolicy.egress.rules | list | `[]` | Every other destination, as raw NetworkPolicyEgressRule entries — one per integration you have switched on. See the book's table. |
 | networkPolicy.enabled | bool | `true` | Install a default-deny-ingress NetworkPolicy that only admits traffic to the API (and management) port. Strongly recommended for a PHI workload. |
 | networkPolicy.ingressFrom | list | `[]` | Ingress `from` selectors admitted to the API port. Empty means the rule carries no `from` at all, and a NetworkPolicy ingress rule without `from` admits EVERY source — other namespaces and off-cluster clients included, not just this namespace (https://kubernetes.io/docs/concepts/services-networking/network-policies/). Only the port list is narrowed in that state, so SET this to your ingress-controller namespace/pods for a PHI workload. |
 | nodeSelector | object | `{}` | Scheduling. |
@@ -241,8 +243,9 @@ Kubernetes: `>=1.25.0-0`
 | resources | object | `{"limits":{"cpu":"2","memory":"1Gi"},"requests":{"cpu":"250m","memory":"256Mi"}}` | Resource requests/limits. Sized for a modest API replica; tune for load. |
 | secrets.auditFhirFeedUrl | string | `""` | FHIR base URL of the external Audit Record Repository for [audit.fhir_feed] (may carry basic-auth credentials in its userinfo) → FERROEHR__AUDIT__FHIR_FEED__URL env: audit.fhir_feed.url has no `*_file` sibling either. |
 | secrets.authOidcHmacSecret | string | `""` | Symmetric HS256 secret for [auth.oidc] (dev/test). MOUNTED as /etc/ferroehr-secrets/auth.oidc.hmac_secret (auth.oidc.hmac_secret_file). |
-| secrets.eventsUrl | string | `""` | AMQP broker URL for [events] (carries credentials) → FERROEHR__EVENTS__URL env: events.url has no `*_file` sibling to point at a mounted file. |
-| secrets.fhirOutboundUrl | string | `""` | AMQP broker URL for [fhir.outbound] (carries credentials) → FERROEHR__FHIR__OUTBOUND__URL env: fhir.outbound.url has no `*_file` sibling. |
+| secrets.basicUserPasswordHashes | object | `{}` | Argon2id password hashes for [[auth.basic.users]], keyed by username. Each is MOUNTED as /etc/ferroehr-secrets/auth.basic.users.<username>.password_hash and the chart injects the matching `password_hash_file` into the rendered TOML. Declare the user itself — `username`, `roles` — under config.auth.basic.users; a username with no matching entry is a render error. A hash under `config:` is refused: it would reach the ConfigMap. |
+| secrets.eventsUrl | string | `""` | AMQP broker URL for [events] (carries credentials). MOUNTED as /etc/ferroehr-secrets/events.url (events.url_file). |
+| secrets.fhirOutboundUrl | string | `""` | AMQP broker URL for [fhir.outbound] (carries credentials). MOUNTED as /etc/ferroehr-secrets/fhir.outbound.url (fhir.outbound.url_file). |
 | secrets.multimediaAccessKeyId | string | `""` | S3 access key id for [multimedia] → FERROEHR__MULTIMEDIA__ACCESS_KEY_ID env. Not a secret in the server's own model (it is reported unredacted by /management/env); prefer IRSA/Workload-Identity (leave empty) on cloud. |
 | secrets.multimediaSecretAccessKey | string | `""` | S3 secret access key for [multimedia]. MOUNTED as /etc/ferroehr-secrets/multimedia.secret_access_key (multimedia.secret_access_key_file). |
 | secrets.signingKeyPassphrase | string | `""` | PGP key passphrase (config.signing.mode=pgp). MOUNTED as /etc/ferroehr-secrets/signing.key_passphrase (signing.key_passphrase_file). |
