@@ -599,6 +599,29 @@ fn run_verdicts(
             render_certificate(&statement, &results, &report, matrix),
         ),
     ];
+    // The shields.io endpoints, derived here rather than downstream so a
+    // published count and the verdict beside it come from one rule.
+    let mut artifacts: Vec<(String, String)> = artifacts
+        .into_iter()
+        .map(|(name, body)| (name.to_owned(), body))
+        .collect();
+    for named in cnf_runner::badges::badges(
+        &report,
+        matrix,
+        cnf_runner::badges::CaseCounts::of(&results),
+    ) {
+        match serde_json::to_string_pretty(&named.badge) {
+            Ok(mut json) => {
+                json.push('\n');
+                artifacts.push((named.file, json));
+            }
+            Err(e) => {
+                eprintln!("cannot serialize the {} badge: {e}", named.file);
+                return ExitCode::from(2);
+            }
+        }
+    }
+
     for (name, body) in &artifacts {
         let path = out.join(name);
         if let Err(e) = std::fs::write(&path, body) {

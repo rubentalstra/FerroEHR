@@ -722,6 +722,41 @@ fn evidence_of(caps: &[(CapabilityName, Evidence)], name: &CapabilityName) -> Op
     caps.iter().find(|(n, _)| n == name).map(|(_, e)| *e)
 }
 
+/// The capabilities a tier's verdict is judged on — the SAME set the verdict
+/// functions below quantify over.
+///
+/// This exists so a published count and the verdict beside it cannot describe
+/// different sets. Deriving a count independently is what produced a "FAIL 5/5
+/// capabilities" badge once: the count was tier-local while the verdict was
+/// cumulative, and both were individually correct.
+///
+/// - `CORE` / `STANDARD`: the CUMULATIVE required Platform capabilities
+///   (`STANDARD` = CORE + STANDARD), matching [`required_all_passed`].
+/// - `OPTIONS`: the optional Platform capabilities, matching the any-passes
+///   rule in [`platform_profiles`].
+/// - `SEC-BASIC`: the required Security-family capabilities, matching
+///   [`security_verdict`].
+/// - The Enterprise tiers have no verdict rule, so they have no member set.
+#[must_use]
+pub fn tier_members(tier: Tier, matrix: &CapabilityMatrix) -> Vec<CapabilityName> {
+    let cumulative: &[Tier] = match tier {
+        Tier::Core => &[Tier::Core],
+        Tier::Standard => &[Tier::Core, Tier::Standard],
+        _ => &[],
+    };
+    matrix
+        .entries()
+        .iter()
+        .filter(|(_, e)| match tier {
+            Tier::Core | Tier::Standard => e.required && cumulative.contains(&e.tier),
+            Tier::Options => e.family == Family::Platform && !e.required && e.tier == Tier::Options,
+            Tier::SecBasic => e.required && e.family == Family::Security,
+            Tier::EnterpriseD | Tier::EnterpriseM | Tier::EnterpriseX => false,
+        })
+        .map(|(name, _)| name.clone())
+        .collect()
+}
+
 /// Every required capability of the given tiers is `Passed`.
 fn required_all_passed(
     tiers: &[Tier],

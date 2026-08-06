@@ -13,6 +13,7 @@
 // (C-QUESTION-MARK, https://rust-lang.github.io/api-guidelines/documentation.html#c-question-mark).
 #![doc(test(attr(deny(warnings))))]
 pub mod artifacts;
+pub mod badges;
 pub mod conf_assets;
 pub mod exec;
 pub mod ids;
