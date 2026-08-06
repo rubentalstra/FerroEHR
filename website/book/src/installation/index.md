@@ -23,6 +23,17 @@ fit cleanly in env, such as a Basic-auth user store or an OIDC block). The
 database schema is created and updated by the binary's migrations, which run
 automatically at boot.
 
+## Choosing a specification generation
+
+One top-level key, **`spec_profile`**, selects which openEHR specification
+generation set the deployment runs — `development` (the default: Reference
+Model 1.2.0 with BASE 1.3.0) or `stable` (the latest released generations:
+Reference Model 1.1.0 with BASE 1.2.0). It is a single coupled choice, and
+`stable → development` is always safe while the reverse is not, so decide it
+before you commit clinical data. The full semantics, defaults, and the
+direction contract are in
+[`spec_profile`](configuration.md#spec_profile).
+
 > [!NOTE]
 > A Clinical Data Repository stores PHI. In production the database must be an
 > externally managed, backed-up, point-in-time-recoverable PostgreSQL 18 — never

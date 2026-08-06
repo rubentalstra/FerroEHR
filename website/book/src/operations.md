@@ -445,7 +445,7 @@ The ops endpoints:
 
 | Endpoint | Purpose | Default access |
 |---|---|---|
-| `GET {base}/info` | build, version, and pinned spec versions | `admin_only` |
+| `GET {base}/info` | build, version, the active `spec_profile`, and the openEHR specification versions that profile selects | `admin_only` |
 | `GET {base}/prometheus` | Prometheus text exposition | `admin_only` (re-expose to the scraper via network policy) |
 | `GET {base}/metrics` | JSON registry view | `admin_only` |
 | `GET {base}/env` | effective configuration, with secrets redacted | `admin_only` |

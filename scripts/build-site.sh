@@ -86,6 +86,8 @@ if [[ "$MODE" != "--full" ]]; then
   # dev-only tree is self-consistent and the link gate stays meaningful.
   mkdir -p "$OUT/docs/latest"
   cp -R "$OUT/docs/dev/." "$OUT/docs/latest/"
+  log "injecting per-page search metadata"
+  cargo run -q -p docs-meta -- "$OUT" "$SITE_ORIGIN" "$SITE_BASE"
   log "dev-only site assembled at $OUT (latest aliased to dev)"
   exit 0
 fi
@@ -145,6 +147,12 @@ else
   mkdir -p "$OUT/docs/latest"
   cp -R "$OUT/docs/dev/." "$OUT/docs/latest/"
 fi
+
+# Per-page search metadata (canonical + description + Open Graph +
+# BreadcrumbList) — see tools/docs-meta for why this runs over the built HTML
+# rather than the mdBook theme. Idempotent.
+log "injecting per-page search metadata"
+cargo run -q -p docs-meta -- "$OUT" "$SITE_ORIGIN" "$SITE_BASE"
 
 # 9. sitemap.xml — landing + /api/ + the pages of /docs/latest/ only (§2d).
 log "generating sitemap.xml"

@@ -8,13 +8,14 @@ cloning that preserves version identity) and Template Data Document (TDD)
 import.
 
 > [!NOTE]
-> These capabilities are provided through the platform's **native service API**
-> (the openEHR SM platform-service catalogue), not as HTTP endpoints. The
-> ITS-REST 1.1.0 contract defines no extract, message, or TDD wire operations,
-> so the server exposes none — the conformance suite records the messaging
-> cases as _skipped with a reason_ (native-API-only) for exactly this reason.
-> If you need these operations over HTTP, they are an integration you build on
-> top of the native API, not a route the server serves today.
+> The openEHR **service model** defines a Message component, but the released
+> ITS-REST 1.1.0 contract publishes no extract, message, or TDD endpoint at
+> all. FerroEHR therefore serves these operations under a `/message` group of
+> its own design — the routes are ours, not the standard's, and they gate no
+> openEHR conformance claim. Unlike the admin extensions, they are **not**
+> admin-gated: they carry the same ordinary authentication as the clinical API.
+> The six routes, with their bodies, parameters, and status codes, are in
+> [Operations → The messaging API](../operations.md#the-messaging-api-ehr-extract-and-tdd-import).
 
 ## Exporting an EHR
 
@@ -65,12 +66,16 @@ composition (see [Templates & validation](../templates-validation.md)), so a
 malformed document, an unknown EHR, or an unknown template is rejected rather
 than partially stored.
 
-## Current limitations
+## Divergent copies and version branches
 
-Version branching is not enabled — the store is trunk-only — so importing a
-_modified_ copy of a record that has diverged on two systems is out of scope
-for this release; straight cloning and import of un-branched history are
-supported.
-The behaviour above is verified against the platform's native service traits and
-the conformance messaging cases; because there is no REST binding, there are no
-endpoints, headers, or status codes to document here.
+openEHR's version tree branches when a version that was created on another
+system is modified locally, and FerroEHR implements that: the local write forks
+a branch at the imported version's fork point, and the new version id ends in
+a three-part tree id (`…::2.1.1`) rather than a plain trunk number. Branch
+versions are served at the same URLs as trunk ones, appear in the history and in
+`ALL_VERSIONS` queries, and the *latest* version of an object is always the
+latest trunk version — see
+[Content negotiation & errors](../using-the-api/content-negotiation.md).
+So importing a modified copy of a record that has diverged on two systems is
+supported, and the divergence is visible in the version tree rather than
+flattened away.

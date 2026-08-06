@@ -297,9 +297,10 @@ unknown EHR:
 ```
 
 > [!NOTE]
-> The contribution envelope is always canonical JSON (or XML). The FLAT and
-> STRUCTURED formats, when used, apply only to the inner composition `data` of
-> each version, not to the envelope.
+> The contribution envelope is **canonical JSON only** — openEHR publishes no
+> CONTRIBUTION XML document, so an XML `Accept` on these routes is a `406`. The
+> FLAT and STRUCTURED formats, when used, apply only to the inner composition
+> `data` of each version, never to the envelope.
 
 ## Status-code summary
 

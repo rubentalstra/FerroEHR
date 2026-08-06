@@ -123,8 +123,10 @@ curl -u ferroehr:ferroehr \
   http://localhost:8080/ferroehr/rest/openehr/v1/definition/template/adl1.4/vital_signs
 ```
 
-FerroEHR follows the widely used Better `web-template` semantics (format
-version `2.3`), so tooling built for that model works unchanged.
+The WebTemplate is part of openEHR's own **Simplified Formats**
+sub-specification of ITS-REST 1.1.0, and FerroEHR emits its metadata format
+version `2.3` as that specification defines it — so tooling written against
+the standard model works unchanged.
 
 `Accept: application/json` on the same URL returns that identical WebTemplate
 document — it is the only JSON representation of a template — but labelled
@@ -168,8 +170,10 @@ to a template:
 
 Send the matching `Content-Type` when committing, or the matching `Accept` when
 retrieving, and the server converts between the flat/structured form and the
-canonical composition. These formats are a Better/EHRbase interoperability
-convenience; the canonical JSON and XML remain the openEHR-standard wire format.
+canonical composition. Both are defined by openEHR's **Simplified Formats**
+sub-specification of ITS-REST 1.1.0 — that specification text is the only
+authority the server follows here, and there is no vendor-compatibility mode.
+The canonical JSON and XML remain the full-fidelity wire format.
 They work against both ADL 1.4 and ADL2 templates: a FLAT or STRUCTURED commit
 keyed to an ADL2-registered template resolves and is validated against that
 template's archetype constraints exactly as an ADL 1.4 commit is.

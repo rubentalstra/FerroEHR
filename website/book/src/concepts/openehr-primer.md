@@ -20,7 +20,14 @@ a unit), `DV_CODED_TEXT` (a term from a terminology), `DV_DATE_TIME`,
 
 The RM is deliberately generic: it knows about "a quantity with a unit" but not
 about "systolic blood pressure in mmHg". That specificity comes from the layer
-above. FerroEHR implements **RM 1.2.0**.
+above.
+
+FerroEHR carries **two Reference Model generations** and one configuration key,
+`spec_profile`, chooses which the deployment runs: **RM 1.2.0** (the
+`development` default) or **RM 1.1.0** (`stable`, the latest released
+generation). openEHR's minor releases are additive, so data written against
+1.1.0 reads unchanged under 1.2.0. See
+[`spec_profile`](../installation/configuration.md#spec_profile).
 
 ## Archetypes and templates: the meaning layer
 
@@ -38,8 +45,9 @@ you need, narrows their optionality (mandatory here, hidden there), and pins
 down defaults. The template is what a CDR is actually loaded with.
 
 FerroEHR ingests templates in the **Operational Template (OPT) 1.4** XML
-format. Once a template is uploaded, the server derives everything it needs to
-validate incoming data and to describe the data's shape to client applications.
+format, and **ADL 2** artefacts as ADL2 source. Once a template is uploaded,
+the server derives everything it needs to validate incoming data and to
+describe the data's shape to client applications.
 
 > [!NOTE]
 > The order is always: agree on archetypes → build a template from them →
@@ -100,7 +108,7 @@ that archetype — that is the portability payoff. The
 
 ```mermaid
 flowchart TB
-    rm["Reference Model 1.2.0<br/>(generic building blocks)"]
+    rm["Reference Model<br/>(generic building blocks)"]
     arch["Archetypes<br/>(one clinical concept each)"]
     tmpl["Template (OPT 1.4)<br/>(archetypes assembled for a use)"]
     comp["Compositions<br/>(committed clinical documents)"]

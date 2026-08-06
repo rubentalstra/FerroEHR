@@ -14,13 +14,14 @@ flowchart TB
     specs["openEHR machine-readable specifications<br/>(Reference Model · XML schemas · OpenAPI — vendored &amp; pinned)"]
 
     subgraph gen ["Specification layer (generated, never hand-edited)"]
-        types["RM 1.2.0 types · canonical JSON &amp; XML<br/>ITS-REST contract (Release-1.1.0) · AQL 1.1 parser · SDT formats"]
+        types["Reference Model types (two generations) · canonical JSON &amp; XML<br/>ITS-REST contract (Release-1.1.0) · AQL 1.1 parser · Simplified Formats"]
     end
 
     subgraph app ["Application layer (the server)"]
         rest["REST adapter (axum)<br/>authentication · authorization · wire mapping"]
         sm["Native service API<br/>(SM Platform Service Model)"]
-        core["Platform: PG18 storage · versioning ·<br/>AQL→SQL engine · validation · signing · integrations"]
+        core["Platform: PG18 storage · versioning ·<br/>AQL→SQL engine · validation · signing"]
+        ext["Optional integrations<br/>(FHIR · events · multimedia — compiled in by cargo feature)"]
     end
 
     db[("PostgreSQL 18")]
@@ -28,6 +29,7 @@ flowchart TB
     specs -->|deterministic codegen, drift-checked in CI| gen
     rest --> sm
     core -->|implements| sm
+    core --> ext
     app --> gen
     core --> db
 ```
@@ -42,20 +44,36 @@ and fails the build on any divergence. A specification update is a
 regeneration, not a rewrite.
 
 **The application layer is the server** — everything the generated layer does
-not give you: storage, the query execution engine, validation, security, and
-the integration connectors. This is where design choices specific to
-FerroEHR live.
+not give you: storage, the query execution engine, validation, and security.
+This is where design choices specific to FerroEHR live. The optional
+integrations (FHIR, change events, S3 multimedia) sit beside it in their own
+crate behind additive cargo features, so a build without them contains none of
+their code — see [Beyond the core](../beyond-core/index.md).
+
+## Two specification generations, one selectable set
+
+The Reference Model is not pinned to a single version. The generated layer
+emits **two generations side by side** — the latest released one and the
+development one — and a single configuration key, `spec_profile`, picks which
+set the server runs: `development` (Reference Model 1.2.0 with BASE 1.3.0, the
+default) or `stable` (Reference Model 1.1.0 with BASE 1.2.0). Because openEHR's
+minor releases are additive supersets, everything valid under `stable` is valid
+under `development`; the reverse is not guaranteed, so the profile also acts as
+an **acceptance boundary** — a query naming a class or attribute the selected
+released generation does not define is refused, naming the active profile,
+rather than answering rows that would overclaim it. See
+[`spec_profile`](../installation/configuration.md#spec_profile).
 
 ## The native service API
 
 Internally the server is organised around the openEHR **Platform Service
-Model** — a standard catalogue of service interfaces (EHR, Composition,
-Directory, Contribution, Query, Definition, Terminology, Admin, and more). Each
-is a Rust trait carrying the specification's own operation names and parameters.
-The REST layer is a thin protocol adapter over that native API. Practically,
-this means the HTTP behaviour you observe maps one-to-one onto the standard's
-own service definitions, and the same core can be driven by adapters other than
-REST.
+Model** — a standard catalogue of service components (EHR, Composition,
+Directory, Contribution, Query, Definition, Terminology, Admin, and more) —
+one module per component, whose methods carry the specification's own operation
+names and parameters. The REST layer is a thin protocol adapter over that
+native API. Practically, this means the HTTP behaviour you observe maps
+one-to-one onto the standard's own service definitions, and the same core can
+be driven by adapters other than REST.
 
 ## Storage: the node model on PostgreSQL 18
 
