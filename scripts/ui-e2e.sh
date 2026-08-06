@@ -148,12 +148,12 @@ wait_http "$KEYCLOAK_URL/auth/realms/ferroehr/.well-known/openid-configuration" 
 echo "── resetting Keycloak test-user passwords"
 KC_TOKEN=$(curl -sf -X POST \
   -d "client_id=admin-cli" -d "username=admin" -d "password=admin" -d "grant_type=password" \
-  "$KEYCLOAK_URL/auth/realms/master/protocol/openid-connect/token" | python3 -c "import json,sys;print(json.load(sys.stdin)['access_token'])")
+  "$KEYCLOAK_URL/auth/realms/master/protocol/openid-connect/token" | jq -r '.access_token')
 for pair in "ferroehr-admin:E2ePass-admin1!" "ferroehr-user:E2ePass-user1!"; do
   user="${pair%%:*}"; pass="${pair#*:}"
   uid=$(curl -sf -H "Authorization: Bearer $KC_TOKEN" \
     "$KEYCLOAK_URL/auth/admin/realms/ferroehr/users?username=$user&exact=true" \
-    | python3 -c "import json,sys;print(json.load(sys.stdin)[0]['id'])")
+    | jq -r '.[0].id')
   curl -sf -X PUT -H "Authorization: Bearer $KC_TOKEN" -H "Content-Type: application/json" \
     -d "{\"type\":\"password\",\"value\":\"$pass\",\"temporary\":false}" \
     "$KEYCLOAK_URL/auth/admin/realms/ferroehr/users/$uid/reset-password"
@@ -165,21 +165,16 @@ done
 echo "── registering the console redirect URI on the ferroehr client"
 CLIENT_ID=$(curl -sf -H "Authorization: Bearer $KC_TOKEN" \
   "$KEYCLOAK_URL/auth/admin/realms/ferroehr/clients?clientId=ferroehr" \
-  | python3 -c "import json,sys;print(json.load(sys.stdin)[0]['id'])")
+  | jq -r '.[0].id')
 curl -sf -H "Authorization: Bearer $KC_TOKEN" \
   "$KEYCLOAK_URL/auth/admin/realms/ferroehr/clients/$CLIENT_ID" \
-  | CONSOLE_URL="$CONSOLE_URL" python3 -c "
-import json, os, sys
-c = json.load(sys.stdin)
-origin = os.environ['CONSOLE_URL']
-uris = set(c.get('redirectUris', []))
-uris.add(f'{origin}/*')
-c['redirectUris'] = sorted(uris)
-origins = set(c.get('webOrigins', []))
-origins.add(origin)
-c['webOrigins'] = sorted(origins)
-print(json.dumps(c))
-" > /tmp/kc-client.json
+  | jq --arg origin "$CONSOLE_URL" '
+      # Union-then-sort, as the previous version did: `unique` in jq both
+      # de-duplicates and sorts, so re-running this script is idempotent rather
+      # than accumulating duplicate redirect URIs on the Keycloak client.
+      .redirectUris = ((.redirectUris // []) + [$origin + "/*"] | unique)
+      | .webOrigins = ((.webOrigins // []) + [$origin] | unique)
+    ' > /tmp/kc-client.json
 curl -sf -X PUT -H "Authorization: Bearer $KC_TOKEN" -H "Content-Type: application/json" \
   -d @/tmp/kc-client.json \
   "$KEYCLOAK_URL/auth/admin/realms/ferroehr/clients/$CLIENT_ID"
@@ -200,7 +195,7 @@ opt_status=$(curl -s -o /dev/null -w "%{http_code}" -u ferroehr:ferroehr -X POST
 case "$opt_status" in 201|409) ;; *) echo "FATAL: template upload -> $opt_status" >&2; exit 1;; esac
 SEEDED_EHR_ID=$(curl -sf -u ferroehr:ferroehr -X POST "$CDR_V1/ehr" \
   -H "Prefer: return=representation" -H "Accept: application/json" \
-  | python3 -c "import json,sys; print(json.load(sys.stdin)['ehr_id']['value'])")
+  | jq -r '.ehr_id.value')
 curl -sf -u ferroehr:ferroehr "$CDR_V1/definition/template/adl1.4/$SEED_TEMPLATE/example" \
   -H "Accept: application/json" > /tmp/ui-e2e-example.json
 SEED_VUID=$(curl -sf -D - -o /dev/null -u ferroehr:ferroehr -X POST \
@@ -221,7 +216,7 @@ day=14
 for magnitude in 36.5 37.8 39.1; do
   extra_ehr=$(curl -sf -u ferroehr:ferroehr -X POST "$CDR_V1/ehr" \
     -H "Prefer: return=representation" -H "Accept: application/json" \
-    | python3 -c "import json,sys; print(json.load(sys.stdin)['ehr_id']['value'])")
+    | jq -r '.ehr_id.value')
   curl -sf -o /dev/null -u ferroehr:ferroehr -X POST \
     "$CDR_V1/ehr/$extra_ehr/composition" \
     -H "Content-Type: application/openehr.wt.flat+json" -H "Accept: application/json" \
