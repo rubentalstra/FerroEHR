@@ -95,6 +95,25 @@ services:
       - ferroehr-pgdata:/var/lib/postgresql
     ports:
       - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_DB_PORT:-5432}:5432"
+    # Isolation floor. The entrypoint starts as root to chown the data directory
+    # and then drops to `postgres`, so it needs exactly the capabilities that
+    # requires and nothing else — not the ~14 the default set grants.
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    # A read-only root still needs these writable: the unix socket directory, the
+    # entrypoint's scratch space, and PostgreSQL's own temp files.
+    tmpfs:
+      - /tmp
+      - /run
+      - /var/run/postgresql
+    ulimits:
+      nofile:
+        soft: 4096
+        hard: 8192
+    restart: unless-stopped
     # Resource ceilings (docs.docker.com/reference/compose-file/deploy;
     # docs.docker.com/engine/containers/resource_constraints) — the DB gets
     # headroom above the app for shared_buffers (1GB) + /dev/shm (1gb).
@@ -149,6 +168,29 @@ services:
         target: /etc/ferroehr/ferroehr.toml
     ports:
       - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_PORT:-8080}:8080"
+    # The image is distroless/nonroot and the server binds 8080, so it needs no
+    # capability at all — not even NET_BIND_SERVICE (that is for ports < 1024).
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    # NOT `read_only: true`, and the reason is a real mutual exclusion rather
+    # than an oversight: Compose refuses an INLINE config in a read-only service
+    # ("cannot create config … in read-only service …: `file` is the sole
+    # supported option"), and the inline `ferroehr-config` below is what makes
+    # this file standalone — downloadable and runnable with no repo checkout.
+    # Mounting the config from a host file instead would restore a read-only root
+    # and break that promise. The Kubernetes path has no such conflict, because
+    # the config arrives as a mounted ConfigMap, and
+    # `deploy/helm/ferroehr/values.yaml` sets `readOnlyRootFilesystem: true`
+    # there. A Compose deployment that wants both mounts a config FILE and adds
+    # `read_only: true` + `tmpfs: [/tmp]`.
+    tmpfs:
+      - /tmp
+    ulimits:
+      nofile:
+        soft: 8192
+        hard: 16384
+    restart: unless-stopped
     # Default sized to the party ixit's documented measurement envelope (the
     # committed measured records are environment-bound to the 8-CPU/8GB
     # docker VM; a 2cpu/1Gi cap halved the measured knee). Production limits
@@ -181,6 +223,17 @@ services:
       FERROEHR_ADMIN__CDR__BASE_URL: http://ferroehr:8080
     ports:
       - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_ADMIN_UI_PORT:-3000}:3000"
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    ulimits:
+      nofile:
+        soft: 4096
+        hard: 8192
+    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -214,13 +267,30 @@ services:
       - ferroehr-seaweedfs:/data
     ports:
       - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_S3_PORT:-8333}:8333"
+    cap_drop: [ALL]
+    # The image drops privileges with `su-exec`, which calls setgroups(2) — so
+    # SETGID/SETUID are load-bearing here. Verified empirically: without them the
+    # container loops on "su-exec: setgroups: Operation not permitted".
+    cap_add: [SETGID, SETUID]
+    security_opt:
+      - no-new-privileges:true
+    # NOT read_only: the gateway writes its volume store under /data, which is a
+    # named volume rather than the container filesystem.
+    ulimits:
+      nofile:
+        soft: 4096
+        hard: 8192
+    restart: unless-stopped
     deploy:
       resources:
         limits:
           cpus: "1"
           memory: 512M
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O - http://localhost:8333/ || exit 1"]
+      # 127.0.0.1, not `localhost`: the name resolves to ::1 first and the S3
+      # gateway listens on IPv4 only, so the loopback NAME never connected and
+      # this healthcheck could not pass.
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:8333/ || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 20
