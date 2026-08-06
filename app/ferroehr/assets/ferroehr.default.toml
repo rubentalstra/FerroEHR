@@ -50,6 +50,36 @@ enabled = false
 client_auth = "off"          # off | optional | required (required = IHE mTLS)
 #? client_ca_file = "/etc/ferroehr/client-ca.pem"
 
+# [server.limits] — the largest request body each route family accepts. Two
+# tiers: the clinical surface, and the routes that accept bulk by design
+# (operational-template upload, /message/import, /message/tdd). Over-limit is
+# refused 413. The defaults are sized against measured payloads — the largest
+# operational template in the vendored CKM corpus is 5.4 MB and the largest
+# example composition 526 KB — not round numbers. Raise body_bytes if your
+# compositions embed large DV_MULTIMEDIA data.
+[server.limits]
+body_bytes = 16777216        # 16 MiB — the ordinary clinical surface
+bulk_body_bytes = 67108864   # 64 MiB — template upload + the /message imports
+
+# [server.rate_limit] — per-caller request rates, refused 429 + Retry-After.
+# Distinct from max_in_flight above: that sheds 503 when too many requests are
+# in flight AT ONCE (capacity); this refuses 429 when one caller asks too often
+# OVER TIME (fairness). Two tiers: the address tier sits outside authentication
+# so a flood is refused before the server verifies a signature per request, and
+# the principal tier sits inside it, keyed on the authenticated subject —
+# address-keying a clinical API would throttle a whole hospital behind one NAT.
+# The defaults sit above this implementation's own measured whole-server ceiling
+# (512 req/s on the reference SUT), so the limiter cannot refuse a caller the
+# server could still have served; raise them in proportion for a larger
+# deployment class. Our own measurement lanes compose with this disabled
+# (docker/sut-measurement.yml) because they push past the knee deliberately.
+[server.rate_limit]
+enabled = true
+principal_per_second = 1024  # per authenticated subject, on the clinical API
+principal_burst = 2048
+address_per_second = 2048    # per client address, across the whole tree
+address_burst = 4096
+
 # [server.identity] — the OPTIONS / System-Options manifest. Defaults are the
 # measured build/provenance identity; override only to rebrand.
 #? [server.identity]

@@ -286,6 +286,88 @@ show a role-keyed break-glass permit and a scope-keyed write restriction.
 > When a patient claim is configured, a local subject gate also rejects access to
 > another patient's EHR before any policy call.
 
+## Response security headers
+
+Three surfaces, three honest answers — the set differs because what they serve
+differs, not because one was forgotten.
+
+**The REST API** carries, on every response including the transport-layer ones
+(`413` from the body limit, `408` from the timeout, `500` from the panic handler):
+
+| Header | Value | Why |
+|---|---|---|
+| `Cache-Control` | `no-store` | responses carry patient data; the OWASP cheat sheet names `no-store` for exactly that. It does not affect openEHR's `ETag`/`If-Match` concurrency control, which is a precondition mechanism, not a caching one |
+| `X-Content-Type-Options` | `nosniff` | stops a proxy or browser re-guessing `application/json` as something executable |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | request paths carry `ehr_id` and version identifiers; this keeps them out of cross-origin `Referer` headers |
+| `Cross-Origin-Resource-Policy` | `same-site` | refuses cross-site embedding of API responses |
+| `X-Frame-Options` | `DENY` | for the HTML this origin can serve (Swagger UI) |
+| `Content-Security-Policy` | `default-src 'none'; frame-ancestors 'none'` | the defensive minimum. The cheat sheet is explicit that CSP "might be meaningless in the response of a REST API that returns content that is not going to be rendered", so this is not a policy pretending to govern scripts — it says nothing loads and nothing frames |
+
+**`Strict-Transport-Security` is deliberately not sent by the API server.** It is a
+property of the TLS edge, and [RFC 6797 §7.2](https://www.rfc-editor.org/rfc/rfc6797#section-7.2)
+requires a browser to *ignore* it over plain HTTP — which is how this server is
+commonly reached behind a terminating proxy. Set it at the proxy or ingress that
+owns TLS; sending it from here would be inert at best and misleading at worst.
+
+**The admin console** additionally carries the browser set with a real CSP, because
+it serves HTML and hydrates WebAssembly.
+
+**The published documentation site cannot carry response headers at all.** GitHub
+Pages serves static files, so the policy travels as a `<meta http-equiv>` element,
+which is weaker by specification: `frame-ancestors`, `report-uri` and `sandbox`
+are ignored in meta form, and the policy applies only once the parser reaches it.
+It still blocks an injected external script or an exfiltrating connection, which
+is the realistic risk for a docs site. Anyone re-hosting these docs behind a real
+web server should send the headers properly instead.
+
+## Request limits and rate limiting
+
+Two different protections, two different statuses, and an operator should be able
+to tell them apart from the status alone.
+
+**Body size** — `[server.limits]`. Two tiers: the clinical surface, and the routes
+that accept bulk by design (template upload, `/message/import`, `/message/tdd`).
+Over-limit is `413`. The defaults are sized against measured payloads (the
+largest operational template in the vendored CKM corpus is 5.4 MB), and a
+deployment whose compositions embed large `DV_MULTIMEDIA` data raises
+`body_bytes` deliberately.
+
+**Request rate** — `[server.rate_limit]`, on by default. The **address** tier sits
+outside authentication so a flood is refused before the server verifies a
+signature per request; the **principal** tier sits inside it, keyed on the
+authenticated subject, because a hospital behind one NAT is a single address and
+address-keying a clinical API would throttle a whole site for one busy client.
+Refusal is `429` with `Retry-After`.
+
+**Concurrency** — `[server].max_in_flight`, the pre-existing load shed. Refusal is
+`503` with `Retry-After`.
+
+So: `503` means the server is full right now, `429` means you are asking too
+fast, `413` means your payload is too big. Full key tables are on the
+[configuration page](installation/configuration.md).
+
+**If you benchmark this server, turn the rate limiter off first**, or you will
+measure the limiter. Our own measurement lanes compose an overlay that disables
+it, and both instruments refuse to write a record if the server answered any
+`429` — a performance number that is really a configuration key is worse than no
+number.
+
+## Operational surfaces: what is reachable, and by whom
+
+| Surface | Default | Notes |
+|---|---|---|
+| `/health`, `/health/liveness`, `/health/readiness` | **always on, unauthenticated** | Deliberate: orchestrator probes must not need credentials. The payload is a status per component plus a fixed-string detail — never a driver error, a DSN, or a panic payload. Causes are logged for the operator instead. |
+| `/management/*` | **not mounted at all** (`management.enabled = false`) | With the master switch off, every route is `404`. |
+| `/management/{info,metrics,prometheus,env,loggers,flamegraph}` | each **`off`** individually | Even with the master switch on, each endpoint stays unmounted until given a level. The global fallback is `admin_only`, so a level set carelessly lands on the admin gate rather than open. |
+| `management.port` | unset (shares the API listener) | Set it to serve ops introspection from **its own listener**, which is how to get the port/interface separation the OWASP cheat sheet asks for — bind it away from the clinical interface. |
+
+`env` and `flamegraph` deserve their individual defaults: `env` renders the
+effective configuration (redacted, but still configuration), and `flamegraph`
+starts a CPU profiler on request, which is both a disclosure and a
+denial-of-service lever. Both are `off` by default and `admin_only` under the
+global fallback; the profiler additionally caps the window and sampling
+frequency, refusing an out-of-range request rather than clamping it silently.
+
 ## Secrets: mount files, never bake values
 
 Every secret this server reads has a `*_file` sibling, and the loader reads and
