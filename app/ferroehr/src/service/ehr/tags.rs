@@ -300,7 +300,7 @@ impl FerroEhrService {
             row.target_path.clone(),
             ehr_owner_ref(ehr_id),
         )
-        .map_err(|e| ServiceError::Internal(format!("stored ITEM_TAG row: {e}")))
+        .map_err(|e| ServiceError::internal("stored ITEM_TAG row", e))
     }
 }
 
@@ -370,7 +370,9 @@ pub(in crate::service) fn item_tag_refusal(
     err: &openehr_rm::v1_2::common::tags::item_tag_impl::ItemTagError,
 ) -> ServiceError {
     ServiceError::Unprocessable(
-        Violation::new(format!("item tag violates its RM invariants: {err}")).with_path("ITEM_TAG"),
+        Violation::new(format!("item tag violates its RM invariants: {err}"))
+            .with_path("ITEM_TAG")
+            .with_source(err.clone()),
     )
 }
 

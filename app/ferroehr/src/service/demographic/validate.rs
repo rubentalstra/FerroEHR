@@ -114,7 +114,9 @@ pub(crate) fn party_check(
         // NOTE: the released `responses/422.yaml` scopes 422 to content that
         // "could be converted to a resource" — a body the strict reader
         // refuses is the 400 row, as on every direct commit route.
-        typed.map_err(|e| ServiceError::BadRequest(format!("invalid canonical JSON body: {e}")))?;
+        typed.map_err(|e| {
+            ServiceError::bad_request(format!("invalid canonical JSON body: {e}"), e)
+        })?;
     }
     party_invariants(rm_type, data, incomplete)
 }
@@ -236,9 +238,10 @@ pub(crate) fn relationship_check(data: &Value, incomplete: bool) -> Result<(), S
         // "could be converted to a resource" — a body the strict reader
         // refuses is the 400 row, as on every direct commit route.
         Err(e) => {
-            return Err(ServiceError::BadRequest(format!(
-                "invalid canonical JSON body: {e}"
-            )));
+            return Err(ServiceError::bad_request(
+                format!("invalid canonical JSON body: {e}"),
+                e,
+            ));
         }
     };
     for (field, reference) in typed
@@ -362,13 +365,18 @@ mod tests {
     #[test]
     fn identities_valid_is_enforced() {
         for bad in [person(&json!([])), json!({ "_type": "PERSON" })] {
-            match party_check("PERSON", &bad, false) {
-                Err(ServiceError::BadRequest(m)) => assert!(
-                    m.contains("invalid canonical JSON body"),
-                    "the decode is the enforcement point, got {m}"
-                ),
-                other => panic!("an unconstructible body must be 400, got {other:?}"),
-            }
+            let err = party_check("PERSON", &bad, false)
+                .expect_err("an unconstructible body must be refused");
+            let api = openehr_its::rest::runtime::ApiError::from(err);
+            assert_eq!(
+                api.status(),
+                http::StatusCode::BAD_REQUEST,
+                "an unconstructible body must be 400, got {api:?}"
+            );
+            assert!(
+                api.to_string().contains("invalid canonical JSON body"),
+                "the decode is the enforcement point, got {api}"
+            );
         }
         party_check("PERSON", &person(&json!([identity()])), false)
             .expect("a party with one identity is valid");

@@ -93,6 +93,16 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- Server-fault log records now carry the underlying failure that caused them.
+  A `500`-class fault writes a `cause` field holding the full error chain — the
+  PostgreSQL driver error, codec refusal or HTTP transport failure, and
+  whatever caused *that* — instead of a single flattened sentence. Response
+  bodies are unchanged: every status code and every message a client receives
+  is byte-identical, and the cause never appears in one. ABAC attribute
+  resolution and policy-engine failures additionally name which step failed
+  (`resolve the EHR subject attribute`, `resolve the template attribute`,
+  `reach an authorization decision`) rather than one generic authorization
+  label.
 - **The published conformance badges are derived by the conformance runner, from the same rule as the verdicts they sit beside.** They were re-derived downstream by a separate ~90-line implementation of the tier semantics, which is how a badge once read `FAIL 5/5 capabilities`: the count was tier-local while the verdict was cumulative, and both were individually right. A count now quantifies over the very capability set its verdict was judged on, so that contradiction is no longer expressible and the self-check that used to catch it is gone rather than ported. Every committed badge regenerates byte-identically, apart from `badge.json`, where a middot is now a literal UTF-8 character instead of a `·` escape — the same string, differently spelled.
 
 - **Deleting a shared definition artefact now requires the admin role, whichever route you use.** `DELETE /definition/archetype/adl1.4/{archetype_id}` and `DELETE /definition/artefact/adl2/{artefact_id}` were clinical-class, so any authenticated principal could remove an archetype every EHR in the deployment validates against — while the neighbouring `DELETE /admin/template/{template_id}`, with exactly the same blast radius, required admin. The difference came from which path prefix a route happened to be given, not from a decision. **This tightens the wire**: a client deleting archetypes with a clinical role now gets `403`. Uploads are unchanged and stay clinical, as they always were. The specification decides that the three must match rather than which class they take — the SM puts removal of archetypes *and* templates in one clause and one pair of interfaces, and its Admin component names no definition artefact at all — so the choice of admin is ours, following the one privilege recommendation in the conformance text for irreversible deletion.

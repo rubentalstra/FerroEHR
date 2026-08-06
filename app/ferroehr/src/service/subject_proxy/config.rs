@@ -118,6 +118,7 @@ impl FhirSystemClient {
                 SmError::exception(format!(
                     "building subject-proxy FHIR client for system '{name}': {e}"
                 ))
+                .with_source(e)
             })?;
         Ok(Self { base, client })
     }

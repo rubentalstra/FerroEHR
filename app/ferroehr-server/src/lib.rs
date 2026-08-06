@@ -596,13 +596,13 @@ pub fn authz_resolvers(pool: PgPool, service: Arc<FerroEhrService>) -> AuthzReso
             let pool = pool.clone();
             Box::pin(async move {
                 let id = Uuid::parse_str(&ehr_id)
-                    .map_err(|e| ResolveError(format!("ehr id {ehr_id}: {e}")))?;
+                    .map_err(|e| ResolveError::new(format!("ehr id {ehr_id}"), e))?;
                 sqlx::query_scalar::<_, Option<String>>("SELECT subject_id FROM ehr WHERE id = $1")
                     .bind(id)
                     .fetch_optional(&pool)
                     .await
                     .map(Option::flatten)
-                    .map_err(|e| ResolveError(format!("ehr subject lookup: {e}")))
+                    .map_err(|e| ResolveError::new("ehr subject lookup", e))
             })
         }),
         template_of_version: Arc::new(move |vo: String, version: Option<String>| {
@@ -610,11 +610,11 @@ pub fn authz_resolvers(pool: PgPool, service: Arc<FerroEhrService>) -> AuthzReso
             Box::pin(async move {
                 let vo_id = vo
                     .parse::<ferroehr::ids::VoId>()
-                    .map_err(|e| ResolveError(format!("vo id {vo}: {e}")))?;
+                    .map_err(|e| ResolveError::new(format!("vo id {vo}"), e))?;
                 service
                     .template_of_version(vo_id, version.as_deref())
                     .await
-                    .map_err(|e| ResolveError(format!("template lookup: {e}")))
+                    .map_err(|e| ResolveError::new("template lookup", e))
             })
         }),
     }

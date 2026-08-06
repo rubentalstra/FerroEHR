@@ -8,6 +8,8 @@
 //! status codes, realized by [`ApiError`]). The tables here keep the three in
 //! lock-step; consistency is test-enforced below.
 
+use std::sync::Arc;
+
 use openehr_base::validate::InvariantViolation;
 use openehr_its::json::JsonParseError;
 use openehr_its::rest::runtime::ApiError;
@@ -26,7 +28,7 @@ use super::status::{CallStatusType, SmError};
 /// (`From<ServiceError> for ApiError` / `for SmError`).
 ///
 /// The rendering is `[<path> ]<detail>[: <cause>; …][ (<invariant>)]`.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct Violation {
     /// The RM attribute path the violation is about (`ATTESTATION.items`).
     path: Option<String>,
@@ -37,6 +39,11 @@ pub struct Violation {
     /// Violations a nested machine pass reported (an RM class-invariant run, a
     /// canonical-JSON decode failure with its JSON path).
     causes: Vec<InvariantViolation>,
+    /// The failure the refusal was raised FOR (a codec error, a template
+    /// compile failure), reachable through [`std::error::Error::source`] and
+    /// never part of the rendering above. Attach it with
+    /// [`Violation::with_source`].
+    source: Option<Arc<dyn std::error::Error + Send + Sync>>,
 }
 
 impl Violation {
@@ -50,6 +57,7 @@ impl Violation {
             invariant: None,
             detail: detail.into(),
             causes: Vec::new(),
+            source: None,
         }
     }
 
@@ -108,6 +116,40 @@ impl Violation {
     pub fn causes(&self) -> &[InvariantViolation] {
         &self.causes
     }
+
+    /// Attach the failure that caused this refusal, leaving the rendering — and
+    /// therefore the wire body — byte-identical.
+    ///
+    /// The cause is carried for the log and for anything walking the chain
+    /// ([RFC 0201](https://rust-lang.github.io/rfcs/0201-error-chaining.html)).
+    #[must_use]
+    pub fn with_source(mut self, source: impl std::error::Error + Send + Sync + 'static) -> Self {
+        self.source = Some(Arc::new(source));
+        self
+    }
+}
+
+/// Equality is over the FACTS a refusal states — path, invariant, detail and
+/// the reported causes. The attached [`std::error::Error`] source is
+/// diagnostic-only and no error type is comparable, so it takes no part.
+impl PartialEq for Violation {
+    fn eq(&self, other: &Self) -> bool {
+        self.path == other.path
+            && self.invariant == other.invariant
+            && self.detail == other.detail
+            && self.causes == other.causes
+    }
+}
+
+impl Eq for Violation {}
+
+impl std::error::Error for Violation {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self.source {
+            Some(source) => Some(&**source),
+            None => None,
+        }
+    }
 }
 
 impl std::fmt::Display for Violation {
@@ -144,7 +186,7 @@ pub enum ServiceError {
     /// SM has no status for (tenants, event subscriptions, FHIR mappings, item
     /// tags) use the generic `versioned_object_does_not_exist`.
     #[error("{0} not found")]
-    NotFound(SmError),
+    NotFound(#[source] SmError),
     /// The request is malformed at the semantic level (e.g. a stale/invalid
     /// `preceding_version_uid`, or an operation on an already-deleted object) —
     /// ITS-REST `400 Bad Request` (`400_already_deleted.yaml`).
@@ -160,7 +202,7 @@ pub enum ServiceError {
     /// carrying the violated rule as DATA ([`Violation`]: path, invariant,
     /// causes), rendered into prose only at the protocol edge.
     #[error("unprocessable: {0}")]
-    Unprocessable(Violation),
+    Unprocessable(#[source] Violation),
     /// A well-formed payload that fails semantic (template/RM/terminology)
     /// validation — carries the per-path violations as the RM validation data
     /// type ([`InvariantViolation`]), which the protocol bridges below render
@@ -179,7 +221,7 @@ pub enum ServiceError {
     /// (offset, expected token), because that is the only thing the caller can
     /// act on. Constructed explicitly at a read site; never by `?`.
     #[error("malformed json: {0}")]
-    JsonRead(serde_json::Error),
+    JsonRead(#[source] serde_json::Error),
     /// The server failed to serialize its OWN data — a server-side fault
     /// (`500`). This is the `From<serde_json::Error>` default (a bare `?` on a
     /// `serde_json` failure lands here), because the safe classification of an
@@ -208,6 +250,23 @@ pub enum ServiceError {
     /// by definition something the client cannot act on.
     #[error("internal: {0}")]
     Internal(String),
+    /// A failure carrying the error that CAUSED it, beside the SM status and
+    /// message the variants above carry as a bare string.
+    ///
+    /// The carried status routes to exactly the wire outcome
+    /// [`ServiceError::sm`] gives it, and the message is what the equivalent
+    /// flat variant would carry, so no response body changes. What the flat
+    /// variants cannot hold is the cause: a `String` payload has nowhere to put
+    /// the `sqlx`/codec/transport error that actually failed, and
+    /// `format!("…{e}")` destroys it before anything can walk it
+    /// ([RFC 0201](https://rust-lang.github.io/rfcs/0201-error-chaining.html)).
+    /// Here it rides [`SmError`]'s source field, out of the message — a
+    /// `500`-class body must disclose no internal error value.
+    ///
+    /// Construct via [`ServiceError::internal`] (a `500`) or
+    /// [`ServiceError::bad_request`] (a `400`).
+    #[error("{0}")]
+    Caused(#[source] SmError),
 }
 
 /// The client-visible message of a server-side fault (`500`). Deliberately
@@ -231,6 +290,77 @@ pub(crate) const INTERNAL_MESSAGE: &str = "the server encountered an internal er
 pub(crate) fn internal_fault(context: &'static str, detail: &dyn std::fmt::Display) -> SmError {
     tracing::error!(context, error = %detail, "internal server fault → 500");
     SmError::new(CallStatusType::Exception, INTERNAL_MESSAGE.to_owned())
+}
+
+/// Record a server-side fault AND its whole cause chain on the trace record,
+/// and return the curated opaque `exception` [`SmError`] its 500-class body
+/// carries.
+///
+/// The sibling of [`internal_fault`] for a fault that carries a
+/// [`std::error::Error`] source: the `cause` field is the walked
+/// [`std::error::Error::source`] chain, which is the only place the underlying
+/// `sqlx`/codec/transport diagnosis is readable — it never reaches the wire.
+fn internal_fault_caused(
+    context: &'static str,
+    error: &(dyn std::error::Error + 'static),
+) -> SmError {
+    if let Some(cause) = error.source() {
+        tracing::error!(
+            context,
+            error = %error,
+            cause = %ErrorChain::new(cause),
+            "internal server fault → 500"
+        );
+    } else {
+        tracing::error!(context, error = %error, "internal server fault → 500");
+    }
+    SmError::new(CallStatusType::Exception, INTERNAL_MESSAGE.to_owned())
+}
+
+/// A [`std::fmt::Display`] view of an error and its remaining source chain.
+///
+/// The hops are joined with `: ` — the log rendering of a carried cause
+/// ([RFC 0201](https://rust-lang.github.io/rfcs/0201-error-chaining.html)).
+///
+/// For a trace field only: a chain ends in whatever its innermost source knows
+/// (SQL text, a DSN, an internal URL), which is exactly what a 5xx response
+/// body must not disclose.
+///
+/// # Examples
+///
+/// ```
+/// use ferroehr::service::error::ErrorChain;
+///
+/// #[derive(Debug, thiserror::Error)]
+/// #[error("outer")]
+/// struct Outer(#[source] Inner);
+/// #[derive(Debug, thiserror::Error)]
+/// #[error("inner")]
+/// struct Inner;
+///
+/// assert_eq!(ErrorChain::new(&Outer(Inner)).to_string(), "outer: inner");
+/// ```
+#[derive(Debug)]
+pub struct ErrorChain<'a>(&'a (dyn std::error::Error + 'static));
+
+impl<'a> ErrorChain<'a> {
+    /// A chain view rooted at `error`.
+    #[must_use]
+    pub fn new(error: &'a (dyn std::error::Error + 'static)) -> Self {
+        Self(error)
+    }
+}
+
+impl std::fmt::Display for ErrorChain<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)?;
+        let mut next = self.0.source();
+        while let Some(cause) = next {
+            write!(f, ": {cause}")?;
+            next = cause.source();
+        }
+        Ok(())
+    }
 }
 
 impl ServiceError {
@@ -295,6 +425,37 @@ impl ServiceError {
             S::NotImplemented | S::ServiceOverloaded => ServiceError::Internal(m),
         }
     }
+
+    /// A server-side fault (`500`) that carries the failure which caused it.
+    ///
+    /// `context` names the step that failed and is a LOG detail: the client
+    /// body is [`INTERNAL_MESSAGE`] on both bridges, never this text and never
+    /// the cause. The cause is reachable through
+    /// [`std::error::Error::source`], which is what lets an operator read the
+    /// `sqlx`/codec diagnosis the flat [`ServiceError::Internal`] string
+    /// destroys.
+    #[must_use]
+    pub fn internal(
+        context: impl Into<String>,
+        source: impl std::error::Error + Send + Sync + 'static,
+    ) -> Self {
+        ServiceError::Caused(SmError::exception(context).with_source(source))
+    }
+
+    /// A malformed-request refusal (`400`) that carries the failure which
+    /// caused it.
+    ///
+    /// `detail` is the client-visible text, unchanged from what the flat
+    /// [`ServiceError::BadRequest`] carried: a `4xx` describes the caller's own
+    /// request, so naming the defect there is the contract. The cause rides the
+    /// source chain for the log and for callers that branch on it.
+    #[must_use]
+    pub fn bad_request(
+        detail: impl Into<String>,
+        source: impl std::error::Error + Send + Sync + 'static,
+    ) -> Self {
+        ServiceError::Caused(SmError::precondition(detail).with_source(source))
+    }
 }
 
 impl From<ServiceError> for SmError {
@@ -317,6 +478,7 @@ impl From<ServiceError> for SmError {
     /// | `Storage`/`Database`      | classified: 409/503/500      |      |
     /// | `JsonRead`                | `PreconditionViolation`      | 400  |
     /// | `JsonWrite`/`Signing`/`Internal` | `Exception`           | 500  |
+    /// | `Caused`                  | its carried status            |      |
     ///
     /// `NotFound` carries the granular does-not-exist [`SmError`] it was
     /// constructed with ([`ServiceError::sm`]), so the round-trip restores the
@@ -379,8 +541,40 @@ impl From<ServiceError> for SmError {
             ServiceError::JsonWrite(e) => internal_fault("serialize a JSON payload", &e),
             ServiceError::Signing(m) => internal_fault("sign or verify a version", &m),
             ServiceError::Internal(m) => internal_fault("complete the request", &m),
+            ServiceError::Caused(sm) => caused_sm_error(sm),
         }
     }
+}
+
+/// The SM half of the [`ServiceError::Caused`] row: a `500`-class status
+/// answers the curated opaque message (with the whole cause chain traced),
+/// every other status IS already the [`SmError`] the wire needs — cause
+/// included, message untouched.
+fn caused_sm_error(sm: SmError) -> SmError {
+    if is_server_fault(sm.status) {
+        internal_fault_caused("complete the request", &sm)
+    } else {
+        sm
+    }
+}
+
+/// Whether an SM status is one [`ServiceError::sm`] routes to
+/// [`ServiceError::Internal`] — the `500`-class rows whose body is the curated
+/// opaque message, never the carried detail.
+///
+/// The single authority both [`ServiceError::Caused`] bridges consult, so a
+/// cause-carrying failure lands on exactly the wire outcome its flat twin does.
+fn is_server_fault(status: CallStatusType) -> bool {
+    use super::status::CallStatusType as S;
+    matches!(
+        status,
+        S::Success
+            | S::Exception
+            | S::FileNotWritable
+            | S::AuthFailure
+            | S::NotImplemented
+            | S::ServiceOverloaded
+    )
 }
 
 impl From<ServiceError> for ApiError {
@@ -432,6 +626,12 @@ impl From<ServiceError> for ApiError {
             ServiceError::Internal(m) => {
                 ApiError::Internal(internal_fault("complete the request", &m).message)
             }
+            // The cause-carrying row: routed by its SM status through exactly
+            // the table above, so the wire outcome equals the flat variant's.
+            ServiceError::Caused(sm) if is_server_fault(sm.status) => {
+                ApiError::Internal(internal_fault_caused("complete the request", &sm).message)
+            }
+            ServiceError::Caused(sm) => ApiError::from(ServiceError::sm(sm.status, sm.message)),
         }
     }
 }
@@ -680,6 +880,180 @@ mod tests {
                 );
             }
         }
+    }
+
+    /// Every SM status a [`ServiceError::Caused`] can carry lands on exactly
+    /// the wire outcome — status AND body text — its cause-less twin produces.
+    ///
+    /// This is the whole safety property of carrying a cause: the chain is a
+    /// new fact for the operator, never a change to what the client is told.
+    /// Both bridges are checked, over every `CallStatusType`.
+    #[test]
+    fn a_carried_cause_changes_no_wire_outcome() {
+        for status in every_status() {
+            let flat_api = ApiError::from(ServiceError::sm(status, "m"));
+            let caused_api = ApiError::from(ServiceError::Caused(
+                crate::service::status::SmError::new(status, "m").with_source(cause()),
+            ));
+            assert_eq!(
+                caused_api.status(),
+                flat_api.status(),
+                "row {} diverged on status",
+                status.sm_name()
+            );
+            assert_eq!(
+                caused_api.to_string(),
+                flat_api.to_string(),
+                "row {} diverged on body text",
+                status.sm_name()
+            );
+
+            let flat_sm = crate::service::status::SmError::from(ServiceError::sm(status, "m"));
+            let caused_sm = crate::service::status::SmError::from(ServiceError::Caused(
+                crate::service::status::SmError::new(status, "m").with_source(cause()),
+            ));
+            assert_eq!(
+                caused_sm.message,
+                flat_sm.message,
+                "row {} diverged on the SM message",
+                status.sm_name()
+            );
+            // The two SM statuses need not be the same NAME: a flat variant with
+            // a bare-string payload (`Conflict`, `Unprocessable`) has no slot for
+            // WHICH conflict or WHICH 422 it was, so its bridge substitutes a
+            // representative status (see the conversion table above) where the
+            // cause-carrying row keeps the one it was built with. What must hold
+            // is that both land on the same wire outcome.
+            assert_eq!(
+                ApiError::from(ServiceError::sm(caused_sm.status, "m")).status(),
+                ApiError::from(ServiceError::sm(flat_sm.status, "m")).status(),
+                "row {} routed the two SM statuses to different wire codes",
+                status.sm_name()
+            );
+        }
+    }
+
+    /// A carried cause stays WALKABLE — [`std::error::Error::source`] reaches
+    /// the concrete underlying error type, which is the whole point of RFC 0201
+    /// chaining — while never appearing in the `500`-class body.
+    #[test]
+    fn a_carried_cause_is_walkable_and_never_on_the_wire() {
+        use std::error::Error;
+
+        let err = ServiceError::internal("read a stored version row", cause());
+        let first = Error::source(&err).expect("a carried cause must be reachable");
+
+        let mut hops = Vec::new();
+        let mut found = None;
+        let mut next = Some(first);
+        while let Some(step) = next {
+            hops.push(step.to_string());
+            if let Some(io) = step.downcast_ref::<std::io::Error>() {
+                found = Some(io.kind());
+            }
+            next = step.source();
+        }
+        assert_eq!(
+            found,
+            Some(std::io::ErrorKind::PermissionDenied),
+            "walking the chain must reach the underlying std::io::Error, got {hops:?}"
+        );
+
+        // The same chain must be invisible to the client on both bridges.
+        let leaked = "the node table is not readable";
+        let api = ApiError::from(ServiceError::internal("read a stored version row", cause()));
+        assert_eq!(api.status(), http::StatusCode::INTERNAL_SERVER_ERROR);
+        assert!(
+            !api.to_string().contains(leaked),
+            "the wire 500 body leaked the cause: {:?}",
+            api.to_string()
+        );
+        let sm = crate::service::status::SmError::from(ServiceError::internal(
+            "read a stored version row",
+            cause(),
+        ));
+        assert!(
+            !sm.message.contains(leaked) && !sm.message.contains("read a stored version row"),
+            "the SM 500 message leaked the fault detail: {:?}",
+            sm.message
+        );
+    }
+
+    /// A [`Violation`] with a carried cause renders EXACTLY as one without —
+    /// the 422 body is the refusal's own facts, and the cause is chain-only.
+    #[test]
+    fn a_violation_cause_is_chain_only() {
+        use std::error::Error;
+
+        let plain =
+            Violation::new("is not a valid PARTY_PROXY").with_path("AUDIT_DETAILS.committer");
+        let carried = Violation::new("is not a valid PARTY_PROXY")
+            .with_path("AUDIT_DETAILS.committer")
+            .with_source(cause());
+        assert_eq!(carried.to_string(), plain.to_string());
+        assert_eq!(carried, plain, "equality is over the facts, not the cause");
+        assert!(Error::source(&plain).is_none());
+        // The hop must be the CONCRETE cause, not a smart-pointer wrapper
+        // around it — otherwise no caller can branch on what actually failed.
+        assert_eq!(
+            Error::source(&carried)
+                .and_then(|c| c.downcast_ref::<std::io::Error>())
+                .map(std::io::Error::kind),
+            Some(std::io::ErrorKind::PermissionDenied)
+        );
+
+        let api = ApiError::from(ServiceError::Unprocessable(carried));
+        assert_eq!(
+            api.to_string(),
+            ApiError::from(ServiceError::Unprocessable(plain)).to_string()
+        );
+    }
+
+    /// A stand-in underlying failure whose `Display` is exactly the kind of
+    /// internal detail a `500` body must never carry.
+    fn cause() -> std::io::Error {
+        std::io::Error::new(
+            std::io::ErrorKind::PermissionDenied,
+            "the node table is not readable",
+        )
+    }
+
+    /// Every `CallStatusType` variant, so the parity check above cannot miss a
+    /// row (the enum is deliberately exhaustive — see its type docs).
+    fn every_status() -> [S; 31] {
+        [
+            S::Success,
+            S::AuthFailure,
+            S::PreconditionViolation,
+            S::ObjectVersionDoesNotExist,
+            S::VersionedObjectDoesNotExist,
+            S::Exception,
+            S::EhrIdDoesNotExist,
+            S::PartyIdDoesNotExist,
+            S::FileNotWritable,
+            S::VersionMismatch,
+            S::NotImplemented,
+            S::Conflict,
+            S::ServiceOverloaded,
+            S::CompositionDoesNotExist,
+            S::ContributionDoesNotExist,
+            S::CompositionArchetypeInvalid,
+            S::EhrCreateFailDuplicateId,
+            S::CompositionAlreadyExists,
+            S::EhrForSubjectAlreadyExists,
+            S::InvalidArchetype,
+            S::InvalidTemplate,
+            S::InvalidArtefact,
+            S::InvalidQuery,
+            S::InvalidIdPattern,
+            S::ArtefactDoesNotExist,
+            S::TemplateDoesNotExist,
+            S::DefinitionUnknown,
+            S::ContentInvalid,
+            S::VersionDoesNotExist,
+            S::SubjectIdDoesNotExist,
+            S::VersionedCompositionDoesNotExist,
+        ]
     }
 
     /// Every granular does-not-exist status must survive the

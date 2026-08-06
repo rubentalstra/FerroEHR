@@ -228,6 +228,8 @@ impl FerroEhrService {
             return Ok(ir);
         }
         // Miss: full parse → terminology expansion → lowering.
+        // NOTE: `parse_str` reports a located grammar diagnostic as a `String`,
+        // so there is no cause to carry — the diagnostic IS the answer.
         let mut ast = parse_str(aql)
             .map_err(|e| Failure::analysis(SmError::precondition(format!("invalid AQL: {e}"))))?;
         // Semantic-analysis pre-pass: resolve every `TERMINOLOGY('expand', …)`
@@ -428,7 +430,7 @@ fn record_phase(phase: &'static str, start: Instant) {
 fn map_plan_error(e: AqlError) -> SmError {
     match e {
         AqlError::Feature(_) | AqlError::Analysis(_) | AqlError::Sql(_) => {
-            SmError::precondition(e.to_string())
+            SmError::precondition(e.to_string()).with_source(e)
         }
         AqlError::Exec(inner) => map_exec_error(inner.into()),
     }
@@ -455,7 +457,7 @@ fn map_exec_error(e: AqlError) -> SmError {
             internal_fault("bind a RESULT_SET column to its generated SQL alias", &e)
         }
         AqlError::Feature(_) | AqlError::Analysis(_) | AqlError::Sql(_) => {
-            SmError::precondition(e.to_string())
+            SmError::precondition(e.to_string()).with_source(e)
         }
     }
 }
