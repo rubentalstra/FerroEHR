@@ -67,6 +67,32 @@ impl AuthConfig {
         self.basic.is_some() || self.oidc.is_some()
     }
 
+    /// The authentication schemes this deployment can name in a `401`
+    /// challenge, in the order it offers them.
+    ///
+    /// RFC 9110 §11.6.1 requires a challenge to name a scheme applicable to the
+    /// target resource, so this is exactly the set a `WWW-Authenticate` may
+    /// carry. Returned as display text for the boot log: an operator reading
+    /// `Basic, Bearer` can see at a glance which tables actually took effect.
+    /// `none` when no mechanism is configured (only reachable with
+    /// [`Self::enabled`] off — [`Self::require_mechanism`] refuses that
+    /// combination at boot).
+    #[must_use]
+    pub fn advertised_mechanisms(&self) -> String {
+        let mut schemes: Vec<&str> = Vec::new();
+        if self.basic.is_some() {
+            schemes.push("Basic");
+        }
+        if self.oidc.is_some() {
+            schemes.push("Bearer");
+        }
+        if schemes.is_empty() {
+            "none".to_owned()
+        } else {
+            schemes.join(", ")
+        }
+    }
+
     /// Validates the configured mechanisms at boot.
     ///
     /// Each present mechanism table is judged on its own terms, whatever
