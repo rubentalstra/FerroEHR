@@ -49,13 +49,11 @@ pub struct SmartConfig {
     /// The token claim carrying the resolved openEHR `EHR` id for the launch
     /// context (master07 §Context Selection token-response table: `ehrId`).
     /// Default `ehrId`.
-    #[serde(default = "default_ehr_id_claim")]
     pub ehr_id_claim: String,
 
     /// The fallback launch-context claim when [`Self::ehr_id_claim`] is absent
     /// (the standard SMART `patient` context attribute, master07). Default
     /// `patient`.
-    #[serde(default = "default_patient_claim")]
     pub patient_claim: String,
 
     /// Fail-closed switch (master08 §Scopes ¶2: the Platform must validate
@@ -169,8 +167,8 @@ impl Default for SmartConfig {
             enabled: false,
             platform_base_url: None,
             public_base_url: None,
-            ehr_id_claim: default_ehr_id_claim(),
-            patient_claim: default_patient_claim(),
+            ehr_id_claim: "ehrId".to_owned(),
+            patient_claim: "patient".to_owned(),
             require_smart_scopes: false,
             episode: EpisodeConfig::default(),
             launch_base64_json: false,
@@ -242,14 +240,6 @@ impl SmartConfig {
             );
         }
     }
-}
-
-fn default_ehr_id_claim() -> String {
-    "ehrId".to_owned()
-}
-
-fn default_patient_claim() -> String {
-    "patient".to_owned()
 }
 
 #[cfg(test)]

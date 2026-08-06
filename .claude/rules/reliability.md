@@ -210,6 +210,18 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   `clippy::too_long_first_doc_paragraph` (tier 3) for the RFC 1574 doc
   summary line. Change-narration and prose deferrals stay review-enforced
   (no tool can judge them).
+- **A field's default value lives in its struct's `Default` impl, inline**
+  (owner directive 2026-08-06; the shape of RFC 3681, whose own syntax is
+  nightly-only — feature `default_field_values`,
+  <https://github.com/rust-lang/rust/issues/132162>). Banned: the per-field
+  `#[serde(default = "path")]` form (it lets `Default::default()` and a
+  deserialized value disagree about one field — a silent wrong configuration
+  value, the failure class this file exists to prevent), zero-argument
+  `fn default_x()` constructors, and single-reader `const DEFAULT_X`. A
+  constant with several consumers stays a constant and may be read from inside
+  the `Default` impl. Enforcement (tier 4):
+  `scripts/check-default-style.sh` — per-edit via the `rust_fmt_clippy.sh`
+  hook, per-PR via the `default-style` CI job (`--all`).
 
 ## Recorded deviations from the API Guidelines (deliberate, owner-adjudicated)
 
@@ -220,6 +232,26 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   `_type` dispatch, and validated-constructor parsing live in auditable
   code (root `CLAUDE.md` §Code generation). The wire contract stays pinned
   by the canonical-output gates.
+- **RFC 0356 (no module-name repetition) — UNSATISFIABLE under two of our own
+  hard rules, and currently unenforced** (adjudicated 2026-08-06). The RFC
+  (<https://rust-lang.github.io/rfcs/0356-no-module-prefixes.html>) offers
+  exactly two ways to cope with the name collisions it creates: qualify by
+  module (`io::Error`) or rename on import (`use io::Error as IoError`).
+  Import renaming is banned outright (`rust-style.md`), and under zero
+  re-exports the qualified path is not `io::Error` but
+  `crate::config::server::Config` — so with eleven modules each defining a
+  `Config`, every use site would carry a full path inline. Renaming the 273
+  hand-written candidates would make the code LESS readable under our own
+  import rules, and the 141 generated ones are immovable (the emitter mirrors
+  BMM class names, and `codegen.md` forbids trimming the model). Enforcement
+  status is honest: `clippy::module_name_repetitions` moved from `pedantic` to
+  `restriction` in clippy 1.84, so `pedantic = deny` does NOT cover it — the
+  lint is off, deliberately, and this entry is why.
+- **RFC 2008 `#[non_exhaustive]` / `clippy::exhaustive_enums` — REJECTED for
+  the spec model** (adjudicated 2026-08-06). openEHR subtype sets are closed
+  BY THE BMM; a forced `_ =>` arm would turn a modelled fact into a silent
+  fallthrough and defeat the exhaustiveness checking that makes a spec-model
+  change a compile error. 1672 sites, and the rejection is on merit, not cost.
 - **C-PERMISSIVE — MIT for the project's own code** (owner decision
   2026-07-31; coverage corrected 2026-08-04, issue #1883): the project's own
   code is MIT-licensed; vendored third-party material keeps its upstream

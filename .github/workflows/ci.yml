@@ -188,6 +188,27 @@ jobs:
       - name: Comment style on changed Rust files
         run: bash scripts/check-comment-style.sh --all
 
+  # Default-value style (.claude/rules/rust-style.md §Default values): a field's
+  # default lives inline in its struct's `Default` impl — the RFC 3681 shape,
+  # hand-written because that syntax is nightly-only.
+  #
+  # CHANGED-FILES mode until the pre-existing set is swept (#2033): the rule
+  # arrived after the tree, so a `--all` gate would fail every PR for violations
+  # it did not introduce. This blocks NEW ones from the moment it lands, and the
+  # sweep issue flips the argument to `--all` (which additionally enables the
+  # single-reader `const` check — that one counts readers tree-wide).
+  default-style:
+    name: default-style
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Default values live in the struct's Default impl
+        run: bash scripts/check-default-style.sh
+
   # ── Always required: supply-chain policy ────────────────────────────────────
   # cargo-deny alone: `cargo deny check` reads the SAME RustSec advisory DB as
   # cargo-audit and additionally enforces yanked = "deny" (deny.toml

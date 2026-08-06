@@ -26,7 +26,14 @@ everywhere else flag "no openEHR spec governs configuration — our own design".
   workspace — `grep -rn figment` over the manifests must stay empty.
 - **No per-struct `load()`.** Section structs are plain
   `#[serde(default, deny_unknown_fields)]` data with a `Default` that is the
-  single source of defaults. Loading happens once, in `ferroehr::config::assemble`
+  single source of defaults — and that `Default` is ONE hand-written impl with
+  every value inline: no `#[serde(default = "path")]`, no `fn default_x()`
+  helper, no single-reader `const DEFAULT_X` (the RFC 3681 shape;
+  `rust-style.md` §Default values, guarded by
+  `scripts/check-default-style.sh`). A per-field default attribute is the one
+  way `Default::default()` and a deserialized value can disagree about the same
+  key, which is exactly what a config loader must never allow.
+  Loading happens once, in `ferroehr::config::assemble`
   (a pure `fn(file, env_map, overrides)`), behind the process-env shim
   `ferroehr::config::load`. Subsystem constructors take the typed section by
   value/ref — never read the environment themselves (no `std::env::var`, no
