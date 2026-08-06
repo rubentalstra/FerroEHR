@@ -2775,6 +2775,7 @@ dependencies = [
  "thirtyfour",
  "thiserror 2.0.19",
  "tokio",
+ "tower-http 0.7.0",
  "tower-sessions",
  "tracing",
  "tracing-subscriber",

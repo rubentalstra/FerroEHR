@@ -327,10 +327,9 @@ to tell them apart from the status alone.
 
 **Body size** — `[server.limits]`. Two tiers: the clinical surface, and the routes
 that accept bulk by design (template upload, `/message/import`, `/message/tdd`).
-Over-limit is `413`. The defaults are sized against measured payloads (the
-largest operational template in the vendored CKM corpus is 5.4 MB), and a
-deployment whose compositions embed large `DV_MULTIMEDIA` data raises
-`body_bytes` deliberately.
+Over-limit is `413`. The defaults are sized to clear the largest operational
+template in the vendored corpus several times over, and a deployment whose
+compositions embed large `DV_MULTIMEDIA` data raises `body_bytes` deliberately.
 
 **Request rate** — `[server.rate_limit]`, on by default. The **address** tier sits
 outside authentication so a flood is refused before the server verifies a
