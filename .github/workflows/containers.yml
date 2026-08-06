@@ -232,6 +232,8 @@ jobs:
     permissions:
       contents: read
       packages: write # push the app image to GHCR
+      id-token: write # Sigstore, for the signed attestations
+      attestations: write # store them against this repository
     needs: binary
     outputs:
       digest: ${{ steps.build.outputs.digest }}
@@ -292,6 +294,26 @@ jobs:
           provenance: mode=max
           sbom: true
 
+      # Sign the provenance BuildKit already produced. `provenance: mode=max` +
+      # `sbom: true` put SLSA v0.2 provenance and an SPDX SBOM on the image index,
+      # but UNSIGNED — a consumer could read them and had no way to tell they were
+      # not forged. This binds them to this repository's build identity through
+      # Sigstore, the control OWASP's CI/CD cheat sheet asks for beyond commit
+      # signing and lockfile hashes.
+      #
+      # GitHub's native attestation rather than slsa-github-generator: no new
+      # secret, and no third-party reusable workflow inside the publish path. It
+      # does not claim the isolation-based SLSA build levels, because the
+      # provenance is generated in the same job that builds — an honest boundary
+      # rather than an asserted level.
+      #
+      #   gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:TAG -R rubentalstra/FerroEHR
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-name: ${{ env.APP_IMAGE }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
   # ── Admin console: server binary per arch + the arch-independent site ───────
   # The WASM/JS/CSS site bundle is architecture-independent, so cargo-leptos
   # runs ONCE (amd64: bin + site); the arm64 job builds only the ssr binary
@@ -395,6 +417,8 @@ jobs:
     permissions:
       contents: read
       packages: write # push the console image to GHCR
+      id-token: write # Sigstore, for the signed attestations
+      attestations: write # store them against this repository
     needs: admin-ui-binary
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -435,6 +459,7 @@ jobs:
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
 
       - name: Package and push
+        id: build_admin_ui
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: .
@@ -451,6 +476,15 @@ jobs:
           provenance: mode=max
           sbom: true
 
+      # Signed provenance, as on the app image above.
+      #
+      #   gh attestation verify oci://ghcr.io/rubentalstra/ferroehr-admin-ui:TAG -R rubentalstra/FerroEHR
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-name: ${{ env.ADMIN_UI_IMAGE }}
+          subject-digest: ${{ steps.build_admin_ui.outputs.digest }}
+          push-to-registry: true
   # ── PostgreSQL image (only on docker/postgres changes or tags; multi-arch) ──
   # COPY-only on top of postgres:18.4, so multi-arch needs no QEMU either.
   postgres-image:
@@ -460,6 +494,8 @@ jobs:
     permissions:
       contents: read
       packages: write # push the postgres image to GHCR
+      id-token: write # Sigstore, for the signed attestations
+      attestations: write # store them against this repository
     needs: changes
     if: >-
       needs.changes.outputs.postgres == 'true' ||
@@ -489,6 +525,7 @@ jobs:
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
 
       - name: Build and push
+        id: build_postgres
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: docker/postgres
@@ -501,6 +538,15 @@ jobs:
           provenance: mode=max
           sbom: true
 
+      # Signed provenance, as on the app image above.
+      #
+      #   gh attestation verify oci://ghcr.io/rubentalstra/ferroehr-postgres:TAG -R rubentalstra/FerroEHR
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-name: ${{ env.POSTGRES_IMAGE }}
+          subject-digest: ${{ steps.build_postgres.outputs.digest }}
+          push-to-registry: true
   # ── Smoke test (amd64): pull the pushed image, compose up, exercise the API ──
   image-scan:
     name: image vulnerability scan
