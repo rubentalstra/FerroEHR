@@ -187,7 +187,7 @@ if [ -z "${CONF_NO_COMPOSE:-}" ] && [ "$SUT" != "byo" ]; then
     ready=""
     for _ in $(seq 1 60); do
       code=$(curl -s -o /dev/null -w '%{http_code}' \
-        "http://localhost:${FERROEHR_EHRBASE_PORT:-8091}/ferroehr/rest/status" || true)
+        "http://localhost:${FERROEHR_EHRBASE_PORT:-8091}/ehrbase/rest/status" || true)
       case "$code" in
         200|401|403) ready=1; break ;;
       esac

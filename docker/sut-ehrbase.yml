@@ -22,10 +22,12 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      FERROEHR_USER_ADMIN: ferroehr
-      FERROEHR_PASSWORD_ADMIN: ferroehr
-      FERROEHR_USER: ferroehr_restricted
-      FERROEHR_PASSWORD: ferroehr_restricted
+      # The image's own contract: its baked createdb.sql reads these EHRBASE_ keys
+      # and creates the database `ehrbase` — neither is ours to rename.
+      EHRBASE_USER_ADMIN: ehrbase
+      EHRBASE_PASSWORD_ADMIN: ehrbase
+      EHRBASE_USER: ehrbase_restricted
+      EHRBASE_PASSWORD: ehrbase_restricted
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -38,11 +40,11 @@ services:
       ehrbase-db:
         condition: service_healthy
     environment:
-      DB_URL: jdbc:postgresql://ehrbase-db:5432/ferroehr
-      DB_USER_ADMIN: ferroehr
-      DB_PASS_ADMIN: ferroehr
-      DB_USER: ferroehr_restricted
-      DB_PASS: ferroehr_restricted
+      DB_URL: jdbc:postgresql://ehrbase-db:5432/ehrbase
+      DB_USER_ADMIN: ehrbase
+      DB_PASS_ADMIN: ehrbase
+      DB_USER: ehrbase_restricted
+      DB_PASS: ehrbase_restricted
       SECURITY_AUTHTYPE: BASIC
       SECURITY_AUTHUSER: ferroehr
       SECURITY_AUTHPASSWORD: ferroehr

@@ -1,7 +1,7 @@
 {
   "instances": {
     "sut": {
-      "base_url": "http://localhost:8091/ferroehr/rest/openehr/v1",
+      "base_url": "http://localhost:8091/ehrbase/rest/openehr/v1",
       "auth": {
         "mode": "basic",
         "user_env": "SUT_USER",
@@ -9,7 +9,7 @@
       }
     },
     "admin": {
-      "base_url": "http://localhost:8091/ferroehr/rest/openehr/v1",
+      "base_url": "http://localhost:8091/ehrbase/rest/openehr/v1",
       "auth": {
         "mode": "basic",
         "user_env": "SUT_ADMIN_USER",
@@ -17,7 +17,7 @@
       }
     },
     "unauthenticated": {
-      "base_url": "http://localhost:8091/ferroehr/rest/openehr/v1",
+      "base_url": "http://localhost:8091/ehrbase/rest/openehr/v1",
       "auth": {
         "mode": "none"
       }
