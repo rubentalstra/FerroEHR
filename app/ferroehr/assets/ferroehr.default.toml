@@ -113,6 +113,7 @@ http2_keep_alive_timeout_secs = 10   # PING response deadline before the connect
 # ── [db] — PostgreSQL ────────────────────────────────────────────────────────
 [db]
 url = "postgres://ferroehr:ferroehr@localhost:5432/ferroehr"  # PROD: real DSN via env/secret
+#? url_file = "/run/secrets/db-dsn"   # or point at a mounted file instead of passing the DSN as env
 max_connections = 20
 min_connections = 2
 acquire_timeout_secs = 30
@@ -157,6 +158,7 @@ verified_cache_ttl_seconds = 60
 #? [[auth.basic.users]]
 #? username = "alice"
 #? password_hash = "$argon2id$v=19$m=19456,t=2,p=1$...$..."   # never a plaintext password
+#? password_hash_file = "/run/secrets/alice-hash"   # or a mounted file; the Argon2id floor applies either way
 #? roles = ["USER"]
 
 # OAuth2/OIDC bearer (absent table ⇒ bearer disabled):
@@ -338,6 +340,7 @@ max_result_rows = 10000      # 0 = unbounded
 [events]
 enabled = false
 url = "amqp://guest:guest@localhost:5672/%2f"   # credentials redacted in every rendering
+#? url_file = "/run/secrets/events-amqp"   # or a mounted file instead of env
 exchange = "ferroehr.events"
 tls = false                  # PROD: true (amqps)
 batch_size = 128
@@ -354,6 +357,7 @@ api_enabled = false          # mount /fhir/r4/* + /admin/fhir_mapping
 [fhir.outbound]
 enabled = false              # carries PHI — enabling is an explicit decision
 url = "amqp://guest:guest@localhost:5672/%2f"
+#? url_file = "/run/secrets/fhir-amqp"   # or a mounted file instead of env
 exchange = "ferroehr.fhir"    # distinct from [events].exchange for PHI isolation
 tls = false                  # PROD: true (amqps)
 batch_size = 128

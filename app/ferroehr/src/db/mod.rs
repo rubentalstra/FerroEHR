@@ -17,6 +17,7 @@
 
 pub mod iden;
 
+use std::path::PathBuf;
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
@@ -48,6 +49,13 @@ pub struct DbConfig {
     /// `PostgreSQL` connection DSN (`postgres://user:pass@host:port/db`).
     /// Credentials are redacted from every rendering ([`SecretUrl`]).
     pub url: SecretUrl,
+    /// Path to a file holding the DSN, read at boot in place of [`Self::url`].
+    ///
+    /// The route for a deployment that mounts its database credential as a file
+    /// rather than passing it as an environment value, which is readable through
+    /// `/proc/<pid>/environ` and inherited by every child process. Setting both
+    /// this and a non-default `url` is a boot error.
+    pub url_file: Option<PathBuf>,
     /// Upper bound of the connection pool.
     pub max_connections: u32,
     /// Connections the pool keeps open when idle (avoids cold reopen +
@@ -78,6 +86,7 @@ impl Default for DbConfig {
     fn default() -> Self {
         Self {
             url: SecretUrl::new(DEFAULT_URL),
+            url_file: None,
             // Deliberate defaults: 20 max (10 hard-capped realistic write
             // concurrency ×2), 2 min (no cold reopen churn at idle).
             max_connections: 20,

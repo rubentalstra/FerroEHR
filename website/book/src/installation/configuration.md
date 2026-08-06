@@ -374,6 +374,7 @@ acquire_timeout_secs = 30
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `url` | secret URL | `postgres://ferroehr:ferroehr@localhost:5432/ferroehr` | Connection DSN. The default suits a local from-source run against a localhost PostgreSQL (the compose stacks set `FERROEHR__DB__URL` explicitly); **production MUST set it**. Credentials are redacted from every rendering. `DATABASE_URL` is a recognized lower-priority alias. |
+| `url_file` | path | unset | Read the DSN from a file instead of the key above, for a mounted secret. Preferred over the environment form in Kubernetes: an environment value is readable through `/proc/<pid>/environ` and inherited by every child process. At most one of the pair, where the built-in dev default does not count as "set". |
 | `max_connections` | int | `20` | Pool ceiling. Write-heavy deployments benefit from 50+. |
 | `min_connections` | int | `2` | Idle connections kept open (avoids cold-reopen churn). |
 | `acquire_timeout_secs` | int | `30` | Seconds to wait for a free connection before failing. |
@@ -445,6 +446,7 @@ algorithms = ["RS256"]
 |---|---|---|---|
 | `username` | string | required | Principal name. A blank or missing one is a boot error. |
 | `password_hash` | secret | required | Argon2**id** PHC hash (`$argon2id$v=19$…`), never a plaintext password. Boot-validated against the OWASP floor — see below. |
+| `password_hash_file` | path | unset | Read the hash from a file instead, for a mounted secret. A hash is an offline cracking target, so prefer this wherever the configuration file itself is not treated as sensitive. The Argon2id floor is validated identically either way. Exactly one of the pair is required. |
 | `roles` | list of string | `["USER"]` | Roles granted (upper-cased on authentication). |
 
 > [!IMPORTANT]
@@ -720,6 +722,7 @@ envelopes are PHI-free by design.
 |---|---|---|---|
 | `enabled` | bool | `false` | Spawn the outbox publisher (with `fhir.outbound.enabled`, gates the per-commit outbox INSERT). |
 | `url` | secret URL | `amqp://guest:guest@localhost:5672/%2f` | AMQP broker URL; credentials redacted from every rendering. |
+| `url_file` | path | unset | Read the broker URL from a file instead, for a mounted secret. At most one of the pair, where the built-in dev default does not count as "set". |
 | `exchange` | string | `ferroehr.events` | Topic exchange (PHI-free envelope stream). |
 | `tls` | bool | `false` | Upgrade `amqp://` to `amqps://`. |
 | `batch_size` | int | `128` | Rows drained per poll. |
@@ -736,7 +739,8 @@ The FHIR connector — an inbound façade and an independent outbound emitter.
 `[fhir]`: `api_enabled` (bool, `false`) — mount `/fhir/r4/*` +
 `/admin/fhir_mapping`.
 `[fhir.outbound]`: `enabled` (bool, `false`), `url` (secret URL, same AMQP
-default), `exchange` (string, `ferroehr.fhir` — deliberately distinct from the
+default) or `url_file` (path, unset — read the broker URL from a mounted file
+instead), `exchange` (string, `ferroehr.fhir` — deliberately distinct from the
 events exchange for PHI isolation), `tls` (bool, `false`), `batch_size` (int,
 `128`), `poll_interval_ms` (int, `1000`), `publish_max_retries` (int, `3`).
 

@@ -9,6 +9,8 @@
 //! configured on (this publisher OR the FHIR outbound emitter), gated in the
 //! binary from `events.enabled || fhir.outbound.enabled`.
 
+use std::path::PathBuf;
+
 use crate::config::secret::SecretUrl;
 use serde::{Deserialize, Serialize};
 
@@ -21,6 +23,9 @@ pub struct EventsConfig {
     pub enabled: bool,
     /// AMQP broker URL (credentials redacted from every rendering).
     pub url: SecretUrl,
+    /// Path to a file holding the broker URL, read at boot in place of
+    /// [`Self::url`]. Setting both this and a non-default `url` is a boot error.
+    pub url_file: Option<PathBuf>,
     /// Topic exchange to publish to (the PHI-free envelope stream).
     pub exchange: String,
     /// Use TLS: when `true` an `amqp://` URL is upgraded to `amqps://` (an
@@ -45,6 +50,7 @@ impl Default for EventsConfig {
         Self {
             enabled: false,
             url: SecretUrl::new("amqp://guest:guest@localhost:5672/%2f"),
+            url_file: None,
             exchange: "ferroehr.events".to_owned(),
             tls: false,
             batch_size: 128,
