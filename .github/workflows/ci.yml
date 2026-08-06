@@ -282,6 +282,42 @@ jobs:
       - name: Access-layer rationale cites durable sources
         run: bash scripts/checks/access-provenance.sh
 
+  # String-built-SQL guard: the AQL engine composes SQL from attacker-supplied
+  # query text, so a `format!`/`push_str`-assembled clause in `app/ferroehr/src/
+  # aql/` or `app/ferroehr/src/storage/` is refused — the OWASP SQL Injection
+  # Prevention Cheat Sheet's "validated data is not necessarily safe to insert
+  # into SQL queries via string building". `--all` from the start: the tree is
+  # clean, and the one legitimate site is a named exemption in the script.
+  sql-string-building:
+    name: sql-string-building
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: No string-built SQL in the query engine
+        run: bash scripts/checks/sql-string-building.sh --all
+
+  error-hygiene:
+    name: error-hygiene
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: No internal detail in a 5xx body or a health detail
+        run: bash scripts/checks/error-hygiene.sh
+
   # ── Always required: supply-chain policy ────────────────────────────────────
   # cargo-deny alone: `cargo deny check` reads the SAME RustSec advisory DB as
   # cargo-audit and additionally enforces yanked = "deny" (deny.toml
@@ -1184,6 +1220,9 @@ jobs:
       - no-attribution
       - workflow-audit
       - comment-style
+      - default-style
+      - sql-string-building
+      - error-hygiene
       - deny
       - clippy
       - doc
@@ -1200,6 +1239,7 @@ jobs:
       - changelog
       - citation
       - compose-version-guard
+      - crate-version
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}
