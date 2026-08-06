@@ -1163,6 +1163,107 @@ jobs:
           fi
           echo "Lockstep crate version bumped to $ver — OK."
 
+  # Chart-version guard (the crate-version-guard pattern, issue #2108): a PR that
+  # changes PACKAGED chart content must bump `Chart.yaml` version in the same PR.
+  #
+  # The immutability this protects is NOT the registry's own: an OCI tag is
+  # mutable, and a second `helm push` of the same chart version silently replaces
+  # the manifest (measured against a local registry — the digest changed with no
+  # warning). So the publish lane refuses to overwrite a published version, and
+  # this guard makes sure a change carries a version to publish under. Artifact
+  # Hub indexes versions, so a re-used one is a listing that misdescribes itself.
+  #
+  # PACKAGED content is `deploy/helm/ferroehr/**` only. The value overlays, the
+  # golden renders, the validator, the helm pin and the Artifact Hub metadata live
+  # one level up and ship in nothing — a change to those needs no bump.
+  # Escape hatch: the `no-chart-bump` label, for a packaged diff that provably
+  # cannot alter what a consumer gets. A comment in `values.yaml` does not
+  # qualify: values.yaml ships.
+  chart-version:
+    name: chart-version-guard
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Require a Chart.yaml version bump for packaged chart changes
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'no-chart-bump') }}
+        run: |
+          set -euo pipefail
+          if [ "$HAS_LABEL" = "true" ]; then
+            echo "no-chart-bump label set — guard skipped."; exit 0
+          fi
+          changed=$(git diff --name-only "$BASE" "$HEAD")
+          if ! echo "$changed" | grep -qE '^deploy/helm/ferroehr/'; then
+            echo "No packaged chart content touched — guard not required."; exit 0
+          fi
+          old=$(git show "$BASE:deploy/helm/ferroehr/Chart.yaml" | sed -nE 's/^version: *(.+)$/\1/p')
+          new=$(git show "$HEAD:deploy/helm/ferroehr/Chart.yaml" | sed -nE 's/^version: *(.+)$/\1/p')
+          if [ "$old" = "$new" ]; then
+            echo "::error::This PR changes packaged chart content (deploy/helm/ferroehr/) but leaves Chart.yaml version at $new. A published chart version is taken — bump it (SemVer over the chart's values schema and rendered output), or apply 'no-chart-bump' if the diff provably cannot change what a consumer gets." >&2
+            exit 1
+          fi
+          echo "Chart version bumped $old -> $new — OK."
+
+  # appVersion guard (issue #2108): `appVersion` is the image tag a user gets from
+  # a plain `helm install`, so it must never lag the released application version.
+  # It is kept equal to the workspace version — the same shape as
+  # compose-image-tags.sh, and the same reason: both are "an artifact references
+  # the released version" checks that would otherwise depend on someone
+  # remembering a release-procedure step.
+  #
+  # The `artifacthub.io/images` tags are checked with it, because those are what
+  # the Artifact Hub security report scans — a stale tag there means the listing
+  # reports vulnerabilities for an image nobody is running.
+  #
+  # What this guard does NOT catch, stated because it was measured rather than
+  # imagined: `appVersion` naming the right release does not mean that release's
+  # image ACCEPTS the chart's current `config` defaults. Values track development
+  # between releases, so the rendered default configuration carries
+  # `server.limits` and `db.statement_timeout_ms`, which 3.17.3 does not know — its
+  # own `config check` refuses the file, and a plain `helm install` crash-loops.
+  # Only the published image can answer that, so the check lives in
+  # publish-chart.yml, which refuses to publish a chart that cannot deploy its own
+  # default image.
+  chart-appversion:
+    name: chart-appversion-guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: appVersion and the artifacthub.io image tags match the workspace version
+        run: |
+          set -euo pipefail
+          ws=$(sed -nE 's/^version = "(.*)"$/\1/p' Cargo.toml | head -1)
+          app=$(sed -nE 's/^appVersion: *"?([^"]+)"?$/\1/p' deploy/helm/ferroehr/Chart.yaml)
+          if [ -z "$ws" ] || [ -z "$app" ]; then
+            echo "::error::could not extract versions (workspace: '$ws', appVersion: '$app')." >&2
+            exit 1
+          fi
+          if [ "$app" != "$ws" ]; then
+            echo "::error::Chart.yaml appVersion ($app) != workspace version ($ws) — the release cut bumps appVersion with the workspace version (.claude/rules/changelog.md), or a plain 'helm install' deploys the previous release." >&2
+            exit 1
+          fi
+          bad=$(grep -oE 'image: ghcr\.io/[^:]+:[^ ]+' deploy/helm/ferroehr/Chart.yaml | grep -v ":${ws}\$" || true)
+          if [ -n "$bad" ]; then
+            echo "::error::artifacthub.io/images tags do not match the workspace version ($ws):" >&2
+            echo "$bad" >&2
+            exit 1
+          fi
+          echo "appVersion and every artifacthub.io/images tag are at $ws — OK."
+
   # Changelog guard (Keep a Changelog discipline): a PR that changes
   # user-visible surfaces must update CHANGELOG.md's [Unreleased] section in
   # the same PR. Escape hatch: the `no-changelog` label for genuinely
@@ -1296,6 +1397,8 @@ jobs:
       - citation
       - compose-version-guard
       - crate-version
+      - chart-version
+      - chart-appversion
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}

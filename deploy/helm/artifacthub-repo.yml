@@ -1,0 +1,31 @@
+# Artifact Hub repository metadata — the ownership token for the chart's listing
+# (https://artifacthub.io/docs/topics/repositories/).
+#
+# THIS FILE IS NOT SERVED FROM THIS REPOSITORY. The chart is published as an OCI
+# artifact and an OCI repository has no `index.yaml`, so there is nowhere to put
+# this as a committed sibling: `.github/workflows/publish-chart.yml` pushes it to
+# the registry as a special `artifacthub.io` tag with ORAS, on every publish.
+# Committing it and stopping there — which is what Artifact Hub's HTTP
+# instructions lead to — produces a file nothing reads, an unowned listing, and
+# silently no Verified Publisher badge, with no error anywhere to say so.
+#
+# WHO UPDATES IT: whoever registers or re-registers the repository on Artifact
+# Hub. Nothing else reads `repositoryID`, and the publish lane emits a build
+# warning while the placeholder below is still in place, so a forgotten
+# registration is visible in the job log rather than silent.
+#
+# Ownership claims are processed immediately by Artifact Hub; the verified-
+# publisher flag applies on the repository's next processing cycle.
+
+# The id Artifact Hub issues when the repository is registered at
+# https://artifacthub.io/control-panel/repositories (kind: Helm charts, URL:
+# oci://ghcr.io/rubentalstra/charts/ferroehr). Without it the chart can still be
+# listed, but the listing is unowned — anyone could claim it — and the Verified
+# Publisher badge is unavailable.
+repositoryID: f5b3afc5-75b1-42db-9861-d5c75a34223b
+
+# Used for the ownership-claim flow: the email must match a verified Artifact Hub
+# account, or the claim is refused.
+owners:
+  - name: Ruben Talstra
+    email: me@rubentalstra.nl
