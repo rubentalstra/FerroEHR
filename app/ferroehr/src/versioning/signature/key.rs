@@ -25,7 +25,7 @@ const HASH: HashAlgorithm = HashAlgorithm::Sha256;
 #[derive(Debug, thiserror::Error)]
 pub enum KeyError {
     /// The armored key file could not be read.
-    #[error("reading OpenPGP key file {path}: {source}")]
+    #[error("reading OpenPGP key file {path}")]
     Read {
         /// The path that failed.
         path: String,
@@ -34,18 +34,18 @@ pub enum KeyError {
         source: std::io::Error,
     },
     /// The file is not a parseable armored RFC 4880 secret key.
-    #[error("parsing armored OpenPGP secret key: {0}")]
-    Parse(String),
+    #[error("parsing armored OpenPGP secret key failed")]
+    Parse(#[source] pgp::errors::Error),
     /// The key cannot produce a signature (wrong passphrase, or a non-signing
     /// key) — the fail-closed boot check.
-    #[error("the configured OpenPGP key cannot sign (wrong passphrase or non-signing key): {0}")]
-    Unusable(String),
+    #[error("the configured OpenPGP key cannot sign (wrong passphrase or non-signing key)")]
+    Unusable(#[from] PgpSignError),
 }
 
 /// A failure producing a detached `OpenPGP` signature at runtime.
 #[derive(Debug, thiserror::Error)]
-#[error("OpenPGP detached signature: {0}")]
-pub struct PgpSignError(String);
+#[error("producing the detached OpenPGP signature failed")]
+pub struct PgpSignError(#[from] pgp::errors::Error);
 
 /// The structural outcome of verifying a PGP-armored signature against the key.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -100,8 +100,7 @@ impl PgpKey {
         armored: &str,
         passphrase: Option<&crate::config::secret::Secret>,
     ) -> Result<Self, KeyError> {
-        let (secret, _headers) =
-            SignedSecretKey::from_string(armored).map_err(|e| KeyError::Parse(e.to_string()))?;
+        let (secret, _headers) = SignedSecretKey::from_string(armored).map_err(KeyError::Parse)?;
         let public = secret.to_public_key();
         // The secret is exposed HERE and nowhere earlier: `pgp`'s `Password` is
         // the one consumer that must have the plaintext, so the value stays
@@ -120,8 +119,7 @@ impl PgpKey {
         };
         // Fail-closed: a real signature proves the passphrase unlocks the key
         // and it can actually sign.
-        key.sign(b"ferroehr-signing boot check")
-            .map_err(|e| KeyError::Unusable(e.to_string()))?;
+        key.sign(b"ferroehr-signing boot check")?;
         Ok(key)
     }
 
@@ -137,9 +135,9 @@ impl PgpKey {
             HASH,
             data,
         )
-        .map_err(|e| PgpSignError(e.to_string()))?;
+        .map_err(PgpSignError)?;
         sig.to_armored_string(ArmorOptions::default())
-            .map_err(|e| PgpSignError(e.to_string()))
+            .map_err(PgpSignError)
     }
 
     /// Verify an armored detached signature over `data` against the public key.

@@ -55,7 +55,7 @@ impl FerroEhrService {
 
     /// Pre-warm the `EHR_ACCESS` cache for a just-created EHR as default-open
     /// (`None`). Every EHR is created with the settings-less
-    /// `super::default_ehr_access` (there is no direct `EHR_ACCESS` write —
+    /// `super::initial_ehr_access` (there is no direct `EHR_ACCESS` write —
     /// RM ehr master04 §EHR Access), so a fresh EHR is unconditionally
     /// default-open; seeding that entry saves the first-access DB miss. A
     /// later `EHR_ACCESS` commit evicts it through
@@ -64,7 +64,7 @@ impl FerroEhrService {
         self.ehr_access.insert(ehr_id, None).await;
     }
 
-    /// Commit the default [`default_ehr_access`] for an EHR that has none,
+    /// Commit the default [`initial_ehr_access`] for an EHR that has none,
     /// inside the caller's transaction — the EHR-Extract import bootstrap
     /// ([`crate::service::message`]).
     ///
@@ -105,7 +105,7 @@ impl FerroEhrService {
                 audit.clone(),
                 Change::Create {
                     kind: Kind::EhrAccess,
-                    canonical: default_ehr_access(),
+                    canonical: initial_ehr_access(),
                     template_id: None,
                     signature: None,
                     lifecycle_state: None,
@@ -167,8 +167,10 @@ impl FerroEhrService {
     }
 }
 
-/// The default `EHR_ACCESS` created with every EHR (RM ehr master04 §EHR
-/// Creation). `EHR_ACCESS` is a LOCATABLE with only the
+/// Builds the `EHR_ACCESS` committed with every new EHR (RM ehr master04 §EHR
+/// Creation).
+///
+/// `EHR_ACCESS` is a LOCATABLE with only the
 /// optional `settings`; with no access-control scheme configured (Stage 1 has
 /// no RBAC), it is committed with none.
 ///
@@ -176,7 +178,7 @@ impl FerroEhrService {
 /// unconditional `Is_archetype_root` invariant as `EHR_STATUS`
 /// (RM ehr `ehr_access.adoc`), so `Archetyped_valid` (RM common
 /// `locatable.adoc`) requires the `ARCHETYPED` block on the root.
-pub(in crate::service) fn default_ehr_access() -> Value {
+pub(in crate::service) fn initial_ehr_access() -> Value {
     const ARCHETYPE: &str = "openEHR-EHR-EHR_ACCESS.generic.v1";
     let access = EhrAccess {
         name: DvText::DvText(DvTextData {

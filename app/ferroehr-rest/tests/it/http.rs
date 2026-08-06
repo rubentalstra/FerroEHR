@@ -1203,3 +1203,40 @@ async fn subject_lookup_by_query_parameter_still_answers() {
         "subject lookup answers on its own merits, got {status}"
     );
 }
+
+// ── The served document describes the LIVE router (issue #2073) ─────────────
+
+/// Under the DEFAULT configuration — Swagger off, SMART off — the served
+/// document must not advertise the paths those features would have mounted.
+///
+/// This is the property the whole "serve only what we generate" rule exists for:
+/// a client generated from the document must not receive endpoints that answer
+/// `404`. It was broken inside the generator itself.
+#[tokio::test]
+async fn the_served_document_omits_paths_whose_features_are_off() {
+    let (pg, service) = common::test_service().await;
+    let mut cfg = config(false);
+    cfg.server.swagger_ui = false;
+    cfg.smart.enabled = false;
+    let app = common::router_with(cfg, service);
+    let _keep = pg;
+
+    let req = Request::builder()
+        .uri(format!("{BASE}/ehr/{EHR}"))
+        .body(Body::empty())
+        .unwrap();
+    let (_status, _headers, _body) = send(app.clone(), req).await;
+
+    let document = ferroehr_rest::extensions::openapi::extensions_document(&config(false));
+    let paths: Vec<String> = document.paths.paths.keys().cloned().collect();
+    for absent in [
+        "/ferroehr/rest/api-docs/openapi.json",
+        "/ferroehr/rest/swagger-ui",
+        "/ferroehr/rest/.well-known/smart-configuration",
+    ] {
+        assert!(
+            !paths.iter().any(|p| p == absent),
+            "{absent} answers 404 in this configuration and must not be advertised"
+        );
+    }
+}

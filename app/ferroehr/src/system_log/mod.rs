@@ -79,27 +79,38 @@ use event::{AuditEvent, EmitOutcome};
 use crate::service::FerroEhrService;
 
 /// Errors raised while rendering or shipping an audit record.
+///
+/// Every variant that has an underlying failure carries it as
+/// [`std::error::Error::source`] (RFC 0201), so a caller can walk or match the
+/// cause instead of parsing prose. The boxed sources are the ones several
+/// unrelated types converge on: XML serialization fails as either an
+/// `std::io::Error` or a `FromUtf8Error`, and the transport as either an
+/// `std::io::Error` (syslog UDP/TLS) or a `reqwest::Error` (the ITI-20 feed).
 #[derive(Debug, thiserror::Error)]
 pub enum AuditError {
     /// XML serialization of the DICOM Audit Message failed.
-    #[error("audit message serialization failed: {0}")]
-    Xml(String),
-    /// The syslog transport (UDP/TLS) could not be established.
-    #[error("audit transport error: {0}")]
-    Transport(String),
+    #[error("audit message serialization failed")]
+    Xml(#[source] Box<dyn std::error::Error + Send + Sync>),
+    /// The syslog transport (UDP/TLS) could not be established, or the ITI-20
+    /// feed request could not be sent.
+    #[error("audit transport error")]
+    Transport(#[source] Box<dyn std::error::Error + Send + Sync>),
+    /// The ITI-20 ATX:FHIR Feed answered a non-success status.
+    #[error("the FHIR audit feed answered {0}")]
+    FeedRejected(http::StatusCode),
     /// The local Audit Record Repository write/reap failed.
-    #[error("audit store error: {0}")]
-    Store(String),
+    #[error("audit store error")]
+    Store(#[from] sqlx::Error),
     /// Rendering the FHIR `AuditEvent` document failed.
-    #[error("audit rendering failed: {0}")]
-    Render(String),
+    #[error("audit rendering failed")]
+    Render(#[source] Box<dyn std::error::Error + Send + Sync>),
 }
 
 // quick-xml's `Writer` over an in-memory buffer surfaces write failures as
 // `std::io::Error`; in the DICOM serializer these can only be a buffer fault.
 impl From<std::io::Error> for AuditError {
     fn from(e: std::io::Error) -> Self {
-        AuditError::Xml(e.to_string())
+        AuditError::Xml(Box::new(e))
     }
 }
 

@@ -247,12 +247,9 @@ async fn run_server(
         return Ok(());
     }
 
-    // Both listeners run through `axum_server` rather than one through it and
-    // one through `axum::serve`: it is the only one of the two that exposes
-    // hyper's connection builder, and the connection-level bound has to apply to
-    // the plaintext listener most of all — that is the one the quickstart
-    // publishes. Unifying them also means one graceful-shutdown mechanism
-    // instead of two.
+    // Both listeners run through `axum_server`: it is the only one of the two that
+    // exposes hyper's connection builder, and the bound has to apply to the
+    // plaintext listener most of all — the one the quickstart publishes.
     let listener = tokio::net::TcpListener::bind(bind).await?;
     let listener = listener.into_std()?;
     tracing::info!(%bind, "ferroehr-rest listening");
@@ -291,15 +288,9 @@ fn bound_connections(
     builder: &mut hyper_util::server::conn::auto::Builder<hyper_util::rt::TokioExecutor>,
     connection: ferroehr::config::server::ConnectionConfig,
 ) {
-    // The timer MUST be installed before any timeout knob is set: hyper stores
-    // timeout settings and a timer separately, and PANICS at connection-serve
-    // time with "timeout `header_read_timeout` set, but no timer set" if a
-    // timeout is configured without one
-    // (<https://docs.rs/hyper/latest/hyper/server/conn/http1/struct.Builder.html#method.timer>).
-    // `axum::serve` installs a timer itself, which is why this only became
-    // necessary once the listeners moved onto the builder directly — and the
-    // failure mode is a panic per connection, not a startup error, so nothing
-    // would have caught it before the first request.
+    // NOTE: a timeout knob without a timer makes hyper PANIC per connection
+    // ("timeout `header_read_timeout` set, but no timer set" —
+    // <https://docs.rs/hyper/latest/hyper/server/conn/http1/struct.Builder.html#method.timer>).
     builder
         .http1()
         .timer(hyper_util::rt::TokioTimer::new())
@@ -378,18 +369,8 @@ pub fn tls_server_config(
     let key = rustls::pki_types::PrivateKeyDer::from_pem_slice(&key_pem).map_err(invalid)?;
 
     let provider = Arc::new(rustls::crypto::aws_lc_rs::default_provider());
-    // The protocol floor is `[server.tls].min_version`, defaulting to 1.3 only.
-    //
-    // The OWASP Transport Layer Security Cheat Sheet §Only Support Strong
-    // Protocols: "web applications must default to TLS 1.3 and may support
-    // TLS 1.2 for compatibility." So 1.3 is what an operator gets without
-    // saying anything, and 1.2 is a named, visible widening for a client that
-    // needs it. `with_safe_default_protocol_versions()` would enable both and
-    // was what this did — safe, but not the default the cheat sheet asks for.
-    //
-    // 1.1 and 1.0 are unreachable by construction rather than merely
-    // discouraged: RFC 8996 deprecates them, and neither `rustls` nor
-    // `TlsVersion` offers them at all.
+    // NOTE: 1.3-only by default — OWASP Transport Layer Security §Only Support
+    // Strong Protocols; 1.1/1.0 are unreachable by construction (RFC 8996).
     let versions: &[&rustls::SupportedProtocolVersion] = match tls.min_version {
         TlsVersion::V1_3 => &[&rustls::version::TLS13],
         TlsVersion::V1_2 => &[&rustls::version::TLS13, &rustls::version::TLS12],

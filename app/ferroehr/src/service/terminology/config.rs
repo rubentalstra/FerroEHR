@@ -45,10 +45,6 @@ use crate::service::status::SmError;
 use super::fhir::FhirTerminologyProvider;
 use super::oauth2::TokenSource;
 
-/// Default per-provider connect timeout (ms).
-const DEFAULT_CONNECT_TIMEOUT_MS: u64 = 2_000;
-/// Default per-provider request timeout (ms).
-const DEFAULT_REQUEST_TIMEOUT_MS: u64 = 10_000;
 /// The provider name the router falls back to when no route matches
 /// (or the sole configured provider when there is exactly one).
 pub(super) const DEFAULT_PROVIDER_NAME: &str = "default";
@@ -122,33 +118,38 @@ pub enum Oauth2AuthMethod {
 /// design/extension; `BASE/docs/architecture_overview/master12-terminology.adoc`
 /// only models the backend as an external "terminology query server".
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(default, deny_unknown_fields)]
 pub struct TerminologyOauth2Config {
-    /// The `OAuth2` token endpoint (RFC 6749 §3.2).
+    /// The `OAuth2` token endpoint (RFC 6749 §3.2). Empty is a boot error.
     pub token_url: String,
-    /// The registered client identifier.
+    /// The registered client identifier. Empty is a boot error.
     pub client_id: String,
     /// The client secret (redacted in every rendering); or set
     /// [`Self::client_secret_file`].
-    #[serde(default)]
     pub client_secret: Option<Secret>,
     /// A file whose contents are the client secret, resolved by the config
     /// loader into [`Self::client_secret`].
-    #[serde(default)]
     pub client_secret_file: Option<PathBuf>,
     /// Scopes requested with the client-credentials grant (RFC 6749 §4.4.2).
-    #[serde(default)]
     pub scopes: Vec<String>,
     /// How long before a token's stated expiry it is refreshed, in seconds.
-    #[serde(default = "default_refresh_leeway_secs")]
     pub refresh_leeway_secs: u64,
     /// Client authentication method at the token endpoint.
-    #[serde(default)]
     pub auth_method: Oauth2AuthMethod,
 }
 
-const fn default_refresh_leeway_secs() -> u64 {
-    30
+impl Default for TerminologyOauth2Config {
+    fn default() -> Self {
+        Self {
+            token_url: String::new(),
+            client_id: String::new(),
+            client_secret: None,
+            client_secret_file: None,
+            scopes: Vec::new(),
+            refresh_leeway_secs: 30,
+            auth_method: Oauth2AuthMethod::ClientSecretBasic,
+        }
+    }
 }
 
 /// The kind of terminology server. Only FHIR R4B is supported.
@@ -175,27 +176,24 @@ pub enum FhirOperation {
 
 /// Configuration for a single FHIR R4B terminology-server provider.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(default, deny_unknown_fields)]
 pub struct FhirProviderConfig {
     /// Server kind (`type = "fhir"`).
-    #[serde(rename = "type", default)]
+    #[serde(rename = "type")]
     pub kind: ProviderKind,
     /// FHIR R4B base URL, e.g. `https://r4.ontoserver.csiro.au/fhir`.
+    /// Empty is a boot error.
     pub url: String,
     /// The membership operation for `value_set_validate` (default
     /// `validate_code`).
-    #[serde(default)]
     pub operation: FhirOperation,
     /// TCP connect timeout (ms).
-    #[serde(default = "default_connect_timeout_ms")]
     pub connect_timeout_ms: u64,
     /// Overall request timeout (ms).
-    #[serde(default = "default_request_timeout_ms")]
     pub request_timeout_ms: u64,
     /// Name of the `OAuth2` client-credentials client
     /// ([`ExternalTerminologyConfig::oauth2_clients`]) whose bearer token is
     /// attached to every request to this provider. Unset = unauthenticated.
-    #[serde(default)]
     pub oauth2_client: Option<String>,
     /// PEM file holding the client certificate (optionally a chain) this
     /// provider presents to its terminology server for **mutual TLS**. Set
@@ -203,45 +201,42 @@ pub struct FhirProviderConfig {
     ///
     /// The identity is per provider because a client certificate is issued by
     /// the peer's PKI — see the [`super::tls`] module NOTE.
-    #[serde(default)]
     pub client_cert_path: Option<PathBuf>,
     /// PEM file holding the private key of [`Self::client_cert_path`]. Both
     /// keys are set together; one without the other is a boot error.
-    #[serde(default)]
     pub client_key_path: Option<PathBuf>,
     /// PEM bundle of the trust anchors this provider's terminology-server
     /// certificate is verified against. When set it **replaces** the default
     /// anchors for this provider (a privately-issued server is pinned to its
     /// own CA); unset = the platform's default trust. Server-certificate and
     /// hostname verification are always on — there is no way to disable them.
-    #[serde(default)]
     pub ca_bundle_path: Option<PathBuf>,
     /// Result-cache TTL in seconds for this provider's FHIR operations
     /// (`$validate-code`/`$expand`/`$subsumes`/`$lookup`). `0` disables the
     /// cache. Bounded staleness against the remote server is the trade for
     /// not paying one HTTPS round trip per validated code — no openEHR spec
     /// governs terminology-server caching; our own design.
-    #[serde(default = "default_cache_ttl_secs")]
     pub cache_ttl_secs: u64,
     /// Maximum cached responses per provider.
-    #[serde(default = "default_cache_capacity")]
     pub cache_capacity: u64,
 }
 
-const fn default_cache_ttl_secs() -> u64 {
-    300
-}
-
-const fn default_cache_capacity() -> u64 {
-    10_000
-}
-
-const fn default_connect_timeout_ms() -> u64 {
-    DEFAULT_CONNECT_TIMEOUT_MS
-}
-
-const fn default_request_timeout_ms() -> u64 {
-    DEFAULT_REQUEST_TIMEOUT_MS
+impl Default for FhirProviderConfig {
+    fn default() -> Self {
+        Self {
+            kind: ProviderKind::Fhir,
+            url: String::new(),
+            operation: FhirOperation::ValidateCode,
+            connect_timeout_ms: 2_000,
+            request_timeout_ms: 10_000,
+            oauth2_client: None,
+            client_cert_path: None,
+            client_key_path: None,
+            ca_bundle_path: None,
+            cache_ttl_secs: 300,
+            cache_capacity: 10_000,
+        }
+    }
 }
 
 impl ExternalTerminologyConfig {
@@ -292,17 +287,9 @@ impl ExternalTerminologyConfig {
 #[cfg(test)]
 pub(super) fn test_provider_config(url: &str) -> FhirProviderConfig {
     FhirProviderConfig {
-        kind: ProviderKind::Fhir,
         url: url.to_owned(),
-        operation: FhirOperation::ValidateCode,
-        connect_timeout_ms: DEFAULT_CONNECT_TIMEOUT_MS,
-        request_timeout_ms: DEFAULT_REQUEST_TIMEOUT_MS,
-        oauth2_client: None,
-        client_cert_path: None,
-        client_key_path: None,
-        ca_bundle_path: None,
-        cache_ttl_secs: 300,
         cache_capacity: 1024,
+        ..FhirProviderConfig::default()
     }
 }
 

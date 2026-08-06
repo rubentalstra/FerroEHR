@@ -63,8 +63,7 @@ pub(super) fn init_subscriber(
     }
     let mut flame_flush = None;
     if let Some(path) = flame_file {
-        let (flame_layer, flush) = tracing_flame::FlameLayer::with_file(path)
-            .map_err(|e| TelemetryError::Flame(e.to_string()))?;
+        let (flame_layer, flush) = tracing_flame::FlameLayer::with_file(path)?;
         layers.push(flame_layer.boxed());
         flame_flush = Some(flush);
     }
@@ -72,8 +71,7 @@ pub(super) fn init_subscriber(
     Registry::default()
         .with(filter_layer)
         .with(layers)
-        .try_init()
-        .map_err(|e| TelemetryError::Subscriber(e.to_string()))?;
+        .try_init()?;
 
     // Type-erase the reload handle (its `S` is `Registry`) behind read/apply
     // closures for `/management/loggers`.

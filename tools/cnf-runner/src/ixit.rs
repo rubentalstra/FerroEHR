@@ -175,18 +175,24 @@ impl TerminologyPosture {
 pub struct TerminologyServer {
     /// The deployment's own name for the server (its provider entry).
     pub name: String,
-    /// Whether the deployment can actually reach it. A DECLARED-unreachable
-    /// server is how a party exercises the terminology-server-down branch
-    /// without any mid-run reconfiguration: the address is wired and nothing
-    /// answers on it, for the whole run.
-    #[serde(default = "reachable_default")]
-    pub reachable: bool,
+    /// Whether the deployment can actually reach it, as DECLARED — absent
+    /// means reachable ([`Self::is_reachable`]). A declared-unreachable server
+    /// is how a party exercises the terminology-server-down branch without any
+    /// mid-run reconfiguration: the address is wired and nothing answers on
+    /// it, for the whole run.
+    #[serde(default)]
+    pub reachable: Option<bool>,
     /// The terminology namespaces this server answers for.
     pub namespaces: Vec<String>,
 }
 
-const fn reachable_default() -> bool {
-    true
+impl TerminologyServer {
+    /// Whether the party declares this server reachable; an omitted
+    /// `reachable` means it is.
+    #[must_use]
+    pub fn is_reachable(&self) -> bool {
+        self.reachable.unwrap_or(true)
+    }
 }
 
 /// The party's terminology posture — which terminology servers the deployment
@@ -224,7 +230,7 @@ impl TerminologyLane {
         let mut names: Vec<&str> = Vec::new();
         for namespace in namespaces {
             if let Some(server) = self.server_for(namespace)
-                && server.reachable
+                && server.is_reachable()
                 && !names.contains(&server.name.as_str())
             {
                 names.push(&server.name);
@@ -644,8 +650,8 @@ mod tests {
         assert_eq!(party.posture, TerminologyPosture::FailOpen);
         // `reachable` defaults to true; a declared-unreachable server is the
         // terminology-server-down branch, wired for the whole run.
-        assert!(party.server_for("urn:cnf:sct").unwrap().reachable);
-        assert!(!party.server_for("urn:cnf:down").unwrap().reachable);
+        assert!(party.server_for("urn:cnf:sct").unwrap().is_reachable());
+        assert!(!party.server_for("urn:cnf:down").unwrap().is_reachable());
         assert!(party.server_for("urn:cnf:unknown").is_none());
         // Two namespaces on ONE server count once; two servers count twice.
         assert_eq!(

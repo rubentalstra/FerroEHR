@@ -65,9 +65,42 @@ pub enum XmlError {
     #[error("xml output was not valid utf-8: {0}")]
     Utf8(#[from] std::string::FromUtf8Error),
     /// The input was not well-formed, or did not match the expected canonical
-    /// shape.
+    /// shape. Carries the diagnosis and nothing beneath it: a shape violation
+    /// has no underlying failure.
     #[error("xml parse error: {0}")]
     Parse(String),
+    /// A reader, decoder, or lexical conversion failed underneath the parse.
+    ///
+    /// The cause is carried as [`std::error::Error::source`] (RFC 0201) so a
+    /// caller can walk or match it. It is BOXED deliberately: the sources are
+    /// several unrelated types (`quick-xml`'s reader/escape/attribute errors, a
+    /// UTF-8 or encoding failure, a `FromStr` failure, a UUID parse failure),
+    /// and naming any of them here would make that dependency's own version
+    /// part of this crate's public API.
+    #[error("xml parse error: {message}")]
+    ParseSource {
+        /// What the reader was doing when the cause fired.
+        message: String,
+        /// The underlying failure.
+        #[source]
+        source: Box<dyn std::error::Error + Send + Sync>,
+    },
+}
+
+impl XmlError {
+    /// A parse failure that carries its underlying cause.
+    ///
+    /// `message` says what was being read; the cause stays reachable through
+    /// [`std::error::Error::source`] rather than being flattened into the text.
+    pub fn parse_source(
+        message: impl Into<String>,
+        source: impl std::error::Error + Send + Sync + 'static,
+    ) -> Self {
+        Self::ParseSource {
+            message: message.into(),
+            source: Box::new(source),
+        }
+    }
 }
 
 /// Writes canonical openEHR XML. A thin wrapper over `quick_xml::Writer` that
@@ -558,7 +591,7 @@ impl FromXml for openehr_base::serde_support::OpenSubtype {
             }
         }
         openehr_base::serde_support::OpenSubtype::new(type_name, serde_json::Map::new())
-            .map_err(|e| XmlError::Parse(e.to_string()))
+            .map_err(|e| XmlError::parse_source("constructing the open-subtype value", e))
     }
 }
 
@@ -684,7 +717,7 @@ impl<'a> XmlReader<'a> {
             let ev = self
                 .r
                 .read_event()
-                .map_err(|e| XmlError::Parse(e.to_string()))?;
+                .map_err(|e| XmlError::parse_source("reading the next XML event", e))?;
             match ev {
                 Event::Start(e) => {
                     self.depth = self.depth.saturating_add(1);
@@ -700,9 +733,11 @@ impl<'a> XmlReader<'a> {
                     return Ok(XmlEvent::End);
                 }
                 Event::Text(t) => {
-                    let raw = t.decode().map_err(|e| XmlError::Parse(e.to_string()))?;
+                    let raw = t
+                        .decode()
+                        .map_err(|e| XmlError::parse_source("decoding element text", e))?;
                     let s = quick_xml::escape::unescape(&raw)
-                        .map_err(|e| XmlError::Parse(e.to_string()))?;
+                        .map_err(|e| XmlError::parse_source("unescaping element text", e))?;
                     return Ok(XmlEvent::Text(s.into_owned()));
                 }
                 Event::Eof => return Ok(XmlEvent::Eof),
@@ -712,11 +747,13 @@ impl<'a> XmlReader<'a> {
                 Event::GeneralRef(e) => {
                     if let Some(c) = e
                         .resolve_char_ref()
-                        .map_err(|e| XmlError::Parse(e.to_string()))?
+                        .map_err(|e| XmlError::parse_source("resolving a character reference", e))?
                     {
                         return Ok(XmlEvent::Text(c.to_string()));
                     }
-                    let name = e.decode().map_err(|e| XmlError::Parse(e.to_string()))?;
+                    let name = e
+                        .decode()
+                        .map_err(|e| XmlError::parse_source("decoding an entity reference", e))?;
                     let resolved = match name.as_ref() {
                         "amp" => "&",
                         "lt" => "<",
@@ -729,18 +766,10 @@ impl<'a> XmlReader<'a> {
                     };
                     return Ok(XmlEvent::Text(resolved.to_string()));
                 }
-                // A DOCTYPE is REFUSED, not skipped.
-                //
-                // It is inert today — quick-xml declares that it does not parse
-                // DTDs (<https://docs.rs/quick-xml/>), so no entity declaration
-                // is ever recorded and the entity arm above rejects anything
-                // beyond the five predefined names and character references.
-                // That makes XXE and entity-expansion attacks impossible by
-                // CONSTRUCTION rather than by configuration — and a property
-                // held by a dependency's current behaviour is exactly the kind
-                // that changes without anyone noticing. Refusing the declaration
-                // outright means this reader does not depend on that behaviour
-                // at all: canonical openEHR XML has no use for a DOCTYPE.
+                // A DOCTYPE is REFUSED, not skipped. It is inert today only
+                // because quick-xml parses no DTDs — a property of a dependency's
+                // current behaviour, which is the kind that changes silently.
+                // Canonical openEHR XML has no use for one (#2065).
                 Event::DocType(_) => {
                     return Err(XmlError::Parse(
                         "a DOCTYPE declaration is not accepted".into(),
@@ -781,11 +810,12 @@ fn to_start_tag(e: &BytesStart<'_>) -> Result<StartTag, XmlError> {
     let name = raw.rsplit(':').next().unwrap_or(&raw).to_string();
     let mut attrs = Vec::new();
     for a in e.attributes() {
-        let a = a.map_err(|e| XmlError::Parse(e.to_string()))?;
+        let a = a.map_err(|e| XmlError::parse_source("reading a start-tag attribute", e))?;
         let k = String::from_utf8_lossy(a.key.as_ref()).into_owned();
-        let raw = std::str::from_utf8(&a.value).map_err(|e| XmlError::Parse(e.to_string()))?;
+        let raw = std::str::from_utf8(&a.value)
+            .map_err(|e| XmlError::parse_source("decoding an attribute value", e))?;
         let v = quick_xml::escape::unescape(raw)
-            .map_err(|e| XmlError::Parse(e.to_string()))?
+            .map_err(|e| XmlError::parse_source("unescaping an attribute value", e))?
             .into_owned();
         attrs.push((k, v));
     }
@@ -836,7 +866,12 @@ macro_rules! impl_from_xml_parse {
         impl FromXml for $t {
             fn from_xml(reader: &mut XmlReader, start: &StartTag) -> Result<Self, XmlError> {
                 let s = String::from_xml(reader, start)?;
-                s.trim().parse::<$t>().map_err(|e| XmlError::Parse(format!("{e}: {s:?}")))
+                s.trim().parse::<$t>().map_err(|e| {
+                    XmlError::parse_source(
+                        format!("{s:?} is not a valid {}", stringify!($t)),
+                        e,
+                    )
+                })
             }
         }
     )*};
@@ -846,7 +881,8 @@ impl_from_xml_parse!(bool, i32, i64, u8, f32, f64, char);
 impl FromXml for uuid::Uuid {
     fn from_xml(reader: &mut XmlReader, start: &StartTag) -> Result<Self, XmlError> {
         let s = String::from_xml(reader, start)?;
-        uuid::Uuid::parse_str(s.trim()).map_err(|e| XmlError::Parse(e.to_string()))
+        uuid::Uuid::parse_str(s.trim())
+            .map_err(|e| XmlError::parse_source(format!("{s:?} is not a valid UUID"), e))
     }
 }
 

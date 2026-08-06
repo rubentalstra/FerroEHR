@@ -33,9 +33,8 @@ use openehr_its::xml::runtime::XmlReader;
 fn drain(xml: &str) -> Result<(), XmlError> {
     let mut reader = XmlReader::new(xml);
     loop {
-        match reader.read()? {
-            XmlEvent::Eof => return Ok(()),
-            _ => continue,
+        if matches!(reader.read()?, XmlEvent::Eof) {
+            return Ok(());
         }
     }
 }

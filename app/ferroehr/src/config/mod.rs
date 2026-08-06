@@ -282,8 +282,9 @@ fn server_bind_port(bind: &str) -> Option<u16> {
 }
 
 /// Semantic checks on `[terminology.external]`: enabling it needs a provider,
-/// and every cross-reference must resolve. A dangling reference would degrade
-/// silently — a route to a missing provider quietly falls back to the default
+/// every provider needs its base URL, and every cross-reference must resolve.
+/// A dangling reference would degrade silently — a route to a missing provider
+/// quietly falls back to the default
 /// server, an `oauth2_client` naming a missing client would send
 /// unauthenticated requests, and half a mutual-TLS identity would connect
 /// without a client certificate — so all three are boot errors (never make a
@@ -311,6 +312,12 @@ fn validate_terminology(
         }
     }
     for (name, provider) in &terminology.providers {
+        if provider.url.trim().is_empty() {
+            errors.push(ConfigError::semantic(format!(
+                "terminology.external.providers.{name}.url must not be empty (the FHIR R4B base \
+                 URL of the terminology server)"
+            )));
+        }
         // A mutual-TLS identity is a certificate AND its key; half of one
         // would connect with no client certificate at all, which the server
         // rejects at handshake time — a boot error, not a runtime surprise.
@@ -1009,6 +1016,37 @@ mod tests {
         assert!(c.validate().is_err());
     }
 
+    /// A provider table with no `url` fails to boot, naming the key. The
+    /// section reads its defaults from one `Default` impl, so serde cannot
+    /// report the missing key itself — the semantic pass owns it, which is
+    /// also what lets every configuration error surface at once.
+    #[test]
+    fn validate_terminology_provider_needs_a_url() {
+        let mut c = FerroEhrConfig::default();
+        let external = &mut c.terminology.external;
+        external.enabled = true;
+        external.providers.insert(
+            "default".to_owned(),
+            crate::service::terminology::config::FhirProviderConfig::default(),
+        );
+        let err = c
+            .validate()
+            .expect_err("a provider with no url must be rejected");
+        assert!(
+            err.to_string()
+                .contains("terminology.external.providers.default.url"),
+            "got {err}"
+        );
+
+        c.terminology
+            .external
+            .providers
+            .get_mut("default")
+            .expect("provider")
+            .url = "https://ts.example/fhir".to_owned();
+        assert!(c.validate().is_ok());
+    }
+
     /// A terminology route naming a provider that is not configured is a boot
     /// error — never a silent fall-back to the default server.
     #[test]
@@ -1078,18 +1116,27 @@ mod tests {
             .expect_err("an unconfigured oauth2_client must be rejected");
         assert!(err.to_string().contains("ts-client"), "got {err}");
 
+        // A client table with none of its mandatory keys: each is named. The
+        // section reads its defaults from one `Default` impl, so serde no
+        // longer reports the missing keys and this pass owns all three.
+        c.terminology.external.oauth2_clients.insert(
+            "ts-client".to_owned(),
+            crate::service::terminology::config::TerminologyOauth2Config::default(),
+        );
+        let err = c
+            .validate()
+            .expect_err("a client with no token_url/client_id/secret is rejected");
+        for key in ["token_url", "client_id", "client_secret"] {
+            assert!(err.to_string().contains(key), "{key} unnamed in {err}");
+        }
+
         // A client with no secret cannot run the client-credentials grant.
         c.terminology.external.oauth2_clients.insert(
             "ts-client".to_owned(),
             crate::service::terminology::config::TerminologyOauth2Config {
                 token_url: "https://idp.example/token".to_owned(),
                 client_id: "cdr".to_owned(),
-                client_secret: None,
-                client_secret_file: None,
-                scopes: Vec::new(),
-                refresh_leeway_secs: 30,
-                auth_method:
-                    crate::service::terminology::config::Oauth2AuthMethod::ClientSecretBasic,
+                ..crate::service::terminology::config::TerminologyOauth2Config::default()
             },
         );
         let err = c.validate().expect_err("a secretless client is rejected");

@@ -17,17 +17,6 @@
 use crate::config::secret::SecretUrl;
 use serde::{Deserialize, Serialize};
 
-/// The default AMQP broker URL (`RabbitMQ`, vhost `/`).
-const DEFAULT_URL: &str = "amqp://guest:guest@localhost:5672/%2f";
-/// The default topic exchange — SEPARATE from the events exchange (PHI note).
-const DEFAULT_EXCHANGE: &str = "ferroehr.fhir";
-/// Default rows drained per poll.
-const DEFAULT_BATCH_SIZE: i64 = 128;
-/// Default poll interval when the outbox is idle (ms).
-const DEFAULT_POLL_INTERVAL_MS: u64 = 1_000;
-/// Default per-message publish retry count before the emitter backs off.
-const DEFAULT_PUBLISH_MAX_RETRIES: usize = 3;
-
 /// The `[fhir]` section: the inbound API façade toggle + the outbound emitter.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
@@ -65,12 +54,12 @@ impl Default for FhirOutboundConfig {
     fn default() -> Self {
         Self {
             enabled: false,
-            url: SecretUrl::new(DEFAULT_URL),
-            exchange: DEFAULT_EXCHANGE.to_owned(),
+            url: SecretUrl::new("amqp://guest:guest@localhost:5672/%2f"),
+            exchange: "ferroehr.fhir".to_owned(),
             tls: false,
-            batch_size: DEFAULT_BATCH_SIZE,
-            poll_interval_ms: DEFAULT_POLL_INTERVAL_MS,
-            publish_max_retries: DEFAULT_PUBLISH_MAX_RETRIES,
+            batch_size: 128,
+            poll_interval_ms: 1_000,
+            publish_max_retries: 3,
         }
     }
 }
@@ -99,6 +88,9 @@ mod tests {
         assert!(!c.api_enabled);
         assert!(!c.outbound.enabled, "off by default (PHI stream)");
         assert_eq!(c.outbound.exchange, "ferroehr.fhir");
+        assert_eq!(c.outbound.batch_size, 128);
+        assert_eq!(c.outbound.poll_interval_ms, 1_000);
+        assert_eq!(c.outbound.publish_max_retries, 3);
         assert!(c.outbound.url.expose().starts_with("amqp://"));
     }
 
