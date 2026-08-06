@@ -39,7 +39,14 @@ impl HealthIndicator for DbHealth {
     async fn check(&self) -> Health {
         match sqlx::query("SELECT 1").execute(&self.pool).await {
             Ok(_) => Health::up(),
-            Err(e) => Health::down(format!("database ping failed: {e}")),
+            Err(e) => {
+                // The health family is UNAUTHENTICATED by design (orchestrator
+                // probes), and an `sqlx::Error` Display can name the DSN host,
+                // the database, the role, or SQL text. The operator reads the
+                // cause here; the wire gets the fact alone.
+                tracing::error!(error = %e, "health: database ping failed");
+                Health::down("database ping failed")
+            }
         }
     }
 }
@@ -74,7 +81,10 @@ impl HealthIndicator for MigrationsHealth {
         {
             Ok(true) => Health::up(),
             Ok(false) => Health::down("core schema tables missing (migrations not applied)"),
-            Err(e) => Health::down(format!("migration check failed: {e}")),
+            Err(e) => {
+                tracing::error!(error = %e, "health: migration check failed");
+                Health::down("migration check failed")
+            }
         }
     }
 }

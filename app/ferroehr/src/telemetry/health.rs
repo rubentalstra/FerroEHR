@@ -142,12 +142,12 @@ impl HealthRegistry {
             let (name, required, health) = match joined {
                 Ok(v) => v,
                 Err(join_err) => {
-                    // A panicked check counts as a required DOWN.
+                    // A panicked check counts as a required DOWN. The join
+                    // error's Display can carry the panic payload, and this
+                    // surface is unauthenticated — so it is logged, not served.
+                    tracing::error!(error = %join_err, "health: check task failed");
                     overall = HealthStatus::Down;
-                    components.insert(
-                        "unknown",
-                        Health::down(format!("health check task failed: {join_err}")),
-                    );
+                    components.insert("unknown", Health::down("health check task failed"));
                     continue;
                 }
             };
