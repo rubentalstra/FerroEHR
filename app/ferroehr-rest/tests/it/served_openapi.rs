@@ -117,8 +117,9 @@ async fn every_path_template_parameter_is_documented() {
     );
 }
 
-/// Rule 2: every operation carries a non-empty summary or description, and
-/// at least one success (2xx) response with a non-empty description.
+/// Rule 2: every operation carries a non-empty summary or description, and at
+/// least one described NON-ERROR outcome — the thing that happens when the
+/// request succeeds.
 #[tokio::test]
 async fn every_operation_is_described_with_a_success_outcome() {
     let doc = served_document().await;
@@ -140,8 +141,12 @@ async fn every_operation_is_described_with_a_success_outcome() {
             r.iter().any(|(code, body)| {
                 // A 501-only operation (declared, not yet implemented — e.g.
                 // the deferred ADL2 projections) documents its whole real
-                // contract; a described 501 satisfies the rule.
-                (code.starts_with('2') || code == "501")
+                // contract; a described 501 satisfies the rule. So does a 3xx:
+                // for an operation whose whole contract IS a redirect (the
+                // Swagger UI mount path), the redirect is the success outcome,
+                // and requiring a 2xx there would only invite documenting a
+                // response the route never sends.
+                (code.starts_with('2') || code.starts_with('3') || code == "501")
                     && body
                         .get("description")
                         .and_then(Value::as_str)
@@ -150,7 +155,7 @@ async fn every_operation_is_described_with_a_success_outcome() {
         });
         if !has_success {
             findings.push(format!(
-                "{} {path}: no described 2xx response",
+                "{} {path}: no described success outcome (2xx or 3xx)",
                 method.to_uppercase()
             ));
         }

@@ -307,10 +307,11 @@ const EXTENSION_READ_ROUTES: &[(&str, &str)] = &[("POST", "/message/export")];
 /// `master04-definition_package.adoc` §Archetypes and Templates puts upload,
 /// update and **removal of archetypes and templates** in one clause and one pair
 /// of interfaces, `i_definition_adl2.adoc` collapses the distinction into a
-/// single `delete_artefact` over "archetype, template or operational_template",
-/// and the SM Admin component names no definition artefact at all. Which class
-/// they take is our own design — ITS-REST leaves authorization out of band
-/// (`Requests_and_responses.md` §Authentication and authorization) — and the one
+/// single `delete_artefact` covering archetype, template and
+/// operational-template alike, and the SM Admin component names no definition
+/// artefact at all. Which class they take is our own design — ITS-REST leaves
+/// authorization out of band (`Requests_and_responses.md` §Authentication and
+/// authorization) — and the one
 /// privilege sentence in the vendored tree points at admin for irreversible
 /// deletion (CNF `master04` §Implementation recommendations, non-normative).
 /// These deletes are physical, so Admin.
