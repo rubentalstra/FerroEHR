@@ -557,7 +557,7 @@ impl FerroEhrService {
     ///
     /// The stored source is resolved (`template_id` → HRID), parsed, compiled to
     /// its operational template (`create_opt`), turned into a `WebTemplate` by
-    /// the v2_4 front end
+    /// the `v2_4` front end
     /// ([`openehr_its::flat::webtemplate::build_web_template_v2_4`]),
     /// and walked into a canonical example COMPOSITION at the requested
     /// [`DetailLevel`] — the same shared generator the ADL 1.4 example endpoint
@@ -594,7 +594,7 @@ impl FerroEhrService {
 
     /// The [`WebTemplate`] of a stored ADL2 template: resolve `template_id` →
     /// HRID, fetch the source, compile it to its operational template, and build
-    /// the Web Template with the v2_4 front end
+    /// the Web Template with the `v2_4` front end
     /// ([`build_web_template_v2_4`]).
     /// The ADL2 twin of [`web_template`](Self::web_template) (which reads the
     /// ADL 1.4 OPT store), used by the example endpoint's FLAT/STRUCTURED

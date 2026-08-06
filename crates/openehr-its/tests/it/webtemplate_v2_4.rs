@@ -1,4 +1,4 @@
-//! The v2_4 (ADL2 / OPT2) → Web Template front end
+//! The `v2_4` (ADL2 / OPT2) → Web Template front end
 //! ([`openehr_its::flat::webtemplate::build_web_template_v2_4`]).
 //!
 //! Every case compiles a **real** ADL2 corpus source to its operational
@@ -7,7 +7,7 @@
 //! dialect-neutral seam of `ITS-REST simplified_formats master04 §"Web Template
 //! Metadata"`. The corpus lives in the sibling `openehr-adl` crate
 //! (`tests/corpus/adl2-reference`); `openehr-adl` is a dev-only dependency here
-//! (the production v2_4 front end takes an already-created OPT as input).
+//! (the production `v2_4` front end takes an already-created OPT as input).
 
 #![allow(
     clippy::expect_used,
@@ -78,7 +78,7 @@ fn corpus_repo() -> ArchetypeRepository {
     repo
 }
 
-/// Compile a corpus source to its WebTemplate through the v2_4 front end.
+/// Compile a corpus source to its WebTemplate through the `v2_4` front end.
 fn web_template(rel: &str) -> WebTemplate {
     let archetype = parse_artefact(&read(rel), Dialect::Adl2).expect("parse ADL2");
     let opt = create_opt(&archetype, &corpus_repo()).expect("create_opt");

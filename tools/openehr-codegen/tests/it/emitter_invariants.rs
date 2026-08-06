@@ -2,7 +2,7 @@
 //! **real** vendored BMM inputs (design doc §1). Each test drives
 //! `openehr_codegen::testsupport`, which runs the same LOAD → ANALYZE → PLAN →
 //! RENDER stages `cli.rs` drives. These are the machine-checked replacements for
-//! the emitter's formerly review-enforced or panic-only guarantees:
+//! the emitter's guarantees that no other check enforces:
 //! completeness, constructibility, byte-determinism, source-package mirroring,
 //! downstream-closure correctness, and decision-map integrity.
 

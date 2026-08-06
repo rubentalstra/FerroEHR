@@ -35,7 +35,7 @@
 //!   JSON satisfies it). The response declares no `application/xml` body, so an
 //!   `Accept` naming *only* `application/xml` is a `406`.
 //! - **ADL 2 example get** (`_example_get`): the stored ADL2 template is compiled
-//!   to its operational template and turned into a Web Template (the v2_4 front
+//!   to its operational template and turned into a Web Template (the `v2_4` front
 //!   end), which the shared example generator walks into an example COMPOSITION —
 //!   served across the four `Accept_LOCATABLE` forms (`200`), with `400`/`404`/
 //!   `406` exactly as the ADL 1.4 example endpoint.
@@ -1107,7 +1107,7 @@ pub(crate) async fn definition_template_adl2_get(
 /// (`GET /definition/template/adl2/{template_id}/example`).
 ///
 /// The stored ADL2 template is compiled to its operational template and turned
-/// into a Web Template (the v2_4 front end), which the shared example generator
+/// into a Web Template (the `v2_4` front end), which the shared example generator
 /// walks into a canonical example COMPOSITION — the same generator the ADL 1.4
 /// example endpoint uses.
 #[utoipa::path(

@@ -10,7 +10,7 @@
 //! unchanged" — realized by the storage layer (a new `vo_version` row per
 //! commit). This module owns the **legality** of each transition: reading
 //! the current state from the preceding version and rejecting a transition the
-//! spec does not sanction (previously any target state was accepted).
+//! spec does not sanction.
 
 use crate::service::error::{ServiceError, Violation};
 use openehr_term::bundle::openehr;

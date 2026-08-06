@@ -5,7 +5,7 @@
     let_underscore_drop,
     reason = "test assertions/diagnostics/fixtures"
 )]
-//! opt14 ↔ v1_4 constraint-model divergence sentinel.
+//! opt14 ↔ `v1_4` constraint-model divergence sentinel.
 //!
 //! The AOM 1.4 constraint model exists twice by design: BMM-generated
 //! `openehr_am::v1_4` (the canonical logical model, canonical-JSON codec) and
@@ -82,7 +82,7 @@ mod opt14_inventory {
     }
 }
 
-/// The v1_4 (BMM/AOM 1.4) polymorphic constraint inventories, same mechanism.
+/// The `v1_4` (BMM/AOM 1.4) polymorphic constraint inventories, same mechanism.
 #[expect(
     dead_code,
     reason = "the inventory fns exist for their exhaustive wildcard-free matches, which are the compile-time drift guard; nothing calls them"

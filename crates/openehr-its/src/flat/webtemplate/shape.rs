@@ -1,8 +1,8 @@
 //! Dialect-neutral Web-Template tree shaping.
 //!
 //! Everything here operates on the already-built [`WebTemplateNode`] tree and is
-//! therefore **independent of the source dialect** (OPT 1.4 or the v2_4 OPT2):
-//! both the [`super::builder`] (opt14) and [`super::builder_v2_4`] (v2_4) front
+//! therefore **independent of the source dialect** (OPT 1.4 or the `v2_4` OPT2):
+//! both the [`super::builder`] (opt14) and [`super::builder_v2_4`] (`v2_4`) front
 //! ends produce the same [`WebTemplateNode`] tree and hand it to these shared
 //! passes, so the level-removal + in-context + post-process semantics are
 //! written once and never forked.

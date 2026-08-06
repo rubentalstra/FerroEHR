@@ -199,8 +199,8 @@ async fn tag_targets_must_be_within_the_same_ehr() {
         None,
     )];
     // Tagging A's composition from A: accepted. The route family must match
-    // the stored kind (the fixture previously said EHR_STATUS for a
-    // COMPOSITION target, which the kind guard now rejects).
+    // the stored kind — the kind guard rejects an EHR_STATUS route for a
+    // COMPOSITION target.
     svc.target_tags_replace(ehr_a, vo_a.to_string(), "COMPOSITION", tag.clone())
         .await
         .expect("own-EHR tag accepted");
