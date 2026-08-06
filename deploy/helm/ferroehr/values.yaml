@@ -157,6 +157,23 @@ config:
     swagger_ui: true
     # Permissive CORS — DEV ONLY. Production configures explicit origins.
     cors_permissive: false
+    # [server.limits] — the largest accepted request body per route family.
+    # Raise body_bytes if compositions embed large DV_MULTIMEDIA data; the bulk
+    # tier covers template upload and the /message imports. Over-limit is 413.
+    limits:
+      body_bytes: 16777216
+      bulk_body_bytes: 67108864
+    # [server.rate_limit] — per-caller rates, refused 429 + Retry-After. Not the
+    # same control as the in-flight shed (503): this one is per caller over time.
+    # The defaults sit above the reference SUT's measured whole-server ceiling
+    # (512 req/s) — raise them in proportion on server-class hardware. Turn the
+    # limiter off before benchmarking, or the benchmark measures the limiter.
+    rate_limit:
+      enabled: true
+      principal_per_second: 1024
+      principal_burst: 2048
+      address_per_second: 2048
+      address_burst: 4096
 
   # [db] — pool bounds (the DSN itself is the FERROEHR__DB__URL secret, above).
   db:
