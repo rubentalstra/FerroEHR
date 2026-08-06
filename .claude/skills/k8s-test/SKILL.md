@@ -38,9 +38,20 @@ output.
 
 1. **The cluster does NOT share the Docker image store.** Docker Desktop's
    Kubernetes runs a kind-style node (`desktop-control-plane`) with its own
-   containerd. A locally built `:local` image is invisible to it: the pod sits
-   `ErrImageNeverPull`. Published images pull normally; a local one must be
-   imported (command in step 3).
+   containerd. A locally built image is invisible to it, and **the symptom depends
+   on the pull policy** — measured 2026-08-06 by building a local-only image and
+   deploying it:
+
+   - `imagePullPolicy: IfNotPresent` (or `Always`) → **`ErrImagePull`**, because
+     the kubelet does not find it locally and falls back to the registry:
+     `failed to resolve reference "docker.io/library/<image>": pull access denied,
+     repository does not exist`. This is the case you will actually hit, since it
+     is the chart's default policy.
+   - `imagePullPolicy: Never` → `ErrImageNeverPull`, the kubelet refusing to look
+     at a registry at all.
+
+   Either way the fix is the same: import it into the node's containerd (step 0b).
+   Published images pull normally.
 2. **Service link env variables break this server.** The kubelet injects
    `<SVC>_SERVICE_HOST`, `<SVC>_PORT_8080_TCP_ADDR` … for every Service in the
    namespace. For a Service named `ferroehr*` those land inside the server's
@@ -66,12 +77,14 @@ output.
    # cannot deploy its own appVersion without the version-skew nulls below.
    ```
 
-4. **There may be no ConfigMap.** A secret with no `*_file` route in the config
-   tree — today only `config.auth.basic.users[].password_hash` — moves the whole
-   rendered `ferroehr.toml` into `<release>-config` (a Secret) and renders no
-   ConfigMap at all. `test-values.yaml` sets a Basic user, so **this is the mode
-   the live test runs in**. A step that greps the ConfigMap for a config value
-   finds nothing and it is not a fault; read the Secret (step 5).
+4. **A secret in `config:` is refused, not rendered.** The chart classifies every
+   key it renders: one with a `secrets:` route (the DSN, the AMQP URLs, a Basic
+   user's hash, the OIDC HMAC secret, a signing passphrase, a terminology client
+   secret) **fails the render** naming the key that carries it. One with no route
+   at all would move the whole `ferroehr.toml` into a Secret and render no
+   ConfigMap — but no key reaches that branch today, so a normal run has a
+   ConfigMap. If `helm template` refuses with "refusing to render a secret into
+   the ConfigMap", move the value to `secrets:` as the message says.
 
 ## 0. Cluster
 
@@ -83,6 +96,41 @@ helm version --short                # v4.1.3+gc94d381
 
 If there is no cluster: Docker Desktop → Settings → Kubernetes → *Enable
 Kubernetes* → Apply & restart. Nothing here needs a cloud account.
+
+## 0b. Testing a chart change that needs an UNRELEASED server
+
+The chart often needs server support that no published image has yet — the
+`*_file` configuration keys are the standing example. `appVersion` names the last
+release, so `helm install` with the default tag crash-loops on
+`unknown configuration key …`. Build the image from the branch and load it:
+
+```bash
+docker build -t ghcr.io/rubentalstra/ferroehr:dev-local \
+  --target runtime-from-source -f docker/Dockerfile .        # ~10-15 min cold
+docker save ghcr.io/rubentalstra/ferroehr:dev-local \
+  | docker exec -i desktop-control-plane ctr -n k8s.io images import -
+helm upgrade ... --set image.tag=dev-local --set image.pullPolicy=IfNotPresent
+```
+
+**The `ctr import` step is not optional, and `IfNotPresent` alone does not save
+you.** Docker Desktop's Kubernetes runs in the `desktop-control-plane` container
+with **its own containerd image store, which does not share the Docker daemon's** —
+verified by building a local-only image and watching the kubelet try to pull it
+from docker.io:
+
+```text
+crictl images | grep local-only-probe     → (nothing)
+pod status: ErrImagePull — "failed to resolve reference docker.io/library/local-only-probe:v1:
+             pull access denied, repository does not exist"
+```
+
+After the import the same pod runs and prints its marker. Check with
+`docker exec desktop-control-plane crictl images | grep ferroehr` before blaming
+the chart.
+
+A locally built image is a legitimate SUT for a hardening or behaviour test. It is
+**not** legitimate for a provenance claim — it carries no attestation, so anything
+about signing or verification still needs a published artifact.
 
 ## 1. Static gates first (seconds, and they catch most mistakes)
 
@@ -194,18 +242,17 @@ filter that denies by default. The same inspect output lists the mounts: only
 `/dev/termination-log` are writable; `/etc/ferroehr` and
 `/etc/ferroehr-secrets` are `ro`.
 
-Which object carries the configuration, and the proof that no ConfigMap holds a
-credential (`test-values.yaml` configures a Basic user, so this run is the
-Secret-borne mode — fact 4 above):
+Where each secret actually lives, and the proof none of them is in the ConfigMap
+or the environment (`test-values.yaml` configures a Basic user and an external-Secret
+DSN, so this run exercises the mounted path):
 
 ```bash
 kubectl -n ferroehr-test get configmap,secret
-# configmap/kube-root-ca.crt only — the chart rendered NO ConfigMap
-# secret/ferroehr-config  ← ferroehr.toml lives here
-kubectl -n ferroehr-test get configmap -o yaml | grep -c argon2id      # 0
-kubectl -n ferroehr-test get pod $P -o jsonpath='{.spec.volumes}'      # projected: secret only
-kubectl -n ferroehr-test get secret ferroehr-config \
-  -o jsonpath='{.data.ferroehr\.toml}' | base64 -d | head
+kubectl -n ferroehr-test get configmap -o yaml | grep -c argon2id     # 0
+# the DSN is a PATH in the env, never a value:
+kubectl -n ferroehr-test get pod $P -o jsonpath='{range .spec.containers[0].env[*]}{.name}={.value}{"\n"}{end}'
+#   FERROEHR__DB__URL_FILE=/etc/ferroehr-secrets/db.url
+kubectl -n ferroehr-test get pod $P -o jsonpath='{.spec.volumes}'     # projected: the operator's Secret + the chart's
 ```
 
 A file-borne secret, checked on the node rather than in the template:
@@ -490,10 +537,11 @@ objects — the observability fixture and metrics-server both leave some behind.
 | `Error: 16 configuration error(s): unknown configuration environment variable FERROEHR_SERVICE_HOST` (+ `FERROEHR_PORT_8080_TCP…`, `FERROEHR_POSTGRES_…`) then `CrashLoopBackOff` | The kubelet's Service link variables collide with the reserved `FERROEHR_` prefix for any Service named `ferroehr*` | `enableServiceLinks: false` on the pod spec. The chart pins it and `validate.sh` asserts it — if you see this, someone removed it |
 | `unknown configuration key spec_profile (line 1)` / `statement_timeout_ms` / `limits` / `connection` | The chart's `config:` defaults are newer than the image `appVersion` names | Diff the key sets against the image itself: `kubectl -n default run cfg --image=ghcr.io/rubentalstra/ferroehr:<tag> --restart=Never --attach --rm --quiet --command -- /usr/local/bin/ferroehr config default`. Then either use an image that has the keys, or null them for the test (`--set config.spec_profile=null`, `--set config.db.statement_timeout_ms=null`, `--set config.server.limits=null`, …). Do NOT delete the keys from `values.yaml` — they are correct for the next release |
 | Every request `401` with `WWW-Authenticate: Basic realm="ferroehr"` | Chart default is `auth.enabled: true` with NO mechanism configured — it boots and refuses everything | Supply `config.auth.basic.users` (as `test-values.yaml` does) or `config.auth.oidc` |
-| Pod `ErrImageNeverPull` for an image `docker images` clearly lists | The cluster's containerd store is separate from the Docker daemon's | `docker save … \| docker exec -i desktop-control-plane ctr -n k8s.io images import -` |
 | `Upgrade failed: … .env: duplicate entries for key [name="FERROEHR__…"]` | `extraEnv` repeated a name the chart already emits | Set the value through its own key, not `extraEnv` |
 | Pods stay NotReady with `migrations` DOWN / `core schema tables missing (migrations not applied)` while `db: UP` | The database was replaced/wiped under a running pod; migrations run only at boot | `kubectl rollout restart deploy/ferroehr` (a running pod also recovers by itself once anything else migrates — step 6) |
 | A replacement pod crash-loops on `relation "vo_version" already exists`, `_sqlx_migrations` stuck at 6 | Only the `ehr` schema was dropped; `cold.vo_version` survived and migration 7 creates it unguarded | Recreate the whole database, not one schema (step 6) |
+| `ErrImagePull` (or `ErrImageNeverPull` with `pullPolicy: Never`) for an image `docker images` clearly lists | The cluster's containerd store is separate from the Docker daemon's — see fact 1 for which symptom appears when | `docker save … \| docker exec -i desktop-control-plane ctr -n k8s.io images import -` (step 0b) |
+| Pod exits with `unknown configuration key …` | the chart's values or its `*_FILE` env outrun the pinned image | build from the branch (step 0b), or pin a newer tag |
 | `kubectl get configmap <release>` returns NotFound | A Basic user (or any secret with no `*_file` route) moved the whole config into `<release>-config`, a Secret | Read the Secret; this is the mode `test-values.yaml` runs in (fact 4) |
 | `golden ...: SKIPPED — running helm X, goldens are pinned to Y` | Local helm differs from `deploy/helm/.tool-versions`; renders are not byte-stable across helm releases | Install the pinned helm, or bump the pin AND `validate.sh --update` together |
 | Readiness `503` with `db: DOWN, terminating connection due to administrator command` | The database went away | Expected and correct: readiness fails, liveness does not, the pod leaves the Service and is not restarted |

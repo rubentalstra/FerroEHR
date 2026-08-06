@@ -9,16 +9,22 @@
 #                            proven. This is the published quickstart credential
 #                            (ferroehr/ferroehr, Argon2id) — dev only.
 #
-# A password HASH has no `*_file` sibling in the server's config tree, so the
-# chart cannot deliver it as a mounted file: setting it moves the WHOLE rendered
-# ferroehr.toml into the Secret and renders no ConfigMap at all. That makes this
-# overlay the live exercise of that branch — step 5 asserts it. For anything real
-# use config.auth.oidc.
+# The password HASH goes in `secrets:`, never in `config:` — the chart mounts it at
+# /etc/ferroehr-secrets/auth.basic.users.<username>.password_hash and injects the
+# matching `password_hash_file`, so it reaches neither the ConfigMap nor the
+# environment. Setting it under `config:` is REFUSED at render time. This overlay
+# is therefore the live exercise of the mounted-secret path (step 5 asserts it).
 replicaCount: 2
 
 database:
   existingSecret: ferroehr-db
+  # The key inside that Secret. The chart PROJECTS it as a file and passes only
+  # FERROEHR__DB__URL_FILE, so the DSN never enters the pod's environment.
   existingSecretKey: FERROEHR__DB__URL
+
+secrets:
+  basicUserPasswordHashes:
+    ferroehr: '$argon2id$v=19$m=19456,t=2,p=1$ZmVycm9laHJEZXZTYWx0$be5nPwWjfUl1qvSrvkvqvdMOuCgM0VFcN/VN4MFLjT8'
 
 config:
   # ── Version-skew block: DELETE these once `appVersion` names an image that has
@@ -38,6 +44,6 @@ config:
     enabled: true
     basic:
       users:
+        # Identity and roles only; the hash is in `secrets:` above.
         - username: ferroehr
-          password_hash: '$argon2id$v=19$m=19456,t=2,p=1$ZmVycm9laHJEZXZTYWx0$be5nPwWjfUl1qvSrvkvqvdMOuCgM0VFcN/VN4MFLjT8'
           roles: [ADMIN, USER]

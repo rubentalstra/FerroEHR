@@ -18,6 +18,41 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The cluster-hardening chapter now covers breach containment, logging, managed
+  control planes and the supply chain.** What scaling to zero does and does not
+  stop (it halts clinical access immediately — a clinical-safety decision to make
+  before an incident, not during one — but does not undo an append-only commit,
+  does not stop an attacker holding the DSN, and does not truncate the audit
+  trail). A rotation procedure for every credential, with the restart requirement
+  stated, because configuration is read at boot and Kubernetes propagating a Secret
+  into a volume does not make a running process re-read it. A checkable
+  supply-chain map: each control against the artifact that satisfies it and the
+  command you can run to verify it yourself, including the two gaps that remain.
+  And an honest account of what becomes your cloud provider's on a managed control
+  plane, with the instruction to **test** NetworkPolicy enforcement rather than
+  read the provider's documentation and conclude.
+
+- **The application log and the ATNA audit trail are documented as two streams that
+  must not be treated alike.** The application log is diagnostics on stdout and may
+  be sampled or dropped; the audit trail is the accountability record — who
+  accessed which patient's data — travelling by a different path, with its own
+  store, its own ITI-81 retrieval endpoint and its own retention. A collector
+  configured to drop a noisy stream under volume is a reasonable policy for the
+  first and a compliance failure for the second, and the two are separated
+  precisely so that one can be lossy.
+
+- **Rotating a PGP version-signing key is documented as the operation it actually
+  is.** In the default `digest` mode there is no key and nothing to rotate. In
+  `pgp` mode, replacing the key makes **every previously-signed version fail
+  verification**: the stored signature carries no key identifier, verification
+  checks against the single currently-configured key, and with the default
+  `verify_on_read: strict` that is served as a 5xx on reading historical data. The
+  signatures cannot be re-issued, because a version's signature is an immutable
+  committed fact. The three real options — treat the key as long-lived, move to
+  `verify_on_read: warn` across a rotation as a recorded reduction in guarantee, or
+  use `digest` mode — are documented with their trade-offs, along with the fact
+  that no keyring or multi-key verification exists today.
+
 - **A default-deny egress policy you can actually write correctly.** `networkPolicy.egress.enabled` refuses all outbound traffic except what you list; DNS is always included, and the database is now a first-class `networkPolicy.egress.database` key rather than something to remember. Enabling egress with **no** database destination is refused at render time, because that mistake presents as a database fault — readiness reports the DB down, the log shows a connect timeout, and nothing mentions the network policy. The cluster-hardening chapter carries the full destination table derived from the configuration tree: every outbound destination the server can make, which config key turns it on, and the port it needs, so a policy can be assembled from what you have enabled rather than guessed from what a default install happens to use.
 
   Two failure modes are documented beside it because neither announces itself. **A blocked OTLP collector drops spans without failing any request**, so an over-tight policy produces a server that is healthy by every check and has silently stopped being observable. And **tightening egress under a running pod appears to work when it has not**: a NetworkPolicy is enforced on new connections, so a pod whose connection pool is already established keeps serving after you remove its database rule and fails at the next restart — measured, along with the recovery, on a live cluster.
