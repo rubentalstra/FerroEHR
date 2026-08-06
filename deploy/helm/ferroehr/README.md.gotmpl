@@ -1,0 +1,121 @@
+{{ template "chart.header" . }}
+
+{{ template "chart.description" . }}
+
+{{ template "chart.badgesSection" . }}
+
+FerroEHR is a pure-Rust openEHR Clinical Data Repository: ITS-REST 1.1.0 at the
+API, AQL 1.1 as the query language, PostgreSQL 18-native storage, shipped as a
+single static binary. This chart deploys the server.
+
+## Before you install: three things that surprise people
+
+**This chart does not deploy a database.** It expects an **external PostgreSQL
+18** (18.4 or newer) and will not start without one. Point it at your own
+instance, a managed service, or a separate PostgreSQL chart — `database.url` or,
+for production, `database.existingSecret`.
+
+**With no authentication mechanism configured, the server boots and answers
+`401` to everything.** `auth.enabled` defaults to `true`, and a deployment with
+no `[auth.oidc]` issuer and no Basic user has nothing to authenticate against.
+That is fail-closed and deliberate: the alternative is an openEHR repository
+serving patient data to anonymous callers. Configure a mechanism, or set
+`config.auth.enabled: false` for a throwaway evaluation.
+
+**A secret set in the wrong place fails the render on purpose.** See
+[Secrets](#secrets) — this chart refuses to put a credential in a ConfigMap
+rather than doing it quietly.
+
+## Install
+
+The chart is published as an **OCI artifact**. There is no chart repository to
+add — `helm repo add` does not apply to this chart and never will:
+
+```console
+helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
+  --version {{ template "chart.version" . }} \
+  --namespace ferroehr --create-namespace \
+  --set database.existingSecret=ferroehr-db \
+  --set image.tag={{ template "chart.appVersion" . }}
+```
+
+OCI registries require Helm 3.8 or newer.
+
+### Pin two versions, not one
+
+They are independent SemVer lines and they move independently:
+
+| What | Set with | This release |
+|---|---|---|
+| the **chart** (templates, defaults, this document) | `--version` | `{{ template "chart.version" . }}` |
+| the **server image** | `image.tag` | `{{ template "chart.appVersion" . }}` |
+
+`appVersion` is the image the chart defaults to; pinning `image.tag` explicitly
+is what keeps an upgrade of one from silently moving the other.
+
+### Verify what you pulled
+
+Both the chart and the images carry Sigstore-signed build provenance:
+
+```console
+gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:{{ template "chart.version" . }} \
+  -R rubentalstra/FerroEHR
+gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:{{ template "chart.appVersion" . }} \
+  -R rubentalstra/FerroEHR
+```
+
+`helm install --verify` does **not** apply: it reads a `.prov` provenance file,
+and this chart is attested through Sigstore rather than signed with a long-lived
+PGP key — deliberately, because keeping such a key in CI is a worse posture than
+not having one.
+
+## Secrets
+
+Every value under `secrets:` is carried by a chart-managed Secret, and **how it
+reaches the process differs by design**. A secret with a `*_file` sibling in the
+server's configuration is **mounted read-only** at
+`/etc/ferroehr-secrets/<config.path>`, and only the *path* is passed as an
+environment variable — because an environment variable is readable through
+`/proc/<pid>/environ` and inherited by every child process. The few keys with no
+`*_file` sibling still pass their value as env; that is a gap in the
+configuration tree, not a choice this chart made.
+
+**Setting a secret under `config:` refuses to render.** Values under `config:`
+become a ConfigMap, which is not a sensitive object — it is readable with
+namespace read, collected by backup tooling that skips Secrets, and unencrypted
+at rest even where Secret encryption is enabled. The refusal names the
+`secrets:` key that carries the value safely.
+
+**A secret with no `secrets:` route at all moves the whole configuration into the
+Secret**, and then **no ConfigMap is created**. This is how a Helm-configured
+Basic user's Argon2id hash is delivered. If your automation reads
+`kubectl get configmap <release>`, read the Secret instead.
+
+The classification is by **name shape**, not a fixed list, so a secret-looking
+key added to the server's configuration tomorrow is caught without anyone
+remembering to update this chart.
+
+## Hardened by default
+
+The pod runs as uid/gid 65532 with `runAsNonRoot`, an empty capability set,
+`allowPrivilegeEscalation: false`, `readOnlyRootFilesystem: true`, and
+`seccompProfile: RuntimeDefault` — the Pod Security Standards **Restricted**
+profile. `automountServiceAccountToken` is off because the workload never calls
+the Kubernetes API, and `enableServiceLinks` is off because the kubelet's
+injected `FERROEHR_*` Service variables would otherwise collide with the
+server's own configuration namespace and stop it booting.
+
+A default-deny-ingress NetworkPolicy ships enabled. **It does nothing unless
+your CNI enforces NetworkPolicy** — check yours; several do not.
+
+{{ template "chart.requirementsSection" . }}
+
+{{ template "chart.valuesSection" . }}
+
+## More
+
+Full deployment documentation, including the least-privilege database roles and
+the observability wiring, is at
+<https://ferroehr.eu/docs/latest/installation/kubernetes.html>.
+
+{{ template "helm-docs.versionFooter" . }}

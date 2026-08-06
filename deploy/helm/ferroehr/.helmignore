@@ -9,3 +9,8 @@
 .idea/
 .vscode/
 # The golden renders + validator live one level up, not inside the chart.
+
+# The helm-docs template that GENERATES README.md. The rendered README ships (it
+# is the chart's front page on a registry and on Artifact Hub); the template is
+# build input and would only confuse a reader who unpacked the tarball.
+README.md.gotmpl
