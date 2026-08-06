@@ -148,7 +148,7 @@ jobs:
       # sibling branches"). The tag/publish lanes that lack that property
       # (release.yml, publish-crates.yml) build cold instead.
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-        with:
+        with: # zizmor: ignore[cache-poisoning]
           shared-key: containers-${{ matrix.platform }}
 
       - name: Build (release, native)
@@ -284,7 +284,7 @@ jobs:
 
       # Same publishing-lane reasoning as the app binary job above.
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-        with:
+        with: # zizmor: ignore[cache-poisoning]
           shared-key: containers-admin-ui-${{ matrix.platform }}
 
       - name: Build the ssr server binary (release, native)
