@@ -350,7 +350,13 @@ mod tests {
             review: Vec::new(),
             capabilities: capabilities
                 .iter()
-                .map(|(n, e)| ((*n).parse::<CapabilityName>().expect("test capability name"), *e))
+                .map(|(n, e)| {
+                    (
+                        (*n).parse::<CapabilityName>()
+                            .expect("test capability name"),
+                        *e,
+                    )
+                })
                 .collect(),
             capability_tallies: Vec::new(),
             profiles: profiles.to_vec(),
@@ -410,7 +416,10 @@ mod tests {
             },
         );
         assert_eq!(message(&out, "badge-core.json"), "PASS 2/2 capabilities");
-        assert_eq!(message(&out, "badge-standard.json"), "PASS 3/3 capabilities");
+        assert_eq!(
+            message(&out, "badge-standard.json"),
+            "PASS 3/3 capabilities"
+        );
         assert_eq!(
             message(&out, "badge-options.json"),
             "PASS 1/1 optional capabilities"
@@ -454,7 +463,10 @@ mod tests {
             },
         );
         assert_eq!(message(&out, "badge-core.json"), "FAIL 1/2 capabilities");
-        assert_eq!(message(&out, "badge-standard.json"), "FAIL 2/3 capabilities");
+        assert_eq!(
+            message(&out, "badge-standard.json"),
+            "FAIL 2/3 capabilities"
+        );
         assert_eq!(
             message(&out, "badge.json"),
             "NOT PASSING · 38/40 cases",
@@ -470,11 +482,7 @@ mod tests {
         let mut caps = all_passed();
         caps[0] = ("EhrOperations", Evidence::NotEvidenced);
         let out = badges(
-            &report(
-                &caps,
-                &[(Tier::Core, ProfileVerdict::Fail)],
-                None,
-            ),
+            &report(&caps, &[(Tier::Core, ProfileVerdict::Fail)], None),
             &matrix(),
             CaseCounts::default(),
         );
@@ -518,7 +526,10 @@ mod tests {
                 errored: 1,
             },
         );
-        let overall = out.iter().find(|b| b.file == "badge.json").expect("overall");
+        let overall = out
+            .iter()
+            .find(|b| b.file == "badge.json")
+            .expect("overall");
         assert_eq!(
             overall.badge.message,
             "CORE+STANDARD PASS · 39/40 cases (1 failing)"
