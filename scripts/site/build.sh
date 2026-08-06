@@ -125,16 +125,11 @@ else
 fi
 
 # 8. Build /docs/latest/ fresh from the newest tag's sources (deep links work).
-LATEST_TAG="$(python3 - "$OUT/versions.json" <<'PY'
-import json, sys
-try:
-    m = json.load(open(sys.argv[1]))
-except Exception:
-    print(""); sys.exit(0)
-lt = m.get("latest")
-print(lt if lt and lt != "dev" else "")
-PY
-)"
+# An unreadable manifest, an absent `latest`, or `latest: "dev"` all yield the
+# empty string, which the guard below reads as "no frozen tag to build from" —
+# so a malformed file skips this step rather than failing the whole site build.
+LATEST_TAG="$(jq -r 'if (.latest // "") == "dev" then "" else (.latest // "") end' \
+  "$OUT/versions.json" 2>/dev/null || true)"
 if [[ -n "$LATEST_TAG" ]] && git rev-parse -q --verify "refs/tags/$LATEST_TAG" >/dev/null 2>&1; then
   log "building /docs/latest/ from tag $LATEST_TAG"
   WT="$ROOT/.latest-src"
