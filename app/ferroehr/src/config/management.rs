@@ -43,6 +43,20 @@ impl AccessLevel {
     pub const fn is_mounted(self) -> bool {
         !matches!(self, AccessLevel::Off)
     }
+
+    /// The level's configuration spelling, as it appears in `ferroehr.toml`.
+    ///
+    /// Used by the boot log, so what an operator reads back matches what they
+    /// wrote.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            AccessLevel::Off => "off",
+            AccessLevel::AdminOnly => "admin_only",
+            AccessLevel::Private => "private",
+            AccessLevel::Public => "public",
+        }
+    }
 }
 
 /// Per-endpoint access levels. Each defaults to [`AccessLevel::Off`].
