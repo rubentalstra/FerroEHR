@@ -71,6 +71,7 @@ fn config(enabled: bool) -> AppConfig {
                 users: vec![BasicUser {
                     username: "alice".to_owned(),
                     password_hash: ferroehr::config::secret::Secret::new(argon2_hash("pw")),
+                    password_hash_file: None,
                     roles: vec!["USER".to_owned()],
                 }],
             }),

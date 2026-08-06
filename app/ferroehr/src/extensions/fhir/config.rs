@@ -14,6 +14,8 @@
 //! control can restrict the PHI-bearing stream independently. Turning it on is
 //! an explicit, audited deployment decision.
 
+use std::path::PathBuf;
+
 use crate::config::secret::SecretUrl;
 use serde::{Deserialize, Serialize};
 
@@ -37,6 +39,9 @@ pub struct FhirOutboundConfig {
     pub enabled: bool,
     /// AMQP broker URL (credentials redacted from every rendering).
     pub url: SecretUrl,
+    /// Path to a file holding the broker URL, read at boot in place of
+    /// [`Self::url`]. Setting both this and a non-default `url` is a boot error.
+    pub url_file: Option<PathBuf>,
     /// Topic exchange to publish FHIR resources to; default `ferroehr.fhir`,
     /// distinct from the events exchange for PHI isolation.
     pub exchange: String,
@@ -55,6 +60,7 @@ impl Default for FhirOutboundConfig {
         Self {
             enabled: false,
             url: SecretUrl::new("amqp://guest:guest@localhost:5672/%2f"),
+            url_file: None,
             exchange: "ferroehr.fhir".to_owned(),
             tls: false,
             batch_size: 128,
