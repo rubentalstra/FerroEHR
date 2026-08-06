@@ -9,9 +9,11 @@
 #                            proven. This is the published quickstart credential
 #                            (ferroehr/ferroehr, Argon2id) — dev only.
 #
-# A password HASH in `config` lands in the ConfigMap, not a Secret, because the
-# server has no `password_hash_file` indirection. Fine for a test; for anything
-# real use config.auth.oidc.
+# A password HASH has no `*_file` sibling in the server's config tree, so the
+# chart cannot deliver it as a mounted file: setting it moves the WHOLE rendered
+# ferroehr.toml into the Secret and renders no ConfigMap at all. That makes this
+# overlay the live exercise of that branch — step 5 asserts it. For anything real
+# use config.auth.oidc.
 replicaCount: 2
 
 database:

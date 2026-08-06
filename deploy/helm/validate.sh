@@ -10,7 +10,10 @@
 #                        allowPrivilegeEscalation:false), plus our
 #                        readOnlyRootFilesystem hardening
 #                        https://kubernetes.io/docs/concepts/security/pod-security-standards/
-#   4. golden render   — compare against deploy/helm/golden/ (or --update it)
+#   4. golden render   — compare against deploy/helm/golden/ (or --update it),
+#                        under the helm version pinned in deploy/helm/.tool-versions
+#                        (`helm template` output is NOT byte-stable across helm
+#                        releases, so the goldens are only reproducible on the pin)
 #   5. kubeconform     — schema-validate the manifests IF kubeconform is on PATH
 #                        (optional; skipped with a note when absent/offline)
 #
@@ -19,6 +22,7 @@
 #   deploy/helm/validate.sh --update   # regenerate the golden renders, then validate
 #
 # No cluster and no network are required for steps 1–4.
+# The CI gate is the `helm-golden` job in .github/workflows/ci.yml.
 
 set -euo pipefail
 
@@ -39,10 +43,24 @@ bold()  { printf '\033[1m%s\033[0m\n' "$*"; }
 command -v helm >/dev/null 2>&1 || { red "helm not found on PATH"; exit 1; }
 bold "helm: $(helm version --short)"
 
+# The golden renders are byte-exact output of ONE helm version (see
+# .tool-versions). A skewed helm produces a whitespace-only diff that reads as
+# chart drift, so the skew is reported as itself instead.
+PIN_FILE="${SCRIPT_DIR}/.tool-versions"
+PINNED_HELM="$(sed -nE 's/^helm[[:space:]]+v?([0-9][^[:space:]]*)[[:space:]]*$/\1/p' "$PIN_FILE" | head -1)"
+[[ -n "$PINNED_HELM" ]] || { red "no helm version declared in ${PIN_FILE}"; exit 1; }
+ACTUAL_HELM="$(helm version --short | sed -E 's/^v?([0-9][^+]*).*$/\1/')"
+GOLDEN_SKEW=0
+if [[ "$ACTUAL_HELM" != "$PINNED_HELM" ]]; then
+  GOLDEN_SKEW=1
+  red "helm version skew: pinned ${PINNED_HELM} (${PIN_FILE}), running ${ACTUAL_HELM}"
+fi
+
 # The value sets to validate: <label>:<values-file>
 declare -a CASES=(
   "default:${CI_DIR}/default-values.yaml"
   "all-features:${CI_DIR}/all-features-values.yaml"
+  "config-in-secret:${CI_DIR}/config-in-secret-values.yaml"
 )
 
 # ── YAML validity check (PyYAML if present, else a helm re-parse) ─────────────
@@ -96,6 +114,111 @@ assert_security() {
 mkdir -p "$GOLDEN_DIR"
 FAIL=0
 
+# ── Secret-leak gate: no credential may reach the ConfigMap ───────────────────
+# Two halves, because there are two ways to get this wrong. (1) Every secret the
+# chart CARRIES is set to a unique sentinel, which must appear in a Secret and in
+# no ConfigMap — absence alone would also be satisfied by dropping the secret on
+# the floor. (2) Every secret-bearing CONFIG key must be refused outright, so a
+# future secret key cannot leak by default — the last probe is a key that does
+# not exist in the server's config tree at all, which is what proves the guard
+# classifies by name shape rather than from a list of today's keys.
+secret_leak_gate() {
+  bold "── secret-leak gate ─────────────────────────────────────"
+  local leak_values="${CI_DIR}/secret-leak-values.yaml"
+  local cm secrets misdelivered=0
+  cm="$(helm template "$RELEASE_NAME" "$CHART_DIR" -n "$NAMESPACE" \
+        -f "$leak_values" -s templates/configmap.yaml)"
+  secrets="$(helm template "$RELEASE_NAME" "$CHART_DIR" -n "$NAMESPACE" \
+        -f "$leak_values" -s templates/secret.yaml)"
+  # No `mapfile`: it is bash 4+, and macOS ships bash 3.2 as /usr/bin/env bash.
+  local -a sentinels=()
+  while IFS= read -r sentinel; do
+    sentinels+=("$sentinel")
+  done < <(grep -oE 'SENTINEL_[A-Z0-9]+_[0-9a-f]{4}' "$leak_values" | sort -u)
+  for sentinel in "${sentinels[@]}"; do
+    if grep -qF -- "$sentinel" <<<"$cm"; then
+      red "  LEAKED into the ConfigMap: ${sentinel}"
+      misdelivered=1
+    fi
+    if ! grep -qF -- "$sentinel" <<<"$secrets"; then
+      red "  NOT DELIVERED by any Secret: ${sentinel}"
+      misdelivered=1
+    fi
+  done
+  if [[ "$misdelivered" -eq 0 ]]; then
+    echo "  all ${#sentinels[@]} carried secrets delivered by a Secret, none in the ConfigMap"
+  else
+    FAIL=1
+  fi
+
+  # ROUTED secrets: the chart carries each through a `secrets:` key, so a value
+  # under `config:` is an operator mistake and must be refused BY NAME.
+  local -a routed_paths=(
+    "db.url"
+    "events.url"
+    "fhir.outbound.url"
+    "audit.fhir_feed.url"
+    "auth.oidc.hmac_secret"
+    "signing.key_passphrase"
+    "multimedia.secret_access_key"
+    "terminology.external.oauth2_clients.tx.client_secret"
+  )
+  local refused=0
+  for path in "${routed_paths[@]}"; do
+    local out
+    if out="$(helm template "$RELEASE_NAME" "$CHART_DIR" -n "$NAMESPACE" \
+              -f "${CI_DIR}/default-values.yaml" \
+              --set-string "config.${path}=SENTINEL_PROBE" 2>&1)"; then
+      red "  NOT REFUSED: config.${path} rendered instead of failing"
+      refused=1
+    elif ! grep -qF -- "config.${path}" <<<"$out"; then
+      red "  config.${path} was refused, but the message does not name it:"
+      echo "$out" | head -3
+      refused=1
+    fi
+  done
+  if [[ "$refused" -eq 0 ]]; then
+    echo "  all ${#routed_paths[@]} routed secret paths refused, each naming its secrets: key"
+  else
+    FAIL=1
+  fi
+
+  # UNROUTED secrets: no `secrets:` key carries them, so the whole rendered TOML
+  # must move into the Secret and NO ConfigMap may exist. The second path is not
+  # a real server key at all — it is the deny-by-default probe, and it is what
+  # proves the guard classifies by name shape rather than from a fixed list.
+  local -a unrouted_paths=(
+    "auth.basic.users[0].password_hash"
+    "server.future_api_key"
+  )
+  local moved=0
+  for path in "${unrouted_paths[@]}"; do
+    local render
+    if ! render="$(helm template "$RELEASE_NAME" "$CHART_DIR" -n "$NAMESPACE" \
+                   -f "${CI_DIR}/default-values.yaml" \
+                   --set-string "config.${path}=SENTINEL_PROBE" 2>&1)"; then
+      red "  config.${path} failed to render; it should move the config into the Secret:"
+      echo "$render" | head -3
+      moved=1
+      continue
+    fi
+    if grep -qE '^kind: ConfigMap$' <<<"$render"; then
+      red "  config.${path}: a ConfigMap was still rendered"
+      moved=1
+    fi
+    if ! grep -qF "SENTINEL_PROBE" <<<"$render"; then
+      red "  config.${path}: the value vanished from the render entirely"
+      moved=1
+    fi
+  done
+  if [[ "$moved" -eq 0 ]]; then
+    echo "  all ${#unrouted_paths[@]} unrouted secret paths delivered by Secret, with no ConfigMap"
+  else
+    FAIL=1
+  fi
+}
+secret_leak_gate
+
 for case in "${CASES[@]}"; do
   label="${case%%:*}"
   values="${case##*:}"
@@ -121,7 +244,11 @@ for case in "${CASES[@]}"; do
   fi
 
   golden="${GOLDEN_DIR}/${label}.yaml"
-  if [[ "$UPDATE" -eq 1 ]]; then
+  if [[ "$GOLDEN_SKEW" -eq 1 ]]; then
+    red "golden ${label}: SKIPPED — running helm ${ACTUAL_HELM}, goldens are pinned to ${PINNED_HELM}."
+    red "  Install helm ${PINNED_HELM}, or bump ${PIN_FILE} AND re-run with --update in the same change."
+    FAIL=1
+  elif [[ "$UPDATE" -eq 1 ]]; then
     cp "$rendered" "$golden"
     green "golden updated: ${golden}"
   elif [[ -f "$golden" ]]; then

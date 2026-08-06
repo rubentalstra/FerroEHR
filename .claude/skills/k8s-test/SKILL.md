@@ -34,7 +34,7 @@ output.
   until it works hides exactly what this exercise exists to surface.
 - Chart behaviour changes regenerate the goldens: `deploy/helm/validate.sh --update`.
 
-## Three facts people get wrong
+## Four facts people get wrong
 
 1. **The cluster does NOT share the Docker image store.** Docker Desktop's
    Kubernetes runs a kind-style node (`desktop-control-plane`) with its own
@@ -51,7 +51,27 @@ output.
    values track the develop tree; `appVersion` names the last published release.
    A key added since that release makes the pod exit with
    `unknown configuration key …`. See the troubleshooting entry — it is the most
-   likely failure of a first run.
+   likely failure of a first run. Check the pairing without a cluster, using the
+   image as the authority:
+
+   ```bash
+   helm template ferroehr deploy/helm/ferroehr -s templates/configmap.yaml \
+     -f deploy/helm/ci/default-values.yaml \
+     | sed -n '/ferroehr.toml/,$p' | sed '1d;s/^    //' > /tmp/rendered.toml
+   docker run --rm -v /tmp/rendered.toml:/etc/ferroehr/ferroehr.toml:ro \
+     -e FERROEHR__DB__URL=postgres://u:p@db:5432/ferroehr \
+     --entrypoint /usr/local/bin/ferroehr ghcr.io/rubentalstra/ferroehr:3.17.3 config check
+   # 3.17.3, 2026-08-06: `unknown configuration key statement_timeout_ms` (default
+   # overlay) and `limits` (all-features) — i.e. the chart on develop currently
+   # cannot deploy its own appVersion without the version-skew nulls below.
+   ```
+
+4. **There may be no ConfigMap.** A secret with no `*_file` route in the config
+   tree — today only `config.auth.basic.users[].password_hash` — moves the whole
+   rendered `ferroehr.toml` into `<release>-config` (a Secret) and renders no
+   ConfigMap at all. `test-values.yaml` sets a Basic user, so **this is the mode
+   the live test runs in**. A step that greps the ConfigMap for a config value
+   finds nothing and it is not a fault; read the Secret (step 5).
 
 ## 0. Cluster
 
@@ -68,12 +88,18 @@ Kubernetes* → Apply & restart. Nothing here needs a cloud account.
 
 ```bash
 helm lint deploy/helm/ferroehr
-bash deploy/helm/validate.sh        # lint + render + security gate + goldens
+bash deploy/helm/validate.sh        # pin + secret-leak + lint + render + security + goldens
 ```
 
-`validate.sh` must be green BEFORE installing. It is not wired into CI, so it is
-routinely stale — a golden drift here means someone changed values without
-regenerating.
+`validate.sh` must be green BEFORE installing. It runs in CI as the
+`helm-golden` job on any PR touching `deploy/helm/**`, so a drift here is a
+merge blocker rather than a note.
+
+It refuses outright if your helm is not the version in
+`deploy/helm/.tool-versions`: `helm template` output is **not byte-stable across
+helm releases** (4.2.3 emits 6 blank lines in the default render that 4.1.3 does
+not), so a skewed helm would report chart drift that is really a whitespace diff.
+Bumping the pin and re-running `--update` in the same change is the fix.
 
 ## 2. Namespace and database
 
@@ -168,6 +194,20 @@ filter that denies by default. The same inspect output lists the mounts: only
 `/dev/termination-log` are writable; `/etc/ferroehr` and
 `/etc/ferroehr-secrets` are `ro`.
 
+Which object carries the configuration, and the proof that no ConfigMap holds a
+credential (`test-values.yaml` configures a Basic user, so this run is the
+Secret-borne mode — fact 4 above):
+
+```bash
+kubectl -n ferroehr-test get configmap,secret
+# configmap/kube-root-ca.crt only — the chart rendered NO ConfigMap
+# secret/ferroehr-config  ← ferroehr.toml lives here
+kubectl -n ferroehr-test get configmap -o yaml | grep -c argon2id      # 0
+kubectl -n ferroehr-test get pod $P -o jsonpath='{.spec.volumes}'      # projected: secret only
+kubectl -n ferroehr-test get secret ferroehr-config \
+  -o jsonpath='{.data.ferroehr\.toml}' | base64 -d | head
+```
+
 A file-borne secret, checked on the node rather than in the template:
 
 ```bash
@@ -215,6 +255,34 @@ kubectl -n ferroehr-test get endpointslice -l kubernetes.io/service-name=ferroeh
 # {"ready":false,"serving":false}   ← removed from the Service
 kubectl -n ferroehr-test scale deploy/ferroehr-postgres --replicas=1
 ```
+
+Then the boot-only migration behaviour, which is the one that reads as a mystery
+in production. Take the schema away and watch what recovers on its own:
+
+```bash
+kubectl -n ferroehr-test exec deploy/ferroehr-postgres -- \
+  psql -U ferroehr -d ferroehr -c 'DROP SCHEMA ehr CASCADE'
+curl -s http://127.0.0.1:8080/health/readiness
+# {"status":"DOWN","components":{"db":{"status":"UP"},
+#  "migrations":{"status":"DOWN","detail":"core schema tables missing (migrations not applied)"}}}
+kubectl -n ferroehr-test get pods -l app.kubernetes.io/name=ferroehr \
+  -o custom-columns='NAME:.metadata.name,READY:.status.containerStatuses[0].ready,RESTARTS:.status.containerStatuses[0].restartCount'
+# both READY false, RESTARTS unchanged — readiness gates, liveness does NOT restart
+
+kubectl -n ferroehr-test delete pod <one-of-them>   # its replacement migrates at boot
+# the pod that was NEVER restarted returns to READY true with RESTARTS 0 and its
+# original start time: the readiness check re-queries the schema every probe, so a
+# running instance recovers as soon as ANYTHING migrates. Only the case where the
+# instance itself is the only migrator needs `rollout restart`.
+```
+
+**A partial wipe does not recover at all**, and it is worth knowing before you
+try it as a shortcut: `DROP SCHEMA ehr CASCADE` leaves `cold`, `audit` and `ext`,
+and migration 7 then dies on the surviving `cold.vo_version`
+(`relation "vo_version" already exists`) with `_sqlx_migrations` stuck at 6 —
+`CREATE SCHEMA IF NOT EXISTS cold` is guarded, the `CREATE TABLE cold.*` under it
+is not. Every restart retries the same failure. Recreate the whole database
+(`DROP DATABASE`/re-apply `postgres.yaml`) rather than one schema.
 
 Migration idempotency, in two installs against the same database:
 
@@ -424,7 +492,10 @@ objects — the observability fixture and metrics-server both leave some behind.
 | Every request `401` with `WWW-Authenticate: Basic realm="ferroehr"` | Chart default is `auth.enabled: true` with NO mechanism configured — it boots and refuses everything | Supply `config.auth.basic.users` (as `test-values.yaml` does) or `config.auth.oidc` |
 | Pod `ErrImageNeverPull` for an image `docker images` clearly lists | The cluster's containerd store is separate from the Docker daemon's | `docker save … \| docker exec -i desktop-control-plane ctr -n k8s.io images import -` |
 | `Upgrade failed: … .env: duplicate entries for key [name="FERROEHR__…"]` | `extraEnv` repeated a name the chart already emits | Set the value through its own key, not `extraEnv` |
-| Pods stay NotReady with `migrations: DOWN, core schema tables missing` while `db: UP` | The database was replaced/wiped under a running pod; migrations run only at boot | `kubectl rollout restart deploy/ferroehr` (and use durable storage for anything real) |
+| Pods stay NotReady with `migrations` DOWN / `core schema tables missing (migrations not applied)` while `db: UP` | The database was replaced/wiped under a running pod; migrations run only at boot | `kubectl rollout restart deploy/ferroehr` (a running pod also recovers by itself once anything else migrates — step 6) |
+| A replacement pod crash-loops on `relation "vo_version" already exists`, `_sqlx_migrations` stuck at 6 | Only the `ehr` schema was dropped; `cold.vo_version` survived and migration 7 creates it unguarded | Recreate the whole database, not one schema (step 6) |
+| `kubectl get configmap <release>` returns NotFound | A Basic user (or any secret with no `*_file` route) moved the whole config into `<release>-config`, a Secret | Read the Secret; this is the mode `test-values.yaml` runs in (fact 4) |
+| `golden ...: SKIPPED — running helm X, goldens are pinned to Y` | Local helm differs from `deploy/helm/.tool-versions`; renders are not byte-stable across helm releases | Install the pinned helm, or bump the pin AND `validate.sh --update` together |
 | Readiness `503` with `db: DOWN, terminating connection due to administrator command` | The database went away | Expected and correct: readiness fails, liveness does not, the pod leaves the Service and is not restarted |
 | OTLP traces never arrive, no error in the logs | `networkPolicy.egress.enabled=true` without a rule for the collector; the exporter fails silently | Add the collector to `networkPolicy.egress.rules` (port 4317) |
 | `nc` says a port is closed that clearly works, or `curl telnet://` always times out | `curl`'s telnet handler waits for input | Probe TCP with `nc -w3 -z host port` from a `busybox` pod |

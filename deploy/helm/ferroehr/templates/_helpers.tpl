@@ -94,7 +94,7 @@ when there is at least one secret value to carry).
 */}}
 {{- define "ferroehr.hasChartSecret" -}}
 {{- $inlineDb := and (not .Values.database.existingSecret) .Values.database.url }}
-{{- if or $inlineDb .Values.secrets.authOidcHmacSecret .Values.secrets.signingKeyPassphrase .Values.secrets.eventsUrl .Values.secrets.fhirOutboundUrl .Values.secrets.multimediaAccessKeyId .Values.secrets.multimediaSecretAccessKey -}}
+{{- if or $inlineDb .Values.secrets.authOidcHmacSecret .Values.secrets.signingKeyPassphrase .Values.secrets.eventsUrl .Values.secrets.fhirOutboundUrl .Values.secrets.auditFhirFeedUrl .Values.secrets.multimediaAccessKeyId .Values.secrets.multimediaSecretAccessKey .Values.secrets.terminologyOauth2ClientSecrets -}}
 true
 {{- end -}}
 {{- end }}
@@ -106,7 +106,7 @@ OWASP Kubernetes Security Cheat Sheet prefers over an environment variable
 (https://cheatsheetseries.owasp.org/cheatsheets/Kubernetes_Security_Cheat_Sheet.html).
 */}}
 {{- define "ferroehr.hasFileSecrets" -}}
-{{- if or .Values.secrets.authOidcHmacSecret .Values.secrets.signingKeyPassphrase .Values.secrets.multimediaSecretAccessKey -}}
+{{- if or .Values.secrets.authOidcHmacSecret .Values.secrets.signingKeyPassphrase .Values.secrets.multimediaSecretAccessKey .Values.secrets.terminologyOauth2ClientSecrets -}}
 true
 {{- end -}}
 {{- end }}
@@ -118,4 +118,137 @@ commonly points at it, so a secrets subdirectory there would be walked as policy
 */}}
 {{- define "ferroehr.secretMountPath" -}}
 /etc/ferroehr-secrets
+{{- end }}
+
+{{/*
+Secret-shaped leaf key names, as one regex. A ConfigMap is not a sensitive
+object — it is readable with namespace read, collected by backup tooling that
+excludes Secrets, and not covered by Secret encryption at rest — so a credential
+must never reach one (Kubernetes ConfigMap docs: "A ConfigMap is not designed to
+hold large chunks of data … If you want to store data that is confidential, use
+a Secret", https://kubernetes.io/docs/concepts/configuration/configmap/).
+
+Deny-by-default is the point: matching on the NAME rather than on a fixed list of
+today's keys is what makes a secret key added to the server's config tree
+tomorrow fail the render instead of leaking silently. The `_file`/`_path`/`_dir`
+suffixes are the one exemption class, and they are provably safe: those keys hold
+a PATH, never a credential.
+*/}}
+{{- define "ferroehr.secretKeyPattern" -}}
+(password|passphrase|secret|credential|private_key|api_key|(^|_)token$)
+{{- end }}
+
+{{/*
+Recursive scan of a config subtree for secret-bearing keys, emitting one
+`class\tpath\tremedy` line per finding. Call with (dict "node" <tree> "path" "").
+
+Two classes, because there are two right answers. `routed` = the chart already
+carries this secret through a `secrets:` key, so a value under `config:` is an
+operator mistake and the render fails naming the key that belongs there.
+`unrouted` = no route exists (today only a Basic user's Argon2id hash, whose
+config key has no `*_file` sibling to point at a mounted file), so the whole
+rendered ferroehr.toml moves into the chart Secret and no ConfigMap is created —
+the safe direction, taken automatically, for a key nobody has routed yet.
+
+The four SecretUrl leaves are matched by PATH because their name (`url`) carries
+no shape a classifier can see — a URL's userinfo component is the credential.
+*/}}
+{{- define "ferroehr.secretScan" -}}
+{{- $urlPaths := list "db.url" "events.url" "fhir.outbound.url" "audit.fhir_feed.url" -}}
+{{- $node := .node -}}
+{{- $path := .path -}}
+{{- $kind := kindOf $node -}}
+{{- if eq $kind "map" -}}
+{{- range $key, $value := $node -}}
+{{- $child := ternary $key (printf "%s.%s" $path $key) (eq $path "") -}}
+{{- if or (has $child $urlPaths) (and (regexMatch (include "ferroehr.secretKeyPattern" $) $key) (not (regexMatch "(_file|_path|_dir)$" $key))) -}}
+{{- printf "%s\t%s\t%s\n" (include "ferroehr.secretClass" $key) $child (include "ferroehr.secretRemedy" $key) -}}
+{{- else -}}
+{{- include "ferroehr.secretScan" (dict "node" $value "path" $child) -}}
+{{- end -}}
+{{- end -}}
+{{- else if eq $kind "slice" -}}
+{{- range $index, $value := $node -}}
+{{- include "ferroehr.secretScan" (dict "node" $value "path" (printf "%s[%d]" $path $index)) -}}
+{{- end -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Whether the chart has a dedicated `secrets:` route for a secret-bearing config
+key, keyed on its leaf name. Unknown ⇒ `unrouted`, which is what makes a secret
+key added upstream tomorrow move to the Secret instead of leaking.
+*/}}
+{{- define "ferroehr.secretClass" -}}
+{{- if has . (list "url" "hmac_secret" "key_passphrase" "secret_access_key" "client_secret") -}}
+routed
+{{- else -}}
+unrouted
+{{- end -}}
+{{- end }}
+
+{{/*
+The `secrets:` key that carries a routed secret, keyed on its leaf name.
+*/}}
+{{- define "ferroehr.secretRemedy" -}}
+{{- $routes := dict
+  "url" "route it through the matching `secrets:` key (`eventsUrl`, `fhirOutboundUrl`, `auditFhirFeedUrl`, or `database.existingSecret` for the DSN)"
+  "hmac_secret" "set `secrets.authOidcHmacSecret` instead"
+  "key_passphrase" "set `secrets.signingKeyPassphrase` instead"
+  "secret_access_key" "set `secrets.multimediaSecretAccessKey` instead"
+  "client_secret" "set `secrets.terminologyOauth2ClientSecrets.<client name>` instead"
+-}}
+{{- get $routes . | default "no `secrets:` route exists for this key" -}}
+{{- end }}
+
+{{/*
+"true" when the rendered ferroehr.toml carries a secret the chart cannot route
+elsewhere, in which case it is delivered by the Secret and NO ConfigMap exists.
+*/}}
+{{- define "ferroehr.configInSecret" -}}
+{{- $findings := include "ferroehr.secretScan" (dict "node" (omit .Values.config "files") "path" "") | trim -}}
+{{- range $finding := splitList "\n" $findings -}}
+{{- if hasPrefix "unrouted\t" $finding -}}
+true
+{{- end -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+The rendered ferroehr.toml body: `.Values.config` minus the separately-mounted
+`files`, with the file-borne secret PATHS the chart owns injected, and a routed
+secret VALUE refused outright.
+*/}}
+{{- define "ferroehr.configToml" -}}
+{{- $config := omit .Values.config "files" -}}
+{{- $findings := include "ferroehr.secretScan" (dict "node" $config "path" "") | trim -}}
+{{- $lines := list -}}
+{{- range $finding := splitList "\n" $findings -}}
+{{- $parts := splitn "\t" 3 $finding -}}
+{{- if eq $parts._0 "routed" -}}
+{{- $lines = append $lines (printf "  - config.%s: %s" $parts._1 $parts._2) -}}
+{{- end -}}
+{{- end -}}
+{{- if $lines -}}
+{{- fail (printf "refusing to render a secret into the ConfigMap (a ConfigMap is not a sensitive object — it is readable with namespace read, collected by tooling that skips Secrets, and not covered by Secret encryption at rest):\n%s" (join "\n" $lines)) -}}
+{{- end -}}
+{{- $rendered := deepCopy $config -}}
+{{- range $name, $value := .Values.secrets.terminologyOauth2ClientSecrets -}}
+{{- $clients := dig "terminology" "external" "oauth2_clients" (dict) $rendered -}}
+{{- if not (hasKey $clients $name) -}}
+{{- fail (printf "secrets.terminologyOauth2ClientSecrets.%s has no client declared at config.terminology.external.oauth2_clients.%s (declare its token_url/client_id there; only the secret belongs here)" $name $name) -}}
+{{- end -}}
+{{- $_ := set (get $clients $name) "client_secret_file" (printf "%s/terminology.external.oauth2_clients.%s.client_secret" (include "ferroehr.secretMountPath" $) $name) -}}
+{{- end -}}
+{{- toToml $rendered -}}
+{{- end }}
+
+{{/*
+Whether the config-files Secret exists: any `config.files` entry, or the whole
+rendered TOML having moved there because it carries an unroutable secret.
+*/}}
+{{- define "ferroehr.hasConfigSecret" -}}
+{{- if or .Values.config.files (eq (include "ferroehr.configInSecret" .) "true") -}}
+true
+{{- end -}}
 {{- end }}

@@ -117,9 +117,13 @@ migrations:
 # https://cheatsheetseries.owasp.org/cheatsheets/Kubernetes_Security_Cheat_Sheet.html).
 # So every value whose config key has a `*_file` sibling is MOUNTED at
 # /etc/ferroehr-secrets/<config.path> and the chart passes only the PATH as env.
-# The three that have no `*_file` sibling (db.url, events.url,
-# fhir.outbound.url) still pass their value as env — that is a config-tree gap,
+# The four that have no `*_file` sibling (db.url, events.url, fhir.outbound.url,
+# audit.fhir_feed.url) still pass their value as env — that is a config-tree gap,
 # not a chart choice.
+#
+# Setting any of these under `config:` instead REFUSES to render: they would land
+# in the ConfigMap, which is not a sensitive object. The refusal names the key
+# here that carries it securely.
 # ─────────────────────────────────────────────────────────────────────────────
 secrets:
   # -- Symmetric HS256 secret for [auth.oidc] (dev/test). MOUNTED as
@@ -134,6 +138,19 @@ secrets:
   # -- AMQP broker URL for [fhir.outbound] (carries credentials) →
   # FERROEHR__FHIR__OUTBOUND__URL env: fhir.outbound.url has no `*_file` sibling.
   fhirOutboundUrl: ""
+  # -- FHIR base URL of the external Audit Record Repository for
+  # [audit.fhir_feed] (may carry basic-auth credentials in its userinfo) →
+  # FERROEHR__AUDIT__FHIR_FEED__URL env: audit.fhir_feed.url has no `*_file`
+  # sibling either.
+  auditFhirFeedUrl: ""
+  # -- OAuth2 client secrets for [terminology.external.oauth2_clients.<name>],
+  # keyed by client name. Each is MOUNTED as
+  # /etc/ferroehr-secrets/terminology.external.oauth2_clients.<name>.client_secret
+  # and the chart injects the matching `client_secret_file` into the rendered
+  # TOML (a path is not sensitive). Declare the client itself — token_url,
+  # client_id, scopes — under config.terminology.external.oauth2_clients.<name>;
+  # a name with no such declaration is a render error.
+  terminologyOauth2ClientSecrets: {}
   # -- S3 access key id for [multimedia] → FERROEHR__MULTIMEDIA__ACCESS_KEY_ID
   # env. Not a secret in the server's own model (it is reported unredacted by
   # /management/env); prefer IRSA/Workload-Identity (leave empty) on cloud.
