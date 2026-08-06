@@ -129,6 +129,11 @@ impl CaptureStore {
 /// mismatched).
 fn note(observed: &mut Option<u16>, status: u16) -> u16 {
     *observed = Some(status);
+    // A 429 anywhere invalidates the whole run: see
+    // `crate::perf_run::rate_limited_observed`.
+    if status == 429 {
+        crate::perf_run::note_rate_limited();
+    }
     status
 }
 
