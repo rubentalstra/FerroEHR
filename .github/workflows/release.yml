@@ -24,13 +24,14 @@ on:
         required: true
         type: string
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
   publish-release:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: write # create or update the GitHub release
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
     steps:
@@ -117,6 +118,8 @@ jobs:
     runs-on: ${{ matrix.runner }}
     # A deliberately cold release build (no cache) of the full workspace.
     timeout-minutes: 60
+    permissions:
+      contents: write # attach the per-arch tarballs to it
     strategy:
       fail-fast: false
       matrix:

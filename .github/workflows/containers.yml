@@ -31,9 +31,7 @@ env:
   POSTGRES_IMAGE: ghcr.io/${{ github.repository_owner }}/ferroehr-postgres
   ADMIN_UI_IMAGE: ghcr.io/${{ github.repository_owner }}/ferroehr-admin-ui
 
-permissions:
-  contents: read
-  packages: write
+permissions: {}
 
 jobs:
   # ── Detect which images need (re)building ───────────────────────────────────
@@ -47,6 +45,8 @@ jobs:
     name: detect changes
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
     outputs:
       app: ${{ steps.filter.outputs.app }}
       admin_ui: ${{ steps.filter.outputs.admin_ui }}
@@ -103,6 +103,8 @@ jobs:
       github.event_name == 'workflow_dispatch'
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
+    permissions:
+      contents: read
     strategy:
       fail-fast: true
       matrix:
@@ -168,6 +170,9 @@ jobs:
     name: app image
     runs-on: ubuntu-26.04
     timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write # push the app image to GHCR
     needs: binary
     outputs:
       digest: ${{ steps.build.outputs.digest }}
@@ -242,6 +247,8 @@ jobs:
       github.event_name == 'workflow_dispatch'
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
+    permissions:
+      contents: read
     strategy:
       fail-fast: true
       matrix:
@@ -325,6 +332,9 @@ jobs:
     name: admin-ui image
     runs-on: ubuntu-26.04
     timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write # push the console image to GHCR
     needs: admin-ui-binary
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -387,6 +397,9 @@ jobs:
     name: postgres image
     runs-on: ubuntu-26.04
     timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write # push the postgres image to GHCR
     needs: changes
     if: >-
       needs.changes.outputs.postgres == 'true' ||
@@ -433,6 +446,9 @@ jobs:
     name: compose smoke (amd64)
     runs-on: ubuntu-26.04
     timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: read # pull the image this run just pushed
     needs: app-image
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

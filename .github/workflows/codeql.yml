@@ -37,6 +37,10 @@ concurrency:
   group: codeql-${{ github.ref }}
   cancel-in-progress: true
 
+# No permissions by default — the analyse job grants its own; without this the
+# workflow would inherit the repository default.
+permissions: {}
+
 jobs:
   analyze:
     name: Analyze (rust)
