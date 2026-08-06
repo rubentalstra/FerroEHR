@@ -15,24 +15,80 @@ assumes a cluster at Kubernetes 1.25 or newer.
 
 ## Installing
 
-Create a Secret holding the app-role connection string, then install the chart
-pointing at it:
+The chart is published to GHCR as an **OCI artifact**, beside the images it
+deploys. Create a Secret holding the app-role connection string, then install:
 
 ```shell
+kubectl create namespace ferroehr
 kubectl -n ferroehr create secret generic ferroehr-db \
   --from-literal=FERROEHR__DB__URL='postgres://ferroehr_app:***@pg-host:5432/ferroehr?sslmode=verify-full'
 
-helm install ferroehr deploy/helm/ferroehr -n ferroehr \
+helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
+  --version 4.0.0 -n ferroehr \
   --set database.existingSecret=ferroehr-db \
   --set image.tag=3.17.3
 ```
 
-Always pin `image.tag` to an immutable version or, better, a `@sha256` digest —
-never `latest`; the chart's `appVersion` is only the *default* tag, and it names
-the release the chart was last cut against. Pin the two deliberately: the `config`
-tree is passed through to the server, so a key the chart's defaults carry and your
-chosen image does not know is a boot refusal (`unknown configuration key …`),
-which presents as `CrashLoopBackOff`.
+> [!IMPORTANT]
+> **`helm repo add` does not work for this chart, and never will.** There is no
+> HTTP chart repository and no `index.yaml` — OCI is the only publication path, so
+> that there is exactly one place a chart version can exist. The install form is
+> the `oci://` reference above. Helm has treated OCI registries as first-class
+> since 3.8, so the cost of this choice is real but narrow: a client older than
+> Helm 3.8 cannot install this chart at all.
+
+`helm show`, `helm pull`, `helm template` and `helm upgrade` all take the same
+`oci://` reference. To read the chart's metadata without installing it:
+
+```shell
+helm show chart oci://ghcr.io/rubentalstra/charts/ferroehr --version 4.0.0
+```
+
+### Pin two versions, not one
+
+**The chart version and the image tag move independently, and this is the thing
+people get wrong first.** `--version` selects the *chart* (its templates and
+values schema); `image.tag` selects the *server binary*. The chart's `appVersion`
+is only the default for the second, and it names the release the chart was cut
+against.
+
+| | Selects | Pin with | Line |
+|---|---|---|---|
+| Chart version | templates, values schema, defaults | `--version 4.0.0` | SemVer over the chart's own contract |
+| Image tag | the server binary | `--set image.tag=3.17.3` (or `image.digest`) | the application's SemVer line |
+
+Always pin the image to an immutable version or, better, a `@sha256` digest —
+never `latest`. Pin the two deliberately: the `config` tree is passed through to
+the server, so a key the chart's defaults carry and your chosen image does not know
+is a boot refusal (`unknown configuration key …`), which presents as
+`CrashLoopBackOff`. A chart version is never republished with different content —
+the publish lane refuses to overwrite one — so a pinned chart version is a fixed
+artifact.
+
+### Verifying what you installed
+
+Both the chart and the images carry **signed, keyless
+[Sigstore](https://docs.sigstore.dev/) provenance**, bound to this repository's
+build identity, so every claim here is checkable rather than asserted:
+
+```shell
+# the chart
+gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:4.0.0 -R rubentalstra/FerroEHR
+# the images it deploys
+gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:3.17.3 -R rubentalstra/FerroEHR
+```
+
+> [!NOTE]
+> `helm install --verify` and `helm verify` do **not** apply: they check a PGP
+> `.prov` file, and this chart ships none. That is deliberate — a `.prov` needs a
+> long-lived private key in CI, which is the exact thing this project's publishing
+> lanes are built to avoid (the crates.io lane uses OIDC Trusted Publishing and
+> holds no token at all). Keyless attestation gives a stronger guarantee with no
+> key to leak, and it is the same command and the same trust root as the images.
+
+The chart is also listed on **[Artifact
+Hub](https://artifacthub.io/packages/helm/ferroehr/ferroehr)**, which renders this
+chapter's metadata plus a security report over the published images.
 
 > [!WARNING]
 > Between releases the chart's `config` defaults track development and can be
@@ -40,8 +96,8 @@ which presents as `CrashLoopBackOff`.
 > the image itself as the authority:
 >
 > ```shell
-> helm template ferroehr deploy/helm/ferroehr -s templates/configmap.yaml \
->   --set database.existingSecret=ferroehr-db \
+> helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 4.0.0 \
+>   -s templates/configmap.yaml --set database.existingSecret=ferroehr-db \
 >   | sed -n '/ferroehr.toml/,$p' | sed '1d;s/^    //' > /tmp/ferroehr.toml
 > docker run --rm -v /tmp/ferroehr.toml:/etc/ferroehr/ferroehr.toml:ro \
 >   -e FERROEHR__DB__URL=postgres://u:p@db:5432/ferroehr \
@@ -50,7 +106,10 @@ which presents as `CrashLoopBackOff`.
 >
 > Exit 0 means the image accepts the rendered configuration. A reported unknown
 > key means the image is older than the chart's defaults: use a newer tag, or set
-> that key to `null` for this deployment.
+> that key to `null` for this deployment. A *published* chart is checked this way
+> before it is published — the publish lane refuses to ship a chart whose defaults
+> its own `appVersion` image rejects — so this matters mainly when you install from
+> a checkout of `develop`, or pin an image older than the chart.
 
 That install alone **boots but answers `401` to everything**, deliberately:
 `config.auth.enabled` is on and no mechanism is configured yet, and a server that
@@ -350,5 +409,16 @@ every running pod kept using the old value.
 PersistentVolumeClaim, so nothing is left behind; your database, and the Secret
 holding its DSN, are yours and survive.
 
-Render and validate the chart before applying with `deploy/helm/validate.sh`
-(helm lint + template + the security-field gate + golden-render diff).
+Preview an upgrade against what you have installed with
+`helm diff`, or render the new chart version and read it:
+
+```shell
+helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 4.0.0 \
+  -n ferroehr -f my-values.yaml | less
+```
+
+Working from a checkout instead, `deploy/helm/validate.sh` runs the chart's full
+gate — the helm-version pin, the secret-leak gate, lint, render, the
+security-field assertions and the golden-render diff. It is the same gate CI runs
+on every change to the chart, so a local run and a pull request agree by
+construction.

@@ -17,6 +17,7 @@ ITS-REST 1.1.0 &nbsp;·&nbsp; AQL 1.1 &nbsp;·&nbsp; RM 1.2.0 **+ 1.1.0** &nbsp;
 [![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fbadges%2Fcoverage.json)](https://github.com/rubentalstra/FerroEHR/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/rubentalstra/FerroEHR/badge)](https://scorecard.dev/viewer/?uri=github.com/rubentalstra/FerroEHR)
 [![GHCR](https://img.shields.io/badge/ghcr.io-ferroehr-2496ED.svg?logo=docker&logoColor=white)](https://github.com/rubentalstra/FerroEHR/pkgs/container/ferroehr)
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/ferroehr)](https://artifacthub.io/packages/search?repo=ferroehr)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 [![openEHR CNF conformance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fdevelop%2Fdocs%2Fconformance%2Fferroehr%2Fbadge.json)](docs/conformance/ferroehr/CONFORMANCE_REPORT.md)
@@ -462,12 +463,23 @@ for EHRbase) and `cnf-runner stress` / `cnf-runner aql-probe`
 
 ## Deployment
 
+The Helm chart is published to GHCR as an OCI artifact, beside the images it
+deploys, and listed on
+[Artifact Hub](https://artifacthub.io/packages/helm/ferroehr/ferroehr):
+
 ```shell
-helm install ferroehr deploy/helm/ferroehr \
-  --set database.existingSecret=my-db-secret
+helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
+  --version 4.0.0 --set database.existingSecret=my-db-secret
 ```
 
-See the [documentation website](https://ferroehr.eu/)
+There is no HTTP chart repository, so `helm repo add` does not apply — OCI is the
+only publication path. The chart version and the image tag are separate SemVer
+lines: `--version` pins the chart, `--set image.tag=` pins the server. Both the
+chart and the images carry signed keyless provenance
+(`gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:4.0.0 -R rubentalstra/FerroEHR`).
+
+See the [Kubernetes chapter](https://ferroehr.eu/docs/latest/installation/kubernetes.html)
+and the [documentation website](https://ferroehr.eu/)
 for the production checklist: database role separation, TLS, backup and
 point-in-time recovery, and audit logging.
 
