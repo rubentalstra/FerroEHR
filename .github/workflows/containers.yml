@@ -91,6 +91,57 @@ jobs:
               - '.github/workflows/containers.yml'
 
   # ── Compile the server binary natively per arch (no QEMU, no in-Docker cargo) ─
+  dockerfile-lint:
+    name: Dockerfile lint
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        dockerfile:
+          - docker/Dockerfile
+          - docker/postgres/Dockerfile
+          - docker/admin-ui/Dockerfile
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # hadolint over each Dockerfile. Configuration lives in `.hadolint.yaml`,
+      # where any rule we deliberately violate is named with its reason — never
+      # a blanket disable (OWASP Docker Security Cheat Sheet rule 9).
+      - uses: hadolint/hadolint-action@2a66e89f53d0771bb131a7fa31f3136336094aa6 # v3.4.0
+        with:
+          dockerfile: ${{ matrix.dockerfile }}
+          config: .hadolint.yaml
+          failure-threshold: warning
+
+  # Secret detection + Docker misconfiguration over the tree, in one tool.
+  # Trivy's `config` scanner covers the misconfiguration half of rule 9 and its
+  # `secret` scanner the credential half, so this replaces a separate gitleaks
+  # lane rather than sitting beside one. Deliberate fixtures (the quickstart's
+  # Argon2 hash, the development JWT secrets) are allow-listed by path in
+  # `.trivyignore.yaml` with their reasons.
+  tree-scan:
+    name: secret + misconfiguration scan
+    runs-on: ubuntu-26.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: secret,misconfig
+          exit-code: '1'
+          severity: HIGH,CRITICAL
+          trivy-config: trivy.yaml
+
   binary:
     name: binary (${{ matrix.platform }})
     needs: changes
@@ -451,6 +502,53 @@ jobs:
           sbom: true
 
   # ── Smoke test (amd64): pull the pushed image, compose up, exercise the API ──
+  image-scan:
+    name: image vulnerability scan
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: read # pull the image this run just pushed
+    needs: app-image
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # The app image, by digest — the artifact this run actually published.
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ${{ env.APP_IMAGE }}@${{ needs.app-image.outputs.digest }}
+          scanners: vuln
+          exit-code: '1'
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          trivy-config: trivy.yaml
+
+      # `ferroehr-postgres` is the one image whose OS package set we do not
+      # control — it is built on the upstream `postgres` image — so it is the
+      # image this gate exists for. Built locally here (a COPY-only Dockerfile,
+      # seconds) because the postgres-image job only runs when its inputs change.
+      - name: Build the postgres image for scanning
+        run: docker build -t ferroehr-postgres:scan docker/postgres
+
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ferroehr-postgres:scan
+          scanners: vuln
+          exit-code: '1'
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          trivy-config: trivy.yaml
+
   smoke:
     name: compose smoke (amd64)
     runs-on: ubuntu-26.04
