@@ -15,9 +15,9 @@
 #                          description, or the tracker — not in code.
 #
 # Usage:
-#   scripts/check-comment-style.sh --all               # whole tree
-#   scripts/check-comment-style.sh --diff <base> [head]  # changed files only
-#   scripts/check-comment-style.sh --files <f.rs>...   # named files (hook)
+#   scripts/checks/check-comment-style.sh --all               # whole tree
+#   scripts/checks/check-comment-style.sh --diff <base> [head]  # changed files only
+#   scripts/checks/check-comment-style.sh --files <f.rs>...   # named files (hook)
 #
 # Exit 0 = clean, 1 = violations (listed as file:line: message), 2 = usage.
 
@@ -26,7 +26,7 @@ set -euo pipefail
 NOTE_MAX=3
 RUN_MAX=8
 
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 
 mode="${1:---all}"
 files=()

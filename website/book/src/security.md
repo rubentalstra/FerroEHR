@@ -90,7 +90,12 @@ a static `JWKS_JSON` (preferred when present) or an `HMAC_SECRET`.
 > roles, and lifecycle are administered in the IdP — the CDR has no user API.
 
 An unauthenticated request to a protected route is refused with `401`; an
-authenticated request that lacks the required role is refused with `403`.
+authenticated request that lacks the required role is refused with `403`. Two
+outcomes are neither: a **malformed** `Authorization` header is a `400` (the
+server never read a credential), and an **unreachable token issuer** is a `503`
+with `Retry-After` (no token can be validated, so the server cannot decide — it
+is not a statement about the caller's credential). The per-status table for
+client authors is in [Using the API](using-the-api/index.md#which-status-a-credential-problem-gets).
 
 ### Two limits worth planning around
 
@@ -185,14 +190,28 @@ defaults are `USER` (the baseline clinical role) and `ADMIN`.
 | `FERROEHR__AUTHZ__RBAC__ADMIN_ROLE` | `ADMIN` | role required for admin operations |
 | `FERROEHR__AUTHZ__RBAC__USER_ROLE` | `USER` | the baseline clinical role |
 | `FERROEHR__AUTHZ__RBAC__READONLY_ROLE` | `READONLY` | role marking a principal read-only: refused on every write |
-| `FERROEHR__AUTHZ__RBAC__ROLE_CLAIMS` | `["realm_access.roles","scope"]` | JWT claim paths mined for roles |
+| `FERROEHR__AUTHZ__RBAC__ROLE_CLAIMS` | `["roles","groups","entitlements","realm_access.roles"]` | JWT claim paths mined for roles |
 | `FERROEHR__AUTHZ__RBAC__MANAGEMENT_ACCESS` | `admin_only` | management-surface access: `admin_only`, `private`, or `public` |
 
-Roles come from the JWT claims listed in `ROLE_CLAIMS` — by default the
-Keycloak `realm_access.roles` array plus the space-separated `scope` claim —
-or from a Basic user's configured roles. A clinical operation needs at least one
-role; an admin operation needs the admin role; the management surface follows
-its tri-state setting. Disabling RBAC restores authentication-only behaviour.
+Roles come from the JWT claims listed in `ROLE_CLAIMS` — by default the carriers
+[RFC 9068 §2.2.3.1](https://www.rfc-editor.org/rfc/rfc9068#section-2.2.3.1) names
+for conveying authorization state (`roles`, `groups`, `entitlements`, of which
+`roles` and `entitlements` are [SCIM](https://www.rfc-editor.org/rfc/rfc7643#section-4.1.2)
+attributes), followed by the widely deployed nested `realm_access.roles` — or from
+a Basic user's configured roles. A claim path may be dotted, so an issuer that
+nests them differently is configuration rather than a code change. A clinical
+operation needs at least one role; an admin operation needs the admin role; the
+management surface follows its tri-state setting. Disabling RBAC restores
+authentication-only behaviour.
+
+> [!IMPORTANT]
+> **The OAuth2 `scope` claim does not grant roles.** A scope grants a *client*
+> delegated authority ([RFC 6749 §3.3](https://www.rfc-editor.org/rfc/rfc6749#section-3.3));
+> it asserts nothing about the subject's roles. Reading it as one also made the
+> at-least-one-role check pass for every OIDC token, since `openid` alone
+> satisfied it. If your callers rely on a scope naming a role, move that role
+> into one of the role claims above. Scopes remain on the principal and still
+> drive SMART scope enforcement.
 
 > [!NOTE]
 > The downloadable Compose quickstart deliberately runs with RBAC **off** and a
@@ -240,12 +259,32 @@ policy set stops the server rather than silently denying), and need no
 external service. The **remote PDP** option consults an external policy server
 over HTTP for deployments that already run one.
 
+A policy sees the **caller**, not just the request: the authenticated subject,
+its roles (as the role layer above resolved them), its scopes, the resolved
+organization and patient, the resource's patient and template, and the operation
+id. So a rule can be written about one caller, a role, a scope, or a single
+operation — the [shipped example policies](https://github.com/rubentalstra/FerroEHR/tree/develop/app/ferroehr-rest/examples/policies)
+show a role-keyed break-glass permit and a scope-keyed write restriction.
+
 > [!WARNING]
-> Authorization is **fail-closed**: if the policy engine is unreachable or a
-> policy cannot be evaluated, the request is refused (mapped to `500`), never
-> permitted. When a patient claim is configured, a local subject gate also
-> rejects access to another patient's EHR before any policy call. A denied
-> decision is a `403`.
+> Authorization is **fail-closed in two distinct senses**, and the difference
+> shows up in the status code.
+>
+> Nothing permits by omission: a gate reached without an authenticated caller
+> refuses, an unconfigured resource kind on the remote PDP denies (and the
+> missing rule is a boot error), and Cedar is deny-by-default with `forbid`
+> overriding `permit`. A denied decision is a **`403`**.
+>
+> And a stage that cannot **decide** is never read as a decision. An
+> unreachable policy engine, a policy server answering `5xx`, or a policy that
+> errors during evaluation is a **`500`** — never a silent permit, and never a
+> `403`, which would claim a decision was made. (Cedar skips a policy that
+> errors and reports it in its diagnostics; ignoring those would let an erroring
+> `forbid` quietly stop forbidding.) A `4xx` from a remote PDP *is* a decision,
+> so it denies.
+>
+> When a patient claim is configured, a local subject gate also rejects access to
+> another patient's EHR before any policy call.
 
 ## Multi-tenancy
 

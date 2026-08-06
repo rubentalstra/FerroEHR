@@ -79,7 +79,7 @@ The published run against FerroEHR reports:
 
 <!-- Generated at build time from docs/conformance/ferroehr/results.json by
      scripts/render-conformance-stats.sh — never hand-type numbers here (CI:
-     scripts/check-conformance-numbers.sh). -->
+     scripts/checks/check-conformance-numbers.sh). -->
 {{#include ../generated/conformance-stats.md}}
 
 Cases that did not execute are not-applicable with a machine-readable

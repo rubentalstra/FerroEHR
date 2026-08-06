@@ -382,7 +382,8 @@ algorithms = ["RS256"]
 |---|---|---|---|
 | `issuer` | string | required when present | Expected `iss`; also the OIDC discovery base. Must be an `https` URL with no query and no fragment (RFC 8414 §2) — boot-validated. |
 | `audiences` | list of string | **required, non-empty** | Accepted `aud`. An empty list is a boot error. |
-| `algorithms` | list of string | `["RS256"]` | Accepted signature algorithms. |
+| `algorithms` | list of string | `["RS256"]` | Accepted signature algorithms. Boot-bound to the key source: `HS*` requires `hmac_secret`, `RS*`/`ES*`/`PS*` require a JWKS (static or discovered). `none` is refused. |
+| `require_at_jwt` | bool | `false` | Refuse a token that does not carry `typ: at+jwt`. A token that DOES carry it is held to RFC 9068 §2.2 either way (`iat`, `jti`, `client_id` become mandatory). |
 | `clock_skew_leeway_seconds` | int | `60` | Leeway on the time-based claims (`exp`/`nbf`). Capped at `300`; above that is a boot error. |
 | `allow_insecure_issuer` | bool | `false` | Accept a non-`https` `issuer`. **Development and test only.** |
 | `hmac_secret` / `hmac_secret_file` | secret / path | unset | Symmetric HS256 secret (dev/test), minimum 32 bytes. At most one of the pair. |
@@ -447,7 +448,7 @@ RBAC + ABAC.
 | `admin_role` | string | `ADMIN` | Role required for admin-class operations. |
 | `user_role` | string | `USER` | Baseline clinical role. |
 | `readonly_role` | string | `READONLY` | Role marking a principal read-only: refused on every write operation (create/update/delete/upload), even alongside granting roles. Reads and AQL queries are still allowed. |
-| `role_claims` | list of string | `["realm_access.roles","scope"]` | JWT claim paths mined for roles. |
+| `role_claims` | list of string | `["roles","groups","entitlements","realm_access.roles"]` | JWT claim paths mined for roles, in order. Dotted paths walk nested claims. **`scope` is not a role source** — see [Security](../security.md#roles). |
 | `management_access` | enum{admin_only,private,public} | `admin_only` | Access level for the management surface. |
 
 `[authz.abac]`:
@@ -518,9 +519,24 @@ the discovery document); `token_endpoint_auth_methods_supported`,
 `code_challenge_methods_supported`, `scopes_supported`, `capabilities` (all
 list of string, `[]` — `capabilities` appends operator-advertised HL7 base
 capabilities such as `launch-ehr`/`sso-openid-connect` to the derived openEHR
-set). Deprecated grant types (`implicit`/password) are rejected at boot;
-`enabled = true` additionally requires `public_base_url`,
-`authorization_endpoint`, and `token_endpoint` at boot.
+set); `allow_insecure_endpoints` (bool, `false`).
+
+Everything in `[smart.endpoints]` is **published** at
+`/.well-known/smart-configuration` for third-party applications to act on, so
+`smart.enabled = true` boot-validates it rather than relaying whatever is
+configured:
+
+| Rule | Why |
+|---|---|
+| Deprecated grant types (`implicit`, password) rejected | master06 §Deprecated Flows |
+| `public_base_url`, `authorization_endpoint`, `token_endpoint` required | an enabled Platform without them publishes an unusable document |
+| Every advertised endpoint an absolute `https` URL | the document tells apps where to send an authorization request and exchange a code, so a plaintext endpoint exposes the code and the access token ([RFC 6749 §3.1.2.1](https://www.rfc-editor.org/rfc/rfc6749#section-3.1.2.1), [RFC 8414 §6.2](https://www.rfc-editor.org/rfc/rfc8414#section-6.2)). `allow_insecure_endpoints = true` opts out for development |
+| `issuer` has no query and no fragment | [RFC 8414 §2](https://www.rfc-editor.org/rfc/rfc8414#section-2) — the same rule `auth.oidc.issuer` follows, because it is the same identity |
+| `response_types_supported` non-empty | RFC 8414 §2 marks the field **REQUIRED** |
+| `token_endpoint_auth_methods_supported` non-empty | an empty list advertises a server that authenticates no client |
+| `code_challenge_methods_supported` includes `S256` | SMART App Launch requires PKCE ([RFC 7636](https://www.rfc-editor.org/rfc/rfc7636)); publishing a list without it tells every app the server cannot do PKCE, and `plain` alone is not sufficient (§7.2) |
+| `smart.endpoints.issuer` equals `auth.oidc.issuer` | one says where apps **obtain** tokens, the other which tokens this server **accepts**. A mismatch means every app gets a valid token and every request is refused |
+| `smart.enabled` requires `[auth.oidc]` | the CDR cannot validate the tokens it directs applications to obtain |
 
 ## `[management]`
 
@@ -920,12 +936,19 @@ touches no database — use it in CI and before a rollout.
 
 ## Zero-config boot and the production checklist
 
-With no file and no environment, the server boots as: listener `0.0.0.0:8080`
-at the ITS-REST base path with Swagger UI; DB at the compose-dev DSN; auth
-**enabled with no mechanism ⇒ every API request 401s** (fail-closed; the server
-logs a prominent warning at startup naming the two ways out — add
-`[[auth.basic.users]]` / `[auth.oidc]`, or set `auth.enabled = false` for dev);
-RBAC on; signing on (digest); log `auto`/`info`; **everything else off**.
+With no file and no environment the server boots as: listener `0.0.0.0:8080`
+at the ITS-REST base path with Swagger UI; DB at the compose-dev DSN; RBAC on;
+signing on (digest); log `auto`/`info`; **everything else off**.
+
+`auth.enabled` defaults to `true`, and **authentication enabled with no
+mechanism configured is a boot error**, not a running server that refuses
+everything: RFC 9110 §11.6.1 requires a `401` challenge to name a scheme
+applicable to the resource, and a server with no mechanism has none — it could
+only refuse every request while advertising a scheme it does not implement. The
+error names the three ways out: add `[[auth.basic.users]]`, add an `[auth.oidc]`
+issuer, or set `auth.enabled = false` for development. So a bare `docker run` of
+the image with no configuration stops at startup with that message; the
+downloadable Compose quickstart ships a user, which is why it boots.
 
 For production, set at least:
 

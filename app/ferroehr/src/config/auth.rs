@@ -150,6 +150,28 @@ pub enum AuthConfigError {
          no more than a few minutes (RFC 9068 §4 step 6)"
     )]
     LeewayTooLarge(u64, u64),
+    /// A symmetric (`HS*`) algorithm is declared without a symmetric key, or an
+    /// asymmetric one with only a symmetric key.
+    #[error(
+        "auth.oidc.algorithms lists {algorithm:?} but the configured key source is \
+         {key_source}: a \
+         key is bound to ONE algorithm family, and accepting an algorithm the key material \
+         cannot verify invites algorithm-confusion (RFC 8725 §3.1, RFC 7515 §10.4)"
+    )]
+    AlgorithmKeySourceMismatch {
+        /// The offending entry of `auth.oidc.algorithms`.
+        algorithm: String,
+        /// Which key source is configured (`hmac_secret`, `jwks_json`, or
+        /// issuer discovery). Not named `source`: `thiserror` reads a field of
+        /// that name as the error's `Error::source`.
+        key_source: &'static str,
+    },
+    /// `auth.oidc.algorithms` names `none` — an unsigned token.
+    #[error(
+        "auth.oidc.algorithms may not contain {0:?}: an unsigned token proves nothing, and \
+         `alg: none` is the canonical JWT forgery (RFC 8725 §3.2, RFC 9068 §4 step 5)"
+    )]
+    AlgorithmNoneRejected(String),
     /// `auth.oidc.hmac_secret` is shorter than the entropy floor (RFC 8725 §3.5).
     #[error(
         "auth.oidc.hmac_secret is {0} bytes; a keyed-MAC key must be at least {1} bytes of \
@@ -463,6 +485,50 @@ impl OidcConfig {
                 ));
             }
         }
+        self.validate_algorithms()?;
+        Ok(())
+    }
+
+    /// Bind the accepted algorithm set to the configured key source.
+    ///
+    /// A key belongs to ONE algorithm family: an HMAC secret can verify `HS*`
+    /// and nothing else, and a JWKS carries public keys that verify `RS*`/`ES*`/
+    /// `PS*` and nothing else. Accepting an algorithm the key material cannot
+    /// verify is the algorithm-confusion setup RFC 8725 §3.1 and RFC 7515 §10.4
+    /// warn about — most famously an `RS256` deployment that also accepts
+    /// `HS256`, letting an attacker sign with the PUBLIC key as if it were a
+    /// shared secret.
+    ///
+    /// `none` is refused outright: an unsigned token proves nothing.
+    fn validate_algorithms(&self) -> Result<(), AuthConfigError> {
+        let symmetric_key = self.hmac_secret.is_some() || self.hmac_secret_file.is_some();
+        let source = if symmetric_key {
+            "auth.oidc.hmac_secret (a symmetric key, which verifies HS* only)"
+        } else if self.jwks_json.is_some() || self.jwks_json_file.is_some() {
+            "auth.oidc.jwks_json (public keys, which verify RS*/ES*/PS* only)"
+        } else {
+            "the issuer's discovered JWKS (public keys, which verify RS*/ES*/PS* only)"
+        };
+        for declared in &self.algorithms {
+            let name = declared.trim();
+            if name.eq_ignore_ascii_case("none") {
+                return Err(AuthConfigError::AlgorithmNoneRejected(name.to_owned()));
+            }
+            // The JOSE `HS*` family, matched without slicing: a byte range into a
+            // `str` panics on a UTF-8 boundary, and an operator's typo is
+            // arbitrary text.
+            let mut chars = name.chars();
+            let is_symmetric = matches!(
+                (chars.next(), chars.next()),
+                (Some('H' | 'h'), Some('S' | 's'))
+            );
+            if is_symmetric != symmetric_key {
+                return Err(AuthConfigError::AlgorithmKeySourceMismatch {
+                    algorithm: name.to_owned(),
+                    key_source: source,
+                });
+            }
+        }
         Ok(())
     }
 
@@ -502,6 +568,64 @@ mod tests {
             issuer: "https://idp.example/realms/ferroehr".to_owned(),
             audiences: vec!["ferroehr".to_owned()],
             ..OidcConfig::default()
+        }
+    }
+
+    /// A key belongs to ONE algorithm family, so accepting an algorithm the key
+    /// material cannot verify is the algorithm-confusion setup RFC 8725 §3.1 and
+    /// RFC 7515 §10.4 warn about: most famously an `RS256` deployment that also
+    /// accepts `HS256`, letting an attacker sign with the PUBLIC key as if it
+    /// were a shared secret.
+    #[test]
+    fn hs256_with_a_public_key_source_is_a_boot_error() {
+        // Discovery (no local key material) verifies public keys only.
+        let discovery = OidcConfig {
+            algorithms: vec!["HS256".to_owned()],
+            ..valid_oidc()
+        };
+        assert!(matches!(
+            discovery.validate(),
+            Err(AuthConfigError::AlgorithmKeySourceMismatch { .. })
+        ));
+
+        // And the mirror: a symmetric secret cannot verify RS256.
+        let symmetric = OidcConfig {
+            algorithms: vec!["RS256".to_owned()],
+            hmac_secret: Some(Secret::new(GOOD_SECRET.to_owned())),
+            ..valid_oidc()
+        };
+        assert!(matches!(
+            symmetric.validate(),
+            Err(AuthConfigError::AlgorithmKeySourceMismatch { .. })
+        ));
+
+        // The matching pairs both boot.
+        let hmac_ok = OidcConfig {
+            algorithms: vec!["HS256".to_owned()],
+            hmac_secret: Some(Secret::new(GOOD_SECRET.to_owned())),
+            ..valid_oidc()
+        };
+        assert!(hmac_ok.validate().is_ok());
+        assert!(valid_oidc().validate().is_ok(), "RS256 + discovery");
+    }
+
+    /// RFC 8725 §3.2 / RFC 9068 §4 step 5: an unsigned token proves nothing, and
+    /// `alg: none` is the canonical JWT forgery. The refusal was implicit in the
+    /// crate's algorithm parser; it is now a boot error naming the key.
+    #[test]
+    fn algorithm_none_is_unconfigurable() {
+        for spelling in ["none", "None", "NONE"] {
+            let cfg = OidcConfig {
+                algorithms: vec![spelling.to_owned()],
+                ..valid_oidc()
+            };
+            assert!(
+                matches!(
+                    cfg.validate(),
+                    Err(AuthConfigError::AlgorithmNoneRejected(_))
+                ),
+                "`{spelling}` must be refused at boot",
+            );
         }
     }
 
@@ -640,6 +764,9 @@ mod tests {
         let cfg = AuthConfig {
             oidc: Some(OidcConfig {
                 hmac_secret: Some(Secret::new(GOOD_SECRET)),
+                // A symmetric key verifies `HS*` only, and the algorithm set is
+                // boot-bound to its key source.
+                algorithms: vec!["HS256".to_owned()],
                 ..valid_oidc()
             }),
             ..AuthConfig::default()

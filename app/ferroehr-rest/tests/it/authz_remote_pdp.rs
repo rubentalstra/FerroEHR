@@ -84,9 +84,10 @@ async fn url_is_base_plus_policy_name_and_body_has_exactly_configured_keys() {
     assert_eq!(pdp.decide(&req).await.unwrap(), Decision::Permit);
 }
 
+/// A 4xx is the policy server DECIDING to refuse, so it denies.
 #[tokio::test]
-async fn non_200_denies() {
-    for status in [401u16, 403, 404, 500] {
+async fn client_error_denies() {
+    for status in [401u16, 403, 404, 422] {
         let server = MockServer::start().await;
         Mock::given(method("POST"))
             .respond_with(ResponseTemplate::new(status))
@@ -99,6 +100,33 @@ async fn non_200_denies() {
             pdp.decide(&req).await.unwrap(),
             Decision::Deny,
             "status {status} must deny"
+        );
+    }
+}
+
+/// A 5xx is NOT a decision — the policy server says it failed. Reading it as a
+/// deny would let a broken PDP silently refuse clinical access while looking
+/// like policy, so it is a fail-closed error the PEP renders 500
+/// (RFC 9110 §15.6: a 5xx means the server "is aware that it has erred").
+///
+/// A 3xx is equally not a decision: an authorization endpoint that redirects is
+/// misconfigured, and following it would send the attribute body somewhere the
+/// deployment never named.
+#[tokio::test]
+async fn a_server_error_is_not_a_decision() {
+    for status in [500u16, 502, 503, 504, 301, 302] {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .respond_with(ResponseTemplate::new(status))
+            .mount(&server)
+            .await;
+        let base = format!("{}/", server.uri());
+        let pdp = RemotePdp::new(&config(&base, "p", vec![AbacParam::Patient])).expect("build");
+        let req = composition_req(Some(Attr::One("p-1".to_owned())), None);
+        let outcome = pdp.decide(&req).await;
+        assert!(
+            matches!(outcome, Err(AuthzError::Unreachable(_))),
+            "status {status} must be a fail-closed error, not a deny: {outcome:?}"
         );
     }
 }

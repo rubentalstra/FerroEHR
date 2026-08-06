@@ -2,7 +2,7 @@
 # Derive every website conformance claim from the committed CNF artifacts
 # (docs/conformance/ferroehr/: results.json + verdicts.json) at BUILD time —
 # the site sources carry no hand-typed conformance numbers (enforced by
-# scripts/check-conformance-numbers.sh in CI), so the stale-numbers failure
+# scripts/checks/check-conformance-numbers.sh in CI), so the stale-numbers failure
 # mode is impossible by construction.
 #
 #   render-conformance-stats.sh includes          write website/book/generated/*.md

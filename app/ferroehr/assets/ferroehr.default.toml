@@ -194,12 +194,24 @@ launch_base64_json = false
 [smart.episode]
 enabled = false
 
+# Everything in this table is PUBLISHED to third-party apps at
+# /.well-known/smart-configuration, so an empty list is not silence — it claims
+# the authorization server supports none of that thing, and an app that reads it
+# complies. With `smart.enabled = true` these are boot-validated: every advertised
+# endpoint must be an absolute https URL (allow_insecure_endpoints opts out for
+# development), `response_types_supported` must be non-empty (RFC 8414 §2 marks it
+# REQUIRED), `token_endpoint_auth_methods_supported` must name at least one
+# method, and `code_challenge_methods_supported` must include "S256" — SMART App
+# Launch requires PKCE (RFC 7636), and `plain` alone is not sufficient (§7.2).
+# `smart.endpoints.issuer` must also equal `auth.oidc.issuer`: one says where apps
+# GET tokens, the other says which tokens this server ACCEPTS.
 [smart.endpoints]
 token_endpoint_auth_methods_supported = []
 grant_types_supported = []
 response_types_supported = []
 code_challenge_methods_supported = []
 scopes_supported = []
+allow_insecure_endpoints = false   # DEV/TEST ONLY: accept a non-https advertised endpoint
 capabilities = []   # extra (HL7 base) capabilities to advertise, e.g. ["launch-ehr", "sso-openid-connect"]
 #? issuer = "https://as.example"
 #? jwks_uri = "https://as.example/jwks"

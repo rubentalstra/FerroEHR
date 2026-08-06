@@ -13,7 +13,7 @@
 # credentials, NOT for production (see the config block for the ways out).
 #
 # The image tags below are bumped at every release cut (the Helm appVersion
-# treatment); scripts/check-compose-image-tags.sh guards them against the
+# treatment); scripts/checks/check-compose-image-tags.sh guards them against the
 # workspace version in CI.
 #
 # ── The two quickstart variants ───────────────────────────────────────────────

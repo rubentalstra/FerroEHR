@@ -57,8 +57,8 @@ cargo test --workspace --doc
 cargo deny check                       # subsumes cargo-audit: same RustSec DB, plus yanked/licenses/bans/sources
 cargo machete                          # unused dependencies
 cargo hack check --rust-version --workspace   # the declared MSRV really builds
-bash scripts/check-codegen-drift.sh    # generated layer matches the vendored specs
-bash scripts/check-comment-style.sh --all     # the comment-style rules
+bash scripts/checks/check-codegen-drift.sh    # generated layer matches the vendored specs
+bash scripts/checks/check-comment-style.sh --all     # the comment-style rules
 ```
 
 CI adds a few gates that need more than a checkout: a container smoke test that

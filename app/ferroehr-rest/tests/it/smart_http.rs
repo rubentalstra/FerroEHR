@@ -183,6 +183,35 @@ async fn advisory_mode_defers_for_scopeless_callers() {
     assert_eq!(status, StatusCode::OK, "{body}");
 }
 
+/// With no authenticated principal there is no token, and therefore no SMART
+/// scopes — a state the configuration already answers. Advisory mode defers to
+/// the RBAC/ABAC tiers; fail-closed mode refuses.
+///
+/// This is the distinction that keeps `auth.enabled = false` usable: there the
+/// absence of a principal is the operator's explicit choice, not a missing
+/// credential, so a gate that refused unconditionally would brick the
+/// development posture.
+#[tokio::test]
+async fn scopeless_caller_defers_in_advisory_mode_and_is_refused_when_required() {
+    let path = format!("{BASE}/definition/template/adl1.4");
+
+    let (_pg, advisory) = app(true, false).await;
+    let (status, body) = send(&advisory, get(&path)).await;
+    assert_eq!(
+        status,
+        StatusCode::OK,
+        "advisory mode must defer for a scopeless caller: {body}"
+    );
+
+    let (_pg2, fail_closed) = app(true, true).await;
+    let (status, body) = send(&fail_closed, get(&path)).await;
+    assert_eq!(
+        status,
+        StatusCode::FORBIDDEN,
+        "fail-closed mode must refuse a caller carrying no SMART scopes: {body}"
+    );
+}
+
 #[tokio::test]
 async fn smart_disabled_leaves_families_ungated() {
     let (_pg, app) = app(false, false).await;

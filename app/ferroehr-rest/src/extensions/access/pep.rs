@@ -744,8 +744,20 @@ fn smart_skip_family_gate(
     ) {
         return Ok(());
     }
-    let principal = current_principal()
-        .ok_or_else(|| forbidden_unauthenticated("authentication required for SMART scopes"))?;
+    // No principal means no token, and therefore no SMART scopes — which is a
+    // state the configuration already has an answer for. Advisory mode
+    // (`smart.require_smart_scopes = false`) defers to the RBAC/ABAC tiers, so
+    // it defers here too; fail-closed mode refuses. Refusing unconditionally
+    // would brick `auth.enabled = false`, where the absence of a principal is
+    // the operator's explicit choice rather than a missing credential.
+    let Some(principal) = current_principal() else {
+        if cfg.require_smart_scopes {
+            return Err(forbidden_unauthenticated(
+                "smart.require_smart_scopes demands a token carrying SMART resource scopes",
+            ));
+        }
+        return Ok(());
+    };
     let resource_id = parts
         .path
         .get("template_id")
@@ -761,6 +773,12 @@ fn smart_skip_family_gate(
 
 #[cfg(test)]
 mod tests {
+    #![expect(
+        clippy::disallowed_types,
+        reason = "a test builds the Principal's claim map directly; the claim set \
+                  is RFC 7519-open, so the fixtures name serde_json's types"
+    )]
+
     use std::sync::Arc;
     use std::sync::atomic::{AtomicUsize, Ordering};
 

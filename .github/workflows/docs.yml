@@ -45,7 +45,7 @@ jobs:
       - name: OAS drift gate (docs copy == vendored ITS-REST)
         run: bash scripts/assemble-oas.sh --check       # regenerate + git diff --exit-code
       - name: Stale-numbers gate (no hand-typed conformance claims in site sources)
-        run: bash scripts/check-conformance-numbers.sh
+        run: bash scripts/checks/check-conformance-numbers.sh
       - name: Render conformance stats + comparison + perf assets (the generated includes must exist before lint)
         run: |
           bash scripts/render-conformance-stats.sh includes

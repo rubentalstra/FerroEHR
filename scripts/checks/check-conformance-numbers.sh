@@ -7,7 +7,7 @@
 # sources must carry only the data-cnf markers / {{#include}} directives / the
 # generated SVG assets, never literal numbers.
 set -euo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 
 # Three claim shapes are forbidden in website/landing + website/book/src +
 # README.md:

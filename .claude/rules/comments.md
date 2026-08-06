@@ -28,7 +28,7 @@ has a durable home and goes there, not into the source:
 "before this consolidation…", "the former X is retired" is PR text; git
 history carries it. A comment describes the code as it IS.
 
-## Budgets (machine-enforced — `scripts/check-comment-style.sh`)
+## Budgets (machine-enforced — `scripts/checks/check-comment-style.sh`)
 
 - `// NOTE:` = a citation + ONE sentence, **max 3 physical lines**. The
   full adjudication lives on the issue/PR.
@@ -80,7 +80,7 @@ history carries it. A comment describes the code as it IS.
 
 ## Enforcement register
 
-- `scripts/check-comment-style.sh` — block comments, TODO(#N) form, banned
+- `scripts/checks/check-comment-style.sh` — block comments, TODO(#N) form, banned
   marker vocabulary, NOTE ≤ 3 lines, `//` runs ≤ 8 lines. Runs per-edit (the
   `rust_fmt_clippy.sh` PostToolUse hook) and on PRs (the `comment-style` CI
   job, running `--all` over the whole tree — the legacy sweep (#1870) is done).

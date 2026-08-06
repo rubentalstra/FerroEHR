@@ -97,7 +97,7 @@ jobs:
           # not cost a Rust run. Allowlist the ONLY scripts a code-gated CI
           # job actually executes (the drift check and the e2e harness).
           code_relevant=$(echo "$changed" | grep -vE '^scripts/' || true)
-          if echo "$changed" | grep -qE '^scripts/(check-codegen-drift|ui-e2e)\.sh$'; then
+          if echo "$changed" | grep -qE '^scripts/(checks/check-codegen-drift|ui-e2e)\.sh$'; then
             echo "code=true" >> "$GITHUB_OUTPUT"
           elif echo "$code_relevant" | grep -qE '^(app/|crates/|tools/|\.cargo/|\.config/|Cargo\.toml$|Cargo\.lock$|rust-toolchain\.toml$|rustfmt\.toml$|clippy\.toml$|deny\.toml$)' ; then
             echo "code=true" >> "$GITHUB_OUTPUT"
@@ -186,7 +186,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Comment style on changed Rust files
-        run: bash scripts/check-comment-style.sh --all
+        run: bash scripts/checks/check-comment-style.sh --all
 
   # Default-value style (.claude/rules/rust-style.md §Default values): a field's
   # default lives inline in its struct's `Default` impl — the RFC 3681 shape,
@@ -207,7 +207,16 @@ jobs:
         with:
           fetch-depth: 0
       - name: Default values live in the struct's Default impl
-        run: bash scripts/check-default-style.sh
+        run: bash scripts/checks/check-default-style.sh
+      # Typed-status guard: an HTTP status is compared as a `StatusCode`, never
+      # as a number. `--all` from the start — the tree has no violations.
+      - name: HTTP statuses are compared as types
+        run: bash scripts/checks/check-typed-status.sh --all
+      # Access-layer provenance (#1963): every rationale in the authn/authz layer
+      # cites an RFC, a standards publication, or the vendored openEHR text —
+      # never another product, a plan-phase marker, or internal markdown.
+      - name: Access-layer rationale cites durable sources
+        run: bash scripts/checks/check-access-provenance.sh
 
   # ── Always required: supply-chain policy ────────────────────────────────────
   # cargo-deny alone: `cargo deny check` reads the SAME RustSec advisory DB as
@@ -327,7 +336,7 @@ jobs:
           components: rustfmt
           cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
       - name: Regenerate and diff
-        run: bash scripts/check-codegen-drift.sh
+        run: bash scripts/checks/check-codegen-drift.sh
 
   # ── Build + tests against PostgreSQL 18.4 (+ the CNF artifact validation) ───
   # The CNF coverage guard lives here: its
@@ -966,7 +975,7 @@ jobs:
       # validity (duplicate '### Added'/'### Fixed' headers in one release
       # section shipped into release notes twice before this guard).
       - name: Changelog structure (no duplicate subsections, canonical types)
-        run: bash scripts/check-changelog-structure.sh
+        run: bash scripts/checks/check-changelog-structure.sh
       - name: Require a CHANGELOG entry for user-visible changes
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
@@ -1033,7 +1042,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: docker-compose.yml image tags match the workspace version
-        run: bash scripts/check-compose-image-tags.sh
+        run: bash scripts/checks/check-compose-image-tags.sh
 
   # ── The one-check aggregate gate (the rust-analyzer/ruff pattern) ───────────
   # A single job that needs everything and passes iff nothing failed — skipped

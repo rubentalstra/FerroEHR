@@ -33,8 +33,11 @@ IHE standards define:
 
 Every server operation is audited (unrecognised extension operations fail
 *closed* to a generic audited class — nothing is silently unaudited), and
-authentication rejections (`401`/`403`) are always recorded, attributed to
-the caller where one authenticated.
+access refusals are always recorded: a `401`, a `403`, and the `400` a malformed
+`Authorization` header now earns. A refusal is attributed to the caller **only
+when one actually authenticated** — an unattributable denial is recorded as
+unattributed rather than under a placeholder subject, so no audit record ever
+names an identity that did not authenticate.
 
 ## Sinks
 

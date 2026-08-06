@@ -49,12 +49,28 @@ ship:
   validated against a configured issuer (Keycloak, Active Directory, any
   standards-compliant provider).
 
-A request with no or invalid credentials gets **401 Unauthorized**; an
-authenticated caller lacking the required role gets **403 Forbidden**.
 Authorization is coarse role-based access control by default (a `USER` role for
 clinical operations, an `ADMIN` role for admin operations), with optional
 attribute-based policies. The full picture — mechanisms, roles, multi-tenancy —
 is in [Security & multi-tenancy](../security.md).
+
+### Which status a credential problem gets
+
+The distinction matters when you are writing a client, because only one of these
+means "fix your credential":
+
+| Situation | Status | What it means |
+|---|---|---|
+| No `Authorization` header | `401` | with a `WWW-Authenticate` challenge listing the schemes this server implements, and **no** `error=` code — nothing has gone wrong yet ([RFC 6750 §3.1](https://www.rfc-editor.org/rfc/rfc6750#section-3.1)) |
+| Credential presented and rejected | `401` | challenge carries `error="invalid_token"` |
+| `Authorization` header malformed | `400` | an unparsable header, an unknown scheme, or a bearer token outside the [RFC 6750 §2.1](https://www.rfc-editor.org/rfc/rfc6750#section-2.1) `b64token` grammar. The server never got as far as a credential, so this is a request defect (`error="invalid_request"`) |
+| Authenticated, not permitted | `403` | for a bearer caller the challenge carries `error="insufficient_scope"`, naming what is missing |
+| The token issuer is unreachable | `503` | with `Retry-After`. No token can be validated, so the server cannot decide — it is **not** a statement about your credential ([RFC 9110 §15.6.4](https://www.rfc-editor.org/rfc/rfc9110#section-15.6.4)). Retry; do not discard the token |
+
+Two Basic-auth details worth knowing: the credential must be **padded** base64
+(RFC 7617 §2 defers to [RFC 4648 §3.2](https://www.rfc-editor.org/rfc/rfc4648#section-3.2),
+which requires the pad characters), and an unknown username costs the same time
+as a known one, so response timing reveals nothing about which accounts exist.
 
 > [!NOTE]
 > The quickstart ships a throwaway Basic user (`ferroehr` / `ferroehr`).

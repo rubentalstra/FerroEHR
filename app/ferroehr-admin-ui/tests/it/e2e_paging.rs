@@ -34,6 +34,8 @@ use crate::common;
 
 use std::time::Duration;
 
+use reqwest::StatusCode;
+
 use common::{Harness, env, login_basic};
 use thirtyfour::prelude::*;
 
@@ -76,7 +78,7 @@ async fn delete_fixtures(cdr: &str) {
             .expect("delete a stored-query fixture")
             .status();
         assert!(
-            status.as_u16() == 204 || status.as_u16() == 404,
+            status == StatusCode::NO_CONTENT || status == StatusCode::NOT_FOUND,
             "stored-query cleanup -> {status}"
         );
     }

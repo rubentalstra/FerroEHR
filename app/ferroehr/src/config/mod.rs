@@ -133,9 +133,36 @@ impl FerroEhrConfig {
         if let Err(e) = self.authz.validate() {
             errors.push(ConfigError::semantic(format!("authz: {e}")));
         }
-        // SMART deprecated-grant rule.
+        // SMART: the deprecated-grant rule plus everything the discovery
+        // document publishes (endpoint scheme, the RFC 8414 §2 required fields,
+        // PKCE).
         if let Err(e) = self.smart.validate() {
             errors.push(ConfigError::semantic(format!("smart: {e}")));
+        }
+        // The two issuers must agree. `smart.endpoints.issuer` tells third-party
+        // applications where to OBTAIN a token; `auth.oidc.issuer` is what this
+        // server will ACCEPT one from. Configured independently and left
+        // unchecked, a mismatch is silently broken in the most confusing way
+        // available: every app obtains a valid token and every request is
+        // refused as an invalid one. Both values are known here, so it is a boot
+        // error.
+        if self.smart.enabled {
+            match (&self.smart.endpoints.issuer, &self.auth.oidc) {
+                (_, None) => errors.push(ConfigError::semantic(
+                    "smart.enabled = true requires an [auth.oidc] issuer: the CDR directs                      applications to an authorization server, so it must be able to validate                      the tokens they come back with"
+                        .to_owned(),
+                )),
+                (Some(advertised), Some(oidc))
+                    if advertised.trim().trim_end_matches('/')
+                        != oidc.issuer.trim().trim_end_matches('/') =>
+                {
+                    errors.push(ConfigError::semantic(format!(
+                        "smart.endpoints.issuer ({advertised:?}) and auth.oidc.issuer ({:?})                          name different authorization servers: applications would obtain tokens                          from the first and every request would be refused by the second",
+                        oidc.issuer
+                    )));
+                }
+                _ => {}
+            }
         }
         // signing.mode = pgp ⇒ key_path set.
         if matches!(
@@ -804,12 +831,82 @@ mod tests {
         assert!(c.validate().is_ok());
     }
 
+    /// `smart.endpoints.issuer` tells applications where to OBTAIN a token;
+    /// `auth.oidc.issuer` is what this server will ACCEPT one from. A mismatch is
+    /// silently broken in the most confusing way available — every app obtains a
+    /// valid token and every request is refused as invalid — so it is a boot
+    /// error naming both keys.
+    #[test]
+    fn a_smart_issuer_that_disagrees_with_the_oidc_issuer_is_refused() {
+        let publishable_smart = |issuer: &str| smart::SmartConfig {
+            enabled: true,
+            public_base_url: Some("https://cdr.example.com".to_owned()),
+            endpoints: smart::SmartEndpoints {
+                issuer: Some(issuer.to_owned()),
+                authorization_endpoint: Some("https://as.example/authorize".to_owned()),
+                token_endpoint: Some("https://as.example/token".to_owned()),
+                response_types_supported: vec!["code".to_owned()],
+                token_endpoint_auth_methods_supported: vec!["client_secret_basic".to_owned()],
+                code_challenge_methods_supported: vec!["S256".to_owned()],
+                ..smart::SmartEndpoints::default()
+            },
+            ..smart::SmartConfig::default()
+        };
+        let oidc = |issuer: &str| auth::OidcConfig {
+            issuer: issuer.to_owned(),
+            audiences: vec!["ferroehr".to_owned()],
+            jwks_json: Some("{\"keys\":[]}".to_owned()),
+            ..auth::OidcConfig::default()
+        };
+
+        let tree = |smart_issuer: &str, oidc_issuer: Option<&str>| FerroEhrConfig {
+            smart: publishable_smart(smart_issuer),
+            auth: auth::AuthConfig {
+                oidc: oidc_issuer.map(oidc),
+                ..auth::AuthConfig::default()
+            },
+            ..FerroEhrConfig::default()
+        };
+
+        // Disagreeing issuers.
+        let err = tree(
+            "https://as.example/realms/ferroehr",
+            Some("https://other-as.example/realms/ferroehr"),
+        )
+        .validate()
+        .expect_err("two different authorization servers must be refused");
+        let text = format!("{err:?}");
+        assert!(text.contains("smart.endpoints.issuer"), "{text}");
+        assert!(text.contains("auth.oidc.issuer"), "{text}");
+
+        // Agreeing issuers — a trailing slash is the same identity.
+        assert!(
+            tree(
+                "https://as.example/realms/ferroehr/",
+                Some("https://as.example/realms/ferroehr"),
+            )
+            .validate()
+            .is_ok(),
+            "a trailing slash is not a mismatch",
+        );
+
+        // SMART enabled with no bearer validation at all: the CDR would send apps
+        // to an authorization server whose tokens it cannot check.
+        let err = tree("https://as.example/realms/ferroehr", None)
+            .validate()
+            .expect_err("SMART without [auth.oidc] must refuse");
+        assert!(format!("{err:?}").contains("auth.oidc"), "{err:?}");
+    }
+
     #[test]
     fn validate_hmac_and_jwks_together_is_refused() {
         let mut c = FerroEhrConfig::default();
         c.auth.oidc = Some(auth::OidcConfig {
             issuer: "https://idp.example.test".to_owned(),
             audiences: vec!["ferroehr".to_owned()],
+            // `HS256`, because the fixture carries a symmetric secret and the
+            // algorithm set is boot-bound to its key source.
+            algorithms: vec!["HS256".to_owned()],
             hmac_secret: Some(Secret::new("0123456789abcdef0123456789abcdef")),
             jwks_json: Some("{\"keys\":[]}".to_owned()),
             ..auth::OidcConfig::default()

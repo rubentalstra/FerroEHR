@@ -9,7 +9,7 @@
 # release). Dependency-free: grep + sed only.
 set -Eeuo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 COMPOSE_FILE="$ROOT_DIR/docker-compose.yml"
 MANIFEST="$ROOT_DIR/Cargo.toml"
 

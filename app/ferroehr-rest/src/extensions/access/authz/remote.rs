@@ -88,7 +88,21 @@ impl RemotePdp {
         Value::Object(map)
     }
 
-    /// POST one combination and return whether the PDP permitted it (HTTP 200).
+    /// POST one combination and return whether the PDP permitted it.
+    ///
+    /// `200` is a permit and a `4xx` is a deny — both are DECISIONS the policy
+    /// server made. A `5xx` is not: it says the PDP failed, so it produced no
+    /// decision at all, and reading it as a deny would let a broken policy
+    /// server silently refuse clinical access while looking like policy. It
+    /// becomes [`AuthzError::Unreachable`], which the PEP renders `500`
+    /// (RFC 9110 §15.6: a 5xx means "the server is aware that it has erred").
+    /// A `3xx` is equally not a decision: an authorization endpoint that
+    /// redirects is misconfigured, and following it would send the attribute
+    /// body somewhere the deployment did not name.
+    ///
+    /// # Errors
+    /// [`AuthzError::Unreachable`] when the request fails, or when the PDP
+    /// answers with any status that is not a decision.
     async fn permits(
         &self,
         rule: &PolicyRule,
@@ -103,7 +117,17 @@ impl RemotePdp {
             .send()
             .await
             .map_err(|e| AuthzError::Unreachable(format!("POST {url}: {e}")))?;
-        Ok(response.status().as_u16() == 200)
+        let status = response.status();
+        if status == reqwest::StatusCode::OK {
+            return Ok(true);
+        }
+        if status.is_client_error() {
+            return Ok(false);
+        }
+        Err(AuthzError::Unreachable(format!(
+            "POST {url}: the policy server answered {status}, which is not an \
+             authorization decision"
+        )))
     }
 }
 

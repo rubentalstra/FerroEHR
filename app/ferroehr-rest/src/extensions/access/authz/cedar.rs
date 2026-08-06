@@ -507,8 +507,8 @@ mod tests {
     #[tokio::test]
     async fn erroring_forbid_policy_is_a_fail_closed_error() {
         let engine = CedarEngine::from_policy_src(
-            r#"permit(principal, action, resource);
-               forbid(principal, action, resource) when { 9223372036854775807 + 1 > 0 };"#,
+            r"permit(principal, action, resource);
+               forbid(principal, action, resource) when { 9223372036854775807 + 1 > 0 };",
         )
         .expect("policy loads");
         let no_attrs = AuthzRequest {

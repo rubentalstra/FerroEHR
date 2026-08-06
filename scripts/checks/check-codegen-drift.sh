@@ -7,7 +7,7 @@
 # hand-editing a `// @generated` file, or changing the emitter without
 # regenerating. Run in CI and locally before committing generator changes.
 set -euo pipefail
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../.."
 
 # Paths the emit targets own (and only those).
 GENERATED=(

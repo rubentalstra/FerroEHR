@@ -33,7 +33,7 @@ bash "$ROOT/scripts/assemble-oas.sh"
 # 1b. Conformance claims are derived from the committed runner artifacts —
 #     the book include is generated before mdbook runs, and the landing's
 #     data-cnf markers are filled after the copy (step 3). Sources carry no
-#     numbers (CI: scripts/check-conformance-numbers.sh).
+#     numbers (CI: scripts/checks/check-conformance-numbers.sh).
 bash "$ROOT/scripts/render-conformance-stats.sh" includes
 bash "$ROOT/scripts/render-comparison.sh"
 bash "$ROOT/scripts/render-perf-assets.sh"

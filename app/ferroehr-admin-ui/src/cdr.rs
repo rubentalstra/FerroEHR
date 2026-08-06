@@ -163,7 +163,7 @@ impl CdrClient {
             .send()
             .await
             .map_err(|e| AdminUiError::CdrUnreachable(e.to_string()))?;
-        if response.status().as_u16() != 401 {
+        if response.status() != http::StatusCode::UNAUTHORIZED {
             return Ok((true, true));
         }
         let challenge = response

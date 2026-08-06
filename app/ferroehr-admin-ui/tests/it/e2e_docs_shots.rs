@@ -22,6 +22,8 @@
 
 use crate::common;
 
+use reqwest::StatusCode;
+
 use std::path::{Path, PathBuf};
 
 use common::{Harness, env, login_basic, login_basic_as};
@@ -168,7 +170,7 @@ async fn capture_documentation_screenshots() {
                 .expect("clean stored query")
                 .status();
             assert!(
-                status.as_u16() == 204 || status.as_u16() == 404,
+                status == StatusCode::NO_CONTENT || status == StatusCode::NOT_FOUND,
                 "stored-query cleanup -> {status}"
             );
         }
