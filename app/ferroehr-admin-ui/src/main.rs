@@ -150,6 +150,7 @@ fn main() {
 ///
 /// `Strict-Transport-Security` is left to the TLS edge, for the same reason as
 /// on the API: RFC 6797 §7.2 makes it inert over plain HTTP.
+#[cfg(feature = "ssr")]
 fn with_security_headers(
     router: axum::Router<leptos::prelude::LeptosOptions>,
 ) -> axum::Router<leptos::prelude::LeptosOptions> {
@@ -178,6 +179,7 @@ fn with_security_headers(
 }
 
 /// The console's Content-Security-Policy.
+#[cfg(feature = "ssr")]
 const CONSOLE_CSP: &str = "default-src 'self'; \
      script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline'; \
      style-src 'self' 'unsafe-inline'; \
@@ -189,7 +191,7 @@ const CONSOLE_CSP: &str = "default-src 'self'; \
      form-action 'self'; \
      frame-ancestors 'none'";
 
-#[cfg(test)]
+#[cfg(all(test, feature = "ssr"))]
 mod tests {
     use super::CONSOLE_CSP;
 

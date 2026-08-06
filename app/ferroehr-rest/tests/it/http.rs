@@ -872,6 +872,39 @@ async fn every_response_carries_the_security_headers() {
     }
 }
 
+/// Two properties the header audit asked about explicitly.
+///
+/// No `Server` header: `hyper` emits none, and nothing in the stack adds one, so
+/// the version-disclosure the OWASP HTTP Headers Cheat Sheet warns about does not
+/// arise. Asserted rather than assumed, because a future middleware could add one.
+///
+/// And `Cache-Control: no-store` does not disturb the spec's concurrency control.
+/// `ETag` is a PRECONDITION mechanism — the client echoes it in `If-Match` on the
+/// next write (ITS-REST overview `Requests_and_responses.md`) — not a caching one,
+/// so refusing to store a response and identifying its version are independent.
+/// This pins both appearing on the same response.
+#[tokio::test]
+async fn no_server_header_and_no_store_coexists_with_etag() {
+    let (_pg, app) = app(false).await;
+    let create = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/ehr"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::empty())
+        .unwrap();
+    let (status, headers, body) = send(app, create).await;
+    assert!(
+        !headers.contains_key(header::SERVER),
+        "a Server header would disclose the implementation for no benefit"
+    );
+    assert_eq!(status, StatusCode::CREATED, "{body}");
+    assert!(
+        headers.contains_key(header::ETAG),
+        "the spec-required ETag must survive Cache-Control: no-store"
+    );
+    assert_eq!(headers.get(header::CACHE_CONTROL).unwrap(), "no-store");
+}
+
 /// `Strict-Transport-Security` is deliberately NOT sent: RFC 6797 §7.2 requires
 /// a browser to ignore it over plain HTTP, which is how this server is commonly
 /// reached behind a terminating proxy, and the TLS edge owns the header. This
