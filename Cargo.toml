@@ -208,7 +208,7 @@ async-trait = "0.1"                 # still handy for dyn traits; native async-f
 pin-project-lite = "0.2"
 
 # ── Authentication & authorization (do NOT hand-roll) ────────────────────────
-jsonwebtoken = { version = "10.4.0", features = ["aws_lc_rs"] }   # JWT encode/decode/validate; aws-lc-rs crypto provider (matches the rustls stack)
+jsonwebtoken = { version = "11.0.0", features = ["aws_lc_rs"] }   # JWT encode/decode/validate; aws-lc-rs crypto provider (matches the rustls stack)
 oauth2 = { version = "5", default-features = false } # OAuth2 client (HTTP-client agnostic: we supply the pinned reqwest)
 openidconnect = "4"                 # OIDC / Keycloak          (verify latest 4.x)
 argon2 = "0.5"                      # password hashing (Argon2id)
@@ -225,6 +225,10 @@ cedar-policy = "4"                  # alternative policy engine (verify latest)
 rustls = "0.23"
 tokio-rustls = "0.26"
 webpki-roots = "1.0.8"
+# NOTE: `app/ferroehr` deliberately pins rand 0.8 at the crate level instead of
+# using this one — it passes `OsRng` into `pgp`'s signing API, so its rand
+# generation must match pgp's (`pgp 0.20` requires rand 0.8.7). Bump that pin
+# only when pgp does.
 rand = "0.10.1"
 getrandom = "0.4.3"
 sha2 = "0.11.0"
@@ -268,7 +272,7 @@ roxmltree = "0.21"                   # read-only XML DOM — XSD reader for the 
 serde_norway = "0.9"                 # maintained serde_yaml fork — parse vendored OAS YAML for the REST codegen
 serde-saphyr = "1.0.0-rc.1"          # pure-Rust YAML 1.2 front-end (no RUSTSEC; alias-expansion Budget) — the CNF 2.0 schedule authoring surface (tools/cnf-runner)
 semver = "1.0.28"                    # Cargo/semver requirement syntax for the CNF case `applies` spec-version ranges
-base64 = "0.22"
+base64 = "0.23"
 # Typed FHIR R4B resource model (fhir-sdk's model half) — the typed surface of
 # the FHIR integration extension (`app/ferroehr-ext`, `fhir` feature): the ATNA
 # BALP `AuditEvent` we author and the `Parameters`/`ValueSet` a terminology
@@ -300,7 +304,7 @@ logos = "0.16.1"                      # DFA lexer
 chumsky = "0.13.0"                    # 0.10 usable stable (1.0 still alpha; repo now on Codeberg)
 winnow = "1.0.3"                      # alternative parser combinator
 regex = "1"
-fancy-regex = "0.18.0"               # backreferences for cADL where needed (verify)
+fancy-regex = "0.19.0"               # backreferences for cADL where needed (verify)
 # parser diagnostics (great for ADL/AQL error reporting):
 ariadne = "0.6.0"                    # verify
 miette = { version = "7", features = ["fancy"] }
@@ -378,7 +382,7 @@ bitflags = "2"
 
 # ── HTTP client & external integration ───────────────────────────────────────
 reqwest = { version = "0.13.4", default-features = false, features = ["rustls", "json", "gzip", "brotli"] }
-jsonschema = "0.46.8"               # validate against openEHR ITS-JSON schemas (verify latest)
+jsonschema = "0.49.3"               # validate against openEHR ITS-JSON schemas (verify latest)
 
 # ── Dev / test (dev-dependencies at the crate level) ─────────────────────────
 insta = { version = "1", features = ["json", "redactions", "filters"] }
@@ -389,7 +393,11 @@ mockall = "0.15.0"                  # verify latest
 fake = "5.1.0"                        # verify latest
 assert_cmd = "2"
 assert_fs = "1"
-testcontainers = "0.27.3"           # real PostgreSQL 18 in tests (verify latest)
+# HELD at 0.27 by testcontainers-modules: its newest release (0.15.0) requires
+# testcontainers ^0.27, and bollard-stubs pins an exact version per bollard
+# line, so 0.27 + 0.28 cannot coexist in one lock. Bump both together once a
+# testcontainers-modules release targets 0.28.
+testcontainers = "0.27.3"
 testcontainers-modules = { version = "0.15.0", features = ["postgres", "rabbitmq"] }   # verify latest
 criterion = { version = "0.8.2", features = ["html_reports"] }
 divan = "0.1"
