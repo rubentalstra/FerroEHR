@@ -603,8 +603,11 @@ impl AccessGuard {
 fn unauthorized(authenticator: &Authenticator) -> Response {
     let mut resp =
         RestError(ApiError::Unauthorized("authentication required".to_owned())).into_response();
+    // No credential was presented, so the challenge carries no RFC 6750 §3.1
+    // error code: "If the request lacks any authentication information … the
+    // resource server SHOULD NOT include an error code".
     resp.headers_mut()
-        .insert(header::WWW_AUTHENTICATE, authenticator.challenge());
+        .insert(header::WWW_AUTHENTICATE, authenticator.challenge(None));
     resp
 }
 

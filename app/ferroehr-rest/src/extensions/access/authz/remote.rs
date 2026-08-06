@@ -1,13 +1,20 @@
-//! [`RemotePdp`] — the v1-compatible external policy-server client.
+//! [`RemotePdp`] — the external policy-decision-point client.
 //!
-//! Byte-compatible with `EHRbase` v1: `POST {server}{policy-name}` with a **flat**
-//! JSON body carrying only the configured, resolved keys
-//! (`organization`/`patient`/`template`); HTTP **200 = permit**, any other
-//! status = deny; the response body is ignored. Connection/IO failure is
-//! fail-closed ([`AuthzError::Unreachable`] → 500 at the PEP). Multi-valued
-//! attributes fan out as the full cartesian product with all-must-permit and
-//! short-circuit deny. The client has explicit connect/request timeouts
-//! (EHRbase v1 had none, so a blackholed PDP parked the request).
+//! The wire contract is deliberately minimal, in the NIST SP 800-162 sense of a
+//! PDP the PEP consults: `POST {server}{policy-name}` with a **flat** JSON body
+//! carrying only the configured, resolved attribute keys
+//! (`organization`/`patient`/`template`); HTTP **200 = permit**, any 4xx =
+//! deny, and the response body is ignored so no policy language is imposed on
+//! the deployment. A 5xx or an IO failure is not a decision at all: it is
+//! fail-closed as [`AuthzError::Unreachable`], which the PEP renders 500 rather
+//! than a silent permit or a misleading 403. Multi-valued attributes fan out as
+//! the full cartesian product, all-must-permit, first deny short-circuits.
+//! Connect and request timeouts are explicit — without them a blackholed PDP
+//! parks the request until the client gives up.
+//!
+//! NOTE: no openEHR spec governs external authorization — our own
+//! design/extension; the SM places authorization out of band
+//! (SM `openehr_platform/master02-overview.adoc` §General Assumptions).
 
 #![expect(
     clippy::disallowed_types,
@@ -26,7 +33,7 @@ use crate::extensions::access::authz::engine::{AuthzError, PolicyEngine};
 use crate::extensions::access::authz::request::{AuthzRequest, Combination, Decision};
 use ferroehr::config::authz::{AbacConfig, AbacParam, PolicyRule};
 
-/// The v1-compatible remote policy-decision-point client.
+/// The remote policy-decision-point client.
 #[derive(Debug)]
 pub struct RemotePdp {
     client: reqwest::Client,

@@ -49,7 +49,18 @@ pub struct RbacConfig {
     /// granting roles (a restriction overrides a grant). Supports the CNF
     /// SEC-BASIC authorization-separation profile.
     pub readonly_role: String,
-    /// JWT claim paths mined for roles (default `["realm_access.roles","scope"]`).
+    /// JWT claim paths mined for roles, in resolution order.
+    ///
+    /// Defaults to the carriers RFC 9068 §2.2.3.1 names for conveying
+    /// authorization state — `roles`, `groups`, `entitlements` (`roles` and
+    /// `entitlements` being SCIM attributes, RFC 7643 §4.1.2) — followed by the
+    /// widely deployed nested `realm_access.roles`. An issuer that nests them
+    /// differently is configuration, not a code change.
+    ///
+    /// `scope` is deliberately NOT a default: an OAuth2 scope grants a client
+    /// delegated authority (RFC 6749 §3.3) and asserts nothing about the
+    /// subject's roles, so reading it as one makes the "at least one role" gate
+    /// vacuous for every OIDC token.
     pub role_claims: Vec<String>,
     /// Access level for the management surface (default `admin_only`).
     pub management_access: ManagementAccess,
@@ -62,21 +73,26 @@ impl Default for RbacConfig {
             admin_role: "ADMIN".to_owned(),
             user_role: "USER".to_owned(),
             readonly_role: "READONLY".to_owned(),
-            role_claims: vec!["realm_access.roles".to_owned(), "scope".to_owned()],
+            role_claims: vec![
+                "roles".to_owned(),
+                "groups".to_owned(),
+                "entitlements".to_owned(),
+                "realm_access.roles".to_owned(),
+            ],
             management_access: ManagementAccess::AdminOnly,
         }
     }
 }
 
 /// The ABAC policy engine selector (`abac.engine`). `cedar` is the
-/// embedded default; `remote` is the v1-compatible external PDP.
+/// embedded default; `remote` delegates to an external PDP.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum AbacEngineKind {
     /// Embedded Cedar (`cedar-policy`), policies from `abac.cedar.policy_dir`.
     #[default]
     Cedar,
-    /// The v1-compatible remote policy-decision-point (`abac.remote.server`).
+    /// The remote policy-decision-point (`abac.remote.server`).
     Remote,
 }
 
@@ -94,7 +110,9 @@ pub enum AbacParam {
 }
 
 impl AbacParam {
-    /// The exact wire key EHRbase v1 uses in the flat PDP request body.
+    /// The key this attribute takes in the flat PDP request body — the wire name
+    /// a policy author writes their rules against, so it is part of the
+    /// deployment's contract with its PDP.
     #[must_use]
     pub const fn wire_key(self) -> &'static str {
         match self {
@@ -127,7 +145,7 @@ pub struct CedarConfig {
     pub reload_secs: Option<u64>,
 }
 
-/// The v1-compatible remote-PDP client settings.
+/// The remote-PDP client settings.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct RemoteConfig {
@@ -254,7 +272,8 @@ pub enum AuthzConfigError {
     )]
     UnknownPolicyKind(String),
     /// A `template` parameter was configured for `ehr`/`ehr_status` — illegal
-    /// (EHRbase v1 made this a runtime 500; here it is a boot error).
+    /// A missing entry is refused at boot rather than at the first request, so a
+    /// deployment cannot discover the gap from a 500 in production.
     #[error("authz.abac.policy.{0} must not take the `template` parameter")]
     TemplateParamIllegal(&'static str),
     /// `engine = remote` without a configured base URL.
@@ -384,9 +403,17 @@ mod tests {
         assert_eq!(c.rbac.user_role, "USER");
         assert_eq!(c.rbac.readonly_role, "READONLY");
         assert_eq!(c.rbac.management_access, ManagementAccess::AdminOnly);
+        // The RFC 9068 §2.2.3.1 carriers, in order. `scope` is deliberately
+        // absent: an OAuth2 scope grants a client delegated authority
+        // (RFC 6749 §3.3) and asserts nothing about the subject's roles.
         assert_eq!(
             c.rbac.role_claims,
-            vec!["realm_access.roles".to_owned(), "scope".to_owned()]
+            vec![
+                "roles".to_owned(),
+                "groups".to_owned(),
+                "entitlements".to_owned(),
+                "realm_access.roles".to_owned(),
+            ]
         );
         assert!(c.validate().is_ok());
     }

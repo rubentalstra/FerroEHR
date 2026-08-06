@@ -18,7 +18,7 @@
 //!    seam ([`engine::PolicyEngine`]) consulted per clinical operation with
 //!    resolved attributes (organization/patient/template), behind two
 //!    interchangeable engines — an embedded Cedar engine ([`cedar`], the
-//!    default) and the v1-compatible [`remote::RemotePdp`].
+//!    default) and the [`remote::RemotePdp`].
 //!
 //! This module also carries the per-server authorization handle wired onto
 //! [`AppState`](crate::state::AppState) (the RBAC + ABAC gates), built by the binary
@@ -34,7 +34,7 @@
 //! - [`request`] — the ABAC [`request::AuthzRequest`] + multi-valued fan-out.
 //! - [`engine`] — the [`engine::PolicyEngine`] PDP seam + [`engine::AuthzError`].
 //! - [`cedar`] — the embedded Cedar engine (schema, policy loading, reload).
-//! - [`remote`] — the v1-compatible remote PDP client.
+//! - [`remote`] — the remote PDP client.
 
 pub mod cedar;
 pub mod classify;
@@ -192,9 +192,10 @@ impl AuthzHandle {
     /// [`Authenticator`]: crate::extensions::access::authn::Authenticator
     #[must_use]
     pub fn role_claims(&self) -> Vec<String> {
-        self.rbac
-            .as_ref()
-            .map_or_else(roles::default_role_claims, |r| r.rules.role_claims.clone())
+        self.rbac.as_ref().map_or_else(
+            || RbacConfig::default().role_claims,
+            |r| r.rules.role_claims.clone(),
+        )
     }
 }
 

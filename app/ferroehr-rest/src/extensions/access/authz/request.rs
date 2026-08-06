@@ -7,7 +7,8 @@
 //! Attributes (`organization`, `patient`, `template`) are resolved by the PEP
 //! before the engine is called; `patient`/`template` may be *sets* (query,
 //! contribution), which the engine fans out over as a full cartesian product,
-//! **all-must-permit** (EHRbase v1 parity).
+//! **all-must-permit**: a request touching several resources is permitted only
+//! if every one of them is, and the first deny short-circuits.
 
 /// The resource family a clinical operation acts on. Derived from the
 /// operation-id prefix by [`crate::extensions::access::authz::classify::kind_of`].
@@ -23,7 +24,8 @@ pub enum ResourceKind {
     Contribution,
     /// An AQL query execution (ad-hoc or stored).
     Query,
-    /// A DIRECTORY/FOLDER (our extension over v1 — unchecked unless configured).
+    /// A DIRECTORY/FOLDER. Gated only when `abac.check_directory` is set, so a
+    /// deployment opts into it explicitly.
     Directory,
 }
 
@@ -80,8 +82,12 @@ impl AccessMode {
 pub enum Attr {
     /// Exactly one value.
     One(String),
-    /// A set of values (the engine fans out over it; an **empty** set yields no
-    /// combinations, i.e. a vacuous permit — EHRbase v1's empty-result behaviour).
+    /// A set of values the engine fans out over.
+    ///
+    /// An empty set yields no combinations, so nothing is asked and nothing
+    /// denies. Both builders map an empty attribute to `None` rather than to
+    /// this variant, so a vacuous permit is unreachable by construction — do not
+    /// introduce a path that constructs `Set(vec![])`.
     Set(Vec<String>),
 }
 

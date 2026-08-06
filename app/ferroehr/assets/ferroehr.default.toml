@@ -116,6 +116,12 @@ verified_cache_ttl_seconds = 60
 # leeway may be "no more than a few minutes" (RFC 9068 §4 step 6), and a large
 # value silently extends every token's life.
 #? clock_skew_leeway_seconds = 60
+# require_at_jwt: refuse a token that does not claim the RFC 9068 access-token
+# profile (`typ: at+jwt`). Off by default because §2.1 makes the type a SHOULD
+# for the authorization server, so requiring it rejects conforming issuers. A
+# token that DOES claim the profile is held to the whole of §2.2 either way —
+# `iat`, `jti` and `client_id` become mandatory for it.
+#? require_at_jwt = false
 # allow_insecure_issuer: accept a non-https issuer. DEVELOPMENT/TEST ONLY — it
 # exposes token verification material to the network (RFC 8414 §6.2).
 #? allow_insecure_issuer = false
@@ -139,7 +145,7 @@ enabled = true
 admin_role = "ADMIN"
 user_role = "USER"
 readonly_role = "READONLY"   # carriers are refused on every write operation
-role_claims = ["realm_access.roles", "scope"]
+role_claims = ["roles", "groups", "entitlements", "realm_access.roles"]
 management_access = "admin_only"   # admin_only | private | public
 
 [authz.abac]

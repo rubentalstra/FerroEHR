@@ -71,13 +71,14 @@ pub struct Principal {
     pub subject: String,
     /// `OAuth2` scopes granted to the caller (empty for Basic).
     pub scopes: Vec<String>,
-    /// Roles granted to the caller, normalized to upper-case. Extracted from the
-    /// configured JWT claim paths (default `realm_access.roles` + `scope`) for
-    /// Bearer; from the Basic user's configured roles for Basic. Consumed by the
-    /// RBAC gate.
+    /// Roles granted to the caller, normalized to upper-case. For Bearer they
+    /// come from the configured JWT claim paths (`authz.rbac.role_claims`,
+    /// defaulting to the RFC 9068 §2.2.3.1 carriers); for Basic from the user's
+    /// configured role list. Consumed by the RBAC gate. An OAuth2 scope is NOT
+    /// a role — see [`Self::scopes`].
     pub roles: Vec<String>,
     /// The retained, validated JWT claim set (Bearer only; empty for Basic).
-    /// Kept so the Stage-2 ABAC layer can resolve attributes (organization /
+    /// Kept so the ABAC layer can resolve subject attributes (organization,
     /// patient) without re-parsing the token; unused by the RBAC gate.
     pub claims: serde_json::Map<String, serde_json::Value>,
     /// Which mechanism authenticated the caller.
@@ -122,10 +123,22 @@ pub enum AuthError {
     /// The request carried no credential for any enabled mechanism.
     #[error("no credentials supplied")]
     MissingCredentials,
-    /// A malformed `Authorization` header, an unknown user, or a password that
-    /// does not match the stored Argon2 hash.
+    /// An unknown user, or a password that does not match the stored Argon2
+    /// hash. A credential that was PRESENTED and REJECTED — RFC 6750 §3.1's
+    /// `invalid_token` case for bearer, an ordinary 401 for Basic.
     #[error("invalid credentials")]
     InvalidCredentials,
+    /// The `Authorization` header is not a well-formed credential at all: an
+    /// unparsable header, an unknown scheme, or a bearer credential outside the
+    /// RFC 6750 §2.1 `b64token` grammar.
+    ///
+    /// RFC 6750 §3.1 gives this its own code — "The request is missing a
+    /// required parameter, includes an unsupported parameter or parameter
+    /// value, repeats the same parameter, uses more than one method for
+    /// including an access token, or is otherwise malformed … 400 (Bad
+    /// Request)" — because it is a request defect, not a credential decision.
+    #[error("malformed authorization header: {0}")]
+    MalformedRequest(String),
     /// A bearer token that failed structural, signature, or claim validation.
     #[error("invalid bearer token: {0}")]
     InvalidToken(String),
@@ -154,7 +167,36 @@ impl AuthError {
             AuthError::VerificationUnavailable(m) => {
                 crate::overview::error::internal_fault("verify the supplied credentials", m)
             }
+            AuthError::MalformedRequest(m) => ApiError::BadRequest(m.clone()),
+            // The issuer's keys are unreachable, so NO token can be validated:
+            // the server cannot decide, which RFC 9110 §15.6.4 makes a 503 —
+            // "the server is currently unable to handle the request due to a
+            // temporary overload or scheduled maintenance". Answering 401 would
+            // tell a caller with a perfectly valid token that its credential was
+            // rejected, and a client that trusts that stops retrying.
+            AuthError::KeyResolution(m) => ApiError::ServiceUnavailable(m.clone()),
             other => ApiError::Unauthorized(other.to_string()),
+        }
+    }
+
+    /// The RFC 6750 §3.1 `error` code this outcome carries on its
+    /// `WWW-Authenticate` challenge, or `None` when the challenge must carry no
+    /// code at all.
+    ///
+    /// §3.1: "If the request lacks any authentication information …  the
+    /// resource server SHOULD NOT include an error code" — an unauthenticated
+    /// caller has not made a mistake yet, so naming one invites the client to
+    /// treat a first request as a failure.
+    const fn bearer_error_code(&self) -> Option<&'static str> {
+        match self {
+            AuthError::InvalidCredentials | AuthError::InvalidToken(_) => Some("invalid_token"),
+            AuthError::Forbidden(_) => Some("insufficient_scope"),
+            AuthError::MalformedRequest(_) => Some("invalid_request"),
+            // No credential presented, or a server-side fault: neither is a
+            // statement the client can act on by changing its credential.
+            AuthError::MissingCredentials
+            | AuthError::KeyResolution(_)
+            | AuthError::VerificationUnavailable(_) => None,
         }
     }
 }
@@ -196,7 +238,7 @@ impl Authenticator {
     pub fn new(config: AuthConfig) -> Result<Arc<Self>, String> {
         Self::with_role_claims(
             config,
-            crate::extensions::access::authz::roles::default_role_claims(),
+            ferroehr::config::authz::RbacConfig::default().role_claims,
         )
     }
 
@@ -235,19 +277,32 @@ impl Authenticator {
     }
 
     /// The `WWW-Authenticate` challenge advertising the enabled mechanisms.
-    pub(crate) fn challenge(&self) -> HeaderValue {
-        let mut parts = Vec::new();
+    pub(crate) fn challenge(&self, outcome: Option<&AuthError>) -> HeaderValue {
+        let error = outcome.and_then(AuthError::bearer_error_code);
+        let mut parts: Vec<String> = Vec::new();
         if self.config.basic.is_some() {
-            parts.push(r#"Basic realm="ferroehr""#);
+            // RFC 7617 §2.1: `charset="UTF-8"` tells the client which encoding
+            // to use for the credential; the RFC defines `UTF-8` as its only
+            // legal value.
+            parts.push(r#"Basic realm="ferroehr", charset="UTF-8""#.to_owned());
         }
         if self.jwt.is_some() {
-            parts.push("Bearer");
+            // RFC 6750 §3: the `Bearer` scheme's challenge carries `realm` and,
+            // when the request failed for a reason the client can act on, an
+            // `error` code from §3.1.
+            let bearer = match error {
+                Some(code) => format!(r#"Bearer realm="ferroehr", error="{code}""#),
+                None => r#"Bearer realm="ferroehr""#.to_owned(),
+            };
+            parts.push(bearer);
         }
         if parts.is_empty() {
-            parts.push(r#"Basic realm="ferroehr""#);
+            // Unreachable in a booted server (`auth.enabled` without a mechanism
+            // is a boot error), but a challenge must never be empty.
+            parts.push(r#"Basic realm="ferroehr", charset="UTF-8""#.to_owned());
         }
         HeaderValue::from_str(&parts.join(", "))
-            .unwrap_or_else(|_| HeaderValue::from_static("Basic"))
+            .unwrap_or_else(|_| HeaderValue::from_static(r#"Basic realm="ferroehr""#))
     }
 
     #[expect(
@@ -263,12 +318,17 @@ impl Authenticator {
         let auth = headers
             .get(header::AUTHORIZATION)
             .ok_or(AuthError::MissingCredentials)?;
-        let scheme = auth
-            .to_str()
-            .map_err(|_| AuthError::InvalidCredentials)?
+        let raw = auth.to_str().map_err(|_| {
+            AuthError::MalformedRequest(
+                "the Authorization header is not valid ISO-8859-1 text".to_owned(),
+            )
+        })?;
+        let scheme = raw
             .split_whitespace()
             .next()
-            .unwrap_or("")
+            .ok_or_else(|| {
+                AuthError::MalformedRequest("the Authorization header is empty".to_owned())
+            })?
             .to_ascii_lowercase();
 
         match scheme.as_str() {
@@ -320,11 +380,7 @@ impl Authenticator {
             }
             "bearer" => {
                 let validator = self.jwt.as_ref().ok_or(AuthError::InvalidCredentials)?;
-                let token = auth
-                    .to_str()
-                    .map_err(|_| AuthError::InvalidCredentials)?
-                    .trim_start_matches(|c: char| !c.is_whitespace())
-                    .trim();
+                let token = bearer_credential(raw)?;
                 // Federated: the authentication event happened at the OIDC
                 // provider, so a per-request login record is never minted here.
                 validator
@@ -335,9 +391,54 @@ impl Authenticator {
                         fresh: false,
                     })
             }
-            _ => Err(AuthError::InvalidCredentials),
+            other => Err(AuthError::MalformedRequest(format!(
+                "unsupported authentication scheme `{other}`"
+            ))),
         }
     }
+}
+
+/// Extract the bearer credential from an `Authorization` header value, enforcing
+/// the RFC 6750 §2.1 grammar.
+///
+/// The RFC is exact: `credentials = "Bearer" 1*SP b64token` with
+/// `b64token = 1*( ALPHA / DIGIT / "-" / "." / "_" / "~" / "+" / "/" ) *"="`.
+/// A value outside it is a malformed REQUEST, not a rejected credential, so it
+/// answers 400 rather than 401 (§3.1 `invalid_request`).
+///
+/// # Errors
+/// [`AuthError::MalformedRequest`] when the scheme is not followed by at least
+/// one space and a non-empty `b64token`, or when the token carries a character
+/// the grammar does not admit.
+fn bearer_credential(raw: &str) -> Result<&str, AuthError> {
+    let rest = raw
+        .strip_prefix("Bearer")
+        .or_else(|| raw.strip_prefix("bearer"))
+        .ok_or_else(|| AuthError::MalformedRequest("expected the Bearer scheme".to_owned()))?;
+    // `1*SP`: at least one space, and the RFC names SP specifically — a tab or a
+    // newline is not a legal separator.
+    if !rest.starts_with(' ') {
+        return Err(AuthError::MalformedRequest(
+            "the Bearer scheme must be followed by a single space and the token".to_owned(),
+        ));
+    }
+    let token = rest.trim_start_matches(' ');
+    if token.is_empty() {
+        return Err(AuthError::MalformedRequest(
+            "the Bearer credential carries no token".to_owned(),
+        ));
+    }
+    // `*"="` is a TRAILING run only, so padding may not appear mid-token.
+    let body = token.trim_end_matches('=');
+    if !body
+        .bytes()
+        .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'.' | b'_' | b'~' | b'+' | b'/'))
+    {
+        return Err(AuthError::MalformedRequest(
+            "the Bearer token is outside the RFC 6750 b64token grammar".to_owned(),
+        ));
+    }
+    Ok(token)
 }
 
 tokio::task_local! {
@@ -459,16 +560,104 @@ pub(crate) async fn middleware(
             )
             .increment(1);
             // ITS-REST §Authentication and authorization: a `401` MUST carry a
-            // `WWW-Authenticate` challenge; a `403` (authenticated-but-refused)
-            // MUST NOT.
-            let needs_challenge = status == StatusCode::UNAUTHORIZED;
+            // `WWW-Authenticate` challenge. RFC 6750 §3 additionally carries one
+            // on a bearer `403` — the `insufficient_scope` case — because there
+            // the challenge tells the client WHAT it lacks rather than that it is
+            // unauthenticated.
+            let needs_challenge =
+                matches!(status, StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN);
+            let challenge = auth.challenge(Some(&e));
             let mut resp = RestError(api).into_response();
             if needs_challenge {
                 resp.headers_mut()
-                    .insert(header::WWW_AUTHENTICATE, auth.challenge());
+                    .insert(header::WWW_AUTHENTICATE, challenge);
             }
             resp
         }
+    }
+}
+
+/// The RFC 6750 §2.1 grammar and the challenge shapes, asserted per clause.
+#[cfg(test)]
+mod bearer_grammar_tests {
+    use super::{AuthError, bearer_credential};
+
+    #[test]
+    fn bearer_credentials_follow_rfc6750_abnf() {
+        // `credentials = "Bearer" 1*SP b64token`
+        assert_eq!(
+            bearer_credential("Bearer abc.def.ghi").expect("ok"),
+            "abc.def.ghi"
+        );
+        assert_eq!(bearer_credential("bearer abc").expect("ok"), "abc");
+        // `1*SP` — more than one space is legal.
+        assert_eq!(bearer_credential("Bearer   abc").expect("ok"), "abc");
+        // Trailing `*"="` padding is part of the grammar.
+        assert_eq!(bearer_credential("Bearer abc==").expect("ok"), "abc==");
+
+        for malformed in [
+            "Bearer",         // no separator, no token
+            "Bearer ",        // separator, no token
+            "Bearer\tabc",    // a tab is not SP
+            "Bearer abc def", // a space inside the token
+            "Bearer abc?def", // `?` is outside b64token
+            "Bearer a=bc",    // interior padding
+            "Basic abc",      // wrong scheme for this parser
+        ] {
+            assert!(
+                matches!(
+                    bearer_credential(malformed),
+                    Err(AuthError::MalformedRequest(_))
+                ),
+                "`{malformed}` must be a malformed REQUEST, not a rejected credential",
+            );
+        }
+    }
+
+    /// RFC 6750 §3.1 assigns each outcome its own code, and deliberately assigns
+    /// NONE when no credential was presented: an unauthenticated first request
+    /// has not made a mistake yet.
+    #[test]
+    fn challenge_error_codes_follow_rfc6750() {
+        assert_eq!(AuthError::MissingCredentials.bearer_error_code(), None);
+        assert_eq!(
+            AuthError::InvalidCredentials.bearer_error_code(),
+            Some("invalid_token")
+        );
+        assert_eq!(
+            AuthError::InvalidToken("x".to_owned()).bearer_error_code(),
+            Some("invalid_token")
+        );
+        assert_eq!(
+            AuthError::Forbidden("x".to_owned()).bearer_error_code(),
+            Some("insufficient_scope")
+        );
+        assert_eq!(
+            AuthError::MalformedRequest("x".to_owned()).bearer_error_code(),
+            Some("invalid_request")
+        );
+        // A server-side fault is not a statement about the credential.
+        assert_eq!(
+            AuthError::KeyResolution("x".to_owned()).bearer_error_code(),
+            None
+        );
+    }
+
+    /// RFC 9110 §15.6.4: an unreachable issuer means the server cannot decide,
+    /// which is a 503 — never a 401 telling a caller its valid token was
+    /// rejected.
+    #[test]
+    fn unreachable_issuer_is_503_not_401() {
+        let api = AuthError::KeyResolution("jwks unreachable".to_owned()).to_api_error();
+        assert_eq!(api.status(), http::StatusCode::SERVICE_UNAVAILABLE);
+    }
+
+    /// A malformed header is a request defect (400), not a credential decision
+    /// (401) — RFC 6750 §3.1 `invalid_request`.
+    #[test]
+    fn malformed_authorization_header_is_400_invalid_request() {
+        let api = AuthError::MalformedRequest("bad".to_owned()).to_api_error();
+        assert_eq!(api.status(), http::StatusCode::BAD_REQUEST);
     }
 }
 

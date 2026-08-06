@@ -15,9 +15,10 @@
 //!
 //! ## Attribute model
 //! - **principal** `User { organization?, patient?, roles, scopes }` — the
-//!   caller. `roles`/`scopes` are declared for advanced policies but left empty
-//!   here (the [`AuthzRequest`] carries only the v1 wire attributes, so the
-//!   example policies stay wire-equivalent with the remote PDP).
+//!   caller, carrying the subject's roles and scopes so a policy can reason
+//!   about them. The shipped example policies deliberately use only the
+//!   attributes the flat PDP body also carries, which is what keeps the two
+//!   engines interchangeable on the same request corpus.
 //! - **resource** (one entity type per [`ResourceKind`]) carries the
 //!   per-combination candidate `patient?` and `template?`.
 //! - **action** `"<kind>.<mode>"` (e.g. `composition.create`, `query.execute`).

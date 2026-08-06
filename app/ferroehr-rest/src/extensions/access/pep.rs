@@ -144,7 +144,8 @@ pub(crate) fn query_pre(
 }
 
 /// The ABAC post-check for a query execution: the PDP fan-out over the
-/// touched template set. An empty result permits (v1 parity). The patient gate
+/// touched template set: a query touching no template asks nothing of the PDP
+/// and is therefore not denied by it. The patient gate
 /// is already enforced by the subject-scope pre-filter (rows outside the
 /// caller's patient are never fetched), so it is not re-run per EHR here.
 pub(crate) async fn query_post(
@@ -206,7 +207,8 @@ pub(crate) async fn pre_check(
     let Some(kind) = kind_of(op) else {
         return Ok(());
     };
-    // DIRECTORY is unchecked unless a directory policy is configured (v1 parity).
+    // DIRECTORY is gated only when `abac.check_directory` says so — engine-
+    // independent, so a Cedar deployment can enable it too.
     if kind == ResourceKind::Directory && !abac.directory_checked {
         return Ok(());
     }
@@ -316,8 +318,12 @@ pub(crate) async fn post_check(state: &AppState, op: &'static str, resp: Respons
     }
 }
 
-/// Resolve the patient claim, if the gate is configured. A configured-but-missing
-/// claim is a 403 (v1 threw 500 — NOTE: the improvement).
+/// Resolve the patient claim, if the gate is configured.
+///
+/// A configured-but-missing claim is a 403: the deployment asked for patient
+/// scoping and the token does not carry it, so no decision can permit the
+/// request. It is not a 500 — the server is working correctly and the caller's
+/// token is the thing that is insufficient.
 fn resolve_patient_claim(
     abac: &AbacGate,
     principal: &Principal,
@@ -805,7 +811,9 @@ mod tests {
 
     #[tokio::test]
     async fn null_subject_passes_gate() {
-        // A subject-less EHR is not patient-scoped (EHRbase v1 parity).
+        // A caller with no patient scope is unaffected by the subject gate, so
+        // an anonymous EHR stays fully operable for it (RM ehr
+        // `master04-ehr_package.adoc` §EHR Status).
         let calls = Arc::new(AtomicUsize::new(0));
         let gate = gate_with_subject(None, calls);
         let principal = principal_with_patient("P1");

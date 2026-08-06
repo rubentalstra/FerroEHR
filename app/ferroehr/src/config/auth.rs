@@ -335,9 +335,19 @@ pub struct OidcConfig {
     /// minutes, to account for clock skew", and RFC 9068 §4 step 6 repeats the
     /// bound for access tokens — so the key is capped rather than free, since a
     /// large leeway silently extends every token's life.
-    // TODO(#1963): the bearer validation pipeline still runs on the
-    // `jsonwebtoken` default leeway; feed this value into its `Validation`.
     pub clock_skew_leeway_seconds: u64,
+    /// Require every bearer token to claim the RFC 9068 access-token profile
+    /// (`typ: at+jwt`); default `false`.
+    ///
+    /// RFC 9068 §2.1 makes `at+jwt` a SHOULD for the AUTHORIZATION SERVER, and
+    /// §4 step 1's MUST attaches to tokens claiming the profile — the RFC
+    /// prescribes nothing for a token that does not claim it. So a token
+    /// carrying the type gets the full §4 rule set (`iat`, `jti` and `client_id`
+    /// required) whatever this key says, while turning it on additionally
+    /// REFUSES a token that omits the type. Off by default because requiring it
+    /// rejects issuers that do not set it, including the identity provider the
+    /// quickstart overlay ships.
+    pub require_at_jwt: bool,
     /// Accepts a non-`https` [`Self::issuer`] (default `false`).
     ///
     /// RFC 8414 §6.2 requires TLS for issuer metadata, so this is a development
@@ -399,6 +409,9 @@ impl Default for OidcConfig {
             // 60 s: the conventional clock-skew allowance, well inside
             // RFC 9068 §4 step 6's "no more than a few minutes".
             clock_skew_leeway_seconds: 60,
+            // RFC 9068 §2.1 makes `at+jwt` a SHOULD for the authorization
+            // server, so requiring it would refuse conforming issuers.
+            require_at_jwt: false,
             allow_insecure_issuer: false,
             hmac_secret: None,
             hmac_secret_file: None,

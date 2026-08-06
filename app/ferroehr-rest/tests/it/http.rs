@@ -35,6 +35,10 @@ use ferroehr_rest::config::AppConfig;
 use crate::common;
 
 const ISSUER: &str = "https://issuer.test";
+/// The audience every fixture token is minted for: `audiences` is mandatory
+/// whenever `[auth.oidc]` is present, so a token for another resource server
+/// can never authenticate here.
+const AUDIENCE: &str = "ferroehr";
 const SECRET: &str = "integration-secret";
 const BASE: &str = "/ferroehr/rest/openehr/v1";
 /// A syntactically valid EHR id that does not exist: the EHR dispatcher decodes
@@ -72,7 +76,7 @@ fn config(enabled: bool) -> AppConfig {
             }),
             oidc: Some(OidcConfig {
                 issuer: ISSUER.to_owned(),
-                audiences: vec![],
+                audiences: vec![AUDIENCE.to_owned()],
                 algorithms: vec!["HS256".to_owned()],
                 hmac_secret: Some(ferroehr::config::secret::Secret::new(SECRET.to_owned())),
                 jwks_json: None,
@@ -104,6 +108,7 @@ fn bearer(scope: &str) -> String {
     let claims = serde_json::json!({
         "sub": "alice",
         "iss": ISSUER,
+        "aud": AUDIENCE,
         "exp": now() + 3600,
         "scope": scope,
     });
