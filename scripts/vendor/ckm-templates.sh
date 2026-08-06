@@ -150,9 +150,9 @@ if [[ "$MODE" != full ]]; then
     meta=$(curl -fsS "$CKM/templates/$cid" -H "Accept: application/json")
     # one field per call: display names contain spaces AND pipes, so a
     # word-split read of a combined line is not safe here
-    name=$(echo "$meta" | python3 -c 'import json,sys; print(json.load(sys.stdin)["resourceMainDisplayName"].replace("|","/"))')
-    status=$(echo "$meta" | python3 -c 'import json,sys; print(json.load(sys.stdin)["status"])')
-    modified=$(echo "$meta" | python3 -c 'import json,sys; print(json.load(sys.stdin)["modificationTime"])')
+    name=$(printf '%s' "$meta" | jq -r '.resourceMainDisplayName | gsub("\\|"; "/")')
+    status=$(printf '%s' "$meta" | jq -r '.status')
+    modified=$(printf '%s' "$meta" | jq -r '.modificationTime')
     bash "$0" --fetch-one "$cid" "$OUT/$slug.opt" | tee -a "$WORK/curated.log"
     grep -q "^OK   $cid " "$WORK/curated.log" || {
       echo "::error::$cid ($slug) did not yield an OPT — the curated pack is a contract" >&2
@@ -170,46 +170,35 @@ if [[ "$MODE" != curated ]]; then
   curl -fsS "$CKM/templates?page=0&size=10000" -H "Accept: application/json" \
     -o "$WORK/templates.json"
 
-  python3 - "$WORK/templates.json" "$WORK/jobs.txt" "$WORK/rows.tsv" "$FULL" <<'PY'
-import collections
-import json
-import re
-import sys
+  # Slugs come from CKM display names, so they collide: the counter suffixes the
+  # second and later occurrences of a base. The 20-row floor is the CKM paging
+  # trap — every parameter other than page/size is silently ignored and yields a
+  # 20-row first page that reads like the whole library.
+  jq '
+    if length <= 20 then
+      error("::error::the list endpoint returned only \(length) rows — CKM ignored the pagination parameters (use ?page=N&size=M)")
+    else . end
+    | sort_by(.cid)
+    | reduce .[] as $t ({ seen: {}, rows: [] };
+        ($t.resourceMainDisplayName | ascii_downcase | gsub("[^a-z0-9]+"; "-")
+          | sub("^-+"; "") | sub("-+$"; "") | .[0:80]) as $stripped
+        | (if $stripped == "" then "template" else $stripped end) as $base
+        | ((.seen[$base] // 0) + 1) as $n
+        | .seen[$base] = $n
+        | .rows += [{
+            cid: $t.cid,
+            slug: (if $n > 1 then "\($base)-\($n)" else $base end),
+            name: ($t.resourceMainDisplayName | gsub("\\|"; "/")),
+            status: $t.status,
+            modified: $t.modificationTime,
+            version: ($t.versionAssetLatest // "" | tostring)
+          }])
+    | .rows
+  ' "$WORK/templates.json" > "$WORK/rows.json"
 
-src, jobs_path, rows_path, out_dir = sys.argv[1:5]
-templates = json.load(open(src))
-if len(templates) <= 20:
-    raise SystemExit(
-        f"::error::the list endpoint returned only {len(templates)} rows — "
-        "CKM ignored the pagination parameters (use ?page=N&size=M)"
-    )
-
-seen = collections.Counter()
-jobs, rows = [], []
-for t in sorted(templates, key=lambda x: x["cid"]):
-    name = t["resourceMainDisplayName"]
-    slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")[:80] or "template"
-    seen[slug] += 1
-    if seen[slug] > 1:
-        slug = f"{slug}-{seen[slug]}"
-    jobs.append(f"{t['cid']} {out_dir}/{slug}.opt")
-    rows.append(
-        "\t".join(
-            (
-                t["cid"],
-                slug,
-                name.replace("|", "/"),
-                t["status"],
-                t["modificationTime"],
-                str(t.get("versionAssetLatest", "")),
-            )
-        )
-    )
-
-open(jobs_path, "w").write("\n".join(jobs) + "\n")
-open(rows_path, "w").write("\n".join(rows) + "\n")
-print(f"==> {len(jobs)} templates published by CKM")
-PY
+  jq -r --arg out_dir "$FULL" '.[] | "\(.cid) \($out_dir)/\(.slug).opt"' \
+    "$WORK/rows.json" > "$WORK/jobs.txt"
+  echo "==> $(jq 'length' "$WORK/rows.json") templates published by CKM"
 
   # fetch everything; a per-file failure is recorded, never fatal (private
   # incubator resources 404 without a CKM account)
@@ -217,55 +206,72 @@ PY
   xargs -P "$JOBS" -n 2 bash "$0" --fetch-one < "$WORK/jobs.txt" \
     | tee "$WORK/full.log"
 
-  python3 - "$WORK/rows.tsv" "$WORK/full.log" "$FULL/PROVENANCE.md" "$STAMP" "$CKM" <<'PY'
-import sys
+  # Join the fetch log's per-cid verdict onto the rows ONCE, into `classified`,
+  # so the provenance file, its tables and the summary line below cannot
+  # disagree about the counts. A per-file failure is RECORDED rather than fatal
+  # (CKM answers 404 for private incubator resources) — hence two tables.
+  jq -Rn --slurpfile rows "$WORK/rows.json" '
+    ( reduce inputs as $line ({};
+        ([$line | splits("\\s+")] | map(select(length > 0))) as $p
+        | if ($p | length) >= 2 and ($p[0] | IN("OK", "BAD", "FAIL"))
+          then .[$p[1]] = $p[0] else . end)
+    ) as $outcome
+    | ($rows | first) as $all
+    | { published: ($all | length),
+        ok: ($all | map(select($outcome[.cid] == "OK"))),
+        bad: ($all | map(select($outcome[.cid] | IN("BAD", "FAIL")))) }
+  ' < "$WORK/full.log" > "$WORK/classified.json"
 
-rows_path, log_path, prov_path, stamp, ckm = sys.argv[1:6]
-outcome = {}
-for line in open(log_path):
-    parts = line.split()
-    if len(parts) >= 2 and parts[0] in {"OK", "BAD", "FAIL"}:
-        outcome[parts[1]] = parts[0]
+  # The static prose stays in shell `echo`s, matching the curated pack above.
+  # It also keeps apostrophes out of the jq programs, where they would have to
+  # fight the surrounding single quotes.
+  {
+    echo "# CKM template library (full pack) — provenance"
+    echo
+    echo "Every template the official openEHR CKM (\`$CKM\`) publishes, exported"
+    echo "by CKM itself as an Operational Template and vendored verbatim by"
+    echo "\`scripts/vendor/ckm-templates.sh\` on $STAMP."
+    echo
+    echo "This is the BREADTH pack: real-world OPT 1.4 shapes for the reader /"
+    echo "WebTemplate builder gates. The curated hospital-simulation journey"
+    echo "pack is the parent directory (its own \`PROVENANCE.md\`); the slugs here"
+    echo "are derived from CKM display names and are NOT a naming contract."
+    echo
+    echo "## Licensing"
+    echo
+    echo "CKM publishes no repository-level license; each OPT embeds its source"
+    echo "archetypes' \`licence\` metadata (predominantly CC-BY-SA 3.0 where"
+    echo "stated — see the individual file). Vendored verbatim, so authorship"
+    echo "and licence metadata ride along; root reference copy:"
+    echo "\`LICENSE-CC-BY-SA-3.0\`."
+    echo
+    jq -r '
+      [ "- published by CKM: **\(.published)**",
+        "- vendored: **\(.ok | length)**",
+        "- unreachable: **\(.bad | length)**",
+        "" ]
+      + (if (.bad | length) > 0 then
+          [ "## Unreachable (recorded, not skipped)",
+            "",
+            "CKM answers 404 for resources held in a private incubator; they are",
+            "only exportable by a signed-in account with access.",
+            "",
+            "| cid | display name | status |",
+            "|---|---|---|" ]
+          + (.bad | map("| \(.cid) | \(.name) | \(.status) |"))
+          + [ "" ]
+        else [] end)
+      + [ "## Vendored",
+          "",
+          "| cid | file | display name | status | modified | asset version |",
+          "|---|---|---|---|---|---|" ]
+      + (.ok | map("| \(.cid) | `\(.slug).opt` | \(.name) | \(.status) | \(.modified) | \(.version) |"))
+      | .[]
+    ' "$WORK/classified.json"
+  } > "$FULL/PROVENANCE.md"
 
-rows = [line.rstrip("\n").split("\t") for line in open(rows_path) if line.strip()]
-ok = [r for r in rows if outcome.get(r[0]) == "OK"]
-bad = [r for r in rows if outcome.get(r[0]) in {"BAD", "FAIL"}]
-
-with open(prov_path, "w") as fh:
-    w = fh.write
-    w("# CKM template library (full pack) — provenance\n\n")
-    w(f"Every template the official openEHR CKM (`{ckm}`) publishes, exported\n")
-    w("by CKM itself as an Operational Template and vendored verbatim by\n")
-    w(f"`scripts/vendor/ckm-templates.sh` on {stamp}.\n\n")
-    w("This is the BREADTH pack: real-world OPT 1.4 shapes for the reader /\n")
-    w("WebTemplate builder gates. The curated hospital-simulation journey\n")
-    w("pack is the parent directory (its own `PROVENANCE.md`); the slugs here\n")
-    w("are derived from CKM display names and are NOT a naming contract.\n\n")
-    w("## Licensing\n\n")
-    w("CKM publishes no repository-level license; each OPT embeds its source\n")
-    w("archetypes' `licence` metadata (predominantly CC-BY-SA 3.0 where\n")
-    w("stated — see the individual file). Vendored verbatim, so authorship\n")
-    w("and licence metadata ride along; root reference copy:\n")
-    w("`LICENSE-CC-BY-SA-3.0`.\n\n")
-    w(f"- published by CKM: **{len(rows)}**\n")
-    w(f"- vendored: **{len(ok)}**\n")
-    w(f"- unreachable: **{len(bad)}**\n\n")
-    if bad:
-        w("## Unreachable (recorded, not skipped)\n\n")
-        w("CKM answers 404 for resources held in a private incubator; they are\n")
-        w("only exportable by a signed-in account with access.\n\n")
-        w("| cid | display name | status |\n|---|---|---|\n")
-        for cid, _slug, name, status, *_ in bad:
-            w(f"| {cid} | {name} | {status} |\n")
-        w("\n")
-    w("## Vendored\n\n")
-    w("| cid | file | display name | status | modified | asset version |\n")
-    w("|---|---|---|---|---|---|\n")
-    for cid, slug, name, status, modified, version in ok:
-        w(f"| {cid} | `{slug}.opt` | {name} | {status} | {modified} | {version} |\n")
-
-print(f"==> full library: {len(ok)} vendored, {len(bad)} unreachable → {prov_path}")
-if bad:
-    print("    unreachable: " + ", ".join(r[0] for r in bad))
-PY
+  jq -r --arg prov "$FULL/PROVENANCE.md" '
+    "==> full library: \(.ok | length) vendored, \(.bad | length) unreachable → \($prov)",
+    (if (.bad | length) > 0 then "    unreachable: \(.bad | map(.cid) | join(", "))" else empty end)
+  ' "$WORK/classified.json"
 fi

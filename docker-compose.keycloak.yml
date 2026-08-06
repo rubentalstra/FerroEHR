@@ -12,7 +12,7 @@
 #   TOKEN=$(curl -s -d client_id=ferroehr -d client_secret=ferroehr-quickstart-secret \
 #     -d username=ferroehr -d password=ferroehr -d grant_type=password \
 #     http://localhost:8081/auth/realms/ferroehr/protocol/openid-connect/token \
-#     | python3 -c 'import json,sys; print(json.load(sys.stdin)["access_token"])')
+#     | jq -r .access_token)
 #   curl -H "Authorization: Bearer $TOKEN" -X POST -i \
 #     http://localhost:8080/ferroehr/rest/openehr/v1/ehr
 #

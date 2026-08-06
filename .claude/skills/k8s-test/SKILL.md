@@ -179,15 +179,15 @@ that settles arguments:
 
 ```bash
 CID=$(docker exec desktop-control-plane crictl ps --name ferroehr -q | head -1)
-docker exec desktop-control-plane crictl inspect $CID \
-  | python3 -c "import json,sys; s=json.load(sys.stdin)['info']['runtimeSpec']; \
-print(s['process']['user'], s['process'].get('noNewPrivileges'), \
-s['process']['capabilities'].get('bounding'), s['root'].get('readonly'), \
-s['linux']['seccomp']['defaultAction'])"
+docker exec desktop-control-plane crictl inspect $CID | jq '
+  .info.runtimeSpec
+  | { user: .process.user, noNewPrivileges: .process.noNewPrivileges,
+      bounding: .process.capabilities.bounding, readonly: .root.readonly,
+      seccomp: .linux.seccomp.defaultAction }'
 ```
 
-Correct output is `{'additionalGids': [65532], 'gid': 65532, 'uid': 65532} True
-None True SCMP_ACT_ERRNO` — uid/gid 65532, no-new-privileges, an EMPTY bounding
+Correct output is `{"additionalGids":[65532],"gid":65532,"uid":65532}`, `true`,
+`[]`, `true`, `SCMP_ACT_ERRNO` — uid/gid 65532, no-new-privileges, an EMPTY bounding
 capability set (not "the default 14 minus ours"), a read-only root, and a seccomp
 filter that denies by default. The same inspect output lists the mounts: only
 `/tmp` (the chart's `emptyDir`) and the kubelet's own `/dev`, `/etc/hosts`,
@@ -423,8 +423,8 @@ itself is opened by `config.management.endpoints.prometheus`. Both are needed.
 
 ```bash
 kubectl -n ferroehr-test port-forward svc/prometheus 9090:9090 &
-curl -s 'http://127.0.0.1:9090/api/v1/targets?state=active' | python3 -c \
- "import json,sys; [print(t['labels'].get('pod'), t['scrapeUrl'], t['health']) for t in json.load(sys.stdin)['data']['activeTargets']]"
+curl -s 'http://127.0.0.1:9090/api/v1/targets?state=active' \
+  | jq -r '.data.activeTargets[] | "\(.labels.pod) \(.scrapeUrl) \(.health)"'
 # ferroehr-…-vcqgj http://10.244.0.43:8080/management/prometheus up
 # ferroehr-…-smkbz http://10.244.0.44:8080/management/prometheus up
 
