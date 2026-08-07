@@ -86,7 +86,12 @@ services:
         - "exec 3<>/dev/tcp/127.0.0.1/8081; printf 'GET /auth/realms/ferroehr/.well-known/openid-configuration HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nConnection: close\\r\\n\\r\\n' >&3; grep -q '^HTTP/1.1 200' <&3"
       interval: 10s
       timeout: 5s
-      retries: 30
+      # A COLD start is slow and the budget must cover it, because `ferroehr`
+      # gates on this probe: Quarkus augmentation plus the dev-database schema
+      # import was measured at 9m31s on a busy machine, which overran the
+      # previous 30-retry (~5m20s) budget and made `up` fail with "dependency
+      # failed to start" — the CDR then never starts at all.
+      retries: 90
       start_period: 20s
 
 configs:
@@ -97,6 +102,11 @@ configs:
   # (ferroehr / ferroehr) carrying the ADMIN + USER realm roles — Keycloak's
   # default client scopes put realm roles into the token's
   # `realm_access.roles`, which is the CDR's default role claim.
+  # The client's `oidc-audience-mapper` is LOAD-BEARING, not decoration: this
+  # overlay sets FERROEHR__AUTH__OIDC__AUDIENCES=ferroehr, and Keycloak puts a
+  # client into `aud` only when a mapper says so or the token carries that
+  # client's own roles. Without it the realm emits no `ferroehr` audience and
+  # every bearer call is refused 401 (RFC 7519 §4.1.3 audience validation).
   keycloak-realm:
     content: |
       {
@@ -137,7 +147,19 @@ configs:
             "directAccessGrantsEnabled": true,
             "serviceAccountsEnabled": true,
             "redirectUris": [ "*" ],
-            "webOrigins": [ "*" ]
+            "webOrigins": [ "*" ],
+            "protocolMappers": [
+              {
+                "name": "ferroehr-audience",
+                "protocol": "openid-connect",
+                "protocolMapper": "oidc-audience-mapper",
+                "config": {
+                  "included.client.audience": "ferroehr",
+                  "access.token.claim": "true",
+                  "id.token.claim": "false"
+                }
+              }
+            ]
           }
         ]
       }

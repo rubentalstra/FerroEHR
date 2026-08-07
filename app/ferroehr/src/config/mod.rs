@@ -214,6 +214,7 @@ impl FerroEhrConfig {
                     .to_owned(),
             ));
         }
+        errors.extend(multimedia_endpoint_errors(&self.multimedia));
         // management.port must differ from the server.bind port.
         if let Some(port) = self.management.port
             && server_bind_port(&self.server.bind) == Some(port)
@@ -444,6 +445,49 @@ pub fn discover_file(
     env: &HashMap<String, String>,
 ) -> Result<Option<PathBuf>, ConfigErrors> {
     loader::discover_file(cli_config, env)
+}
+
+/// The `multimedia.endpoint` semantic checks.
+///
+/// An enabled integration with a blank or scheme-less endpoint used to boot
+/// clean and then fail on the first `DV_MULTIMEDIA` commit (#2167) — a
+/// `${VAR:-}` compose pass-through and an empty Helm value both produce
+/// exactly that, so it is refused at boot where an operator can still act.
+fn multimedia_endpoint_errors(
+    config: &crate::extensions::multimedia::config::MultimediaConfig,
+) -> Vec<ConfigError> {
+    if !config.enabled {
+        return Vec::new();
+    }
+    let Some(endpoint) = &config.endpoint else {
+        return Vec::new();
+    };
+    let trimmed = endpoint.trim();
+    if trimmed.is_empty() {
+        return vec![ConfigError::semantic(
+            "multimedia.endpoint is set but empty — give an absolute URL \
+             (e.g. http://seaweedfs:8333) or remove the key to use default \
+             AWS endpoint resolution"
+                .to_owned(),
+        )];
+    }
+    match url::Url::parse(trimmed) {
+        // `seaweedfs:8333` parses as a URL (scheme `seaweedfs`, path `8333`),
+        // so syntax alone does not catch the common "host:port with no scheme"
+        // mistake — an S3 endpoint is http or https, and nothing else reaches
+        // a bucket.
+        Ok(url) if !matches!(url.scheme(), "http" | "https") => {
+            vec![ConfigError::semantic(format!(
+                "multimedia.endpoint {trimmed:?} has scheme {:?} — an S3 endpoint \
+                 must be http or https (did you mean \"http://{trimmed}\"?)",
+                url.scheme()
+            ))]
+        }
+        Ok(_) => Vec::new(),
+        Err(e) => vec![ConfigError::semantic(format!(
+            "multimedia.endpoint {trimmed:?} is not an absolute URL: {e}"
+        ))],
+    }
 }
 
 #[cfg(test)]
@@ -1090,6 +1134,34 @@ mod tests {
             "the template declares no key line for: {}",
             missing.join(", ")
         );
+    }
+
+    /// An enabled multimedia integration with a blank or relative endpoint is a
+    /// BOOT error, not a panic on the first commit (#2167).
+    #[test]
+    fn an_enabled_multimedia_integration_refuses_a_blank_or_relative_endpoint() {
+        for bad in ["", "   ", "seaweedfs:8333", "/bucket"] {
+            let mut c = FerroEhrConfig::default();
+            c.multimedia.enabled = true;
+            c.multimedia.endpoint = Some(bad.to_owned());
+            let errors = c.validate().expect_err("a bad endpoint must be refused");
+            assert!(
+                format!("{errors:?}").contains("multimedia.endpoint"),
+                "the refusal must name the key so an operator can act on it, got: {errors:?}"
+            );
+        }
+    }
+
+    /// An absent endpoint is legitimate (default AWS resolution) and an
+    /// absolute one is accepted, so the check above cannot be a blanket refusal.
+    #[test]
+    fn an_absent_or_absolute_multimedia_endpoint_is_accepted() {
+        let mut c = FerroEhrConfig::default();
+        c.multimedia.enabled = true;
+        c.multimedia.endpoint = None;
+        assert!(c.validate().is_ok(), "an absent endpoint is legitimate");
+        c.multimedia.endpoint = Some("http://seaweedfs:8333".to_owned());
+        assert!(c.validate().is_ok(), "an absolute endpoint is accepted");
     }
 
     // ── 7. Semantic validation ────────────────────────────────────────────────
