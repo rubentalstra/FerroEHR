@@ -134,23 +134,48 @@ assert_selector_stable() {
   python3 - "$file" <<'PYSEL' || { red "  selector immutability gate FAILED for ${file}"; exit 1; }
 import sys, yaml
 EXPECTED = {"ferroehr": {"app.kubernetes.io/name", "app.kubernetes.io/instance"},
-            "admin-ui": {"app.kubernetes.io/name", "app.kubernetes.io/instance",
-                         "app.kubernetes.io/component"}}
+            "admin-ui": {"app.kubernetes.io/name", "app.kubernetes.io/instance"}}
 bad = []
-for d in yaml.safe_load_all(open(sys.argv[1])):
-    if not d or d.get("kind") != "Deployment":
+docs = [d for d in yaml.safe_load_all(open(sys.argv[1])) if d]
+
+pod_labels = {}
+for d in docs:
+    if d.get("kind") != "Deployment":
         continue
     name = d["metadata"]["name"]
+    pod_labels[name] = d["spec"]["template"]["metadata"]["labels"] or {}
     keys = set((d["spec"]["selector"]["matchLabels"] or {}).keys())
     which = "admin-ui" if name.endswith("-admin-ui") else "ferroehr"
     if keys != EXPECTED[which]:
         bad.append(f"  {name}: selector.matchLabels is {sorted(keys)}, expected {sorted(EXPECTED[which])}"
                    f" — this field is IMMUTABLE; changing it breaks helm upgrade on every existing release")
+
+# Disjointness. A Service/PDB selector is a SUBSET match, so a selector naming
+# only the labels two workloads share silently selects both. That is not a
+# cosmetic overlap: the CDR Service and the admin console both expose a port
+# named `http`, so `targetPort: http` resolved to the console's 3000 and a share
+# of openEHR API requests were answered by the console; the PDB counted the
+# console toward the server's budget and would have let a drain evict every
+# server replica at once. Key sets alone cannot catch this — after the fix both
+# Deployments have the SAME selector keys and differ only in the name's value.
+for d in docs:
+    if d.get("kind") not in ("Service", "PodDisruptionBudget"):
+        continue
+    sel = d["spec"].get("selector") or {}
+    sel = sel.get("matchLabels", sel)
+    if not sel:
+        continue
+    hit = [n for n, lbl in pod_labels.items()
+           if all(lbl.get(k) == v for k, v in sel.items())]
+    if len(hit) > 1:
+        bad.append(f"  {d['kind']}/{d['metadata']['name']}: selector {sel} matches {sorted(hit)}"
+                   f" — a subset match selects BOTH workloads; give each its own"
+                   f" app.kubernetes.io/name rather than a shared name plus a component")
 for b in bad:
     print(b)
 sys.exit(1 if bad else 0)
 PYSEL
-  echo "  selector.matchLabels unchanged (the immutable upgrade-breaking field)"
+  echo "  selector.matchLabels unchanged, and no selector matches two workloads"
 }
 
 # ── Restricted-profile gate: EVERY pod, control by control ───────────────────

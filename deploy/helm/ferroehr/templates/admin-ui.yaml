@@ -208,14 +208,9 @@ spec:
   egress:
     # The CDR, by pod selector — the console's ONLY application destination.
     #
-    # This matches the release's name+instance, which the console's own pods
-    # carry too, so console→console traffic is permitted as well. That is
-    # deliberate: narrowing it would need a `component` label inside
-    # `selectorLabels`, and a Deployment's `selector.matchLabels` is IMMUTABLE
-    # (https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
-    # — "the selector … cannot be changed once created"), so adding one would
-    # break `helm upgrade` on every existing release. A permitted hop between
-    # two pods of the same release is a far smaller cost than that.
+    # This selects the server's pods exactly: the console carries its own
+    # `app.kubernetes.io/name`, so the two label sets no longer overlap and
+    # this rule cannot admit console→console traffic.
     - to:
         - podSelector:
             matchLabels:

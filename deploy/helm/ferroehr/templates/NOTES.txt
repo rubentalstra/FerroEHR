@@ -37,7 +37,15 @@ Reach it locally:
 
 Health probes (public, always on):  /health | /health/liveness | /health/readiness
 {{ if and .Values.config.management.enabled .Values.metrics.enabled -}}
-Prometheus (public):     {{ .Values.config.management.base_path }}/prometheus  (scrape annotations added)
+{{ $prometheus := dig "endpoints" "prometheus" "off" .Values.config.management -}}
+{{ if eq $prometheus "off" -}}
+⚠  metrics.enabled=true added the scrape annotations, but
+   config.management.endpoints.prometheus is "off" — the endpoint is not mounted,
+   so every scrape 404s. Set it to public (or private/admin_only, with matching
+   scrape credentials).
+{{ else -}}
+Prometheus ({{ $prometheus }}):  {{ .Values.config.management.base_path }}/prometheus  (scrape annotations added)
+{{ end -}}
 {{ end -}}
 {{ if not .Values.config.management.enabled -}}
 NOTE: config.management.enabled=false — the ops-introspection surface (info,
