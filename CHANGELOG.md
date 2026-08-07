@@ -407,6 +407,32 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The chart no longer promises drain-safety it cannot deliver on older
+  clusters.** `PodDisruptionBudget.unhealthyPodEvictionPolicy` was rendered
+  unconditionally under a `kubeVersion` floor of `>=1.25.0-0`, but the field is
+  alpha in 1.26, beta in 1.27 and stable only in 1.31 (KEP-3017). Below 1.27 the
+  API server prunes it or leaves it behind a disabled gate, so the install
+  succeeded while the policy silently did not apply. It is now version-gated and
+  rendered only where it takes effect; clusters below 1.27 get the documented API
+  default (`IfHealthyBudget`) visibly rather than an ignored setting.
+
+- **The chart-publish gate now judges every values overlay, at real secret
+  values.** The tag lane carried its own copy of the boot replay, which wrote a
+  placeholder into every file-borne secret (so the 32-byte HMAC floor and the
+  Argon2id password-hash parse were checked against the placeholder, not the
+  configured secret), rendered only `default-values.yaml`, and skipped
+  `valueFrom.secretKeyRef` environment entirely. It now calls
+  `deploy/helm/ci/boot-check.sh`, which mounts each secret at its rendered value,
+  resolves `secretKeyRef`, and boots every committed overlay — and the replay
+  logic exists in exactly one place.
+
+- **`boot-check.sh` no longer hands one workload's environment to another
+  image.** With the admin console added, the script collected `env:` from every
+  rendered Deployment, so the console's `FERROEHR_ADMIN__*` variables (a separate
+  binary with its own config root) reached the CDR image, whose strict sweep
+  correctly refused them and reported a crash-loop for a deployment that runs
+  fine. Environment collection is scoped to the CDR Deployment.
+
 - **The Helm chart's shipped values overlays now produce configurations the
   server accepts.** All three rendered, linted and matched their goldens while
   none of them would boot: `default-values.yaml` enabled authentication with no
