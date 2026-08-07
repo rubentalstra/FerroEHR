@@ -372,51 +372,92 @@ same.
 
 **The operator's — and this is provenance nobody currently checks.**
 
-The publishing lanes attest both the images and the chart through **keyless
-Sigstore**, which means a verifier can establish that an artifact came from this
-repository's build. Nothing in a cluster *requires* that check before running one,
-and a signature nobody verifies changes nothing about what actually runs.
+The publishing lanes attest their artifacts through **keyless Sigstore**, so a
+verifier can establish that an artifact came from this repository's build — the
+three published images carry a signed SLSA v1 provenance attestation today.
+Nothing in a cluster *requires* that check before running one, and a signature
+nobody verifies changes nothing about what actually runs. That is what the
+policies below close.
 
-> [!WARNING]
-> **No published artifact carries an attestation yet, so the policies below are
-> written from the workflow definitions and have not been verified against a live
-> attestation.** The signing step was added after the most recent release, and no
-> publishing run has executed since: `gh attestation verify` on the current
-> `ferroehr:3.17.3` and `ferroehr:develop` images both return HTTP 404, and the
-> repository's attestation list is empty. Before relying on either policy, confirm
-> the identity it trusts against a real artifact:
->
-> ```shell
-> gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:<tag> \
->   -R rubentalstra/FerroEHR --format json | jq '.[0].verificationResult.signature.certificate'
-> ```
->
-> and reconcile `certificateIdentity` / `certificateOidcIssuer` with the values
-> below. A `--certificate-identity` that does not match what the lane issues fails
-> **closed** — it blocks a legitimate image — which is worse than no policy.
+### The identity to trust, read off a real artifact
 
-The identity to trust, derived from the lanes themselves: GitHub's OIDC issuer,
-and a subject that is the publishing workflow's own ref.
+Each lane signs with a short-lived Fulcio certificate whose **subject
+alternative name is the workflow that issued the token**, and whose issuer is
+GitHub's OIDC provider. The values below are not derived from the workflow
+files — they are read out of the certificate on a published image:
 
-| Artifact | Built by | Certificate identity (SAN) |
-|---|---|---|
-| the three images | `.github/workflows/containers.yml` | `https://github.com/rubentalstra/FerroEHR/.github/workflows/containers.yml@refs/tags/vX.Y.Z` |
-| the chart | `.github/workflows/publish-chart.yml` | `https://github.com/rubentalstra/FerroEHR/.github/workflows/publish-chart.yml@refs/tags/vX.Y.Z` |
+```shell
+gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:develop \
+  -R rubentalstra/FerroEHR --format json \
+  | jq '.[0].verificationResult.signature.certificate
+        | {subjectAlternativeName, issuer, sourceRepositoryRef, runnerEnvironment}'
+```
 
-with issuer `https://token.actions.githubusercontent.com` in both cases.
+```json
+{
+  "subjectAlternativeName": "https://github.com/rubentalstra/FerroEHR/.github/workflows/containers.yml@refs/heads/develop",
+  "issuer": "https://token.actions.githubusercontent.com",
+  "sourceRepositoryRef": "refs/heads/develop",
+  "runnerEnvironment": "github-hosted"
+}
+```
 
-**Kyverno** (`verifyImages`, keyless) — the engine [chosen
-below](#centralized-policy-and-which-engine):
+**The SAN's ref varies with the trigger, and that is the part a policy gets
+wrong.** Each lane runs on more than one ref, so each issues more than one
+identity:
+
+| Artifact | Signing workflow | SAN on a release build | SAN on a development build |
+|---|---|---|---|
+| the three images | `containers.yml` | `…/containers.yml@refs/tags/vX.Y.Z` | `…/containers.yml@refs/heads/develop` |
+| the chart | `publish-chart.yml` | `…/publish-chart.yml@refs/tags/vX.Y.Z` | `…/publish-chart.yml@refs/heads/develop` (a `workflow_dispatch` chart-only publish) |
+| the release binaries | `release-build.yml` | `…/release-build.yml@refs/tags/vX.Y.Z` | *(none — the lane only runs on a tag)* |
+
+All three prefixed with `https://github.com/rubentalstra/FerroEHR/.github/workflows/`,
+and all with issuer `https://token.actions.githubusercontent.com`.
+
+The release binaries are signed by `release-build.yml` rather than by
+`release.yml` because the build lives in a **reusable** workflow — the
+certificate names the workflow that owns the build definition, which is what
+makes the `--signer-workflow` pin below meaningful.
+
+**Pick the ref set deliberately, because the choice is a refusal.** A policy
+matching `refs/tags/v…` only admits released images and **refuses
+`ghcr.io/rubentalstra/ferroehr:develop`** — correct for production, and the
+reason a policy tested against `:develop` appears broken when it is working. A
+staging cluster that runs `:develop` needs both refs. Nothing accepts an
+arbitrary branch: `refs/heads/develop` is exact, not a prefix match.
+
+### Kyverno
+
+The engine [chosen below](#centralized-policy-and-which-engine). Two details
+decide whether this policy works at all:
+
+- **`type: SigstoreBundle`.** These attestations are GitHub Artifact
+  Attestations, stored in the [Sigstore bundle
+  format](https://docs.sigstore.dev/about/bundle/) as an OCI referrer. Kyverno
+  reads that format only under this type; the field
+  [defaults to `Cosign`](https://kyverno.io/docs/policy-types/cluster-policy/verify-images/sigstore/),
+  which looks for a `sha256-<digest>.sig` tag that these images do not have (it
+  returns 404 — the bundle is a referrer, not a cosign tag). Requires
+  **Kyverno 1.13 or newer**.
+- **`attestations:`, not `attestors:` alone.** Kyverno's own rule is that
+  "each `verifyImages` rule can be used to verify signatures or attestations,
+  but not both", and what the lane produces is a signed *attestation* — there
+  is no detached image signature. A rule with `attestors:` at the top level
+  therefore fails **closed** on a perfectly legitimate image.
 
 ```yaml
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
   name: ferroehr-image-provenance
+  annotations:
+    pod-policies.kyverno.io/autogen-controllers: none
 spec:
-  validationFailureAction: Enforce
+  background: false
+  webhookTimeoutSeconds: 30
   rules:
-    - name: verify-ferroehr-images
+    - name: verify-ferroehr-provenance
       match:
         any:
           - resources:
@@ -424,17 +465,53 @@ spec:
               namespaces: [ferroehr]
       verifyImages:
         - imageReferences:
-            - "ghcr.io/rubentalstra/ferroehr*"
-          attestors:
-            - entries:
-                - keyless:
-                    subject: "https://github.com/rubentalstra/FerroEHR/.github/workflows/containers.yml@refs/tags/*"
-                    issuer: "https://token.actions.githubusercontent.com"
-                    rekor:
-                      url: https://rekor.sigstore.dev
+            - "ghcr.io/rubentalstra/ferroehr"
+            - "ghcr.io/rubentalstra/ferroehr:*"
+            - "ghcr.io/rubentalstra/ferroehr-admin-ui*"
+            - "ghcr.io/rubentalstra/ferroehr-postgres*"
+          # Sigstore bundle format — GitHub Artifact Attestations. Omitting
+          # this defaults to Cosign, which looks for a signature that does not
+          # exist and refuses every image.
+          type: SigstoreBundle
+          failureAction: Enforce
+          attestations:
+            - type: https://slsa.dev/provenance/v1
+              attestors:
+                - count: 1
+                  entries:
+                    - keyless:
+                        issuer: https://token.actions.githubusercontent.com
+                        # Released images only. For a staging cluster that runs
+                        # the development tag, make the group
+                        # `(heads/develop|tags/v.+)`.
+                        subjectRegExp: '^https://github\.com/rubentalstra/FerroEHR/\.github/workflows/containers\.yml@refs/(tags/v.+)$'
+                        rekor:
+                          url: https://rekor.sigstore.dev
+              conditions:
+                - all:
+                    - key: '{{ buildDefinition.buildType }}'
+                      operator: Equals
+                      value: https://actions.github.io/buildtypes/workflow/v1
 ```
 
-**sigstore-policy-controller**, if you already run it:
+`failureAction` sits on the `verifyImages` entry: the spec-level
+`validationFailureAction` is
+[deprecated in the CRD](https://github.com/kyverno/kyverno/blob/main/config/crds/kyverno/kyverno.io_clusterpolicies.yaml)
+("use `validationFailureAction` under the validate rule instead"), and a
+`verifyImages` rule has no validate block. `mutateDigest`, `verifyDigest` and
+`required` all default to `true`, which is what you want: a tag is rewritten to
+the digest that was verified, and an image with no attestation is refused
+rather than passed.
+
+### sigstore-policy-controller
+
+If you already run it. The equivalent two details:
+
+- **`signatureFormat: bundle`** on the authority. The default is `legacy`
+  (cosign's own), which cannot read these attestations. Requires
+  **policy-controller v0.13.0 or newer**.
+- **an `attestations:` entry**, because in bundle format policy-controller
+  supports "only attestations, not plain signatures".
 
 ```yaml
 apiVersion: policy.sigstore.dev/v1beta1
@@ -449,8 +526,33 @@ spec:
         url: https://fulcio.sigstore.dev
         identities:
           - issuer: https://token.actions.githubusercontent.com
-            subjectRegExp: "^https://github\\.com/rubentalstra/FerroEHR/\\.github/workflows/containers\\.yml@refs/tags/v.*$"
+            # Same group as the Kyverno policy: `(heads/develop|tags/v.+)` for a
+            # staging cluster that runs the development tag.
+            subjectRegExp: '^https://github\.com/rubentalstra/FerroEHR/\.github/workflows/containers\.yml@refs/(tags/v.+)$'
+      signatureFormat: bundle
+      attestations:
+        - name: require-slsa-provenance
+          predicateType: https://slsa.dev/provenance/v1
 ```
+
+> [!NOTE]
+> **What has been checked, and what has not.** The identity, the issuer and the
+> predicate type above are verified first-hand against the three published
+> images — `cosign verify --certificate-identity-regexp …` (cosign 3.1.3) admits
+> all three and refuses both an unsigned image and, under a tags-only pattern, a
+> `:develop` image, so the matcher is neither vacuous nor accidentally
+> permissive. The manifests are checked field-by-field against the published
+> `ClusterPolicy` and `ClusterImagePolicy` CRDs. **Neither policy has been
+> exercised by a running admission controller**, and the Kyverno CLI is no
+> substitute: `kyverno test` reports a `verifyImages` rule as `Excluded` and
+> returns the same verdict whichever result you assert. Before enforcing, run
+> the policy in `Audit` (Kyverno) or as a `warn` policy (policy-controller) long
+> enough to see one real deployment pass.
+
+**No chart policy is offered yet.** No chart version has been published, so
+there is nothing to reconcile a chart identity against; the row in the table
+above is what the lane *will* issue, not something read off an artifact. Verify
+the chart with the manual command below once a chart version exists.
 
 **Should the chart ship one? No, and the reason is structural:** an admission
 policy is cluster-scoped and governs workloads the chart knows nothing about,
@@ -461,12 +563,25 @@ to depend on. The chart's contribution is the policy *document*, here, versioned
 with the lanes whose identity it encodes.
 
 **Without an admission controller**, the manual equivalent is a release-time
-check rather than a per-pod one:
+check rather than a per-pod one. Add `--signer-workflow` to insist on the lane
+as well as the repository — without it you are trusting that *some* workflow
+here signed the image:
 
 ```shell
-gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:3.17.3 -R rubentalstra/FerroEHR
-gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:4.0.0 -R rubentalstra/FerroEHR
+gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:develop \
+  -R rubentalstra/FerroEHR \
+  --signer-workflow rubentalstra/FerroEHR/.github/workflows/containers.yml
 ```
+
+Substitute a `vX.Y.Z` tag for `develop` on a release; the signer workflow is the
+same. Both forms are verified working on the current `develop` images.
+
+> [!IMPORTANT]
+> Signing landed in the publishing lanes during the `3.17.4` cycle, so
+> `ferroehr:3.17.3` and every earlier tag answer `HTTP 404: Not Found` — there is
+> nothing to verify, not a verification failure. The chart command
+> (`oci://ghcr.io/rubentalstra/charts/ferroehr:<chart-version>`) has nothing to
+> answer for yet either: no chart version has been published.
 
 Then deploy **by digest** (`image.digest`), so what you verified is what runs — a
 tag can be moved afterwards, a digest cannot.
