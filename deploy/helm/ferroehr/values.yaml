@@ -333,9 +333,13 @@ config:
     format: json
 
   # [auth] — authentication (Basic + OAuth2/OIDC bearer). Enabled by default.
-  # auth.enabled=true with NO mechanism REFUSES TO BOOT (RFC 9110 §11.6.1: a 401
-  # challenge must name a scheme the server implements) — add an [auth.oidc]
-  # issuer, an [[auth.basic.users]] entry, or set enabled=false (dev only).
+  # auth.enabled=true with NO mechanism is REFUSED BY THIS CHART AT RENDER TIME,
+  # because the server refuses to boot on it (RFC 9110 §11.6.1: a 401 challenge
+  # must name a scheme the server implements) and a crash-loop hides the reason
+  # in a pod log. So a stock `helm install` stops with an actionable error rather
+  # than appearing to succeed. Add an [auth.oidc] issuer, an [[auth.basic.users]]
+  # entry, or set enabled=false — the last serves EVERY request unauthenticated
+  # and is a development-only choice the chart makes you state explicitly.
   # An [auth.oidc] table additionally requires `audiences` (at least one) and an
   # https `issuer` with no query/fragment; every [[auth.basic.users]]
   # password_hash must be argon2id at m>=19456,t=2,p=1. All checked at boot.
