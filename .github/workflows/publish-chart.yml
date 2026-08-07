@@ -409,6 +409,28 @@ jobs:
       # checks the classic `sha256-<hex>.sig` tag FIRST (tag-based discovery in
       # `HasCosignSignature`, `internal/oci/oci.go`), and a plain tag needs no
       # registry capability whatever. Revisit when GHCR serves referrers.
+      # A keyless cosign SIGNATURE over the pushed digest. Distinct from the
+      # attestation below and not redundant with it: the attestation answers
+      # "built from this source, this way", the signature answers "signed by this
+      # workflow" — and the signature is what a Helm consumer's tooling and
+      # Artifact Hub's listing actually look for.
+      #
+      # NO format flag, deliberately. cosign 3 signs in the protobuf bundle
+      # format and there is no supported way to opt out here: measured against
+      # cosign v3.1.3, `--new-bundle-format=false` is refused outright —
+      # "must provide --new-bundle-format or --bundle where applicable with
+      # --signing-config or --use-signing-config" — because `--use-signing-config`
+      # defaults to true, and the flag is deprecated besides ("this will be the
+      # only supported format in future versions").
+      #
+      # That the hub can still SEE it was checked rather than assumed, and the
+      # chain is: GHCR serves no referrers API (`GET /v2/…/referrers/<digest>`
+      # answers 404 MANIFEST_UNKNOWN, measured), so the signature is written to
+      # the OCI fallback tag `sha256-<hex>`; the hub reads referrers through
+      # cosign's `remote.Referrers`, which delegates to go-containerregistry,
+      # which falls back to that same tag when the API is absent
+      # (`WithReferrersTagFallback` — "The default is true"). Same layout, both
+      # directions.
       - name: Sign the chart with keyless cosign
         id: sign
         if: steps.push.outputs.digest != ''
@@ -416,16 +438,41 @@ jobs:
           DIGEST: ${{ steps.push.outputs.digest }}
         run: |
           set -euo pipefail
-          cosign sign --yes --new-bundle-format=false "${CHART_REF}@${DIGEST}"
+          cosign sign --yes "${CHART_REF}@${DIGEST}"
 
-      # Read the signature back the way a consumer and Artifact Hub each do,
-      # because both failure modes are silent: a signature that does not verify
-      # against this workflow's identity is worse than none, and a signature the
-      # hub cannot locate presents weeks later as a listing that still says
-      # "not signed" with no error anywhere.
-      - name: Verify the signature verifies, and is where the hub looks
+      # Keyless provenance for the chart artifact, the same mechanism the images
+      # use — see the header for why neither of these is a PGP `.prov`.
+      #
+      # Ordered AFTER the signature deliberately. GHCR serves no referrers API
+      # (`GET /v2/…/referrers/<digest>` answers 404 MANIFEST_UNKNOWN, measured),
+      # so BOTH artifacts reach the registry through the same OCI fallback tag,
+      # `sha256-<hex>` — two writers to one index. Nothing in either tool
+      # promises the second writer appends rather than replaces, so this lane
+      # does not assume it: the step below reads both back and fails if either
+      # went missing.
+      - name: Attest build provenance
+        id: attest
+        if: steps.push.outputs.digest != ''
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-name: ${{ env.CHART_REF }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+      # Read both artifacts back, after both writers have run, because every
+      # failure here is otherwise silent for weeks: a signature that does not
+      # verify against this workflow's identity is worse than none; a signature
+      # Artifact Hub cannot locate presents as a listing that still says "not
+      # signed"; and an attestation the second writer dropped presents as
+      # nothing at all until someone runs `gh attestation verify` and gets a 404.
+      #
+      # `cosign verify` is the consumer's own command, so this is the check a
+      # user would run, not a proxy for it. The fallback-tag assertion is the
+      # hub's view: it lists what the shared index actually holds and requires
+      # the cosign signature and the SLSA provenance to BOTH still be there.
+      - name: Verify the signature and the attestation both survived
         id: verify
-        if: steps.sign.outcome == 'success'
+        if: steps.sign.outcome == 'success' && steps.attest.outcome == 'success'
         env:
           DIGEST: ${{ steps.push.outputs.digest }}
           REPO: ${{ github.repository }}
@@ -436,25 +483,26 @@ jobs:
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             > /dev/null
           echo "the signature verifies against ${REPO}/.github/workflows/publish-chart.yml"
-          # `cosign triangulate` prints the tag the classic layout stores the
-          # signature under — the same tag the hub's tag-based discovery reads.
-          sig_ref="$(cosign triangulate "${CHART_REF}@${DIGEST}")"
-          if ! oras manifest fetch "$sig_ref" > /dev/null; then
-            echo "::error::${sig_ref} is not fetchable — the signature verified but Artifact Hub's tag-based discovery will not find it."
+
+          # The OCI fallback tag for a subject digest: `sha256:<hex>` → `sha256-<hex>`.
+          fallback="${CHART_REF}:${DIGEST/:/-}"
+          if ! manifest=$(oras manifest fetch "$fallback" 2>&1); then
+            echo "::error::${fallback} is not fetchable, so neither the signature nor the attestation is discoverable from the registry: ${manifest}"
             exit 1
           fi
-          echo "sig=${sig_ref}" >> "$GITHUB_OUTPUT"
-          echo "::notice::signature readable at ${sig_ref}; Artifact Hub reports it on its next processing cycle."
-
-      # Keyless provenance for the chart artifact, the same mechanism the images
-      # use — see the header for why neither of these is a PGP `.prov`.
-      - name: Attest build provenance
-        if: steps.push.outputs.digest != ''
-        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
-        with:
-          subject-name: ${{ env.CHART_REF }}
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
+          echo "--- ${fallback} ---"
+          printf '%s' "$manifest" | jq '{mediaType, manifests: [.manifests[] | {artifactType, digest, annotations}]}'
+          # The signature half is already proven by `cosign verify` above, so
+          # this only has to establish that the ATTESTATION entry is still in the
+          # shared index. It is matched on the SLSA predicate or the in-toto
+          # media type rather than on cosign's own media type, which differs
+          # between cosign's bundle formats and is not ours to predict.
+          if ! printf '%s' "$manifest" | grep -qE 'slsa\.dev/provenance|application/vnd\.in-toto'; then
+            echo "::error::${fallback} no longer carries the SLSA provenance entry — both the signature and the attestation write this one index (GHCR serves no referrers API), so one writer replaced the other's entry. The index is printed above."
+            exit 1
+          fi
+          echo "sig=${fallback}" >> "$GITHUB_OUTPUT"
+          echo "::notice::signature + provenance both readable at ${fallback}; Artifact Hub reports the signature on its next processing cycle."
 
       # Artifact Hub ownership (#2106). For an OCI repository there is no
       # `index.yaml`, so there is nowhere to commit this file as a sibling: it is
