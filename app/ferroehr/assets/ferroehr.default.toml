@@ -114,6 +114,12 @@ http2_keep_alive_timeout_secs = 10   # PING response deadline before the connect
 [db]
 url = "postgres://ferroehr:ferroehr@localhost:5432/ferroehr"  # PROD: real DSN via env/secret
 #? url_file = "/run/secrets/db-dsn"   # or point at a mounted file instead of passing the DSN as env
+# Whether the server issues DDL at boot. "apply" runs the embedded migrations
+# then verifies, which is what makes an empty configuration boot against an
+# empty database; "verify" never issues DDL and refuses to serve unless the
+# database already carries exactly this build's migrations, so the runtime role
+# needs no schema rights.
+migrate = "apply"            # apply | verify — PROD: verify
 max_connections = 20
 min_connections = 2
 acquire_timeout_secs = 30
@@ -312,7 +318,13 @@ max_frequency = 999           # highest sampling frequency (Hz) a request may as
 enabled = true
 mode = "digest"              # digest | pgp
 #? key_path = "/etc/ferroehr/signing.asc"   # required for mode = pgp
-#? key_passphrase = "..."    # or key_passphrase_file = "/run/secrets/pgp-pass"
+#? key_passphrase = "..."
+#? key_passphrase_file = "/run/secrets/pgp-pass"
+# PUBLIC keys retired from signing and kept for verification, so versions signed
+# before a key rotation keep verifying. A stored signature carries no key id and
+# is an immutable committed fact, so retaining the old key is the only way
+# history stays verifiable. Public keys: a retired key can never sign again.
+retired_key_paths = []       # e.g. ["/etc/ferroehr/signing-2025.pub.asc"]
 # Read-time verification of OUR OWN signatures. UNSET (the default) resolves to
 # `strict` when signing is enabled — a served version whose stored signature no
 # longer recomputes is a 5xx integrity fault. Set explicitly to opt out:
@@ -422,7 +434,8 @@ threshold_bytes = 262144
 bucket = "openehr-multimedia"
 region = "us-east-1"
 #? access_key_id = "..."
-#? secret_access_key = "..."   # or secret_access_key_file = "/run/secrets/s3"
+#? secret_access_key = "..."
+#? secret_access_key_file = "/run/secrets/s3"
 allow_http = false           # PROD: false (HTTPS S3)
 
 # ── [audit] — IHE ATNA audit trail / System Log ──────────────────────────────
