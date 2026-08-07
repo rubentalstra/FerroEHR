@@ -26,6 +26,42 @@ misconfigurations:
       directory and drops privileges itself; capabilities are dropped at the
       deployment layer instead.
 
+  # KSV-0014 (readOnlyRootFilesystem) and KSV-0118 (default security context) on
+  # the k8s-test skill's THROWAWAY manifests: a scratch PostgreSQL and a
+  # Prometheus/Grafana/OTel-collector stack, both stood up in a disposable local
+  # cluster to exercise the chart and deleted with it.
+  #
+  # Scoped to those two files and to those two rules — never a directory skip, so
+  # the SECRET scanner still reads everything under `.claude/`, and a genuinely
+  # new misconfiguration class in these files still fails.
+  #
+  # Why exempt rather than harden: neither file is deployed by anything. They are
+  # the *instrument*, and the subject they measure — the chart — is held to the
+  # opposite standard by `deploy/helm/validate.sh`, which fails if the rendered
+  # Deployment loses `runAsNonRoot`, `readOnlyRootFilesystem`, the seccomp
+  # profile, `drop: [ALL]` or the NetworkPolicy. Hardening a scratch Prometheus
+  # would secure nothing and would put upstream data-directory quirks between an
+  # engineer and the chart test they are actually running. The k8s-test skill's
+  # own first ground rule is the load-bearing one and is unaffected: "Never relax
+  # a security setting to make something start" — that governs the CHART, and
+  # this exception cannot reach it.
+  - id: KSV-0014
+    paths:
+      - .claude/skills/k8s-test/postgres.yaml
+      - .claude/skills/k8s-test/observability.yaml
+    statement: >-
+      Throwaway test-harness manifests for a disposable local cluster, deployed
+      by nothing; the chart they exercise is gated on the opposite standard by
+      deploy/helm/validate.sh.
+  - id: KSV-0118
+    paths:
+      - .claude/skills/k8s-test/postgres.yaml
+      - .claude/skills/k8s-test/observability.yaml
+    statement: >-
+      Throwaway test-harness manifests for a disposable local cluster, deployed
+      by nothing; the chart they exercise is gated on the opposite standard by
+      deploy/helm/validate.sh.
+
 # No secret exceptions. The deliberate development credentials (the quickstart's
 # Argon2id hash, the development HMAC secrets) were checked against the secret
 # scanner and are NOT flagged, so listing them here would be inventing
