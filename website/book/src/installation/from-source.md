@@ -68,9 +68,12 @@ target/release/ferroehr
 ```
 
 It runs its schema migrations at boot and then serves on the configured bind
-address (default `0.0.0.0:8080`).
+address (default `0.0.0.0:8080`). That boot-time migration is a setting, not a
+fixture: `db.migrate = "verify"` makes the server issue no DDL at all, for a
+deployment whose database role has none of those rights (see
+[Operations](../operations.md#applying-migrations)).
 
-Three global flags and two subcommands round the CLI out:
+Two global flags and three subcommand groups round the CLI out:
 
 - `--config <path>` points at a configuration file, overriding the search
   order (`FERROEHR_CONFIG`, `./ferroehr.toml`, `/etc/ferroehr/ferroehr.toml`);
@@ -82,6 +85,10 @@ Three global flags and two subcommands round the CLI out:
 - `ferroehr config default` writes the annotated default configuration
   template to stdout, which is the reference every key in the
   [configuration reference](configuration.md) is drawn from;
+- `ferroehr db migrate` applies the embedded migrations and exits — the
+  out-of-band schema step, run under a `ferroehr_migrator` DSN;
+- `ferroehr db verify` checks, without issuing any DDL, that the database
+  carries exactly this build's migrations, exiting 0 when it does;
 - `ferroehr healthcheck` (used by the container healthcheck and Kubernetes
   exec probes) probes the status endpoint and exits 0 or 1. It defaults to
   `http://127.0.0.1:8080/ferroehr/rest/status`; override with `--url` or
