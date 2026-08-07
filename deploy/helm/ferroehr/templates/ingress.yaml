@@ -24,7 +24,11 @@ spec:
         paths:
           {{- range .paths }}
           - path: {{ .path }}
-            pathType: {{ .pathType }}
+            {{- /* `pathType` is REQUIRED on networking.k8s.io/v1 and the values
+                   schema does not make it so; without a default an omitted one
+                   renders empty and the API server rejects the whole Ingress
+                   (https://kubernetes.io/docs/concepts/services-networking/ingress/#path-types). */}}
+            pathType: {{ .pathType | default "Prefix" }}
             backend:
               service:
                 name: {{ include "ferroehr.fullname" $ }}

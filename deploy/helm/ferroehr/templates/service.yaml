@@ -2,15 +2,15 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "ferroehr.fullname" . }}
-  annotations:
-    kubernetes.io/description: >-
-      Stable in-cluster address for the FerroEHR CDR's openEHR ITS-REST API. The management surface, when enabled on its own port, is deliberately NOT exposed here.
   labels:
     {{- include "ferroehr.labels" . | nindent 4 }}
-  {{- with .Values.service.annotations }}
+  {{- /* ONE annotations mapping. A second `annotations:` key under the same
+         metadata is a duplicate YAML key: the later mapping wins and the
+         description disappears. Operator values take precedence on a
+         collision, which is what `merge`'s destination-wins rule gives. */}}
   annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- $description := dict "kubernetes.io/description" "Stable in-cluster address for the FerroEHR CDR's openEHR ITS-REST API. The management surface, when enabled on its own port, is deliberately NOT exposed here." }}
+    {{- toYaml (merge (deepCopy (default dict .Values.service.annotations)) $description) | nindent 4 }}
 spec:
   {{- /* Rendered only when it differs from the API default, per
          https://kubernetes.io/docs/concepts/configuration/overview/
