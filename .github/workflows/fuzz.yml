@@ -1,0 +1,141 @@
+# Scheduled libFuzzer campaigns over the parsers that read attacker-controlled
+# bytes off the REST wire (the harnesses live in `fuzz/`).
+#
+# Deliberately NOT on the pull-request path: a fuzz job that makes every PR slow
+# gets disabled within a month, and a bounded run finds regressions just as well
+# on a nightly cadence. Long campaigns are a local activity — `fuzz/README.md`
+# carries the command.
+#
+# Each target keeps its corpus in the Actions cache between runs, so coverage
+# accumulates instead of restarting from the seed set every night. A crash is
+# uploaded as an artifact and fails the job; the fix belongs in the crate,
+# pinned by a regression test, never by widening a bound here.
+#
+# cargo-fuzz needs a nightly toolchain (libFuzzer wants `-Zsanitizer`), which is
+# why `fuzz/` is its own workspace: the CDR workspace stays on pinned stable.
+# Docs: https://rust-fuzz.github.io/book/cargo-fuzz.html
+name: Fuzz
+
+on:
+  schedule:
+    - cron: "41 2 * * *" # daily 02:41 UTC (off-the-hour to dodge load spikes)
+  workflow_dispatch:
+    inputs:
+      seconds:
+        description: "Seconds to fuzz each target (default 300)"
+        required: false
+        default: "300"
+
+concurrency:
+  # Never cancel a running campaign: a cancelled run loses the corpus it grew.
+  group: fuzz-${{ github.ref }}
+  cancel-in-progress: false
+
+# No permissions by default — the job grants its own; without this the workflow
+# would inherit the repository default.
+permissions: {}
+
+jobs:
+  fuzz:
+    name: ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    strategy:
+      # One failing target must not hide the other five.
+      fail-fast: false
+      matrix:
+        include:
+          # `max_len` is per-target: it bounds the inputs libFuzzer GENERATES,
+          # and an input far larger than a realistic request body only spends
+          # execution budget. AQL is a query string; an operational template is
+          # the largest legitimate body of the six.
+          - target: canonical_json
+            max_len: 16384
+          - target: canonical_xml
+            max_len: 32768
+          - target: aql_query
+            max_len: 4096
+          - target: simplified_formats
+            max_len: 16384
+          - target: adl2_source
+            max_len: 16384
+          - target: opt14_template
+            max_len: 65536
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install nightly Rust
+        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        with:
+          toolchain: nightly
+          # The fuzz build tree is cached below, keyed on the fuzz lockfile.
+          cache: false
+
+      - name: Install cargo-fuzz
+        uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2.85.9
+        with:
+          # Not in install-action's managed manifest set, so this resolves
+          # through its cargo-binstall fallback against the upstream release
+          # assets (cargo-fuzz publishes an x86_64-unknown-linux-musl build).
+          tool: cargo-fuzz@0.13.2
+
+      - name: Cache the fuzz build tree
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: fuzz
+          key: ${{ matrix.target }}
+
+      - name: Restore the accumulated corpus
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: fuzz/corpus/${{ matrix.target }}
+          # A run always saves under a fresh key and restores the newest prefix
+          # match, which is how a cache entry can keep growing (GitHub cache
+          # entries are immutable once written).
+          key: fuzz-corpus-${{ matrix.target }}-${{ github.run_id }}
+          restore-keys: |
+            fuzz-corpus-${{ matrix.target }}-
+
+      - name: Wire the seed corpus
+        env:
+          TARGET: ${{ matrix.target }}
+        run: bash fuzz/seeds.sh "$TARGET"
+
+      - name: Fuzz
+        env:
+          TARGET: ${{ matrix.target }}
+          MAX_LEN: ${{ matrix.max_len }}
+          SECONDS_PER_TARGET: ${{ inputs.seconds || '300' }}
+        # The seed directory is passed as a SECOND corpus: libFuzzer writes only
+        # to the first one, so the committed corpora stay read-only inputs.
+        run: |
+          cargo fuzz run "$TARGET" \
+            "fuzz/corpus/$TARGET" "fuzz/seeds/$TARGET" \
+            -- \
+            -max_total_time="$SECONDS_PER_TARGET" \
+            -max_len="$MAX_LEN" \
+            -timeout=25 \
+            -rss_limit_mb=4096 \
+            -print_final_stats=1
+
+      - name: Upload the crash artifacts
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: fuzz-artifacts-${{ matrix.target }}
+          path: fuzz/artifacts/${{ matrix.target }}
+          if-no-files-found: ignore
+
+      - name: Save the accumulated corpus
+        # Runs even when the target crashed: the corpus grown up to the crash is
+        # the coverage the next run should start from.
+        if: always()
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: fuzz/corpus/${{ matrix.target }}
+          key: fuzz-corpus-${{ matrix.target }}-${{ github.run_id }}

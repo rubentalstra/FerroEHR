@@ -25,7 +25,7 @@ pub fn to_aql(query: &SelectQuery) -> String {
     contains_expr(&mut out, &query.from, ContainsCtx::Top);
     if let Some(where_) = &query.where_ {
         out.push_str(" WHERE ");
-        where_expr(&mut out, where_, WhereCtx::Or);
+        where_expr(&mut out, where_, WhereCtx::Top);
     }
     if !query.order_by.is_empty() {
         out.push_str(" ORDER BY ");
@@ -180,12 +180,24 @@ fn identified_path(out: &mut String, path: &IdentifiedPath) {
 }
 
 /// Where a contains expression sits, for parenthesisation.
+///
+/// The SIDE matters, not just the enclosing operator: `AqlParser.g4`
+/// `containsExpr` states `AND`/`OR` as binary alternatives of one recursive
+/// rule, which ANTLR4 resolves left-associatively, so a same-precedence child
+/// re-parses unchanged on the LEFT and re-associates on the RIGHT. A right
+/// operand therefore needs parentheses where a left operand does not.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum ContainsCtx {
     /// Directly after `FROM` — no parens needed at any operator.
     Top,
-    /// Inside an `AND` — an `OR` child needs parens.
-    And,
+    /// The left operand of an `OR`.
+    OrLeft,
+    /// The right operand of an `OR`.
+    OrRight,
+    /// The left operand of an `AND`.
+    AndLeft,
+    /// The right operand of an `AND`.
+    AndRight,
     /// Directly after `CONTAINS` — any boolean child needs parens.
     Nested,
 }
@@ -193,6 +205,16 @@ enum ContainsCtx {
 fn contains_expr(out: &mut String, expr: &ContainsExpr, ctx: ContainsCtx) {
     match expr {
         ContainsExpr::Contained { operand, contains } => {
+            // `containsExpr: classExprOperand (NOT? CONTAINS containsExpr)?`
+            // makes the CONTAINS operand a whole `containsExpr`, so it absorbs
+            // any `AND`/`OR` that follows it: an unparenthesised `A CONTAINS B`
+            // used as a boolean operand would re-parse with the operator moved
+            // INSIDE its scope, which changes what the query means.
+            let parens =
+                contains.is_some() && !matches!(ctx, ContainsCtx::Top | ContainsCtx::Nested);
+            if parens {
+                out.push('(');
+            }
             class_operand(out, operand);
             if let Some(constraint) = contains {
                 if constraint.negated {
@@ -202,27 +224,38 @@ fn contains_expr(out: &mut String, expr: &ContainsExpr, ctx: ContainsCtx) {
                 }
                 contains_expr(out, &constraint.expr, ContainsCtx::Nested);
             }
+            if parens {
+                out.push(')');
+            }
         }
         ContainsExpr::And(a, b) => {
-            let parens = ctx == ContainsCtx::Nested;
+            // `AND` binds tighter than `OR`, so only a right-hand `AND` (which
+            // would re-associate leftwards) and a `CONTAINS` operand need parens.
+            let parens = matches!(ctx, ContainsCtx::AndRight | ContainsCtx::Nested);
             if parens {
                 out.push('(');
             }
-            contains_expr(out, a, ContainsCtx::And);
+            contains_expr(out, a, ContainsCtx::AndLeft);
             out.push_str(" AND ");
-            contains_expr(out, b, ContainsCtx::And);
+            contains_expr(out, b, ContainsCtx::AndRight);
             if parens {
                 out.push(')');
             }
         }
         ContainsExpr::Or(a, b) => {
-            let parens = matches!(ctx, ContainsCtx::And | ContainsCtx::Nested);
+            let parens = matches!(
+                ctx,
+                ContainsCtx::OrRight
+                    | ContainsCtx::AndLeft
+                    | ContainsCtx::AndRight
+                    | ContainsCtx::Nested
+            );
             if parens {
                 out.push('(');
             }
-            contains_expr(out, a, ContainsCtx::Top);
+            contains_expr(out, a, ContainsCtx::OrLeft);
             out.push_str(" OR ");
-            contains_expr(out, b, ContainsCtx::Top);
+            contains_expr(out, b, ContainsCtx::OrRight);
             if parens {
                 out.push(')');
             }
@@ -265,14 +298,25 @@ fn class_operand(out: &mut String, operand: &ClassExprOperand) {
     }
 }
 
-/// Precedence context inside a WHERE tree.
+/// Precedence and associativity context inside a WHERE tree.
+///
+/// The SIDE matters, not just the enclosing operator: `AqlParser.g4`
+/// `whereExpr` states `AND`/`OR` as binary alternatives of one recursive rule,
+/// which ANTLR4 resolves left-associatively, so a same-precedence child
+/// re-parses unchanged on the LEFT and re-associates on the RIGHT.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum WhereCtx {
-    /// Top level / right under an `OR` — nothing needs parens.
-    Or,
-    /// Under an `AND` — an `OR` child needs parens.
-    And,
-    /// Under a `NOT` — any boolean child needs parens.
+    /// Top level — nothing needs parens.
+    Top,
+    /// The left operand of an `OR`.
+    OrLeft,
+    /// The right operand of an `OR`.
+    OrRight,
+    /// The left operand of an `AND`.
+    AndLeft,
+    /// The right operand of an `AND`.
+    AndRight,
+    /// The operand of a `NOT` — any boolean child needs parens.
     Not,
 }
 
@@ -284,25 +328,30 @@ fn where_expr(out: &mut String, expr: &WhereExpr, ctx: WhereCtx) {
             where_expr(out, inner, WhereCtx::Not);
         }
         WhereExpr::And(a, b) => {
-            let parens = ctx == WhereCtx::Not;
+            // `AND` binds tighter than `OR`, so only a right-hand `AND` (which
+            // would re-associate leftwards) and a `NOT` operand need parens.
+            let parens = matches!(ctx, WhereCtx::AndRight | WhereCtx::Not);
             if parens {
                 out.push('(');
             }
-            where_expr(out, a, WhereCtx::And);
+            where_expr(out, a, WhereCtx::AndLeft);
             out.push_str(" AND ");
-            where_expr(out, b, WhereCtx::And);
+            where_expr(out, b, WhereCtx::AndRight);
             if parens {
                 out.push(')');
             }
         }
         WhereExpr::Or(a, b) => {
-            let parens = matches!(ctx, WhereCtx::And | WhereCtx::Not);
+            let parens = matches!(
+                ctx,
+                WhereCtx::OrRight | WhereCtx::AndLeft | WhereCtx::AndRight | WhereCtx::Not
+            );
             if parens {
                 out.push('(');
             }
-            where_expr(out, a, WhereCtx::Or);
+            where_expr(out, a, WhereCtx::OrLeft);
             out.push_str(" OR ");
-            where_expr(out, b, WhereCtx::Or);
+            where_expr(out, b, WhereCtx::OrRight);
             if parens {
                 out.push(')');
             }
