@@ -37,6 +37,7 @@ requires: { server: any }
 flow:
   - step: 1
     call: delete_artefact
+    on: admin                              # ADMIN-role principal (ixit) — the delete carries the Admin operation class
     with: { template_id: "not-an-artefact-hrid" }
     expect: not_found
 ambiguities: [AMB-37]

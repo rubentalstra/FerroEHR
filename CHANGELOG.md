@@ -93,6 +93,8 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The conformance baseline moves to 1014 of 1014, and three new cases pin behaviour that had none.** The run that produced it went red first, with five cases failing because the two shared-definition deletes now require the admin role. Every red row was attributed before anything was touched, and the attribution landed on the catalogue: those five pin the *semantics* of a delete — none of them declares a `forbidden` outcome — so they were calling an operation their principal is not authorized for and never reaching it. They now drive the delete as admin, with their `204`/`404` expectations untouched. The refusal the authorization change introduced gets its own two cases, so the behaviour is tested rather than merely described, and a read-only case that had quietly stopped isolating anything — its subject route became admin-gated, and it was the only write on that surface — is joined by one on a route where the restriction is still observable. The comparison record for the upstream EHRbase server is regenerated from the same run of the same catalogue.
+
 - Server-fault log records now carry the underlying failure that caused them.
   A `500`-class fault writes a `cause` field holding the full error chain — the
   PostgreSQL driver error, codec refusal or HTTP transport failure, and

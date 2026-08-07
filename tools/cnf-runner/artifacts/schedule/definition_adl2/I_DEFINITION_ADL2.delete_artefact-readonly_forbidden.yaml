@@ -3,18 +3,26 @@
 # authenticated, and is refused anyway.
 #
 # One behaviour: an authenticated principal whose authorization is read-only is
-# refused on the capability's one WRITE (the artefact delete) and served on its
-# reads. The read step is the control that makes the row a statement about the
-# WRITE rather than about the principal.
+# refused on the capability's one mutating route (the artefact delete) and
+# served on its reads. The read step is the control that makes the row a
+# statement about the ROUTE rather than about the principal.
 #
 # EXTENSION ROUTES (register AMB-37): the outcome mapping is UNIVERSAL
 # (vocab/selectors.yaml universal_outcomes: forbidden -> 403, route-table-wide).
-# These routes carry the coarse `Clinical` operation class — they are NOT under
-# /admin/ and require no ADMIN role — so the ONLY documented role class is the
-# read-only restriction, which is what this row drives. No openEHR spec governs
-# role semantics on a route it does not define; the refusal is the served
-# route's own documented contract (its `#[utoipa::path]` declares the 403
-# branch on the delete and not on the listings).
+# OPERATION CLASSES on this family are SPLIT: the four listings and counts carry
+# the coarse `Clinical` class, while the artefact DELETE carries `Admin` despite
+# not sitting under /admin/, so this principal is refused by the role gate
+# before the read-only restriction is reached — both refusals hold, and the row
+# no longer ISOLATES the restriction. The class assignment is our own design on
+# the delete's blast radius; SM openehr_platform master02-overview.adoc
+# §Functional Style lists "approach to access control and authorisation" among
+# the implementation choices and assumes authorisation "dealt with before any
+# particular call has been made … and role-based access control", so no released
+# clause governs it. Because the delete was this family's only write, the
+# restriction is unobservable here and is pinned instead on the ADL 2 surface's
+# remaining Clinical write, the released template upload
+# (I_DEFINITION_ADL2.upload_artefact-readonly_forbidden); the delete's Admin
+# branch has its own row (I_DEFINITION_ADL2.delete_artefact-clinical_forbidden).
 id: I_DEFINITION_ADL2.delete_artefact-readonly_forbidden
 kind: functional
 component: DEFINITION_ADL2

@@ -30,6 +30,7 @@ flow:
     expect: created
   - step: 2
     call: delete_archetype
+    on: admin                              # ADMIN-role principal (ixit) — the delete carries the Admin operation class
     with: { archetype_id: "openEHR-EHR-INSTRUCTION.medication.v1" }
     expect: deleted
   - step: 3

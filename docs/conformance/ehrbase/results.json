@@ -5,7 +5,7 @@
   },
   "runner": {
     "name": "cnf-runner",
-    "version": "3.11.0",
+    "version": "3.17.3",
     "verification_pack_status": "passed"
   },
   "schedule_release": "cnf-2.0-w2",
@@ -16,7 +16,7 @@
       "canonical-xml"
     ]
   },
-  "ixit_digest": "bd88c8dadd68a7ce",
+  "ixit_digest": "416247a938accea2",
   "outcomes": [
     {
       "case": "I_ADMIN_SERVICE.physical_ehr_delete-delete_all_unfiltered",
@@ -30,6 +30,21 @@
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL14.upload_opt-largest_published",
+      "status": "failed",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 1,
+      "reason": "expected `created`, observed `not_acceptable`",
+      "failed_rows": [
+        {
+          "row": 0,
+          "step": 1,
+          "reason": "expected `created`, observed `not_acceptable`"
+        }
+      ]
     },
     {
       "case": "I_DEFINITION_ADL2.has_artefact-non_existing",
@@ -65,84 +80,294 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_ADMIN_ARCHIVE.archive_ehrs: AMB-33"
+      "citation": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_ARCHIVE.archive_ehrs-archive_twice",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ADMIN_ARCHIVE.archive_ehrs-archive_unknown",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_ADMIN_ARCHIVE.archive_ehrs: AMB-33"
+      "citation": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_ARCHIVE.archive_ehrs-empty_list",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_ARCHIVE.archive_ehrs-forbidden",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_ARCHIVE.archive_ehrs-malformed_id",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_ARCHIVE.archive_ehrs-unauthenticated",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ADMIN_ARCHIVE.archive_parties-archive_selected",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_ADMIN_ARCHIVE.archive_parties: AMB-33"
+      "citation": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_ARCHIVE.archive_parties-archive_twice",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ADMIN_ARCHIVE.archive_parties-archive_unknown",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_ADMIN_ARCHIVE.archive_parties: AMB-33"
+      "citation": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_ARCHIVE.archive_parties-empty_list",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_ARCHIVE.archive_parties-forbidden",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_ARCHIVE.archive_parties-malformed_id",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_ARCHIVE.archive_parties-relationship_id_refused",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_ARCHIVE.archive_parties-unauthenticated",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.export_ehrs-compression_7z",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.export_ehrs-encoding_unrepresentable",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ADMIN_DUMP_LOAD.export_ehrs-export_all",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_ADMIN_DUMP_LOAD.export_ehrs: AMB-33"
+      "citation": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ADMIN_DUMP_LOAD.export_ehrs-export_formats",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_ADMIN_DUMP_LOAD.export_ehrs: AMB-33"
+      "citation": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.export_ehrs-forbidden",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.export_ehrs-format_not_a_member",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.export_ehrs-logical_format_xml",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.export_ehrs-no_location",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.export_ehrs-segment_split_size_non_positive",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.export_ehrs-unauthenticated",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.load_ehrs-container_7z",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.load_ehrs-container_zip",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.load_ehrs-load_archive",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.load_ehrs-logical_format_xml",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_DUMP_LOAD.load_ehrs-no_location",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ADMIN_SERVICE.composition_version_count-all",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_ADMIN_SERVICE.composition_version_count: AMB-33"
+      "citation": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_SERVICE.composition_version_count-interval_not_a_pair",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ADMIN_SERVICE.composition_version_count-time_range",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_ADMIN_SERVICE.composition_version_count: AMB-33"
+      "citation": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ADMIN_SERVICE.contribution_count-all",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_ADMIN_SERVICE.contribution_count: AMB-33"
+      "citation": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_SERVICE.contribution_count-forbidden",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_SERVICE.contribution_count-interval_bound_not_iso",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ADMIN_SERVICE.contribution_count-time_range",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_ADMIN_SERVICE.contribution_count: AMB-33"
+      "citation": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_SERVICE.contribution_count-unauthenticated",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ADMIN_SERVICE.list_contributions-all",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_ADMIN_SERVICE.list_contributions: AMB-33"
+      "citation": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_SERVICE.list_contributions-non_content_service",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_SERVICE.list_contributions-service_not_a_member",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ADMIN_SERVICE.list_contributions-time_range",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_ADMIN_SERVICE.list_contributions: AMB-33"
+      "citation": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ADMIN_SERVICE.physical_ehr_delete-delete_all_cascade",
@@ -219,14 +444,21 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_ADMIN_SERVICE.versioned_composition_count: AMB-33"
+      "citation": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ADMIN_SERVICE.versioned_composition_count-interval_lower_after_upper",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_ADMIN_SERVICE.versioned_composition_count-time_range",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_ADMIN_SERVICE.versioned_composition_count: AMB-33"
+      "citation": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-audit_system_id_declared",
@@ -234,6 +466,46 @@
       "rows_driven": 0,
       "rows_total": 1,
       "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-category_invalid",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-cluster_no_items",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-composer_identifiers_empty",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-context_location_empty",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-datetime_comma_fraction",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-datetime_lexical",
@@ -245,6 +517,14 @@
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-deprecated_template_id",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-duplicate_member",
       "status": "errored",
       "rows_driven": 1,
       "rows_total": 1,
@@ -282,6 +562,22 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.create_composition-feeder_audit_roundtrip",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-foreign_type_in_content",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
       "case": "I_EHR_COMPOSITION.create_composition-invalid_event",
       "status": "errored",
       "rows_driven": 1,
@@ -298,7 +594,103 @@
       "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
     },
     {
+      "case": "I_EHR_COMPOSITION.create_composition-item_node_id_empty",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-item_tree_empty",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-language_invalid",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-largest_published_form",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-link_target_bad_scheme",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-links_empty",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-links_roundtrip",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
       "case": "I_EHR_COMPOSITION.create_composition-null_empty_absent",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-paragraph_no_items",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-participation_function_invalid",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-participation_mode_invalid",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-participation_time_roundtrip",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-performer_relationship_invalid",
       "status": "errored",
       "rows_driven": 1,
       "rows_total": 1,
@@ -339,7 +731,100 @@
       "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
     },
     {
+      "case": "I_EHR_COMPOSITION.create_composition-root_archetype_id_mismatch",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
       "case": "I_EHR_COMPOSITION.create_composition-same_opt_twice",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-setting_invalid",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-setting_invalid_xml",
+      "format": "canonical-xml",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-single_member",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-subject_external_ref",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-terminology_binding_member",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-terminology_binding_non_member",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-terminology_binding_unresolvable_fail_closed",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "the ixit declares no instance sut_pgp — the case's flow addresses it with `on:` and this party runs no such deployment/principal; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-terminology_binding_unresolvable_fail_open",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-territory_invalid",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-unknown_key_nested",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-unknown_key_root",
       "status": "errored",
       "rows_driven": 1,
       "rows_total": 1,
@@ -394,6 +879,13 @@
       "rows_total": 1,
       "failing_step": 0,
       "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.delete_composition-contradictory_lifecycle_header",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_COMPOSITION.delete_composition-etag_names_new_version",
@@ -581,11 +1073,27 @@
       "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
     },
     {
+      "case": "I_EHR_COMPOSITION.get_composition_latest-xml_namespace_v1",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "option xml-namespace-negotiated: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    },
+    {
       "case": "I_EHR_COMPOSITION.get_composition_latest-xml_namespace_v2",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
       "citation": "option xml-namespace-negotiated: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.get_composition_latest-xml_root_namespace",
+      "format": "canonical-xml",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
     },
     {
       "case": "I_EHR_COMPOSITION.get_composition_latest",
@@ -662,6 +1170,13 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.get_versioned_composition-branch_version_uid",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "requires.import provisions over the message-extract extension routes (AMB-34): the ICS claims none of the capabilities those routes' cases gate (EhrExtract, MessageApi), and no openEHR specification governs them, so the received version this case reads cannot exist here — ISO/IEC 9646 test selection"
+    },
+    {
       "case": "I_EHR_COMPOSITION.get_versioned_composition-container_shape",
       "status": "errored",
       "rows_driven": 1,
@@ -676,6 +1191,20 @@
       "rows_total": 1,
       "failing_step": 0,
       "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.get_versioned_composition-imported_version",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "requires.import provisions over the message-extract extension routes (AMB-34): the ICS claims none of the capabilities those routes' cases gate (EhrExtract, MessageApi), and no openEHR specification governs them, so the received version this case reads cannot exist here — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.get_versioned_composition-imported_version_xml_root",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "requires.import provisions over the message-extract extension routes (AMB-34): the ICS claims none of the capabilities those routes' cases gate (EhrExtract, MessageApi), and no openEHR specification governs them, so the received version this case reads cannot exist here — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_COMPOSITION.get_versioned_composition-malformed_uid",
@@ -708,6 +1237,15 @@
     },
     {
       "case": "I_EHR_COMPOSITION.get_versioned_composition-version_unknown",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.get_versioned_composition-version_xml_root",
+      "format": "canonical-xml",
       "status": "errored",
       "rows_driven": 1,
       "rows_total": 1,
@@ -808,7 +1346,39 @@
       "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
     },
     {
+      "case": "I_EHR_COMPOSITION.update_composition-cluster_no_items",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.update_composition-deleted_lifecycle_header",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
       "case": "I_EHR_COMPOSITION.update_composition-event",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.update_composition-feeder_audit_carried",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.update_composition-feeder_audit_removed",
       "status": "errored",
       "rows_driven": 1,
       "rows_total": 1,
@@ -832,6 +1402,14 @@
     },
     {
       "case": "I_EHR_COMPOSITION.update_composition-non_existent",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.update_composition-paragraph_no_items",
       "status": "errored",
       "rows_driven": 1,
       "rows_total": 1,
@@ -870,6 +1448,14 @@
       "rows_driven": 0,
       "rows_total": 1,
       "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_COMPOSITION.update_composition-same_content",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
     },
     {
       "case": "I_EHR_COMPOSITION.update_composition-stale_if_match",
@@ -1383,8 +1969,23 @@
       "rows_driven": 5,
       "rows_total": 5,
       "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`",
+      "reason": "expected `bad_request`, observed `validation_failed`",
       "failed_rows": [
+        {
+          "row": 0,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
+        },
+        {
+          "row": 1,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
+        },
+        {
+          "row": 2,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
+        },
         {
           "row": 3,
           "step": 1,
@@ -2123,6 +2724,11 @@
           "reason": "expected `created`, observed `validation_failed`"
         },
         {
+          "row": 6,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
+        },
+        {
           "row": 8,
           "step": 1,
           "reason": "expected `created`, observed `validation_failed`"
@@ -2151,6 +2757,11 @@
           "row": 5,
           "step": 1,
           "reason": "expected `created`, observed `validation_failed`"
+        },
+        {
+          "row": 6,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
         },
         {
           "row": 8,
@@ -2889,8 +3500,13 @@
       "rows_driven": 6,
       "rows_total": 6,
       "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`",
+      "reason": "expected `bad_request`, observed `validation_failed`",
       "failed_rows": [
+        {
+          "row": 0,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
+        },
         {
           "row": 1,
           "step": 1,
@@ -2900,6 +3516,11 @@
           "row": 2,
           "step": 1,
           "reason": "expected `created`, observed `validation_failed`"
+        },
+        {
+          "row": 3,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
         },
         {
           "row": 5,
@@ -3421,8 +4042,18 @@
       "rows_driven": 4,
       "rows_total": 4,
       "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`",
+      "reason": "expected `bad_request`, observed `validation_failed`",
       "failed_rows": [
+        {
+          "row": 0,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
+        },
+        {
+          "row": 1,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
+        },
         {
           "row": 3,
           "step": 1,
@@ -3436,8 +4067,18 @@
       "rows_driven": 4,
       "rows_total": 4,
       "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`",
+      "reason": "expected `bad_request`, observed `validation_failed`",
       "failed_rows": [
+        {
+          "row": 0,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
+        },
+        {
+          "row": 1,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
+        },
         {
           "row": 2,
           "step": 1,
@@ -3881,8 +4522,28 @@
       "rows_driven": 8,
       "rows_total": 8,
       "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`",
+      "reason": "expected `bad_request`, observed `validation_failed`",
       "failed_rows": [
+        {
+          "row": 0,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
+        },
+        {
+          "row": 1,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
+        },
+        {
+          "row": 2,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
+        },
+        {
+          "row": 3,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
+        },
         {
           "row": 7,
           "step": 1,
@@ -3896,8 +4557,28 @@
       "rows_driven": 8,
       "rows_total": 8,
       "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`",
+      "reason": "expected `bad_request`, observed `validation_failed`",
       "failed_rows": [
+        {
+          "row": 0,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
+        },
+        {
+          "row": 1,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
+        },
+        {
+          "row": 2,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
+        },
+        {
+          "row": 3,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
+        },
         {
           "row": 6,
           "step": 1,
@@ -3916,8 +4597,28 @@
       "rows_driven": 8,
       "rows_total": 8,
       "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`",
+      "reason": "expected `bad_request`, observed `validation_failed`",
       "failed_rows": [
+        {
+          "row": 0,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
+        },
+        {
+          "row": 1,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
+        },
+        {
+          "row": 2,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
+        },
+        {
+          "row": 3,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
+        },
         {
           "row": 5,
           "step": 1,
@@ -3936,8 +4637,28 @@
       "rows_driven": 8,
       "rows_total": 8,
       "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`",
+      "reason": "expected `bad_request`, observed `validation_failed`",
       "failed_rows": [
+        {
+          "row": 0,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
+        },
+        {
+          "row": 1,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
+        },
+        {
+          "row": 2,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
+        },
+        {
+          "row": 3,
+          "step": 1,
+          "reason": "expected `bad_request`, observed `validation_failed`"
+        },
         {
           "row": 4,
           "step": 1,
@@ -3961,7 +4682,174 @@
       ]
     },
     {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-attest_imported_version",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "requires.import provisions over the message-extract extension routes (AMB-34): the ICS claims none of the capabilities those routes' cases gate (EhrExtract, MessageApi), and no openEHR specification governs them, so the received version this case reads cannot exist here — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-attestation_attested_view",
+      "format": "canonical-json",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-attestation_commit_audit",
+      "format": "canonical-json",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-attestation_description_coded",
+      "format": "canonical-json",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-attestation_empty_items",
+      "format": "canonical-json",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-attestation_missing_reason",
+      "format": "canonical-json",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-attestation_only",
+      "format": "canonical-json",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-attestation_pending_then_final",
+      "format": "canonical-json",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-attestation_reason_out_of_group",
+      "format": "canonical-json",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-audit_change_type_omitted",
+      "format": "canonical-json",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-audit_change_type_out_of_group",
+      "format": "canonical-json",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-audit_conformant",
+      "format": "canonical-json",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-audit_description_coded",
+      "format": "canonical-json",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-client_uid_in_use",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-cluster_no_items",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-committer_empty_name",
+      "format": "canonical-json",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-committer_no_identity",
+      "format": "canonical-json",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-committer_related",
+      "format": "canonical-json",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-committer_related_out_of_group",
+      "format": "canonical-json",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-complete_missing_mandatory",
       "status": "errored",
       "rows_driven": 1,
       "rows_total": 1,
@@ -3998,6 +4886,14 @@
           "reason": "expected `created`, observed `not_found`"
         }
       ]
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-deleted_lifecycle_with_data",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-deleted_member_with_data",
@@ -4069,9 +4965,73 @@
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-ehr_status_valid_combinations",
-      "status": "passed",
+      "status": "failed",
       "rows_driven": 12,
-      "rows_total": 12
+      "rows_total": 12,
+      "failing_step": 2,
+      "reason": "header Last-Modified: expected present, got none",
+      "failed_rows": [
+        {
+          "row": 0,
+          "step": 2,
+          "reason": "header Last-Modified: expected present, got none"
+        },
+        {
+          "row": 1,
+          "step": 2,
+          "reason": "header Last-Modified: expected present, got none"
+        },
+        {
+          "row": 2,
+          "step": 2,
+          "reason": "header Last-Modified: expected present, got none"
+        },
+        {
+          "row": 3,
+          "step": 2,
+          "reason": "header Last-Modified: expected present, got none"
+        },
+        {
+          "row": 4,
+          "step": 2,
+          "reason": "header Last-Modified: expected present, got none"
+        },
+        {
+          "row": 5,
+          "step": 2,
+          "reason": "header Last-Modified: expected present, got none"
+        },
+        {
+          "row": 6,
+          "step": 2,
+          "reason": "header Last-Modified: expected present, got none"
+        },
+        {
+          "row": 7,
+          "step": 2,
+          "reason": "header Last-Modified: expected present, got none"
+        },
+        {
+          "row": 8,
+          "step": 2,
+          "reason": "header Last-Modified: expected present, got none"
+        },
+        {
+          "row": 9,
+          "step": 2,
+          "reason": "header Last-Modified: expected present, got none"
+        },
+        {
+          "row": 10,
+          "step": 2,
+          "reason": "header Last-Modified: expected present, got none"
+        },
+        {
+          "row": 11,
+          "step": 2,
+          "reason": "header Last-Modified: expected present, got none"
+        }
+      ]
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-empty",
@@ -4110,9 +5070,48 @@
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-full_ehr_status",
-      "status": "passed",
+      "status": "failed",
       "rows_driven": 1,
-      "rows_total": 1
+      "rows_total": 1,
+      "failing_step": 2,
+      "reason": "header Last-Modified: expected present, got none",
+      "failed_rows": [
+        {
+          "row": 0,
+          "step": 2,
+          "reason": "header Last-Modified: expected present, got none"
+        }
+      ]
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-imported_version_member",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-imported_version_type",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-incomplete_missing_mandatory",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-incomplete_wrong_data",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-invalid_composition",
@@ -4129,10 +5128,99 @@
       "rows_total": 1
     },
     {
-      "case": "I_EHR_CONTRIBUTION.commit_contribution-minimal_ehr_status",
-      "status": "passed",
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-last_modified",
+      "format": "canonical-json",
+      "status": "errored",
       "rows_driven": 1,
-      "rows_total": 1
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-last_modified_minimal",
+      "format": "canonical-json",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-lifecycle_abandon",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-lifecycle_deactivate",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-lifecycle_illegal_transition",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-lifecycle_reactivate",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-lifecycle_restore_from_deleted",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-lifecycle_retrieve",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-member_without_lifecycle_state",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-merge_provenance_member",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-minimal_ehr_status",
+      "status": "failed",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 2,
+      "reason": "header Last-Modified: expected present, got none",
+      "failed_rows": [
+        {
+          "row": 0,
+          "step": 2,
+          "reason": "header Last-Modified: expected present, got none"
+        }
+      ]
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-multiple_valid_event_compositions",
@@ -4198,6 +5286,14 @@
       "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
     },
     {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-paragraph_no_items",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-persistent_composition",
       "status": "errored",
       "rows_driven": 1,
@@ -4247,9 +5343,18 @@
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-update_existing_directory",
-      "status": "passed",
+      "status": "failed",
       "rows_driven": 1,
-      "rows_total": 1
+      "rows_total": 1,
+      "failing_step": 1,
+      "reason": "header Last-Modified: expected present, got none",
+      "failed_rows": [
+        {
+          "row": 0,
+          "step": 1,
+          "reason": "header Last-Modified: expected present, got none"
+        }
+      ]
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-valid_composition",
@@ -4261,9 +5366,18 @@
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-valid_directory",
-      "status": "passed",
+      "status": "failed",
       "rows_driven": 1,
-      "rows_total": 1
+      "rows_total": 1,
+      "failing_step": 1,
+      "reason": "header Last-Modified: expected present, got none",
+      "failed_rows": [
+        {
+          "row": 0,
+          "step": 1,
+          "reason": "header Last-Modified: expected present, got none"
+        }
+      ]
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-valid_invalid_compositions",
@@ -4326,6 +5440,13 @@
       "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
     },
     {
+      "case": "I_EHR_CONTRIBUTION.get_contribution-import_contribution",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "requires.import provisions over the message-extract extension routes (AMB-34): the ICS claims none of the capabilities those routes' cases gate (EhrExtract, MessageApi), and no openEHR specification governs them, so the received version this case reads cannot exist here — ISO/IEC 9646 test selection"
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.get_contribution-malformed_contribution_uid",
       "status": "errored",
       "rows_driven": 1,
@@ -4343,9 +5464,18 @@
     },
     {
       "case": "I_EHR_CONTRIBUTION.get_contribution-version_ref_shape",
-      "status": "passed",
+      "status": "failed",
       "rows_driven": 1,
-      "rows_total": 1
+      "rows_total": 1,
+      "failing_step": 2,
+      "reason": "header Last-Modified: expected present, got none",
+      "failed_rows": [
+        {
+          "row": 0,
+          "step": 2,
+          "reason": "header Last-Modified: expected present, got none"
+        }
+      ]
     },
     {
       "case": "I_EHR_CONTRIBUTION.get_contribution-xml_not_acceptable",
@@ -4427,6 +5557,20 @@
       "citation": "I_EHR_CONTRIBUTION.list_contributions: AMB-22"
     },
     {
+      "case": "I_DEFINITION_ADL14.delete_archetype-existing",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 1,
+      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
+    },
+    {
+      "case": "I_DEFINITION_ADL14.delete_archetype-non_existing",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEFINITION_ADL14.delete_opt-delete_existing",
       "status": "not_applicable",
       "rows_driven": 0,
@@ -4453,6 +5597,18 @@
       "rows_driven": 0,
       "rows_total": 1,
       "citation": "I_DEFINITION_ADL14.delete_opt: AMB-17"
+    },
+    {
+      "case": "I_DEFINITION_ADL14.get_archetype-malformed_archetype_id",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL14.get_archetype-non_existing",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_DEFINITION_ADL14.get_opt-example_detail_levels",
@@ -4528,11 +5684,12 @@
       "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
     },
     {
-      "case": "I_DEFINITION_ADL14.list_archetypes-unrealized",
-      "status": "not_applicable",
-      "rows_driven": 0,
+      "case": "I_DEFINITION_ADL14.list_archetypes-all",
+      "status": "errored",
+      "rows_driven": 1,
       "rows_total": 1,
-      "citation": "I_DEFINITION_ADL14.list_archetypes: AMB-41"
+      "failing_step": 1,
+      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
     },
     {
       "case": "I_DEFINITION_ADL14.list_opts-absent_version_latest_only",
@@ -4551,10 +5708,55 @@
       "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
     },
     {
+      "case": "I_DEFINITION_ADL14.upload_archetype-readonly_forbidden",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "the ixit declares no instance readonly — the case's flow addresses it with `on:` and this party runs no such deployment/principal; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEFINITION_ADL14.upload_archetype-replaces_existing",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 1,
+      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
+    },
+    {
+      "case": "I_DEFINITION_ADL14.upload_archetype-source_round_trip",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 1,
+      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
+    },
+    {
+      "case": "I_DEFINITION_ADL14.upload_archetype-unauthenticated",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL14.upload_archetype-unparseable_source",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 1,
+      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
+    },
+    {
+      "case": "I_DEFINITION_ADL14.upload_archetype-wrong_media",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 1,
+      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
+    },
+    {
       "case": "I_DEFINITION_ADL14.upload_opt-invalid_opt",
       "status": "failed",
-      "rows_driven": 3,
-      "rows_total": 3,
+      "rows_driven": 5,
+      "rows_total": 5,
       "failing_step": 1,
       "reason": "expected `validation_failed`, observed `not_acceptable`",
       "failed_rows": [
@@ -4570,6 +5772,16 @@
         },
         {
           "row": 2,
+          "step": 1,
+          "reason": "expected `validation_failed`, observed `not_acceptable`"
+        },
+        {
+          "row": 3,
+          "step": 1,
+          "reason": "expected `validation_failed`, observed `not_acceptable`"
+        },
+        {
+          "row": 4,
           "step": 1,
           "reason": "expected `validation_failed`, observed `not_acceptable`"
         }
@@ -4710,32 +5922,46 @@
       ]
     },
     {
-      "case": "I_DEFINITION_ADL2.archetypes_count-unrealized",
+      "case": "I_DEFINITION_ADL2.archetypes_count-empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_DEFINITION_ADL2.archetypes_count: AMB-37"
+      "citation": "extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
-      "case": "I_DEFINITION_ADL2.artefacts_count-unrealized",
+      "case": "I_DEFINITION_ADL2.artefacts_count-empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_DEFINITION_ADL2.artefacts_count: AMB-37"
+      "citation": "extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL2.delete_artefact-existing",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_DEFINITION_ADL2.delete_artefact: AMB-37"
+      "citation": "extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEFINITION_ADL2.delete_artefact-malformed_artefact_id",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL2.delete_artefact-non_existing",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_DEFINITION_ADL2.delete_artefact: AMB-37"
+      "citation": "extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEFINITION_ADL2.delete_artefact-readonly_forbidden",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL2.get_artefact-example",
@@ -4807,18 +6033,25 @@
       "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
     },
     {
-      "case": "I_DEFINITION_ADL2.list_archetypes-unrealized",
+      "case": "I_DEFINITION_ADL2.list_archetypes-all",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_DEFINITION_ADL2.list_archetypes: AMB-37"
+      "citation": "extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
-      "case": "I_DEFINITION_ADL2.list_artefacts-unrealized",
+      "case": "I_DEFINITION_ADL2.list_archetypes-unauthenticated",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_DEFINITION_ADL2.list_artefacts: AMB-37"
+      "citation": "extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEFINITION_ADL2.list_artefacts-all",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL2.list_matching_artefacts-filter",
@@ -5250,6 +6483,20 @@
       "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
     },
     {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-agent_contact_addresses_empty",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-agent_identities_empty",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-archetype_node_id_mismatch",
       "status": "not_applicable",
       "rows_driven": 0,
@@ -5293,7 +6540,28 @@
       "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
     },
     {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-cluster_no_items",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-contacts_present_empty",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-group_contact_addresses_empty",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-group_identities_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
@@ -5308,6 +6576,13 @@
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-identity_details_wrong_type",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-inline_relationships_verbatim",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
@@ -5353,7 +6628,63 @@
       "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
     },
     {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-organisation_contact_addresses_empty",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-organisation_identities_empty",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-paragraph_no_items",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-person_contact_addresses_empty",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-person_identities_empty",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-prefer_minimal",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-relationship_source_foreign_container",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-relationship_source_is_the_container",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-relationships_present_empty",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
@@ -5367,6 +6698,28 @@
       "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
     },
     {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-role_contact_addresses_empty",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-role_identities_empty",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-role_root_identity_mismatch",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 1,
+      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
+    },
+    {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-roles_present_empty",
       "status": "not_applicable",
       "rows_driven": 0,
@@ -5375,6 +6728,13 @@
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party-simplified_content_type",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party-version_lifecycle",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
@@ -5392,7 +6752,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option party-xml-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party_relationship-aaaa",
@@ -5403,6 +6763,27 @@
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.create_party_relationship-bbbb",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (party-relationship; AMB-32): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party_relationship-readonly_forbidden",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (party-relationship; AMB-32): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party_relationship-root_identity_mismatch",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (party-relationship; AMB-32): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.create_party_relationship-unauthenticated",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
@@ -5592,6 +6973,34 @@
       "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
     },
     {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-agent_cluster_no_items",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-agent_contact_addresses_empty",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-agent_identities_empty",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-agent_valid",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-bbbb",
       "status": "errored",
       "rows_driven": 1,
@@ -5608,6 +7017,62 @@
       "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
     },
     {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-cluster_no_items",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-contact_addresses_empty",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-contacts_present_empty",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-group_cluster_no_items",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-group_contact_addresses_empty",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-group_identities_empty",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-group_valid",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-identities_empty",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-invalid_body",
       "status": "not_applicable",
       "rows_driven": 0,
@@ -5622,11 +7087,82 @@
       "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
     },
     {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-organisation_cluster_no_items",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-organisation_contact_addresses_empty",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-organisation_identities_empty",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-organisation_valid",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-paragraph_no_items",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-prefer_minimal",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
       "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-role_cluster_no_items",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-role_contact_addresses_empty",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-role_identities_empty",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-role_valid",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-root_identity_mismatch",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 1,
+      "reason": "status 404 maps to no outcome of the operation's binding (inconclusive)"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party-unknown_container",
@@ -5663,7 +7199,7 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "option party-xml-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "citation": "option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party_relationship-aaaa",
@@ -5688,6 +7224,13 @@
     },
     {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party_relationship-missing_if_match",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (party-relationship; AMB-32): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party_relationship-root_identity_mismatch",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
@@ -5744,7 +7287,84 @@
       "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
     },
     {
+      "case": "I_ITS_REST_ITEM_TAGS.agent_tags_delete-key_scoped",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.agent_tags_delete-unknown_key",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.agent_tags_get-unknown_container",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.agent_tags_update-non_array_body",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.agent_tags_update-unknown_container",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
       "case": "I_ITS_REST_ITEM_TAGS.demographic_tags_get-space_wide_listing",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.group_tags_delete-key_scoped",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.group_tags_delete-unknown_key",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.group_tags_get-unknown_container",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.group_tags_update-non_array_body",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.group_tags_update-unknown_container",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.organisation_tags_delete-key_scoped",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
@@ -5759,6 +7379,13 @@
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.organisation_tags_get-wrong_kind_uid",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.organisation_tags_update-non_array_body",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
@@ -5814,6 +7441,13 @@
       "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
     },
     {
+      "case": "I_ITS_REST_ITEM_TAGS.person_tags_update-empty_target_path_absent",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
       "case": "I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity",
       "status": "not_applicable",
       "rows_driven": 0,
@@ -5836,6 +7470,41 @@
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.person_tags_update-version_container_disjoint",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.role_tags_delete-key_scoped",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.role_tags_delete-unknown_key",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.role_tags_get-unknown_container",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.role_tags_update-non_array_body",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.role_tags_update-unknown_container",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
@@ -5890,6 +7559,18 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_DIRECTORY.create_directory-cluster_no_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.create_directory-details_not_item_structure",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_DIRECTORY.create_directory-ehr_not_modifiable",
       "status": "failed",
       "rows_driven": 1,
@@ -5917,12 +7598,48 @@
       "rows_total": 1
     },
     {
-      "case": "I_EHR_DIRECTORY.create_directory-invalid_folder",
-      "status": "errored",
+      "case": "I_EHR_DIRECTORY.create_directory-folder_with_link",
+      "status": "passed",
       "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.create_directory-invalid_folder",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.create_directory-invalid_item_tag_header",
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "status 400 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_DIRECTORY.create_directory-item_tag_wrapper_header",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_DIRECTORY.create_directory-items_by_value",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.create_directory-link_missing_meaning",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.create_directory-paragraph_no_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_EHR_DIRECTORY.create_directory-prefer_minimal",
@@ -5932,13 +7649,62 @@
       "rows_total": 1
     },
     {
-      "case": "I_EHR_DIRECTORY.create_directory-xml",
-      "format": "canonical-xml",
-      "status": "errored",
+      "case": "I_EHR_DIRECTORY.create_directory-root_archetype_id_mismatch",
+      "status": "failed",
       "rows_driven": 1,
       "rows_total": 1,
       "failing_step": 1,
-      "reason": "status 400 maps to no outcome of the operation's binding (inconclusive)"
+      "reason": "expected `validation_failed`, observed `created`",
+      "failed_rows": [
+        {
+          "row": 0,
+          "step": 1,
+          "reason": "expected `validation_failed`, observed `created`"
+        }
+      ]
+    },
+    {
+      "case": "I_EHR_DIRECTORY.create_directory-versioned_id_items",
+      "status": "failed",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 1,
+      "reason": "expected `created`, observed `bad_request`",
+      "failed_rows": [
+        {
+          "row": 0,
+          "step": 1,
+          "reason": "expected `created`, observed `bad_request`"
+        }
+      ]
+    },
+    {
+      "case": "I_EHR_DIRECTORY.create_directory-wide_id_items",
+      "status": "failed",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 1,
+      "reason": "expected `created`, observed `bad_request`",
+      "failed_rows": [
+        {
+          "row": 0,
+          "step": 1,
+          "reason": "expected `created`, observed `bad_request`"
+        }
+      ]
+    },
+    {
+      "case": "I_EHR_DIRECTORY.create_directory-with_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.create_directory-xml",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_DIRECTORY.delete_directory-bad_ehr",
@@ -6028,18 +7794,9 @@
     },
     {
       "case": "I_EHR_DIRECTORY.get_directory-directory_with_structure",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 1,
-      "reason": "equivalent: retrieved content differs from committed (modulo the normative ignore-set); $/folders[0]/folders[0]/folders[0]/uid: surplus in retrieved ({\"_type\":\"HIER_OBJECT_ID\",\"value\":\"26559264-2b9b-4228-8d8f-3…); $/folders[0]/folders[0]/uid: surplus in retrieved ({\"_type\":\"HIER_OBJECT_ID\",\"value\":\"94e62038-3579-4403-8ed8-4…); $/folders[0]/folders[1]/folders[0]/uid: surplus in retrieved ({\"_type\":\"HIER_OBJECT_ID\",\"value\":\"6dba1d60-7285-4b1b-8a9a-7…); $/folders[0]/folders[1]/uid: surplus in retrieved ({\"_type\":\"HIER_OBJECT_ID\",\"value\":\"ccfc20c9-3559-4e6e-a159-2…); $/folders[0]/uid: surplus in retrieved ({\"_type\":\"HIER_OBJECT_ID\",\"value\":\"8d36e321-adf5-4342-9bc4-e…); $/folders[1]/folders[0]/uid: surplus in retrieved ({\"_type\":\"HIER_OBJECT_ID\",\"value\":\"f51c6b66-93f2-4733-a46d-d…) … and 3 more differing path(s)",
-      "failed_rows": [
-        {
-          "row": 0,
-          "step": 1,
-          "reason": "equivalent: retrieved content differs from committed (modulo the normative ignore-set); $/folders[0]/folders[0]/folders[0]/uid: surplus in retrieved ({\"_type\":\"HIER_OBJECT_ID\",\"value\":\"26559264-2b9b-4228-8d8f-3…); $/folders[0]/folders[0]/uid: surplus in retrieved ({\"_type\":\"HIER_OBJECT_ID\",\"value\":\"94e62038-3579-4403-8ed8-4…); $/folders[0]/folders[1]/folders[0]/uid: surplus in retrieved ({\"_type\":\"HIER_OBJECT_ID\",\"value\":\"6dba1d60-7285-4b1b-8a9a-7…); $/folders[0]/folders[1]/uid: surplus in retrieved ({\"_type\":\"HIER_OBJECT_ID\",\"value\":\"ccfc20c9-3559-4e6e-a159-2…); $/folders[0]/uid: surplus in retrieved ({\"_type\":\"HIER_OBJECT_ID\",\"value\":\"8d36e321-adf5-4342-9bc4-e…); $/folders[1]/folders[0]/uid: surplus in retrieved ({\"_type\":\"HIER_OBJECT_ID\",\"value\":\"f51c6b66-93f2-4733-a46d-d…) … and 3 more differing path(s)"
-        }
-      ]
+      "rows_total": 1
     },
     {
       "case": "I_EHR_DIRECTORY.get_directory-ehr_root_directory",
@@ -6049,6 +7806,12 @@
     },
     {
       "case": "I_EHR_DIRECTORY.get_directory-empty_ehr",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.get_directory-multiply_classified_items",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -6334,6 +8097,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_DIRECTORY.update_directory-cluster_no_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_DIRECTORY.update_directory-ehr_with_directory",
       "status": "passed",
       "rows_driven": 1,
@@ -6356,21 +8125,18 @@
     },
     {
       "case": "I_EHR_DIRECTORY.update_directory-invalid_folder",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 2,
-      "reason": "expected `validation_failed`, observed `precondition_missing`",
-      "failed_rows": [
-        {
-          "row": 0,
-          "step": 2,
-          "reason": "expected `validation_failed`, observed `precondition_missing`"
-        }
-      ]
+      "rows_total": 1
     },
     {
       "case": "I_EHR_DIRECTORY.update_directory-missing_if_match",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.update_directory-paragraph_no_items",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -6381,6 +8147,21 @@
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
+    },
+    {
+      "case": "I_EHR_DIRECTORY.update_directory-root_archetype_id_mismatch",
+      "status": "failed",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 2,
+      "reason": "expected `validation_failed`, observed `updated`",
+      "failed_rows": [
+        {
+          "row": 0,
+          "step": 2,
+          "reason": "expected `validation_failed`, observed `updated`"
+        }
+      ]
     },
     {
       "case": "I_EHR_DIRECTORY.update_directory-stale_if_match",
@@ -6399,19 +8180,10 @@
     },
     {
       "case": "I_EHR_DIRECTORY.update_directory-xml",
-      "format": "canonical-xml",
-      "status": "failed",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 2,
-      "reason": "expected `updated`, observed `precondition_missing`",
-      "failed_rows": [
-        {
-          "row": 0,
-          "step": 2,
-          "reason": "expected `updated`, observed `precondition_missing`"
-        }
-      ]
+      "citation": "option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_COMPOSITION.create_composition-bulk_load_depth",
@@ -6474,6 +8246,13 @@
       ]
     },
     {
+      "case": "I_EHR_SERVICE.create_ehr-clone_system_id",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "the ixit declares no system_id — the case reads it as ${ixit:…} and no released operation discloses the value; ISO/IEC 9646 test selection"
+    },
+    {
       "case": "I_EHR_SERVICE.create_ehr-committal_headers",
       "status": "failed",
       "rows_driven": 1,
@@ -6496,11 +8275,6 @@
       "failing_step": 1,
       "reason": "expected `validation_failed`, observed `created`",
       "failed_rows": [
-        {
-          "row": 3,
-          "step": 1,
-          "reason": "expected `validation_failed`, observed `created`"
-        },
         {
           "row": 4,
           "step": 1,
@@ -6569,12 +8343,10 @@
     },
     {
       "case": "I_EHR_SERVICE.create_ehr-xml",
-      "format": "canonical-xml",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "status 400 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "option ehr-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_SERVICE.get_ehr-existing_ehr_by_ehr_id",
@@ -6706,11 +8478,18 @@
     },
     {
       "case": "I_EHR_STATUS.clear_ehr_modifiable-invalid_body",
-      "status": "errored",
+      "status": "failed",
       "rows_driven": 5,
       "rows_total": 5,
       "failing_step": 2,
-      "reason": "status 400 maps to no outcome of the operation's binding (inconclusive)"
+      "reason": "expected `validation_failed`, observed `bad_request`",
+      "failed_rows": [
+        {
+          "row": 3,
+          "step": 2,
+          "reason": "expected `validation_failed`, observed `bad_request`"
+        }
+      ]
     },
     {
       "case": "I_EHR_STATUS.clear_ehr_modifiable-missing_if_match",
@@ -6735,12 +8514,10 @@
     },
     {
       "case": "I_EHR_STATUS.clear_ehr_modifiable-xml_body",
-      "format": "canonical-xml",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 2,
-      "reason": "status 400 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_STATUS.clear_ehr_queryable-bad_ehr",
@@ -6774,11 +8551,18 @@
     },
     {
       "case": "I_EHR_STATUS.clear_ehr_queryable-invalid_body",
-      "status": "errored",
+      "status": "failed",
       "rows_driven": 5,
       "rows_total": 5,
       "failing_step": 2,
-      "reason": "status 400 maps to no outcome of the operation's binding (inconclusive)"
+      "reason": "expected `validation_failed`, observed `bad_request`",
+      "failed_rows": [
+        {
+          "row": 3,
+          "step": 2,
+          "reason": "expected `validation_failed`, observed `bad_request`"
+        }
+      ]
     },
     {
       "case": "I_EHR_STATUS.clear_ehr_queryable-missing_if_match",
@@ -6803,12 +8587,10 @@
     },
     {
       "case": "I_EHR_STATUS.clear_ehr_queryable-xml_body",
-      "format": "canonical-xml",
-      "status": "errored",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 2,
-      "reason": "status 400 maps to no outcome of the operation's binding (inconclusive)"
+      "citation": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_STATUS.get_ehr_status-at_time_before_first_version",
@@ -6978,6 +8760,13 @@
       ]
     },
     {
+      "case": "I_EHR_STATUS.get_versioned_ehr_status-imported_version",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "requires.import provisions over the message-extract extension routes (AMB-34): the ICS claims none of the capabilities those routes' cases gate (EhrExtract, MessageApi), and no openEHR specification governs them, so the received version this case reads cannot exist here — ISO/IEC 9646 test selection"
+    },
+    {
       "case": "I_EHR_STATUS.get_versioned_ehr_status-version_of_other_ehr",
       "status": "passed",
       "rows_driven": 1,
@@ -7031,11 +8820,18 @@
     },
     {
       "case": "I_EHR_STATUS.set_ehr_modifiable-invalid_body",
-      "status": "errored",
+      "status": "failed",
       "rows_driven": 5,
       "rows_total": 5,
       "failing_step": 2,
-      "reason": "status 400 maps to no outcome of the operation's binding (inconclusive)"
+      "reason": "expected `validation_failed`, observed `bad_request`",
+      "failed_rows": [
+        {
+          "row": 3,
+          "step": 2,
+          "reason": "expected `validation_failed`, observed `bad_request`"
+        }
+      ]
     },
     {
       "case": "I_EHR_STATUS.set_ehr_modifiable-missing_if_match",
@@ -7069,19 +8865,10 @@
     },
     {
       "case": "I_EHR_STATUS.set_ehr_modifiable-xml_body",
-      "format": "canonical-xml",
-      "status": "failed",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 2,
-      "reason": "expected `updated`, observed `precondition_missing`",
-      "failed_rows": [
-        {
-          "row": 0,
-          "step": 2,
-          "reason": "expected `updated`, observed `precondition_missing`"
-        }
-      ]
+      "citation": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_STATUS.set_ehr_queryable-audit_change_type",
@@ -7107,6 +8894,12 @@
       ]
     },
     {
+      "case": "I_EHR_STATUS.set_ehr_queryable-cluster_no_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_STATUS.set_ehr_queryable-existing_ehr",
       "status": "failed",
       "rows_driven": 1,
@@ -7123,11 +8916,18 @@
     },
     {
       "case": "I_EHR_STATUS.set_ehr_queryable-invalid_body",
-      "status": "errored",
+      "status": "failed",
       "rows_driven": 5,
       "rows_total": 5,
       "failing_step": 2,
-      "reason": "status 400 maps to no outcome of the operation's binding (inconclusive)"
+      "reason": "expected `validation_failed`, observed `bad_request`",
+      "failed_rows": [
+        {
+          "row": 3,
+          "step": 2,
+          "reason": "expected `validation_failed`, observed `bad_request`"
+        }
+      ]
     },
     {
       "case": "I_EHR_STATUS.set_ehr_queryable-missing_if_match",
@@ -7143,6 +8943,12 @@
           "reason": "expected `updated`, observed `precondition_missing`"
         }
       ]
+    },
+    {
+      "case": "I_EHR_STATUS.set_ehr_queryable-paragraph_no_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_EHR_STATUS.set_ehr_queryable-prefer_minimal",
@@ -7161,6 +8967,21 @@
       "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
     },
     {
+      "case": "I_EHR_STATUS.set_ehr_queryable-rm_version_empty",
+      "status": "failed",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 2,
+      "reason": "expected `validation_failed`, observed `bad_request`",
+      "failed_rows": [
+        {
+          "row": 0,
+          "step": 2,
+          "reason": "expected `validation_failed`, observed `bad_request`"
+        }
+      ]
+    },
+    {
       "case": "I_EHR_STATUS.set_ehr_queryable-stale_if_match",
       "status": "failed",
       "rows_driven": 1,
@@ -7177,19 +8998,10 @@
     },
     {
       "case": "I_EHR_STATUS.set_ehr_queryable-xml_body",
-      "format": "canonical-xml",
-      "status": "failed",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 2,
-      "reason": "expected `updated`, observed `precondition_missing`",
-      "failed_rows": [
-        {
-          "row": 0,
-          "step": 2,
-          "reason": "expected `updated`, observed `precondition_missing`"
-        }
-      ]
+      "citation": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_STATUS.update_other_details-round_trip",
@@ -7201,6 +9013,13 @@
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_delete-key_scoped",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.composition_tags_delete-second_delete_not_found",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
@@ -7235,7 +9054,42 @@
       "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
     },
     {
+      "case": "I_ITS_REST_ITEM_TAGS.composition_tags_get-supersession_does_not_move_tags",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_get-version_target_shape",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.composition_tags_get-xml_not_acceptable",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-duplicate_identity_last_wins",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-empty_target_path_absent",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-empty_value_invariant",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
@@ -7249,7 +9103,21 @@
       "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
     },
     {
+      "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-no_reversioning",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-non_array_body",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-prefer_identifier",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
@@ -7264,6 +9132,20 @@
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-version_container_disjoint",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-wrong_media",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.ehr_status_tags_delete-key_scoped",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
@@ -7285,6 +9167,13 @@
     },
     {
       "case": "I_ITS_REST_ITEM_TAGS.ehr_status_tags_update-key_target_path_identity",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_ITS_REST_ITEM_TAGS.ehr_status_tags_update-non_array_body",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
@@ -7339,98 +9228,374 @@
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts: AMB-34"
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
-      "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-empty_result",
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-criteria_foreign_formalism",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts: AMB-34"
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-criteria_selects_primary_set",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-empty_manifest",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-latest_across_lineages",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-readonly_allowed",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-spec_named_extract_type",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-term_coded_extract_type",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-unknown_ehr",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-unknown_extract_type",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-unresolvable_entity",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_EXTRACT_SERVICE.export_ehrs-export_existing",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_EHR_EXTRACT_SERVICE.export_ehrs: AMB-34"
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_EXTRACT_SERVICE.export_ehrs-export_unknown",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_EHR_EXTRACT_SERVICE.export_ehrs: AMB-34"
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehrs-malformed_ehr_id",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehrs-reexport_of_an_import",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.export_ehrs-unauthenticated",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_EXTRACT_SERVICE.import_ehr-duplicate",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_EHR_EXTRACT_SERVICE.import_ehr: AMB-34"
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.import_ehr-local_chronology",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.import_ehr-malformed",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_EXTRACT_SERVICE.import_ehr-new",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_EHR_EXTRACT_SERVICE.import_ehr: AMB-34"
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_EXTRACT_SERVICE.import_ehr-with_id",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_EHR_EXTRACT_SERVICE.import_ehr: AMB-34"
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.import_ehr-wrong_media",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-append_later_trunk_version",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-cluster_no_items",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-into_branched_lineage",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-into_existing",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_EHR_EXTRACT_SERVICE.import_ehr_extract: AMB-34"
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-invalid",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_EHR_EXTRACT_SERVICE.import_ehr_extract: AMB-34"
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-manifest_no_entities",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-paragraph_no_items",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-readonly_forbidden",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-second_status",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-unknown_ehr",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_EHR_EXTRACT_SERVICE.import_ehr_extract: AMB-34"
+      "citation": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_TDD_SERVICE.import_tdd-invalid",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_TDD_SERVICE.import_tdd: AMB-34"
+      "citation": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_TDD_SERVICE.import_tdd-nonconforming_body",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_TDD_SERVICE.import_tdd-readonly_forbidden",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_TDD_SERVICE.import_tdd-unauthenticated",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_TDD_SERVICE.import_tdd-unknown_ehr",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_TDD_SERVICE.import_tdd-unprovisioned_template",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_TDD_SERVICE.import_tdd-valid",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_TDD_SERVICE.import_tdd: AMB-34"
+      "citation": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_TDD_SERVICE.import_tdd-wrong_media",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_TDD_SERVICE.import_tdds-atomicity_state_proof",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_TDD_SERVICE.import_tdds-bulk_invalid",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_TDD_SERVICE.import_tdds: AMB-34"
+      "citation": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_TDD_SERVICE.import_tdds-bulk_valid",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
-      "citation": "I_TDD_SERVICE.import_tdds: AMB-34"
+      "citation": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_TDD_SERVICE.import_tdds-empty_batch",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_TDD_SERVICE.import_tdds-empty_batch_unknown_ehr",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_TDD_SERVICE.import_tdds-nonconforming_body",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_TDD_SERVICE.import_tdds-unknown_ehr",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_TDD_SERVICE.import_tdds-wrong_media",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-aggregates",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-aggregates_empty_set",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-all_versions",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-archetype_subsumption",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-contains_and_or",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions",
@@ -7440,6 +9605,14 @@
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-distinct",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-distinct_limit_order",
       "status": "errored",
       "rows_driven": 1,
       "rows_total": 1,
@@ -7514,6 +9687,14 @@
       "rows_total": 2
     },
     {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-exists_predicate",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-fetch_over_limit",
       "status": "errored",
       "rows_driven": 1,
@@ -7528,6 +9709,14 @@
       "rows_total": 1
     },
     {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-like_wildcards",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db",
       "status": "errored",
       "rows_driven": 1,
@@ -7540,6 +9729,30 @@
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-node_name_term_code",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-node_predicate_paths",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-not_contains",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-order_by_limit",
@@ -7580,6 +9793,22 @@
       "rows_total": 1
     },
     {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-scalar_functions",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-select_literals",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_expand_matches",
       "status": "errored",
       "rows_driven": 1,
@@ -7588,7 +9817,48 @@
       "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
     },
     {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_routed_expand_filters",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_routed_validate_member",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_routed_validate_non_member",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_subsumes",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_two_servers",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection"
+    },
+    {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_unsupported_forms",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-top_backward_rejected",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -7615,6 +9885,14 @@
           "reason": "expected `not_found`, observed `ok`"
         }
       ]
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-version_metadata_predicate",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-where_magnitude",
@@ -7768,6 +10046,15 @@
       "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
     },
     {
+      "case": "SIG-VERSION-at_committal_attestation_signed",
+      "format": "canonical-json",
+      "status": "errored",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 0,
+      "reason": "provisioning upload_opt refused: status 406 — the case's required ground was never established; the behaviour under test was not driven (body: {\"error\":\"Not Acceptable\",\"message\":\"No acceptable representation\"})"
+    },
+    {
       "case": "SIG-VERSION-client_supplied_verbatim-pgp",
       "status": "not_applicable",
       "rows_driven": 0,
@@ -7906,6 +10193,13 @@
       "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
     },
     {
+      "case": "SF-CTX-participation_missing_function",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
       "case": "SF-CTX-participations_forms",
       "status": "not_applicable",
       "rows_driven": 0,
@@ -7935,6 +10229,20 @@
     },
     {
       "case": "SF-DEPRECATED-media_unsupported",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "option sf-deprecated-types-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "SF-DEPRECATED-structured_accept_unsupported",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "option sf-deprecated-types-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "SF-DEPRECATED-structured_media_unsupported",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
@@ -7984,6 +10292,13 @@
     },
     {
       "case": "SF-FLAT-commit_roundtrip_ctx_defaults",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "SF-FLAT-malformed_path",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
@@ -8053,6 +10368,20 @@
       "citation": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
     },
     {
+      "case": "SF-LEGACY-nc_flat_accept_unsupported",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "option legacy-alt-formats-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "SF-LEGACY-nc_flat_media_supported",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "option legacy-alt-formats-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    },
+    {
       "case": "SF-LEGACY-nc_flat_media_unsupported",
       "status": "not_applicable",
       "rows_driven": 0,
@@ -8061,6 +10390,13 @@
     },
     {
       "case": "SF-LEGACY-tds2_accept_unsupported",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "option legacy-alt-formats-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    },
+    {
+      "case": "SF-LEGACY-tds2_media_unsupported",
       "status": "not_applicable",
       "rows_driven": 0,
       "rows_total": 1,
