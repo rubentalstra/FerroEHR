@@ -23,8 +23,9 @@ Offload is a commit-path transformation applied to `DV_MULTIMEDIA` nodes
    no-op if the key already exists.
 3. The node is rewritten in place: its inline `data` is removed and replaced
    with a `uri` of the form `s3://<bucket>/<hash>`, plus an `integrity_check`
-   (the SHA-256 digest), an `integrity_check_algorithm` code phrase (`SHA-256`),
-   and the original `size`.
+   (the same SHA-256 digest — carried as RM `List<Byte>`, so canonical JSON
+   renders it **base64**, while the `uri` spells it lowercase hex), an
+   `integrity_check_algorithm` code phrase (`SHA-256`), and the original `size`.
 
 Uploads happen before anything is persisted, so a failed upload aborts the
 commit — a record is never half-stored.
@@ -45,6 +46,28 @@ treated as its own; foreign `https://` or other-bucket references are left
 alone), **verifies the SHA-256 hash of the fetched bytes against the key**, and
 only then re-inlines the `data`. A hash mismatch is a hard error, so a
 corrupted or tampered blob is never silently served.
+
+If the object store is unreachable, both halves of the path fail loudly rather
+than losing content: a commit that needs to offload is refused `500` and
+nothing is written (the version count is unchanged), and an expanded read of an
+already-offloaded record is refused `500`. A read **without** `expand_multimedia`
+still answers `200` — it never touches the store.
+
+## Turning it back off
+
+Switching `enabled` back to `false` changes two things, and one of them is a
+trap worth knowing before you flip it:
+
+- New commits keep large `DV_MULTIMEDIA` **inline**, byte-identical, with no
+  dependency on the object store. Nothing else about the request or the record
+  changes.
+- Records that were **already** offloaded keep their `s3://` reference, and
+  `?expand_multimedia=true` on them is **ignored**: the read answers `200` with
+  the compact reference and no error. The bytes are still in the bucket, but the
+  API will not return them until the integration is switched back on.
+
+So disable the integration only after you have decided what happens to the blobs
+already in the bucket.
 
 ## Enabling it
 
@@ -67,6 +90,16 @@ If both the access key and secret are unset, the client runs unsigned
 (anonymous) — the mode a local development SeaweedFS accepts with no
 credentials. Set both to use signed requests against a real store.
 
+> [!WARNING]
+> **The bucket must already exist.** The server never creates it, and a store
+> that is reachable but has no such bucket is not a distinguishable condition on
+> the wire: S3 answers a `PUT` into a missing bucket with `403 AccessDenied`, so
+> every multimedia commit fails `500` and the log says `Access Denied` — which
+> reads like a credentials problem and is not. Create the bucket before you
+> enable the integration (the SeaweedFS recipe below shows the one-liner), and
+> leave `endpoint` either unset or a full absolute URL — an **empty** endpoint
+> string is accepted at startup and then fails the request.
+
 > [!NOTE]
 > Externalization is also a **cargo feature** (`multimedia`), on in the
 > published images and any default build. A slim `--no-default-features` build
@@ -86,7 +119,18 @@ credentials. Set both to use signed requests against a real store.
 
 Any S3-compatible store works (AWS S3, MinIO, SeaweedFS). SeaweedFS is a light
 option for development and testing — its S3 gateway needs no credentials.
-Point the server at the gateway and allow plain HTTP for local use:
+
+**Step 1 — create the bucket.** The gateway starts with no buckets at all, and
+nothing creates one for you. Against an unauthenticated development gateway a
+bare `PUT` on the bucket path is enough:
+
+```bash
+curl -X PUT http://127.0.0.1:8333/openehr-multimedia
+curl -s http://127.0.0.1:8333/            # the bucket now appears in ListAllMyBuckets
+```
+
+**Step 2 — point the server at the gateway** and allow plain HTTP for local
+use. For a server you start yourself (from source, or a binary on the host):
 
 ```bash
 export FERROEHR__MULTIMEDIA__ENABLED=true
@@ -95,8 +139,36 @@ export FERROEHR__MULTIMEDIA__BUCKET=openehr-multimedia
 export FERROEHR__MULTIMEDIA__ALLOW_HTTP=true
 ```
 
-With the feature enabled and the bucket reachable, large `DV_MULTIMEDIA` values
+For the [Compose stack](../installation/compose.md), exporting these in your
+shell does **nothing** — Compose passes only the variables the file names, and
+the multimedia keys are not among them. Add them to the `ferroehr` service's
+`environment:` block instead, using the in-network hostname:
+
+```yaml
+  ferroehr:
+    environment:
+      FERROEHR__MULTIMEDIA__ENABLED: "true"
+      FERROEHR__MULTIMEDIA__ENDPOINT: http://seaweedfs:8333
+      FERROEHR__MULTIMEDIA__BUCKET: openehr-multimedia
+      FERROEHR__MULTIMEDIA__ALLOW_HTTP: "true"
+```
+
+**Step 3 — check what the server actually took.** `/management/env` reports the
+effective configuration, which is the quickest way to catch a variable that
+never arrived:
+
+```bash
+curl -s -u ferroehr:ferroehr http://localhost:8080/management/env | jq .multimedia
+```
+
+With the feature enabled and the bucket present, large `DV_MULTIMEDIA` values
 committed through the normal composition APIs (see
 [Using the API](../using-the-api/index.md)) are offloaded automatically; nothing
 about the request or the stored record changes except the size of what lives in
 the database.
+
+> [!NOTE]
+> Base64 inflates a blob by about a third on the wire, and the whole request
+> body is still subject to `[server.limits] body_bytes` (16 MiB by default) —
+> a composition that exceeds it is refused `413` before offload is ever
+> considered. See [`[server.limits]`](../installation/configuration.md).

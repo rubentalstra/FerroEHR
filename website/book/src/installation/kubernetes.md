@@ -187,17 +187,48 @@ a superuser:
 | `ferroehr_app` | day-to-day reads and writes — **the running pod connects as this** |
 | `ferroehr_reader` | read-only, for replicas and reporting |
 
-The binary calls its migrations on boot, so you choose one of two flows:
+Migrations are DDL, so whoever applies them can rewrite the schema. Two flows,
+and `config.db.migrate` is where you choose:
 
-- **(a) Grant the runtime DSN the migrator role** — simplest for single-tenant
-  or small deployments; the pod migrates itself at startup.
-- **(b) Run migrations out of band** with a migrator DSN (a CI step or a
-  one-shot `Job`), then start the pods with the lower-privileged `ferroehr_app`
-  DSN — recommended for least-privilege production. Gate the Deployment rollout
-  on the migration step so two server versions never race the schema.
+- **(a) The pod migrates itself** (`config.db.migrate: apply`, the default).
+  Simplest for single-tenant or small deployments — and the runtime DSN must
+  then be a member of `ferroehr_migrator`, so the serving process holds DDL
+  rights on the clinical schema for its whole life.
+- **(b) A separate migration step** (`config.db.migrate: verify`) under a
+  migrator DSN, with the pods on a DSN that is `ferroehr_app` **only**. The
+  server issues no DDL at all and refuses to boot against a database that has
+  not been migrated to its build, so the two versions cannot race the schema.
+  Recommended for production.
 
-The chart does not ship a migration Job; `migrations.runByMigratorRole` is an
-informational marker surfaced in the install NOTES.
+Set `migrations.job.enabled` and the chart runs (b) for you as a
+`pre-install,pre-upgrade` hook `Job`. Helm creates it before the Deployment and
+waits for it, so a failed migration fails the release rather than rolling pods
+against a schema that was never applied. The Job authenticates from its **own**
+Secret — deliberately a different credential from `database.existingSecret` —
+and rendering is refused if you enable it without one:
+
+```yaml
+database:
+  existingSecret: ferroehr-db            # postgres://ferroehr_app:…
+migrations:
+  job:
+    enabled: true
+    existingSecret: ferroehr-db-migrator # postgres://ferroehr_migrator:…
+config:
+  db:
+    migrate: verify
+```
+
+Give the migrator DSN a short `lock_timeout`
+(`?options=-c%20lock_timeout%3D5s`) so DDL blocked behind live traffic fails
+fast instead of queueing. `migrations.runByMigratorRole` remains an
+informational marker surfaced in the install NOTES, which also tell you when
+the Job is enabled but `config.db.migrate` is still `apply` — a combination
+that buys nothing, because the server would migrate itself anyway.
+
+You can check the posture from outside the cluster at any time: `ferroehr db
+verify` exits 0 only when the database carries exactly that build's migrations,
+and issues no DDL doing it.
 
 ## Secrets and mounted config
 
@@ -440,3 +471,32 @@ gate — the helm-version pin, the secret-leak gate, lint, render, the
 security-field assertions and the golden-render diff. It is the same gate CI runs
 on every change to the chart, so a local run and a pull request agree by
 construction.
+
+### Check your values before you deploy them
+
+A render that lints is not a deployment that boots. `validate.sh` never runs the
+server, so it cannot see a configuration the server refuses — a missing
+authentication mechanism, an HMAC secret under the 32-byte floor, a password
+hash that is not a real Argon2id PHC string, SMART enabled without its public
+base URL. Every one of those renders perfectly and crash-loops the pod. The
+script now prints exactly which properties it does not check, so a green run is
+not mistaken for a working deployment.
+
+The check that closes that gap runs the image against your rendered
+configuration:
+
+```shell
+FERROEHR_IMAGE=ghcr.io/rubentalstra/ferroehr:3.17.3 \
+  deploy/helm/ci/boot-check.sh my-values.yaml
+```
+
+It renders the chart, mounts the ConfigMap and the Secret exactly as the
+Deployment does — with their real values, not placeholders — replays the
+declared environment, and runs `ferroehr config check` inside the image. Point
+`FERROEHR_IMAGE` at the tag you intend to deploy: the answer is specific to that
+image, since a key your values carry may be newer than the server that has to
+read it.
+
+It validates configuration only; it opens no socket, so it cannot tell you the
+issuer resolves, the broker is reachable or the database accepts the DSN. CI
+runs the same script over every values overlay the chart ships.

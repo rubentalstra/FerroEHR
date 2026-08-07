@@ -552,9 +552,16 @@ the RESTful-ATNA **ITI-81** FHIR search, and optionally forwarded to an
 external ARR over syslog and/or the ITI-20 FHIR feed. Node authentication
 (ITI-19) is available as native mutual TLS on the listener.
 
-The full chapter — record content, sinks, the ITI-81 search, fail-mode
-semantics, and mTLS — is **[Audit trail (IHE ATNA)](audit.md)**; every
-`[audit]` key is in the
+Stored records are **tamper-evident**: each is linked into a SHA-256 hash
+chain maintained by the database, the table refuses every rewrite path except
+the forwarding stamp, and `SELECT * FROM audit.verify_audit_chain()` names any
+record that was modified or removed. That is detection, not prevention — the
+controls that make it hard to forge wholesale are the least-privilege database
+role and the off-box sinks.
+
+The full chapter — record content, sinks, tamper evidence, the ITI-81 search,
+fail-mode semantics, and mTLS — is **[Audit trail (IHE ATNA)](audit.md)**;
+every `[audit]` key is in the
 [configuration reference](installation/configuration.md#audit).
 
 > [!NOTE]
