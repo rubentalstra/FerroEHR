@@ -565,6 +565,17 @@ spec:
           emptyDir: {}
         - name: config
           projected:
+            # Same 0440 as the secrets volume, for the same reason: this volume
+            # is not only ferroehr.toml. Every `config.files` entry lands here,
+            # and that key's documented use includes the PGP signing PRIVATE key
+            # (signing.key_path), mutual-TLS PEMs and a JWKS blob; when the
+            # configuration holds a secret the chart cannot route out of it,
+            # ferroehr.toml itself arrives from a Secret too. Without a mode the
+            # projection defaults to 0644 — world-readable inside the container.
+            # Owner is root, group is fsGroup, so the group bit is what the
+            # non-root process reads through
+            # (https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod).
+            defaultMode: 0440
             sources:
               - configMap:
                   name: ferroehr

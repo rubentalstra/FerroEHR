@@ -68,6 +68,12 @@ as the unprivileged app role.
 {{ end }}
 Migrations are append-only DDL and MUST be applied by the `ferroehr_migrator`
 role, NOT the runtime app role.
+{{ if not .Values.migrations.runByMigratorRole -}}
+  ⚠  migrations.runByMigratorRole is false. That is your own marker that this
+     deployment does NOT separate the migrator and app roles — the chart cannot
+     verify it, and nothing above changes because of it. It is recorded here so
+     the posture is visible at install time rather than assumed.
+{{ end -}}
 {{ if .Values.migrations.job.enabled -}}
   Migration step: pre-install/pre-upgrade Job, DSN from Secret
   "{{ .Values.migrations.job.existingSecret }}" key "{{ .Values.migrations.job.existingSecretKey }}"  [OK]
