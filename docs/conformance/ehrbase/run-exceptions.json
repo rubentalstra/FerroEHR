@@ -17,84 +17,294 @@
     "case": "I_ADMIN_ARCHIVE.archive_ehrs-archive_selected",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_ADMIN_ARCHIVE.archive_ehrs: AMB-33"
+      "detail": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_ARCHIVE.archive_ehrs-archive_twice",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_ADMIN_ARCHIVE.archive_ehrs-archive_unknown",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_ADMIN_ARCHIVE.archive_ehrs: AMB-33"
+      "detail": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_ARCHIVE.archive_ehrs-empty_list",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_ARCHIVE.archive_ehrs-forbidden",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_ARCHIVE.archive_ehrs-malformed_id",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_ARCHIVE.archive_ehrs-unauthenticated",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_ADMIN_ARCHIVE.archive_parties-archive_selected",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_ADMIN_ARCHIVE.archive_parties: AMB-33"
+      "detail": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_ARCHIVE.archive_parties-archive_twice",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_ADMIN_ARCHIVE.archive_parties-archive_unknown",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_ADMIN_ARCHIVE.archive_parties: AMB-33"
+      "detail": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_ARCHIVE.archive_parties-empty_list",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_ARCHIVE.archive_parties-forbidden",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_ARCHIVE.archive_parties-malformed_id",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_ARCHIVE.archive_parties-relationship_id_refused",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_ARCHIVE.archive_parties-unauthenticated",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_DUMP_LOAD.export_ehrs-compression_7z",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_DUMP_LOAD.export_ehrs-encoding_unrepresentable",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_ADMIN_DUMP_LOAD.export_ehrs-export_all",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_ADMIN_DUMP_LOAD.export_ehrs: AMB-33"
+      "detail": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_ADMIN_DUMP_LOAD.export_ehrs-export_formats",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_ADMIN_DUMP_LOAD.export_ehrs: AMB-33"
+      "detail": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_DUMP_LOAD.export_ehrs-forbidden",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_DUMP_LOAD.export_ehrs-format_not_a_member",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_DUMP_LOAD.export_ehrs-logical_format_xml",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_DUMP_LOAD.export_ehrs-no_location",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_DUMP_LOAD.export_ehrs-segment_split_size_non_positive",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_DUMP_LOAD.export_ehrs-unauthenticated",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_DUMP_LOAD.load_ehrs-container_7z",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_DUMP_LOAD.load_ehrs-container_zip",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_DUMP_LOAD.load_ehrs-load_archive",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_DUMP_LOAD.load_ehrs-logical_format_xml",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_DUMP_LOAD.load_ehrs-no_location",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_ADMIN_SERVICE.composition_version_count-all",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_ADMIN_SERVICE.composition_version_count: AMB-33"
+      "detail": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_SERVICE.composition_version_count-interval_not_a_pair",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_ADMIN_SERVICE.composition_version_count-time_range",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_ADMIN_SERVICE.composition_version_count: AMB-33"
+      "detail": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_ADMIN_SERVICE.contribution_count-all",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_ADMIN_SERVICE.contribution_count: AMB-33"
+      "detail": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_SERVICE.contribution_count-forbidden",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_SERVICE.contribution_count-interval_bound_not_iso",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_ADMIN_SERVICE.contribution_count-time_range",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_ADMIN_SERVICE.contribution_count: AMB-33"
+      "detail": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_SERVICE.contribution_count-unauthenticated",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_ADMIN_SERVICE.list_contributions-all",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_ADMIN_SERVICE.list_contributions: AMB-33"
+      "detail": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_SERVICE.list_contributions-non_content_service",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_SERVICE.list_contributions-service_not_a_member",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_ADMIN_SERVICE.list_contributions-time_range",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_ADMIN_SERVICE.list_contributions: AMB-33"
+      "detail": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
@@ -171,14 +381,21 @@
     "case": "I_ADMIN_SERVICE.versioned_composition_count-all",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_ADMIN_SERVICE.versioned_composition_count: AMB-33"
+      "detail": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ADMIN_SERVICE.versioned_composition_count-interval_lower_after_upper",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_ADMIN_SERVICE.versioned_composition_count-time_range",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_ADMIN_SERVICE.versioned_composition_count: AMB-33"
+      "detail": "extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
@@ -190,6 +407,41 @@
   },
   {
     "case": "I_EHR_COMPOSITION.create_composition-return_identifier",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_COMPOSITION.create_composition-terminology_binding_member",
+    "exception": {
+      "kind": "guarded",
+      "detail": "instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_COMPOSITION.create_composition-terminology_binding_non_member",
+    "exception": {
+      "kind": "guarded",
+      "detail": "instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_COMPOSITION.create_composition-terminology_binding_unresolvable_fail_closed",
+    "exception": {
+      "kind": "guarded",
+      "detail": "the ixit declares no instance sut_pgp — the case's flow addresses it with `on:` and this party runs no such deployment/principal; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_COMPOSITION.create_composition-terminology_binding_unresolvable_fail_open",
+    "exception": {
+      "kind": "guarded",
+      "detail": "instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_COMPOSITION.delete_composition-contradictory_lifecycle_header",
     "exception": {
       "kind": "unrealized",
       "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
@@ -210,10 +462,38 @@
     }
   },
   {
+    "case": "I_EHR_COMPOSITION.get_composition_latest-xml_namespace_v1",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option xml-namespace-negotiated: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "I_EHR_COMPOSITION.get_composition_latest-xml_namespace_v2",
     "exception": {
       "kind": "unrealized",
       "detail": "option xml-namespace-negotiated: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_COMPOSITION.get_versioned_composition-branch_version_uid",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "requires.import provisions over the message-extract extension routes (AMB-34): the ICS claims none of the capabilities those routes' cases gate (EhrExtract, MessageApi), and no openEHR specification governs them, so the received version this case reads cannot exist here — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_COMPOSITION.get_versioned_composition-imported_version",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "requires.import provisions over the message-extract extension routes (AMB-34): the ICS claims none of the capabilities those routes' cases gate (EhrExtract, MessageApi), and no openEHR specification governs them, so the received version this case reads cannot exist here — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_COMPOSITION.get_versioned_composition-imported_version_xml_root",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "requires.import provisions over the message-extract extension routes (AMB-34): the ICS claims none of the capabilities those routes' cases gate (EhrExtract, MessageApi), and no openEHR specification governs them, so the received version this case reads cannot exist here — ISO/IEC 9646 test selection"
     }
   },
   {
@@ -245,10 +525,52 @@
     }
   },
   {
+    "case": "I_EHR_CONTRIBUTION.commit_contribution-attest_imported_version",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "requires.import provisions over the message-extract extension routes (AMB-34): the ICS claims none of the capabilities those routes' cases gate (EhrExtract, MessageApi), and no openEHR specification governs them, so the received version this case reads cannot exist here — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_CONTRIBUTION.commit_contribution-imported_version_member",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_CONTRIBUTION.commit_contribution-imported_version_type",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_CONTRIBUTION.commit_contribution-member_without_lifecycle_state",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_CONTRIBUTION.commit_contribution-merge_provenance_member",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "I_EHR_CONTRIBUTION.commit_contribution-return_identifier",
     "exception": {
       "kind": "unrealized",
       "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_CONTRIBUTION.get_contribution-import_contribution",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "requires.import provisions over the message-extract extension routes (AMB-34): the ICS claims none of the capabilities those routes' cases gate (EhrExtract, MessageApi), and no openEHR specification governs them, so the received version this case reads cannot exist here — ISO/IEC 9646 test selection"
     }
   },
   {
@@ -350,10 +672,10 @@
     }
   },
   {
-    "case": "I_DEFINITION_ADL14.list_archetypes-unrealized",
+    "case": "I_DEFINITION_ADL14.upload_archetype-readonly_forbidden",
     "exception": {
-      "kind": "unrealized",
-      "detail": "I_DEFINITION_ADL14.list_archetypes: AMB-41"
+      "kind": "guarded",
+      "detail": "the ixit declares no instance readonly — the case's flow addresses it with `on:` and this party runs no such deployment/principal; ISO/IEC 9646 test selection"
     }
   },
   {
@@ -364,45 +686,66 @@
     }
   },
   {
-    "case": "I_DEFINITION_ADL2.archetypes_count-unrealized",
+    "case": "I_DEFINITION_ADL2.archetypes_count-empty",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_DEFINITION_ADL2.archetypes_count: AMB-37"
+      "detail": "extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
-    "case": "I_DEFINITION_ADL2.artefacts_count-unrealized",
+    "case": "I_DEFINITION_ADL2.artefacts_count-empty",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_DEFINITION_ADL2.artefacts_count: AMB-37"
+      "detail": "extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_DEFINITION_ADL2.delete_artefact-existing",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_DEFINITION_ADL2.delete_artefact: AMB-37"
+      "detail": "extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEFINITION_ADL2.delete_artefact-malformed_artefact_id",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_DEFINITION_ADL2.delete_artefact-non_existing",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_DEFINITION_ADL2.delete_artefact: AMB-37"
+      "detail": "extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
-    "case": "I_DEFINITION_ADL2.list_archetypes-unrealized",
+    "case": "I_DEFINITION_ADL2.delete_artefact-readonly_forbidden",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_DEFINITION_ADL2.list_archetypes: AMB-37"
+      "detail": "extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
-    "case": "I_DEFINITION_ADL2.list_artefacts-unrealized",
+    "case": "I_DEFINITION_ADL2.list_archetypes-all",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_DEFINITION_ADL2.list_artefacts: AMB-37"
+      "detail": "extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEFINITION_ADL2.list_archetypes-unauthenticated",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEFINITION_ADL2.list_artefacts-all",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
@@ -455,6 +798,20 @@
     }
   },
   {
+    "case": "I_DEMOGRAPHIC_SERVICE.create_party-agent_contact_addresses_empty",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.create_party-agent_identities_empty",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "I_DEMOGRAPHIC_SERVICE.create_party-archetype_node_id_mismatch",
     "exception": {
       "kind": "unrealized",
@@ -490,7 +847,28 @@
     }
   },
   {
+    "case": "I_DEMOGRAPHIC_SERVICE.create_party-cluster_no_items",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "I_DEMOGRAPHIC_SERVICE.create_party-contacts_present_empty",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.create_party-group_contact_addresses_empty",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.create_party-group_identities_empty",
     "exception": {
       "kind": "unrealized",
       "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
@@ -511,7 +889,49 @@
     }
   },
   {
+    "case": "I_DEMOGRAPHIC_SERVICE.create_party-inline_relationships_verbatim",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "I_DEMOGRAPHIC_SERVICE.create_party-item_tag_wrapper_headers",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.create_party-organisation_contact_addresses_empty",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.create_party-organisation_identities_empty",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.create_party-paragraph_no_items",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.create_party-person_contact_addresses_empty",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.create_party-person_identities_empty",
     "exception": {
       "kind": "unrealized",
       "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
@@ -525,7 +945,42 @@
     }
   },
   {
+    "case": "I_DEMOGRAPHIC_SERVICE.create_party-relationship_source_foreign_container",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.create_party-relationship_source_is_the_container",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.create_party-relationships_present_empty",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "I_DEMOGRAPHIC_SERVICE.create_party-return_identifier",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.create_party-role_contact_addresses_empty",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.create_party-role_identities_empty",
     "exception": {
       "kind": "unrealized",
       "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
@@ -546,6 +1001,13 @@
     }
   },
   {
+    "case": "I_DEMOGRAPHIC_SERVICE.create_party-version_lifecycle",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "I_DEMOGRAPHIC_SERVICE.create_party-wrong_subtype_body",
     "exception": {
       "kind": "unrealized",
@@ -556,7 +1018,7 @@
     "case": "I_DEMOGRAPHIC_SERVICE.create_party-xml",
     "exception": {
       "kind": "unrealized",
-      "detail": "option party-xml-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     }
   },
   {
@@ -568,6 +1030,27 @@
   },
   {
     "case": "I_DEMOGRAPHIC_SERVICE.create_party_relationship-bbbb",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (party-relationship; AMB-32): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.create_party_relationship-readonly_forbidden",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (party-relationship; AMB-32): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.create_party_relationship-root_identity_mismatch",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (party-relationship; AMB-32): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.create_party_relationship-unauthenticated",
     "exception": {
       "kind": "unrealized",
       "detail": "extension realization (party-relationship; AMB-32): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
@@ -693,6 +1176,90 @@
     }
   },
   {
+    "case": "I_DEMOGRAPHIC_SERVICE.update_party-agent_cluster_no_items",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.update_party-agent_contact_addresses_empty",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.update_party-agent_identities_empty",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.update_party-agent_valid",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.update_party-cluster_no_items",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.update_party-contact_addresses_empty",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.update_party-contacts_present_empty",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.update_party-group_cluster_no_items",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.update_party-group_contact_addresses_empty",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.update_party-group_identities_empty",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.update_party-group_valid",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.update_party-identities_empty",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "I_DEMOGRAPHIC_SERVICE.update_party-invalid_body",
     "exception": {
       "kind": "unrealized",
@@ -707,7 +1274,70 @@
     }
   },
   {
+    "case": "I_DEMOGRAPHIC_SERVICE.update_party-organisation_cluster_no_items",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.update_party-organisation_contact_addresses_empty",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.update_party-organisation_identities_empty",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.update_party-organisation_valid",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.update_party-paragraph_no_items",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "I_DEMOGRAPHIC_SERVICE.update_party-prefer_minimal",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.update_party-role_cluster_no_items",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.update_party-role_contact_addresses_empty",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.update_party-role_identities_empty",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.update_party-role_valid",
     "exception": {
       "kind": "unrealized",
       "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
@@ -731,7 +1361,7 @@
     "case": "I_DEMOGRAPHIC_SERVICE.update_party-xml",
     "exception": {
       "kind": "unrealized",
-      "detail": "option party-xml-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+      "detail": "option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     }
   },
   {
@@ -757,6 +1387,13 @@
   },
   {
     "case": "I_DEMOGRAPHIC_SERVICE.update_party_relationship-missing_if_match",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (party-relationship; AMB-32): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEMOGRAPHIC_SERVICE.update_party_relationship-root_identity_mismatch",
     "exception": {
       "kind": "unrealized",
       "detail": "extension realization (party-relationship; AMB-32): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
@@ -805,7 +1442,84 @@
     }
   },
   {
+    "case": "I_ITS_REST_ITEM_TAGS.agent_tags_delete-key_scoped",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ITS_REST_ITEM_TAGS.agent_tags_delete-unknown_key",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ITS_REST_ITEM_TAGS.agent_tags_get-unknown_container",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ITS_REST_ITEM_TAGS.agent_tags_update-non_array_body",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ITS_REST_ITEM_TAGS.agent_tags_update-unknown_container",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "I_ITS_REST_ITEM_TAGS.demographic_tags_get-space_wide_listing",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ITS_REST_ITEM_TAGS.group_tags_delete-key_scoped",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ITS_REST_ITEM_TAGS.group_tags_delete-unknown_key",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ITS_REST_ITEM_TAGS.group_tags_get-unknown_container",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ITS_REST_ITEM_TAGS.group_tags_update-non_array_body",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ITS_REST_ITEM_TAGS.group_tags_update-unknown_container",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ITS_REST_ITEM_TAGS.organisation_tags_delete-key_scoped",
     "exception": {
       "kind": "unrealized",
       "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
@@ -820,6 +1534,13 @@
   },
   {
     "case": "I_ITS_REST_ITEM_TAGS.organisation_tags_get-wrong_kind_uid",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ITS_REST_ITEM_TAGS.organisation_tags_update-non_array_body",
     "exception": {
       "kind": "unrealized",
       "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
@@ -875,6 +1596,13 @@
     }
   },
   {
+    "case": "I_ITS_REST_ITEM_TAGS.person_tags_update-empty_target_path_absent",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity",
     "exception": {
       "kind": "unrealized",
@@ -897,6 +1625,41 @@
   },
   {
     "case": "I_ITS_REST_ITEM_TAGS.person_tags_update-version_container_disjoint",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ITS_REST_ITEM_TAGS.role_tags_delete-key_scoped",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ITS_REST_ITEM_TAGS.role_tags_delete-unknown_key",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ITS_REST_ITEM_TAGS.role_tags_get-unknown_container",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ITS_REST_ITEM_TAGS.role_tags_update-non_array_body",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ITS_REST_ITEM_TAGS.role_tags_update-unknown_container",
     "exception": {
       "kind": "unrealized",
       "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
@@ -945,6 +1708,27 @@
     }
   },
   {
+    "case": "I_EHR_DIRECTORY.create_directory-invalid_item_tag_header",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_DIRECTORY.create_directory-item_tag_wrapper_header",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_DIRECTORY.create_directory-xml",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "I_EHR_DIRECTORY.get_directory-xml_not_acceptable",
     "exception": {
       "kind": "unrealized",
@@ -973,10 +1757,24 @@
     }
   },
   {
+    "case": "I_EHR_DIRECTORY.update_directory-xml",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "I_EHR_COMPOSITION.create_composition-item_tag_wrapper_headers",
     "exception": {
       "kind": "unrealized",
       "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_SERVICE.create_ehr-clone_system_id",
+    "exception": {
+      "kind": "guarded",
+      "detail": "the ixit declares no system_id — the case reads it as ${ixit:…} and no released operation discloses the value; ISO/IEC 9646 test selection"
     }
   },
   {
@@ -987,6 +1785,13 @@
     }
   },
   {
+    "case": "I_EHR_SERVICE.create_ehr-xml",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option ehr-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "I_EHR_SERVICE.get_ehr-xml_not_acceptable",
     "exception": {
       "kind": "unrealized",
@@ -994,7 +1799,35 @@
     }
   },
   {
+    "case": "I_EHR_STATUS.clear_ehr_modifiable-xml_body",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_STATUS.clear_ehr_queryable-xml_body",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "I_EHR_STATUS.get_ehr_status-xml_not_acceptable",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_STATUS.get_versioned_ehr_status-imported_version",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "requires.import provisions over the message-extract extension routes (AMB-34): the ICS claims none of the capabilities those routes' cases gate (EhrExtract, MessageApi), and no openEHR specification governs them, so the received version this case reads cannot exist here — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_STATUS.set_ehr_modifiable-xml_body",
     "exception": {
       "kind": "unrealized",
       "detail": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
@@ -1008,7 +1841,21 @@
     }
   },
   {
+    "case": "I_EHR_STATUS.set_ehr_queryable-xml_body",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "I_ITS_REST_ITEM_TAGS.composition_tags_delete-key_scoped",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ITS_REST_ITEM_TAGS.composition_tags_delete-second_delete_not_found",
     "exception": {
       "kind": "unrealized",
       "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
@@ -1043,7 +1890,42 @@
     }
   },
   {
+    "case": "I_ITS_REST_ITEM_TAGS.composition_tags_get-supersession_does_not_move_tags",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "I_ITS_REST_ITEM_TAGS.composition_tags_get-version_target_shape",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ITS_REST_ITEM_TAGS.composition_tags_get-xml_not_acceptable",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-duplicate_identity_last_wins",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-empty_target_path_absent",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-empty_value_invariant",
     "exception": {
       "kind": "unrealized",
       "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
@@ -1057,7 +1939,21 @@
     }
   },
   {
+    "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-no_reversioning",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-non_array_body",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-prefer_identifier",
     "exception": {
       "kind": "unrealized",
       "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
@@ -1072,6 +1968,20 @@
   },
   {
     "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-version_container_disjoint",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ITS_REST_ITEM_TAGS.composition_tags_update-wrong_media",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ITS_REST_ITEM_TAGS.ehr_status_tags_delete-key_scoped",
     "exception": {
       "kind": "unrealized",
       "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
@@ -1093,6 +2003,13 @@
   },
   {
     "case": "I_ITS_REST_ITEM_TAGS.ehr_status_tags_update-key_target_path_identity",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_ITS_REST_ITEM_TAGS.ehr_status_tags_update-non_array_body",
     "exception": {
       "kind": "unrealized",
       "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
@@ -1123,98 +2040,371 @@
     "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-by_spec",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts: AMB-34"
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
-    "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-empty_result",
+    "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-criteria_foreign_formalism",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts: AMB-34"
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-criteria_selects_primary_set",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-empty_manifest",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-latest_across_lineages",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-readonly_allowed",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-spec_named_extract_type",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-term_coded_extract_type",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-unknown_ehr",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-unknown_extract_type",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_EXTRACT_SERVICE.export_ehr_extracts-unresolvable_entity",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_EHR_EXTRACT_SERVICE.export_ehrs-export_existing",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_EHR_EXTRACT_SERVICE.export_ehrs: AMB-34"
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_EHR_EXTRACT_SERVICE.export_ehrs-export_unknown",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_EHR_EXTRACT_SERVICE.export_ehrs: AMB-34"
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_EXTRACT_SERVICE.export_ehrs-malformed_ehr_id",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_EXTRACT_SERVICE.export_ehrs-reexport_of_an_import",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_EXTRACT_SERVICE.export_ehrs-unauthenticated",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_EHR_EXTRACT_SERVICE.import_ehr-duplicate",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_EHR_EXTRACT_SERVICE.import_ehr: AMB-34"
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_EXTRACT_SERVICE.import_ehr-local_chronology",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_EXTRACT_SERVICE.import_ehr-malformed",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_EHR_EXTRACT_SERVICE.import_ehr-new",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_EHR_EXTRACT_SERVICE.import_ehr: AMB-34"
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_EHR_EXTRACT_SERVICE.import_ehr-with_id",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_EHR_EXTRACT_SERVICE.import_ehr: AMB-34"
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_EXTRACT_SERVICE.import_ehr-wrong_media",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-append_later_trunk_version",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-cluster_no_items",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-into_branched_lineage",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-into_existing",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_EHR_EXTRACT_SERVICE.import_ehr_extract: AMB-34"
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-invalid",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_EHR_EXTRACT_SERVICE.import_ehr_extract: AMB-34"
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-manifest_no_entities",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-paragraph_no_items",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-readonly_forbidden",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-second_status",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_EHR_EXTRACT_SERVICE.import_ehr_extract-unknown_ehr",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_EHR_EXTRACT_SERVICE.import_ehr_extract: AMB-34"
+      "detail": "extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_TDD_SERVICE.import_tdd-invalid",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_TDD_SERVICE.import_tdd: AMB-34"
+      "detail": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_TDD_SERVICE.import_tdd-nonconforming_body",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_TDD_SERVICE.import_tdd-readonly_forbidden",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_TDD_SERVICE.import_tdd-unauthenticated",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_TDD_SERVICE.import_tdd-unknown_ehr",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_TDD_SERVICE.import_tdd-unprovisioned_template",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_TDD_SERVICE.import_tdd-valid",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_TDD_SERVICE.import_tdd: AMB-34"
+      "detail": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_TDD_SERVICE.import_tdd-wrong_media",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_TDD_SERVICE.import_tdds-atomicity_state_proof",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_TDD_SERVICE.import_tdds-bulk_invalid",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_TDD_SERVICE.import_tdds: AMB-34"
+      "detail": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
     }
   },
   {
     "case": "I_TDD_SERVICE.import_tdds-bulk_valid",
     "exception": {
       "kind": "unrealized",
-      "detail": "I_TDD_SERVICE.import_tdds: AMB-34"
+      "detail": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_TDD_SERVICE.import_tdds-empty_batch",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_TDD_SERVICE.import_tdds-empty_batch_unknown_ehr",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_TDD_SERVICE.import_tdds-nonconforming_body",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_TDD_SERVICE.import_tdds-unknown_ehr",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_TDD_SERVICE.import_tdds-wrong_media",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_routed_expand_filters",
+    "exception": {
+      "kind": "guarded",
+      "detail": "instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_routed_validate_member",
+    "exception": {
+      "kind": "guarded",
+      "detail": "instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_routed_validate_non_member",
+    "exception": {
+      "kind": "guarded",
+      "detail": "instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_subsumes",
+    "exception": {
+      "kind": "guarded",
+      "detail": "instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_two_servers",
+    "exception": {
+      "kind": "guarded",
+      "detail": "instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection"
     }
   },
   {
@@ -1323,6 +2513,13 @@
     }
   },
   {
+    "case": "SF-CTX-participation_missing_function",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "SF-CTX-participations_forms",
     "exception": {
       "kind": "unrealized",
@@ -1352,6 +2549,20 @@
   },
   {
     "case": "SF-DEPRECATED-media_unsupported",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option sf-deprecated-types-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "SF-DEPRECATED-structured_accept_unsupported",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option sf-deprecated-types-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "SF-DEPRECATED-structured_media_unsupported",
     "exception": {
       "kind": "unrealized",
       "detail": "option sf-deprecated-types-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
@@ -1401,6 +2612,13 @@
   },
   {
     "case": "SF-FLAT-commit_roundtrip_ctx_defaults",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "SF-FLAT-malformed_path",
     "exception": {
       "kind": "unrealized",
       "detail": "case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection"
@@ -1470,6 +2688,20 @@
     }
   },
   {
+    "case": "SF-LEGACY-nc_flat_accept_unsupported",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option legacy-alt-formats-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "SF-LEGACY-nc_flat_media_supported",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option legacy-alt-formats-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "SF-LEGACY-nc_flat_media_unsupported",
     "exception": {
       "kind": "unrealized",
@@ -1478,6 +2710,13 @@
   },
   {
     "case": "SF-LEGACY-tds2_accept_unsupported",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option legacy-alt-formats-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "SF-LEGACY-tds2_media_unsupported",
     "exception": {
       "kind": "unrealized",
       "detail": "option legacy-alt-formats-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"

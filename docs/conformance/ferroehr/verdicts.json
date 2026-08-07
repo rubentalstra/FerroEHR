@@ -178,7 +178,7 @@
     [
       "Adl14ArchetypeProvisioning",
       {
-        "passed": 11,
+        "passed": 12,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -196,7 +196,7 @@
     [
       "Adl2ArchetypeProvisioning",
       {
-        "passed": 9,
+        "passed": 10,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 0
@@ -205,7 +205,7 @@
     [
       "Adl2OptProvisioning",
       {
-        "passed": 27,
+        "passed": 28,
         "failed": 0,
         "inconclusive": 0,
         "unevidenced": 2
@@ -588,9 +588,9 @@
     }
   ],
   "coverage": {
-    "selected": 1049,
-    "driven": 1011,
-    "passed": 1011,
+    "selected": 1052,
+    "driven": 1014,
+    "passed": 1014,
     "failed": 0,
     "inconclusive": 0
   }

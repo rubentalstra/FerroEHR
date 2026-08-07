@@ -39,3 +39,5 @@
 - [Optional-list invariant emitter gap](optional-list-invariant-emitter-gap.md) — APP bin: `ROLE.capabilities`/`PARTY.relationships` still `Option<Vec>`, empty list accepted 201; the raw-body checks were deleted
 - [CONTRIBUTION seam skips the strict reader](contribution-seam-skips-strict-reader.md) — APP bin: both contribution lanes 422 a payload the direct routes 400; AMB-193+AMB-194 already fix the line
 - [OAS `required:` ≠ non-empty array](oas-required-does-not-forbid-empty-arrays.md) — `Clstr.yaml required: [items]` is satisfied by `[]`; only the BMM cardinality grounds an empty-list refusal
+- [Authz class is EXPLICIT SM deferral](authz-class-is-explicit-sm-deferral.md) — a role 403 is never the app bin; SM master02 §Functional Style also grounds driving semantics cases as an authorized principal
+- [Definition-delete routes are Admin (#2071)](definition-delete-routes-are-admin-class.md) — the class move stands; 5 red rows = catalogue bin (`on: admin`), plus the readonly/uncased-branch fallout

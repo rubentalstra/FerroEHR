@@ -3,7 +3,7 @@
   "capabilities": [
     [
       "Adl14ArchetypeProvisioning",
-      "not_evidenced"
+      "inconclusive"
     ],
     [
       "Adl14OptProvisioning",
@@ -178,17 +178,17 @@
     [
       "Adl14ArchetypeProvisioning",
       {
-        "passed": 0,
+        "passed": 4,
         "failed": 0,
-        "inconclusive": 0,
-        "unevidenced": 6
+        "inconclusive": 6,
+        "unevidenced": 1
       }
     ],
     [
       "Adl14OptProvisioning",
       {
         "passed": 3,
-        "failed": 6,
+        "failed": 7,
         "inconclusive": 8,
         "unevidenced": 5
       }
@@ -235,15 +235,15 @@
         "passed": 18,
         "failed": 2,
         "inconclusive": 0,
-        "unevidenced": 2
+        "unevidenced": 3
       }
     ],
     [
       "EhrStatus",
       {
-        "passed": 12,
-        "failed": 21,
-        "inconclusive": 7,
+        "passed": 14,
+        "failed": 26,
+        "inconclusive": 3,
         "unevidenced": 5
       }
     ],
@@ -252,26 +252,26 @@
       {
         "passed": 5,
         "failed": 0,
-        "inconclusive": 20,
-        "unevidenced": 3
+        "inconclusive": 51,
+        "unevidenced": 2
       }
     ],
     [
       "DirectoryOps",
       {
-        "passed": 48,
-        "failed": 11,
-        "inconclusive": 2,
+        "passed": 61,
+        "failed": 13,
+        "inconclusive": 1,
         "unevidenced": 8
       }
     ],
     [
       "ChangeSets",
       {
-        "passed": 13,
-        "failed": 6,
-        "inconclusive": 28,
-        "unevidenced": 5
+        "passed": 7,
+        "failed": 12,
+        "inconclusive": 58,
+        "unevidenced": 7
       }
     ],
     [
@@ -279,8 +279,8 @@
       {
         "passed": 8,
         "failed": 3,
-        "inconclusive": 45,
-        "unevidenced": 0
+        "inconclusive": 50,
+        "unevidenced": 4
       }
     ],
     [
@@ -289,7 +289,7 @@
         "passed": 0,
         "failed": 67,
         "inconclusive": 54,
-        "unevidenced": 0
+        "unevidenced": 4
       }
     ],
     [
@@ -322,9 +322,9 @@
     [
       "AqlBasic",
       {
-        "passed": 6,
+        "passed": 7,
         "failed": 2,
-        "inconclusive": 11,
+        "inconclusive": 23,
         "unevidenced": 0
       }
     ],
@@ -333,7 +333,7 @@
       {
         "passed": 0,
         "failed": 0,
-        "inconclusive": 2,
+        "inconclusive": 3,
         "unevidenced": 0
       }
     ],
@@ -591,10 +591,10 @@
     }
   ],
   "coverage": {
-    "selected": 499,
-    "driven": 459,
-    "passed": 136,
-    "failed": 132,
-    "inconclusive": 191
+    "selected": 613,
+    "driven": 568,
+    "passed": 151,
+    "failed": 146,
+    "inconclusive": 271
   }
 }

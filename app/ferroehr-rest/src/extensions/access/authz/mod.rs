@@ -297,24 +297,21 @@ const EXTENSION_READ_ROUTES: &[(&str, &str)] = &[("POST", "/message/export")];
 /// Extension routes that are [`OperationClass::Admin`] despite not sitting under
 /// `/admin/` — the destructive half of the shared-definition surface.
 ///
-/// These delete a deployment-wide definition artefact: an archetype or
-/// operational template every EHR in the deployment validates against. The
-/// neighbouring `DELETE /admin/template/{id}` has the same blast radius and gets
-/// Admin from its path, so leaving these Clinical made the privilege depend on
-/// which prefix a route was given rather than on what it destroys.
+/// Each deletes a deployment-wide definition artefact every EHR validates
+/// against, and the deletion is physical: this store has no logical tier to
+/// undelete from.
 ///
-/// The specification settles that the three must MATCH, and nothing more: SM
-/// `master04-definition_package.adoc` §Archetypes and Templates puts upload,
-/// update and **removal of archetypes and templates** in one clause and one pair
-/// of interfaces, `i_definition_adl2.adoc` collapses the distinction into a
-/// single `delete_artefact` covering archetype, template and
-/// operational-template alike, and the SM Admin component names no definition
-/// artefact at all. Which class they take is our own design — ITS-REST leaves
-/// authorization out of band (`Requests_and_responses.md` §Authentication and
-/// authorization) — and the one
-/// privilege sentence in the vendored tree points at admin for irreversible
-/// deletion (CNF `master04` §Implementation recommendations, non-normative).
-/// These deletes are physical, so Admin.
+/// The class is OUR OWN DESIGN, on the blast radius, and the specification
+/// explicitly leaves it to us rather than being silent on it. SM
+/// `master02-overview.adoc` §Global Conventions → §Functional Style lists
+/// "approach to access control and authorisation" among the implementation
+/// choices and states that "Authentication and authorisation is assumed to have
+/// been dealt with before any particular call has been made … and role-based
+/// access control"; ITS-REST `Requests_and_responses.md` §Authentication and
+/// authorization adds that it "does not mandate a specific authentication
+/// scheme". So no released clause requires or forbids this, and the uploads
+/// staying Clinical is a deliberate asymmetry: an upload is additive and
+/// reversible, a delete is neither.
 ///
 /// Matched by method + path SUFFIX so the configured base path is irrelevant.
 const EXTENSION_ADMIN_ROUTES: &[(&str, &str)] = &[
