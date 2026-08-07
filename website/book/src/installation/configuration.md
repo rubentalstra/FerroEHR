@@ -407,7 +407,7 @@ OpenTelemetry export. Unset `otlp_endpoint` ⇒ the OTel layer is not installed
 | `service_name` | string | `ferroehr` | `service.name` resource attribute. |
 | `environment` | string | `dev` | `deployment.environment` resource attribute. |
 | `traces_sample_ratio` | float | `1.0` | Head-sampling ratio (`0.1` is a common prod start). |
-| `metrics_push` | bool | `false` | Also push metrics over OTLP alongside the Prometheus pull surface. |
+| `metrics_push` | bool | `false` | Push the **OpenTelemetry SDK instruments** over OTLP alongside the Prometheus pull surface. **Partial by design today:** the families recorded through the `metrics`-crate recorder — `ferroehr_build_info`, the HTTP request histogram, active requests, the ATNA audit counters, process start time — reach `/management/prometheus` by scrape only and do **not** appear in an OTLP collector. The server warns at boot listing exactly which families are affected. Scrape `/management/prometheus` as well if you need them ([#2175](https://github.com/rubentalstra/FerroEHR/issues/2175)). |
 | `flame_file` | path | unset ⇒ layer not installed | Span-timing flamegraph capture (`tracing-flame`): write folded stack samples of every span to this file; render offline with `inferno-flamegraph < file > flame.svg`. For diagnostic sessions, not a standing posture — the file grows with span traffic. |
 
 ## `[auth]`
