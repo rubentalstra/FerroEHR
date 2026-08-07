@@ -16,6 +16,10 @@
 #                        releases, so the goldens are only reproducible on the pin)
 #   5. kubeconform     — schema-validate the manifests IF kubeconform is on PATH
 #                        (optional; skipped with a note when absent/offline)
+#   6. values schema   — assert values.schema.json REFUSES what it claims to
+#                        (typos, wrong types, bad enums, out-of-range ports) and
+#                        still ACCEPTS what must stay open (the server's own
+#                        config vocabulary, a parent chart's `global`)
 #
 # What it does NOT check is printed at the end of every run, and is not a
 # footnote: every one of those properties has failed while this script was green
@@ -253,6 +257,87 @@ secret_leak_gate() {
   fi
 }
 secret_leak_gate
+
+# ── The values schema must refuse and permit exactly what it claims to ────────
+# A schema that is present but vacuous is worse than none: `helm template` stays
+# green, Artifact Hub renders a Values-schema tab, and an operator reads both as
+# evidence their values file was checked. So the file is exercised from both
+# sides — every refusal it promises, and every place it must stay OPEN.
+#
+# It has to stay open in two directions. `config:` is a 1:1 passthrough of the
+# SERVER's TOML tree, adjudicated at boot by the binary that owns that
+# vocabulary; typing it here would fork the config tree into the chart and refuse
+# keys the server accepts. And `global:` is what a parent chart injects when this
+# chart is used as a dependency — refusing it would make the chart unusable as a
+# subchart, with an error that names nothing the operator wrote.
+schema_gate() {
+  bold "── values schema ────────────────────────────────────────"
+  local schema="${CHART_DIR}/values.schema.json"
+  if [[ ! -f "$schema" ]]; then
+    red "  missing: ${schema} — nothing validates an operator's values file, and"
+    red "  Artifact Hub reports the chart as having no values schema."
+    FAIL=1
+    return
+  fi
+  # Not a preference: helm validates through a multi-draft library, but Artifact
+  # Hub's renderer is typed against json-schema draft 4/6/7, so a newer dialect
+  # renders wrong on the page that consumes the file.
+  if ! grep -q 'json-schema.org/draft-07/schema' "$schema"; then
+    red "  ${schema} does not declare the draft-07 dialect"
+    FAIL=1
+  fi
+
+  # <helm --set argument>|<the refusal must name this>
+  local -a refusals=(
+    "autoscalng.enabled=true|additional properties 'autoscalng' not allowed"
+    "probes.startup.periodSecond=5|/probes/startup"
+    "replicaCount=two|/replicaCount"
+    "image.pullPolicy=Sometimes|/image/pullPolicy"
+    "image.digest=sha256:nothex|/image/digest"
+    "service.port=70000|/service/port"
+    "metrics.serviceMonitor.interval=30|/metrics/serviceMonitor/interval"
+  )
+  local refused=0 probe want out
+  for case in "${refusals[@]}"; do
+    probe="${case%%|*}"
+    want="${case##*|}"
+    if out="$(helm template "$RELEASE_NAME" "$CHART_DIR" -n "$NAMESPACE" \
+              -f "${CI_DIR}/default-values.yaml" --set "$probe" 2>&1)"; then
+      red "  NOT REFUSED: --set ${probe} rendered instead of failing schema validation"
+      refused=1
+    elif ! grep -qF -- "$want" <<<"$out"; then
+      red "  --set ${probe} was refused, but the message does not mention '${want}':"
+      printf '%s\n' "$out" | head -4
+      refused=1
+    fi
+  done
+  if [[ "$refused" -eq 0 ]]; then
+    echo "  all ${#refusals[@]} malformed-values probes refused, each naming the offending path"
+  else
+    FAIL=1
+  fi
+
+  local -a acceptances=(
+    "config.server.future_api_key=probe"
+    "config.telemetry.otlp_endpoint=http://otel-collector:4317"
+    "global.imageRegistry=registry.example.com"
+  )
+  local accepted=0
+  for probe in "${acceptances[@]}"; do
+    if ! out="$(helm template "$RELEASE_NAME" "$CHART_DIR" -n "$NAMESPACE" \
+                -f "${CI_DIR}/default-values.yaml" --set "$probe" 2>&1)"; then
+      red "  WRONGLY REFUSED: --set ${probe} must be accepted (see the note above this gate):"
+      printf '%s\n' "$out" | head -4
+      accepted=1
+    fi
+  done
+  if [[ "$accepted" -eq 0 ]]; then
+    echo "  all ${#acceptances[@]} must-stay-open probes accepted (server config vocabulary, parent-chart global)"
+  else
+    FAIL=1
+  fi
+}
+schema_gate
 
 # ── The live-test fixture must still track the chart ──────────────────────────
 # WHY a `.claude/` path appears in a deploy gate: `.claude/skills/k8s-test/` holds

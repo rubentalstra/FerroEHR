@@ -2,7 +2,7 @@
 
 Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL 1.1). A single static binary deployed with a hardened-by-default security posture: runs as a non-root, read-only-rootfs, default-deny-ingress workload that connects to an EXTERNAL PostgreSQL 18 as an unprivileged app role (migrations are run out of band by a separate migrator role).
 
-![Version: 4.1.0](https://img.shields.io/badge/Version-4.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 3.17.3](https://img.shields.io/badge/AppVersion-3.17.3-informational?style=flat-square)
+![Version: 5.0.0](https://img.shields.io/badge/Version-5.0.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 3.17.3](https://img.shields.io/badge/AppVersion-3.17.3-informational?style=flat-square)
 
 FerroEHR is a pure-Rust openEHR Clinical Data Repository: ITS-REST 1.1.0 at the
 API, AQL 1.1 as the query language, PostgreSQL 18-native storage, shipped as a
@@ -33,7 +33,7 @@ add — `helm repo add` does not apply to this chart and never will:
 
 ```console
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 4.1.0 \
+  --version 5.0.0 \
   --namespace ferroehr --create-namespace \
   --set database.existingSecret=ferroehr-db \
   --set image.tag=3.17.3
@@ -47,7 +47,7 @@ They are independent SemVer lines and they move independently:
 
 | What | Set with | This release |
 |---|---|---|
-| the **chart** (templates, defaults, this document) | `--version` | `4.1.0` |
+| the **chart** (templates, defaults, this document) | `--version` | `5.0.0` |
 | the **server image** | `image.tag` | `3.17.3` |
 
 `appVersion` is the image the chart defaults to; pinning `image.tag` explicitly
@@ -55,19 +55,40 @@ is what keeps an upgrade of one from silently moving the other.
 
 ### Verify what you pulled
 
-Both the chart and the images carry Sigstore-signed build provenance:
+The chart carries two keyless Sigstore artifacts, and they answer different
+questions. A **cosign signature** — who signed this:
 
 ```console
-gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:4.1.0 \
+cosign verify ghcr.io/rubentalstra/charts/ferroehr:5.0.0 \
+  --certificate-identity-regexp '^https://github\.com/rubentalstra/FerroEHR/\.github/workflows/publish-chart\.yml@' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+A **SLSA build provenance attestation** — what source it was built from, and how:
+
+```console
+gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:5.0.0 \
   -R rubentalstra/FerroEHR
 gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:3.17.3 \
   -R rubentalstra/FerroEHR
 ```
 
-`helm install --verify` does **not** apply: it reads a `.prov` provenance file,
-and this chart is attested through Sigstore rather than signed with a long-lived
-PGP key — deliberately, because keeping such a key in CI is a worse posture than
-not having one.
+`helm install --verify` does **not** apply: it reads a PGP `.prov` provenance
+file, and this chart ships none — deliberately, because keeping a long-lived
+private key in CI is a worse posture than not having one. The two commands above
+are what replace it.
+
+### Your values file is validated
+
+The chart ships a `values.schema.json`, so `helm install`, `upgrade`, `lint` and
+`template` refuse a values file that misspells a key of the chart's own
+vocabulary, gets a type wrong, or names a value outside the permitted set —
+instead of rendering and ignoring it.
+
+Everything under `config:` stays deliberately open: that vocabulary is the
+**server's** (`ferroehr config default` prints it in full), it is validated by
+the binary at boot, and duplicating it here would fork it. So a typo under
+`config:` is caught when the pod starts, not when the chart renders.
 
 ## Secrets
 
