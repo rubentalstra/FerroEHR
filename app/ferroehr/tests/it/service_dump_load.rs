@@ -1278,6 +1278,7 @@ async fn attestations_round_trip_and_the_restored_signature_verifies() {
         key_path: None,
         key_passphrase: None,
         key_passphrase_file: None,
+        retired_key_paths: Vec::new(),
         verify_on_read: Some(VerifyOnRead::Strict),
     };
     let src_db = testkit::db().await.expect("testkit database");

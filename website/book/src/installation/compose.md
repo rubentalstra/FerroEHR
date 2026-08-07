@@ -22,7 +22,7 @@ FerroEHR publishes three container images to GHCR:
 | Image | Contents |
 |---|---|
 | `ghcr.io/rubentalstra/ferroehr` | The `ferroehr` server binary. A distroless, non-root, shell-less multi-arch image (amd64 + arm64). Configured via `FERROEHR_*` environment variables and/or a mounted TOML file. |
-| `ghcr.io/rubentalstra/ferroehr-postgres` | `postgres:18.4` with the application role, the layered group roles (`ferroehr_migrator`, `ferroehr_app`, `ferroehr_reader`), database, schemas (`ehr`, `ext`), and required extensions (`uuid-ossp`, `pgcrypto`, `pg_trgm`, `btree_gist`) pre-created, so the app role never needs superuser. The role the server connects as owns the database and belongs to **both** `ferroehr_migrator` and `ferroehr_app`, which is what lets it apply migrations at boot — a least-privilege deployment that connects as `ferroehr_app` alone must run migrations out of band (see [Operations](../operations.md)). |
+| `ghcr.io/rubentalstra/ferroehr-postgres` | `postgres:18.4` with the application role, the layered group roles (`ferroehr_migrator`, `ferroehr_app`, `ferroehr_reader`), database, schemas (`ehr`, `ext`, `audit`), and required extensions (`uuid-ossp`, `pgcrypto`, `pg_trgm`, `btree_gist`) pre-created, so the app role never needs superuser. The role the server connects as owns the database and belongs to **both** `ferroehr_migrator` and `ferroehr_app`, which is what lets it apply migrations at boot — a least-privilege deployment sets `db.migrate = "verify"`, connects as `ferroehr_app` alone, and runs `ferroehr db migrate` out of band under the migrator DSN (see [Operations](../operations.md)). |
 | `ghcr.io/rubentalstra/ferroehr-admin-ui` | The [admin console](../admin-ui/index.md) — a standalone web application that talks to the CDR strictly over ITS-REST. Optional; see the `admin-ui` profile below. |
 
 Each image is published under several tags:
@@ -169,12 +169,35 @@ you ask for them:
   ```
 
 - **`seaweedfs`** (`--profile s3`) — an S3 gateway for large `DV_MULTIMEDIA`
-  externalization (development/test only). Start it with
-  `docker compose --profile s3 up`, then set `FERROEHR__MULTIMEDIA__ENABLED=true`,
-  `FERROEHR__MULTIMEDIA__ENDPOINT=http://seaweedfs:8333`,
-  `FERROEHR__MULTIMEDIA__BUCKET=openehr-multimedia`, and (dev only)
-  `FERROEHR__MULTIMEDIA__ALLOW_HTTP=true`. In production, point the multimedia
-  settings at a real, credentialed, HTTPS S3 endpoint instead.
+  externalization (development/test only). Three steps, and none of them can be
+  skipped:
+
+  ```shell
+  # 1. start the gateway beside the server
+  docker compose --profile s3 up -d --wait ferroehr seaweedfs
+
+  # 2. create the bucket — the gateway starts empty and nothing creates it
+  curl -X PUT http://localhost:8333/openehr-multimedia
+  ```
+
+  ```yaml
+  # 3. add these to the `ferroehr` service's environment: block, then re-up.
+  #    Exporting them in your shell has no effect — Compose passes through only
+  #    the variables this file names, and the multimedia keys are not among them.
+      FERROEHR__MULTIMEDIA__ENABLED: "true"
+      FERROEHR__MULTIMEDIA__ENDPOINT: http://seaweedfs:8333
+      FERROEHR__MULTIMEDIA__BUCKET: openehr-multimedia
+      FERROEHR__MULTIMEDIA__ALLOW_HTTP: "true"
+  ```
+
+  Confirm the server took them with
+  `curl -s -u ferroehr:ferroehr http://localhost:8080/management/env | jq .multimedia`
+  — `"enabled": true` and a non-empty `endpoint` mean the wiring is right.
+  Without the bucket, the first composition carrying a large `DV_MULTIMEDIA`
+  fails `500` and the log reports `Access Denied`, which looks like a
+  credentials problem and is not. In production, point the multimedia settings
+  at a real, credentialed, HTTPS S3 endpoint instead; see
+  [S3 multimedia](../beyond-core/s3-multimedia.md).
 
 Two things that used to be profiles of this file are not any more. Both have to
 *change* the server's configuration to be useful, which a profile cannot do — so

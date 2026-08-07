@@ -47,7 +47,7 @@ Records fan out to independently configured sinks (`[audit]` in
 
 | Sink | Default | What it does |
 |---|---|---|
-| `[audit.store]` | **on** | The local **Audit Record Repository**: records persist in the dedicated `audit` PostgreSQL schema (append-only, strictly outside the EHR content), served back via the ITI-81 search below. `retention_days` prunes old records hourly (`0` = keep forever). |
+| `[audit.store]` | **on** | The local **Audit Record Repository**: records persist in the dedicated `audit` PostgreSQL schema (append-only and tamper-evident, strictly outside the EHR content), served back via the ITI-81 search below. `retention_days` prunes old records hourly (`0` = keep forever). |
 | `[audit.syslog]` | off | The classic ATNA feed: DICOM PS3.15 XML over syslog (RFC 5424; UDP or TLS transport) to an external ARR, per IHE ITI-20. |
 | `[audit.fhir_feed]` | off | The RESTful-ATNA feed (ITI-20 **ATX: FHIR Feed**): each FHIR `AuditEvent` is `POST`ed to an external FHIR ARR. With the local store on, delivery is **outbox-driven**: an ARR outage loses nothing, pending records ship on recovery. |
 
@@ -57,6 +57,54 @@ answer `503 Service Unavailable` until a write succeeds again — no un-audited
 PHI access. (`open`, the default, drops-and-meters instead; every loss path
 is metered — see the `atna_audit_*` counters in
 [Operations](operations.md).)
+
+## Tamper evidence
+
+An audit trail that anything with the application's database password can
+quietly rewrite is a log, not an accountability record. The local store is
+therefore tamper-**evident**: every record is linked into a SHA-256 hash chain
+maintained inside PostgreSQL, so each record commits to its predecessor and to
+its own content. The chain is built by the database itself, not by the server,
+which means it covers every writer — the per-event insert, the batched drain,
+and any statement typed by hand.
+
+Three controls sit on top of it, and they are separate on purpose:
+
+- **The table refuses the ordinary rewrite paths outright.** The only permitted
+  change to a stored record is the per-sink forwarding stamp; an `UPDATE` of any
+  other column, a `DELETE`, and a `TRUNCATE` are refused by the database.
+  Retention pruning goes through the one sanctioned deletion path, which records
+  *which* records it removed and what the surviving chain must link back to — so
+  reaping does not look like tampering, and tampering does not look like
+  reaping.
+- **The privileges are narrow.** The runtime role may record an event, stamp it
+  forwarded, and read the trail back. It holds nothing that can rewrite a
+  record, remove one, or alter the chain's own bookkeeping. That posture is only
+  fully in force with `db.migrate = "verify"` — see
+  [Operations](operations.md#database-roles-and-least-privilege), because a
+  self-migrating server owns the schema and can therefore turn the enforcement
+  off.
+- **Verification is a query you can run yourself.** It recomputes every digest,
+  re-walks every link, and checks both ends of the chain:
+
+  ```sql
+  SELECT * FROM audit.verify_audit_chain();
+  ```
+
+  An empty result means the trail is intact. Any row names one record — its
+  chain position, its id, when it was recorded — and what is wrong with it:
+  content modified after it was written, records deleted with no retention
+  record for the removal, or records removed from the end of the chain where no
+  successor would have noticed. Run it on a schedule and alert on any output.
+
+> [!IMPORTANT]
+> This is **detection, not prevention**, and the boundary is worth stating
+> plainly. The chain is unkeyed, so a party with unrestricted write access to
+> the `audit` schema — the database owner, or a superuser — can delete a record
+> and recompute every hash after it. What closes that case is not a bigger hash:
+> it is keeping the trail somewhere that party does not control. Enable
+> `[audit.syslog]` or `[audit.fhir_feed]` so records leave the box as they are
+> written, and give the server an app-role-only DSN so it is not that party.
 
 ## Retrieving audit records (ITI-81)
 

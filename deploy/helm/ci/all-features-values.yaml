@@ -6,8 +6,12 @@ database:
   existingSecretKey: FERROEHR__DB__URL
 
 secrets:
-  authOidcHmacSecret: dev-hmac-secret
-  signingKeyPassphrase: dev-passphrase
+  # 40 bytes of obvious filler. RFC 8725 §3.5 puts a 32-byte floor under a
+  # keyed-MAC key and the server enforces it at boot, so a short "dev-hmac-secret"
+  # renders fine and refuses to start. Low-entropy on purpose: it must read as a
+  # fixture to a human and to a secret scanner alike.
+  authOidcHmacSecret: ci-fixture-not-a-secret-0000000000000000
+  signingKeyPassphrase: ci-fixture-not-a-secret-passphrase
   eventsUrl: amqps://user:pass@rabbitmq:5671/%2f
   fhirOutboundUrl: amqps://user:pass@rabbitmq:5671/%2f
   auditFhirFeedUrl: https://arr:arr-password@arr.example.com/fhir
@@ -52,7 +56,11 @@ config:
     oidc:
       issuer: https://keycloak.example.com/realms/ferroehr
       audiences: [ferroehr]
-      algorithms: [RS256]
+      # HS256, not the RS256 default, because this overlay carries
+      # secrets.authOidcHmacSecret to exercise that route: the server binds the
+      # accepted algorithm set to the key source (RFC 8725 §3.1), so a symmetric
+      # key plus RS256 is refused as the algorithm-confusion setup it is.
+      algorithms: [HS256]
   authz:
     rbac:
       enabled: true
@@ -74,8 +82,28 @@ config:
     header: X-FerroEHR-Tenant
   smart:
     enabled: true
+    # Required whenever SMART is on: the launch context's service URLs are
+    # absolute, so the server has to be told the origin clients reach it at —
+    # it cannot infer one from a request. Matches the ingress host below.
+    public_base_url: https://ferroehr.example.com
     ehr_id_claim: ehrId
     patient_claim: patient
+    # Published verbatim at /.well-known/smart-configuration, so these are
+    # boot-validated rather than free text: absolute https endpoints, a
+    # non-empty response/auth-method set, PKCE S256 (SMART App Launch §7.2),
+    # and an `issuer` equal to auth.oidc.issuer above — one says where apps get
+    # tokens, the other says which tokens this server accepts.
+    endpoints:
+      issuer: https://keycloak.example.com/realms/ferroehr
+      jwks_uri: https://keycloak.example.com/realms/ferroehr/protocol/openid-connect/certs
+      authorization_endpoint: https://keycloak.example.com/realms/ferroehr/protocol/openid-connect/auth
+      token_endpoint: https://keycloak.example.com/realms/ferroehr/protocol/openid-connect/token
+      token_endpoint_auth_methods_supported: [client_secret_basic, private_key_jwt]
+      grant_types_supported: [authorization_code, client_credentials]
+      response_types_supported: [code]
+      code_challenge_methods_supported: [S256]
+      scopes_supported: [openid, fhirUser, launch, "patient/*.rs"]
+      capabilities: [launch-ehr, sso-openid-connect]
   management:
     enabled: true
     base_path: /management

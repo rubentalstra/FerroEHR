@@ -1,0 +1,97 @@
+{{- if .Values.migrations.job.enabled }}
+{{- if not .Values.migrations.job.existingSecret }}
+{{- fail "migrations.job.enabled requires migrations.job.existingSecret: the migration step authenticates as ferroehr_migrator, which is a DIFFERENT credential from the runtime database.* DSN — that separation is the whole point of the job" }}
+{{- end }}
+# Out-of-band schema migration, as a Helm pre-install/pre-upgrade hook Job.
+#
+# Migrations are DDL, so whoever applies them can rewrite the schema. Running
+# them here — as `ferroehr_migrator`, in a pod that exits — lets the SERVER run
+# as `ferroehr_app` with no DDL rights at all, which is what
+# config.db.migrate=verify then enforces (it refuses to boot against a database
+# this job has not migrated, rather than migrating it itself).
+#
+# As a hook, Helm creates it before the Deployment and WAITS for it: a failed
+# migration fails the release instead of rolling pods against a schema that was
+# never applied. Deliberately lean — the migration step needs the DSN and
+# nothing else, so it mounts no ConfigMap and runs on the built-in defaults.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "ferroehr.fullname" . }}-migrate
+  labels:
+    {{- include "ferroehr.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migration
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: {{ .Values.migrations.job.backoffLimit }}
+  ttlSecondsAfterFinished: {{ .Values.migrations.job.ttlSecondsAfterFinished }}
+  activeDeadlineSeconds: {{ .Values.migrations.job.activeDeadlineSeconds }}
+  template:
+    metadata:
+      labels:
+        {{- include "ferroehr.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: migration
+      {{- with .Values.migrations.job.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      restartPolicy: Never
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "ferroehr.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+      # Same reason as the Deployment: the kubelet's per-Service link variables
+      # land inside the server's reserved FERROEHR_ namespace and the strict
+      # boot-time env sweep then refuses to start.
+      enableServiceLinks: false
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: migrate
+          image: "{{ include "ferroehr.image" . }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          args: ["db", "migrate"]
+          env:
+            # The migrator DSN, as a mounted file rather than an environment
+            # value (readable through /proc/<pid>/environ and inherited by every
+            # child process — OWASP Kubernetes Security Cheat Sheet).
+            - name: FERROEHR__DB__URL_FILE
+              value: {{ printf "%s/db.url" (include "ferroehr.secretMountPath" .) | quote }}
+            # This pod's job IS the DDL, whatever the server's posture is.
+            - name: FERROEHR__DB__MIGRATE
+              value: apply
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: migrator-secret
+              mountPath: {{ include "ferroehr.secretMountPath" . }}
+              readOnly: true
+          resources:
+            {{- toYaml .Values.migrations.job.resources | nindent 12 }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: migrator-secret
+          secret:
+            secretName: {{ .Values.migrations.job.existingSecret }}
+            defaultMode: 0440
+            items:
+              - key: {{ .Values.migrations.job.existingSecretKey }}
+                path: db.url
+      {{- with .Values.migrations.job.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.migrations.job.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

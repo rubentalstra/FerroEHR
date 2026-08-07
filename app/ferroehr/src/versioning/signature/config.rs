@@ -74,6 +74,15 @@ pub struct SigningConfig {
     /// File-based indirection for [`Self::key_passphrase`] (K8s/Docker secrets).
     /// Exactly one of the pair may be set; the loader reads and trims the file.
     pub key_passphrase_file: Option<PathBuf>,
+    /// Armored RFC 4880 **public** keys retired from signing but retained for
+    /// verification, so versions signed before a key rotation keep verifying.
+    ///
+    /// A stored `VERSION.signature` records no key identifier, and a signature
+    /// is an immutable committed fact (RM common `master06` §Digital Signature)
+    /// that cannot be re-issued — so keeping the retired key is the only way
+    /// history stays verifiable across a rotation. These are public keys: a
+    /// retired key can verify and can never sign again.
+    pub retired_key_paths: Vec<PathBuf>,
     /// Read-time verification policy: `off` | `warn` | `strict`. **Unset**
     /// (the default) resolves via [`Self::effective_verify_on_read`] to `strict`
     /// when signing is enabled — the explicit "sign but never check" state is
@@ -89,6 +98,7 @@ impl Default for SigningConfig {
             key_path: None,
             key_passphrase: None,
             key_passphrase_file: None,
+            retired_key_paths: Vec::new(),
             verify_on_read: None,
         }
     }
@@ -173,16 +183,15 @@ mod tests {
     /// freed memory. A runtime test cannot observe that; the compiler can.
     #[test]
     fn the_key_loader_takes_the_secret_wrapper_not_a_str() {
-        fn assert_signature(
-            _f: fn(
-                &std::path::Path,
-                Option<&Secret>,
-            ) -> Result<
-                crate::versioning::signature::key::PgpKey,
-                crate::versioning::signature::key::KeyError,
-            >,
-        ) {
-        }
+        type KeyLoader = fn(
+            &std::path::Path,
+            Option<&Secret>,
+            &[PathBuf],
+        ) -> Result<
+            crate::versioning::signature::key::PgpKey,
+            crate::versioning::signature::key::KeyError,
+        >;
+        fn assert_signature(_f: KeyLoader) {}
         assert_signature(crate::versioning::signature::key::PgpKey::load);
     }
 }

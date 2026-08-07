@@ -223,20 +223,62 @@ impl AuditStore {
     /// Delete records older than `retention_days` (0 = keep forever).
     /// Returns the number of reaped rows.
     ///
+    /// Reaping goes through `audit.reap_audit_events`, the only deletion path
+    /// the table permits: it removes a PREFIX of the hash chain and advances
+    /// the retention low-water mark in the same transaction, so the surviving
+    /// records still verify and an unrecorded deletion of the oldest records
+    /// remains detectable. A direct `DELETE` is refused by the table's trigger.
+    ///
     /// # Errors
-    /// [`AuditError::Store`] when the DELETE fails.
+    /// [`AuditError::Store`] when the reap fails.
     pub async fn reap(&self, retention_days: u32) -> Result<u64, AuditError> {
         if retention_days == 0 {
             return Ok(0);
         }
-        let result = sqlx::query(
-            "DELETE FROM audit.audit_event \
-             WHERE recorded_at < now() - make_interval(days => $1)",
+        let removed: i64 = sqlx::query_scalar("SELECT audit.reap_audit_events($1)")
+            .bind(i32::try_from(retention_days).unwrap_or(i32::MAX))
+            .fetch_one(&self.pool)
+            .await?;
+        Ok(u64::try_from(removed).unwrap_or(0))
+    }
+
+    /// Check the repository's tamper evidence: recompute every record's digest,
+    /// re-walk every link in the hash chain, and check both ends against the
+    /// recorded chain state.
+    ///
+    /// An empty result means the trail is intact. Any returned
+    /// [`AuditChainFinding`] names one damaged record (or one damaged chain
+    /// boundary) and what is wrong with it — this is the report an operator
+    /// acts on, and the same answer `SELECT * FROM audit.verify_audit_chain()`
+    /// gives from `psql`.
+    ///
+    /// NOTE: no openEHR spec governs audit tamper detection — our own
+    /// design/extension; the chain is unkeyed, so it detects modification and
+    /// deletion but cannot prevent a party with unrestricted write access from
+    /// recomputing the chain wholesale.
+    ///
+    /// # Errors
+    /// [`AuditError::Store`] when the verification query cannot run — which is
+    /// itself a finding, never a pass.
+    pub async fn verify_chain(&self) -> Result<Vec<AuditChainFinding>, AuditError> {
+        let rows = sqlx::query(
+            "SELECT chain_seq, record_id, recorded_at, finding \
+             FROM audit.verify_audit_chain() ORDER BY chain_seq NULLS FIRST",
         )
-        .bind(i32::try_from(retention_days).unwrap_or(i32::MAX))
-        .execute(&self.pool)
+        .fetch_all(&self.pool)
         .await?;
-        Ok(result.rows_affected())
+        rows.into_iter()
+            .map(|row| {
+                Ok(AuditChainFinding {
+                    chain_seq: row.try_get("chain_seq")?,
+                    record_id: row.try_get("record_id")?,
+                    recorded_at: row
+                        .try_get::<Option<Timestamp>, _>("recorded_at")?
+                        .map(Timestamp::to_jiff),
+                    finding: row.try_get("finding")?,
+                })
+            })
+            .collect()
     }
 
     /// The RESTful-ATNA ITI-81 retrieval: filtered, newest-first stored FHIR
@@ -354,6 +396,22 @@ fn build_search_statements(
         .build_sqlx(PostgresQueryBuilder);
 
     (count_sql, count_values, sql, values)
+}
+
+/// One damaged record — or one damaged chain boundary — reported by
+/// [`AuditStore::verify_chain`].
+#[derive(Debug, Clone)]
+pub struct AuditChainFinding {
+    /// The chain position the finding is about; `None` when the chain state
+    /// row itself is missing.
+    pub chain_seq: Option<i64>,
+    /// The damaged record's id, when the finding is about a record that is
+    /// still present rather than about a gap or a boundary.
+    pub record_id: Option<Uuid>,
+    /// The damaged record's event time, when known.
+    pub recorded_at: Option<jiff::Timestamp>,
+    /// What is wrong, in the operator's words.
+    pub finding: String,
 }
 
 /// The supported ITI-81 search-parameter subset, resolved by the REST layer.

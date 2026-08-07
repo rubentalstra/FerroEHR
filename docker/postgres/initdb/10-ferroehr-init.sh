@@ -67,6 +67,8 @@ fi
 psql_app <<SQL
 CREATE SCHEMA IF NOT EXISTS ehr AUTHORIZATION "${APP_USER}";
 CREATE SCHEMA IF NOT EXISTS ext AUTHORIZATION "${APP_USER}";
+-- The local IHE ATNA Audit Record Repository, deliberately its own schema.
+CREATE SCHEMA IF NOT EXISTS audit AUTHORIZATION "${APP_USER}";
 
 -- Installed by the superuser so the app role never needs it.
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA ext;
@@ -75,9 +77,10 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm    WITH SCHEMA ext;
 -- Required by the temporal vo_version PRIMARY KEY (... WITHOUT OVERLAPS).
 CREATE EXTENSION IF NOT EXISTS btree_gist WITH SCHEMA ext;
 
--- The app role owns both schemas already; make the intent explicit.
-GRANT ALL ON SCHEMA ehr TO "${APP_USER}";
-GRANT ALL ON SCHEMA ext TO "${APP_USER}";
+-- The app role owns the schemas already; make the intent explicit.
+GRANT ALL ON SCHEMA ehr   TO "${APP_USER}";
+GRANT ALL ON SCHEMA ext   TO "${APP_USER}";
+GRANT ALL ON SCHEMA audit TO "${APP_USER}";
 SQL
 
 echo "ferroehr init: done"

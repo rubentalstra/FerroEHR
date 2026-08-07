@@ -366,18 +366,22 @@ PostgreSQL connection.
 ```toml
 [db]
 url = "postgres://ferroehr:ferroehr@localhost:5432/ferroehr"
+migrate = "apply"
 max_connections = 20
 min_connections = 2
 acquire_timeout_secs = 30
+statement_timeout_ms = 60000
 ```
 
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `url` | secret URL | `postgres://ferroehr:ferroehr@localhost:5432/ferroehr` | Connection DSN. The default suits a local from-source run against a localhost PostgreSQL (the compose stacks set `FERROEHR__DB__URL` explicitly); **production MUST set it**. Credentials are redacted from every rendering. `DATABASE_URL` is a recognized lower-priority alias. |
 | `url_file` | path | unset | Read the DSN from a file instead of the key above, for a mounted secret. Preferred over the environment form in Kubernetes: an environment value is readable through `/proc/<pid>/environ` and inherited by every child process. At most one of the pair, where the built-in dev default does not count as "set". |
+| `migrate` | enum{apply,verify} | `apply` | Whether the server applies its embedded migrations at boot. `apply` is what makes an empty configuration boot against an empty database. `verify` issues **no DDL at all**: it checks that the database already carries exactly this build's migrations and refuses to start otherwise, so the DSN can authenticate as a role with no DDL rights. See [Operations](../operations.md#applying-migrations). |
 | `max_connections` | int | `20` | Pool ceiling. Write-heavy deployments benefit from 50+. |
 | `min_connections` | int | `2` | Idle connections kept open (avoids cold-reopen churn). |
 | `acquire_timeout_secs` | int | `30` | Seconds to wait for a free connection before failing. |
+| `statement_timeout_ms` | int | `60000` | `statement_timeout` applied to every pooled connection; `0` leaves the server default. The backstop the HTTP request timeout cannot be — dropping a handler future does not cancel the statement PostgreSQL is running. Keep it above `query.timeout_ms` so the AQL engine's own typed refusal fires first. |
 
 ## `[log]`
 
