@@ -426,16 +426,23 @@ and not verifiable. It is signed through Sigstore from this release on.
 
 > [!IMPORTANT]
 > Signing landed in the publishing lanes during the `3.17.4` cycle, so **`3.17.3`
-> and every earlier tag carry no attestation**: the commands below answer `no
-> attestations found` for them. That is the honest state, not a verification
+> and every earlier tag carry no attestation**: the commands below answer
+> `HTTP 404: Not Found` for them. That is the honest state, not a verification
 > failure — there is nothing to verify, because those artifacts were built before
-> the lane signed anything.
+> the lane signed anything. The development images
+> (`ghcr.io/rubentalstra/ferroehr:develop` and its two siblings) are signed and
+> verify now; the release-tag, release-binary and chart forms below start
+> answering at the `3.17.4` cut.
 
-**An image:**
+**An image** — signed and verifying today on the development tag:
 
 ```bash
-gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:3.17.4   -R rubentalstra/FerroEHR
+gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:develop -R rubentalstra/FerroEHR
 ```
+
+Add `--signer-workflow rubentalstra/FerroEHR/.github/workflows/containers.yml` to
+require the image lane specifically, not merely some workflow in this repository.
+On a release, substitute the `vX.Y.Z` tag for `develop`.
 
 **A release binary:**
 
