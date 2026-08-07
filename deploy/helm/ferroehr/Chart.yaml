@@ -18,7 +18,14 @@ type: application
 # misspelled or wrong-typed key of the CHART's own vocabulary is refused where it
 # previously rendered with the key silently ignored. The server's `config:` tree
 # stays open — that vocabulary belongs to the binary, not to this schema.
-version: 5.0.0
+#
+# 5.0.1 carries the SAME chart content as 5.0.0 and exists because 5.0.0 is
+# already published: its run pushed the chart and then failed at the signing
+# step, so 5.0.0 is installable but carries neither a cosign signature nor an
+# attestation. A published OCI version is immutable here by refusal rather than
+# by the registry — `helm push` over an existing tag replaces it silently — so
+# the signed artifact ships as a new version and 5.0.0 stays as it is.
+version: 5.0.1
 # The default container image tag (overridable via image.tag), and the released
 # application version — kept equal to the workspace version by the
 # `chart-appversion` CI guard, so a release cannot ship a chart pointing at the

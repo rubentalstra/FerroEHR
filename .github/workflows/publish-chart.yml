@@ -557,6 +557,32 @@ jobs:
           echo "ownership claim readable at ${CHART_REF}:artifacthub.io, repositoryID $got"
           echo "::notice::Verified Publisher applies on Artifact Hub's next processing cycle. The GHCR package must be PUBLIC for the hub to read it at all."
 
+      # Everything after `helm push` operates on an artifact that is already
+      # PUBLIC and, by this lane's own refusal, immutable — so a failure there
+      # consumes the chart version rather than leaving the tree where it was. It
+      # happened on 5.0.0: the signing step failed, the chart stayed published
+      # unsigned and un-attested, and the obvious next move — re-run the lane —
+      # then failed on the immutability guard with a message about bumping
+      # Chart.yaml that read like a mistake in the branch rather than the
+      # consequence of the first failure. This says it at the point of the first
+      # failure instead.
+      - name: What the failure left behind
+        if: failure() && steps.push.outputs.digest != ''
+        env:
+          VERSION: ${{ steps.chart.outputs.version }}
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          {
+            printf '## Chart %s is published, and this run failed after that\n\n' "$VERSION"
+            printf 'The chart was pushed (`%s`) before the failing step, so it is public and\n' "$DIGEST"
+            printf 'immutable: re-running this lane will be refused by the overwrite guard, and\n'
+            printf 're-pushing the tag would silently replace a version consumers may already have.\n\n'
+            printf 'It may be missing its signature, its attestation, or the Artifact Hub ownership\n'
+            printf 'tag, depending on where this run stopped — check the steps above.\n\n'
+            printf 'Fix the cause and ship it as the NEXT chart version. Leave %s as it is.\n' "$VERSION"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::error::chart ${VERSION} is already published; fix the cause and ship the next version — do not re-run this lane for ${VERSION}."
+
       - name: Summary
         if: always()
         env:
