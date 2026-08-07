@@ -405,7 +405,25 @@ workflow refuses a tag that has no matching section here.
 - The generated `openehr-*` spec crates no longer carry a crate-level `SPEC_VERSION` constant: a multi-generation crate has no single implemented spec version, and a fixed crate-root pin would contradict a configured non-current generation. The ONLY pin authority is the emitted `Generation` enum (per-variant `const fn spec_version()`; the derived `Default` variant is the current generation) — the generation modules carry no version constant either; the hand-written single-spec crates (`openehr-its`, `openehr-query`, `openehr-adl`) keep their literal constant.
 
 
+### Security
+
+- **The PGP signing private key is no longer world-readable inside the pod.**
+  The `secrets` volume was projected at `0440`, but the sibling `config` volume
+  carried no mode and so defaulted to `0644` — and that volume holds every
+  `config.files` entry, whose documented use includes the PGP signing private
+  key (`signing.key_path`), mutual-TLS PEMs and a JWKS blob, plus `ferroehr.toml`
+  itself when the configuration holds a secret the chart cannot route out. Now
+  `0440`, matching the secrets volume. Verified on a live cluster: the applied
+  `defaultMode` is 288 (0440) and both server pods read their configuration and
+  became Ready.
+
 ### Fixed
+
+- **`migrations.runByMigratorRole` now does what its documentation says.** The
+  key was described as "rendered into NOTES for the operator" and no template
+  read it, so the chart, its generated README and the book all described a
+  marker that did nothing. It now surfaces at install time when set to false,
+  stating plainly that the chart cannot verify the claim.
 
 - **A stock `helm install` no longer appears to succeed and then crash-loops.**
   `config.auth.enabled` defaults to true and the server requires a mechanism with
