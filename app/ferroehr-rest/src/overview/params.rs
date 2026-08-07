@@ -103,18 +103,17 @@ fn canonical_header_name(lower: &str) -> String {
     }
 }
 
-/// Minimal `application/x-www-form-urlencoded` pair splitter for query strings.
-/// (`+`→space, percent-decoding.) Kept local to avoid a dependency purely for
-/// query splitting; robustness matches the query-string shapes the contract
-/// uses.
+/// Split a query string into decoded `application/x-www-form-urlencoded` pairs.
+///
+/// `form_urlencoded::parse` does the whole job — the pair split, the `+`→space
+/// rule and percent-decoding — to the WHATWG URL standard, maintained by the
+/// same people as the `url` crate. It replaces a local splitter whose stated
+/// reason for existing ("to avoid a dependency purely for query splitting") was
+/// not true: `form_urlencoded` is a dependency of `url`, which this workspace
+/// pins, so it was already compiled into the build.
 fn form_urlencoded_pairs(query: &str) -> Vec<(String, String)> {
-    query
-        .split('&')
-        .filter(|s| !s.is_empty())
-        .map(|pair| {
-            let (k, v) = pair.split_once('=').unwrap_or((pair, ""));
-            (percent_decode(k), percent_decode(v))
-        })
+    form_urlencoded::parse(query.as_bytes())
+        .map(|(key, value)| (key.into_owned(), value.into_owned()))
         .collect()
 }
 
@@ -455,15 +454,6 @@ pub(crate) fn key_value_pairs(input: &str) -> Vec<(String, String)> {
         rest = tail;
     }
     out
-}
-
-/// Percent-decode one form-urlencoded token: `+` is a space
-/// (application/x-www-form-urlencoded), then WHATWG percent-decoding via the
-/// `urlencoding` crate (invalid UTF-8 tolerated lossily; incomplete escapes
-/// recovered per the WHATWG URL standard).
-fn percent_decode(s: &str) -> String {
-    let plus_decoded = s.replace('+', " ");
-    String::from_utf8_lossy(&urlencoding::decode_binary(plus_decoded.as_bytes())).into_owned()
 }
 
 /// Deserializer over the merged `name → [values]` multi-map. Only map/struct

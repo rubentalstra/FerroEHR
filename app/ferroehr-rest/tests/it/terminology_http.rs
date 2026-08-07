@@ -119,6 +119,7 @@ async fn disabled_group_answers_401_before_404_when_unauthenticated() {
             users: vec![BasicUser {
                 username: "alice".to_owned(),
                 password_hash: ferroehr::config::secret::Secret::new(argon2_hash("pw")),
+                password_hash_file: None,
                 roles: vec!["USER".to_owned()],
             }],
         }),
@@ -148,6 +149,7 @@ async fn disabled_group_answers_404_when_authenticated() {
             users: vec![BasicUser {
                 username: "alice".to_owned(),
                 password_hash: ferroehr::config::secret::Secret::new(argon2_hash("pw")),
+                password_hash_file: None,
                 roles: vec!["USER".to_owned()],
             }],
         }),

@@ -16,42 +16,42 @@ set -euo pipefail
 
 file="${1:-CHANGELOG.md}"
 
-python3 - "$file" <<'PY'
-import re, sys
-
-CANON = {"Added", "Changed", "Deprecated", "Removed", "Fixed", "Security"}
-path = sys.argv[1]
-lines = open(path, encoding="utf-8").read().split("\n")
-
-errors = []
-section = None
-seen: set[str] = set()
-for n, line in enumerate(lines, 1):
-    m = re.match(r"^## \[([^\]]+)\]", line)
-    if m:
-        section = m.group(1)
-        seen = set()
-        continue
-    m = re.match(r"^### (.+?)\s*$", line)
-    if m and section is not None:
-        sub = m.group(1)
-        if sub not in CANON:
-            errors.append(
-                f"{path}:{n}: '### {sub}' in [{section}] is not a "
-                f"Keep-a-Changelog type (allowed: {', '.join(sorted(CANON))})"
-            )
-        if sub in seen:
-            errors.append(
-                f"{path}:{n}: duplicate '### {sub}' in [{section}] — merge "
-                f"the entry into the existing subsection instead of adding "
-                f"a second header"
-            )
-        seen.add(sub)
-
-if errors:
-    print("changelog structure check FAILED:", file=sys.stderr)
-    for e in errors:
-        print(f"  {e}", file=sys.stderr)
-    sys.exit(1)
-print(f"changelog structure OK ({path})")
-PY
+# awk, not python: this repository ships no Python, and the check is a line scan
+# over one file — exactly what awk is for. The quote character arrives as a
+# variable because an awk string constant cannot portably escape it.
+awk -v path="$file" -v q="'" '
+  # A release heading opens a new section and resets what has been seen in it.
+  /^## \[/ {
+    section = $0
+    sub(/^## \[/, "", section)
+    sub(/\].*$/, "", section)
+    delete seen
+    next
+  }
+  # A subsection heading inside a section: check the type, then the duplicate.
+  /^### / && section != "" {
+    heading = $0
+    sub(/^### /, "", heading)
+    sub(/[[:space:]]+$/, "", heading)
+    if (heading != "Added" && heading != "Changed" && heading != "Deprecated" \
+        && heading != "Removed" && heading != "Fixed" && heading != "Security") {
+      errors[++n] = path ":" FNR ": " q "### " heading q " in [" section \
+        "] is not a Keep-a-Changelog type (allowed: Added, Changed, " \
+        "Deprecated, Fixed, Removed, Security)"
+    }
+    if (heading in seen) {
+      errors[++n] = path ":" FNR ": duplicate " q "### " heading q " in [" \
+        section "] — merge the entry into the existing subsection instead of " \
+        "adding a second header"
+    }
+    seen[heading] = 1
+  }
+  END {
+    if (n > 0) {
+      print "changelog structure check FAILED:" > "/dev/stderr"
+      for (i = 1; i <= n; i++) print "  " errors[i] > "/dev/stderr"
+      exit 1
+    }
+    print "changelog structure OK (" path ")"
+  }
+' "$file"

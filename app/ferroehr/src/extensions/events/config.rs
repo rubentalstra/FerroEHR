@@ -9,23 +9,10 @@
 //! configured on (this publisher OR the FHIR outbound emitter), gated in the
 //! binary from `events.enabled || fhir.outbound.enabled`.
 
+use std::path::PathBuf;
+
 use crate::config::secret::SecretUrl;
 use serde::{Deserialize, Serialize};
-
-/// The default AMQP broker URL (`RabbitMQ`, vhost `/`).
-const DEFAULT_URL: &str = "amqp://guest:guest@localhost:5672/%2f";
-/// The default topic exchange.
-const DEFAULT_EXCHANGE: &str = "ferroehr.events";
-/// Default rows drained per poll.
-const DEFAULT_BATCH_SIZE: i64 = 128;
-/// Default poll interval when the outbox is idle (ms).
-const DEFAULT_POLL_INTERVAL_MS: u64 = 1_000;
-/// Default published-row retention window (days).
-const DEFAULT_RETENTION_DAYS: i64 = 7;
-/// Default retention-prune cadence (seconds).
-const DEFAULT_PRUNE_INTERVAL_SECS: u64 = 3_600;
-/// Default per-row publish retry count before the drainer backs off.
-const DEFAULT_PUBLISH_MAX_RETRIES: usize = 3;
 
 /// Contribution-outbox eventing configuration (`[events]`) — our own extension.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -36,6 +23,9 @@ pub struct EventsConfig {
     pub enabled: bool,
     /// AMQP broker URL (credentials redacted from every rendering).
     pub url: SecretUrl,
+    /// Path to a file holding the broker URL, read at boot in place of
+    /// [`Self::url`]. Setting both this and a non-default `url` is a boot error.
+    pub url_file: Option<PathBuf>,
     /// Topic exchange to publish to (the PHI-free envelope stream).
     pub exchange: String,
     /// Use TLS: when `true` an `amqp://` URL is upgraded to `amqps://` (an
@@ -59,14 +49,15 @@ impl Default for EventsConfig {
     fn default() -> Self {
         Self {
             enabled: false,
-            url: SecretUrl::new(DEFAULT_URL),
-            exchange: DEFAULT_EXCHANGE.to_owned(),
+            url: SecretUrl::new("amqp://guest:guest@localhost:5672/%2f"),
+            url_file: None,
+            exchange: "ferroehr.events".to_owned(),
             tls: false,
-            batch_size: DEFAULT_BATCH_SIZE,
-            poll_interval_ms: DEFAULT_POLL_INTERVAL_MS,
-            retention_days: DEFAULT_RETENTION_DAYS,
-            prune_interval_secs: DEFAULT_PRUNE_INTERVAL_SECS,
-            publish_max_retries: DEFAULT_PUBLISH_MAX_RETRIES,
+            batch_size: 128,
+            poll_interval_ms: 1_000,
+            retention_days: 7,
+            prune_interval_secs: 3_600,
+            publish_max_retries: 3,
             admin_api: false,
         }
     }
@@ -96,7 +87,11 @@ mod tests {
         assert!(!c.enabled);
         assert!(!c.admin_api);
         assert_eq!(c.exchange, "ferroehr.events");
+        assert_eq!(c.batch_size, 128);
+        assert_eq!(c.poll_interval_ms, 1_000);
         assert_eq!(c.retention_days, 7);
+        assert_eq!(c.prune_interval_secs, 3_600);
+        assert_eq!(c.publish_max_retries, 3);
         assert!(c.url.expose().starts_with("amqp://"));
     }
 

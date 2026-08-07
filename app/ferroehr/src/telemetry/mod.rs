@@ -21,6 +21,7 @@ pub mod config;
 use crate::telemetry::config::{OtelConfig, TelemetryConfig};
 pub mod indicators;
 mod layers;
+mod log_sanitize;
 pub mod prometheus;
 pub mod samplers;
 
@@ -53,14 +54,14 @@ pub enum TelemetryError {
     #[error("prometheus recorder: {0}")]
     Prometheus(#[from] metrics_exporter_prometheus::BuildError),
     /// The global subscriber could not be installed.
-    #[error("subscriber init: {0}")]
-    Subscriber(String),
+    #[error("subscriber init failed")]
+    Subscriber(#[from] tracing_subscriber::util::TryInitError),
     /// An OTLP exporter could not be built.
-    #[error("otlp exporter: {0}")]
-    Exporter(String),
+    #[error("otlp exporter could not be built")]
+    Exporter(#[from] opentelemetry_otlp::ExporterBuildError),
     /// The span-flamegraph capture file could not be created.
-    #[error("flame capture: {0}")]
-    Flame(String),
+    #[error("flame capture file could not be created")]
+    Flame(#[from] tracing_flame::Error),
 }
 
 /// Initialize telemetry from configuration. Call once, early in `main`.
@@ -144,8 +145,7 @@ fn build_tracer_provider(
     let exporter = opentelemetry_otlp::SpanExporter::builder()
         .with_tonic()
         .with_endpoint(endpoint)
-        .build()
-        .map_err(|e| TelemetryError::Exporter(e.to_string()))?;
+        .build()?;
 
     Ok(SdkTracerProvider::builder()
         .with_batch_exporter(exporter)
@@ -164,8 +164,7 @@ fn build_meter_provider(
     let exporter = opentelemetry_otlp::MetricExporter::builder()
         .with_tonic()
         .with_endpoint(endpoint)
-        .build()
-        .map_err(|e| TelemetryError::Exporter(e.to_string()))?;
+        .build()?;
 
     Ok(SdkMeterProvider::builder()
         .with_periodic_exporter(exporter)

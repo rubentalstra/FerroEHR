@@ -480,7 +480,7 @@ fn unsatisfied_terminology(case: &CaseCore, ixit: &Ixit) -> Option<String> {
         }
         for namespace in &required.served {
             match lane.server_for(namespace) {
-                Some(server) if server.reachable => {}
+                Some(server) if server.is_reachable() => {}
                 Some(server) => {
                     return Some(format!(
                         "instance {name}: terminology namespace {namespace} is declared on server \
@@ -498,7 +498,7 @@ fn unsatisfied_terminology(case: &CaseCore, ixit: &Ixit) -> Option<String> {
         }
         for namespace in &required.unreachable {
             match lane.server_for(namespace) {
-                Some(server) if server.reachable => {
+                Some(server) if server.is_reachable() => {
                     return Some(format!(
                         "instance {name}: terminology namespace {namespace} is declared reachable \
                          on server '{}' — the case needs the terminology-server-down branch, \

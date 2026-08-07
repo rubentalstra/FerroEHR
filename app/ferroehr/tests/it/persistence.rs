@@ -111,6 +111,59 @@ async fn migrations_apply_cleanly_and_idempotently() {
     assert_eq!(cold, ["node", "vo_attestation", "vo_version"]);
 }
 
+/// A wipe of the `ehr` schema alone leaves the cold archival tier standing, and
+/// the next boot refuses with the remedy rather than looping on a bare
+/// `relation "vo_version" already exists`.
+///
+/// This is the exact sequence observed on a live cluster: `0007_cold_archive_tier`
+/// is the only migration in the set whose objects live outside `ehr`, so
+/// `DROP SCHEMA ehr CASCADE` takes the bookkeeping and leaves the mirrors. The
+/// refusal is deliberate — adopting a surviving mirror would accept a shape copied
+/// from the primary tables as they were before the wipe, and re-attach clinical
+/// rows to a repository that no longer exists.
+#[tokio::test]
+async fn a_cold_tier_that_outlived_its_primary_tier_is_refused_with_the_remedy() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+
+    sqlx::query("DROP SCHEMA ehr CASCADE")
+        .execute(&pool)
+        .await
+        .expect("drop the primary tier alone");
+
+    // The mirrors are in a different schema, so they are still here — which is
+    // the whole cause.
+    let survivors: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM pg_tables WHERE schemaname = 'cold'")
+            .fetch_one(&pool)
+            .await
+            .expect("count the surviving mirrors");
+    assert_eq!(survivors, 3, "the cold tier must survive a wipe of `ehr`");
+
+    let error = db::run_migrations(&pool)
+        .await
+        .expect_err("re-migrating over an orphaned cold tier must be refused");
+    assert!(
+        matches!(error, db::DbError::OrphanedArchiveTier),
+        "the refusal must be the typed one, not a bare relation-exists error: {error}"
+    );
+    let message = error.to_string();
+    assert!(
+        message.contains("DROP SCHEMA cold CASCADE"),
+        "the refusal must name the remedy: {message}"
+    );
+
+    // And the remedy actually works: with the orphan removed, the set applies
+    // from scratch. Without this half the test would pin a refusal with no way out.
+    sqlx::query("DROP SCHEMA cold CASCADE")
+        .execute(&pool)
+        .await
+        .expect("apply the remedy");
+    db::run_migrations(&pool)
+        .await
+        .expect("the migrations apply once the orphaned tier is gone");
+}
+
 #[tokio::test]
 async fn ext_magnitude_function_follows_the_spec_formulas() {
     let db = testkit::db().await.expect("testkit database");

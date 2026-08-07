@@ -196,6 +196,88 @@ system_id = "ferroehr.local"
 | `cors_permissive` | bool | `false` | Permissive (development) CORS. Production configures explicit origins. |
 | `system_id` | string | `ferroehr.local` | **This deployment's own openEHR system identifier** — see below. Set a stable, deployment-unique name in production (`FERROEHR__SERVER__SYSTEM_ID`). |
 
+### `[server.limits]`: request-body sizes
+
+```toml
+[server.limits]
+body_bytes = 16777216        # 16 MiB
+bulk_body_bytes = 67108864   # 64 MiB
+```
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `body_bytes` | int | `16777216` | The largest request body the ordinary clinical surface accepts, in bytes. |
+| `bulk_body_bytes` | int | `67108864` | The largest body the bulk routes accept: operational-template upload, `/message/import`, `/message/tdd`. |
+
+A request over its tier's limit is refused `413 Payload Too Large` with the
+standard openEHR error body. The status is not in the ITS-REST status table; it
+is admitted there as an additional, non-conflicting code, and is what RFC 9110
+§15.5.14 defines for this refusal.
+
+The defaults are sized against measured payloads rather than chosen as round
+numbers: the clinical tier was set to clear the largest operational template in
+the vendored CKM corpus several times over, with the measurement recorded beside
+the constant it justifies (`BodyLimits` in `app/ferroehr/src/config/server.rs`). **Raise `body_bytes` if your
+compositions embed large `DV_MULTIMEDIA` data** — a base64 radiology image can
+exceed either tier on its own, and that is a deliberate operator decision rather
+than a default.
+
+### `[server.rate_limit]`: per-caller request rates
+
+```toml
+[server.rate_limit]
+enabled = true
+principal_per_second = 1024
+principal_burst = 2048
+address_per_second = 2048
+address_burst = 4096
+```
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `enabled` | bool | `true` | Whether rate limiting is active. Off allocates no limiter state and costs no per-request check. |
+| `principal_per_second` | int | `1024` | Sustained requests per second per authenticated subject, on the clinical API. |
+| `principal_burst` | int | `2048` | How far one principal may burst before refusal. |
+| `address_per_second` | int | `2048` | Sustained requests per second per client address, across the whole tree. |
+| `address_burst` | int | `4096` | How far one address may burst before refusal. |
+
+**This is not `max_in_flight`, and an operator should be able to tell them apart
+from the status alone.** `max_in_flight` protects *capacity*: too many requests
+in flight at once, from anyone, and the excess is shed `503` + `Retry-After`.
+Rate limiting protects *fairness*: one caller asking too often over time, refused
+`429` + `Retry-After`. A `503` means the server is full; a `429` means you are
+asking too fast.
+
+Two tiers, because they defend different things. The **address** tier sits
+outside authentication, so a flood of unauthenticated requests is refused before
+it can make the server verify a signature per request — a limiter must not itself
+be the expensive path. The **principal** tier sits inside authentication, keyed
+on the authenticated subject, which is the only fair key for a clinical API: a
+hospital behind one NAT is a single address, so an address-keyed clinical limit
+would throttle an entire site because one client was busy.
+
+The defaults are derived from this implementation's own measured ceiling. The
+committed step-load record puts maximum sustainable whole-server throughput at
+512 requests/second on the reference SUT, so the principal tier is set at twice
+that and the address tier at four times: neither can refuse a caller until it is
+asking for more than the whole server could serve, and below that line capacity
+is `max_in_flight`'s job. **A deployment that earns a higher volumetric class
+should raise both in proportion** — a limit derived from a laptop-class
+measurement is too low for a server-class deployment.
+
+Refusals carry the limiter's own `Retry-After` and `x-ratelimit-*` headers
+alongside the openEHR error body. `429` is the status RFC 6585 §4 defines for
+this refusal, admitted by ITS-REST as an additional, non-conflicting code.
+
+The always-on health family is covered by the address tier only, deliberately: an
+orchestrator probe must never be refused because a principal-keyed bucket was
+exhausted, and probe rates are nowhere near the address ceiling.
+
+**Benchmarking this server?** Turn the limiter off first, or you will measure it
+instead of the server. Our own measurement lanes compose an overlay that does
+exactly that, and both instruments refuse to write a record if the server
+answered any `429`.
+
 ### `system_id`: the data-authoring identity
 
 `system_id` is the identifier this CDR stamps into the data it authors. It
@@ -292,6 +374,7 @@ acquire_timeout_secs = 30
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `url` | secret URL | `postgres://ferroehr:ferroehr@localhost:5432/ferroehr` | Connection DSN. The default suits a local from-source run against a localhost PostgreSQL (the compose stacks set `FERROEHR__DB__URL` explicitly); **production MUST set it**. Credentials are redacted from every rendering. `DATABASE_URL` is a recognized lower-priority alias. |
+| `url_file` | path | unset | Read the DSN from a file instead of the key above, for a mounted secret. Preferred over the environment form in Kubernetes: an environment value is readable through `/proc/<pid>/environ` and inherited by every child process. At most one of the pair, where the built-in dev default does not count as "set". |
 | `max_connections` | int | `20` | Pool ceiling. Write-heavy deployments benefit from 50+. |
 | `min_connections` | int | `2` | Idle connections kept open (avoids cold-reopen churn). |
 | `acquire_timeout_secs` | int | `30` | Seconds to wait for a free connection before failing. |
@@ -363,6 +446,7 @@ algorithms = ["RS256"]
 |---|---|---|---|
 | `username` | string | required | Principal name. A blank or missing one is a boot error. |
 | `password_hash` | secret | required | Argon2**id** PHC hash (`$argon2id$v=19$…`), never a plaintext password. Boot-validated against the OWASP floor — see below. |
+| `password_hash_file` | path | unset | Read the hash from a file instead, for a mounted secret. A hash is an offline cracking target, so prefer this wherever the configuration file itself is not treated as sensitive. The Argon2id floor is validated identically either way. Exactly one of the pair is required. |
 | `roles` | list of string | `["USER"]` | Roles granted (upper-cased on authentication). |
 
 > [!IMPORTANT]
@@ -638,6 +722,7 @@ envelopes are PHI-free by design.
 |---|---|---|---|
 | `enabled` | bool | `false` | Spawn the outbox publisher (with `fhir.outbound.enabled`, gates the per-commit outbox INSERT). |
 | `url` | secret URL | `amqp://guest:guest@localhost:5672/%2f` | AMQP broker URL; credentials redacted from every rendering. |
+| `url_file` | path | unset | Read the broker URL from a file instead, for a mounted secret. At most one of the pair, where the built-in dev default does not count as "set". |
 | `exchange` | string | `ferroehr.events` | Topic exchange (PHI-free envelope stream). |
 | `tls` | bool | `false` | Upgrade `amqp://` to `amqps://`. |
 | `batch_size` | int | `128` | Rows drained per poll. |
@@ -654,7 +739,8 @@ The FHIR connector — an inbound façade and an independent outbound emitter.
 `[fhir]`: `api_enabled` (bool, `false`) — mount `/fhir/r4/*` +
 `/admin/fhir_mapping`.
 `[fhir.outbound]`: `enabled` (bool, `false`), `url` (secret URL, same AMQP
-default), `exchange` (string, `ferroehr.fhir` — deliberately distinct from the
+default) or `url_file` (path, unset — read the broker URL from a mounted file
+instead), `exchange` (string, `ferroehr.fhir` — deliberately distinct from the
 events exchange for PHI isolation), `tls` (bool, `false`), `batch_size` (int,
 `128`), `poll_interval_ms` (int, `1000`), `publish_max_retries` (int, `3`).
 

@@ -104,11 +104,13 @@ impl Signer {
                     .key_path
                     .as_ref()
                     .ok_or(SigningError::MissingKeyPath)?;
-                let passphrase = config
-                    .key_passphrase
-                    .as_ref()
-                    .map(crate::config::secret::Secret::expose);
-                SignerMode::Pgp(Box::new(PgpKey::load(path, passphrase)?))
+                // Passed as the wrapper, not as `&str`: the plaintext is
+                // produced only at the `pgp` call that needs it (see
+                // `PgpKey::from_armored`), so no un-zeroized copy exists here.
+                SignerMode::Pgp(Box::new(PgpKey::load(
+                    path,
+                    config.key_passphrase.as_ref(),
+                )?))
             }
         };
         Ok(Self {

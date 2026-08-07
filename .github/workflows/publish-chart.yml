@@ -1,0 +1,341 @@
+# .github/workflows/publish-chart.yml
+#
+# Publishes the Helm chart to GHCR as an OCI artifact (issues #2104–#2106).
+#
+# OCI ONLY — no HTTP chart repository, no `index.yaml`, no chart branch (owner
+# ruling on #2105). The chart lands beside the images it deploys, under the same
+# owner, authentication and retention, and Artifact Hub consumes an OCI
+# repository directly. The cost, stated rather than hidden: `helm repo add` does
+# not work for this chart, so consumers older than Helm 3.8 (which made OCI a
+# first-class registry) are excluded.
+#
+# Two triggers, because the chart version is independent of the application
+# version:
+#   - a `vX.Y.Z` tag, since a release always moves `appVersion` and therefore the
+#     chart version too (the `chart-version` guard in ci.yml enforces the bump);
+#   - `workflow_dispatch`, so a chart-only fix does not wait for an unrelated
+#     application release. The default dispatch is a DRY RUN — it packages and
+#     runs every pre-flight check but pushes nothing — mirroring
+#     publish-crates.yml.
+#
+# WHY there is no `helm package --sign` / `.prov` provenance: PGP signing needs a
+# long-lived private key in CI, which is the exact thing the crates.io lane was
+# built to avoid (Trusted Publishing via OIDC, no long-lived token anywhere), and
+# a key in a repository secret is a worse posture than no key at all. The chart is
+# instead attested KEYLESS through Sigstore, the same mechanism and the same
+# verification command as the images:
+#   gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:X.Y.Z -R rubentalstra/FerroEHR
+# The consequence for consumers is honest: `helm install --verify` (which only
+# understands a `.prov`) does not apply; `gh attestation verify` does.
+name: Publish chart
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Really push the chart to GHCR (false = dry run)"
+        required: false
+        default: false
+        type: boolean
+
+# An OCI tag is MUTABLE — verified against a local registry: a second
+# `helm push` of the same chart version silently replaced the manifest and
+# returned a different digest, with no warning. So a published chart version is
+# only immutable because this lane refuses to overwrite one (below), and two
+# concurrent runs must never race that check. Queue, never cancel.
+concurrency:
+  group: publish-chart
+  cancel-in-progress: false
+
+permissions: {}
+
+env:
+  CHART_DIR: deploy/helm/ferroehr
+  # `helm push` appends the chart name, so the chart lands at
+  # ghcr.io/<owner>/charts/ferroehr.
+  OCI_NAMESPACE: oci://ghcr.io/${{ github.repository_owner }}/charts
+  CHART_REF: ghcr.io/${{ github.repository_owner }}/charts/ferroehr
+  APP_IMAGE: ghcr.io/${{ github.repository_owner }}/ferroehr
+
+jobs:
+  publish:
+    name: package + publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write # push the chart + the artifacthub.io tag to GHCR
+      id-token: write # Sigstore, for the keyless attestation
+      attestations: write # store it against this repository
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The same helm the golden renders are pinned to, from the same file.
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version-file: deploy/helm/.tool-versions
+      - uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
+        with:
+          version: 1.3.3
+
+      # No build cache is restored anywhere in this lane (#2011): everything it
+      # publishes is built from this checkout and nothing else.
+
+      - name: Read the chart's own versions
+        id: chart
+        run: |
+          set -euo pipefail
+          version=$(helm show chart "$CHART_DIR" | sed -nE 's/^version: *"?([^"]+)"?/\1/p')
+          app=$(helm show chart "$CHART_DIR" | sed -nE 's/^appVersion: *"?([^"]+)"?/\1/p')
+          [ -n "$version" ] && [ -n "$app" ] || { echo "::error::could not read version/appVersion from $CHART_DIR/Chart.yaml"; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "app=$app" >> "$GITHUB_OUTPUT"
+          echo "chart version $version, appVersion $app"
+
+      # A tag push must publish the chart version the tree carries, and the
+      # release cut moves `appVersion` to the released application version, so
+      # they have to agree. A mismatch means the release PR forgot one of them.
+      - name: On a tag, appVersion must be the tag being released
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          TAG: ${{ github.ref_name }}
+          APP: ${{ steps.chart.outputs.app }}
+        run: |
+          set -euo pipefail
+          if [ "${TAG#v}" != "$APP" ]; then
+            echo "::error::tag $TAG does not match Chart.yaml appVersion $APP — the release cut bumps appVersion with the workspace version."
+            exit 1
+          fi
+
+      - name: Chart validation + golden renders
+        run: bash deploy/helm/validate.sh
+
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # A published chart version is taken, exactly like a crates.io version —
+      # except the registry will happily overwrite it, so the refusal has to live
+      # here. `helm show chart` exits 0 when the version resolves and 1 when it
+      # does not (verified against a local registry).
+      - name: Refuse to overwrite an already-published chart version
+        env:
+          VERSION: ${{ steps.chart.outputs.version }}
+        run: |
+          set -euo pipefail
+          if helm show chart "oci://${CHART_REF}" --version "$VERSION" >/dev/null 2>&1; then
+            echo "::error::chart version $VERSION is already published at ${CHART_REF} — a published version is immutable; bump Chart.yaml version."
+            exit 1
+          fi
+          echo "chart version $VERSION is unpublished — proceeding."
+
+      # The check that catches the failure nobody could see from a rendered
+      # manifest: `helm install` with no `image.tag` pins `appVersion`, and the
+      # chart's `config` defaults track development between releases, so the
+      # image can REJECT a key the chart ships and every pod crash-loops with
+      # `unknown configuration key …`. Measured against ghcr.io/…/ferroehr:3.17.3:
+      # the rendered defaults carry `server.limits` and `db.statement_timeout_ms`,
+      # and that image's own `config check` refuses the file. A chart that cannot
+      # deploy its own default image is not published.
+      #
+      # On a tag push the image is built by containers.yml in a parallel run, so
+      # the pull waits for it rather than failing the race.
+      - name: The appVersion image must accept the chart's rendered defaults
+        env:
+          APP: ${{ steps.chart.outputs.app }}
+        run: |
+          set -euo pipefail
+          image="${APP_IMAGE}:${APP}"
+          for attempt in $(seq 1 40); do
+            if docker pull -q "$image" >/dev/null 2>&1; then break; fi
+            echo "waiting for $image to be published (attempt $attempt/40)"
+            sleep 30
+          done
+          docker pull -q "$image" >/dev/null
+          helm template ferroehr "$CHART_DIR" -f deploy/helm/ci/default-values.yaml \
+            --show-only templates/configmap.yaml \
+            | sed -n '/ferroehr.toml: |/,$p' | sed '1d;s/^    //' > rendered.toml
+          test -s rendered.toml
+
+          # The TOML is only half of what the chart hands the server: it also sets
+          # FERROEHR__* environment, and the strict boot-time sweep REFUSES an
+          # unknown one. Checking the file alone missed exactly that — measured on
+          # a live cluster, the chart's `FERROEHR__DB__URL_FILE` (added when the
+          # server gained `db.url_file`) crash-loops a 3.17.3 pod with
+          # `unknown configuration key url_file` while the rendered TOML checks out
+          # clean. So the env the Deployment declares is replayed here too, with a
+          # real file behind every `*_FILE` path.
+          mkdir -p envfiles
+          : > envargs
+          helm template ferroehr "$CHART_DIR" -f deploy/helm/ci/default-values.yaml \
+            --show-only templates/deployment.yaml \
+            | awk '/^            - name: FERROEHR__/ {n=$3} /^              value: / && n {v=$2; gsub(/"/,"",v); print n"="v; n=""}' \
+            > declared-env
+          cat declared-env
+          while IFS='=' read -r name value; do
+            [ -n "$name" ] || continue
+            case "$name" in
+              *_FILE)
+                f="envfiles/$(basename "$value")"
+                # A DSN-shaped file for the DSN, a token for everything else; the
+                # point is that the KEY is understood, not the value's content.
+                case "$name" in
+                  *DB__URL_FILE) printf 'postgres://u:p@db:5432/ferroehr' > "$f" ;;
+                  *) printf 'x' > "$f" ;;
+                esac
+                printf -- '-e\n%s=/etc/ferroehr-secrets/%s\n' "$name" "$(basename "$value")" >> envargs ;;
+              *) printf -- '-e\n%s=%s\n' "$name" "$value" >> envargs ;;
+            esac
+          done < declared-env
+          # No FERROEHR__DB__URL fallback when the chart supplies a file route.
+          grep -q 'DB__URL_FILE' declared-env || printf -- '-e\nFERROEHR__DB__URL=postgres://u:p@db:5432/ferroehr\n' >> envargs
+          # shellcheck disable=SC2046
+          if ! docker run --rm -v "$PWD/rendered.toml:/etc/ferroehr/ferroehr.toml:ro" \
+               -v "$PWD/envfiles:/etc/ferroehr-secrets:ro" \
+               $(tr '\n' ' ' < envargs) \
+               --entrypoint /usr/local/bin/ferroehr "$image" config check > check.log 2>&1; then
+            echo "::error::the chart's default configuration is not accepted by ${image} — a plain 'helm install' would crash-loop."
+            cat check.log
+            exit 1
+          fi
+          echo "${image} accepts the chart's rendered default configuration and declared environment."
+
+      # The per-release Artifact Hub annotations, derived from CHANGELOG.md so
+      # there is one changelog rather than two (#2107). Injected at package time
+      # rather than committed: they are facts about a release, and a committed
+      # copy would be stale from the next merge onwards.
+      - name: Inject the release's Artifact Hub annotations
+        env:
+          APP: ${{ steps.chart.outputs.app }}
+          IS_TAG: ${{ startsWith(github.ref, 'refs/tags/v') }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          # A tag publishes that release's section; a chart-only dispatch between
+          # releases publishes what is currently unreleased.
+          if [ "$IS_TAG" = "true" ]; then section="$APP"; else section="Unreleased"; fi
+          bash deploy/helm/artifacthub-changes.sh "$section" --inject
+          # An `-rc` tag is a chart pre-release, matching release.yml's own rule.
+          case "$TAG" in
+            *-rc*|*-alpha*|*-beta*)
+              printf '  artifacthub.io/prerelease: "true"\n' >> "$CHART_DIR/Chart.yaml" ;;
+          esac
+          echo "--- annotations as packaged ---"
+          sed -n '/^annotations:/,$p' "$CHART_DIR/Chart.yaml"
+
+      - name: Package
+        id: package
+        env:
+          VERSION: ${{ steps.chart.outputs.version }}
+        run: |
+          set -euo pipefail
+          helm package "$CHART_DIR" --destination dist
+          ls -l dist
+          echo "path=dist/ferroehr-${VERSION}.tgz" >> "$GITHUB_OUTPUT"
+
+      - name: Dry run — everything but the push
+        if: github.event_name == 'workflow_dispatch' && !inputs.publish
+        env:
+          PACKAGE: ${{ steps.package.outputs.path }}
+        run: |
+          echo "DRY RUN: would push $PACKAGE to ${OCI_NAMESPACE}"
+          helm show chart "$PACKAGE"
+
+      - name: Push the chart
+        id: push
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.publish
+        env:
+          PACKAGE: ${{ steps.package.outputs.path }}
+        run: |
+          set -euo pipefail
+          helm push "$PACKAGE" "$OCI_NAMESPACE" 2>&1 | tee push.log
+          digest=$(sed -nE 's/^Digest: (sha256:[0-9a-f]+)$/\1/p' push.log)
+          [ -n "$digest" ] || { echo "::error::could not read the pushed digest from helm push output"; exit 1; }
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+      # Keyless provenance for the chart artifact, the same mechanism the images
+      # use — see the header for why this replaces a PGP `.prov`.
+      - name: Attest build provenance
+        if: steps.push.outputs.digest != ''
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-name: ${{ env.CHART_REF }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+      # Artifact Hub ownership (#2106). For an OCI repository there is no
+      # `index.yaml`, so there is nowhere to commit this file as a sibling: it is
+      # pushed as a special `artifacthub.io` TAG on the chart's own repository,
+      # with the media types Artifact Hub looks for
+      # (https://artifacthub.io/docs/topics/repositories/helm-charts/). Following
+      # the HTTP instructions instead produces a committed file nothing reads and
+      # silently no Verified Publisher badge, with no error anywhere — which is
+      # why this runs on EVERY publish rather than once by hand.
+      #
+      # The config media type ends `+yaml`; the layer media type ends `.v1.yaml`
+      # with no `+`. They are not the same shape and a swap is silent.
+      - name: Push the Artifact Hub ownership metadata
+        if: steps.push.outputs.digest != ''
+        run: |
+          set -euo pipefail
+          if grep -q 'REPLACE_WITH_ARTIFACT_HUB_REPOSITORY_ID' deploy/helm/artifacthub-repo.yml; then
+            echo "::error::artifacthub-repo.yml still carries the placeholder repositoryID — the listing would be unowned and the Verified Publisher badge unobtainable. Register the repository and fill the id in (deploy/helm/artifacthub-repo.yml)."
+            exit 1
+          fi
+          cd deploy/helm
+          oras push "${CHART_REF}:artifacthub.io" \
+            --config /dev/null:application/vnd.cncf.artifacthub.config.v1+yaml \
+            artifacthub-repo.yml:application/vnd.cncf.artifacthub.repository-metadata.layer.v1.yaml
+
+      # Read the ownership claim back the way Artifact Hub reads it — by LAYER
+      # MEDIA TYPE, not by position — and confirm the id it carries is the one in
+      # the tree. Without this the whole mechanism fails silently: a mistyped media
+      # type (the config one ends `+yaml`, the layer one ends `.v1.yaml`), a
+      # mistyped tag, or a registry that dropped the artifact all present as
+      # "no Verified Publisher badge" weeks later, with no error anywhere.
+      - name: Verify the ownership claim is readable and correct
+        if: steps.push.outputs.digest != ''
+        run: |
+          set -euo pipefail
+          layer="application/vnd.cncf.artifacthub.repository-metadata.layer.v1.yaml"
+          manifest=$(oras manifest fetch "${CHART_REF}:artifacthub.io")
+          count=$(printf '%s' "$manifest" | jq --arg t "$layer" '[.layers[] | select(.mediaType == $t)] | length')
+          if [ "$count" != "1" ]; then
+            echo "::error::the artifacthub.io tag carries $count layers of $layer (expected exactly 1) — Artifact Hub locates the metadata by this media type and will not find it."
+            printf '%s\n' "$manifest"
+            exit 1
+          fi
+          fetched=$(oras blob fetch --output - \
+            "${CHART_REF}@$(printf '%s' "$manifest" | jq -r --arg t "$layer" '.layers[] | select(.mediaType == $t) | .digest')")
+          want=$(sed -nE 's/^repositoryID: *(.+)$/\1/p' deploy/helm/artifacthub-repo.yml)
+          got=$(printf '%s' "$fetched" | sed -nE 's/^repositoryID: *(.+)$/\1/p')
+          if [ "$got" != "$want" ]; then
+            echo "::error::the published ownership claim carries repositoryID '$got' but the tree says '$want'."
+            exit 1
+          fi
+          echo "ownership claim readable at ${CHART_REF}:artifacthub.io, repositoryID $got"
+          echo "::notice::Verified Publisher applies on Artifact Hub's next processing cycle. The GHCR package must be PUBLIC for the hub to read it at all."
+
+      - name: Summary
+        if: always()
+        env:
+          VERSION: ${{ steps.chart.outputs.version }}
+          APP: ${{ steps.chart.outputs.app }}
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          {
+            printf '## Chart publish\n\n'
+            printf '| | |\n|---|---|\n'
+            printf '| chart version | `%s` |\n' "$VERSION"
+            printf '| appVersion | `%s` |\n' "$APP"
+            printf '| repository | `%s` |\n' "$CHART_REF"
+            printf '| digest | `%s` |\n' "${DIGEST:-not pushed}"
+            printf '\nInstall:\n\n```shell\nhelm install ferroehr oci://%s/ferroehr --version %s\n```\n' \
+              "${CHART_REF%/ferroehr}" "$VERSION"
+          } >> "$GITHUB_STEP_SUMMARY"

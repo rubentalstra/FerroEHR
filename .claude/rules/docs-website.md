@@ -67,5 +67,5 @@ lychee, Swagger UI). Bump only after live-verifying the new version.
 ## Local preview
 
 `bash scripts/site/build.sh` then serve `_site/`
-(`python3 -m http.server -d _site`). CI equivalence is the point — if it
+(`npx --yes serve _site`, or any static server). CI equivalence is the point — if it
 works locally it works deployed.

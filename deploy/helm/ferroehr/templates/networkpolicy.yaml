@@ -3,6 +3,9 @@
 # API port (and the management port when it runs on its own listener). Every
 # other inbound port is denied. A PHI workload should never be reachable on
 # anything but its serving port.
+# The SOURCE is narrowed only when networkPolicy.ingressFrom is set: a rule with
+# no `from` admits every source, including other namespaces
+# (https://kubernetes.io/docs/concepts/services-networking/network-policies/).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -31,14 +34,31 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
   {{- if .Values.networkPolicy.egress.enabled }}
+  {{- /* An egress policy that forgets the database is a total outage presenting
+         as a database fault: readiness reports the DB down, the logs show a
+         connect timeout, and nothing mentions the network policy. The database is
+         the one destination that is never optional, so its absence is refused at
+         render time rather than discovered at rollout. */}}
+  {{- if and (not .Values.networkPolicy.egress.database.to) (not .Values.networkPolicy.egress.rules) }}
+  {{- fail "networkPolicy.egress.enabled=true with no destination for the database: set networkPolicy.egress.database.to (a podSelector/namespaceSelector for an in-cluster database, or an ipBlock for a managed one). DNS alone leaves the server unable to reach its DSN, which fails readiness with a connect timeout and no mention of the policy. The destination table is in the book, installation/kubernetes-hardening.md §Egress." }}
+  {{- end }}
   egress:
-    # DNS is always required.
+    # DNS is always required: without it every destination below fails name
+    # resolution regardless of its own rule.
     - to: []
       ports:
         - port: 53
           protocol: UDP
         - port: 53
           protocol: TCP
+    {{- with .Values.networkPolicy.egress.database.to }}
+    # The database (never optional — the server cannot pass readiness without it).
+    - to:
+        {{- toYaml . | nindent 8 }}
+      ports:
+        - port: {{ $.Values.networkPolicy.egress.database.port }}
+          protocol: TCP
+    {{- end }}
     {{- with .Values.networkPolicy.egress.rules }}
     {{- toYaml . | nindent 4 }}
     {{- end }}

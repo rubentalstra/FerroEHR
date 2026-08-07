@@ -1,3 +1,4 @@
+{{- if ne (include "ferroehr.configInSecret" .) "true" }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -6,8 +7,15 @@ metadata:
     {{- include "ferroehr.labels" . | nindent 4 }}
 data:
   # The whole server configuration as one ferroehr.toml, mounted at
-  # /etc/ferroehr/ferroehr.toml (config search-order position 4). Rendered from
-  # .Values.config (minus `files`, which is mounted separately). Secrets are NOT
-  # here — they are injected as FERROEHR_* env from the Secret and override the file.
+  # /etc/ferroehr/ferroehr.toml (config search-order position 4). Rendered by
+  # `ferroehr.configToml`, never from .Values.config verbatim: a ConfigMap is not
+  # a sensitive object, so a secret-bearing key is either refused (when a
+  # `secrets:` key carries it) or moves this whole file into the Secret, in which
+  # case this ConfigMap is not created at all.
+  # NOTE: Helm decodes values through JSON, so every number reaches a template as
+  # a float64 and `toToml` writes it back as a TOML float (`10.0`, `1.6777216e+07`)
+  # — the server's configuration layer coerces those onto integer keys, which is
+  # why the rendered file is accepted as written.
   ferroehr.toml: |
-{{ omit .Values.config "files" | toToml | indent 4 }}
+{{ include "ferroehr.configToml" . | indent 4 }}
+{{- end }}

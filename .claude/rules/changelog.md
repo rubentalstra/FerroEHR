@@ -33,6 +33,23 @@ optional:
   version match is missing**. Releases publish as OFFICIAL
   releases — `prerelease` is true only for an explicitly suffixed tag
   (`vX.Y.Z-rc1`, ...) — owner sign-off 2026-07-31.
+- **The Helm chart, in the SAME release PR:** bump
+  `deploy/helm/ferroehr/Chart.yaml` `appVersion` to the release version (the
+  `chart-appversion-guard` CI job enforces it, and so do the
+  `artifacthub.io/images` tags in the same file), and bump the chart's own
+  `version` if any packaged chart content changed in the cycle
+  (`chart-version-guard`). The two are INDEPENDENT SemVer lines and stay so.
+  Regenerate the golden renders (`deploy/helm/validate.sh --update`).
+- **The chart publishes on the tag** (`publish-chart.yml`): it refuses to
+  overwrite a published chart version, checks that the `appVersion` image
+  accepts the chart's rendered defaults, injects that release's
+  `artifacthub.io/changes` from this changelog, pushes to
+  `oci://ghcr.io/rubentalstra/charts`, attests it through Sigstore, and
+  re-pushes the Artifact Hub ownership tag. A chart-only fix between releases
+  uses the same lane by `workflow_dispatch` with `publish: true`. **Never
+  re-publish a chart version — bump it:** an OCI tag is MUTABLE, so `helm push`
+  would silently replace it with a different digest, and the immutability the
+  guards assume exists only because the lane enforces it.
 - **After the tag:** close the `vX.Y.Z` milestone (`gh api … milestones/N
   -f state=closed`) and make sure the NEXT milestone exists so triage always
   has a target. The milestone's closed-issue list + the changelog section

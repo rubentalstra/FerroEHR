@@ -1,0 +1,63 @@
+# OpenSSF Scorecard — an INDEPENDENT score of this repository's security posture.
+#
+# It is here for the same reason the conformance numbers are computed by a runner
+# rather than written down: a security claim should be earned by something that
+# can disagree with us. Scorecard checks the supply-chain properties this project
+# spent real work on — pinned action digests, minimal workflow token permissions,
+# no dangerous `run:` interpolation, code scanning, branch protection, signed
+# releases, dependency update automation — and publishes a score we do not
+# control. A self-made "hardened" badge would assert the same thing while proving
+# nothing.
+#
+# Results go two places: the OpenSSF API (which backs the README badge, enabled
+# by `publish_results`) and this repository's code-scanning alerts, so a
+# regression shows up in the Security tab rather than only in a number.
+#
+# Docs: https://github.com/ossf/scorecard-action
+name: Scorecard
+
+on:
+  # Weekly, because most checks measure repository CONFIGURATION rather than a
+  # commit: branch protection, code scanning, the update bot. A per-push run
+  # would re-measure unchanged settings.
+  schedule:
+    - cron: '37 5 * * 1'
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  analysis:
+    name: Scorecard analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      # Upload the SARIF into code scanning.
+      security-events: write
+      # Publish to the OpenSSF API (the badge's source) via OIDC — no token.
+      id-token: write
+      contents: read
+      # Read branch-protection settings, which Scorecard cannot check otherwise.
+      actions: read
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run analysis
+        uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc # v2.4.4
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          # Publishing is what makes the badge possible, and it is a deliberate
+          # choice rather than a default: the score becomes public, including
+          # when it drops.
+          publish_results: true
+
+      - name: Upload the SARIF to code scanning
+        uses: github/codeql-action/upload-sarif@5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6
+        with:
+          sarif_file: results.sarif

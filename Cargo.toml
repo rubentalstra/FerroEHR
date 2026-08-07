@@ -17,7 +17,6 @@ edition = "2024"
 rust-version = "1.96"
 license = "MIT"
 repository = "https://github.com/rubentalstra/FerroEHR"
-authors = ["Ruben Talstra <14235001+rubentalstra@users.noreply.github.com>"]
 # C-METADATA (https://rust-lang.github.io/api-guidelines/documentation.html#c-metadata):
 # members inherit via `<key>.workspace = true`; `readme` resolves from this root.
 documentation = "https://ferroehr.eu/"
@@ -318,6 +317,10 @@ jiff = { version = "0.2.31", features = ["serde"] }   # 1.0 not yet out as of 20
 garde = { version = "0.23.0", features = ["derive"] }   # verify latest
 url = "2"
 urlencoding = "2.1.3"
+# WHATWG query-string pair splitting (`+`→space + percent-decoding in one call).
+# Already in the graph as a dependency of `url`; pinned explicitly because a
+# workspace member uses it directly rather than through `url`.
+form_urlencoded = "1.2.2"
 csv = "1.4"                        # RESULT_SET → CSV export (admin console BFF; verified live 2026-07-18)
 
 # ── Admin console (Leptos stack — app/ferroehr-admin-ui; pins re-verified live 2026-07-17) ──
@@ -362,7 +365,11 @@ pprof = { version = "0.15.0", features = ["flamegraph"] }
 # ── Caching, rate limiting, resilience ───────────────────────────────────────
 moka = { version = "0.12", features = ["future"] }   # Caffeine equivalent (template/WebTemplate cache)
 quick_cache = "0.7.0"
-tower_governor = "0.8.0"             # rate limiting for axum (verify latest)
+# Rate limiting for axum (GCRA via `governor`). `tonic` is in its default
+# feature set and we serve no gRPC, so only `axum` is enabled; `tracing` stays
+# off deliberately — its hooks would put a bucket key (a subject id or client
+# address) into telemetry.
+tower_governor = { version = "0.8.0", default-features = false, features = ["axum"] }
 governor = "0.10.4"                  # underlying limiter (verify latest)
 backon = "1"                      # retry/backoff (backoff crate is deprecated)
 lapin = "4"                       # AMQP 0.9.1 client (RabbitMQ) — contribution-outbox eventing

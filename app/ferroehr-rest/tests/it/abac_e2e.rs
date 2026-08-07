@@ -178,10 +178,10 @@ fn service_resolvers(svc: Arc<FerroEhrService>) -> AuthzResolvers {
             Box::pin(async move {
                 let vo_id = vo
                     .parse::<ferroehr::ids::VoId>()
-                    .map_err(|e| ResolveError(format!("vo id: {e}")))?;
+                    .map_err(|e| ResolveError::new("vo id", e))?;
                 svc.template_of_version(vo_id, version.as_deref())
                     .await
-                    .map_err(|e| ResolveError(format!("{e}")))
+                    .map_err(|e| ResolveError::new("template of version", e))
             })
         }),
         ..resolvers()

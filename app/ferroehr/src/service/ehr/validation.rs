@@ -598,8 +598,8 @@ mod tests {
     use serde_json::{Value, json};
 
     use super::{validate_ehr_access, validate_ehr_status, validate_folder};
-    use crate::service::ehr::access::default_ehr_access;
-    use crate::service::ehr::service::default_ehr_status;
+    use crate::service::ehr::access::initial_ehr_access;
+    use crate::service::ehr::service::initial_ehr_status;
     use crate::service::error::ServiceError;
 
     /// `EHR_STATUS.other_details` must be a concrete `ITEM_STRUCTURE`
@@ -608,7 +608,7 @@ mod tests {
     #[test]
     fn ehr_status_other_details_type_is_enforced() {
         let with_other = |other: Value| {
-            let mut st = default_ehr_status();
+            let mut st = initial_ehr_status();
             st.as_object_mut()
                 .unwrap()
                 .insert("other_details".into(), other);
@@ -651,7 +651,7 @@ mod tests {
 
     #[test]
     fn default_and_typical_ehr_status_are_accepted() {
-        validate_ehr_status(&default_ehr_status()).expect("default EHR_STATUS");
+        validate_ehr_status(&initial_ehr_status()).expect("default EHR_STATUS");
         // A subject identified via external_ref is still a PARTY_SELF (RM ehr
         // master04 §EHR Status).
         let identified = json!({
@@ -781,7 +781,7 @@ mod tests {
     /// `Scheme_valid`).
     #[test]
     fn ehr_access_commit_validation() {
-        validate_ehr_access(&default_ehr_access(), false).expect("the default EHR_ACCESS is valid");
+        validate_ehr_access(&initial_ehr_access(), false).expect("the default EHR_ACCESS is valid");
         let err = validate_ehr_access(&json!({ "_type": "EHR_STATUS" }), false)
             .expect_err("foreign _type rejected");
         assert!(format!("{err:?}").contains("EHR_ACCESS"), "got {err:?}");
@@ -964,14 +964,14 @@ mod tests {
     /// reaches it. The populated twin stays accepted.
     #[test]
     fn ehr_status_empty_rm_version_is_refused() {
-        let mut bad = default_ehr_status();
+        let mut bad = initial_ehr_status();
         bad["archetype_details"]["rm_version"] = json!("");
         let err = validate_ehr_status(&bad).expect_err("an empty rm_version must be refused");
         assert!(
             format!("{err:?}").contains("Rm_version_valid"),
             "the refusal should name the invariant, got {err:?}"
         );
-        validate_ehr_status(&default_ehr_status()).expect("a populated rm_version is accepted");
+        validate_ehr_status(&initial_ehr_status()).expect("a populated rm_version is accepted");
     }
 
     /// `LINK.meaning` is 1..1 (RM common `org.openehr.rm.common.link.adoc`
@@ -1024,7 +1024,7 @@ mod tests {
     #[test]
     fn ehr_status_other_details_item_single_without_item_is_refused() {
         let with_other = |other: Value| {
-            let mut status = default_ehr_status();
+            let mut status = initial_ehr_status();
             status
                 .as_object_mut()
                 .unwrap()
@@ -1090,7 +1090,7 @@ mod tests {
             })
         };
         let with_other = |other: Value| {
-            let mut status = default_ehr_status();
+            let mut status = initial_ehr_status();
             status
                 .as_object_mut()
                 .unwrap()

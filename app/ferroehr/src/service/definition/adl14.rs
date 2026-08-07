@@ -139,14 +139,15 @@ impl FerroEhrService {
         let mut log = ConversionLog::new();
         let converted =
             parse_and_convert(&source, &ConvertConfig::default(), &mut log).map_err(|e| {
-                ServiceError::Unprocessable(Violation::new(format!(
-                    "1.4 → 2 conversion failed: {e}"
-                )))
+                ServiceError::Unprocessable(
+                    Violation::new(format!("1.4 → 2 conversion failed: {e}")).with_source(e),
+                )
             })?;
         openehr_adl::print::print(&converted).map_err(|e| {
-            SmError::from(ServiceError::Unprocessable(Violation::new(format!(
-                "1.4 → 2 conversion produced unprintable ADL2: {e}"
-            ))))
+            SmError::from(ServiceError::Unprocessable(
+                Violation::new(format!("1.4 → 2 conversion produced unprintable ADL2: {e}"))
+                    .with_source(e),
+            ))
         })
     }
 
@@ -185,14 +186,14 @@ impl FerroEhrService {
         // boundary re-raise needed.
         let xml = self.opt_get(&an_opt_id).await?;
         let opt = openehr_its::opt14::from_xml(&xml).map_err(|e| {
-            ServiceError::Unprocessable(Violation::new(format!(
-                "stored OPT no longer parses: {e:?}"
-            )))
+            ServiceError::Unprocessable(
+                Violation::new(format!("stored OPT no longer parses: {e:?}")).with_source(e),
+            )
         })?;
         let conversion = super::opt14_convert::convert_opt_to_adl2(&opt).map_err(|e| {
-            ServiceError::Unprocessable(Violation::new(format!(
-                "OPT 1.4 → 2 conversion failed: {e}"
-            )))
+            ServiceError::Unprocessable(
+                Violation::new(format!("OPT 1.4 → 2 conversion failed: {e}")).with_source(e),
+            )
         })?;
         Ok(conversion.roots.into_iter().map(|r| r.adl2).collect())
     }

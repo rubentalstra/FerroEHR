@@ -52,24 +52,34 @@ pub struct SubscriptionRecord {
 /// optional predicates (absent/`null`/empty = wildcard), `enabled` default
 /// `true`.
 #[derive(Debug, serde::Deserialize)]
+#[serde(default)]
 pub struct SubscriptionDefinition {
-    /// The subscription name (required; validated to `[A-Za-z0-9_.-]`).
+    /// The subscription name (required; validated to `[A-Za-z0-9_.-]`). An
+    /// absent name arrives empty and is refused by `validated_name`.
     pub name: String,
     /// The versioned-object kind predicate (absent/`null` = wildcard).
-    #[serde(default)]
     pub kind: Option<String>,
     /// The audit change-type predicate (absent/`null` = wildcard).
-    #[serde(default)]
     pub change_type: Option<String>,
     /// The template-id predicate (absent/`null` = wildcard).
-    #[serde(default)]
     pub template_id: Option<String>,
     /// The root-archetype predicate (absent/`null` = wildcard).
-    #[serde(default)]
     pub archetype: Option<String>,
     /// Whether the subscription starts enabled (default `true`).
-    #[serde(default = "enabled_default")]
     pub enabled: bool,
+}
+
+impl Default for SubscriptionDefinition {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            kind: None,
+            change_type: None,
+            template_id: None,
+            archetype: None,
+            enabled: true,
+        }
+    }
 }
 
 /// A client-submitted subscription update: the predicates + `enabled`.
@@ -77,27 +87,30 @@ pub struct SubscriptionDefinition {
 /// The `name` is immutable — it is the queue key — so an echoed `name` from a
 /// prior GET is tolerated and ignored, like the other echoed read-only fields.
 #[derive(Debug, serde::Deserialize)]
+#[serde(default)]
 pub struct SubscriptionUpdate {
     /// The versioned-object kind predicate (absent/`null` = wildcard).
-    #[serde(default)]
     pub kind: Option<String>,
     /// The audit change-type predicate (absent/`null` = wildcard).
-    #[serde(default)]
     pub change_type: Option<String>,
     /// The template-id predicate (absent/`null` = wildcard).
-    #[serde(default)]
     pub template_id: Option<String>,
     /// The root-archetype predicate (absent/`null` = wildcard).
-    #[serde(default)]
     pub archetype: Option<String>,
     /// Whether the publisher binds this subscription's queue (default `true`).
-    #[serde(default = "enabled_default")]
     pub enabled: bool,
 }
 
-/// The `enabled` default (`true`) for absent flags on submitted definitions.
-fn enabled_default() -> bool {
-    true
+impl Default for SubscriptionUpdate {
+    fn default() -> Self {
+        Self {
+            kind: None,
+            change_type: None,
+            template_id: None,
+            archetype: None,
+            enabled: true,
+        }
+    }
 }
 
 impl FerroEhrService {

@@ -6,7 +6,6 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-authors.workspace = true
 documentation.workspace = true
 readme.workspace = true
 keywords.workspace = true
@@ -85,6 +84,9 @@ anyhow = { workspace = true, optional = true }
 reqwest = { workspace = true, optional = true }
 config = { workspace = true, optional = true }
 tower-sessions = { workspace = true, optional = true, features = ["memory-store"] }
+# The browser security-header layer (`SetResponseHeaderLayer`). Server-only:
+# headers are a response property, so the hydrate target never needs it.
+tower-http = { workspace = true, optional = true }
 csv = { workspace = true, optional = true }
 # Bounded concurrent fan-out for the dashboard namespace tiles (ssr only —
 # the client never runs the tile queries).
@@ -110,6 +112,7 @@ hydrate = [
     "dep:console_error_panic_hook",
 ]
 ssr = [
+    "dep:tower-http",
     "leptos/ssr",
     "leptos_meta/ssr",
     "leptos_router/ssr",

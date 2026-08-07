@@ -4,17 +4,22 @@
 # the issue "Security alerts" relationship (link an alert to a tracked issue;
 # see .claude/rules/issue-relationships.md §4, which is UI-only by design).
 #
-# Rust is a generally-available CodeQL language (GA 2025-10-14) and scans with
-# build-mode "none" — no cargo build required, so this stays cheap and never
-# contends for the shared ./target tree.
+# Two languages are analysed, both with build-mode "none" — no cargo build
+# required, so this stays cheap and never contends for the shared ./target tree:
+#   - rust    — the product source (a generally-available language, GA 2025-10-14)
+#   - actions — the workflows in this directory, treated as source rather than
+#               configuration, because that is what they are: code holding tokens
+#               that can publish releases, images and crates.
 #
 # Docs: https://docs.github.com/en/code-security/code-scanning
 name: CodeQL
 
-# Push/PR runs are path-filtered to Rust-relevant changes — a docs/CI/artifact
-# -only change has nothing for the rust analyzer to scan. The weekly scheduled
-# run has no filter, so full-tree coverage is never lost. (CodeQL is not a
-# required status check, so a skipped run cannot block a merge.)
+# Push/PR runs are path-filtered to what the two analyzers can actually read.
+# `.github/workflows/**` widens the old `codeql.yml`-only entry now that the
+# workflows are themselves analysed; the cost is that a workflow-only change
+# also re-runs the rust analyzer, which build-mode "none" keeps cheap. The
+# weekly scheduled run has no filter, so full-tree coverage is never lost.
+# (CodeQL is not a required status check, so a skipped run cannot block a merge.)
 on:
   push:
     branches: [develop]
@@ -22,14 +27,16 @@ on:
       - "**/*.rs"
       - "**/Cargo.toml"
       - "Cargo.lock"
-      - ".github/workflows/codeql.yml"
+      - ".github/workflows/**"
+      - ".github/actions/**"
   pull_request:
     branches: [develop]
     paths:
       - "**/*.rs"
       - "**/Cargo.toml"
       - "Cargo.lock"
-      - ".github/workflows/codeql.yml"
+      - ".github/workflows/**"
+      - ".github/actions/**"
   schedule:
     - cron: "23 5 * * 1" # Mondays 05:23 UTC (off-the-hour to dodge load spikes)
 
@@ -37,26 +44,37 @@ concurrency:
   group: codeql-${{ github.ref }}
   cancel-in-progress: true
 
+# No permissions by default — the analyse job grants its own; without this the
+# workflow would inherit the repository default.
+permissions: {}
+
 jobs:
   analyze:
-    name: Analyze (rust)
+    name: Analyze (${{ matrix.language }})
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
       security-events: write # upload the SARIF results / alerts
       contents: read
       actions: read
+    strategy:
+      # One language must not hide the other's results.
+      fail-fast: false
+      matrix:
+        language: [rust, actions]
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6
         with:
-          languages: rust
+          languages: ${{ matrix.language }}
           build-mode: none
 
       - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6
         with:
-          category: "/language:rust"
+          category: "/language:${{ matrix.language }}"

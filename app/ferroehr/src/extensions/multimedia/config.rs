@@ -19,13 +19,6 @@ use std::path::PathBuf;
 use crate::config::secret::Secret;
 use serde::{Deserialize, Serialize};
 
-/// Default offload threshold: a decoded (unencoded) `DV_MULTIMEDIA.data`
-/// larger than this is externalized. 256 KiB.
-pub const DEFAULT_THRESHOLD_BYTES: usize = 256 * 1024;
-
-/// The default bucket name when a deployment does not set one.
-const DEFAULT_BUCKET: &str = "openehr-multimedia";
-
 /// DV_MULTIMEDIA externalization settings.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
@@ -34,7 +27,8 @@ pub struct MultimediaConfig {
     /// byte; no object store is built or contacted.
     pub enabled: bool,
     /// A decoded `DV_MULTIMEDIA.data` strictly larger than this many bytes is
-    /// offloaded to the object store; at or below it stays inline.
+    /// offloaded to the object store; at or below it stays inline. Default
+    /// 256 `KiB`.
     pub threshold_bytes: usize,
     /// S3-compatible endpoint URL (e.g. a SeaweedFS S3 gateway in dev/test, or
     /// an AWS/MinIO endpoint in prod). `None` uses the object_store default AWS
@@ -62,9 +56,9 @@ impl Default for MultimediaConfig {
     fn default() -> Self {
         Self {
             enabled: false,
-            threshold_bytes: DEFAULT_THRESHOLD_BYTES,
+            threshold_bytes: 256 * 1024,
             endpoint: None,
-            bucket: DEFAULT_BUCKET.to_owned(),
+            bucket: "openehr-multimedia".to_owned(),
             region: "us-east-1".to_owned(),
             access_key_id: None,
             secret_access_key: None,
@@ -91,7 +85,7 @@ mod tests {
         let c = MultimediaConfig::default();
         assert!(!c.enabled);
         assert_eq!(c.threshold_bytes, 256 * 1024);
-        assert_eq!(c.bucket, DEFAULT_BUCKET);
+        assert_eq!(c.bucket, "openehr-multimedia");
         assert!(c.is_anonymous());
         assert!(!c.allow_http);
     }

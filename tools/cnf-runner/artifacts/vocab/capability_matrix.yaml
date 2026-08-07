@@ -19,7 +19,7 @@
 # line per row. The nine unclaimed SM rows become re-claimable the day the
 # product serves their operations on declared extension routes (the
 # PartyRelationshipOperations pattern).
-Adl14ArchetypeProvisioning: { family: Platform, tier: CORE, required: false, realization: extension, min_cases: 11, workload_exclusion: { register: AMB-170, reason: "definition administration, not a sustainable per-patient arrival: archetype provisioning is a design-time operation a hospital simulation would not repeatedly drive (the same family reason the ADL2/OPT provisioning rows carry journeys for is satisfied by the definition-poll journey; this row's own upload/delete churn would grow the definition store unboundedly through a measured hold)" }, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 1.4 Archetype provisioning)" }
+Adl14ArchetypeProvisioning: { family: Platform, tier: CORE, required: false, realization: extension, min_cases: 12, workload_exclusion: { register: AMB-170, reason: "definition administration, not a sustainable per-patient arrival: archetype provisioning is a design-time operation a hospital simulation would not repeatedly drive (the same family reason the ADL2/OPT provisioning rows carry journeys for is satisfied by the definition-poll journey; this row's own upload/delete churn would grow the definition store unboundedly through a measured hold)" }, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 1.4 Archetype provisioning)" }
 Adl14OptProvisioning: { family: Platform, tier: CORE, required: true, min_cases: 25, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 1.4 OPT provisioning)" }
 # (c) NO RELEASED WIRE — verified first-hand 2026-07-28: the released
 # definition.openapi.yaml surfaces only OPT wire under /definition/template/adl2
@@ -48,8 +48,8 @@ Adl14OptProvisioning: { family: Platform, tier: CORE, required: true, min_cases:
 # The workload_exclusion is gone too: the `integration_poll` journey now polls
 # the ADL 2 archetype store (`archetype_adl2_list`), so the measured
 # hospital simulation exercises the capability.
-Adl2ArchetypeProvisioning: { family: Platform, tier: OPTIONS, required: false, min_cases: 9, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 2 Archetype provisioning)" }
-Adl2OptProvisioning: { family: Platform, tier: OPTIONS, required: false, min_cases: 29, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 2 OPT provisioning)" }
+Adl2ArchetypeProvisioning: { family: Platform, tier: OPTIONS, required: false, min_cases: 10, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 2 Archetype provisioning)" }
+Adl2OptProvisioning: { family: Platform, tier: OPTIONS, required: false, min_cases: 30, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: ADL 2 OPT provisioning)" }
 # Example generation split from OPT provisioning (#545, 2026-07-28): the /example sub-resource is SHOULD-level surface — the CNF profiles book has no ex (register: AMB-115).
 TemplateExamples: { family: Platform, tier: OPTIONS, required: false, min_cases: 3, source: "ITS-REST specifications/operations/definition_template_adl1.4_example_get.yaml NOTE + register AMB-115 (no CNF profiles row exists for example generation)" }
 QueryProvisioning: { family: Platform, tier: STANDARD, required: true, min_cases: 27, source: "CNF profiles master03-profiles.adoc §Functional (Definitions: Query provisioning)" }

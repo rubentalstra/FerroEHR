@@ -10,11 +10,18 @@ secrets:
   signingKeyPassphrase: dev-passphrase
   eventsUrl: amqps://user:pass@rabbitmq:5671/%2f
   fhirOutboundUrl: amqps://user:pass@rabbitmq:5671/%2f
+  auditFhirFeedUrl: https://arr:arr-password@arr.example.com/fhir
   multimediaAccessKeyId: AKIAEXAMPLE
   multimediaSecretAccessKey: s3-secret
+  terminologyOauth2ClientSecrets:
+    tx: tx-client-secret
 
 metrics:
   enabled: true
+  serviceMonitor:
+    enabled: true
+    labels:
+      release: kube-prometheus-stack
 
 config:
   server:
@@ -37,11 +44,11 @@ config:
     metrics_push: true
   auth:
     enabled: true
-    basic:
-      users:
-        - username: clinician
-          password_hash: "$argon2id$v=19$m=19456,t=2,p=1$c2FsdA$hash"
-          roles: [USER]
+    # No [[auth.basic.users]] here: a Basic user's Argon2id hash has no `*_file`
+    # sibling in the server's config tree, so the only way to configure one
+    # through this chart would be the ConfigMap — an offline cracking target in a
+    # non-sensitive object. The chart refuses to render it; OIDC below is the
+    # supported mechanism.
     oidc:
       issuer: https://keycloak.example.com/realms/ferroehr
       audiences: [ferroehr]
@@ -103,7 +110,8 @@ config:
       transport: tls
     fhir_feed:
       enabled: true
-      url: https://arr.example.com/fhir
+      # url is a SecretUrl (its userinfo may carry ARR basic-auth credentials),
+      # so it arrives as secrets.auditFhirFeedUrl, never through the ConfigMap.
   events:
     enabled: true
     exchange: ferroehr.events
@@ -124,6 +132,13 @@ config:
           type: fhir
           url: https://tx.example.com/fhir
           operation: validate_code
+      # The client secret itself is secrets.terminologyOauth2ClientSecrets.tx;
+      # the chart injects client_secret_file pointing at the mounted file.
+      oauth2_clients:
+        tx:
+          token_url: https://idp.example.org/realms/ts/protocol/openid-connect/token
+          client_id: ferroehr
+          scopes: [tx.read]
   multimedia:
     enabled: true
     threshold_bytes: 262144
@@ -162,13 +177,38 @@ networkPolicy:
           kubernetes.io/metadata.name: ingress-nginx
   egress:
     enabled: true
+    # The mandatory destination, through the typed key.
+    database:
+      to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgres
+      port: 5432
+    # One raw rule per enabled integration — this overlay turns everything on, so
+    # it carries the OTLP collector, the AMQP broker and the outbound HTTPS
+    # destinations (OIDC issuer, terminology server, S3, the FHIR audit feed).
     rules:
       - to:
           - podSelector:
               matchLabels:
-                app.kubernetes.io/name: postgres
+                app.kubernetes.io/name: otel-collector
         ports:
-          - port: 5432
+          - port: 4317
+            protocol: TCP
+      - to:
+          - podSelector:
+              matchLabels:
+                app.kubernetes.io/name: rabbitmq
+        ports:
+          - port: 5671
+            protocol: TCP
+      - to:
+          - ipBlock:
+              cidr: 203.0.113.0/24
+        ports:
+          - port: 443
+            protocol: TCP
+          - port: 6514
             protocol: TCP
 
 autoscaling:

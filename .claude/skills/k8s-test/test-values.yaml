@@ -1,0 +1,49 @@
+# Values for a cluster test of the chart — the smallest overlay that produces a
+# SERVING deployment, and nothing that weakens the security posture.
+#
+# Why each key is here:
+#   database.existingSecret  the chart never ships a database; postgres.yaml
+#                            creates this Secret
+#   config.auth.basic.users  the chart's own default is auth on with NO mechanism,
+#                            so every request 401s and no openEHR call can be
+#                            proven. This is the published quickstart credential
+#                            (ferroehr/ferroehr, Argon2id) — dev only.
+#
+# The password HASH goes in `secrets:`, never in `config:` — the chart mounts it at
+# /etc/ferroehr-secrets/auth.basic.users.<username>.password_hash and injects the
+# matching `password_hash_file`, so it reaches neither the ConfigMap nor the
+# environment. Setting it under `config:` is REFUSED at render time. This overlay
+# is therefore the live exercise of the mounted-secret path (step 5 asserts it).
+replicaCount: 2
+
+database:
+  existingSecret: ferroehr-db
+  # The key inside that Secret. The chart PROJECTS it as a file and passes only
+  # FERROEHR__DB__URL_FILE, so the DSN never enters the pod's environment.
+  existingSecretKey: FERROEHR__DB__URL
+
+secrets:
+  basicUserPasswordHashes:
+    ferroehr: '$argon2id$v=19$m=19456,t=2,p=1$ZmVycm9laHJEZXZTYWx0$be5nPwWjfUl1qvSrvkvqvdMOuCgM0VFcN/VN4MFLjT8'
+
+config:
+  # ── Version-skew block: DELETE these once `appVersion` names an image that has
+  # the keys. They exist only because the chart's `config:` defaults track the
+  # develop tree while `image.tag` here is the last PUBLISHED release, which
+  # rejects a key it does not know. Confirm the current set against the image
+  # itself with `ferroehr config default` (the command is in the skill), rather
+  # than trusting this list.
+  spec_profile: null
+  db:
+    statement_timeout_ms: null
+  server:
+    limits: null
+    rate_limit: null
+    connection: null
+  auth:
+    enabled: true
+    basic:
+      users:
+        # Identity and roles only; the hash is in `secrets:` above.
+        - username: ferroehr
+          roles: [ADMIN, USER]

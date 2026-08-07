@@ -1,0 +1,24 @@
+# hadolint configuration (OWASP Docker Security Cheat Sheet rule 9: "Dockerfile
+# lint for best practices").
+#
+# The policy is that a rule we deliberately violate is named here with its
+# reason — never a blanket disable, and never a lowered failure threshold to
+# make a specific finding go away. The CI job runs at
+# `failure-threshold: warning`, so info-level style advice does not gate a merge
+# while a genuine best-practice violation does.
+failureThreshold: warning
+
+ignored:
+  # DL3008 "pin versions in apt-get install" — the build stages install from
+  # Debian's rolling security-patched indices inside a pinned base image
+  # digest, which is the posture that gets SECURITY updates. Pinning apt
+  # versions there means a build that breaks the moment Debian publishes a CVE
+  # fix, and an image that keeps the vulnerable version until someone notices.
+  # The base image digest is what makes the build reproducible.
+  - DL3008
+
+trustedRegistries:
+  # Every FROM is digest-pinned; these are the registries those digests live in.
+  - docker.io
+  - gcr.io
+  - ghcr.io

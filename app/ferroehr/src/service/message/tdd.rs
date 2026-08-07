@@ -68,6 +68,7 @@ fn typed_composition(composition: &Value) -> Result<openehr_rm::prelude::Composi
             CallStatusType::ContentInvalid,
             format!("the TDD did not convert to a valid COMPOSITION: {e}"),
         )
+        .with_source(e)
     })
 }
 
@@ -92,6 +93,7 @@ fn decode_attr(attr: &quick_xml::events::attributes::Attribute) -> Result<String
                 CallStatusType::ContentInvalid,
                 format!("TDD attribute value is not valid UTF-8: {e}"),
             )
+            .with_source(e)
         })
 }
 
@@ -115,6 +117,7 @@ fn parse_tdd_envelope(tdd: &str) -> Result<TddEnvelope, SmError> {
                             CallStatusType::ContentInvalid,
                             format!("TDD root has malformed XML attributes: {err}"),
                         )
+                        .with_source(err)
                     })?;
                     let key = attr.key.as_ref();
                     // The default-namespace declaration `xmlns="..."` (the
@@ -152,7 +155,8 @@ fn parse_tdd_envelope(tdd: &str) -> Result<TddEnvelope, SmError> {
                 return Err(SmError::new(
                     CallStatusType::ContentInvalid,
                     format!("TDD payload is not well-formed XML: {err}"),
-                ));
+                )
+                .with_source(err));
             }
         }
     }
@@ -286,6 +290,7 @@ impl FerroEhrService {
                 "TDD body does not conform to operational template {:?}: {e}",
                 envelope.template_id
             ))
+            .with_source(e)
         })
     }
 

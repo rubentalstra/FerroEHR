@@ -144,6 +144,10 @@ fn local_name(raw: &[u8]) -> String {
 }
 
 /// Parse a TDD document into the generic [`El`] tree.
+///
+/// NOTE: the reader diagnostics below stay flattened into the message rather
+/// than carried as a source (RFC 0201) — a TDD is CLIENT content, and this
+/// message is what the `400`/`422` body shows the caller.
 fn parse_tree(xml: &str) -> Result<El, FlatError> {
     use quick_xml::Reader;
     use quick_xml::events::Event;
@@ -280,6 +284,10 @@ fn xml_escape(s: &str) -> String {
 /// resolved from the element's own `xsi:type` or a `WebTemplate` hint), returning
 /// its canonical JSON. Polymorphic slots (`PARTY_PROXY`, `DATA_VALUE`, …) are
 /// parsed as the closed-set enum, which dispatches on `xsi:type`.
+///
+/// NOTE: the codec's refusal stays flattened into the message rather than
+/// carried as a source (RFC 0201) — it names the offending path in CLIENT
+/// content, which is what the `400`/`422` body must show the caller.
 fn parse_typed(el: &El, type_name: &str) -> Result<Value, FlatError> {
     use crate::xml::from_canonical_xml as fx;
     use openehr_rm::prelude::{

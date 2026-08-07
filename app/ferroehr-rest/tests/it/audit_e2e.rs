@@ -114,6 +114,7 @@ fn auth_on() -> AuthConfig {
             users: vec![BasicUser {
                 username: "alice".to_owned(),
                 password_hash: ferroehr::config::secret::Secret::new(hash_pw("pw")),
+                password_hash_file: None,
                 roles: vec!["USER".to_owned()],
             }],
         }),

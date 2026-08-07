@@ -60,6 +60,12 @@ RUN rustup target add wasm32-unknown-unknown
 # bump a tool version re-uses them instead of re-downloading
 # (docs.docker.com/build/cache/optimize — RUN --mount=type=cache). cargo-leptos
 # resolves wasm-bindgen + Tailwind from PATH before its own downloader.
+# `sh` on Debian is dash, which has no `pipefail`, so the tool downloads below
+# need bash: each is `curl … | tar … > file`, and without pipefail a failed
+# curl leaves tar's exit status to decide. The redirect creates the file
+# regardless, so the next build's cache check would find it and `install` a
+# truncated binary — a silent bad build rather than a failed one.
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN --mount=type=cache,target=/opt/tool-cache,sharing=locked \
     set -eu; \
     case "${TARGETARCH}" in \
@@ -96,9 +102,12 @@ COPY . .
 # its image provenance is the OCI-standard REVISION LABEL on the shared runtime
 # stage below (docs.docker.com/build/building/best-practices).
 ENV LEPTOS_TAILWIND_VERSION=${TAILWIND_VERSION}
+# `cargo leptos` reads its configuration from the console crate's own manifest
+# directory, so the build runs from there — as a WORKDIR rather than a `cd`
+# inside RUN, which would silently not apply to any later instruction.
+WORKDIR /app/app/ferroehr-admin-ui
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
-    cd app/ferroehr-admin-ui \
-    && cargo leptos build --release \
+    cargo leptos build --release \
     && mkdir -p /out \
     && cp /app/target/release/ferroehr-admin-ui /out/ \
     && cp -r /app/target/site /out/site
@@ -109,6 +118,11 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
 # The HEALTHCHECK the previous split baked ONLY into the CI image (F8) is baked
 # here once, so both targets carry it identically.
 FROM gcr.io/distroless/cc-debian13:nonroot@sha256:d97bc0a941b8d4be647dc0ee75b264ddbb772f1ac5ba690a4309c00723b23775 AS runtime-base
+# The `:nonroot` tag already runs as uid 65532, but a scanner reading the
+# Dockerfile cannot see a base image's user — and neither can a reader. Stating
+# it makes the posture a property of this file rather than of a tag someone
+# could change (OWASP Docker Security Cheat Sheet rule 2).
+USER nonroot:nonroot
 ENV LEPTOS_SITE_ROOT=/site \
     LEPTOS_SITE_ADDR=0.0.0.0:3000 \
     LEPTOS_OUTPUT_NAME=ferroehr-admin-ui

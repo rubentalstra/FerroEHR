@@ -86,6 +86,9 @@ pub(super) fn page_bounds(page: Page) -> (i64, Option<i64>) {
 /// `invalid_id_pattern`, the correct SM outcome for an unusable pattern (a
 /// narrower accept envelope, never a wrong status).
 pub(super) fn compile_pattern(pattern: &str) -> Result<Regex, ServiceError> {
+    // NOTE: no cause is carried here, because `ServiceError::sm` normalizes
+    // `invalid_id_pattern` into the bare-string `BadRequest` row that the
+    // cause-carrying `ServiceError::Caused` row deliberately does not.
     Regex::new(pattern).map_err(|e| {
         ServiceError::sm(
             CallStatusType::InvalidIdPattern,

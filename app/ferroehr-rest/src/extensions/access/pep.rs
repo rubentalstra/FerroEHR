@@ -404,7 +404,7 @@ async fn subject_gate(
     };
     let subject = (abac.resolvers.subject)(ehr_id.to_owned())
         .await
-        .map_err(|e| engine_error(principal, &format!("subject resolution: {e}")))?;
+        .map_err(|e| engine_error(principal, "resolve the EHR subject attribute", &e))?;
     match subject {
         Some(subject) if subject != patient => {
             Err(forbidden(principal, "patient scope (subject mismatch)"))
@@ -433,7 +433,7 @@ async fn pre_template(
             let (vo_id, _) = resolve_target(principal, uid)?;
             let template = (abac.resolvers.template_of_version)(vo_id, None)
                 .await
-                .map_err(|e| engine_error(principal, &format!("template resolution: {e}")))?;
+                .map_err(|e| engine_error(principal, "resolve the template attribute", &e))?;
             Ok(template.map(Attr::One))
         }
         "contribution_create" => {
@@ -461,7 +461,7 @@ async fn post_template(
     let (vo_id, version) = resolve_target(principal, uid)?;
     (abac.resolvers.template_of_version)(vo_id, version)
         .await
-        .map_err(|e| engine_error(principal, &format!("template resolution: {e}")))
+        .map_err(|e| engine_error(principal, "resolve the template attribute", &e))
 }
 
 /// Extract the composition template id from the request body: the canonical
@@ -542,7 +542,11 @@ async fn decide(
     match abac.engine.decide(req).await {
         Ok(Decision::Permit) => Ok(()),
         Ok(Decision::Deny) => Err(forbidden(principal, "policy denied")),
-        Err(e) => Err(engine_error(principal, &e.to_string())),
+        Err(e) => Err(engine_error(
+            principal,
+            "reach an authorization decision",
+            &e,
+        )),
     }
 }
 
@@ -598,15 +602,17 @@ fn forbidden_unauthenticated(detail: &str) -> Response {
     RestError(ApiError::Forbidden(format!("access denied: {detail}"))).into_response()
 }
 
-/// A 500 (fail-closed) carrying the principal. `detail` names why the policy
-/// engine could not decide — server-internal, so it goes to the trace record
-/// and the body carries the curated opaque message.
-fn engine_error(principal: &Principal, detail: &str) -> Response {
-    let mut resp = RestError(crate::overview::error::internal_fault(
-        "reach an authorization decision",
-        &detail,
-    ))
-    .into_response();
+/// A 500 (fail-closed) carrying the principal. `step` names what could not be
+/// done and `error` the failure that broke it, whole cause chain included —
+/// server-internal, so both go to the trace record and the body carries the
+/// curated opaque message.
+fn engine_error(
+    principal: &Principal,
+    step: &'static str,
+    error: &(dyn std::error::Error + 'static),
+) -> Response {
+    let mut resp =
+        RestError(crate::overview::error::internal_fault_caused(step, error)).into_response();
     resp.extensions_mut().insert(principal.clone());
     resp
 }

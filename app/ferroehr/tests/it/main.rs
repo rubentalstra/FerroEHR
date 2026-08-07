@@ -54,6 +54,7 @@ mod service_tdd;
 mod service_template;
 mod service_validation;
 mod signing_pgp;
+mod sql_injection;
 mod storage_spike;
 mod system_log_tls_roundtrip;
 mod telemetry;

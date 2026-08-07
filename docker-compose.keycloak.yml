@@ -12,7 +12,7 @@
 #   TOKEN=$(curl -s -d client_id=ferroehr -d client_secret=ferroehr-quickstart-secret \
 #     -d username=ferroehr -d password=ferroehr -d grant_type=password \
 #     http://localhost:8081/auth/realms/ferroehr/protocol/openid-connect/token \
-#     | python3 -c 'import json,sys; print(json.load(sys.stdin)["access_token"])')
+#     | jq -r .access_token)
 #   curl -H "Authorization: Bearer $TOKEN" -X POST -i \
 #     http://localhost:8080/ferroehr/rest/openehr/v1/ehr
 #
@@ -44,6 +44,9 @@ services:
       FERROEHR__AUTH__OIDC__ALGORITHMS: RS256
 
   keycloak:
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
     # Digest-pinned quay.io/keycloak/keycloak:26.7.0 (current release), resolved
     # 2026-07-24 (docs.docker.com/build/building/best-practices).
     image: quay.io/keycloak/keycloak:26.7.0@sha256:0f198be292568439d700cdbfb893e69a6009bb43a94a06a945b1d3d506c76b13
@@ -66,7 +69,7 @@ services:
       - source: keycloak-realm
         target: /opt/keycloak/data/import/ferroehr-realm.json
     ports:
-      - "${KEYCLOAK_PORT:-8081}:8081"
+      - "${FERROEHR_BIND_HOST:-127.0.0.1}:${KEYCLOAK_PORT:-8081}:8081"
     deploy:
       resources:
         limits:

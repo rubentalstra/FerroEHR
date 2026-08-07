@@ -1207,7 +1207,7 @@ dependencies = [
  "linked-hash-map",
  "linked_hash_set",
  "miette",
- "nonempty",
+ "nonempty 0.12.0",
  "ref-cast",
  "regex",
  "rustc-literal-escaper",
@@ -2775,6 +2775,7 @@ dependencies = [
  "thirtyfour",
  "thiserror 2.0.19",
  "tokio",
+ "tower-http 0.7.0",
  "tower-sessions",
  "tracing",
  "tracing-subscriber",
@@ -2820,9 +2821,12 @@ dependencies = [
  "bytes",
  "cedar-policy",
  "ferroehr",
+ "form_urlencoded",
  "futures",
+ "governor",
  "http",
  "http-body-util",
+ "hyper-util",
  "indexmap 2.14.0",
  "jiff",
  "jsonwebtoken",
@@ -2849,6 +2853,7 @@ dependencies = [
  "tokio",
  "tower",
  "tower-http 0.7.0",
+ "tower_governor",
  "tracing",
  "tracing-opentelemetry",
  "tracing-subscriber",
@@ -3017,6 +3022,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "forwarded-header-value"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8835f84f38484cc86f110a805655697908257fb9a7af005234060891557198e9"
+dependencies = [
+ "nonempty 0.7.0",
+ "thiserror 1.0.69",
+]
+
+[[package]]
 name = "fraction"
 version = "0.15.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3164,6 +3179,12 @@ name = "futures-task"
 version = "0.3.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b231ed28831efb4a61a08580c4bc233ec56bc009f4cd8f52da2c3cb97df0c109"
+
+[[package]]
+name = "futures-timer"
+version = "3.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af43fadb8a98512d547e37b4e92e0ced13e205c061b87b4623eff01d918d6968"
 
 [[package]]
 name = "futures-util"
@@ -3356,6 +3377,29 @@ dependencies = [
  "serde_json",
  "wasm-bindgen",
  "web-sys",
+]
+
+[[package]]
+name = "governor"
+version = "0.10.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9efcab3c1958580ff1f25a2a41be1668f7603d849bb63af523b208a3cc1223b8"
+dependencies = [
+ "cfg-if",
+ "dashmap",
+ "futures-sink",
+ "futures-timer",
+ "futures-util",
+ "getrandom 0.3.4",
+ "hashbrown 0.16.1",
+ "nonzero_ext",
+ "parking_lot",
+ "portable-atomic",
+ "quanta",
+ "rand 0.9.5",
+ "smallvec",
+ "spinning_top",
+ "web-time",
 ]
 
 [[package]]
@@ -5233,12 +5277,24 @@ dependencies = [
 
 [[package]]
 name = "nonempty"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e9e591e719385e6ebaeb5ce5d3887f7d5676fceca6411d1925ccc95745f3d6f7"
+
+[[package]]
+name = "nonempty"
 version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9737e026353e5cd0736f98eddae28665118eb6f6600902a7f50db585621fecb6"
 dependencies = [
  "serde",
 ]
+
+[[package]]
+name = "nonzero_ext"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "38bf9645c8b145698bb0b18a4637dcacbc421ea49bef2317e4fd8065a387cf21"
 
 [[package]]
 name = "nu-ansi-term"
@@ -5398,7 +5454,7 @@ version = "5.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "51e219e79014df21a225b1860a479e2dcd7cbd9130f4defd4bd0e191ea31d67d"
 dependencies = [
- "base64 0.21.7",
+ "base64 0.22.1",
  "chrono",
  "getrandom 0.2.17",
  "http",
@@ -5533,7 +5589,7 @@ checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
 
 [[package]]
 name = "openehr-adl"
-version = "0.0.11"
+version = "0.0.12"
 dependencies = [
  "indexmap 2.14.0",
  "openehr-am",
@@ -5548,7 +5604,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-am"
-version = "0.0.11"
+version = "0.0.12"
 dependencies = [
  "openehr-base",
  "openehr-lang",
@@ -5558,7 +5614,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-base"
-version = "0.0.11"
+version = "0.0.12"
 dependencies = [
  "serde",
  "serde_json",
@@ -5577,7 +5633,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-its"
-version = "0.0.11"
+version = "0.0.12"
 dependencies = [
  "async-trait",
  "axum",
@@ -5606,7 +5662,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-lang"
-version = "0.0.11"
+version = "0.0.12"
 dependencies = [
  "assert_fs",
  "chumsky",
@@ -5620,7 +5676,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-query"
-version = "0.0.11"
+version = "0.0.12"
 dependencies = [
  "chumsky",
  "logos",
@@ -5629,7 +5685,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-rm"
-version = "0.0.11"
+version = "0.0.12"
 dependencies = [
  "insta",
  "jsonschema",
@@ -5646,7 +5702,7 @@ dependencies = [
 
 [[package]]
 name = "openehr-term"
-version = "0.0.11"
+version = "0.0.12"
 dependencies = [
  "openehr-base",
  "roxmltree",
@@ -6087,7 +6143,7 @@ dependencies = [
  "aes-gcm",
  "aes-kw",
  "argon2",
- "base64 0.21.7",
+ "base64 0.22.1",
  "bitfields",
  "block-padding",
  "blowfish",
@@ -8166,7 +8222,7 @@ version = "0.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "287f59010008f0d7cf5e3b03196d666c1acc46c8d3e9cf34c28a1a7157601e72"
 dependencies = [
- "heck 0.4.1",
+ "heck 0.5.0",
  "proc-macro2",
  "quote",
  "syn 2.0.119",
@@ -8196,6 +8252,15 @@ name = "spin"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "023a211cb3138dbc438680b32560ad89f699977624c9f8dbb95a47d5b4c07dd3"
+dependencies = [
+ "lock_api",
+]
+
+[[package]]
+name = "spinning_top"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d96d2d1d716fb500937168cc09353ffdc7a012be8475ac7308e1bdf0e3923300"
 dependencies = [
  "lock_api",
 ]
@@ -9342,6 +9407,22 @@ dependencies = [
  "time",
  "tokio",
  "tower-sessions-core",
+]
+
+[[package]]
+name = "tower_governor"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "44de9b94d849d3c46e06a883d72d408c2de6403367b39df2b1c9d9e7b6736fe6"
+dependencies = [
+ "axum",
+ "forwarded-header-value",
+ "governor",
+ "http",
+ "pin-project",
+ "thiserror 2.0.19",
+ "tower",
+ "tracing",
 ]
 
 [[package]]

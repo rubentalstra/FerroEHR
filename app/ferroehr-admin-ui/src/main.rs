@@ -108,8 +108,8 @@ async fn main() -> anyhow::Result<()> {
             ferroehr_admin_ui::app::shell,
         ))
         .layer(Extension(app_state))
-        .layer(session_layer)
-        .with_state(leptos_options);
+        .layer(session_layer);
+    let service = with_security_headers(service).with_state(leptos_options);
 
     let listener = tokio::net::TcpListener::bind(&addr).await?;
     tracing::info!(%addr, "ferroehr-admin-ui listening");
@@ -121,4 +121,106 @@ async fn main() -> anyhow::Result<()> {
 fn main() {
     // The binary is only meaningful with `ssr`; the WASM client uses
     // `lib.rs::hydrate`. cargo-leptos always builds the bin with `ssr`.
+}
+
+/// The browser security-header set for the console, per the OWASP HTTP Headers
+/// Cheat Sheet.
+///
+/// This is a stricter problem than the API's: the console serves HTML, hydrates
+/// WebAssembly, and holds a session cookie, so a policy here has to survive
+/// contact with a real hydrating application.
+///
+/// - `Content-Security-Policy` — `'wasm-unsafe-eval'` is required, and is the
+///   narrow modern replacement for `'unsafe-eval'`: it permits WebAssembly
+///   compilation without permitting `eval` of JavaScript. `connect-src 'self'`
+///   is correct because the console reaches the CDR through its own server
+///   functions, never the browser calling the CDR directly (the BFF boundary in
+///   `.claude/rules/leptos-ui.md`), so a policy that forbids cross-origin
+///   connections costs nothing and forecloses exfiltration.
+/// - `'unsafe-inline'` is present for both scripts and styles, and it is the
+///   honest limitation of this policy rather than an oversight: Leptos emits its
+///   hydration bootstrap as an inline script and `thaw` injects generated
+///   `<style>` elements. The strict form is a per-request nonce, which Leptos
+///   supports — that work is tracked separately because a blocked bootstrap
+///   script means a console that renders and never hydrates, so it needs
+///   browser verification rather than a plausible-looking header.
+/// - `X-Frame-Options: DENY` plus `frame-ancestors 'none'` — belt and braces
+///   against clickjacking a console that performs administrative writes.
+/// - `Cache-Control: no-store` — the console renders patient data into HTML.
+///
+/// `Strict-Transport-Security` is left to the TLS edge, for the same reason as
+/// on the API: RFC 6797 §7.2 makes it inert over plain HTTP.
+#[cfg(feature = "ssr")]
+fn with_security_headers(
+    router: axum::Router<leptos::prelude::LeptosOptions>,
+) -> axum::Router<leptos::prelude::LeptosOptions> {
+    use tower_http::set_header::SetResponseHeaderLayer;
+    router
+        .layer(SetResponseHeaderLayer::overriding(
+            http::header::CONTENT_SECURITY_POLICY,
+            http::HeaderValue::from_static(CONSOLE_CSP),
+        ))
+        .layer(SetResponseHeaderLayer::overriding(
+            http::header::X_CONTENT_TYPE_OPTIONS,
+            http::HeaderValue::from_static("nosniff"),
+        ))
+        .layer(SetResponseHeaderLayer::overriding(
+            http::header::REFERRER_POLICY,
+            http::HeaderValue::from_static("strict-origin-when-cross-origin"),
+        ))
+        .layer(SetResponseHeaderLayer::overriding(
+            http::header::X_FRAME_OPTIONS,
+            http::HeaderValue::from_static("DENY"),
+        ))
+        .layer(SetResponseHeaderLayer::overriding(
+            http::header::CACHE_CONTROL,
+            http::HeaderValue::from_static("no-store"),
+        ))
+}
+
+/// The console's Content-Security-Policy.
+#[cfg(feature = "ssr")]
+const CONSOLE_CSP: &str = "default-src 'self'; \
+     script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline'; \
+     style-src 'self' 'unsafe-inline'; \
+     img-src 'self' data:; \
+     font-src 'self'; \
+     connect-src 'self'; \
+     object-src 'none'; \
+     base-uri 'self'; \
+     form-action 'self'; \
+     frame-ancestors 'none'";
+
+#[cfg(all(test, feature = "ssr"))]
+mod tests {
+    use super::CONSOLE_CSP;
+
+    /// The directives the policy must carry, each for a stated reason.
+    #[test]
+    fn the_policy_carries_the_audited_directives() {
+        for directive in [
+            "default-src 'self'",
+            // WebAssembly compilation, without permitting eval of JavaScript.
+            "'wasm-unsafe-eval'",
+            // The console reaches the CDR through its own server functions, so
+            // the browser never needs a cross-origin connection.
+            "connect-src 'self'",
+            "object-src 'none'",
+            "base-uri 'self'",
+            "frame-ancestors 'none'",
+        ] {
+            assert!(
+                CONSOLE_CSP.contains(directive),
+                "the policy must carry {directive}"
+            );
+        }
+    }
+
+    /// `'unsafe-eval'` is what `'wasm-unsafe-eval'` exists to avoid, so the
+    /// broad form must never appear — including by someone "fixing" a WASM
+    /// error with the bigger hammer.
+    #[test]
+    fn the_policy_never_permits_eval() {
+        assert!(!CONSOLE_CSP.contains("'unsafe-eval'"));
+    }
 }

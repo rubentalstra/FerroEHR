@@ -48,7 +48,58 @@ enabled = false
 #? cert_file = "/etc/ferroehr/server.pem"
 #? key_file = "/etc/ferroehr/server.key"
 client_auth = "off"          # off | optional | required (required = IHE mTLS)
+# The protocol floor. Defaults to 1.3 ONLY: the OWASP Transport Layer Security
+# Cheat Sheet §Only Support Strong Protocols — "web applications must default to
+# TLS 1.3 and may support TLS 1.2 for compatibility". Set "1.2" only for a client
+# that genuinely cannot do 1.3 (an older integration engine, a pinned Java
+# runtime); it enables 1.2 ALONGSIDE 1.3, never instead of it. 1.1 and 1.0 are
+# not selectable at all — RFC 8996 deprecates them and neither this key nor
+# rustls offers them.
+min_version = "1.3"          # 1.3 | 1.2
 #? client_ca_file = "/etc/ferroehr/client-ca.pem"
+
+# [server.limits] — the largest request body each route family accepts. Two
+# tiers: the clinical surface, and the routes that accept bulk by design
+# (operational-template upload, /message/import, /message/tdd). Over-limit is
+# refused 413. The defaults are sized against measured payloads — the largest
+# operational template in the vendored CKM corpus is 5.4 MB and the largest
+# example composition 526 KB — not round numbers. Raise body_bytes if your
+# compositions embed large DV_MULTIMEDIA data.
+[server.limits]
+body_bytes = 16777216        # 16 MiB — the ordinary clinical surface
+bulk_body_bytes = 67108864   # 64 MiB — template upload + the /message imports
+
+# [server.rate_limit] — per-caller request rates, refused 429 + Retry-After.
+# Distinct from max_in_flight above: that sheds 503 when too many requests are
+# in flight AT ONCE (capacity); this refuses 429 when one caller asks too often
+# OVER TIME (fairness). Two tiers: the address tier sits outside authentication
+# so a flood is refused before the server verifies a signature per request, and
+# the principal tier sits inside it, keyed on the authenticated subject —
+# address-keying a clinical API would throttle a whole hospital behind one NAT.
+# The defaults sit above this implementation's own measured whole-server ceiling
+# (512 req/s on the reference SUT), so the limiter cannot refuse a caller the
+# server could still have served; raise them in proportion for a larger
+# deployment class. Our own measurement lanes compose with this disabled
+# (docker/sut-measurement.yml) because they push past the knee deliberately.
+[server.rate_limit]
+enabled = true
+principal_per_second = 1024  # per authenticated subject, on the clinical API
+principal_burst = 2048
+address_per_second = 2048    # per client address, across the whole tree
+address_burst = 4096
+
+# [server.connection] — the bounds that apply BEFORE a request exists. Every
+# other limit here engages once a request is parsed and dispatched (body size,
+# request timeout, rate limit, in-flight shed); a client that opens a socket and
+# trickles headers reaches none of them. HTTP/1 and HTTP/2 need different bounds
+# because the exposure differs: h1 streams a request head (so it can be
+# trickled), h2 multiplexes streams (so the exposure is concurrency — the
+# rapid-reset amplification class).
+[server.connection]
+header_read_timeout_secs = 10   # HTTP/1: time to deliver a complete request head; 0 disables
+max_concurrent_streams = 256    # HTTP/2 streams per connection; 0 leaves hyper's default
+http2_keep_alive_interval_secs = 30  # PING interval; 0 disables (a vanished peer is then held)
+http2_keep_alive_timeout_secs = 10   # PING response deadline before the connection closes
 
 # [server.identity] — the OPTIONS / System-Options manifest. Defaults are the
 # measured build/provenance identity; override only to rebrand.
@@ -62,9 +113,16 @@ client_auth = "off"          # off | optional | required (required = IHE mTLS)
 # ── [db] — PostgreSQL ────────────────────────────────────────────────────────
 [db]
 url = "postgres://ferroehr:ferroehr@localhost:5432/ferroehr"  # PROD: real DSN via env/secret
+#? url_file = "/run/secrets/db-dsn"   # or point at a mounted file instead of passing the DSN as env
 max_connections = 20
 min_connections = 2
 acquire_timeout_secs = 30
+# statement_timeout on every pooled connection — the backstop the HTTP request
+# timeout cannot be, because dropping a handler future does not cancel the
+# statement PostgreSQL is running. Set ABOVE query.timeout_ms so the engine's
+# typed refusal fires first and this only catches what the engine does not
+# govern. 0 leaves the server default (usually unlimited).
+statement_timeout_ms = 60000
 
 # ── [log] — logging ──────────────────────────────────────────────────────────
 [log]
@@ -100,6 +158,7 @@ verified_cache_ttl_seconds = 60
 #? [[auth.basic.users]]
 #? username = "alice"
 #? password_hash = "$argon2id$v=19$m=19456,t=2,p=1$...$..."   # never a plaintext password
+#? password_hash_file = "/run/secrets/alice-hash"   # or a mounted file; the Argon2id floor applies either way
 #? roles = ["USER"]
 
 # OAuth2/OIDC bearer (absent table ⇒ bearer disabled):
@@ -262,12 +321,26 @@ mode = "digest"              # digest | pgp
 # ── [query] — AQL execution knobs ─────────────────────────────────────────────
 [query]
 plan_cache_capacity = 256    # 0 disables the plan cache
-timeout_ms = 0               # 0 disables the per-query budget (408 on overrun)
+# The per-query execution budget, ON by default. It used to be off, which left
+# the HTTP request timeout as the only guard — and that answers the CLIENT
+# without cancelling the statement, so overrunning queries kept holding pooled
+# connections after their callers had been given up on. Kept TIGHTER than
+# db.statement_timeout_ms so an overrun surfaces as this engine's typed 408
+# rather than a driver error.
+timeout_ms = 30000           # 0 disables the per-query budget (408 on overrun)
+# The result-row ceiling for a query that neither the AQL nor the request bounds.
+# Without it, `SELECT c FROM COMPOSITION c` with no `fetch` generates SQL with no
+# LIMIT and materialises every matching row — one request, unbounded allocation.
+# ITS-REST leaves the `fetch` default to the implementation, so a ceiling is
+# spec-permitted. An explicit AQL LIMIT or a `fetch` parameter is honoured as
+# written; this only bounds the case where nothing else does.
+max_result_rows = 10000      # 0 = unbounded
 
 # ── [events] — contribution-outbox eventing (PHI-free envelopes) ──────────────
 [events]
 enabled = false
 url = "amqp://guest:guest@localhost:5672/%2f"   # credentials redacted in every rendering
+#? url_file = "/run/secrets/events-amqp"   # or a mounted file instead of env
 exchange = "ferroehr.events"
 tls = false                  # PROD: true (amqps)
 batch_size = 128
@@ -284,6 +357,7 @@ api_enabled = false          # mount /fhir/r4/* + /admin/fhir_mapping
 [fhir.outbound]
 enabled = false              # carries PHI — enabling is an explicit decision
 url = "amqp://guest:guest@localhost:5672/%2f"
+#? url_file = "/run/secrets/fhir-amqp"   # or a mounted file instead of env
 exchange = "ferroehr.fhir"    # distinct from [events].exchange for PHI isolation
 tls = false                  # PROD: true (amqps)
 batch_size = 128

@@ -129,7 +129,7 @@ pub fn to_fhir(
         entities: build_entities(event, subject, missing),
     };
 
-    ferroehr_ext::fhir::audit::render(&record).map_err(|e| AuditError::Render(e.to_string()))
+    ferroehr_ext::fhir::audit::render(&record).map_err(|e| AuditError::Render(Box::new(e)))
 }
 
 /// The `type` coding + the restful-interaction `subtype` for the event.

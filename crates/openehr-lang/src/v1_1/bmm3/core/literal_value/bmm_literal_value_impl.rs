@@ -36,11 +36,6 @@
 use crate::v1_1::bmm3::core::literal_value::bmm_literal_value::BmmLiteralValue;
 use crate::v1_1::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValue;
 
-/// The formalism assumed for a literal's `_value_literal_` when `_syntax_` is
-/// not set: "If not set, `json` is assumed"
-/// (`org.openehr.lang.bmm3.bmm_literal_value.adoc` §Attributes).
-pub const DEFAULT_SYNTAX: &str = "json";
-
 impl BmmPrimitiveValue {
     /// `BMM_LITERAL_VALUE.value_literal`: "A serial representation of the value"
     /// (`org.openehr.lang.bmm3.bmm_literal_value.adoc` §Attributes), for any
@@ -86,6 +81,6 @@ impl BmmLiteralValue {
                 BmmPrimitiveValue::BmmPrimitiveValue(v) => v.syntax.as_deref(),
             },
         };
-        stated.unwrap_or(DEFAULT_SYNTAX)
+        stated.unwrap_or("json")
     }
 }

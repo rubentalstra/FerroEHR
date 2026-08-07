@@ -15,8 +15,12 @@ on:
     - cron: "17 5 * * 1" # Mondays 05:17 UTC
   workflow_dispatch:
 
-permissions:
-  contents: read
+# A scheduled probe: only the newest run is interesting, so cancel freely.
+concurrency:
+  group: latest-deps-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
 
 jobs:
   latest-deps:
@@ -30,8 +34,10 @@ jobs:
       # (the same visibility mechanism as the two spec watchers).
       issues: write
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
       - name: Update to the latest in-range dependency set
         run: cargo update
       - name: Check the workspace against it

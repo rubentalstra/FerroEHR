@@ -1,12 +1,11 @@
 [package]
 name = "openehr-base"
-version = "0.0.11"
+version = "0.0.12"
 description = "openEHR BASE foundation + base types, generated from BMM: generations v1_2 (BASE 1.2.0) and v1_3 (BASE 1.3.0, current)"
 edition.workspace = true
 rust-version.workspace = true
 license = "MIT AND Apache-2.0"
 repository.workspace = true
-authors.workspace = true
 documentation = "https://docs.rs/openehr-base"
 readme = "README.md"
 keywords = ["openehr", "healthcare", "ehr", "foundation", "types"]

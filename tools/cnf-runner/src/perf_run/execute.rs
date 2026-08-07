@@ -28,6 +28,8 @@
 use std::collections::HashMap;
 use std::sync::Mutex;
 
+use reqwest::StatusCode;
+
 use crate::perf::PerfOp;
 use crate::perf_run::client::{
     PerfClient, PerfPrincipals, location_last_segment, object_uid_of, strip_weak_quotes,
@@ -127,8 +129,17 @@ impl CaptureStore {
 /// Record the observed wire status (the failure-sampling channel: a
 /// mismatched arrival reports WHAT the SUT answered, not just that it
 /// mismatched).
-fn note(observed: &mut Option<u16>, status: u16) -> u16 {
-    *observed = Some(status);
+///
+/// The recorded channel is a bare `u16` because it is RENDERED into the run
+/// record; the returned status stays typed so every caller compares against
+/// a [`StatusCode`] constant.
+fn note(observed: &mut Option<u16>, status: StatusCode) -> StatusCode {
+    *observed = Some(status.as_u16());
+    // A 429 anywhere invalidates the whole run: see
+    // `crate::perf_run::rate_limited_observed`.
+    if status == StatusCode::TOO_MANY_REQUESTS {
+        crate::perf_run::note_rate_limited();
+    }
     status
 }
 
@@ -139,8 +150,15 @@ fn note(observed: &mut Option<u16>, status: u16) -> u16 {
 /// answers 204; this SUT answers 201). The identifying `ETag`/`Location`
 /// is still demanded by each arm. Mirrors the seeder's acceptance
 /// ([`crate::perf_run::corpus`]).
-fn created(status: u16) -> bool {
-    matches!(status, 201 | 204)
+fn created(status: StatusCode) -> bool {
+    status == StatusCode::CREATED || status == StatusCode::NO_CONTENT
+}
+
+/// Whether a `Prefer: return=minimal` versioned UPDATE landed: the same
+/// §Prefer clause makes an empty body `204 No Content`, while a served
+/// representation is `200 OK`.
+fn updated(status: StatusCode) -> bool {
+    status == StatusCode::OK || status == StatusCode::NO_CONTENT
 }
 
 /// Deterministic corpus addressing: a large odd stride cycles the pools.
@@ -229,7 +247,7 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::EhrStatusRead => {
             let reply = client.request(
@@ -239,7 +257,7 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            if note(observed, reply.status) == 200
+            if note(observed, reply.status) == StatusCode::OK
                 && let Some(ovid) = reply.etag.as_deref().map(strip_weak_quotes)
             {
                 if let Some(patient) = planned.patient {
@@ -248,7 +266,7 @@ pub(crate) fn perform(
                     captures.journey(journey, |s| s.status_ovid = Some(ovid));
                 }
             }
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::EhrStatusUpdate => {
             // If-Match from the journey's own status read (the ADT flow
@@ -270,7 +288,7 @@ pub(crate) fn perform(
                 true,
                 Some(&preceding),
             )?;
-            let ok = matches!(note(observed, reply.status), 200 | 204);
+            let ok = updated(note(observed, reply.status));
             let ovid = if ok {
                 reply.etag.as_deref().map(strip_weak_quotes)
             } else {
@@ -326,7 +344,7 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::CompositionReadCurrent => {
             // The journey's own document: the instance's last commit, else
@@ -344,7 +362,7 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::CompositionRevisionHistory => {
             let uid = current_doc_object_uid(planned, captures, ward)
@@ -356,7 +374,7 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::CompositionUpdate => {
             let template = planned
@@ -389,7 +407,7 @@ pub(crate) fn perform(
                 true,
                 Some(&preceding),
             )?;
-            let ok = matches!(note(observed, reply.status), 200 | 204);
+            let ok = updated(note(observed, reply.status));
             let next = if ok {
                 reply.etag.as_deref().map(strip_weak_quotes)
             } else {
@@ -419,7 +437,7 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            note(observed, reply.status) == 204
+            note(observed, reply.status) == StatusCode::NO_CONTENT
         }
         PerfOp::DirectoryCreate => {
             // Fresh-EHR journeys create their episode tree; the standing
@@ -446,13 +464,13 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            if note(observed, reply.status) == 200
+            if note(observed, reply.status) == StatusCode::OK
                 && let Some(patient) = planned.patient
                 && let Some(ovid) = reply.etag.as_deref().map(strip_weak_quotes)
             {
                 captures.patient(patient, |s| s.directory_ovid = Some(ovid));
             }
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::DirectoryUpdate => {
             let preceding = planned
@@ -473,7 +491,7 @@ pub(crate) fn perform(
                 true,
                 Some(&preceding),
             )?;
-            let ok = matches!(note(observed, reply.status), 200 | 204);
+            let ok = updated(note(observed, reply.status));
             let next = if ok {
                 reply.etag.as_deref().map(strip_weak_quotes)
             } else {
@@ -528,7 +546,7 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::AdhocQuery => {
             let body = serde_json::json!({
@@ -543,7 +561,7 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::WardQuery => {
             let body = serde_json::json!({ "q": WARD_AQL });
@@ -555,7 +573,7 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::StoredQueryExecute => {
             let reply = client.request(
@@ -565,7 +583,7 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::TemplateList => {
             let reply = client.request(
@@ -575,7 +593,7 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::TemplateGet => {
             // Stride across the pack (integration engines poll them all).
@@ -592,7 +610,7 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::TagsPut => {
             let uid = current_doc_object_uid(planned, captures, ward)
@@ -604,9 +622,10 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            // 200 (stored collection) or 204 (no content) — both are the
-            // successful full-collection replace.
-            matches!(note(observed, reply.status), 200 | 201 | 204)
+            // 200 (stored collection), 201 (first collection) or 204 (no
+            // content) — each is the successful full-collection replace.
+            let status = note(observed, reply.status);
+            updated(status) || status == StatusCode::CREATED
         }
         PerfOp::TagsRead => {
             let uid = current_doc_object_uid(planned, captures, ward)
@@ -618,7 +637,7 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::CompositionVersionRead => {
             // The ORIGINAL_VERSION envelope (the signature carrier): the
@@ -633,7 +652,7 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::CompositionCommitFlat => {
             let flat = journey_pack
@@ -674,7 +693,7 @@ pub(crate) fn perform(
                 Some("application/openehr.wt.flat+json"),
                 &[],
             )?;
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::PartyCreate => {
             let person = journey_pack
@@ -721,7 +740,7 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::PartyUpdate => {
             let amended = journey_pack
@@ -743,7 +762,7 @@ pub(crate) fn perform(
                 true,
                 Some(&preceding),
             )?;
-            let ok = matches!(note(observed, reply.status), 200 | 204);
+            let ok = updated(note(observed, reply.status));
             if ok && let Some(next) = reply.etag.as_deref().map(strip_weak_quotes) {
                 captures.journey(journey, |s| s.party_ovid = Some(next));
             }
@@ -796,7 +815,7 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::TemplateExample => {
             let n = journey_pack.templates.len().max(1);
@@ -816,7 +835,7 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::TemplateAdl2List => {
             let reply = client.request(
@@ -826,7 +845,7 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::ArchetypeAdl2List => {
             // EXTENSION route (register AMB-37) — no openEHR spec governs it;
@@ -839,7 +858,7 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::AdminContributionReport => {
             // EXTENSION route (register AMB-33) — no openEHR spec governs it.
@@ -853,7 +872,7 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::EhrExtractExport => {
             // EXTENSION route (register AMB-34) — no openEHR spec governs it.
@@ -865,7 +884,7 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::TddImport => {
             // EXTENSION route (register AMB-34) — no openEHR spec governs it.
@@ -899,7 +918,7 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::TerminologyQuery => {
             let body = serde_json::json!({ "q": TERMINOLOGY_AQL });
@@ -911,11 +930,11 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::SystemOptions => {
             let reply = client.request(reqwest::Method::OPTIONS, "/", None, false, None)?;
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::SmartConfigurationRead => {
             // Addressed at the PLATFORM base the ixit's `smart` lane names —
@@ -929,7 +948,7 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            note(observed, reply.status) == 200
+            note(observed, reply.status) == StatusCode::OK
         }
         PerfOp::UnauthenticatedProbe => {
             // The DENY branch is the measured outcome: a credential-less
@@ -942,7 +961,7 @@ pub(crate) fn perform(
                 false,
                 None,
             )?;
-            note(observed, reply.status) == 401
+            note(observed, reply.status) == StatusCode::UNAUTHORIZED
         }
         PerfOp::ReadonlyWriteDenied => {
             let template = planned
@@ -959,7 +978,7 @@ pub(crate) fn perform(
             )?;
             // 403 is the arrival's success: the write is refused, so the
             // measured population is untouched by this probe.
-            note(observed, reply.status) == 403
+            note(observed, reply.status) == StatusCode::FORBIDDEN
         }
     };
 
@@ -985,7 +1004,7 @@ fn refresh_current_ovid(client: &PerfClient, path: &str) -> Option<String> {
     let reply = client
         .request(reqwest::Method::GET, path, None, false, None)
         .ok()?;
-    if reply.status == 200 {
+    if reply.status == StatusCode::OK {
         reply.etag.as_deref().map(strip_weak_quotes)
     } else {
         None
@@ -1056,6 +1075,31 @@ mod tests {
             store.patient(3, |s| s.gp_ovid.clone()).flatten().as_deref(),
             Some("g::s::2")
         );
+    }
+
+    /// The failure-sampling channel is a RECORDED wire number: `window.rs`
+    /// renders it into the run's progress record, so `note` must leave a bare
+    /// `u16` there however the status is held while comparing.
+    #[test]
+    fn the_failure_sampling_channel_records_a_bare_wire_number() {
+        let mut observed = None;
+        let returned = note(&mut observed, StatusCode::NOT_FOUND);
+        assert_eq!(returned, StatusCode::NOT_FOUND, "the caller compares typed");
+        assert_eq!(observed, Some(404), "the recorded channel stays a number");
+        assert_eq!(
+            observed.map(|status| format!("unexpected wire status {status}")),
+            Some("unexpected wire status 404".to_owned())
+        );
+    }
+
+    /// The two `Prefer: return=minimal` acceptance families, pinned against
+    /// the neighbouring codes a numeric comparison could have confused.
+    #[test]
+    fn the_prefer_minimal_families_accept_exactly_their_codes() {
+        assert!(created(StatusCode::CREATED) && created(StatusCode::NO_CONTENT));
+        assert!(!created(StatusCode::OK) && !created(StatusCode::ACCEPTED));
+        assert!(updated(StatusCode::OK) && updated(StatusCode::NO_CONTENT));
+        assert!(!updated(StatusCode::CREATED) && !updated(StatusCode::RESET_CONTENT));
     }
 
     #[test]

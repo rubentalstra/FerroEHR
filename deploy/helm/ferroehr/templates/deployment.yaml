@@ -8,14 +8,25 @@ spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
+  {{- with .Values.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   selector:
     matchLabels:
       {{- include "ferroehr.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
-        # Roll pods when the rendered ferroehr.toml changes.
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        # Roll pods when anything the process reads AT BOOT changes: the rendered
+        # ferroehr.toml (wherever it lands), the mounted config files, and the
+        # secret values. Hashing the ConfigMap template alone missed the last two,
+        # so a rotated passphrase or an edited Cedar policy propagated into the
+        # volume while every pod kept running on the value it read at startup.
+        checksum/config: {{ printf "%s|%s|%s"
+          (include "ferroehr.configToml" .)
+          (toYaml .Values.config.files)
+          (toYaml .Values.secrets) | sha256sum }}
         {{- if .Values.metrics.enabled }}
         prometheus.io/scrape: "true"
         prometheus.io/port: {{ include "ferroehr.managementPort" . | quote }}
@@ -36,6 +47,12 @@ spec:
       {{- end }}
       serviceAccountName: {{ include "ferroehr.serviceAccountName" . }}
       automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+      # NOT a tunable: the kubelet's per-Service link variables
+      # (<SVC>_SERVICE_HOST, <SVC>_PORT_8080_TCP_ADDR, …) land inside the
+      # server's reserved FERROEHR_ namespace for any Service named ferroehr*,
+      # and the strict boot-time env sweep then refuses to start
+      # (https://kubernetes.io/docs/concepts/services-networking/service/#environment-variables).
+      enableServiceLinks: false
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
@@ -58,47 +75,43 @@ spec:
           # The DSN comes from an existing Secret (preferred) or the chart Secret;
           # the env layer overrides the file, so each secret here wins over any
           # matching TOML key.
+          # A secret VALUE appears below only where the config key has no
+          # `*_file` sibling to point at the mounted volume instead; the rest are
+          # `*_FILE` paths, which are not themselves sensitive.
           {{- if or (eq (include "ferroehr.hasChartSecret" .) "true") .Values.database.existingSecret .Values.extraEnv }}
           env:
             {{- if or .Values.database.existingSecret .Values.database.url }}
-            - name: FERROEHR__DB__URL
-              valueFrom:
-                secretKeyRef:
-                  {{- if .Values.database.existingSecret }}
-                  name: {{ .Values.database.existingSecret }}
-                  key: {{ .Values.database.existingSecretKey }}
-                  {{- else }}
-                  name: {{ include "ferroehr.secretName" . }}
-                  key: FERROEHR__DB__URL
-                  {{- end }}
+            {{- /* The DSN is the credential that reaches patient data, so it is a
+                   mounted file and only its PATH is environment: an env VALUE is
+                   readable through /proc/<pid>/environ and inherited by every
+                   child process. `DATABASE_URL` is deliberately NOT set — the
+                   server recognises it as a lower-priority alias, and setting both
+                   it and a file path would work but read ambiguously. */}}
+            - name: FERROEHR__DB__URL_FILE
+              value: {{ printf "%s/db.url" (include "ferroehr.secretMountPath" .) | quote }}
             {{- end }}
             {{- if .Values.secrets.authOidcHmacSecret }}
-            - name: FERROEHR__AUTH__OIDC__HMAC_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "ferroehr.secretName" . }}
-                  key: FERROEHR__AUTH__OIDC__HMAC_SECRET
+            - name: FERROEHR__AUTH__OIDC__HMAC_SECRET_FILE
+              value: {{ printf "%s/auth.oidc.hmac_secret" (include "ferroehr.secretMountPath" .) | quote }}
             {{- end }}
             {{- if .Values.secrets.signingKeyPassphrase }}
-            - name: FERROEHR__SIGNING__KEY_PASSPHRASE
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "ferroehr.secretName" . }}
-                  key: FERROEHR__SIGNING__KEY_PASSPHRASE
+            - name: FERROEHR__SIGNING__KEY_PASSPHRASE_FILE
+              value: {{ printf "%s/signing.key_passphrase" (include "ferroehr.secretMountPath" .) | quote }}
             {{- end }}
             {{- if .Values.secrets.eventsUrl }}
-            - name: FERROEHR__EVENTS__URL
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "ferroehr.secretName" . }}
-                  key: FERROEHR__EVENTS__URL
+            - name: FERROEHR__EVENTS__URL_FILE
+              value: {{ printf "%s/events.url" (include "ferroehr.secretMountPath" .) | quote }}
             {{- end }}
             {{- if .Values.secrets.fhirOutboundUrl }}
-            - name: FERROEHR__FHIR__OUTBOUND__URL
+            - name: FERROEHR__FHIR__OUTBOUND__URL_FILE
+              value: {{ printf "%s/fhir.outbound.url" (include "ferroehr.secretMountPath" .) | quote }}
+            {{- end }}
+            {{- if .Values.secrets.auditFhirFeedUrl }}
+            - name: FERROEHR__AUDIT__FHIR_FEED__URL
               valueFrom:
                 secretKeyRef:
                   name: {{ include "ferroehr.secretName" . }}
-                  key: FERROEHR__FHIR__OUTBOUND__URL
+                  key: FERROEHR__AUDIT__FHIR_FEED__URL
             {{- end }}
             {{- if .Values.secrets.multimediaAccessKeyId }}
             - name: FERROEHR__MULTIMEDIA__ACCESS_KEY_ID
@@ -108,11 +121,8 @@ spec:
                   key: FERROEHR__MULTIMEDIA__ACCESS_KEY_ID
             {{- end }}
             {{- if .Values.secrets.multimediaSecretAccessKey }}
-            - name: FERROEHR__MULTIMEDIA__SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "ferroehr.secretName" . }}
-                  key: FERROEHR__MULTIMEDIA__SECRET_ACCESS_KEY
+            - name: FERROEHR__MULTIMEDIA__SECRET_ACCESS_KEY_FILE
+              value: {{ printf "%s/multimedia.secret_access_key" (include "ferroehr.secretMountPath" .) | quote }}
             {{- end }}
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
@@ -182,6 +192,14 @@ spec:
             - name: config
               mountPath: /etc/ferroehr
               readOnly: true
+            {{- if eq (include "ferroehr.hasFileSecrets" .) "true" }}
+            # File-borne secrets, read-only. NOT a subPath mount: a subPath-mounted
+            # Secret never receives updates, so a rotation would not propagate
+            # (https://kubernetes.io/docs/concepts/storage/volumes/#using-subpath).
+            - name: secrets
+              mountPath: {{ include "ferroehr.secretMountPath" . }}
+              readOnly: true
+            {{- end }}
             {{- with .Values.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -191,15 +209,80 @@ spec:
         - name: config
           projected:
             sources:
+              {{- if ne (include "ferroehr.configInSecret" .) "true" }}
               - configMap:
                   name: {{ include "ferroehr.fullname" . }}
                   items:
                     - key: ferroehr.toml
                       path: ferroehr.toml
-              {{- if .Values.config.files }}
+              {{- end }}
+              {{- if eq (include "ferroehr.hasConfigSecret" .) "true" }}
+              # Carries ferroehr.toml itself when the configuration holds a
+              # secret the chart cannot route elsewhere (then no ConfigMap
+              # exists), plus every config.files entry.
               - secret:
                   name: {{ include "ferroehr.configSecretName" . }}
               {{- end }}
+        {{- if eq (include "ferroehr.hasFileSecrets" .) "true" }}
+        # File-borne secrets. A projected volume rather than a plain secret volume
+        # because the DSN may live in an EXTERNAL Secret the operator created,
+        # which has to be projected beside the chart's own — both under one mount,
+        # and not a subPath mount, so a rotated Secret still propagates.
+        - name: secrets
+          projected:
+            # Owner is root, group is fsGroup, so the group bit is what the
+            # non-root process reads through
+            # (https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod).
+            defaultMode: 0440
+            sources:
+              {{- if .Values.database.existingSecret }}
+              # The operator's Secret, projected as the file FERROEHR__DB__URL_FILE
+              # points at. Its key name is theirs (database.existingSecretKey);
+              # only the mounted PATH is fixed.
+              - secret:
+                  name: {{ .Values.database.existingSecret }}
+                  items:
+                    - key: {{ .Values.database.existingSecretKey }}
+                      path: db.url
+              {{- end }}
+              {{- if eq (include "ferroehr.hasChartFileSecrets" .) "true" }}
+              - secret:
+                  name: {{ include "ferroehr.secretName" . }}
+                  items:
+              {{- if and (not .Values.database.existingSecret) .Values.database.url }}
+                    - key: db.url
+                      path: db.url
+              {{- end }}
+              {{- if .Values.secrets.eventsUrl }}
+                    - key: events.url
+                      path: events.url
+              {{- end }}
+              {{- if .Values.secrets.fhirOutboundUrl }}
+                    - key: fhir.outbound.url
+                      path: fhir.outbound.url
+              {{- end }}
+              {{- if .Values.secrets.authOidcHmacSecret }}
+                    - key: auth.oidc.hmac_secret
+                      path: auth.oidc.hmac_secret
+              {{- end }}
+              {{- if .Values.secrets.signingKeyPassphrase }}
+                    - key: signing.key_passphrase
+                      path: signing.key_passphrase
+              {{- end }}
+              {{- if .Values.secrets.multimediaSecretAccessKey }}
+                    - key: multimedia.secret_access_key
+                      path: multimedia.secret_access_key
+              {{- end }}
+              {{- range $user, $hash := .Values.secrets.basicUserPasswordHashes }}
+                    - key: auth.basic.users.{{ $user }}.password_hash
+                      path: auth.basic.users.{{ $user }}.password_hash
+              {{- end }}
+              {{- range $name, $value := .Values.secrets.terminologyOauth2ClientSecrets }}
+                    - key: terminology.external.oauth2_clients.{{ $name }}.client_secret
+                      path: terminology.external.oauth2_clients.{{ $name }}.client_secret
+              {{- end }}
+              {{- end }}
+        {{- end }}
         {{- with .Values.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

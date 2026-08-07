@@ -48,6 +48,9 @@ services:
         condition: service_started
 
   otel-lgtm:
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
     # Single-container LGTM dev stack (OTLP collector + Prometheus + Tempo +
     # Loki + Grafana). Digest-pinned grafana/otel-lgtm:0.29.2 (current release),
     # resolved 2026-07-24; no `:latest`
@@ -66,7 +69,7 @@ services:
         target: /otel-lgtm/grafana/dashboards/ferroehr.json
     ports:
       # Grafana UI only. OTLP (4317/4318) stays on the compose network.
-      - "${GRAFANA_PORT:-3000}:3000"
+      - "${FERROEHR_BIND_HOST:-127.0.0.1}:${GRAFANA_PORT:-3000}:3000"
 
 configs:
   prometheus-scrape:

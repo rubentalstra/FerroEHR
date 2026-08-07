@@ -143,6 +143,17 @@ impl FerroEhrService {
         record_phase("plan", plan_start);
 
         let (limit, offset) = compose_paging(ir.limit, ir.offset, ir.limit_is_top, request)?;
+        // The ceiling applies ONLY where nothing else bounds the query. An AQL
+        // `LIMIT` or a `fetch` parameter is honoured as written; a query with
+        // neither would otherwise generate SQL with no `LIMIT` and materialise
+        // every matching row before the RESULT_SET is built, which makes one
+        // request an unbounded caller-chosen allocation. ITS-REST leaves the
+        // `fetch` default to the implementation (query `Request.md` §Common
+        // Headers and Query Parameters), so a default ceiling is spec-permitted.
+        let limit = match (limit, self.query_result_ceiling) {
+            (None, Some(ceiling)) => Some(ceiling),
+            (bounded, _) => bounded,
+        };
         // Multi-EHR scoping (`ehr_ids: List<UUID>`): a malformed id is a
         // client precondition (`400`); a well-formed but absent id raises
         // `ehr_id_does_not_exist` (`i_query_service.adoc`).
@@ -217,6 +228,8 @@ impl FerroEhrService {
             return Ok(ir);
         }
         // Miss: full parse → terminology expansion → lowering.
+        // NOTE: `parse_str` reports a located grammar diagnostic as a `String`,
+        // so there is no cause to carry — the diagnostic IS the answer.
         let mut ast = parse_str(aql)
             .map_err(|e| Failure::analysis(SmError::precondition(format!("invalid AQL: {e}"))))?;
         // Semantic-analysis pre-pass: resolve every `TERMINOLOGY('expand', …)`
@@ -417,7 +430,7 @@ fn record_phase(phase: &'static str, start: Instant) {
 fn map_plan_error(e: AqlError) -> SmError {
     match e {
         AqlError::Feature(_) | AqlError::Analysis(_) | AqlError::Sql(_) => {
-            SmError::precondition(e.to_string())
+            SmError::precondition(e.to_string()).with_source(e)
         }
         AqlError::Exec(inner) => map_exec_error(inner.into()),
     }
@@ -444,7 +457,7 @@ fn map_exec_error(e: AqlError) -> SmError {
             internal_fault("bind a RESULT_SET column to its generated SQL alias", &e)
         }
         AqlError::Feature(_) | AqlError::Analysis(_) | AqlError::Sql(_) => {
-            SmError::precondition(e.to_string())
+            SmError::precondition(e.to_string()).with_source(e)
         }
     }
 }

@@ -31,6 +31,17 @@ and revoke the ability to create objects in the public schema. **The running
 server connects as `ferroehr_app`** — its DSN should authenticate as that role,
 not the migrator or the owner.
 
+`ferroehr_app` holds `SELECT`/`INSERT`/`UPDATE`/`DELETE` on the clinical tables
+and `EXECUTE` on the `ext` helper functions, and nothing else: it is not a
+superuser, does not bypass row-level security, and cannot create, alter or drop
+a table, index, schema or role. That posture is only reachable when the
+migrations are applied out of band, because the server applies its embedded
+migrations on every boot (see the next section) and those are DDL — a
+self-migrating deployment necessarily runs as a role that can execute it. The
+single-container quickstart takes that path: its DSN authenticates as a
+non-superuser role that owns the database and is a member of both
+`ferroehr_migrator` and `ferroehr_app`.
+
 ## Applying migrations
 
 The binary applies its embedded migrations on boot, so you choose how
@@ -43,6 +54,71 @@ migrations run:
   least-privilege production. Run the migration as a CI/CD step or a one-shot
   job with the migrator credential _before_ rolling the deployment, and gate
   the rollout so two versions never race the schema.
+
+> [!WARNING]
+> **Migration is a boot step, and nothing re-runs it.** A running instance whose
+> database is replaced, wiped, or reachable-but-empty does not migrate. It reports
+>
+> ```json
+> {"status":"DOWN","components":{"db":{"status":"UP"},
+>  "migrations":{"status":"DOWN","detail":"core schema tables missing (migrations not applied)"}}}
+> ```
+>
+> on `/health/readiness` (`503`), leaves the load balancer's rotation, and keeps
+> passing liveness — correctly, since the process is healthy — so nothing restarts
+> it. Under Kubernetes that is a Deployment sitting at `0/N` ready with no error
+> after the first one.
+>
+> The readiness check re-tests the schema on **every probe**, so recovery does not
+> require a restart *of that instance* — it goes back to `UP` within one probe
+> interval of the schema existing, whoever created it. What needs a restart is the
+> case where the only thing that would migrate is the instance itself: then
+> `kubectl rollout restart deploy/ferroehr` (or a migration job) is the remedy.
+>
+> For the out-of-band flow this means: the migration step must **complete before**
+> the first instance starts, or that instance sits unready until the schema
+> appears — harmless but confusing, and it delays the rollout rather than failing
+> it. Gate the rollout on the migration job.
+
+### Recovering a partially wiped database
+
+A wipe that removes *some* of the server's schemas is not a fresh start, and the
+server refuses to migrate over one rather than doing something plausible with it.
+
+Almost every object lives in `ehr`, but the cold archival tier lives in its own
+`cold` schema, so `DROP SCHEMA ehr CASCADE` — a restore gone wrong, a recreated
+volume, a wiped test database — takes the primary tier and the migration
+bookkeeping and **leaves the archived clinical rows standing**. On the next boot
+you get:
+
+```text
+migration: the cold archival tier (schema `cold`) is present but the primary tier
+(`ehr.vo_version`) is not: the two are one repository and have been wiped apart.
+```
+
+The refusal is deliberate. Those mirror tables were created from the primary
+tables as they stood when archiving was set up, so silently adopting a survivor
+could leave the archive tier a different shape from the tier it mirrors — and
+its rows are clinical content belonging to a repository that no longer exists.
+Two remedies, and which one applies is your call, not the server's:
+
+- **The data mattered.** Restore the whole database from backup — both schemas
+  together, since they are one repository. Do not try to graft the surviving
+  `cold` tables onto a fresh schema; their `ehr`, `contribution` and `audit`
+  parents are gone, so they are fragments, not a recoverable archive.
+- **The wipe was intended** (a test database, a recreated volume). Then
+  `DROP SCHEMA cold CASCADE` and start the server again; it migrates from
+  scratch.
+
+The reverse partial wipe — dropping `cold` while `ehr` survives — is not caught at
+boot, because the migration bookkeeping still records the archival tier as applied.
+It surfaces the first time an archive, restore or whole-repository export runs.
+Restore from backup; there is no forward path that invents the archived rows back.
+
+> [!TIP]
+> When you wipe a FerroEHR database deliberately, drop the **database**, not a
+> schema. `DROP DATABASE` cannot leave half a repository behind, and it is the
+> only wipe with no partial-state failure mode.
 
 ## TLS and database security
 
@@ -87,6 +163,52 @@ Egress restriction is opt-in because egress targets (database, broker,
 terminology server) are deployment-specific. See
 [Installation → Kubernetes & Helm](installation/kubernetes.md) for the chart
 itself.
+
+The Compose path now carries the same floor: every service drops all Linux
+capabilities and adds back only what its entrypoint provably needs, refuses
+privilege escalation, bounds its file descriptors, and publishes its ports on the
+loopback interface. `scripts/checks/compose-hardening.sh` enforces that on every
+committed compose artifact, so it cannot regress. Two services additionally run a
+read-only root filesystem; the quickstart's server container cannot, because
+Compose refuses an inline `config` in a read-only service and the inline config is
+what makes that file standalone — a deployment that mounts its configuration from
+a file instead can add `read_only: true` and a tmpfs at `/tmp`.
+
+### What the host owes, and we cannot enforce
+
+Four controls belong to whoever runs the daemon. They are stated here because a
+container hardening story that ignores them is misleading — the strongest pod
+security context in the world sits on top of these.
+
+**Keep the host kernel and Docker Engine current.** A container is a kernel
+namespace, not a virtual machine: a kernel privilege-escalation bug is a container
+escape, and every runtime hardening above assumes the kernel enforcing it is
+patched. Track your distribution's kernel updates and the Docker Engine release
+notes with the same urgency you would give a public-facing service.
+
+**Prefer rootless mode.** Running the daemon as a non-root user means a container
+escape lands as an unprivileged user rather than as root on the host
+(<https://docs.docker.com/engine/security/rootless/>). The images here need no
+privileged operation, no host networking, and no daemon socket, so nothing in this
+deployment prevents rootless — the constraints are usually the host's (cgroup v2,
+`newuidmap`/`newgidmap`, and no privileged ports below 1024, which is why the
+server binds 8080 rather than 80).
+
+**Set the daemon log level to `info` (the default) and keep it.** Docker's `debug`
+level records request payloads and can put secret material into daemon logs, which
+are typically world-readable to anyone with host log access and are shipped
+wholesale to log aggregators.
+
+**Control who can pull and push your images.** GHCR access is the deployment's
+authorization boundary for what runs in production: whoever can push a tag your
+manifests reference can run their code with your database credentials. Restrict
+push rights, prefer digest pins over mutable tags for anything you deploy (the
+compose files pin the third-party images by digest for exactly this reason), and
+verify the published attestations before rollout — the verification command is in
+[Installation → Kubernetes & Helm](installation/kubernetes.md).
+
+None of these four is something this project can assert on your behalf, which is
+why they are written as your checklist rather than as our claim.
 
 ## Upgrades
 

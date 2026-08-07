@@ -71,3 +71,8 @@ docs/conformance/*/perf-corpus-*.json
 
 # insta pending snapshots — never committed (see the snapshot-root issue)
 **/*.snap.new
+
+# cargo-cyclonedx output. SBOMs are generated per release and attached to it
+# as an attested asset, never committed — a checked-in SBOM describes whatever
+# graph happened to be resolved the day someone ran it.
+*.cdx.json

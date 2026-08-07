@@ -5,6 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 3d6bd35c-d7ca-4629-bfa9-12bad4751500
+  modified: 2026-08-06T21:53:41.348Z
 ---
 
 Observed 2026-07-08: while one session worked, another session in the same
@@ -18,12 +19,17 @@ first session's mid-edit files into its own commit.
 **How to apply:**
 - Never `git add -A`/`git commit -a` — stage explicit paths only, and re-check
   `git branch --show-current` immediately before committing.
-- **Explicit `git add <paths>` is NOT enough** (bitten 3× on 2026-07-14):
-  another session/agent may have pre-staged its own files, and a plain
-  `git commit` sweeps the whole index. Commit with an explicit pathspec —
-  `git commit -m "…" -- <paths>` — which commits ONLY those paths regardless
-  of what else sits staged; or run `git diff --cached --name-only` first and
-  unstage strangers.
+- **Explicit `git add <paths>` is NOT enough** (bitten 3× on 2026-07-14, again
+  2026-08-06): another session/agent may have pre-staged its own files, and a
+  plain `git commit` sweeps the whole index. The 2026-08-06 case was a
+  **deletion**: an agent ran `git rm` in its own fence, which stages, and two
+  `deploy/` files it was mid-way through removing rode into an unrelated
+  `scripts/` commit. Commit with an explicit pathspec —
+  `git commit -F msg -- <paths>` — which commits ONLY those paths regardless
+  of what else sits staged; or run `git diff --cached --name-only` first (it
+  shows staged deletions too) and unstage strangers. Recovery is
+  `git reset --soft HEAD~1` + `git restore --staged <stranger>` + recommit,
+  which leaves the agent's work untouched in the tree.
 - Scope cargo gates to the crates you touched (`-p`), not `--workspace` — the
   other session may have a broken crate in flight.
 - For multi-file subagent work, use worktree isolation and merge branches back.

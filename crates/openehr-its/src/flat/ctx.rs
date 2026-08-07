@@ -33,10 +33,6 @@ use crate::flat::error::FlatError;
 use crate::flat::map::coded_from_group;
 use crate::flat::sim::SimNode;
 
-/// The default `EVENT_CONTEXT.setting` — openEHR `setting` group code `238`
-/// "other care" (master06 §setting: "will be set to 'other care' if not set").
-const DEFAULT_SETTING: &str = "other care";
-
 /// The `ctx/` child names of master06 (+ the `master04 §Context` overview). A
 /// `ctx/` key outside this vocabulary is a [`FlatError::UnknownContext`].
 const KNOWN_CTX: &[&str] = &[
@@ -71,7 +67,7 @@ const KNOWN_CTX: &[&str] = &[
 /// The typed, resolved context of one simplified data instance
 /// (master06-context_information.adoc). Fields hold ready canonical-JSON pieces
 /// (or the raw strings a piece is built from on demand).
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub(crate) struct CtxDefaults {
     /// `ENTRY.language` / `COMPOSITION.language` code (master06 §"Language and
     /// Territory"). Not defaulted here — the mandatory check is the caller's.
@@ -117,6 +113,36 @@ pub(crate) struct CtxDefaults {
     pub(crate) id_scheme: Option<String>,
 }
 
+impl Default for CtxDefaults {
+    /// `setting` is the one context field the spec gives a value to when it is
+    /// absent: openEHR `setting` group code `238` "other care" (master06
+    /// §setting — "will be set to 'other care' if not set"). Every other field
+    /// defaults to absent, and `time` is filled by [`resolve`] from `now`.
+    fn default() -> Self {
+        Self {
+            language: None,
+            territory: None,
+            composer: None,
+            time: String::new(),
+            end_time: None,
+            history_origin: None,
+            action_time: None,
+            activity_timing: None,
+            setting: coded_from_group("setting", "other care"),
+            location: None,
+            health_care_facility: None,
+            participations: Vec::new(),
+            work_flow_id: None,
+            provider: None,
+            action_ism_current_state: None,
+            instruction_narrative: None,
+            links: Vec::new(),
+            id_namespace: None,
+            id_scheme: None,
+        }
+    }
+}
+
 impl CtxDefaults {
     /// The `COMPOSITION`/`ENTRY` `language` as a CODE_PHRASE in `ISO_639-1`
     /// (master06 §"Language and Territory"), when `ctx/language` was set.
@@ -150,7 +176,6 @@ impl CtxDefaults {
 pub(crate) fn resolve(ctx: Option<&SimNode>, now: &str) -> Result<CtxDefaults, FlatError> {
     let mut out = CtxDefaults {
         time: now.to_owned(),
-        setting: coded_from_group("setting", DEFAULT_SETTING),
         ..CtxDefaults::default()
     };
     let Some(ctx) = ctx else { return Ok(out) };

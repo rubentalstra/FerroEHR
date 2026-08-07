@@ -124,12 +124,14 @@ impl FhirTerminologyProvider {
         // Mutual TLS + the provider's trust anchors, when configured. Bad
         // material is a boot failure here, never a first-request surprise
         // ([`super::tls`]).
-        let builder = super::tls::apply(builder, cfg)
-            .map_err(|e| SmError::exception(format!("terminology provider '{name}': {e}")))?;
+        let builder = super::tls::apply(builder, cfg).map_err(|e| {
+            SmError::exception(format!("terminology provider '{name}': {e}")).with_source(e)
+        })?;
         let client = builder.build().map_err(|e| {
             SmError::exception(format!(
                 "building terminology client for provider '{name}': {e}"
             ))
+            .with_source(e)
         })?;
         let cache = (cfg.cache_ttl_secs > 0).then(|| {
             moka::future::Cache::builder()

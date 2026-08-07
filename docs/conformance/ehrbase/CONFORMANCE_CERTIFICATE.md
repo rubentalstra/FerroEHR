@@ -6,7 +6,7 @@
 | --- | --- |
 | Solution | ehrbase 2.34.0 |
 | Vendor | EHRbase (vitagroup / upstream open-source project) |
-| Runner | cnf-runner 3.11.0 |
+| Runner | cnf-runner 3.17.3 |
 | Infrastructure | — |
 
 ## Scope of Test
@@ -26,7 +26,7 @@ The Realization column says what the row's cases were verified against: `release
 
 | Family | Capability | Required in profile | Realization | Result |
 | --- | --- | --- | --- | --- |
-| Platform | Adl14ArchetypeProvisioning | OPT | extension | not evidenced |
+| Platform | Adl14ArchetypeProvisioning | OPT | extension | INCONCLUSIVE (errored rows — never green by absorption) |
 | Platform | Adl14OptProvisioning | Y | released-wire | FAIL |
 | Platform | Adl2ArchetypeProvisioning | OPT | released-wire | not evidenced |
 | Platform | Adl2OptProvisioning | OPT | released-wire | not evidenced |

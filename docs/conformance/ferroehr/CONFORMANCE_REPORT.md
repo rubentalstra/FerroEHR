@@ -7,12 +7,12 @@ Runner: cnf-runner 3.17.3 · verification pack: passed
 
 | Status | Count |
 | --- | --- |
-| passed | 1011 |
+| passed | 1014 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
 | not_applicable | 38 |
-| total | 1049 |
+| total | 1052 |
 
 ## By chapter
 
@@ -28,9 +28,9 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 | — CONTRIBUTION | 91 | 0 | 0 | 5 |
 | — Item tags | 59 | 0 | 0 | 0 |
 | — Revision history | 6 | 0 | 0 | 0 |
-| **Definitions** | 92 | 0 | 0 | 10 |
-| — ADL 1.4 templates | 34 | 0 | 0 | 5 |
-| — ADL 2 artefacts | 30 | 0 | 0 | 2 |
+| **Definitions** | 95 | 0 | 0 | 10 |
+| — ADL 1.4 templates | 35 | 0 | 0 | 5 |
+| — ADL 2 artefacts | 32 | 0 | 0 | 2 |
 | — Stored queries | 28 | 0 | 0 | 3 |
 | **Query** | 56 | 0 | 0 | 0 |
 | — Ad-hoc AQL | 45 | 0 | 0 | 0 |
@@ -76,10 +76,10 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 
 | Capability | Evidence | passed | failed | inconclusive | unevidenced |
 | --- | --- | --- | --- | --- | --- |
-| Adl14ArchetypeProvisioning | pass | 11 | 0 | 0 | 0 |
+| Adl14ArchetypeProvisioning | pass | 12 | 0 | 0 | 0 |
 | Adl14OptProvisioning | pass | 20 | 0 | 0 | 5 |
-| Adl2ArchetypeProvisioning | pass | 9 | 0 | 0 | 0 |
-| Adl2OptProvisioning | pass | 27 | 0 | 0 | 2 |
+| Adl2ArchetypeProvisioning | pass | 10 | 0 | 0 | 0 |
+| Adl2OptProvisioning | pass | 28 | 0 | 0 | 2 |
 | TemplateExamples | pass | 3 | 0 | 0 | 0 |
 | QueryProvisioning | pass | 27 | 0 | 0 | 0 |
 | EhrOperations | pass | 22 | 0 | 0 | 2 |
@@ -175,7 +175,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 1011 of 1049 selected cases driven.
+Coverage: 1014 of 1052 selected cases driven.
 
 Not-executed verdicts (each cited):
 

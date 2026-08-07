@@ -489,20 +489,12 @@ async fn search(state: &AppState, parts: &RequestParts) -> Response {
 /// `GET /fhir/r4/AuditEvent` — the ITI-81 retrieval over the local Audit
 /// Record Repository.
 async fn audit_search(state: &AppState, parts: &RequestParts) -> Response {
-    // Gate 1: the local store must be on.
-    if !state.backend().audit_search_enabled() {
-        return operation_outcome(
-            StatusCode::NOT_FOUND,
-            "not-supported",
-            "the local audit record repository is disabled ([audit.store])",
-        );
-    }
-    // Gate 2: admin-only under RBAC. The audit trail is the node's
-    // security-surveillance record (IHE ITI TF-1 §9) — an operator surface.
-    // The coarse RBAC gate classes routes by template and would class this
-    // FHIR-base path Clinical, so the Admin requirement is enforced here;
-    // with RBAC off the surface is authenticated-only, like the rest of the
-    // extension routes (no openEHR spec governs this — our own design).
+    // Gate 1, and it must stay FIRST: authorization precedes availability, or the
+    // resource's state becomes a side channel for a caller who may not read this
+    // surface at all (#2070). The audit trail is the node's
+    // security-surveillance record (IHE ITI TF-1 §9), so it is admin-only; the
+    // coarse gate would class this FHIR-base path Clinical, hence the check here.
+    // No openEHR spec governs it — our own design.
     if let Some(authz) = state.authz()
         && let Some(rbac) = authz.rbac()
     {
@@ -515,6 +507,14 @@ async fn audit_search(state: &AppState, parts: &RequestParts) -> Response {
         ) {
             return operation_outcome(StatusCode::FORBIDDEN, "forbidden", &reason);
         }
+    }
+    // Gate 2: the local store must be on.
+    if !state.backend().audit_search_enabled() {
+        return operation_outcome(
+            StatusCode::NOT_FOUND,
+            "not-supported",
+            "the local audit record repository is disabled ([audit.store])",
+        );
     }
 
     let filter = match audit_filter(parts.query.as_deref()) {

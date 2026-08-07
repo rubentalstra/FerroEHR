@@ -40,8 +40,10 @@ pub mod api;
 pub mod config;
 pub mod extensions;
 pub mod formats;
+mod limits;
 mod overload;
 pub mod overview;
+pub mod rate_limit;
 pub mod router;
 pub mod smart;
 pub mod state;
@@ -106,8 +108,9 @@ pub async fn serve_with(
 ) -> Result<(), ServeError> {
     let bind = config.server.bind.clone();
     let tls = config.server.tls.clone();
+    let connection = config.server.connection;
     let app = build_with(config, backend)?;
-    run_server(app, &bind, &tls).await
+    run_server(app, &bind, &tls, connection).await
 }
 
 /// Build the application router with a concrete backend and a full
@@ -162,6 +165,7 @@ pub async fn serve_full(
     let authenticator = build_authenticator(&config, authz.as_deref())?;
     let bind = config.server.bind.clone();
     let tls = config.server.tls.clone();
+    let connection = config.server.connection;
     let management_enabled = observability.management.enabled;
     let management_port = observability.management.port;
     let state = AppState::with_parts(config, backend, authz, observability);
@@ -179,7 +183,7 @@ pub async fn serve_full(
         tracing::info!(bind = %management_bind, "ferroehr-rest management listening (separate port)");
         Some(tokio::spawn(async move {
             let plain = ferroehr::config::server::TlsConfig::default();
-            if let Err(e) = run_server(management_app, &management_bind, &plain).await {
+            if let Err(e) = run_server(management_app, &management_bind, &plain, connection).await {
                 tracing::error!("management listener stopped: {e}");
             }
         }))
@@ -187,7 +191,7 @@ pub async fn serve_full(
         None
     };
 
-    let result = run_server(main_app, &bind, &tls).await;
+    let result = run_server(main_app, &bind, &tls, connection).await;
     if let Some(task) = management_task {
         task.abort();
     }
@@ -204,10 +208,10 @@ async fn run_server(
     app: axum::Router,
     bind: &str,
     tls: &ferroehr::config::server::TlsConfig,
+    connection: ferroehr::config::server::ConnectionConfig,
 ) -> Result<(), ServeError> {
     use std::net::SocketAddr;
 
-    use axum::serve::ListenerExt as _;
     use tower::Layer;
     use tower_http::normalize_path::NormalizePathLayer;
 
@@ -229,32 +233,99 @@ async fn run_server(
             signal_handle.graceful_shutdown(Some(std::time::Duration::from_secs(10)));
         });
         tracing::info!(%bind, client_auth = ?tls.client_auth, "ferroehr-rest listening (TLS)");
-        axum_server::bind_rustls(
+        let mut server = axum_server::bind_rustls(
             addr,
             axum_server::tls_rustls::RustlsConfig::from_config(rustls_config),
         )
-        .handle(handle)
-        .serve(make)
-        .await?;
+        .handle(handle);
+        // The connection-level bound, applied where hyper actually enforces it.
+        // Everything else in this stack engages after a request head is parsed,
+        // so this is the only place a connection that never finishes writing one
+        // can be reclaimed.
+        bound_connections(server.http_builder(), connection);
+        server.serve(make).await?;
         return Ok(());
     }
 
+    // Both listeners run through `axum_server`: it is the only one of the two that
+    // exposes hyper's connection builder, and the bound has to apply to the
+    // plaintext listener most of all — the one the quickstart publishes.
     let listener = tokio::net::TcpListener::bind(bind).await?;
+    let listener = listener.into_std()?;
     tracing::info!(%bind, "ferroehr-rest listening");
-    // `TCP_NODELAY` on every accepted socket: small responses (the
-    // `204`/minimal write acknowledgements the API is full of) must not sit
-    // in Nagle's buffer waiting for an ACK — worth tens of milliseconds of
-    // tail latency per small response on some stacks. A failed setsockopt is
-    // not fatal — the connection is served regardless.
-    let listener = listener.tap_io(|io: &mut tokio::net::TcpStream| {
-        if let Err(err) = io.set_nodelay(true) {
+    let handle = axum_server::Handle::new();
+    let signal_handle = handle.clone();
+    tokio::spawn(async move {
+        shutdown_signal().await;
+        signal_handle.graceful_shutdown(Some(std::time::Duration::from_secs(10)));
+    });
+    let mut server = axum_server::from_tcp(listener)
+        .map_err(ServeError::Io)?
+        .acceptor(NoDelayAcceptor)
+        .handle(handle);
+    bound_connections(server.http_builder(), connection);
+    server.serve(make).await?;
+    Ok(())
+}
+
+/// Applies the connection-level bounds to hyper's builder, for both listeners.
+///
+/// The builder is `hyper_util`'s AUTO builder, so this server speaks HTTP/1 and
+/// HTTP/2 — negotiated by ALPN on the TLS listener, and by prior knowledge or an
+/// upgrade on the plaintext one. Configuring the HTTP/1 side does not disable
+/// HTTP/2; each protocol needs its own bounds because the exposure differs:
+///
+/// - **HTTP/1**: a request head arrives as a byte stream, so a peer can trickle
+///   it forever. `header_read_timeout` is the bound
+///   (<https://docs.rs/hyper/latest/hyper/server/conn/http1/struct.Builder.html>).
+/// - **HTTP/2**: the head arrives in HEADERS frames on a multiplexed connection,
+///   so there is nothing to trickle — the exposure is stream CONCURRENCY. A peer
+///   that opens streams and cancels them immediately makes the server do request
+///   setup at almost no cost to itself (CVE-2023-44487, "Rapid Reset"), which
+///   `max_concurrent_streams` bounds. The keep-alive PING pair additionally
+///   reclaims a connection whose peer vanished without a FIN.
+fn bound_connections(
+    builder: &mut hyper_util::server::conn::auto::Builder<hyper_util::rt::TokioExecutor>,
+    connection: ferroehr::config::server::ConnectionConfig,
+) {
+    // NOTE: a timeout knob without a timer makes hyper PANIC per connection
+    // ("timeout `header_read_timeout` set, but no timer set" —
+    // <https://docs.rs/hyper/latest/hyper/server/conn/http1/struct.Builder.html#method.timer>).
+    builder
+        .http1()
+        .timer(hyper_util::rt::TokioTimer::new())
+        .header_read_timeout(connection.header_read_timeout());
+    builder
+        .http2()
+        .timer(hyper_util::rt::TokioTimer::new())
+        .max_concurrent_streams(connection.stream_cap())
+        .keep_alive_interval(connection.http2_keep_alive_interval())
+        .keep_alive_timeout(connection.http2_keep_alive_timeout());
+}
+
+/// An acceptor that sets `TCP_NODELAY` on every accepted socket and otherwise
+/// passes it through.
+///
+/// Small responses — the `204` and minimal write acknowledgements this API is
+/// full of — must not sit in Nagle's buffer waiting for an ACK; that is worth
+/// tens of milliseconds of tail latency per response on some stacks. This exists
+/// because the option is per-connection, so it cannot be set once on the
+/// listener. A failed `setsockopt` is logged and the connection served anyway:
+/// a latency optimisation must never refuse a request.
+#[derive(Debug, Clone, Copy, Default)]
+struct NoDelayAcceptor;
+
+impl<S> axum_server::accept::Accept<tokio::net::TcpStream, S> for NoDelayAcceptor {
+    type Stream = tokio::net::TcpStream;
+    type Service = S;
+    type Future = std::future::Ready<std::io::Result<(Self::Stream, Self::Service)>>;
+
+    fn accept(&self, stream: tokio::net::TcpStream, service: S) -> Self::Future {
+        if let Err(err) = stream.set_nodelay(true) {
             tracing::debug!(%err, "TCP_NODELAY could not be set on an accepted socket");
         }
-    });
-    axum::serve(listener, make)
-        .with_graceful_shutdown(shutdown_signal())
-        .await?;
-    Ok(())
+        std::future::ready(Ok((stream, service)))
+    }
 }
 
 /// Builds the rustls server config for `[server.tls]`.
@@ -273,6 +344,7 @@ pub fn tls_server_config(
     use rustls::pki_types::pem::PemObject;
 
     use ferroehr::config::server::ClientAuth;
+    use ferroehr::config::server::TlsVersion;
 
     fn required<'a>(value: Option<&'a String>, key: &str) -> Result<&'a str, std::io::Error> {
         value.map(String::as_str).ok_or_else(|| {
@@ -297,8 +369,14 @@ pub fn tls_server_config(
     let key = rustls::pki_types::PrivateKeyDer::from_pem_slice(&key_pem).map_err(invalid)?;
 
     let provider = Arc::new(rustls::crypto::aws_lc_rs::default_provider());
+    // NOTE: 1.3-only by default — OWASP Transport Layer Security §Only Support
+    // Strong Protocols; 1.1/1.0 are unreachable by construction (RFC 8996).
+    let versions: &[&rustls::SupportedProtocolVersion] = match tls.min_version {
+        TlsVersion::V1_3 => &[&rustls::version::TLS13],
+        TlsVersion::V1_2 => &[&rustls::version::TLS13, &rustls::version::TLS12],
+    };
     let builder = rustls::ServerConfig::builder_with_provider(Arc::clone(&provider))
-        .with_safe_default_protocol_versions()
+        .with_protocol_versions(versions)
         .map_err(invalid)?;
 
     let builder = match tls.client_auth {
