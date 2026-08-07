@@ -24,7 +24,7 @@ kubectl -n ferroehr create secret generic ferroehr-db \
   --from-literal=FERROEHR__DB__URL='postgres://ferroehr_app:***@pg-host:5432/ferroehr?sslmode=verify-full'
 
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 5.0.0 -n ferroehr \
+  --version 5.0.1 -n ferroehr \
   --set database.existingSecret=ferroehr-db \
   --set image.tag=3.17.3
 ```
@@ -41,7 +41,7 @@ helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
 `oci://` reference. To read the chart's metadata without installing it:
 
 ```shell
-helm show chart oci://ghcr.io/rubentalstra/charts/ferroehr --version 5.0.0
+helm show chart oci://ghcr.io/rubentalstra/charts/ferroehr --version 5.0.1
 ```
 
 ### Pin two versions, not one
@@ -54,7 +54,7 @@ against.
 
 | | Selects | Pin with | Line |
 |---|---|---|---|
-| Chart version | templates, values schema, defaults | `--version 5.0.0` | SemVer over the chart's own contract |
+| Chart version | templates, values schema, defaults | `--version 5.0.1` | SemVer over the chart's own contract |
 | Image tag | the server binary | `--set image.tag=3.17.3` (or `image.digest`) | the application's SemVer line |
 
 Always pin the image to an immutable version or, better, a `@sha256` digest —
@@ -101,9 +101,12 @@ gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:<tag> -R rubentalstra/
 > the signing lane onward — `3.17.3` and everything before it answer `HTTP 404:
 > Not Found`, which is the honest state rather than a verification failure (the
 > development images, `ghcr.io/rubentalstra/ferroehr:develop`, already verify).
-> For the chart, attestations exist from the first published version and the
-> **cosign signature from chart `5.0.0` onward**; chart `4.1.0` carries the
-> attestation but no signature.
+> For the chart, the **cosign signature exists from chart `5.0.1` onward**. Two
+> earlier versions are honest exceptions: `4.1.0` carries the attestation but no
+> signature, and `5.0.0` carries **neither** — its publishing run pushed the chart
+> and then failed at the signing step, and a published chart version is never
+> replaced, so it stands as it was published. Both install and run normally; they
+> simply cannot be verified. Pin `5.0.1` or newer if verification matters to you.
 
 > [!NOTE]
 > `helm install --verify` and `helm verify` do **not** apply: they check a PGP
@@ -144,7 +147,7 @@ chapter's metadata plus a security report over the published images.
 > the image itself as the authority:
 >
 > ```shell
-> helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 5.0.0 \
+> helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 5.0.1 \
 >   -s templates/configmap.yaml --set database.existingSecret=ferroehr-db \
 >   | sed -n '/ferroehr.toml/,$p' | sed '1d;s/^    //' > /tmp/ferroehr.toml
 > docker run --rm -v /tmp/ferroehr.toml:/etc/ferroehr/ferroehr.toml:ro \
@@ -499,7 +502,7 @@ Preview an upgrade against what you have installed with
 `helm diff`, or render the new chart version and read it:
 
 ```shell
-helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 5.0.0 \
+helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 5.0.1 \
   -n ferroehr -f my-values.yaml | less
 ```
 
