@@ -136,7 +136,7 @@ fn official_aql_corpus_parses() {
                         )),
                     }
                 }
-                Err(e) => failures.push((query, e)),
+                Err(e) => failures.push((query, e.to_string())),
             }
         }
     }

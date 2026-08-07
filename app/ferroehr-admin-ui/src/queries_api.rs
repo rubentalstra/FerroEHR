@@ -46,7 +46,7 @@ pub async fn validate_aql(
     crate::session::require_session().await?;
     openehr_query::parser::parse_str(&aql)
         .map(|_| ())
-        .map_err(AdminUiError::Invalid)
+        .map_err(|e| AdminUiError::Invalid(e.to_string()))
 }
 
 /// Run ad-hoc AQL via `POST query/aql` with parameter bindings (a JSON
@@ -249,7 +249,7 @@ pub async fn store_query(
              query; leave the field empty to let the server assign the version."
         )));
     }
-    openehr_query::parser::parse_str(&aql).map_err(AdminUiError::Invalid)?;
+    openehr_query::parser::parse_str(&aql).map_err(|e| AdminUiError::Invalid(e.to_string()))?;
     let state: crate::state::AppState = leptos::prelude::expect_context();
     let path = match version.as_deref() {
         Some(version) => format!(

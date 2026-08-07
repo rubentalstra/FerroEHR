@@ -109,6 +109,16 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **The AQL parser reports a typed error instead of a string.**
+  `openehr_query::parser::parse_str` and `parse` now return `ParseError`, which
+  separates a lexing refusal — carrying the lexer's own error as a real
+  `source()`, so the cause chain is walkable — from a grammar refusal, which
+  carries every position the parser reported along with the token found there.
+  A caller can finally branch on *which pass* refused without matching a
+  substring. The message text is unchanged, so the `400` body for an invalid
+  query reads exactly as before and no wire behaviour moves. The published
+  crate also no longer exposes `chumsky`'s error type in its public API.
+
 - The Kubernetes hardening chapter's image-provenance admission policies now
   carry the certificate identity the publishing lanes actually issue — read off a
   published image rather than inferred from the workflow files — and both are
