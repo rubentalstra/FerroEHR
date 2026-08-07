@@ -405,7 +405,7 @@ fn is_identifier(s: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{BuilderError, to_aql};
+    use super::{BuilderError, lower, to_aql};
     use crate::builder::model::{
         BoolOp, BuilderQuery, Criterion, CriterionKind, CriterionNode, OrderRule, QueryShape,
         SelectedColumn,
@@ -430,18 +430,26 @@ mod tests {
             units: "°C".to_owned(),
         }));
         let aql = to_aql(&q).unwrap();
+        // The range's three conjuncts are the RIGHT operand of the top-level
+        // `AND`, and AQL resolves `AND` left-associatively, so the group keeps
+        // its parentheses: without them the text would re-parse as a
+        // differently-shaped (if logically equivalent) query.
         assert_eq!(
             aql,
             format!(
                 "SELECT c FROM EHR e CONTAINS COMPOSITION c \
                  WHERE c/archetype_details/template_id/value='vitals.v1' \
-                 AND c/{TEMP_PATH}/magnitude>=36.0 \
+                 AND (c/{TEMP_PATH}/magnitude>=36.0 \
                  AND c/{TEMP_PATH}/magnitude<=38.5 \
-                 AND c/{TEMP_PATH}/units='°C' LIMIT 50"
+                 AND c/{TEMP_PATH}/units='°C') LIMIT 50"
             )
         );
-        // And the emitted text is grammar-valid.
-        openehr_query::parser::parse_str(&aql).unwrap();
+        // And the emitted text does not merely parse — it parses back to the
+        // very query that was printed.
+        assert_eq!(
+            openehr_query::parser::parse_str(&aql).unwrap(),
+            lower(&q).unwrap()
+        );
     }
 
     #[test]

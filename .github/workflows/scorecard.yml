@@ -13,7 +13,20 @@
 # by `publish_results`) and this repository's code-scanning alerts, so a
 # regression shows up in the Security tab rather than only in a number.
 #
+# TWO CHECKS SCORE ZERO AND ALWAYS WILL — recorded here so the badge does not
+# send the next reader on an investigation that has already been done (#2134):
+#
+#   * `Maintained` — the web view gives no reason; the API does: "project was
+#     created within the last 90 days". A new-repository caution, not a judgement
+#     about activity, and it expires by itself.
+#   * `Code-Review` — wants a second human to approve pull requests. With one
+#     maintainer the only ways to move it are to add a reviewer or to fake one.
+#
+# The score is an outcome, never the target. A check we cannot honestly satisfy
+# stays at zero with its reason written down.
+#
 # Docs: https://github.com/ossf/scorecard-action
+# The full per-check analysis and its sub-issues: #2134.
 name: Scorecard
 
 on:

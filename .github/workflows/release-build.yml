@@ -1,0 +1,194 @@
+# The release build, as a REUSABLE workflow — the SLSA v1.0 Build Level 3 lane.
+#
+# WHY THIS IS A SEPARATE FILE, which is the whole point of it. SLSA Build L3
+# requires the platform to "prevent secret material used to sign the provenance
+# from being accessible to the user-defined build steps"
+# (https://slsa.dev/spec/v1.0/levels). `actions/attest-build-provenance` used
+# inside an ordinary job does not satisfy that: every step of a job shares one
+# runner VM, so a build step could in principle reach the signing material. That
+# single clause is the only thing separating Build L2 from Build L3 here.
+#
+# GitHub's documented remedy is to move the build AND its attestation into a
+# reusable workflow, which runs on its own VM and whose steps a caller cannot
+# add to — a caller passes declared inputs and nothing else
+# (https://docs.github.com/actions/security-guides/using-artifact-attestations-and-reusable-workflows-to-achieve-slsa-v1-build-level-3).
+# The build definition therefore stops being caller-defined, and the Fulcio
+# certificate names THIS workflow as the signer, which a consumer can require:
+#
+#   gh attestation verify ferroehr-<tag>-<target>.tar.gz \
+#     -R rubentalstra/FerroEHR \
+#     --signer-workflow rubentalstra/FerroEHR/.github/workflows/release-build.yml
+#
+# That flag is the consumer-visible prize, not the badge: it lets a downstream
+# verifier insist an artifact came from this hardened lane rather than from any
+# workflow that happens to live in this repository.
+#
+# WHAT IS STILL NOT CLAIMED, so the honesty of the earlier position survives the
+# upgrade: the isolation is GitHub's, not ours, and this workflow's own steps run
+# beside the attestation in the reusable workflow's VM. We claim exactly what
+# GitHub's construction supports — Build L3 by way of a non-caller-defined build
+# definition and a signer identity a verifier can pin — and nothing about
+# reproducibility or a hermetic build, which are separate SLSA tracks we do not
+# address.
+name: Release build (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: The release tag being built.
+        required: true
+        type: string
+      sha:
+        description: The commit the release was cut from.
+        required: true
+        type: string
+      target:
+        description: The Rust target triple.
+        required: true
+        type: string
+      runner:
+        description: The runner label matching the target's architecture.
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  build:
+    runs-on: ${{ inputs.runner }}
+    # A deliberately cold release build (no cache) of the full workspace.
+    timeout-minutes: 60
+    permissions:
+      contents: write # attach the per-arch tarballs to the release
+      id-token: write # Sigstore, for the provenance + SBOM attestations
+      attestations: write # store them against this repository
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.sha }}
+      # Cold by construction, not by hope: setup-rust-toolchain restores a
+      # Swatinem/rust-cache entry unless told otherwise, so the published
+      # tarballs were being linked from cached bytes this job did not build.
+      # A publishing lane restores no cache — nothing a prior run could have
+      # poisoned may influence the artifact it signs.
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        with:
+          cache: false
+      - name: Build server
+        # `ferroehr-server` is the binary-producing crate (bin name stays
+        # `ferroehr`) since the crate consolidation; `-p ferroehr` is the
+        # platform library and yields no binary.
+        run: cargo build --release --locked -p ferroehr-server
+      - name: Package
+        shell: bash
+        env:
+          TAG: ${{ inputs.tag }}
+          TARGET: ${{ inputs.target }}
+        run: |
+          out="ferroehr-${TAG}-${TARGET}.tar.gz"
+          strip target/release/ferroehr
+          tar -C target/release -czf "$out" ferroehr
+          echo "ASSET=$out" >> "$GITHUB_ENV"
+
+      # A CycloneDX SBOM of the Rust dependency graph — a different document from
+      # the container SBOMs BuildKit emits, answering a different question. The
+      # image SBOM sees the OS layer; this one enumerates the cargo graph with
+      # `pkg:cargo/...` purls and, crucially, the DIRECT vs TRANSITIVE edges that
+      # make an SBOM actionable rather than a flat package list (the OWASP
+      # Dependency Graph & SBOM Cheat Sheet's element 8).
+      #
+      # Generated from the release commit's own `Cargo.lock` with `--locked`, so
+      # it describes the graph that was actually built, not one resolved later.
+      - name: Install cargo-cyclonedx
+        uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2
+        with:
+          tool: cargo-cyclonedx
+      - name: Generate the dependency SBOM
+        env:
+          TAG: ${{ inputs.tag }}
+          TARGET: ${{ inputs.target }}
+        run: |
+          set -euo pipefail
+          # Scoped to the binary-producing crate, so the document describes the
+          # artifact being released rather than the whole workspace.
+          cargo cyclonedx \
+            --manifest-path app/ferroehr-server/Cargo.toml \
+            --format json --describe binaries --spec-version 1.5
+          # Named for the asset it describes, so a consumer can tell which
+          # artifact it belongs to. The generated name follows the BINARY
+          # (`ferroehr`), not the crate.
+          sbom="ferroehr-${TAG}-${TARGET}.cdx.json"
+          mv app/ferroehr-server/ferroehr_bin.cdx.json "$sbom"
+          echo "SBOM=$sbom" >> "$GITHUB_ENV"
+
+      - name: Attest build provenance
+        id: provenance
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-path: ${{ env.ASSET }}
+      - name: Attest the SBOM
+        id: sbom-attestation
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+        with:
+          subject-path: ${{ env.ASSET }}
+          sbom-path: ${{ env.SBOM }}
+
+      # The attestations above live in GitHub's attestations API, which is what
+      # `gh attestation verify` reads without a `--bundle` flag. Publishing them
+      # as assets adds two things the API cannot: OFFLINE verification, and
+      # visibility to scanners that read a release's file list rather than that
+      # API (the OpenSSF Scorecard's signed-releases probes match filename
+      # suffixes — `.sigstore.json` for a signature, `.intoto.jsonl` for
+      # provenance; v5.5.0 `probes/releasesAreSigned`,
+      # `probes/releasesHaveProvenance`).
+      #
+      # The `.intoto.jsonl` is a RE-CONTAINER, not a second document: the
+      # bundle's `dsseEnvelope` is already a DSSE-wrapped in-toto Statement v1
+      # whose `predicateType` is `https://slsa.dev/provenance/v1`, and
+      # `.intoto.jsonl` means exactly one such envelope per line. Verified on a
+      # real bundle before this was written. Emitting it was deliberately
+      # REFUSED while this lane was Build L2, because the format is what a SLSA
+      # generator publishes and it would have implied a build-integrity claim we
+      # had declined to make; at L3 the claim is one we do make, so the format
+      # is now honest rather than cosmetic.
+      - name: Publish the attestations as release assets
+        env:
+          ASSET_NAME: ${{ env.ASSET }}
+          PROVENANCE_BUNDLE: ${{ steps.provenance.outputs.bundle-path }}
+          SBOM_BUNDLE: ${{ steps.sbom-attestation.outputs.bundle-path }}
+        run: |
+          set -euo pipefail
+          cp "$PROVENANCE_BUNDLE" "${ASSET_NAME}.sigstore.json"
+          cp "$SBOM_BUNDLE" "${ASSET_NAME}.sbom.sigstore.json"
+          # One DSSE envelope, one line — the .intoto.jsonl contract.
+          jq -c '.dsseEnvelope' "$PROVENANCE_BUNDLE" > "${ASSET_NAME}.intoto.jsonl"
+          # Refuse to publish an empty or malformed provenance line rather than
+          # attaching a file that looks like provenance and is not.
+          payload_type="$(jq -r '.payloadType' "${ASSET_NAME}.intoto.jsonl")"
+          [ "$payload_type" = "application/vnd.in-toto+json" ] || {
+            echo "::error::provenance envelope is not in-toto (payloadType=${payload_type})"
+            exit 1
+          }
+          predicate="$(jq -r '.payload' "${ASSET_NAME}.intoto.jsonl" | base64 -d | jq -r '.predicateType')"
+          [ "$predicate" = "https://slsa.dev/provenance/v1" ] || {
+            echo "::error::provenance predicate is not SLSA v1 (${predicate})"
+            exit 1
+          }
+          {
+            echo "PROVENANCE_BUNDLE_ASSET=${ASSET_NAME}.sigstore.json"
+            echo "SBOM_BUNDLE_ASSET=${ASSET_NAME}.sbom.sigstore.json"
+            echo "PROVENANCE_JSONL_ASSET=${ASSET_NAME}.intoto.jsonl"
+          } >> "$GITHUB_ENV"
+
+      - name: Upload to release
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
+        with:
+          tag_name: ${{ inputs.tag }}
+          files: |
+            ${{ env.ASSET }}
+            ${{ env.SBOM }}
+            ${{ env.PROVENANCE_BUNDLE_ASSET }}
+            ${{ env.SBOM_BUNDLE_ASSET }}
+            ${{ env.PROVENANCE_JSONL_ASSET }}

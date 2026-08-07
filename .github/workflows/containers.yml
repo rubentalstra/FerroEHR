@@ -305,10 +305,16 @@ jobs:
       # signing and lockfile hashes.
       #
       # GitHub's native attestation rather than slsa-github-generator: no new
-      # secret, and no third-party reusable workflow inside the publish path. It
-      # does not claim the isolation-based SLSA build levels, because the
-      # provenance is generated in the same job that builds — an honest boundary
-      # rather than an asserted level.
+      # secret, and no third-party reusable workflow inside the publish path.
+      #
+      # This lane is SLSA v1.0 Build **L2**, not L3: the provenance is generated
+      # in the same job that builds, and a job's steps share one runner VM, so
+      # the signing material is not out of reach of the build steps
+      # (https://slsa.dev/spec/v1.0/levels). The release-binaries lane reaches L3
+      # by building inside a reusable workflow (release-build.yml); the same move
+      # is available here and is tracked on #2140 rather than assumed. Until then
+      # this is L2 and says so — the images are genuinely signed, and the level
+      # is the honest one.
       #
       #   gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:TAG -R rubentalstra/FerroEHR
       - name: Attest build provenance

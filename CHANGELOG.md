@@ -18,6 +18,22 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- The [OpenSSF Best Practices badge](https://www.bestpractices.dev/projects/13982) at
+  the passing level, alongside the Scorecard badge in the README. Every
+  criterion is answered from something a reader can check — the vulnerability
+  process in `SECURITY.md`, the release signing and provenance in the security
+  chapter, the test and analysis gates in CI — rather than self-asserted.
+
+- Fuzzing for every parser that reads attacker-controlled bytes off the wire:
+  `cargo-fuzz` (libFuzzer) harnesses for the canonical-JSON reader, the
+  canonical-XML reader, the AQL lexer/parser, the FLAT/STRUCTURED simplified
+  formats, the ADL source parser and the OPT 1.4 template reader, each a pure
+  parse of a byte slice, seeded from the openEHR corpora already committed in
+  the repository. A bounded campaign per target runs on a nightly schedule with
+  its corpus persisted between runs; long campaigns are a documented local
+  command (`fuzz/README.md`). The harnesses live in their own workspace, so no
+  ordinary build, clippy or test run is affected.
+
 - **The cluster-hardening chapter now covers breach containment, logging, managed
   control planes and the supply chain.** What scaling to zero does and does not
   stop (it halts clinical access immediately — a clinical-safety decision to make
@@ -92,6 +108,10 @@ workflow refuses a tag that has no matching section here.
 - Boot warnings for two deliberate weakenings that are easy to leave switched on: `cors_permissive`, and authentication enabled on a **plaintext** listener bound to a routable address.
 
 ### Changed
+
+- **Release binaries reach SLSA v1.0 Build Level 3, and carry provenance a scanner and an offline verifier can both read.** Build L3's distinguishing requirement is that signing material must be out of reach of the build steps — and every step of a GitHub Actions job shares one runner VM, so attesting inside the building job cannot satisfy it. The release build now happens inside a *reusable* workflow: it runs on its own VM, a caller passes declared inputs and cannot add steps, and the caller job has no steps at all. You can now **require** that signer rather than trusting any workflow in the repository: `gh attestation verify <tarball> -R rubentalstra/FerroEHR --signer-workflow rubentalstra/FerroEHR/.github/workflows/release-build.yml`. Each release also carries its provenance as `<tarball>.intoto.jsonl` beside the Sigstore bundles. The container images and the Helm chart remain Build L2 and now say so where they are built, rather than leaving the level to be assumed.
+
+- **A direct push to `develop` is refused.** The branch ruleset already blocked deletion and force-pushes and required signed commits, but not a pull request — so the discipline every change has followed was convention rather than enforcement, and the `main` ruleset had the rule all along. Requiring zero approvals, so it changes nothing about how a maintainer merges their own work.
 
 - **The conformance baseline moves to 1014 of 1014, and three new cases pin behaviour that had none.** The run that produced it went red first, with five cases failing because the two shared-definition deletes now require the admin role. Every red row was attributed before anything was touched, and the attribution landed on the catalogue: those five pin the *semantics* of a delete — none of them declares a `forbidden` outcome — so they were calling an operation their principal is not authorized for and never reaching it. They now drive the delete as admin, with their `204`/`404` expectations untouched. The refusal the authorization change introduced gets its own two cases, so the behaviour is tested rather than merely described, and a read-only case that had quietly stopped isolating anything — its subject route became admin-gated, and it was the only write on that surface — is joined by one on a route where the restriction is still observable. The comparison record for the upstream EHRbase server is regenerated from the same run of the same catalogue.
 
@@ -183,7 +203,11 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The AQL printer emitted queries that meant something different when read back.** Found by the new fuzzer, and it is a correctness defect rather than a formatting one: `to_aql` dropped parentheses that the grammar needs, so re-parsing the printed text produced a *different* query. Two causes. The `AND`/`OR` operators are stated in the grammar as binary alternatives of one recursive rule, which resolves left-associatively — so a same-precedence operand survives a re-parse on the left and silently **re-associates** on the right, and the printer treated both sides alike. And a `CONTAINS` chain used as a boolean operand absorbs whatever operator follows it, moving that operator *inside* the CONTAINS scope. The printer's own documented invariant — parse(print(q)) == q — now holds across every boolean shape, asserted rather than assumed.
+
 - **The container images declare their user numerically, so Kubernetes can actually verify it.** Both images stated `USER nonroot:nonroot`, which reads well and defeats the check it was meant to support: the kubelet cannot resolve a username against an image it does not read, so `runAsNonRoot: true` without an explicit `runAsUser` refuses the pod with *"cannot verify user is non-root"*. The distroless base already declared the numeric `65532`, and that line was overriding it with a name. Both now declare `USER 65532:65532` — the same identity, stated the way every consumer can check. The Helm chart was unaffected because it pins `runAsUser: 65532` itself; a plain `kubectl run` of these images was not.
+
+- **Release artifacts carry their signature with them, so verification no longer needs GitHub.** Each release now attaches the Sigstore bundles as assets beside the binary and its SBOM, which means a consumer can verify an artifact on an air-gapped host with nothing but the download in hand: `gh attestation verify <tarball> --bundle <tarball>.sigstore.json --repo rubentalstra/FerroEHR`. The attestations were already being produced and stored in GitHub's attestations API; what was missing was the form in which a signature travels with the file.
 
 - **The Helm golden-render gate was inert in CI, and the chart publish lane could not run at all.** Both jobs passed `version-file:` to `azure/setup-helm`, which has no such input — its inputs are `version`, `token` and `downloadBaseURL`. An unrecognised input is only a **warning**, so the action quietly installed the newest Helm instead of the pinned one; the golden comparison then skipped itself ("running helm 4.2.3, goldens are pinned to 4.1.3") and the job went red without ever comparing a render. The workflows now read the version out of `deploy/helm/.tool-versions` and pass it as the input that exists, so the pin means what the file says it means.
 
