@@ -172,8 +172,9 @@ pub(super) fn committed_response(
 /// metric every service write path records (no openEHR spec governs this —
 /// our own telemetry).
 pub(super) fn record_commit() {
-    metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
-        .increment(1);
+    crate::telemetry::metrics::metrics()
+        .db_transactions
+        .add(1, &[opentelemetry::KeyValue::new("outcome", "commit")]);
 }
 
 /// One `REVISION_HISTORY_ITEM` for a stored version row: its

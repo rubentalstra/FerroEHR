@@ -24,9 +24,6 @@ use std::time::Instant;
 use axum::extract::{ConnectInfo, MatchedPath, Request};
 use axum::middleware::Next;
 use axum::response::Response;
-use ferroehr::telemetry::prometheus::{
-    HTTP_ACTIVE_REQUESTS, HTTP_REQUEST_BODY_SIZE, HTTP_REQUEST_DURATION, HTTP_RESPONSE_BODY_SIZE,
-};
 use http::{HeaderMap, HeaderValue, StatusCode, header};
 use opentelemetry::propagation::Extractor;
 use opentelemetry::trace::TraceContextExt;
@@ -109,27 +106,39 @@ pub async fn http_metrics(req: Request, next: Next) -> Response {
     let method = req.method().as_str().to_owned();
     let request_body = content_length(req.headers());
 
-    metrics::gauge!(HTTP_ACTIVE_REQUESTS, "http_route" => route.clone()).increment(1.0);
+    let route_kv = [opentelemetry::KeyValue::new("http_route", route.clone())];
+    ferroehr::telemetry::metrics::metrics()
+        .http_active_requests
+        .add(1, &route_kv);
     let started = Instant::now();
 
     let resp = next.run(req).await;
 
     let elapsed = started.elapsed().as_secs_f64();
-    metrics::gauge!(HTTP_ACTIVE_REQUESTS, "http_route" => route.clone()).decrement(1.0);
+    ferroehr::telemetry::metrics::metrics()
+        .http_active_requests
+        .add(-1, &route_kv);
 
-    metrics::histogram!(
-        HTTP_REQUEST_DURATION,
-        "http_route" => route.clone(),
-        "http_request_method" => method,
-        "status_class" => status_class(resp.status()),
-    )
-    .record(elapsed);
+    ferroehr::telemetry::metrics::metrics()
+        .http_request_duration
+        .record(
+            elapsed,
+            &[
+                opentelemetry::KeyValue::new("http_route", route.clone()),
+                opentelemetry::KeyValue::new("http_request_method", method),
+                opentelemetry::KeyValue::new("status_class", status_class(resp.status())),
+            ],
+        );
 
     if let Some(size) = request_body {
-        metrics::histogram!(HTTP_REQUEST_BODY_SIZE, "http_route" => route.clone()).record(size);
+        ferroehr::telemetry::metrics::metrics()
+            .http_request_body_size
+            .record(size, &route_kv);
     }
     if let Some(size) = content_length(resp.headers()) {
-        metrics::histogram!(HTTP_RESPONSE_BODY_SIZE, "http_route" => route).record(size);
+        ferroehr::telemetry::metrics::metrics()
+            .http_response_body_size
+            .record(size, &route_kv);
     }
     resp
 }
@@ -157,20 +166,15 @@ fn status_class(status: StatusCode) -> &'static str {
     }
 }
 
-/// The `Content-Length` of a message, in bytes, if declared. Body sizes fit a
-/// histogram sample exactly (well under `2^53`), so the widening is lossless.
-#[expect(
-    clippy::as_conversions,
-    clippy::cast_precision_loss,
-    reason = "a Content-Length is observed into an f64 histogram; f64 is exact to \
-              2^53 bytes, far past any request or response this server accepts"
-)]
-fn content_length(headers: &HeaderMap) -> Option<f64> {
+/// The `Content-Length` of a message, in bytes, if declared.
+///
+/// A byte count is integral, and the histogram takes `u64`, so there is no cast
+/// and nothing to lose.
+fn content_length(headers: &HeaderMap) -> Option<u64> {
     headers
         .get(header::CONTENT_LENGTH)
         .and_then(|v| v.to_str().ok())
         .and_then(|v| v.parse::<u64>().ok())
-        .map(|n| n as f64)
 }
 
 /// A header value as an owned string, if present and valid UTF-8.
@@ -229,7 +233,7 @@ mod tests {
     fn content_length_parses() {
         let mut h = HeaderMap::new();
         h.insert(header::CONTENT_LENGTH, HeaderValue::from_static("1234"));
-        assert_eq!(content_length(&h), Some(1234.0));
+        assert_eq!(content_length(&h), Some(1234));
         assert_eq!(content_length(&HeaderMap::new()), None);
     }
 

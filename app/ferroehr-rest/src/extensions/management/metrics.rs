@@ -17,15 +17,20 @@ use axum::Json;
 use axum::extract::Path;
 use axum::response::{IntoResponse, Response};
 use http::{HeaderValue, StatusCode, header};
-use metrics_exporter_prometheus::PrometheusHandle;
 use serde::Serialize;
 
 /// The Prometheus text-exposition content type.
 const PROM_CONTENT_TYPE: &str = "text/plain; version=0.0.4; charset=utf-8";
 
 /// `GET /management/prometheus`.
-pub(super) fn prometheus(handle: &PrometheusHandle) -> Response {
-    let body = handle.render();
+pub(super) fn prometheus(registry: &::prometheus::Registry) -> Response {
+    let Ok(body) = ferroehr::telemetry::metrics::render(registry) else {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "metrics could not be rendered",
+        )
+            .into_response();
+    };
     (
         StatusCode::OK,
         [(
@@ -63,16 +68,16 @@ pub(super) struct Measurement {
 }
 
 /// `GET /management/metrics`.
-pub(super) fn list(handle: &PrometheusHandle) -> Json<MetricNames> {
-    let text = handle.render();
+pub(super) fn list(registry: &::prometheus::Registry) -> Json<MetricNames> {
+    let text = ferroehr::telemetry::metrics::render(registry).unwrap_or_default();
     let mut names: Vec<String> = base_names(&text).into_iter().collect();
     names.sort();
     Json(MetricNames { names })
 }
 
 /// `GET /management/metrics/{name}`.
-pub(super) fn detail(handle: &PrometheusHandle, Path(name): Path<String>) -> Response {
-    let text = handle.render();
+pub(super) fn detail(registry: &::prometheus::Registry, Path(name): Path<String>) -> Response {
+    let text = ferroehr::telemetry::metrics::render(registry).unwrap_or_default();
     let (metric_type, help, measurements) = samples_for(&text, &name);
     if measurements.is_empty() && metric_type.is_none() && help.is_none() {
         return (

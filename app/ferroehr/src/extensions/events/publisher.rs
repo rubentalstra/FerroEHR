@@ -40,7 +40,6 @@ use tokio::sync::watch;
 use tokio::task::JoinHandle;
 
 use super::config::EventsConfig;
-use crate::telemetry::prometheus::EVENTS_PUBLISHED;
 use ferroehr_ext::events::amqp::AmqpPublisher;
 use ferroehr_ext::events::{EventError, EventPublisher};
 
@@ -347,7 +346,9 @@ async fn drain_batch(
             reason = "the published-event count widens exactly: usize is at most 64 bits \
                       on every supported target"
         )]
-        metrics::counter!(EVENTS_PUBLISHED).increment(sent as u64);
+        crate::telemetry::metrics::metrics()
+            .events_published
+            .add(sent as u64, &[]);
     }
     match publish_err {
         Some(e) => Err(DrainError::Publish(e)),

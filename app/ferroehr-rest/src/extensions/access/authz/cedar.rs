@@ -209,17 +209,13 @@ impl PolicyEngine for CedarEngine {
     async fn decide(&self, req: &AuthzRequest<'_>) -> Result<Decision, AuthzError> {
         for combo in req.combinations() {
             if self.permits(req, &combo)? {
-                metrics::counter!(
-                    ferroehr::telemetry::prometheus::AUTHZ_CEDAR_DECISIONS,
-                    "result" => "permit"
-                )
-                .increment(1);
+                ferroehr::telemetry::metrics::metrics()
+                    .authz_cedar_decisions
+                    .add(1, &[opentelemetry::KeyValue::new("result", "permit")]);
             } else {
-                metrics::counter!(
-                    ferroehr::telemetry::prometheus::AUTHZ_CEDAR_DECISIONS,
-                    "result" => "deny"
-                )
-                .increment(1);
+                ferroehr::telemetry::metrics::metrics()
+                    .authz_cedar_decisions
+                    .add(1, &[opentelemetry::KeyValue::new("result", "deny")]);
                 return Ok(Decision::Deny);
             }
         }

@@ -187,6 +187,22 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **Metric names change: `/management/prometheus` now derives its suffixes.**
+  The server had two metrics systems and now has one — OpenTelemetry, feeding
+  both the Prometheus pull surface and the OTLP push from a single meter
+  provider, so a metric can no longer exist on one surface and not the other.
+  **Counters are unaffected on the wire** (`compositions_committed_total` and
+  friends render exactly as before). **Histograms and gauges lose their
+  hand-written `_seconds`/`_bytes` suffix from the instrument name** and gain it
+  from the declared unit instead — the rendered name is the same in almost every
+  case, but check any dashboard that pinned a name literally. Bucket boundaries
+  are unchanged, deliberately and test-pinned: a re-bucketed latency histogram
+  would silently invalidate every alert built on it.
+- `telemetry.metrics_push` now exports every family the Prometheus surface
+  exposes. It previously carried four of ten, missing the build identity, the
+  request-duration histogram and the ATNA audit counters, and the boot warning
+  added earlier in this cycle to disclose that is removed as no longer true.
+
 - `deploy/helm/validate.sh` now ends every run by stating the properties it does
   **not** check — that the server accepts the render, that the selected image
   understands its keys, that a pod starts and serves — each with the command

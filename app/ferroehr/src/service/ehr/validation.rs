@@ -171,25 +171,28 @@ impl FerroEhrService {
             messages.extend(bindings);
         }
         if rm_terminology_failures > 0 {
-            metrics::counter!(
-                crate::telemetry::prometheus::VALIDATION_FAILURES,
-                "pass" => "rm_terminology",
-            )
-            .increment(rm_terminology_failures as u64);
+            crate::telemetry::metrics::metrics()
+                .validation_failures
+                .add(
+                    rm_terminology_failures as u64,
+                    &[opentelemetry::KeyValue::new("pass", "rm_terminology")],
+                );
         }
         if template_failures > 0 {
-            metrics::counter!(
-                crate::telemetry::prometheus::VALIDATION_FAILURES,
-                "pass" => "template",
-            )
-            .increment(template_failures as u64);
+            crate::telemetry::metrics::metrics()
+                .validation_failures
+                .add(
+                    template_failures as u64,
+                    &[opentelemetry::KeyValue::new("pass", "template")],
+                );
         }
         if binding_failures > 0 {
-            metrics::counter!(
-                crate::telemetry::prometheus::VALIDATION_FAILURES,
-                "pass" => "constraint_binding",
-            )
-            .increment(binding_failures as u64);
+            crate::telemetry::metrics::metrics()
+                .validation_failures
+                .add(
+                    binding_failures as u64,
+                    &[opentelemetry::KeyValue::new("pass", "constraint_binding")],
+                );
         }
         if messages.is_empty() {
             return Ok(());
@@ -293,11 +296,12 @@ pub(in crate::service) fn validate_rm_invariants_for_commit(
     if messages.is_empty() {
         return Ok(());
     }
-    metrics::counter!(
-        crate::telemetry::prometheus::VALIDATION_FAILURES,
-        "pass" => "rm_terminology",
-    )
-    .increment(u64::try_from(messages.len()).unwrap_or(u64::MAX));
+    crate::telemetry::metrics::metrics()
+        .validation_failures
+        .add(
+            u64::try_from(messages.len()).unwrap_or(u64::MAX),
+            &[opentelemetry::KeyValue::new("pass", "rm_terminology")],
+        );
     Err(ServiceError::ValidationFailed(
         messages
             .into_iter()
