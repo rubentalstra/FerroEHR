@@ -124,22 +124,53 @@ database:
 # ─────────────────────────────────────────────────────────────────────────────
 # Migrations: who runs the schema.
 #
-# Migrations are append-only and are applied by the `ferroehr_migrator` role, NOT
-# by the runtime app role. The app binary DOES call run_migrations on boot, so
-# for that to be safe you EITHER:
-#   (a) grant the runtime DSN the migrator role (simplest; single-tenant), OR
-#   (b) disable in-app migration and run them out-of-band as a Job/CI step with
-#       a migrator DSN (recommended for least-privilege prod).
-# This chart does not ship a migration Job. Run the out-of-band flow with a
-# migrator DSN and a short `lock_timeout`, so DDL blocked behind live traffic
-# fails fast instead of queueing (PostgreSQL 18 docs, "Client Connection
-# Defaults" § lock_timeout:
+# Migrations are append-only DDL, so whoever applies them can rewrite the
+# schema. Two postures, and the choice is yours:
+#   (a) The server migrates itself at boot (config.db.migrate=apply, the
+#       default). Simplest, and the runtime DSN must then be a member of
+#       ferroehr_migrator — i.e. the running process holds DDL rights.
+#   (b) A separate migration step under a migrator DSN, with the server on
+#       config.db.migrate=verify and a DSN that is ferroehr_app ONLY. The server
+#       then issues no DDL at all and refuses to boot against a database that
+#       has not been migrated. Recommended for production.
+# Setting migrations.job.enabled runs (b) for you as a pre-install/pre-upgrade
+# hook Job that Helm waits on, so a failed migration fails the release. Point
+# its migrator DSN at a short `lock_timeout` (`?options=-c%20lock_timeout%3D5s`)
+# so DDL blocked behind live traffic fails fast instead of queueing (PostgreSQL
+# 18 docs, "Client Connection Defaults" § lock_timeout:
 # https://www.postgresql.org/docs/18/runtime-config-client.html).
 # ─────────────────────────────────────────────────────────────────────────────
 migrations:
-  # -- Purely informational marker rendered into NOTES for the operator; the
-  # chart never runs migrations itself.
+  # -- Purely informational marker rendered into NOTES for the operator.
   runByMigratorRole: true
+  job:
+    # -- Run the migrations as a pre-install/pre-upgrade hook Job under the
+    # migrator DSN. Pair it with config.db.migrate=verify and an app-role-only
+    # runtime DSN for the least-privilege posture.
+    enabled: false
+    # -- REQUIRED when enabled: an existing Secret holding the MIGRATOR DSN
+    # (`postgres://ferroehr_migrator:...@host:5432/ferroehr`). Deliberately a
+    # different credential from `database.*`, which carries the runtime app-role
+    # DSN — rendering fails if it is empty.
+    existingSecret: ""
+    # -- Key WITHIN existingSecret holding the migrator DSN. Mounted as a file;
+    # only its PATH reaches the pod's environment.
+    existingSecretKey: FERROEHR__DB__URL
+    # -- Retries before the Job (and therefore the release) is declared failed.
+    backoffLimit: 3
+    # -- How long the finished Job's pod is kept for its logs.
+    ttlSecondsAfterFinished: 600
+    # -- Hard ceiling on the migration step; a migration blocked behind live
+    # traffic must fail the release rather than hang it.
+    activeDeadlineSeconds: 600
+    # -- Resource requests/limits for the migration pod.
+    resources: {}
+    # -- Extra annotations on the migration pod.
+    podAnnotations: {}
+    # -- Node selector for the migration pod.
+    nodeSelector: {}
+    # -- Tolerations for the migration pod.
+    tolerations: []
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Secret values carried by a chart-managed Secret. Anything set here is rendered
@@ -284,6 +315,11 @@ config:
 
   # [db] — pool bounds (the DSN itself is the FERROEHR__DB__URL secret, above).
   db:
+    # apply | verify — whether the server runs its embedded migrations at boot.
+    # `verify` issues no DDL and refuses to boot against a database that has not
+    # been migrated, which is what lets the runtime DSN be ferroehr_app only.
+    # Pair it with migrations.job.enabled (see the Migrations section above).
+    migrate: apply
     max_connections: 10
     min_connections: 0
     acquire_timeout_secs: 30

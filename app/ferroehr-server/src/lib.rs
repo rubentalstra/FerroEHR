@@ -76,6 +76,27 @@ pub enum Command {
         #[command(subcommand)]
         cmd: ConfigCmd,
     },
+    /// Database schema utilities (apply / verify the migrations, then exit).
+    Db {
+        /// Which schema utility to run.
+        #[command(subcommand)]
+        cmd: DbCmd,
+    },
+}
+
+/// `ferroehr db …` subcommands.
+///
+/// These exist so a least-privilege deployment can separate the two database
+/// identities: `migrate` runs under the migrator DSN as a one-shot step
+/// (a Kubernetes Job, an init container, a CI/CD stage), and the server then
+/// boots with `[db].migrate = "verify"` under a DSN with no DDL rights at all.
+#[derive(Debug, Subcommand)]
+pub enum DbCmd {
+    /// Apply the embedded migrations and exit; the DSN must hold DDL rights.
+    Migrate,
+    /// Verify, without issuing any DDL, that the database carries exactly this
+    /// build's migrations; exit 0 when it does, 1 otherwise.
+    Verify,
 }
 
 /// `ferroehr config …` subcommands.
@@ -105,8 +126,43 @@ pub async fn run(cli: Cli) -> anyhow::Result<()> {
     match cli.command {
         Some(Command::Healthcheck { url }) => healthcheck(&url).await,
         Some(Command::Config { cmd }) => run_config(&cmd, cli.config.as_deref(), &cli.set),
+        Some(Command::Db { cmd }) => run_db(&cmd, cli.config.as_deref(), &cli.set).await,
         None => serve(cli.config.as_deref(), &cli.set).await,
     }
+}
+
+/// `ferroehr db migrate` / `ferroehr db verify` — the out-of-band schema step.
+async fn run_db(
+    cmd: &DbCmd,
+    config_path: Option<&Path>,
+    overrides: &[(String, String)],
+) -> anyhow::Result<()> {
+    let config =
+        ferroehr::config::load(config_path, overrides).map_err(|e| anyhow::anyhow!("{e}"))?;
+    config.validate().map_err(|e| anyhow::anyhow!("{e}"))?;
+    let telemetry_config = TelemetryConfig {
+        log: config.log.clone(),
+        otel: config.telemetry.clone(),
+    };
+    let build_info = BuildInfo::for_profile(config.spec_profile);
+    let telemetry =
+        telemetry::init(&telemetry_config, &build_info).context("initialising telemetry")?;
+
+    // The plain pool: the migrator identity is a database role, never a tenant.
+    let pool = db::connect(&config.db)
+        .await
+        .context("connecting to PostgreSQL")?;
+    let outcome = match cmd {
+        DbCmd::Migrate => db::run_migrations(&pool)
+            .await
+            .context("applying migrations"),
+        DbCmd::Verify => db::verify_migrations(&pool)
+            .await
+            .context("verifying the schema"),
+    };
+    pool.close().await;
+    telemetry.shutdown().await;
+    outcome
 }
 
 /// `ferroehr config check` / `ferroehr config default`.
@@ -280,9 +336,9 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
             .await
             .context("connecting to PostgreSQL")?
     };
-    db::run_migrations(&pool)
+    db::prepare(&config.db, &pool)
         .await
-        .context("applying migrations")?;
+        .context("preparing the database schema")?;
 
     // ATNA audit (fail-open at boot). A slim build cannot render the FHIR
     // `AuditEvent` the store and the ATX:FHIR Feed carry, so an enabled

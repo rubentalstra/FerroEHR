@@ -44,12 +44,28 @@ as the unprivileged app role.
      config.db and will crash-loop against a cluster. Set database.existingSecret
      (preferred) or database.url.
 {{ end }}
-Migrations are append-only and MUST be applied by the `ferroehr_migrator` role,
-NOT the runtime app role. Either grant the runtime DSN the migrator role, or
-run migrations out-of-band with a migrator DSN (recommended). Wrap that step
-in a short lock_timeout so DDL blocked behind live traffic fails fast instead
-of queueing, and pin the image by digest so a rollback cannot outrun the
-schema.
+Migrations are append-only DDL and MUST be applied by the `ferroehr_migrator`
+role, NOT the runtime app role.
+{{ if .Values.migrations.job.enabled -}}
+  Migration step: pre-install/pre-upgrade Job, DSN from Secret
+  "{{ .Values.migrations.job.existingSecret }}" key "{{ .Values.migrations.job.existingSecretKey }}"  [OK]
+  {{ if eq (.Values.config.db.migrate | default "apply") "verify" -}}
+  Server posture: config.db.migrate=verify — the server issues no DDL, so its
+  own DSN can be ferroehr_app only.  [least privilege]
+  {{ else -}}
+  ⚠  config.db.migrate is "apply": the server still migrates itself at boot, so
+     its DSN must hold DDL rights and the Job buys you nothing. Set
+     config.db.migrate=verify and give the server an app-role-only DSN.
+  {{ end -}}
+{{ else -}}
+  ⚠  No migration Job. The server migrates itself at boot, so the runtime DSN
+     must be a member of ferroehr_migrator — a process holding DDL rights on
+     the clinical schema. For production set migrations.job.enabled=true with a
+     migrator DSN and config.db.migrate=verify.
+{{ end }}
+Wrap the migration step in a short lock_timeout so DDL blocked behind live
+traffic fails fast instead of queueing, and pin the image by digest so a
+rollback cannot outrun the schema.
 
 ────────────────────────────────────────────────────────────────────────────
 SECURITY POSTURE
