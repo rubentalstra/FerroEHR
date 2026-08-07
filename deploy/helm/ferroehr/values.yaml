@@ -60,9 +60,15 @@ image:
   repository: ghcr.io/rubentalstra/ferroehr
   # -- Pull policy. IfNotPresent + an immutable pinned tag/digest in production.
   pullPolicy: IfNotPresent
-  # -- Image tag. Empty string falls back to .Chart.appVersion. PIN a version
-  # or, better, a @sha256 digest in production (never `latest`).
+  # -- Image tag. Empty string falls back to .Chart.appVersion. Pin a version in
+  # production, never `latest` — and prefer `digest` below, which a tag cannot be
+  # substituted for once it is set.
   tag: ""
+  # -- Image digest (`sha256:…`). Set it and the pod runs `repository@digest`,
+  # ignoring `tag` entirely: a digest is what the provenance attestation is made
+  # over, so deploying by digest is what makes verification bind to the running
+  # image. A tag can be moved afterwards; a digest cannot.
+  digest: ""
 
 # -- imagePullSecrets for private registries.
 imagePullSecrets: []

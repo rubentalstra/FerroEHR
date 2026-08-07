@@ -679,7 +679,7 @@ database genuinely external to it:
 - **the chart installs and serves unchanged** — both replicas `1/1 Running`, zero
   restarts, readiness `UP`, `POST /ehr` → `201`. No warnings for its pods.
 - **a regression of the chart's own pod spec is refused.** Upgrading with
-  `--set securityContext.privileged=true --set allowPrivilegeEscalation=true`
+  `--set securityContext.privileged=true --set securityContext.allowPrivilegeEscalation=true`
   produced a ReplicaSet with `DESIRED 1, CURRENT 0` and:
 
   ```text

@@ -53,6 +53,41 @@ The `/phase-done` checklist enforces it at phase close.
 - Every endpoint, header, status code, and config key must be verified
   against the code or the vendored OAS before it is written down.
 
+## What a gate checks, and what only review can (#1984)
+
+The v3.17.4 book sweep found five substantive defects that had already shipped
+to the published site, and no gate had caught any of them: `mdbook-lint`
+checks style, `lychee` checks that links resolve, and both pass on a page
+whose every technical claim is false. Per the reliability convention that an
+unenforced rule is labelled as one, here is the honest split.
+
+**Machine-checked** — `scripts/checks/docs-claims.sh`, the `docs-claims` CI
+job, `--all` over the whole book:
+
+- Every `FERROEHR__…` environment form resolves to a key in
+  `app/ferroehr/assets/ferroehr.default.toml`.
+- Every Helm values path on a chart page resolves — against `values.yaml`, or
+  for `config.*` against the TOML schema, since the chart renders `config:`
+  verbatim into `ferroehr.toml`.
+- Every committed chart under a `*-assets/` directory is embedded by a page or
+  by an mdBook `{{#include}}` source.
+
+**Review-only, deliberately:**
+
+- **Documented Rust paths.** A grep-level existence check for `crate::a::b` /
+  `openehr_x::y::Z` was measured and rejected: prose names types under a
+  different module path than the sentence implies, and the generated crates'
+  generation modules give one type several valid paths. It found less than it
+  cried wolf about.
+- **Prose claims** — "six endpoints exist", "the chart renders one key",
+  behaviour descriptions of any kind. No machine authority exists for these,
+  which is exactly why the same-PR rule above still carries the weight.
+
+A guard is only worth having if it is trusted, so when `docs-claims` reports
+something, check whether the *guard* is wrong before editing the page: its
+first run reported a published chart as orphaned because it searched only
+`website/book/src` and the reference lived in `website/book/generated`.
+
 ## Never hand-edit
 
 - `website/api/spec/**` — produced by `scripts/site/assemble-oas.sh` from the
