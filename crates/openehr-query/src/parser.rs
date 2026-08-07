@@ -21,7 +21,7 @@ use crate::ast::{
     SortOrder, StandardPredicate, StatFunc, Terminal, TerminologyFunction, Top, TopDirection,
     ValueListItem, VersionPredicate, WhereExpr,
 };
-use crate::lexer::Token;
+use crate::lexer::{SpannedTokens, Token};
 use chumsky::prelude::*;
 
 // The chumsky extra-parameter alias. `chumsky::extra::Err` stays fully
@@ -35,14 +35,20 @@ type Err<'a> = chumsky::extra::Err<Simple<'a, Token>>;
 
 /// One position at which the token stream left the grammar.
 ///
-/// The position is an index into the TOKEN stream, not a byte offset into the
-/// source: the parser's input is [`crate::lexer::lex`]'s output, so a caller
-/// that needs a source location maps the index back through the token stream
-/// it lexed.
+/// The position is reported twice, in the two coordinate systems a caller
+/// needs: [`SyntaxFault::tokens`] indexes the parser's own input, and
+/// [`SyntaxFault::bytes`] locates the same position in the source text, so a
+/// diagnostic can underline the offending characters.
 #[derive(Debug, Clone, PartialEq)]
 pub struct SyntaxFault {
     /// The half-open range of token indices the parser was looking at.
     pub tokens: core::ops::Range<usize>,
+    /// The half-open byte range of the source those tokens cover.
+    ///
+    /// `Some` whenever the parse ran over a spanned stream ([`parse_spanned`],
+    /// [`parse_str`]); `None` for [`parse`], whose bare `&[Token]` input
+    /// carries no source positions.
+    pub bytes: Option<core::ops::Range<usize>>,
     /// The token found there, or `None` when the input ended early.
     pub found: Option<Token>,
 }
@@ -78,32 +84,53 @@ pub enum ParseError {
     },
 }
 
-/// Parse a token slice into a [`SelectQuery`].
+/// Parses a token slice into a [`SelectQuery`].
+///
+/// A bare token slice carries no source positions, so every reported
+/// [`SyntaxFault`] has `bytes: None`; use [`parse_spanned`] to keep them.
 ///
 /// # Errors
 /// [`ParseError::Syntax`], carrying every token position the parser reported.
 pub fn parse(tokens: &[Token]) -> Result<SelectQuery, ParseError> {
+    run(tokens, None)
+}
+
+/// Parses a spanned token stream into a [`SelectQuery`], keeping source
+/// positions on any failure.
+///
+/// # Errors
+/// [`ParseError::Syntax`], each fault carrying both the token indices and the
+/// byte range of the source they cover.
+pub fn parse_spanned(tokens: &SpannedTokens) -> Result<SelectQuery, ParseError> {
+    run(tokens.tokens(), Some(tokens))
+}
+
+fn run(tokens: &[Token], spanned: Option<&SpannedTokens>) -> Result<SelectQuery, ParseError> {
     query().parse(tokens).into_result().map_err(|errs| {
         let faults = errs
             .iter()
-            .map(|e: &Simple<'_, Token>| SyntaxFault {
-                tokens: e.span().into_range(),
-                found: e.found().cloned(),
+            .map(|e: &Simple<'_, Token>| {
+                let at = e.span().into_range();
+                SyntaxFault {
+                    bytes: spanned.map(|stream| stream.byte_span(&at)),
+                    tokens: at,
+                    found: e.found().cloned(),
+                }
             })
             .collect();
         ParseError::Syntax { faults }
     })
 }
 
-/// Lex then parse `src` in one step.
+/// Lexes then parses `src` in one step.
 ///
 /// # Errors
 /// [`ParseError::Lex`] if the source does not tokenize, otherwise
-/// [`ParseError::Syntax`]. Its `Display` is the located diagnostic a client
-/// should see; its variant is what a caller branches on.
+/// [`ParseError::Syntax`], whose faults locate the failure in `src` itself.
+/// Its `Display` is the located diagnostic a client should see; its variant is
+/// what a caller branches on.
 pub fn parse_str(src: &str) -> Result<SelectQuery, ParseError> {
-    let tokens = crate::lexer::lex(src)?;
-    parse(&tokens)
+    parse_spanned(&crate::lexer::lex_spanned(src)?)
 }
 
 // ── leaf parsers ─────────────────────────────────────────────────────────────

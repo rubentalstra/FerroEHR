@@ -332,17 +332,92 @@ fn line_comment(lex: &mut logos::Lexer<Token>) -> logos::Filter<()> {
     }
 }
 
-/// Lex `src` into a token vector, or report the byte span of the first token
-/// that fails to lex.
+/// A lexed token stream carrying each token's byte span in the source.
+///
+/// [`SpannedTokens::tokens`] and [`SpannedTokens::spans`] are index-aligned:
+/// `spans()[i]` is the byte range of `src` that `tokens()[i]` was lexed from.
+/// They stay parallel rather than interleaved because a parser over this
+/// stream consumes a contiguous `&[Token]`.
+#[derive(Debug, Clone, PartialEq)]
+pub struct SpannedTokens {
+    tokens: Vec<Token>,
+    spans: Vec<std::ops::Range<usize>>,
+}
+
+impl SpannedTokens {
+    /// Returns the tokens, in source order.
+    #[must_use]
+    pub fn tokens(&self) -> &[Token] {
+        &self.tokens
+    }
+
+    /// Returns each token's byte range in the source.
+    ///
+    /// Index-aligned with [`SpannedTokens::tokens`].
+    #[must_use]
+    pub fn spans(&self) -> &[std::ops::Range<usize>] {
+        &self.spans
+    }
+
+    /// Consumes the stream and returns its tokens, discarding the spans.
+    #[must_use]
+    pub fn into_tokens(self) -> Vec<Token> {
+        self.tokens
+    }
+
+    /// Maps a half-open range of token indices onto the byte range of the
+    /// source those tokens cover.
+    ///
+    /// An empty range, or one that starts past the last token, yields the
+    /// empty range just after the last token — the position an end-of-input
+    /// report names. An empty stream yields `0..0`.
+    #[must_use]
+    pub fn byte_span(&self, tokens: &std::ops::Range<usize>) -> std::ops::Range<usize> {
+        let after_last = self.spans.last().map_or(0, |span| span.end);
+        let start = self
+            .spans
+            .get(tokens.start)
+            .map_or(after_last, |span| span.start);
+        let end = if tokens.end > tokens.start {
+            tokens
+                .end
+                .checked_sub(1)
+                .and_then(|last| self.spans.get(last))
+                .map_or(start, |span| span.end)
+        } else {
+            start
+        };
+        start..end
+    }
+}
+
+/// Lexes `src` into a token vector, or reports the byte span of the first
+/// token that fails to lex.
 ///
 /// # Errors
 /// Returns [`LexError`] on the first unrecognized token.
 pub fn lex(src: &str) -> Result<Vec<Token>, LexError> {
-    let mut out = Vec::new();
+    lex_spanned(src).map(SpannedTokens::into_tokens)
+}
+
+/// Lexes `src` into tokens paired with the byte span each was lexed from.
+///
+/// The spanned counterpart of [`lex`]: the same token sequence, plus the
+/// source positions [`lex`] discards, so a caller can map a token position
+/// back onto the text it came from.
+///
+/// # Errors
+/// Returns [`LexError`] on the first unrecognized token.
+pub fn lex_spanned(src: &str) -> Result<SpannedTokens, LexError> {
+    let mut tokens = Vec::new();
+    let mut spans = Vec::new();
     let mut lexer = Token::lexer(src);
     while let Some(res) = lexer.next() {
         match res {
-            Ok(tok) => out.push(tok),
+            Ok(tok) => {
+                tokens.push(tok);
+                spans.push(lexer.span());
+            }
             Err(()) => {
                 return Err(LexError {
                     span: lexer.span(),
@@ -351,7 +426,7 @@ pub fn lex(src: &str) -> Result<Vec<Token>, LexError> {
             }
         }
     }
-    Ok(out)
+    Ok(SpannedTokens { tokens, spans })
 }
 
 /// A lexing failure at a byte span.
@@ -557,6 +632,26 @@ mod tests {
             toks("--foo"),
             vec![Token::DoubleDash, Token::Identifier("foo".into())]
         );
+    }
+
+    #[test]
+    fn spans_skip_the_whitespace_between_tokens() {
+        let src = "SELECT   c";
+        let stream = lex_spanned(src).unwrap_or_else(|e| panic!("lex failed: {e}"));
+        assert_eq!(stream.spans(), &[0..6, 9..10]);
+        assert_eq!(stream.byte_span(&(0..2)), 0..10);
+        assert_eq!(stream.byte_span(&(1..2)), 9..10);
+    }
+
+    #[test]
+    fn a_token_range_past_the_end_maps_to_the_end_of_the_source() {
+        let stream = lex_spanned("SELECT").unwrap_or_else(|e| panic!("lex failed: {e}"));
+        // chumsky reports end-of-input as the empty range at the stream length.
+        assert_eq!(stream.byte_span(&(1..1)), 6..6);
+        assert_eq!(stream.byte_span(&(0..0)), 0..0);
+
+        let empty = lex_spanned("").unwrap_or_else(|e| panic!("lex failed: {e}"));
+        assert_eq!(empty.byte_span(&(0..0)), 0..0);
     }
 
     #[test]
