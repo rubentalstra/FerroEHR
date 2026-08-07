@@ -685,9 +685,23 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # `azure/setup-helm` has NO `version-file` input — its inputs are `version`,
+      # `token` and `downloadBaseURL`. An unknown input is a WARNING, not an
+      # error, so the action silently installed the latest helm and the golden
+      # compare skipped itself ("running helm 4.2.3, goldens are pinned to
+      # 4.1.3") while the job still went red. Read the pin and pass it as the
+      # input that exists.
+      - name: Read the pinned helm version
+        id: helm-pin
+        run: |
+          set -euo pipefail
+          version="$(awk '$1 == "helm" { print $2 }' deploy/helm/.tool-versions)"
+          [ -n "$version" ] || { echo "::error::no helm line in deploy/helm/.tool-versions"; exit 1; }
+          echo "version=v${version}" >> "$GITHUB_OUTPUT"
+          echo "pinned helm: v${version}"
       - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
         with:
-          version-file: deploy/helm/.tool-versions
+          version: ${{ steps.helm-pin.outputs.version }}
       - name: helm lint (default + all-features value sets)
         run: |
           helm lint deploy/helm/ferroehr -f deploy/helm/ci/default-values.yaml
