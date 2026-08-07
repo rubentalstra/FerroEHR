@@ -77,6 +77,33 @@ impl BlobStore {
             .with_region(&params.region)
             .with_allow_http(params.allow_http);
         if let Some(endpoint) = &params.endpoint {
+            // A blank or relative endpoint is refused HERE rather than passed
+            // to the builder, which accepts it and leaves object_store to
+            // panic on `RelativeUrlWithoutBase` at the first request — a panic
+            // on a request path from a configuration value the server took
+            // (#2167). `${VAR:-}` in a compose file and an empty Helm value
+            // both produce exactly this.
+            let endpoint = endpoint.trim();
+            if endpoint.is_empty() {
+                return Err(MultimediaError::Config(
+                    "multimedia.endpoint is set but empty — give an absolute URL \
+                     (e.g. http://seaweedfs:8333) or unset it to use default AWS \
+                     endpoint resolution"
+                        .to_owned(),
+                ));
+            }
+            let parsed = url::Url::parse(endpoint).map_err(|e| {
+                MultimediaError::Config(format!(
+                    "multimedia.endpoint {endpoint:?} is not an absolute URL: {e}"
+                ))
+            })?;
+            if !matches!(parsed.scheme(), "http" | "https") {
+                return Err(MultimediaError::Config(format!(
+                    "multimedia.endpoint {endpoint:?} has scheme {:?} — an S3 endpoint \
+                     must be http or https",
+                    parsed.scheme()
+                )));
+            }
             builder = builder.with_endpoint(endpoint);
         }
         match (&params.access_key_id, &params.secret_access_key) {
@@ -221,5 +248,45 @@ mod tests {
         assert!(!s.exists("k").await.unwrap());
         // delete of an absent key is idempotent.
         s.delete("k").await.unwrap();
+    }
+
+    /// A blank or scheme-less endpoint is a typed configuration error, never a
+    /// panic on the first request (#2167). This is the second line of defence:
+    /// the platform refuses it at boot, and this refuses it if it ever gets
+    /// past that.
+    #[test]
+    fn a_blank_or_schemeless_endpoint_is_a_typed_error_not_a_panic() {
+        for bad in ["", "   ", "seaweedfs:8333", "/bucket"] {
+            let params = BlobStoreParams {
+                endpoint: Some(bad.to_owned()),
+                bucket: "b".to_owned(),
+                region: "us-east-1".to_owned(),
+                access_key_id: None,
+                secret_access_key: None,
+                allow_http: true,
+            };
+            let err = BlobStore::from_params(params)
+                .err()
+                .unwrap_or_else(|| panic!("endpoint {bad:?} must be refused"));
+            assert!(
+                matches!(err, MultimediaError::Config(_)),
+                "endpoint {bad:?} must be a typed Config error, got {err:?}"
+            );
+        }
+    }
+
+    /// An absolute http(s) endpoint still builds, so the check above is not a
+    /// blanket refusal.
+    #[test]
+    fn an_absolute_http_endpoint_still_builds() {
+        let params = BlobStoreParams {
+            endpoint: Some("http://seaweedfs:8333".to_owned()),
+            bucket: "b".to_owned(),
+            region: "us-east-1".to_owned(),
+            access_key_id: None,
+            secret_access_key: None,
+            allow_http: true,
+        };
+        assert!(BlobStore::from_params(params).is_ok());
     }
 }
