@@ -18,6 +18,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The Helm chart can deploy by digest.** `image.digest` renders the pod's
+  image as `repository@sha256:…` and takes precedence over `image.tag`. The
+  hardening chapter had been telling operators to deploy by digest "so what you
+  verified is what runs" — and the chart had no such key and no template that
+  read one, so the instruction silently did nothing. A digest is what a build
+  provenance attestation is made over, so this is what makes verification bind
+  to the image actually running. The value is accepted with or without the
+  `sha256:` prefix.
+
 - The [OpenSSF Best Practices badge](https://www.bestpractices.dev/projects/13982) at
   the passing level, alongside the Scorecard badge in the README. Every
   criterion is answered from something a reader can check — the vulnerability
@@ -232,6 +241,12 @@ workflow refuses a tag that has no matching section here.
 
 
 ### Fixed
+
+- `auth.oidc.hmac_secret_file` and `auth.oidc.jwks_json_file` now appear as
+  their own reference lines in the shipped `ferroehr.toml` template, so
+  `ferroehr config default` teaches them. Both were real configuration keys
+  mentioned only inside a trailing comment on another key's line, in a file
+  whose header calls itself the complete server configuration.
 
 - Documented `gh attestation verify` invocations no longer promise a result on
   the Helm chart or on `3.17.3`: no chart version has been published, and signing

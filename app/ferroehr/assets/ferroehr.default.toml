@@ -188,8 +188,10 @@ verified_cache_ttl_seconds = 60
 # and never a memorizable password (RFC 8725 §3.5). A development posture: the
 # key is shared with the authorization server, so this server could mint the
 # tokens it accepts. Boot warns when it is set.
-#? hmac_secret = "..."            # or hmac_secret_file = "/run/secrets/hmac"
-#? jwks_json = "{...}"            # or jwks_json_file = "/etc/ferroehr/jwks.json"
+#? hmac_secret = "..."
+#? hmac_secret_file = "/run/secrets/hmac"
+#? jwks_json = "{...}"
+#? jwks_json_file = "/etc/ferroehr/jwks.json"
 # Discovery/JWKS fetch hardening (used only when neither hmac_secret nor
 # jwks_json is set, i.e. keys come from the issuer's OIDC discovery document):
 #? connect_timeout_ms = 3000

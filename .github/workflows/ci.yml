@@ -302,6 +302,28 @@ jobs:
       - name: Access-layer rationale cites durable sources
         run: bash scripts/checks/access-provenance.sh
 
+  # Docs-claim guard (#1984): a documented KEY must exist in the thing it
+  # documents. `mdbook-lint` checks style and `lychee` checks links; both pass on
+  # a page whose every technical claim is false, which is how a fabricated Helm
+  # values table reached the published site. `--all` from the start: the three
+  # defects this found on its first run are fixed in the same change, so the
+  # corpus is clean. What it deliberately does NOT check is recorded in the
+  # script's header and in `.claude/rules/docs-website.md`.
+  docs-claims:
+    name: docs-claims
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Documented keys resolve in their source
+        run: bash scripts/checks/docs-claims.sh --all
+
   # String-built-SQL guard: the AQL engine composes SQL from attacker-supplied
   # query text, so a `format!`/`push_str`-assembled clause in `app/ferroehr/src/
   # aql/` or `app/ferroehr/src/storage/` is refused — the OWASP SQL Injection
@@ -1391,6 +1413,7 @@ jobs:
       - workflow-audit
       - comment-style
       - default-style
+      - docs-claims
       - sql-string-building
       - error-hygiene
       - deny

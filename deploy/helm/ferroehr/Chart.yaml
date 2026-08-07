@@ -13,7 +13,7 @@ type: application
 # (https://helm.sh/docs/topics/charts/#charts-and-versioning). 4.0.0 is a major
 # bump because a values file that set a secret-bearing key under `config:` used
 # to render (into a ConfigMap) and is now refused.
-version: 4.0.0
+version: 4.1.0
 # The default container image tag (overridable via image.tag), and the released
 # application version — kept equal to the workspace version by the
 # `chart-appversion` CI guard, so a release cannot ship a chart pointing at the
