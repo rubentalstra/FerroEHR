@@ -385,7 +385,7 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     let env_snapshot = Arc::new(serde_json::to_value(&config).unwrap_or(serde_json::Value::Null));
     let observability = Observability {
         management: config.management.clone(),
-        prometheus: Some(telemetry.prometheus_handle()),
+        prometheus: Some(telemetry.registry()),
         log_reload: Some(telemetry.log_reload()),
         health,
         build_info,

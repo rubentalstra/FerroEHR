@@ -11,7 +11,6 @@
 
 use std::time::Duration;
 
-use metrics_exporter_prometheus::PrometheusHandle;
 use opentelemetry::KeyValue;
 use opentelemetry::metrics::Meter;
 use sqlx::PgPool;
@@ -19,9 +18,8 @@ use sqlx::pool::PoolConnection;
 use sqlx::postgres::Postgres;
 use tokio::task::JoinHandle;
 
-use super::prometheus::{
-    DB_POOL_ACQUIRE_DURATION, DB_POOL_CONNECTIONS, TOKIO_ALIVE_TASKS, TOKIO_GLOBAL_QUEUE_DEPTH,
-    TOKIO_WORKERS,
+use super::metrics::{
+    DB_POOL_CONNECTIONS, TOKIO_ALIVE_TASKS, TOKIO_GLOBAL_QUEUE_DEPTH, TOKIO_WORKERS,
 };
 
 /// How often the sampler reads gauges + runs recorder upkeep.
@@ -36,7 +34,9 @@ const SAMPLE_INTERVAL: Duration = Duration::from_secs(5);
 pub async fn acquire(pool: &PgPool) -> Result<PoolConnection<Postgres>, sqlx::Error> {
     let started = std::time::Instant::now();
     let result = pool.acquire().await;
-    metrics::histogram!(DB_POOL_ACQUIRE_DURATION).record(started.elapsed().as_secs_f64());
+    crate::telemetry::metrics::metrics()
+        .db_pool_acquire_duration
+        .record(started.elapsed().as_secs_f64(), &[]);
     result
 }
 
@@ -46,20 +46,14 @@ pub async fn acquire(pool: &PgPool) -> Result<PoolConnection<Postgres>, sqlx::Er
 /// When `meter` is `Some`, the pool/runtime gauges are mirrored through the
 /// `OTel` meter for OTLP push.
 #[must_use]
-pub fn spawn(pool: PgPool, prometheus: PrometheusHandle, meter: Option<Meter>) -> JoinHandle<()> {
+pub fn spawn(pool: PgPool, meter: Meter) -> JoinHandle<()> {
     tokio::spawn(async move {
-        let otel = meter.as_ref().map(OtelGauges::new);
+        let gauges = OtelGauges::new(&meter);
         let mut ticker = tokio::time::interval(SAMPLE_INTERVAL);
         ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
         loop {
             ticker.tick().await;
-            let sample = sample(&pool);
-            record_prometheus(&sample);
-            if let Some(otel) = &otel {
-                otel.record(&sample);
-            }
-            // Fold histograms / drain idle metrics.
-            prometheus.run_upkeep();
+            gauges.record(&sample(&pool));
         }
     })
 }
@@ -97,23 +91,7 @@ fn sample(pool: &PgPool) -> Sample {
     }
 }
 
-/// Publish the snapshot through the `metrics` facade (→ Prometheus).
-#[expect(
-    clippy::as_conversions,
-    clippy::cast_precision_loss,
-    reason = "the gauge values are small counts (pool size, worker count, \
-              queue depth, alive tasks), so the u64 → f64 widening is exact \
-              over their whole range"
-)]
-fn record_prometheus(s: &Sample) {
-    metrics::gauge!(DB_POOL_CONNECTIONS, "state" => "idle").set(s.idle as f64);
-    metrics::gauge!(DB_POOL_CONNECTIONS, "state" => "in_use").set(s.in_use as f64);
-    metrics::gauge!(TOKIO_WORKERS).set(s.workers as f64);
-    metrics::gauge!(TOKIO_GLOBAL_QUEUE_DEPTH).set(s.global_queue_depth as f64);
-    metrics::gauge!(TOKIO_ALIVE_TASKS).set(s.alive_tasks as f64);
-}
-
-/// The `OTel` meter instruments mirrored for OTLP push.
+/// The pool + runtime gauges, on the one meter provider.
 struct OtelGauges {
     pool: opentelemetry::metrics::Gauge<u64>,
     workers: opentelemetry::metrics::Gauge<u64>,

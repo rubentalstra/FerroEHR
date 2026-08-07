@@ -146,18 +146,14 @@ impl PolicyEngine for RemotePdp {
         };
         for combo in req.combinations() {
             if !self.permits(rule, &combo).await? {
-                metrics::counter!(
-                    ferroehr::telemetry::prometheus::AUTHZ_REMOTE_PDP_CALLS,
-                    "result" => "deny"
-                )
-                .increment(1);
+                ferroehr::telemetry::metrics::metrics()
+                    .authz_remote_pdp_calls
+                    .add(1, &[opentelemetry::KeyValue::new("result", "deny")]);
                 return Ok(Decision::Deny);
             }
-            metrics::counter!(
-                ferroehr::telemetry::prometheus::AUTHZ_REMOTE_PDP_CALLS,
-                "result" => "permit"
-            )
-            .increment(1);
+            ferroehr::telemetry::metrics::metrics()
+                .authz_remote_pdp_calls
+                .add(1, &[opentelemetry::KeyValue::new("result", "permit")]);
         }
         Ok(Decision::Permit)
     }

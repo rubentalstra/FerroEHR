@@ -649,6 +649,18 @@ pub fn current_principal() -> Option<Principal> {
 
 /// The authentication + RBAC middleware. Attached to the API router; public
 /// endpoints (status, health, Swagger) are mounted outside it.
+/// Count one refusal, tagged by the mechanism that produced it and the status
+/// the caller receives.
+fn count_auth_failure(mechanism: &'static str, status: &'static str) {
+    ferroehr::telemetry::metrics::metrics().auth_failures.add(
+        1,
+        &[
+            opentelemetry::KeyValue::new("mechanism", mechanism),
+            opentelemetry::KeyValue::new("status", status),
+        ],
+    );
+}
+
 pub(crate) async fn middleware(
     State(layer): State<AuthLayer>,
     mut req: Request,
@@ -682,12 +694,7 @@ pub(crate) async fn middleware(
                     }
                 };
                 if let RbacDecision::Deny(reason) = decision {
-                    metrics::counter!(
-                        ferroehr::telemetry::prometheus::AUTH_FAILURES,
-                        "mechanism" => mechanism_label(principal.method),
-                        "status" => "403",
-                    )
-                    .increment(1);
+                    count_auth_failure(mechanism_label(principal.method), "403");
                     // Attribute the 403 to the authenticated caller so the outer
                     // ATNA audit layer records the denied access.
                     let mut resp = RestError(ApiError::Forbidden(reason)).into_response();
@@ -744,12 +751,20 @@ pub(crate) async fn middleware(
             let api = e.to_api_error();
             let status = api.status();
             let mechanism = scheme_label(req.headers());
-            metrics::counter!(
-                ferroehr::telemetry::prometheus::AUTH_FAILURES,
-                "mechanism" => mechanism,
-                "status" => if status == StatusCode::FORBIDDEN { "403" } else { "401" },
-            )
-            .increment(1);
+            ferroehr::telemetry::metrics::metrics().auth_failures.add(
+                1,
+                &[
+                    opentelemetry::KeyValue::new("mechanism", mechanism),
+                    opentelemetry::KeyValue::new(
+                        "status",
+                        if status == StatusCode::FORBIDDEN {
+                            "403"
+                        } else {
+                            "401"
+                        },
+                    ),
+                ],
+            );
             // A refusal that presented no credential is routine (an
             // unauthenticated probe); a presented-and-rejected one is the
             // operator's signal. Neither record carries the token or a claim

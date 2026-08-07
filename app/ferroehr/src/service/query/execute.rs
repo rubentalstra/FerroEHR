@@ -31,7 +31,6 @@ use crate::service::FerroEhrService;
 use crate::service::error::internal_fault;
 use crate::service::query::request::{AqlQueryRequest, QueryOutcome};
 use crate::service::status::{QUERY_TIMEOUT_TAG, SmError};
-use crate::telemetry::prometheus::{AQL_QUERIES, AQL_QUERY_DURATION};
 
 use super::result_set::{build_params, result_set_json, substitute_params};
 
@@ -416,12 +415,19 @@ fn outcome_of(e: &AqlError) -> &'static str {
 /// Increment `aql_queries_total{outcome}` — called exactly once per
 /// [`FerroEhrService::execute_aql`] call.
 fn count_query(outcome: &'static str) {
-    metrics::counter!(AQL_QUERIES, "outcome" => outcome).increment(1);
+    crate::telemetry::metrics::metrics()
+        .aql_queries
+        .add(1, &[opentelemetry::KeyValue::new("outcome", outcome)]);
 }
 
 /// Record `aql_query_duration_seconds{phase}` for a completed phase.
 fn record_phase(phase: &'static str, start: Instant) {
-    metrics::histogram!(AQL_QUERY_DURATION, "phase" => phase).record(start.elapsed().as_secs_f64());
+    crate::telemetry::metrics::metrics()
+        .aql_query_duration
+        .record(
+            start.elapsed().as_secs_f64(),
+            &[opentelemetry::KeyValue::new("phase", phase)],
+        );
 }
 
 /// Map a planning error to an ITS-REST status: an unsupported feature, a
