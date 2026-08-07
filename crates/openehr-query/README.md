@@ -12,9 +12,15 @@ ANTLR runtime.
   grammar's example set.
 - Typed parse errors: `ParseError` separates a lexing refusal (carrying the
   lexer's error as a real `source()`) from a grammar refusal (carrying every
-  position the parser reported, as token-stream indices), so a caller branches
-  on the failure instead of reading its message. `Display` is the located
-  diagnostic to show a human.
+  position the parser reported), so a caller branches on the failure instead
+  of reading its message. Each grammar fault gives the position twice — as
+  token-stream indices and as a byte range of the source, so a diagnostic can
+  underline the offending text. `Display` is the located diagnostic to show a
+  human; it names the token indices.
+- `lexer::lex_spanned` — the token stream with each token's source byte span,
+  additive beside `lexer::lex`. `parser::parse_spanned` consumes it and is
+  what `parser::parse_str` runs; `parser::parse` over a bare `&[Token]` still
+  works and reports token indices only.
 - `printer::to_aql` — canonical AQL rendering of the AST, the parser's
   inverse, for programmatic query construction (corpus-verified fixed point:
   `parse(to_aql(ast)) == ast`).

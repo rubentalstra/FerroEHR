@@ -18,6 +18,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- `openehr-query`: a spanned lexing entry point, `lexer::lex_spanned`, returning
+  each token together with the byte range of the source it was lexed from
+  (`lexer::SpannedTokens`, with a `byte_span` mapping from token indices to a
+  source range), plus `parser::parse_spanned` over that stream. `lexer::lex` and
+  `parser::parse` are unchanged (#2145).
+
 - Six more OCI annotation keys on every image: `authors`, `vendor`,
   `documentation` (the docs site, which no image pointed at), `url`, and
   `base.name`/`base.digest` naming the exact pinned base image each one is built
@@ -124,6 +130,15 @@ workflow refuses a tag that has no matching section here.
 - Boot warnings for two deliberate weakenings that are easy to leave switched on: `cors_permissive`, and authentication enabled on a **plaintext** listener bound to a routable address.
 
 ### Changed
+
+- `openehr-query`: a syntax failure now locates itself in the source.
+  `parser::SyntaxFault` carries `bytes: Option<Range<usize>>` — the byte range of
+  the offending text — alongside the existing token indices, so a caller can
+  underline the offending characters or derive a line and column instead of
+  mapping a token index back through the stream itself. `parser::parse_str` fills
+  it in on every failure; `parser::parse` over a bare token slice reports `None`,
+  because a bare slice carries no source positions. The rendered `Display` — and
+  therefore the body of an AQL `400` — is unchanged (#2145).
 
 - **The AQL parser reports a typed error instead of a string.**
   `openehr_query::parser::parse_str` and `parse` now return `ParseError`, which
@@ -248,6 +263,22 @@ workflow refuses a tag that has no matching section here.
 
 
 ### Fixed
+
+- Publishing a chart-only fix between releases works again. The chart lane's
+  pre-flight check — that a plain `helm install` of the chart will not
+  crash-loop — now compares the chart against the image it is actually judged
+  with: the released image on a `vX.Y.Z` tag, where `appVersion` is that
+  release, and an image built from the current tree on a manual chart-only
+  run, where `appVersion` still names the *previous* release and therefore
+  rejects every configuration key added since it. The check itself is
+  unchanged in strength; only the image it compares against is now the right
+  one, and the run log and job summary name that image and why it was chosen.
+- A `vX.Y.Z` tag starts the image build and the chart publish at the same
+  moment, and the chart lane's pre-flight pulls the image the other lane is
+  still pushing. The chart lane now waits for that specific build rather than
+  retrying a registry pull in the dark: if the image build fails, the chart
+  lane fails immediately with a link to it instead of presenting the race as a
+  broken chart.
 
 - **The published images carry OCI annotations, so registries can read their
   description.** GHCR showed "No description provided" for all three packages
