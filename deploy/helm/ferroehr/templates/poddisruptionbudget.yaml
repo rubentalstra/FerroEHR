@@ -17,8 +17,19 @@ spec:
          the application pods to become healthy before the drain can proceed."
          With our maxUnavailable: 0 posture the default is worse than passive: a
          drain waits for pods to become healthy that are unhealthy BECAUSE the
-         node is draining, so it never completes and reports nothing. */}}
+         node is draining, so it never completes and reports nothing.
+
+         Version-gated because this chart's kubeVersion floor is below the
+         field's: KEP-3017 (keps/sig-apps/3017-pod-healthy-policy-for-pdb)
+         records alpha v1.26, beta v1.27, stable v1.31. Below 1.27 the field is
+         either absent from the schema (pruned by the API server) or behind an
+         alpha gate that is off by default — set, accepted, and silently
+         ignored, so the chart would claim a drain-safety property it does not
+         have. Rendering it only where it takes effect keeps the claim honest;
+         1.25/1.26 clusters get the API default (IfHealthyBudget) visibly. */}}
+  {{- if semverCompare ">=1.27.0-0" .Capabilities.KubeVersion.Version }}
   unhealthyPodEvictionPolicy: {{ .Values.podDisruptionBudget.unhealthyPodEvictionPolicy }}
+  {{- end }}
   {{- if .Values.podDisruptionBudget.maxUnavailable }}
   maxUnavailable: {{ .Values.podDisruptionBudget.maxUnavailable }}
   {{- else }}
