@@ -1,0 +1,262 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+#
+# CodeRabbit review configuration (issue #2142). Two properties hold here:
+# ADVISORY — no pre-merge check is at `error`, no required status is produced;
+# WRITE-FREE — every commit-producing recipe is off, because a bot commit or a
+# co-author trailer violates the no-AI-attribution hard rule.
+# Everything not set below keeps the schema default deliberately.
+
+language: en-US
+
+tone_instructions: >-
+  Terse and technical. Cite the governing .claude/rules file or vendored spec
+  section for each finding. No praise, no filler, no restating the diff.
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+
+  # The PR description is the durable build record and is written by hand, so
+  # the generated summary goes to the walkthrough comment instead.
+  high_level_summary: true
+  high_level_summary_in_walkthrough: true
+  collapse_walkthrough: true
+
+  # Walkthrough trimmed to what the GitHub diff view does not already show.
+  changed_files_summary: false
+  sequence_diagrams: false
+  estimate_code_review_effort: false
+  review_details: false
+  in_progress_fortune: false
+  poem: false
+
+  # Labels follow the tracker taxonomy and milestones; a solo repository has no
+  # reviewer to suggest.
+  suggested_labels: false
+  auto_apply_labels: false
+  suggested_reviewers: false
+  auto_assign_reviewers: false
+
+  # Kept: every PR declares `Closes #N` against an acceptance-criteria checklist.
+  assess_linked_issues: true
+  related_issues: true
+  related_prs: false
+
+  enable_prompt_for_ai_agents: true
+
+  # Advisory: no commit status that a branch ruleset could later require.
+  commit_status: false
+  fail_commit_status: false
+
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    drafts: false
+    ignore_usernames:
+      - dependabot[bot]
+
+  # Every recipe below writes code into the branch. All off: no bot commit, no
+  # co-author trailer, no attribution footer anywhere in this repository.
+  finishing_touches:
+    docstrings:
+      enabled: false
+    unit_tests:
+      enabled: false
+    simplify:
+      enabled: false
+    autofix:
+      enabled: false
+    fix_ci:
+      enabled: false
+    resolve_merge_conflict:
+      enabled: false
+
+  pre_merge_checks:
+    # rustdoc `missing_docs` + the CI doc job already enforce documentation.
+    docstrings:
+      mode: "off"
+    description:
+      mode: "off"
+    title:
+      mode: warning
+      requirements: >-
+        The title is `<type>(<scope>): <subject>` with type one of feat, fix,
+        chore, docs, refactor, perf, test, ci, build, release, security. The
+        subject states what changed, in lowercase, without a trailing period.
+    issue_assessment:
+      mode: warning
+    custom_checks:
+      - name: No AI attribution
+        mode: warning
+        instructions: >-
+          Fail if the PR title, the PR description, or any commit message in
+          this PR contains AI or assistant attribution: a `Co-Authored-By:`
+          trailer of any kind, "Generated with", "Co-authored-by: Claude", a
+          robot-emoji footer, or a comparable generated-by line. Commit and PR
+          text describe only the change. Pass when none is present.
+      - name: Generated files are not hand-edited
+        mode: warning
+        instructions: >-
+          Identify every changed file under crates/openehr-* whose header
+          contains `// @generated` or `@generated-from-template`. Pass if there
+          are none, or if this PR also changes tools/openehr-codegen (the
+          emitter, its overrides, its templates, or its vendored inputs), which
+          is what a legitimate regeneration looks like. Otherwise fail and say
+          the fix belongs in the emitter, not in the generated file.
+
+  tools:
+    # These lanes already run in CI; a second run duplicates every comment.
+    clippy:
+      enabled: false
+    zizmor:
+      enabled: false
+    osvScanner:
+      enabled: false
+    semgrep:
+      enabled: false
+    opengrep:
+      enabled: false
+    checkov:
+      enabled: false
+    # Prose and style linters over 364 markdown and 2000 yaml files: noise.
+    markdownlint:
+      enabled: false
+    languagetool:
+      enabled: false
+    yamllint:
+      enabled: false
+    # Style nags on hand-written migrations; squawk covers migration safety.
+    sqlfluff:
+      enabled: false
+    # Left enabled on purpose: shellcheck (48 scripts), actionlint, gitleaks,
+    # trufflehog, hadolint, trivy, squawk, github-checks.
+
+  # Vendored and machine-generated trees. These patterns also drive the sparse
+  # checkout, so excluding them keeps the clone off 130 MB of spec text and
+  # schemas that no PR may hand-edit anyway.
+  path_filters:
+    - "!docs/specs/openehr/**"
+    - "!tools/openehr-codegen/vendor/**"
+    - "!crates/*/vendor/**"
+    - "!crates/openehr-its/schemas/**"
+    - "!docs/conformance/**"
+    - "!deploy/helm/golden/**"
+    - "!website/api/spec/**"
+    - "!website/api/vendor/**"
+    - "!website/book/theme/**"
+    - "!Cargo.lock"
+
+  # The full standards live in the knowledge base (CLAUDE.md + .claude/rules).
+  # These are the per-path reminders of what to actually look for.
+  path_instructions:
+    - path: "**/*.rs"
+      instructions: >-
+        Judgement, not lint: clippy at deny plus the comment-style, typed-status
+        and default-style guards already run in CI. Flag: a fallible conversion
+        whose failure means the input is DEFECTIVE turned into `None`
+        (`.ok()?`, `filter_map(|x| f(x).ok())`) instead of a typed error;
+        `unwrap`/`expect`/`panic!` outside tests without a scoped `#[expect]`
+        carrying a reason; a guard, transaction or lock bound to `_`; a
+        `#[source]` field typed `Option<Box<..>>`/`Option<Arc<..>>` with a
+        derived `Error` (the smart pointer becomes the source hop and downcast
+        breaks); HashMap/HashSet iteration feeding canonical output or SQL; an
+        import renamed with `use X as Y`; a re-export; a `// TODO` without an
+        issue number; a `// NOTE:` longer than three lines or describing work
+        not yet done. Clinical payload must never reach a `Debug` impl or a
+        tracing field.
+    - path: "crates/openehr-{base,rm,am,term,lang,its}/**/*.rs"
+      instructions: >-
+        Most files here start with `// @generated ... DO NOT EDIT` or
+        `@generated-from-template`. For those, the only valid finding is that
+        the file was hand-edited: say so and point at the emitter
+        (tools/openehr-codegen) or the template. Never propose a stylistic or
+        structural change to generated output. Files without that header
+        (`*_impl.rs` siblings, runtimes, the `flat` module) are hand-written and
+        reviewed normally.
+    - path: "app/**/*.rs"
+      instructions: >-
+        The application consumes the generated openehr-* types directly as its
+        domain model. Flag any shadow type, duplicate model, adapter layer,
+        placeholder value or local re-modelling that works around a shape in the
+        generated crates — the fix is an emitter change plus regeneration. The
+        vendored openEHR spec text is the only authority for wire and RM
+        behaviour; EHRbase is prior art, never an oracle. Ids are typed newtypes:
+        a bare `Uuid` parameter where `EhrId`/`VoId` belongs is a defect.
+    - path: "app/ferroehr-rest/**/*.rs"
+      instructions: >-
+        Any change to the REST surface updates the `#[utoipa::path]` declaration
+        in the same PR — the server serves only the OpenAPI it generates itself.
+        A missing or rejected credential is 401 with a `WWW-Authenticate`
+        challenge; an authenticated-but-refused caller is 403; a malformed
+        `Authorization` header is 400. A control that cannot DECIDE fails closed
+        (503 or 500), never as a policy outcome.
+    - path: "app/ferroehr/migrations/**/*.sql"
+      instructions: >-
+        PostgreSQL 18 target. Check that a new migration is additive and
+        reversible in effect, that it does not rewrite the squashed baseline,
+        that it takes no lock a live table cannot afford, and that every write
+        path it enables still emits contribution plus audit in the same
+        transaction.
+    - path: "app/ferroehr-admin-ui/**"
+      instructions: >-
+        The console is Leptos SSR and consumes the CDR strictly over ITS-REST —
+        it must never reach into app/ferroehr or app/ferroehr-rest. Code must
+        compile on both the native (ssr) and wasm32 (hydrate) targets. Check
+        `<For>` keys, signal/effect discipline, and that no hand-written
+        JavaScript appears.
+    - path: "tools/cnf-runner/artifacts/**"
+      instructions: >-
+        The catalogue is the conformance instrument. An expectation is derived
+        from the vendored spec text, NEVER adjusted to match observed server
+        behaviour — flag any change that moves an expected value toward what the
+        SUT happens to return. Spec silence belongs in the ambiguity register
+        with a typed disposition, not in a loosened assertion.
+    - path: ".github/workflows/**"
+      instructions: >-
+        Every `uses:` is pinned to a full commit SHA with the version in a
+        trailing comment; `permissions: {}` at workflow level with the minimum
+        granted per job; `persist-credentials: false` on any checkout that does
+        not push; no context value interpolated into a `run:` block (pass it
+        through `env:`). A lane that publishes restores no build cache. A
+        workflow that creates commits uses the Git Data API so the commit is
+        signed.
+    - path: "{website/book/src/**,docs/**/*.md}"
+      instructions: >-
+        A change to the REST surface, configuration (FERROEHR_*), the CLI, or a
+        deployment artifact updates the matching website/book page in the same
+        PR. Citations point only at vendored spec files or official upstream
+        documentation — never at an internal markdown file, which is deleted
+        once implemented.
+
+knowledge_base:
+  opt_out: false
+  web_search:
+    enabled: true
+  code_guidelines:
+    enabled: true
+    # The repository's actual law: the root and per-crate CLAUDE.md files, the
+    # rule corpus, and the two living reference documents.
+    filePatterns:
+      - "**/CLAUDE.md"
+      - ".claude/rules/*.md"
+      - "docs/architecture.md"
+      - "docs/VERSIONS.md"
+  learnings:
+    scope: local
+  issues:
+    scope: local
+  pull_requests:
+    scope: local
+
+chat:
+  art: false
+
+# Issue bodies are hand-written contracts (summary, acceptance criteria, tasks)
+# and labels follow a fixed taxonomy; nothing enriches them automatically.
+issue_enrichment:
+  auto_enrich:
+    enabled: false
+  planning:
+    enabled: false
+  labeling:
+    auto_apply_labels: false
