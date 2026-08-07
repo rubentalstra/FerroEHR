@@ -118,10 +118,12 @@ pub fn from_aql(aql: &str) -> Result<BuilderQuery, LiftError> {
     if !crate::aql_text::placeholders(aql).is_empty() {
         return Err(LiftError::Parameterised);
     }
-    let parsed = openehr_query::parser::parse_str(aql).map_err(LiftError::NotAql)?;
+    let parsed =
+        openehr_query::parser::parse_str(aql).map_err(|e| LiftError::NotAql(e.to_string()))?;
     let lifted = lift_query(&parsed)?;
     let relowered = crate::builder::lower::to_aql(&lifted).map_err(LiftError::Invalid)?;
-    let reparsed = openehr_query::parser::parse_str(&relowered).map_err(LiftError::NotAql)?;
+    let reparsed = openehr_query::parser::parse_str(&relowered)
+        .map_err(|e| LiftError::NotAql(e.to_string()))?;
     if reparsed == parsed {
         Ok(lifted)
     } else {

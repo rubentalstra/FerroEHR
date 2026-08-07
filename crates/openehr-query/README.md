@@ -10,7 +10,11 @@ ANTLR runtime.
   `FROM`/`CONTAINS`, `WHERE`, `ORDER BY`, `LIMIT`, path expressions with
   predicates, parameters, functions), corpus-validated against the official
   grammar's example set.
-- Typed parse errors with source positions — a refusal names what and where.
+- Typed parse errors: `ParseError` separates a lexing refusal (carrying the
+  lexer's error as a real `source()`) from a grammar refusal (carrying every
+  position the parser reported, as token-stream indices), so a caller branches
+  on the failure instead of reading its message. `Display` is the located
+  diagnostic to show a human.
 - `printer::to_aql` — canonical AQL rendering of the AST, the parser's
   inverse, for programmatic query construction (corpus-verified fixed point:
   `parse(to_aql(ast)) == ast`).
