@@ -180,15 +180,23 @@ done
 # catch, and that page may not be in a narrow diff.
 #
 # The reference may sit in an mdBook `{{#include}}` source rather than in a page
-# — `comparison.md` pulls three of its figures in from `website/book/generated/`
-# — so both trees are searched. Searching only the pages reported a chart as
-# orphaned when it was in fact published, which is the failure mode that gets a
-# guard ignored.
+# — `comparison.md` pulls its figures in from `website/book/generated/` — so that
+# tree is searched too. Searching only the pages reported a chart as orphaned when
+# it was in fact published, which is the failure mode that gets a guard ignored.
+#
+# And `website/book/generated/` is a BUILD ARTIFACT: it is not committed and does
+# not exist in a fresh checkout, so on its own it never matches and a figure
+# published only through an include is reported as orphaned regardless — measured
+# on `perf-stress-compare.svg`, which `scripts/render/comparison.sh` both renders
+# AND embeds, while this guard called it unpublished. The durable reference for
+# generated markdown is therefore the GENERATOR, so the render scripts are the
+# third haystack.
 while read -r svg; do
   [ -n "$svg" ] || continue
   base=${svg##*/}
   grep -rqF "$base" --include='*.md' "$BOOK" website/book/generated \
-    || report "$svg" "is committed but nothing embeds it"
+    || grep -rqF "$base" scripts/render \
+    || report "$svg" "is committed but neither a page, a generated include, nor a render script embeds it"
 done < <(git ls-files "$BOOK/*-assets/*.svg")
 
 if [ "$failures" -gt 0 ]; then
