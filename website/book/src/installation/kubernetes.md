@@ -467,6 +467,45 @@ CRDs installed first, or the install fails on an unknown kind.
 
 ## Optional integrations
 
+### Any server setting is reachable, not only the ones listed here
+
+The chart renders its `config` tree **verbatim** into `ferroehr.toml`. So
+`config.<the.toml.path>` sets *any* key in the
+[configuration reference](configuration.md) — including keys this page and
+`values.yaml` never mention. There is no allow-list to extend and no chart
+release to wait for:
+
+```yaml
+# values.yaml — [query] plan_cache_capacity, which values.yaml never names
+config:
+  query:
+    plan_cache_capacity: 512
+```
+
+```shell
+helm upgrade ferroehr ferroehr/ferroehr --reuse-values \
+  --set config.query.plan_cache_capacity=512
+```
+
+Turning something off is the same edit in reverse: remove the key (or set the
+integration's `enabled` back to `false`) and upgrade. The tables below are a
+curated starting point for the switches most deployments want — they are not
+the boundary of what the chart supports.
+
+Two things make this safe to rely on:
+
+- **A typo is a boot refusal, not a silent default.** The server sweeps its
+  configuration strictly and rejects an unknown key with a did-you-mean, so a
+  misspelled path fails loudly at startup instead of quietly doing nothing.
+  Check before you deploy with the schema and boot gates described under
+  [Check your values before you deploy them](#check-your-values-before-you-deploy-them).
+- **Credentials do not belong in this tree.** `config` becomes a mounted
+  file; secrets have their own routes (`secrets.*`, `existingSecret`, and the
+  `*_file` key siblings) — see
+  [Secrets and mounted config](#secrets-and-mounted-config).
+
+### The common switches
+
 Every switch below lives in the chart's `config` tree, so its key *is* the
 TOML key from the [configuration reference](configuration.md). Most are **off
 by default**; the ones that ship on are marked, and enabling any of the others
