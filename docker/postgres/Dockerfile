@@ -18,7 +18,21 @@ FROM postgres:18.4@sha256:3a82e1f56c8f0f5616a11103ac3d47e632c3938698946a7ad26da0
 # Init scripts run once, on an empty data directory, as the bootstrap superuser.
 COPY initdb/ /docker-entrypoint-initdb.d/
 
+# See docker/Dockerfile for the split: build-independent keys here, the four
+# build-dependent ones from the publishing workflow. base.* names the `FROM`
+# above, kept in step by scripts/checks/image-labels.sh.
+#
+# `licenses` is an SPDX EXPRESSION and this image genuinely is one: our init
+# scripts are MIT, and every layer under them is upstream `postgres`, which is
+# PostgreSQL-licensed. Claiming only MIT would understate what the image
+# contains.
 LABEL org.opencontainers.image.title="ferroehr-postgres" \
       org.opencontainers.image.description="PostgreSQL 18 preconfigured (role/db/schemas/extensions) for ferroehr" \
+      org.opencontainers.image.url="https://ferroehr.eu/" \
+      org.opencontainers.image.documentation="https://ferroehr.eu/docs/latest/" \
       org.opencontainers.image.source="https://github.com/rubentalstra/FerroEHR" \
-      org.opencontainers.image.licenses="Apache-2.0"
+      org.opencontainers.image.vendor="FerroEHR" \
+      org.opencontainers.image.authors="Ruben Talstra <https://github.com/rubentalstra>" \
+      org.opencontainers.image.licenses="MIT AND PostgreSQL" \
+      org.opencontainers.image.base.name="postgres:18.4" \
+      org.opencontainers.image.base.digest="sha256:3a82e1f56c8f0f5616a11103ac3d47e632c3938698946a7ad26da0df1334744a"
