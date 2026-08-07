@@ -26,7 +26,7 @@ use super::metrics::{
 const SAMPLE_INTERVAL: Duration = Duration::from_secs(5);
 
 /// Acquire a pooled connection, recording the wait on
-/// [`DB_POOL_ACQUIRE_DURATION`]. Use in place of `pool.acquire()` on measured
+/// [`DB_POOL_ACQUIRE_DURATION`](crate::telemetry::metrics::DB_POOL_ACQUIRE_DURATION). Use in place of `pool.acquire()` on measured
 /// hot paths.
 ///
 /// # Errors

@@ -184,7 +184,7 @@ impl FerroEhrService {
 }
 
 /// Record one WebTemplate-cache hit/miss on the
-/// [`crate::telemetry::prometheus::WEBTEMPLATE_CACHE_EVENTS`] counter. No
+/// [`crate::telemetry::metrics::WEBTEMPLATE_CACHE_EVENTS`] counter. No
 /// openEHR spec governs this — our own observability design.
 fn note_cache_event(event: &'static str) {
     crate::telemetry::metrics::metrics()

@@ -115,7 +115,7 @@ impl Committed {
 }
 
 /// Meter a just-committed version on the
-/// [`COMPOSITIONS_COMMITTED`](crate::telemetry::prometheus::COMPOSITIONS_COMMITTED)
+/// [`COMPOSITIONS_COMMITTED`](crate::telemetry::metrics::COMPOSITIONS_COMMITTED)
 /// counter; kinds other than COMPOSITION are ignored.
 ///
 /// Every commit route calls this **after** its transaction has committed, so a
