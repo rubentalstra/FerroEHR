@@ -84,7 +84,7 @@ impl FerroEhrService {
                 && is_persistent(&read.canonical)
                 && composition_template_id(&read.canonical) == Some(template_id)
             {
-                return Err(ServiceError::Conflict(format!(
+                return Err(ServiceError::conflict(format!(
                     "EHR {ehr_id} already has a persistent COMPOSITION for template \
                      {template_id}; only one create is allowed (subsequent commits must \
                      be modifications)"
@@ -351,7 +351,7 @@ pub(in crate::service) async fn check_versioned_composition_invariants(
     if let (Some(stored), Some(incoming)) = (first_ani.as_deref(), incoming_ani)
         && stored != incoming
     {
-        return Err(ServiceError::Unprocessable(
+        return Err(ServiceError::content_invalid(
             Violation::new(format!(
                 "{incoming:?} differs from the versioned object's first version {stored:?}"
             ))
@@ -365,7 +365,7 @@ pub(in crate::service) async fn check_versioned_composition_invariants(
     if let (Some(stored), Some(incoming)) = (first_category.as_deref(), incoming_category)
         && (stored == code::PERSISTENT) != (incoming == code::PERSISTENT)
     {
-        return Err(ServiceError::Unprocessable(
+        return Err(ServiceError::content_invalid(
             Violation::new(format!(
                 "{incoming} changes the persistence of the versioned object \
                  (first version: {stored}) — is_persistent is fixed across versions"
@@ -420,7 +420,7 @@ pub(in crate::service) fn validate_root_locatable(
         .get("archetype_details")
         .filter(|v| v.is_object())
         .ok_or_else(|| {
-            ServiceError::Unprocessable(
+            ServiceError::content_invalid(
                 Violation::new(format!(
                     "is mandatory: {kind} is an archetype root (Is_archetype_root), \
                      and a root without ARCHETYPED is invalid"
@@ -435,7 +435,7 @@ pub(in crate::service) fn validate_root_locatable(
         .and_then(Value::as_str)
         .filter(|s| !s.is_empty())
         .ok_or_else(|| {
-            ServiceError::Unprocessable(
+            ServiceError::content_invalid(
                 Violation::new("is mandatory")
                     .with_path(format!("{kind}.archetype_details.archetype_id.value"))
                     .with_invariant("ARCHETYPED.archetype_id 1..1"),
@@ -474,7 +474,7 @@ pub(in crate::service) fn validate_root_locatable(
 /// [`ServiceError::ValidationFailed`] carrying the RM-invariant violations
 /// (both → 422).
 pub(in crate::service) fn validate_ehr_status(status: &Value) -> Result<(), ServiceError> {
-    let unproc = |m: String| ServiceError::Unprocessable(Violation::new(m));
+    let unproc = |m: String| ServiceError::content_invalid(Violation::new(m));
     let obj = status
         .as_object()
         .ok_or_else(|| unproc("EHR_STATUS must be a JSON object".to_owned()))?;
@@ -519,7 +519,7 @@ pub(in crate::service) fn validate_ehr_access(
     access: &Value,
     incomplete: bool,
 ) -> Result<(), ServiceError> {
-    let unproc = |m: String| ServiceError::Unprocessable(Violation::new(m));
+    let unproc = |m: String| ServiceError::content_invalid(Violation::new(m));
     let obj = access
         .as_object()
         .ok_or_else(|| unproc("EHR_ACCESS must be a JSON object".to_owned()))?;

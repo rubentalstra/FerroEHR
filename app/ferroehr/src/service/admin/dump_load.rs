@@ -674,14 +674,14 @@ fn original_version_envelope(
     let (contribution, commit_audit, signature) = if let Some(wrapped) = &v.wrapped_original {
         (
             wrapped.get("contribution").cloned().ok_or_else(|| {
-                ServiceError::Internal(format!(
+                ServiceError::exception(format!(
                     "version {} of {} is imported but its wrapped ORIGINAL_VERSION carries no \
                      contribution",
                     v.sys_version, v.vo_id
                 ))
             })?,
             wrapped.get("commit_audit").cloned().ok_or_else(|| {
-                ServiceError::Internal(format!(
+                ServiceError::exception(format!(
                     "version {} of {} is imported but its wrapped ORIGINAL_VERSION carries no \
                      commit_audit",
                     v.sys_version, v.vo_id
@@ -787,7 +787,7 @@ fn version_document(kind: &str, envelope: &Value) -> Result<String, ServiceError
         "EHR_STATUS" => version_document_of::<EhrStatus>(envelope),
         "EHR_ACCESS" => version_document_of::<EhrAccess>(envelope),
         "FOLDER" => version_document_of::<Folder>(envelope),
-        other => Err(ServiceError::Internal(format!(
+        other => Err(ServiceError::exception(format!(
             "no canonical-XML payload type for versioned-object kind {other}"
         ))),
     }
@@ -1104,11 +1104,11 @@ impl FerroEhrService {
                     // load into a non-empty repository. Reported and skipped
                     // (its transaction rolled back) exactly like a duplicate
                     // EHR id, so the rest of the archive still loads.
-                    Err(ServiceError::Conflict(message)) => reports.push(DumpLoadFailReport {
+                    Err(ServiceError::Conflict(e)) => reports.push(DumpLoadFailReport {
                         entity_type: "EHR".to_owned(),
                         entity_id: ehr_id.to_string(),
                         dump_status: false,
-                        error: Some(message),
+                        error: Some(e.message),
                     }),
                     Err(e) => return Err(e.into()),
                 }
@@ -1556,7 +1556,7 @@ impl FerroEhrService {
         .fetch_one(&mut *tx)
         .await?;
         if overlap {
-            return Err(ServiceError::Unprocessable(
+            return Err(ServiceError::content_invalid(
                 crate::service::error::Violation::new(format!(
                     "archive for EHR {ehr_id} carries overlapping version validity periods"
                 )),
@@ -1604,7 +1604,7 @@ async fn insert_ehr_row(tx: &mut PgConnection, ehr: &EhrRow) -> Result<(), Servi
         if let sqlx::Error::Database(db) = &e
             && db.constraint() == Some("uq_ehr_subject")
         {
-            return ServiceError::Conflict(format!(
+            return ServiceError::conflict(format!(
                 "EHR {} names subject {}@{}, which another EHR in this repository already \
                  holds (one EHR per subject)",
                 ehr.id,

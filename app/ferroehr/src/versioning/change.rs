@@ -234,7 +234,7 @@ fn preceding_tip(
     row: crate::storage::version_repo::placement::TipRow,
 ) -> Result<PrecedingTip, ServiceError> {
     let kind = Kind::from_type(&row.kind).ok_or_else(|| {
-        ServiceError::Internal(format!("unknown versioned-object kind {:?}", row.kind))
+        ServiceError::exception(format!("unknown versioned-object kind {:?}", row.kind))
     })?;
     Ok(PrecedingTip {
         ehr_id: row.ehr_id,
@@ -318,7 +318,7 @@ async fn next_version(
             .map(preceding_tip)
             .transpose()?;
         return match (expected, current) {
-            (Some(tree), Some(current)) => Err(ServiceError::VersionConflict(format!(
+            (Some(tree), Some(current)) => Err(ServiceError::version_conflict(format!(
                 "expected version {tree}, which does not exist (current is {})",
                 current.tree
             ))),
@@ -337,7 +337,7 @@ async fn next_version(
         ));
     }
     if !tip.open {
-        return Err(ServiceError::VersionConflict(format!(
+        return Err(ServiceError::version_conflict(format!(
             "expected version {} has been superseded",
             tip.tree
         )));
@@ -545,7 +545,7 @@ async fn apply_change(
                 engine
                     .offload(&mut canonical)
                     .await
-                    .map_err(|e| ServiceError::Internal(e.to_string()))?;
+                    .map_err(|e| ServiceError::exception(e.to_string()))?;
             }
             let lifecycle = resolve_lifecycle(lifecycle_state)?;
             // This arm commits CONTENT, so the deleted state is refused here
@@ -596,7 +596,7 @@ async fn apply_change(
                 engine
                     .offload(&mut canonical)
                     .await
-                    .map_err(|e| ServiceError::Internal(e.to_string()))?;
+                    .map_err(|e| ServiceError::exception(e.to_string()))?;
             }
             let lifecycle = resolve_lifecycle(lifecycle_state)?;
             // Same coupling as the create arm: a modification carries content,

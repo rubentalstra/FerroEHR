@@ -52,7 +52,7 @@ pub mod types;
 use regex::Regex;
 
 use crate::service::list::Page;
-use crate::service::status::CallStatusType;
+use crate::service::status::{CallStatusType, SmError};
 
 use crate::service::error::ServiceError;
 
@@ -86,13 +86,42 @@ pub(super) fn page_bounds(page: Page) -> (i64, Option<i64>) {
 /// `invalid_id_pattern`, the correct SM outcome for an unusable pattern (a
 /// narrower accept envelope, never a wrong status).
 pub(super) fn compile_pattern(pattern: &str) -> Result<Regex, ServiceError> {
-    // NOTE: no cause is carried here, because `ServiceError::sm` normalizes
-    // `invalid_id_pattern` into the bare-string `BadRequest` row that the
-    // cause-carrying `ServiceError::Caused` row deliberately does not.
     Regex::new(pattern).map_err(|e| {
-        ServiceError::sm(
-            CallStatusType::InvalidIdPattern,
-            format!("invalid id pattern: {e}"),
+        let message = format!("invalid id pattern: {e}");
+        ServiceError::BadRequest(
+            SmError::new(CallStatusType::InvalidIdPattern, message).with_source(e),
         )
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::compile_pattern;
+    use crate::service::error::ServiceError;
+    use crate::service::status::CallStatusType;
+
+    /// An uncompilable id pattern reports the SM status
+    /// `i_definition_adl14.adoc` §`list_matching_archetypes` declares
+    /// (`.Errors`: `invalid_id_pattern`) and carries the `regex` compile
+    /// failure as a walkable cause
+    /// ([RFC 0201](https://rust-lang.github.io/rfcs/0201-error-chaining.html)).
+    #[test]
+    fn an_uncompilable_pattern_is_invalid_id_pattern_and_carries_its_cause() {
+        use std::error::Error;
+
+        let err = compile_pattern("(").expect_err("an unbalanced group must not compile");
+        let ServiceError::BadRequest(sm) = &err else {
+            panic!("an unusable pattern is a 400, got {err:?}");
+        };
+        assert_eq!(sm.status, CallStatusType::InvalidIdPattern);
+        // Two hops: the refusal carries its `SmError`, which carries the
+        // concrete compile failure.
+        let hops = std::iter::successors(Error::source(&err), |e| Error::source(*e))
+            .map(|e| e.downcast_ref::<regex::Error>().is_some())
+            .collect::<Vec<_>>();
+        assert!(
+            hops.contains(&true),
+            "walking the chain must reach the concrete regex::Error, got {err:?}"
+        );
+    }
 }
