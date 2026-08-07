@@ -22,6 +22,7 @@ use crate::telemetry::config::{OtelConfig, TelemetryConfig};
 pub mod indicators;
 mod layers;
 mod log_sanitize;
+pub mod metrics;
 pub mod prometheus;
 pub mod samplers;
 
