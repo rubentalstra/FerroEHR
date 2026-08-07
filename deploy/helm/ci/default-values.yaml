@@ -1,6 +1,26 @@
 # Minimal realistic production overlay: chart defaults (all optional
-# integrations OFF) plus the one thing every real deployment must supply — the
-# app-role DSN from an existing Secret. Used as the "default" golden render.
+# integrations OFF) plus the only two things every real deployment must supply —
+# the app-role DSN from an existing Secret, and an identity provider. Used as
+# the "default" golden render, and booted against the image by
+# deploy/helm/ci/boot-check.sh.
+#
+# Nothing here is a credential. The DSN comes from a Secret the operator already
+# owns, and the OIDC block below carries no key material at all: with neither
+# `hmac_secret` nor `jwks_json` set, the server resolves signing keys from the
+# issuer's discovery document at first use, so an issuer URL and the audience
+# this deployment answers to are the whole configuration.
 database:
   existingSecret: ferroehr-db
   existingSecretKey: FERROEHR__DB__URL
+
+config:
+  auth:
+    # `auth.enabled` is true in the chart defaults and a server with no
+    # mechanism refuses to boot (RFC 9110 §11.6.1 — a 401 challenge must name a
+    # scheme the server implements), so an overlay that claims to be
+    # production-minimal has to name one. An IdP is the mechanism a real
+    # deployment supplies; Basic would mean shipping a password hash, which
+    # this file has no business carrying.
+    oidc:
+      issuer: https://idp.example.com/realms/ferroehr
+      audiences: [ferroehr]

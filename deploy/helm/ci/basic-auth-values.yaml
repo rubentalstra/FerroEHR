@@ -14,7 +14,13 @@ database:
 
 secrets:
   basicUserPasswordHashes:
-    clinician: "$argon2id$v=19$m=19456,t=2,p=1$c2FsdA$hash"
+    # The Argon2id hash of the password "ferroehr" — the same published
+    # development fixture docker/ferroehr.dev.toml and the quickstart compose
+    # file ship, reused here so no new credential-shaped string enters the tree.
+    # It has to be a REAL PHC string: the server parses every password_hash at
+    # boot and refuses the file otherwise, so a "$argon2id$…$hash" placeholder
+    # renders fine and deploys nothing.
+    clinician: "$argon2id$v=19$m=19456,t=2,p=1$ZmVycm9laHJEZXZTYWx0$be5nPwWjfUl1qvSrvkvqvdMOuCgM0VFcN/VN4MFLjT8"
 
 config:
   auth:

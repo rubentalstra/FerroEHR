@@ -17,6 +17,13 @@
 #   5. kubeconform     — schema-validate the manifests IF kubeconform is on PATH
 #                        (optional; skipped with a note when absent/offline)
 #
+# What it does NOT check is printed at the end of every run, and is not a
+# footnote: every one of those properties has failed while this script was green
+# (#2159 — all three overlays rendered, linted and matched their goldens while
+# producing configurations the server refuses to start on). A green run here
+# means the MANIFESTS are well-formed, hardened and unchanged. It says nothing
+# about whether the deployment works.
+#
 # Usage:
 #   deploy/helm/validate.sh            # validate (fails on lint/render/golden drift)
 #   deploy/helm/validate.sh --update   # regenerate the golden renders, then validate
@@ -383,9 +390,39 @@ else
   printf '%s\n' "helm-docs: not installed — skipping the chart README drift check"
 fi
 
+# ── What a green run above does NOT mean ─────────────────────────────────────
+# Printed unconditionally, on success and on failure. It is the direct answer to
+# #2159: every committed overlay was rendering, linting and matching its golden
+# while none of them produced a configuration the server accepts, and the reason
+# nobody noticed is that a green run here reads like a working deployment.
+bold "── not checked by this script ───────────────────────────"
+cat <<'BOUNDARY'
+  This script renders. It never runs the server, and never talks to a cluster.
+  It therefore cannot tell you any of the following, and a green result above
+  must not be read as evidence of them:
+
+    * that the server ACCEPTS the rendered ferroehr.toml — the keys it carries,
+      their types, and the semantic rules validated at boot (an auth mechanism,
+      the RFC 8725 32-byte HMAC floor, a real Argon2id PHC string, the SMART
+      requirements). Run: deploy/helm/ci/boot-check.sh   [CI: chart-boot]
+    * that the image the chart selects UNDERSTANDS those keys. `appVersion` and
+      the chart's config defaults move on different clocks, so a key added
+      in-tree can be rejected by the released image.
+      Run: FERROEHR_IMAGE=ghcr.io/rubentalstra/ferroehr:<tag> \
+             deploy/helm/ci/boot-check.sh   [CI: publish-chart.yml, on a tag]
+    * that a pod STARTS, migrates the database, passes its probes and serves a
+      request — config validation opens no socket. Run: the k8s-test skill
+      (.claude/skills/k8s-test/) against a real cluster.
+    * that the values are semantically sensible for a real deployment: that the
+      issuer exists, the broker is reachable, the S3 bucket resolves, the
+      NetworkPolicy egress rules actually match the peers in use.
+    * anything about the CHART's behaviour under `helm upgrade`, or about
+      resource sizing, scheduling or autoscaling behaviour under load.
+BOUNDARY
+
 echo
 if [[ "$FAIL" -eq 0 ]]; then
-  green "ALL CHECKS PASSED"
+  green "ALL RENDER CHECKS PASSED (see 'not checked' above)"
 else
   red "VALIDATION FAILED"
   exit 1
