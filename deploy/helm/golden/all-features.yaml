@@ -140,8 +140,8 @@ metadata:
     app.kubernetes.io/part-of: ferroehr
 type: Opaque
 stringData:
-  auth.oidc.hmac_secret: "dev-hmac-secret"
-  signing.key_passphrase: "dev-passphrase"
+  auth.oidc.hmac_secret: "ci-fixture-not-a-secret-0000000000000000"
+  signing.key_passphrase: "ci-fixture-not-a-secret-passphrase"
   multimedia.secret_access_key: "s3-secret"
   terminology.external.oauth2_clients.tx.client_secret: "tx-client-secret"
   events.url: "amqps://user:pass@rabbitmq:5671/%2f"
@@ -219,7 +219,7 @@ data:
     [auth]
       enabled = true
       [auth.oidc]
-        algorithms = ["RS256"]
+        algorithms = ["HS256"]
         audiences = ["ferroehr"]
         issuer = "https://keycloak.example.com/realms/ferroehr"
     
@@ -240,6 +240,7 @@ data:
     [db]
       acquire_timeout_secs = 30.0
       max_connections = 10.0
+      migrate = "apply"
       min_connections = 0.0
       statement_timeout_ms = 60000.0
     
@@ -314,6 +315,18 @@ data:
       ehr_id_claim = "ehrId"
       enabled = true
       patient_claim = "patient"
+      public_base_url = "https://ferroehr.example.com"
+      [smart.endpoints]
+        authorization_endpoint = "https://keycloak.example.com/realms/ferroehr/protocol/openid-connect/auth"
+        capabilities = ["launch-ehr", "sso-openid-connect"]
+        code_challenge_methods_supported = ["S256"]
+        grant_types_supported = ["authorization_code", "client_credentials"]
+        issuer = "https://keycloak.example.com/realms/ferroehr"
+        jwks_uri = "https://keycloak.example.com/realms/ferroehr/protocol/openid-connect/certs"
+        response_types_supported = ["code"]
+        scopes_supported = ["openid", "fhirUser", "launch", "patient/*.rs"]
+        token_endpoint = "https://keycloak.example.com/realms/ferroehr/protocol/openid-connect/token"
+        token_endpoint_auth_methods_supported = ["client_secret_basic", "private_key_jwt"]
     
     [subject_proxy]
       [subject_proxy.systems]
@@ -406,7 +419,7 @@ spec:
         # secret values. Hashing the ConfigMap template alone missed the last two,
         # so a rotated passphrase or an edited Cedar policy propagated into the
         # volume while every pod kept running on the value it read at startup.
-        checksum/config: a165250dd7f8359264f7760c12f03dad3a89fdb2e09b95517b2a5b17b8b24674
+        checksum/config: 90f50521ae6482cacb9e62c525f405147839440a91e4f0b39e59e5cfe9d86b01
         prometheus.io/scrape: "true"
         prometheus.io/port: "9100"
         prometheus.io/path: "/management/prometheus"

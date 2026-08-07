@@ -34,26 +34,49 @@ not the migrator or the owner.
 `ferroehr_app` holds `SELECT`/`INSERT`/`UPDATE`/`DELETE` on the clinical tables
 and `EXECUTE` on the `ext` helper functions, and nothing else: it is not a
 superuser, does not bypass row-level security, and cannot create, alter or drop
-a table, index, schema or role. That posture is only reachable when the
-migrations are applied out of band, because the server applies its embedded
-migrations on every boot (see the next section) and those are DDL — a
-self-migrating deployment necessarily runs as a role that can execute it. The
-single-container quickstart takes that path: its DSN authenticates as a
-non-superuser role that owns the database and is a member of both
-`ferroehr_migrator` and `ferroehr_app`.
+a table, index, schema or role. On the audit trail it is narrower still — it may
+record an event and stamp it forwarded, and it holds no privilege that can
+rewrite or remove one (see [Audit](audit.md)).
+
+Which posture you actually get depends on `db.migrate`, because the server's
+embedded migrations are DDL: a self-migrating deployment necessarily runs as a
+role that can execute DDL. The single-container quickstart takes that path — its
+DSN authenticates as a non-superuser role that owns the database and is a member
+of both `ferroehr_migrator` and `ferroehr_app`.
 
 ## Applying migrations
 
-The binary applies its embedded migrations on boot, so you choose how
-migrations run:
+`db.migrate` decides who runs the schema:
 
-- **Grant the runtime DSN the migrator role** — simplest, for single-tenant or
-  small deployments; the server migrates itself at startup. Least isolation.
-- **Run migrations out of band** with a migrator DSN, then start the server
-  with the lower-privileged `ferroehr_app` DSN — recommended for
-  least-privilege production. Run the migration as a CI/CD step or a one-shot
-  job with the migrator credential _before_ rolling the deployment, and gate
-  the rollout so two versions never race the schema.
+- **`apply`** (the default) — the server applies its embedded migrations at
+  boot. This is what makes a fresh checkout and an empty database work with no
+  configuration at all, and it is the right choice for development and for
+  small single-tenant deployments. The runtime DSN must be a member of
+  `ferroehr_migrator`, so the serving process holds DDL rights for its whole
+  life. Least isolation.
+- **`verify`** — the server issues **no DDL at all**. At boot it checks that the
+  database carries exactly this build's migrations and refuses to start
+  otherwise, naming the schema and what is wrong with it. The DSN can then be
+  `ferroehr_app` only, which is the least-privilege production posture: an
+  application-level SQL flaw can then reach rows, never the schema.
+
+With `verify`, something else has to run the migrations first. Use the binary's
+own subcommand under the migrator DSN — a CI/CD stage, a one-shot job, or the
+Helm chart's `migrations.job.enabled` hook Job, which Helm waits on so a failed
+migration fails the release:
+
+```shell
+FERROEHR__DB__URL='postgres://ferroehr_migrator:***@pg:5432/ferroehr' \
+  ferroehr db migrate     # applies; exits when done
+FERROEHR__DB__URL='postgres://ferroehr_app:***@pg:5432/ferroehr' \
+  ferroehr db verify      # read-only check; exit 0 iff the schema is current
+```
+
+Gate the rollout on the migration step so two server versions never race the
+schema. Note the difference in failure shape: a `verify` server refuses to boot
+against an unmigrated database (loud, immediate), while an `apply` server that
+loses its schema later stays up and reports readiness `DOWN` — the warning
+below.
 
 > [!WARNING]
 > **Migration is a boot step, and nothing re-runs it.** A running instance whose

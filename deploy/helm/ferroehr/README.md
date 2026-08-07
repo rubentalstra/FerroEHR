@@ -134,6 +134,7 @@ Kubernetes: `>=1.25.0-0`
 | config.authz.rbac.user_role | string | `"USER"` |  |
 | config.db.acquire_timeout_secs | int | `30` |  |
 | config.db.max_connections | int | `10` |  |
+| config.db.migrate | string | `"apply"` |  |
 | config.db.min_connections | int | `0` |  |
 | config.db.statement_timeout_ms | int | `60000` |  |
 | config.events.enabled | bool | `false` |  |
@@ -208,7 +209,17 @@ Kubernetes: `>=1.25.0-0`
 | metrics.serviceMonitor.labels | object | `{}` | Extra labels, for the `serviceMonitorSelector` your Prometheus matches on. |
 | metrics.serviceMonitor.namespace | string | `""` | Namespace for the ServiceMonitor; empty = the release namespace. |
 | metrics.serviceMonitor.scrapeTimeout | string | `"10s"` |  |
-| migrations.runByMigratorRole | bool | `true` | Purely informational marker rendered into NOTES for the operator; the chart never runs migrations itself. |
+| migrations.job.activeDeadlineSeconds | int | `600` | Hard ceiling on the migration step; a migration blocked behind live traffic must fail the release rather than hang it. |
+| migrations.job.backoffLimit | int | `3` | Retries before the Job (and therefore the release) is declared failed. |
+| migrations.job.enabled | bool | `false` | Run the migrations as a pre-install/pre-upgrade hook Job under the migrator DSN. Pair it with config.db.migrate=verify and an app-role-only runtime DSN for the least-privilege posture. |
+| migrations.job.existingSecret | string | `""` | REQUIRED when enabled: an existing Secret holding the MIGRATOR DSN (`postgres://ferroehr_migrator:...@host:5432/ferroehr`). Deliberately a different credential from `database.*`, which carries the runtime app-role DSN — rendering fails if it is empty. |
+| migrations.job.existingSecretKey | string | `"FERROEHR__DB__URL"` | Key WITHIN existingSecret holding the migrator DSN. Mounted as a file; only its PATH reaches the pod's environment. |
+| migrations.job.nodeSelector | object | `{}` | Node selector for the migration pod. |
+| migrations.job.podAnnotations | object | `{}` | Extra annotations on the migration pod. |
+| migrations.job.resources | object | `{}` | Resource requests/limits for the migration pod. |
+| migrations.job.tolerations | list | `[]` | Tolerations for the migration pod. |
+| migrations.job.ttlSecondsAfterFinished | int | `600` | How long the finished Job's pod is kept for its logs. |
+| migrations.runByMigratorRole | bool | `true` | Purely informational marker rendered into NOTES for the operator. |
 | nameOverride | string | `""` | Override the chart name portion of resource names. |
 | networkPolicy.egress.database | object | `{"port":5432,"to":[]}` | The database, which is NOT optional: the server cannot pass readiness without it. Rendering an egress policy with no database destination is a refusal, not a warning (see the template) — an egress policy that forgets the DSN is a total outage that looks like a database failure. `to` takes raw NetworkPolicyPeer entries: a `podSelector`/ `namespaceSelector` for an in-cluster database, or an `ipBlock` for a managed one. `port` is the DSN's port. |
 | networkPolicy.egress.enabled | bool | `false` | Refuse all outbound traffic except DNS, `database` and `rules`. |

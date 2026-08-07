@@ -92,7 +92,7 @@ metadata:
     app.kubernetes.io/part-of: ferroehr
 type: Opaque
 stringData:
-  auth.basic.users.clinician.password_hash: "$argon2id$v=19$m=19456,t=2,p=1$c2FsdA$hash"
+  auth.basic.users.clinician.password_hash: "$argon2id$v=19$m=19456,t=2,p=1$ZmVycm9laHJEZXZTYWx0$be5nPwWjfUl1qvSrvkvqvdMOuCgM0VFcN/VN4MFLjT8"
 ---
 # Source: ferroehr/templates/configmap.yaml
 apiVersion: v1
@@ -150,6 +150,7 @@ data:
     [db]
       acquire_timeout_secs = 30.0
       max_connections = 10.0
+      migrate = "apply"
       min_connections = 0.0
       statement_timeout_ms = 60000.0
     
@@ -275,7 +276,7 @@ spec:
         # secret values. Hashing the ConfigMap template alone missed the last two,
         # so a rotated passphrase or an edited Cedar policy propagated into the
         # volume while every pod kept running on the value it read at startup.
-        checksum/config: e34520697a2234e54ea2295b6ea425d93e699736cff3d583583e93e235426109
+        checksum/config: 6050744bc3cc2188305172b951c54e904764777ef0c9acddeb5d0f219734c93a
       labels:
         app.kubernetes.io/name: ferroehr
         app.kubernetes.io/instance: ferroehr
