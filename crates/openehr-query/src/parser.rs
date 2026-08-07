@@ -33,30 +33,77 @@ use chumsky::prelude::*;
 )]
 type Err<'a> = chumsky::extra::Err<Simple<'a, Token>>;
 
+/// One position at which the token stream left the grammar.
+///
+/// The position is an index into the TOKEN stream, not a byte offset into the
+/// source: the parser's input is [`crate::lexer::lex`]'s output, so a caller
+/// that needs a source location maps the index back through the token stream
+/// it lexed.
+#[derive(Debug, Clone, PartialEq)]
+pub struct SyntaxFault {
+    /// The half-open range of token indices the parser was looking at.
+    pub tokens: core::ops::Range<usize>,
+    /// The token found there, or `None` when the input ended early.
+    pub found: Option<Token>,
+}
+
+impl std::fmt::Display for SyntaxFault {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.found {
+            Some(token) => write!(f, "found '{token:?}' at {:?}", self.tokens),
+            None => write!(f, "found end of input at {:?}", self.tokens),
+        }
+    }
+}
+
+/// Why an AQL source failed to become a [`SelectQuery`].
+///
+/// The two variants are the two passes, so a caller branches on the pass that
+/// refused rather than reading the message. Semantic rejections — an unknown
+/// archetype path, an unsupported construct — are NOT here: this crate stops
+/// at the AST, and those are typed errors of the engine that consumes it.
+#[derive(Debug, Clone, PartialEq, thiserror::Error)]
+pub enum ParseError {
+    /// The source did not tokenize.
+    // NOTE: `#[error("{0}")]` and not `transparent`, which forwards `source()`
+    // to the inner error and so erases the lex error from the cause chain
+    // (<https://docs.rs/thiserror/latest/thiserror/derive.Error.html>).
+    #[error("{0}")]
+    Lex(#[from] crate::lexer::LexError),
+    /// The tokens did not match the grammar.
+    #[error("{}", faults.iter().map(ToString::to_string).collect::<Vec<_>>().join("; "))]
+    Syntax {
+        /// Every position the parser reported, in report order.
+        faults: Vec<SyntaxFault>,
+    },
+}
+
 /// Parse a token slice into a [`SelectQuery`].
 ///
 /// # Errors
-/// Returns a list of [`Simple`] parse errors (with token spans) on failure.
-pub fn parse(tokens: &[Token]) -> Result<SelectQuery, Vec<Simple<'_, Token>>> {
-    query().parse(tokens).into_result()
+/// [`ParseError::Syntax`], carrying every token position the parser reported.
+pub fn parse(tokens: &[Token]) -> Result<SelectQuery, ParseError> {
+    query().parse(tokens).into_result().map_err(|errs| {
+        let faults = errs
+            .iter()
+            .map(|e: &Simple<'_, Token>| SyntaxFault {
+                tokens: e.span().into_range(),
+                found: e.found().cloned(),
+            })
+            .collect();
+        ParseError::Syntax { faults }
+    })
 }
 
 /// Lex then parse `src` in one step.
 ///
 /// # Errors
-/// Returns a human-readable message on a lex or parse failure.
-///
-/// NOTE: the lexer and parser diagnostics stay flattened into that message
-/// rather than carried as a source (RFC 0201) — a positional AQL diagnostic IS
-/// the answer, and `chumsky`'s error type is deliberately not in this API.
-pub fn parse_str(src: &str) -> Result<SelectQuery, String> {
-    let tokens = crate::lexer::lex(src).map_err(|e| e.to_string())?;
-    parse(&tokens).map_err(|errs| {
-        errs.iter()
-            .map(ToString::to_string)
-            .collect::<Vec<_>>()
-            .join("; ")
-    })
+/// [`ParseError::Lex`] if the source does not tokenize, otherwise
+/// [`ParseError::Syntax`]. Its `Display` is the located diagnostic a client
+/// should see; its variant is what a caller branches on.
+pub fn parse_str(src: &str) -> Result<SelectQuery, ParseError> {
+    let tokens = crate::lexer::lex(src)?;
+    parse(&tokens)
 }
 
 // ── leaf parsers ─────────────────────────────────────────────────────────────
