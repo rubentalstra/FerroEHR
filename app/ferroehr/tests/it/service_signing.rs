@@ -370,6 +370,7 @@ async fn strict_verify_on_read_rejects_a_tampered_row() {
         key_path: None,
         key_passphrase: None,
         key_passphrase_file: None,
+        retired_key_paths: Vec::new(),
         verify_on_read: Some(VerifyOnRead::Strict),
     };
     let signer = Signer::from_config(&config).expect("strict signer");
@@ -468,6 +469,7 @@ fn service_with_verify(pool: PgPool, policy: VerifyOnRead) -> FerroEhrService {
         key_path: None,
         key_passphrase: None,
         key_passphrase_file: None,
+        retired_key_paths: Vec::new(),
         verify_on_read: Some(policy),
     };
     let signer = Signer::from_config(&config).expect("signer");
@@ -575,6 +577,7 @@ fn signing_disabled(pool: PgPool) -> FerroEhrService {
         key_path: None,
         key_passphrase: None,
         key_passphrase_file: None,
+        retired_key_paths: Vec::new(),
         verify_on_read: Some(VerifyOnRead::Off),
     };
     let signer = Signer::from_config(&config).expect("disabled signer");

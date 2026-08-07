@@ -114,6 +114,12 @@ hydrate = [
 ssr = [
     "dep:tower-http",
     "leptos/ssr",
+    # The per-request CSP nonce (src/main.rs): `leptos::nonce::Nonce` +
+    # `HydrationScripts` stamping `nonce=` on the bootstrap script. Named
+    # explicitly rather than inherited from leptos_axum's own dependency
+    # edge, so the strict script-src cannot lose its nonce to a feature
+    # change upstream.
+    "leptos/nonce",
     "leptos_meta/ssr",
     "leptos_router/ssr",
     "thaw/ssr",
@@ -145,6 +151,9 @@ ssr = [
 
 [dev-dependencies]
 indexmap.workspace = true
+# `ServiceExt::oneshot`: the CSP-nonce tests drive a stub router through the
+# security layer in-process, with no listener.
+tower.workspace = true
 # E2E journeys (tests/e2e_*.rs): Rust-native WebDriver + the async runtime;
 # the console gate reads the browser log via thirtyfour's legacy-log API.
 thirtyfour.workspace = true

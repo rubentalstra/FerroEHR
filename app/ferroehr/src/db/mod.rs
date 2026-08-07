@@ -36,6 +36,28 @@ use crate::config::secret::SecretUrl;
 /// [`DbConfig::is_dev_default`] holds.
 pub const DEFAULT_URL: &str = "postgres://ferroehr:ferroehr@localhost:5432/ferroehr";
 
+/// What the server does about schema migrations when it boots.
+///
+/// Migrations are DDL, so a self-migrating server must authenticate as a role
+/// that can execute DDL — and a role that can rewrite the schema is a role an
+/// application-level SQL flaw can rewrite the schema with. This setting is how
+/// a deployment opts out of that: the schema is applied out of band by the
+/// migrator role, and the server connects as the DML-only `ferroehr_app` role.
+///
+/// No openEHR spec governs migration mechanics or database roles — our own
+/// design/extension.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum MigrationMode {
+    /// Apply the embedded migrations at boot, then verify (the default, and
+    /// what makes an empty configuration boot against an empty database).
+    #[default]
+    Apply,
+    /// Never issue DDL: verify that the database already carries exactly this
+    /// build's migrations, and refuse to serve when it does not.
+    Verify,
+}
+
 /// Connection settings for the application `PostgreSQL` database — the `[db]`
 /// section of the one config tree ([`crate::config::FerroEhrConfig`]), with no
 /// loader of its own.
@@ -80,6 +102,15 @@ pub struct DbConfig {
     /// engine's typed refusal fires first and this only catches what the engine
     /// does not govern. No openEHR spec governs it — our own design.
     pub statement_timeout_ms: u64,
+    /// Whether the server applies its embedded migrations at boot
+    /// ([`MigrationMode`]).
+    ///
+    /// `apply` (the default) keeps a fresh checkout and a fresh database
+    /// working with no configuration at all. `verify` is the least-privilege
+    /// production posture: the DSN may then authenticate as a role with no DDL
+    /// rights, and the server refuses to boot against a database that is not
+    /// already migrated to exactly this build.
+    pub migrate: MigrationMode,
 }
 
 impl Default for DbConfig {
@@ -95,6 +126,7 @@ impl Default for DbConfig {
             // Twice the engine's own 30 s budget, so the engine refuses first
             // and this remains a backstop rather than the primary control.
             statement_timeout_ms: 60_000,
+            migrate: MigrationMode::Apply,
         }
     }
 }
@@ -133,6 +165,15 @@ pub enum DbError {
     #[error("migration: {0}")]
     Migrate(#[from] sqlx::migrate::MigrateError),
 
+    /// The database does not carry exactly this build's migrations, and
+    /// [`MigrationMode::Verify`] forbids applying them.
+    #[error(
+        "the database is not migrated to this build ({0}). \
+         [db].migrate is `verify`, so this server will not issue DDL: apply the \
+         migrations out of band with the migrator role, then start it again"
+    )]
+    SchemaNotReady(#[source] SchemaMismatch),
+
     /// The cold archival tier outlived the primary tier it mirrors.
     #[error(
         "the cold archival tier (schema `cold`) is present but the primary tier \
@@ -145,6 +186,63 @@ pub enum DbError {
          wipe was intended, `DROP SCHEMA cold CASCADE` and start again"
     )]
     OrphanedArchiveTier,
+}
+
+/// How a database's recorded migration state differs from the one this binary
+/// embeds.
+///
+/// Each variant names a distinct operational situation, so a caller can branch
+/// on it rather than match a message: an unmigrated database, a database behind
+/// the binary, a database ahead of it, and a database whose bookkeeping is
+/// damaged.
+#[derive(Debug, thiserror::Error)]
+pub enum SchemaMismatch {
+    /// The schema carries no `_sqlx_migrations` table at all.
+    #[error("schema `{schema}` has never been migrated")]
+    NeverMigrated {
+        /// The `PostgreSQL` schema that carries the migration set.
+        schema: String,
+    },
+
+    /// Migrations this binary embeds are absent from the database.
+    #[error(
+        "schema `{schema}` is missing migration(s) {versions:?} — the database is older than this build"
+    )]
+    Missing {
+        /// The `PostgreSQL` schema that carries the migration set.
+        schema: String,
+        /// The absent migration versions, ascending.
+        versions: Vec<i64>,
+    },
+
+    /// A migration is recorded as having failed partway through.
+    #[error("schema `{schema}` records migration {version} as failed")]
+    Failed {
+        /// The `PostgreSQL` schema that carries the migration set.
+        schema: String,
+        /// The failed migration's version.
+        version: i64,
+    },
+
+    /// A migration was applied from source text this binary does not carry.
+    #[error("schema `{schema}` applied migration {version} from different source text")]
+    ChecksumMismatch {
+        /// The `PostgreSQL` schema that carries the migration set.
+        schema: String,
+        /// The diverging migration's version.
+        version: i64,
+    },
+
+    /// The database carries migrations this binary does not know about.
+    #[error(
+        "schema `{schema}` carries migration(s) {versions:?} — the database is newer than this build"
+    )]
+    Ahead {
+        /// The `PostgreSQL` schema that carries the migration set.
+        schema: String,
+        /// The unknown migration versions, ascending.
+        versions: Vec<i64>,
+    },
 }
 
 // ---------------------------------------------------------------------------
@@ -312,6 +410,14 @@ static EHR_MIGRATOR: Migrator = sqlx::migrate!("migrations/ehr");
 /// access logs, never part of the EHR proper); runs after `ehr`.
 static AUDIT_MIGRATOR: Migrator = sqlx::migrate!("migrations/audit");
 
+/// The three migration sets in application order, each paired with the schema
+/// that carries its `_sqlx_migrations` bookkeeping table.
+const MIGRATION_SETS: &[(&str, &Migrator)] = &[
+    ("ext", &EXT_MIGRATOR),
+    ("ehr", &EHR_MIGRATOR),
+    ("audit", &AUDIT_MIGRATOR),
+];
+
 /// Bootstrap done outside the migrations: the three schemas and `btree_gist`
 /// (required by the temporal `WITHOUT OVERLAPS` primary key).
 const BOOTSTRAP: &[&str] = &[
@@ -346,7 +452,7 @@ pub fn migration_fingerprint() -> String {
     for statement in BOOTSTRAP {
         eat(statement.as_bytes());
     }
-    for migrator in [&EXT_MIGRATOR, &EHR_MIGRATOR, &AUDIT_MIGRATOR] {
+    for (_, migrator) in MIGRATION_SETS {
         for migration in migrator.iter() {
             eat(&migration.version.to_le_bytes());
             eat(&migration.checksum);
@@ -385,6 +491,113 @@ pub async fn run_migrations(pool: &PgPool) -> Result<(), DbError> {
         tracing::debug!(%error, "closing the migration connection failed");
     }
     outcome
+}
+
+/// Brings the database to the state this build requires, as
+/// [`DbConfig::migrate`] directs.
+///
+/// [`MigrationMode::Apply`] runs [`run_migrations`]; [`MigrationMode::Verify`]
+/// issues no DDL and only checks, so the DSN may authenticate as a role that
+/// holds no DDL rights at all. This is the boot-path entry point — call it
+/// instead of [`run_migrations`] anywhere the operator's configuration should
+/// decide.
+///
+/// # Errors
+///
+/// In `apply` mode, whatever [`run_migrations`] returns. In `verify` mode,
+/// [`DbError::SchemaNotReady`] when the database does not carry exactly this
+/// build's migrations, or [`DbError::Sqlx`] when the check itself cannot run.
+pub async fn prepare(settings: &DbConfig, pool: &PgPool) -> Result<(), DbError> {
+    match settings.migrate {
+        MigrationMode::Apply => run_migrations(pool).await,
+        MigrationMode::Verify => {
+            tracing::info!(
+                "[db].migrate is `verify`: this server issues no DDL and requires an \
+                 already-migrated database"
+            );
+            verify_migrations(pool).await
+        }
+    }
+}
+
+/// Verifies, without issuing any DDL, that the database carries exactly the
+/// migrations this binary embeds.
+///
+/// Read-only by construction: it reads each set's `_sqlx_migrations`
+/// bookkeeping table and compares versions, success flags and checksums
+/// against the embedded sources. That makes it usable both as the boot gate for
+/// [`MigrationMode::Verify`] and as an operator check against a running
+/// database.
+///
+/// # Errors
+///
+/// [`DbError::SchemaNotReady`] naming the first divergence found, or
+/// [`DbError::Sqlx`] when a connection or the bookkeeping read fails.
+pub async fn verify_migrations(pool: &PgPool) -> Result<(), DbError> {
+    for (schema, migrator) in MIGRATION_SETS {
+        verify_set(pool, schema, migrator).await?;
+    }
+    Ok(())
+}
+
+/// Compare one migration set's bookkeeping table against its embedded source.
+async fn verify_set(pool: &PgPool, schema: &str, migrator: &Migrator) -> Result<(), DbError> {
+    // The schema name is one of the three literals in `MIGRATION_SETS`, never
+    // input: `to_regclass` answers NULL for a missing relation rather than
+    // failing (PostgreSQL 18 docs, "System Information Functions").
+    let bookkeeping = format!("{schema}._sqlx_migrations");
+    let present: bool = sqlx::query_scalar("SELECT to_regclass($1) IS NOT NULL")
+        .bind(&bookkeeping)
+        .fetch_one(pool)
+        .await?;
+    if !present {
+        return Err(DbError::SchemaNotReady(SchemaMismatch::NeverMigrated {
+            schema: schema.to_owned(),
+        }));
+    }
+
+    let query = format!("SELECT version, success, checksum FROM {bookkeeping} ORDER BY version");
+    let applied: Vec<(i64, bool, Vec<u8>)> = sqlx::query_as(sqlx::AssertSqlSafe(query))
+        .fetch_all(pool)
+        .await?;
+
+    let mut unknown: Vec<i64> = applied.iter().map(|(version, _, _)| *version).collect();
+    let mut missing: Vec<i64> = Vec::new();
+    for embedded in migrator.iter() {
+        let Some((version, success, checksum)) = applied
+            .iter()
+            .find(|(version, _, _)| *version == embedded.version)
+        else {
+            missing.push(embedded.version);
+            continue;
+        };
+        unknown.retain(|known| known != version);
+        if !success {
+            return Err(DbError::SchemaNotReady(SchemaMismatch::Failed {
+                schema: schema.to_owned(),
+                version: *version,
+            }));
+        }
+        if checksum.as_slice() != embedded.checksum.as_ref() {
+            return Err(DbError::SchemaNotReady(SchemaMismatch::ChecksumMismatch {
+                schema: schema.to_owned(),
+                version: *version,
+            }));
+        }
+    }
+    if !missing.is_empty() {
+        return Err(DbError::SchemaNotReady(SchemaMismatch::Missing {
+            schema: schema.to_owned(),
+            versions: missing,
+        }));
+    }
+    if !unknown.is_empty() {
+        return Err(DbError::SchemaNotReady(SchemaMismatch::Ahead {
+            schema: schema.to_owned(),
+            versions: unknown,
+        }));
+    }
+    Ok(())
 }
 
 /// The bootstrap + two-migrator sequence on one dedicated connection.

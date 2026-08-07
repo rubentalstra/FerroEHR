@@ -27,7 +27,7 @@ use std::time::Duration;
 use jsonwebtoken::jwk::JwkSet;
 use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode, decode_header};
 
-use super::{AuthError, AuthMethod, Principal};
+use super::{AuthError, AuthMethod, Principal, TokenRejection};
 use ferroehr::config::auth::OidcConfig;
 
 /// A configured bearer-token validator.
@@ -118,14 +118,15 @@ impl JwtValidator {
     /// Validate a raw bearer token (the value after `Bearer `).
     ///
     /// # Errors
-    /// [`AuthError::InvalidToken`] for any signature/claim/format failure.
+    /// [`AuthError::InvalidToken`] for any signature/claim/format failure,
+    /// carrying the [`TokenRejection`] that names which check refused it.
     pub(super) async fn validate(&self, token: &str) -> Result<Principal, AuthError> {
-        let header = decode_header(token).map_err(|e| AuthError::InvalidToken(e.to_string()))?;
+        let header =
+            decode_header(token).map_err(|e| AuthError::InvalidToken(TokenRejection::from(e)))?;
         if !self.algorithms.contains(&header.alg) {
-            return Err(AuthError::InvalidToken(format!(
-                "token algorithm {:?} not accepted",
-                header.alg
-            )));
+            return Err(AuthError::InvalidToken(
+                TokenRejection::AlgorithmNotAccepted(header.alg),
+            ));
         }
 
         // RFC 9068 §4 step 1 / RFC 8725 §3.11: verify the media type BEFORE any
@@ -139,17 +140,15 @@ impl JwtValidator {
             // only requires that a type, if present, is one this server accepts.
             Some(t) if t.eq_ignore_ascii_case("jwt") => false,
             Some(other) => {
-                return Err(AuthError::InvalidToken(format!(
-                    "token type `{other}` is not an access token"
-                )));
+                return Err(AuthError::InvalidToken(
+                    TokenRejection::TokenTypeNotAccessToken(other.to_owned()),
+                ));
             }
             None => false,
         };
         if self.require_at_jwt && !claims_at_jwt_profile {
             return Err(AuthError::InvalidToken(
-                "the token does not claim the RFC 9068 `at+jwt` profile, which \
-                 auth.oidc.require_at_jwt demands"
-                    .to_owned(),
+                TokenRejection::AtJwtProfileRequired,
             ));
         }
 
@@ -175,7 +174,7 @@ impl JwtValidator {
         // `jsonwebtoken` still validates `exp`/`iss`/`aud` from the raw payload
         // independent of the deserialize target.
         let data = decode::<serde_json::Map<String, serde_json::Value>>(token, &key, &validation)
-            .map_err(|e| AuthError::InvalidToken(e.to_string()))?;
+            .map_err(|e| AuthError::InvalidToken(TokenRejection::from(e)))?;
         let claims = data.claims;
 
         // RFC 7519 §4.1.2 makes `sub` optional, but this principal is stamped
@@ -186,13 +185,7 @@ impl JwtValidator {
             .and_then(serde_json::Value::as_str)
             .map(str::trim)
             .filter(|s| !s.is_empty())
-            .ok_or_else(|| {
-                AuthError::InvalidToken(
-                    "token carries no usable `sub` claim; an audit-attributable subject is \
-                     required"
-                        .to_owned(),
-                )
-            })?
+            .ok_or(AuthError::InvalidToken(TokenRejection::SubjectMissing))?
             .to_owned();
 
         // RFC 9068 §4 step 1: a token that CLAIMS the profile is held to the
@@ -203,9 +196,9 @@ impl JwtValidator {
         if claims_at_jwt_profile {
             for required in ["iat", "jti", "client_id"] {
                 if !claims.contains_key(required) {
-                    return Err(AuthError::InvalidToken(format!(
-                        "an `at+jwt` access token must carry `{required}` (RFC 9068 §2.2)"
-                    )));
+                    return Err(AuthError::InvalidToken(
+                        TokenRejection::AtJwtProfileClaimMissing(required.to_owned()),
+                    ));
                 }
             }
         }
@@ -267,9 +260,8 @@ impl JwtValidator {
 /// after narrowing, or when the selected JWK cannot be turned into a key.
 fn jwk_to_key(set: &JwkSet, kid: Option<&str>, alg: Algorithm) -> Result<DecodingKey, AuthError> {
     let jwk = if let Some(kid) = kid {
-        set.find(kid).ok_or_else(|| {
-            AuthError::InvalidToken(format!("the issuer's JWKS carries no key `{kid}`"))
-        })?
+        set.find(kid)
+            .ok_or_else(|| AuthError::InvalidToken(TokenRejection::UnknownKeyId(kid.to_owned())))?
     } else {
         let candidates: Vec<_> = set
             .keys
@@ -295,22 +287,16 @@ fn jwk_to_key(set: &JwkSet, kid: Option<&str>, alg: Algorithm) -> Result<Decodin
         match candidates.as_slice() {
             [single] => *single,
             [] => {
-                return Err(AuthError::InvalidToken(
-                    "the token carries no `kid` and the issuer's JWKS holds no key usable for \
-                     verifying this algorithm"
-                        .to_owned(),
-                ));
+                return Err(AuthError::InvalidToken(TokenRejection::NoUsableKey));
             }
             many => {
-                return Err(AuthError::InvalidToken(format!(
-                    "the token carries no `kid` and {} keys in the issuer's JWKS could verify \
-                     it — the issuer must identify the key",
-                    many.len()
+                return Err(AuthError::InvalidToken(TokenRejection::AmbiguousKey(
+                    many.len(),
                 )));
             }
         }
     };
-    DecodingKey::from_jwk(jwk).map_err(|e| AuthError::InvalidToken(format!("invalid JWK: {e}")))
+    DecodingKey::from_jwk(jwk).map_err(|e| AuthError::InvalidToken(TokenRejection::UnusableJwk(e)))
 }
 
 /// How long successfully fetched key material stays usable without a refetch.
@@ -490,7 +476,7 @@ mod tests {
             .await
             .expect_err("reject");
         assert!(
-            matches!(&err, AuthError::InvalidToken(m) if m.contains("sub")),
+            matches!(&err, AuthError::InvalidToken(TokenRejection::ClaimSet(_))),
             "got {err:?}"
         );
     }
@@ -503,7 +489,10 @@ mod tests {
             .validate(&token(&c))
             .await
             .expect_err("reject");
-        assert!(matches!(err, AuthError::InvalidToken(_)), "got {err:?}");
+        assert!(
+            matches!(err, AuthError::InvalidToken(TokenRejection::SubjectMissing)),
+            "got {err:?}"
+        );
     }
 
     #[tokio::test]
@@ -514,7 +503,63 @@ mod tests {
             .validate(&token(&c))
             .await
             .expect_err("reject");
-        assert!(matches!(err, AuthError::InvalidToken(_)), "got {err:?}");
+        assert!(
+            matches!(err, AuthError::InvalidToken(TokenRejection::Expired(_))),
+            "got {err:?}"
+        );
+    }
+
+    /// RFC 0201 makes the cause chain part of the `Error` contract. It is
+    /// asserted by DOWNCASTING to the concrete types — `source().is_some()`
+    /// stays true even when a hop carries the wrong one.
+    #[tokio::test]
+    async fn a_token_rejection_downcasts_to_its_jsonwebtoken_cause() {
+        let mut c = base_claims();
+        c["exp"] = json!(now() - 3600);
+        let err = validator(&[])
+            .validate(&token(&c))
+            .await
+            .expect_err("reject");
+
+        let rejection = std::error::Error::source(&err)
+            .expect("AuthError carries the typed rejection")
+            .downcast_ref::<TokenRejection>()
+            .expect("the first hop is the TokenRejection");
+        assert_eq!(rejection.label(), "expired");
+
+        let cause = std::error::Error::source(rejection)
+            .expect("the rejection carries its jsonwebtoken error")
+            .downcast_ref::<jsonwebtoken::errors::Error>()
+            .expect("the second hop is the concrete jsonwebtoken error");
+        assert!(
+            matches!(
+                cause.kind(),
+                jsonwebtoken::errors::ErrorKind::ExpiredSignature
+            ),
+            "got {cause:?}"
+        );
+    }
+
+    /// The defect this classification exists to remove: expiry and a bad
+    /// signature used to be one opaque string, so an operator could not tell a
+    /// clock problem from someone presenting tokens this server never minted.
+    #[tokio::test]
+    async fn expired_and_tampered_tokens_report_different_reasons() {
+        let mut c = base_claims();
+        c["exp"] = json!(now() - 3600);
+        let expired = validator(&[])
+            .validate(&token(&c))
+            .await
+            .expect_err("reject");
+
+        let mut t = token(&base_claims());
+        let flip = t.len() - 10;
+        let tampered_char = if t.as_bytes()[flip] == b'A' { 'B' } else { 'A' };
+        t.replace_range(flip..=flip, &tampered_char.to_string());
+        let tampered = validator(&[]).validate(&t).await.expect_err("reject");
+
+        assert_eq!(expired.label(), "expired");
+        assert_eq!(tampered.label(), "signature");
     }
 
     #[tokio::test]
@@ -525,7 +570,10 @@ mod tests {
             .validate(&token(&c))
             .await
             .expect_err("reject");
-        assert!(matches!(err, AuthError::InvalidToken(_)));
+        assert!(
+            matches!(err, AuthError::InvalidToken(TokenRejection::Issuer(_))),
+            "got {err:?}"
+        );
     }
 
     #[tokio::test]
@@ -536,7 +584,10 @@ mod tests {
             .validate(&token(&c))
             .await
             .expect_err("reject");
-        assert!(matches!(err, AuthError::InvalidToken(_)));
+        assert!(
+            matches!(err, AuthError::InvalidToken(TokenRejection::Audience(_))),
+            "got {err:?}"
+        );
     }
 
     #[tokio::test]
@@ -562,7 +613,10 @@ mod tests {
         let tampered = if t.as_bytes()[flip] == b'A' { 'B' } else { 'A' };
         t.replace_range(flip..=flip, &tampered.to_string());
         let err = validator(&[]).validate(&t).await.expect_err("reject");
-        assert!(matches!(err, AuthError::InvalidToken(_)));
+        assert!(
+            matches!(err, AuthError::InvalidToken(TokenRejection::Signature(_))),
+            "got {err:?}"
+        );
     }
 
     /// RFC 7519 §4.1.5: `nbf` is a "MUST NOT be accepted before" claim, and the
@@ -575,7 +629,10 @@ mod tests {
             .validate(&token(&c))
             .await
             .expect_err("a token not yet valid must be refused");
-        assert!(matches!(err, AuthError::InvalidToken(_)), "got {err:?}");
+        assert!(
+            matches!(err, AuthError::InvalidToken(TokenRejection::NotYetValid(_))),
+            "got {err:?}"
+        );
     }
 
     /// RFC 9068 §2.2 requires `iss` on an access token; the crate's default
@@ -589,7 +646,10 @@ mod tests {
             .validate(&token(&c))
             .await
             .expect_err("a token without `iss` must be refused");
-        assert!(matches!(err, AuthError::InvalidToken(_)), "got {err:?}");
+        assert!(
+            matches!(err, AuthError::InvalidToken(TokenRejection::ClaimSet(_))),
+            "got {err:?}"
+        );
     }
 
     /// RFC 7519 §4.1.3 / RFC 9068 §4 step 4: a token minted for a different
@@ -602,7 +662,10 @@ mod tests {
             .validate(&token(&c))
             .await
             .expect_err("a token for another audience must be refused");
-        assert!(matches!(err, AuthError::InvalidToken(_)), "got {err:?}");
+        assert!(
+            matches!(err, AuthError::InvalidToken(TokenRejection::Audience(_))),
+            "got {err:?}"
+        );
     }
 
     /// RFC 9068 §2.1 + §4 step 1: a token CLAIMING the `at+jwt` profile is held
@@ -625,7 +688,13 @@ mod tests {
             .validate(&mint(&base_claims()))
             .await
             .expect_err("an at+jwt token without iat/jti/client_id must be refused");
-        assert!(matches!(err, AuthError::InvalidToken(_)), "got {err:?}");
+        assert!(
+            matches!(
+                err,
+                AuthError::InvalidToken(TokenRejection::AtJwtProfileClaimMissing(_))
+            ),
+            "got {err:?}"
+        );
 
         // Profile claimed and complete → accepted.
         let mut complete = base_claims();
@@ -665,7 +734,13 @@ mod tests {
             .validate(&raw)
             .await
             .expect_err("a non-access-token type must be refused");
-        assert!(matches!(err, AuthError::InvalidToken(_)), "got {err:?}");
+        assert!(
+            matches!(
+                err,
+                AuthError::InvalidToken(TokenRejection::TokenTypeNotAccessToken(_))
+            ),
+            "got {err:?}"
+        );
     }
 
     #[tokio::test]

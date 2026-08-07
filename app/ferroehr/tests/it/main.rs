@@ -23,6 +23,7 @@ mod adl14_knowledge_archetypes;
 mod adl2_fixture;
 mod adl2_vetdf;
 mod aql_planner;
+mod audit_chain;
 mod audit_feed;
 mod audit_store;
 mod canonical_json_literals;
