@@ -110,6 +110,7 @@ impl Signer {
                 SignerMode::Pgp(Box::new(PgpKey::load(
                     path,
                     config.key_passphrase.as_ref(),
+                    &config.retired_key_paths,
                 )?))
             }
         };
