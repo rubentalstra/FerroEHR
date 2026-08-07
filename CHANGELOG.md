@@ -109,6 +109,26 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- The Kubernetes hardening chapter's image-provenance admission policies now
+  carry the certificate identity the publishing lanes actually issue — read off a
+  published image rather than inferred from the workflow files — and both are
+  corrected to the form that can read a GitHub Artifact Attestation at all.
+  Kyverno needs `type: SigstoreBundle` with an `attestations:` block (the field
+  defaults to `Cosign`, which looks for a detached signature these images do not
+  carry and so refuses every one of them), and `sigstore-policy-controller` needs
+  `signatureFormat: bundle` with an `attestations:` entry. Minimum versions are
+  stated, `failureAction` moves off the deprecated spec-level field, and each
+  policy names the ref set it admits: as published they accept released images
+  only and deliberately refuse the `develop` tag, with the one-word change a
+  staging cluster needs spelled out.
+- Provenance verification commands across the security and Kubernetes chapters
+  now point at artifacts that actually answer. `gh attestation verify` on the
+  three `:develop` images succeeds today, and `--signer-workflow` is shown as the
+  way to require the specific publishing lane rather than any workflow in the
+  repository. The release-tag, release-binary and chart forms are marked as
+  starting at the `3.17.4` cut instead of being demonstrated against a tag that
+  returns `HTTP 404`.
+
 - **Release binaries reach SLSA v1.0 Build Level 3, and carry provenance a scanner and an offline verifier can both read.** Build L3's distinguishing requirement is that signing material must be out of reach of the build steps — and every step of a GitHub Actions job shares one runner VM, so attesting inside the building job cannot satisfy it. The release build now happens inside a *reusable* workflow: it runs on its own VM, a caller passes declared inputs and cannot add steps, and the caller job has no steps at all. You can now **require** that signer rather than trusting any workflow in the repository: `gh attestation verify <tarball> -R rubentalstra/FerroEHR --signer-workflow rubentalstra/FerroEHR/.github/workflows/release-build.yml`. Each release also carries its provenance as `<tarball>.intoto.jsonl` beside the Sigstore bundles. The container images and the Helm chart remain Build L2 and now say so where they are built, rather than leaving the level to be assumed.
 
 - **A direct push to `develop` is refused.** The branch ruleset already blocked deletion and force-pushes and required signed commits, but not a pull request — so the discipline every change has followed was convention rather than enforcement, and the `main` ruleset had the rule all along. Requiring zero approvals, so it changes nothing about how a maintainer merges their own work.
@@ -202,6 +222,13 @@ workflow refuses a tag that has no matching section here.
 
 
 ### Fixed
+
+- Documented `gh attestation verify` invocations no longer promise a result on
+  the Helm chart or on `3.17.3`: no chart version has been published, and signing
+  landed after that tag was built. Both chapters now say so, and the stale
+  "no published artifact carries an attestation" warning on the admission
+  policies is replaced by a narrower note about the one thing still unproven —
+  that no admission controller has yet run these policies against a live image.
 
 - **The AQL printer emitted queries that meant something different when read back.** Found by the new fuzzer, and it is a correctness defect rather than a formatting one: `to_aql` dropped parentheses that the grammar needs, so re-parsing the printed text produced a *different* query. Two causes. The `AND`/`OR` operators are stated in the grammar as binary alternatives of one recursive rule, which resolves left-associatively — so a same-precedence operand survives a re-parse on the left and silently **re-associates** on the right, and the printer treated both sides alike. And a `CONTAINS` chain used as a boolean operand absorbs whatever operator follows it, moving that operator *inside* the CONTAINS scope. The printer's own documented invariant — parse(print(q)) == q — now holds across every boolean shape, asserted rather than assumed.
 
