@@ -1,6 +1,29 @@
 # cargo-deny configuration. Run: cargo deny check
 # Docs: https://embarkstudios.github.io/cargo-deny/
-
+#
+# This is the ONLY advisory gate. `cargo deny check advisories` reads the same
+# RustSec database `cargo audit` does and adds yanked/licenses/bans/sources, so
+# no cargo-audit job exists and no second ignore list should either — one existed
+# (`.cargo/audit.toml`), nothing read it, and it had already drifted to a
+# different set of ids than this file.
+#
+# WHY THIS FILE AND AN OSV-BASED SCANNER DISAGREE, and which one to believe.
+# `Cargo.lock` records the union of every dependency any feature combination
+# COULD pull. Scanners that read the lock file — OSV, and therefore the OpenSSF
+# Scorecard `Vulnerabilities` check — report advisories for crates our feature
+# set never compiles. `cargo-deny` resolves features and does not, so where the
+# two disagree in that direction cargo-deny is the more precise instrument and
+# this file needs no entry.
+#
+# The live example, so the next over-report is diagnosed in a minute:
+# RUSTSEC-2026-0235 (`rkyv` 0.7, out-of-bounds read). `rust_decimal 1.42.1`
+# declares BOTH `rkyv ^0.8.13` and `rkyv ^0.7.46` as optional dependencies; our
+# features enable neither, and `cargo tree --workspace --all-features` finds zero
+# rkyv nodes. The lock file still pins 0.7.46 because `^0.7.46` cannot resolve
+# above the vulnerable range — so this can only leave the lock file when
+# rust_decimal drops that requirement upstream. It is deliberately NOT ignored
+# below: an ignore for an advisory this tool never raises records nothing and
+# would silently start applying if the tool ever became lock-file-based.
 [advisories]
 version = 2
 # Fail on any RustSec advisory. Add exceptions explicitly and dated.

@@ -443,6 +443,21 @@ gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:3.17.4   -R rubentalst
 gh attestation verify ferroehr-v3.17.4-x86_64-unknown-linux-gnu.tar.gz   -R rubentalstra/FerroEHR
 ```
 
+**A release binary, without reaching GitHub.** Each release also carries its
+Sigstore bundles as assets, so verification needs nothing but the artifact and
+the bundle — useful on an air-gapped host, and the only form in which the
+signature travels with the download:
+
+```bash
+gh attestation verify ferroehr-v3.17.4-x86_64-unknown-linux-gnu.tar.gz \
+  --bundle ferroehr-v3.17.4-x86_64-unknown-linux-gnu.tar.gz.sigstore.json \
+  --repo rubentalstra/FerroEHR
+```
+
+The `*.sbom.sigstore.json` asset beside it is the same thing for the SBOM
+attestation, so "which dependency graph was this binary built from" is
+verifiable offline too.
+
 Each release also attaches a **CycloneDX SBOM of the Rust dependency graph**
 (`*.cdx.json`), which is a different document from the SPDX SBOM on the image
 index and answers a different question. The image SBOM sees the OS layer — which

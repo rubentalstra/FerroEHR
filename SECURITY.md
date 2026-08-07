@@ -55,9 +55,16 @@ credit costs you nothing and changes nothing about how the report is handled.
 - The server handles PHI-class data by design; reports about data exposure
   through the API, AQL, telemetry, or the audit trail are in scope even when
   they look like "just configuration".
-- Supply-chain policy is enforced in CI (`cargo deny`, `cargo audit`); known
-  advisories that are deliberately accepted are documented with rationale in
-  [`deny.toml`](deny.toml) and [`.cargo/audit.toml`](.cargo/audit.toml).
+- Supply-chain policy is enforced in CI by `cargo deny`, which reads the same
+  RustSec database `cargo audit` does and adds yanked/licence/source checks on
+  top; known advisories that are deliberately accepted are documented with their
+  rationale in [`deny.toml`](deny.toml), which is the single advisory gate.
+- An advisory reported by a scanner that reads `Cargo.lock` (including the
+  OpenSSF Scorecard's) may name a crate our feature set never compiles, because
+  the lock file records every dependency any feature combination *could* pull.
+  `deny.toml`'s header explains the asymmetry and carries the current example;
+  such a report is not an accepted risk, it is a dependency that does not exist
+  in the built artifact.
 - Findings in an inherited upstream container layer that we have argued are not
   reachable are published as OpenVEX documents under
   [`security/vex/`](security/vex/), with the justification and an impact
