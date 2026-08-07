@@ -445,8 +445,11 @@ require the image lane specifically, not merely some workflow in this repository
 On a release, substitute the `vX.Y.Z` tag for `develop`.
 
 **The Helm chart** carries a keyless cosign **signature** in addition to its
-attestation, from chart `5.0.0` onward — the attestation says what the chart was
-built from, the signature says who signed the artifact you pulled:
+attestation, from chart `5.0.1` onward — the attestation says what the chart was
+built from, the signature says who signed the artifact you pulled. (`4.1.0` has
+the attestation only; `5.0.0` has neither — its publishing run failed at the
+signing step after the chart was already pushed, and a published chart version is
+never replaced.)
 
 ```bash
 cosign verify ghcr.io/rubentalstra/charts/ferroehr:<chart-version> \
