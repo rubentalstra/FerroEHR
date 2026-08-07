@@ -26,3 +26,4 @@
 - [BMM v3 on hold](bmm3-on-hold.md) — record #1920; v3-only issues get on-hold + blocked-by #1920, never the worklist; tracker-state only, landed code stays
 - [Multi-gen refactor: no legacy carried](multi-generation-refactor-no-legacy.md) — residue found under #1936 is removed or filed as a sub-issue of #1936, never kept
 - [No worktrees — one checkout](no-worktrees-single-checkout.md) — every change in the main tree on the current branch; one worker at a time with explicit fences, never `isolation: worktree`
+- [K8s testing uses a compose postgres](k8s-testing-uses-compose-postgres.md) — database runs in docker compose on the host and the chart points at it; never deploy postgres into the test cluster

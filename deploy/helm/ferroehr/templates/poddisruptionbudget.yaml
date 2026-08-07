@@ -3,6 +3,9 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: {{ include "ferroehr.fullname" . }}
+  annotations:
+    kubernetes.io/description: >-
+      Keeps the CDR available during voluntary disruption (node drains, cluster upgrades). AlwaysAllow lets a drain evict already-unhealthy pods rather than waiting for them to recover.
   labels:
     {{- include "ferroehr.labels" . | nindent 4 }}
 spec:

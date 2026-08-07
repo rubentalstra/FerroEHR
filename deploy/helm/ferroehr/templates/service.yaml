@@ -2,6 +2,9 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "ferroehr.fullname" . }}
+  annotations:
+    kubernetes.io/description: >-
+      Stable in-cluster address for the FerroEHR CDR's openEHR ITS-REST API. The management surface, when enabled on its own port, is deliberately NOT exposed here.
   labels:
     {{- include "ferroehr.labels" . | nindent 4 }}
   {{- with .Values.service.annotations }}
@@ -9,17 +12,20 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
+  {{- /* Rendered only when it differs from the API default, per
+         https://kubernetes.io/docs/concepts/configuration/overview/
+         "Don't specify default values unnecessarily". */}}
+  {{- if ne .Values.service.type "ClusterIP" }}
   type: {{ .Values.service.type }}
+  {{- end }}
   ports:
     - name: http
       port: {{ .Values.service.port }}
       targetPort: http
-      protocol: TCP
     {{- if and .Values.config.management.enabled .Values.config.management.port }}
     - name: management
       port: {{ .Values.config.management.port }}
       targetPort: management
-      protocol: TCP
     {{- end }}
   selector:
     {{- include "ferroehr.selectorLabels" . | nindent 4 }}
