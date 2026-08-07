@@ -444,6 +444,21 @@ Add `--signer-workflow rubentalstra/FerroEHR/.github/workflows/containers.yml` t
 require the image lane specifically, not merely some workflow in this repository.
 On a release, substitute the `vX.Y.Z` tag for `develop`.
 
+**The Helm chart** carries a keyless cosign **signature** in addition to its
+attestation, from chart `5.0.0` onward — the attestation says what the chart was
+built from, the signature says who signed the artifact you pulled:
+
+```bash
+cosign verify ghcr.io/rubentalstra/charts/ferroehr:<chart-version> \
+  --certificate-identity-regexp '^https://github\.com/rubentalstra/FerroEHR/\.github/workflows/publish-chart\.yml@' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+Both flags are the point: without an identity and an issuer, `cosign verify`
+accepts a signature from anyone in the transparency log. The chart ships **no**
+PGP `.prov`, so `helm install --verify` does not apply — deliberately, since a
+`.prov` needs a long-lived private key in CI.
+
 **A release binary:**
 
 ```bash
