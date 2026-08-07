@@ -53,6 +53,8 @@ use openehr_its::rest::runtime::ApiError;
 
 use crate::extensions::access::authz::AuthzHandle;
 use crate::overview::error::RestError;
+use jsonwebtoken::Algorithm;
+use jsonwebtoken::errors::ErrorKind;
 use jwt::JwtValidator;
 
 /// The state the [`middleware`] runs on: the authenticator plus the optional
@@ -117,6 +119,165 @@ pub(crate) struct Authenticated {
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct FreshAuthentication;
 
+/// Why a bearer token was refused.
+///
+/// RFC 6750 §3.1 gives every one of these the SAME challenge code —
+/// `invalid_token` covers a token that "is expired, revoked, malformed, or
+/// invalid for other reasons" — so this distinction never reaches the client.
+/// It exists for the operator and the cause chain: a burst of
+/// [`TokenRejection::Expired`] is clock skew or a token lifetime that is too
+/// short, while a burst of [`TokenRejection::Signature`] is someone presenting
+/// tokens this server was never meant to accept.
+///
+/// The variants built from `jsonwebtoken` carry that error as their
+/// [`std::error::Error::source`], so a caller can walk to the concrete kind
+/// instead of matching a substring of another crate's message text.
+#[derive(Debug, Clone, thiserror::Error)]
+pub enum TokenRejection {
+    /// The `exp` claim is in the past, beyond the configured clock-skew leeway.
+    #[error("{0}")]
+    Expired(#[source] jsonwebtoken::errors::Error),
+    /// The `nbf` claim puts the token's validity in the future.
+    #[error("{0}")]
+    NotYetValid(#[source] jsonwebtoken::errors::Error),
+    /// The signature does not verify against the selected key.
+    #[error("{0}")]
+    Signature(#[source] jsonwebtoken::errors::Error),
+    /// The `iss` claim is not the configured issuer.
+    #[error("{0}")]
+    Issuer(#[source] jsonwebtoken::errors::Error),
+    /// The `aud` claim names none of the configured audiences.
+    #[error("{0}")]
+    Audience(#[source] jsonwebtoken::errors::Error),
+    /// The `sub` claim is not a subject the validation admits.
+    #[error("{0}")]
+    Subject(#[source] jsonwebtoken::errors::Error),
+    /// A required claim is absent, or carries the wrong JSON type. The message
+    /// names the CLAIM, never its value.
+    #[error("{0}")]
+    ClaimSet(#[source] jsonwebtoken::errors::Error),
+    /// The credential is not a well-formed JWT at all: a bad shape, or base64 /
+    /// JSON / UTF-8 that does not decode.
+    #[error("{0}")]
+    Malformed(#[source] jsonwebtoken::errors::Error),
+    /// The header's algorithm disagrees with the decoding key or the validation.
+    #[error("{0}")]
+    AlgorithmMismatch(#[source] jsonwebtoken::errors::Error),
+    /// The key material the validator holds is unusable — an issuer or
+    /// deployment misconfiguration rather than a client fault.
+    #[error("{0}")]
+    KeyMaterial(#[source] jsonwebtoken::errors::Error),
+    /// A `jsonwebtoken` failure outside the classified set. Its `ErrorKind` is
+    /// `#[non_exhaustive]`, so a crate upgrade can add kinds this mapping has
+    /// not yet named.
+    #[error("{0}")]
+    Unclassified(#[source] jsonwebtoken::errors::Error),
+    /// The header's `alg` is outside `auth.oidc.algorithms`.
+    #[error("token algorithm {0:?} not accepted")]
+    AlgorithmNotAccepted(Algorithm),
+    /// The header's `typ` names a media type that is not an access token
+    /// (RFC 8725 §3.11).
+    #[error("token type `{0}` is not an access token")]
+    TokenTypeNotAccessToken(String),
+    /// `auth.oidc.require_at_jwt` is set and the token does not claim the
+    /// RFC 9068 `at+jwt` profile.
+    #[error(
+        "the token does not claim the RFC 9068 `at+jwt` profile, which \
+         auth.oidc.require_at_jwt demands"
+    )]
+    AtJwtProfileRequired,
+    /// The token claims the `at+jwt` profile but omits a claim RFC 9068 §2.2
+    /// then requires. Carries the claim NAME.
+    #[error("an `at+jwt` access token must carry `{0}` (RFC 9068 §2.2)")]
+    AtJwtProfileClaimMissing(String),
+    /// The token carries no usable `sub`, so the caller would be unattributable
+    /// in the ATNA audit trail.
+    #[error(
+        "token carries no usable `sub` claim; an audit-attributable subject is \
+         required"
+    )]
+    SubjectMissing,
+    /// The token's `kid` names no key in the issuer's JWKS.
+    #[error("the issuer's JWKS carries no key `{0}`")]
+    UnknownKeyId(String),
+    /// The token carries no `kid` and no JWKS key can verify its algorithm.
+    #[error(
+        "the token carries no `kid` and the issuer's JWKS holds no key usable for \
+         verifying this algorithm"
+    )]
+    NoUsableKey,
+    /// The token carries no `kid` and several JWKS keys could verify it, so the
+    /// key cannot be chosen without guessing.
+    #[error(
+        "the token carries no `kid` and {0} keys in the issuer's JWKS could verify \
+         it — the issuer must identify the key"
+    )]
+    AmbiguousKey(usize),
+    /// The selected JWK cannot be turned into a decoding key.
+    #[error("invalid JWK: {0}")]
+    UnusableJwk(#[source] jsonwebtoken::errors::Error),
+}
+
+impl From<jsonwebtoken::errors::Error> for TokenRejection {
+    fn from(error: jsonwebtoken::errors::Error) -> Self {
+        match error.kind() {
+            ErrorKind::ExpiredSignature => Self::Expired(error),
+            ErrorKind::ImmatureSignature => Self::NotYetValid(error),
+            ErrorKind::InvalidSignature => Self::Signature(error),
+            ErrorKind::InvalidIssuer => Self::Issuer(error),
+            ErrorKind::InvalidAudience => Self::Audience(error),
+            ErrorKind::InvalidSubject => Self::Subject(error),
+            ErrorKind::MissingRequiredClaim(_) | ErrorKind::InvalidClaimFormat(_) => {
+                Self::ClaimSet(error)
+            }
+            ErrorKind::InvalidToken
+            | ErrorKind::Base64(_)
+            | ErrorKind::Json(_)
+            | ErrorKind::Utf8(_) => Self::Malformed(error),
+            ErrorKind::InvalidAlgorithm
+            | ErrorKind::InvalidAlgorithmName
+            | ErrorKind::MissingAlgorithm
+            | ErrorKind::UnsupportedAlgorithm => Self::AlgorithmMismatch(error),
+            ErrorKind::InvalidEcdsaKey
+            | ErrorKind::InvalidEddsaKey
+            | ErrorKind::InvalidRsaKey(_)
+            | ErrorKind::InvalidKeyFormat => Self::KeyMaterial(error),
+            _ => Self::Unclassified(error),
+        }
+    }
+}
+
+impl TokenRejection {
+    /// A stable, low-cardinality label naming this rejection.
+    ///
+    /// Carries no token bytes and no claim value, so it is safe as a structured
+    /// log field or a metric label.
+    pub(crate) const fn label(&self) -> &'static str {
+        match self {
+            TokenRejection::Expired(_) => "expired",
+            TokenRejection::NotYetValid(_) => "not_yet_valid",
+            TokenRejection::Signature(_) => "signature",
+            TokenRejection::Issuer(_) => "issuer",
+            TokenRejection::Audience(_) => "audience",
+            TokenRejection::Subject(_) => "subject",
+            TokenRejection::ClaimSet(_) => "claim_set",
+            TokenRejection::Malformed(_) => "malformed",
+            TokenRejection::AlgorithmMismatch(_) => "algorithm_mismatch",
+            TokenRejection::KeyMaterial(_) => "key_material",
+            TokenRejection::Unclassified(_) => "unclassified",
+            TokenRejection::AlgorithmNotAccepted(_) => "algorithm_not_accepted",
+            TokenRejection::TokenTypeNotAccessToken(_) => "token_type",
+            TokenRejection::AtJwtProfileRequired => "at_jwt_profile_required",
+            TokenRejection::AtJwtProfileClaimMissing(_) => "at_jwt_claim_missing",
+            TokenRejection::SubjectMissing => "subject_missing",
+            TokenRejection::UnknownKeyId(_) => "unknown_key_id",
+            TokenRejection::NoUsableKey => "no_usable_key",
+            TokenRejection::AmbiguousKey(_) => "ambiguous_key",
+            TokenRejection::UnusableJwk(_) => "unusable_jwk",
+        }
+    }
+}
+
 /// An authentication failure.
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum AuthError {
@@ -140,8 +301,13 @@ pub enum AuthError {
     #[error("malformed authorization header: {0}")]
     MalformedRequest(String),
     /// A bearer token that failed structural, signature, or claim validation.
+    ///
+    /// The [`TokenRejection`] names WHICH check refused it and carries the
+    /// underlying `jsonwebtoken` error as its source; RFC 6750 §3.1 keeps every
+    /// one of those on the single `invalid_token` challenge code, so the
+    /// distinction is an operator signal, never a wire one.
     #[error("invalid bearer token: {0}")]
-    InvalidToken(String),
+    InvalidToken(#[from] TokenRejection),
     /// The issuer's signing keys (JWKS) could not be fetched or parsed, so no
     /// bearer token can be validated.
     #[error("could not resolve signing keys: {0}")]
@@ -175,7 +341,14 @@ impl AuthError {
             // tell a caller with a perfectly valid token that its credential was
             // rejected, and a client that trusts that stops retrying.
             AuthError::KeyResolution(m) => ApiError::ServiceUnavailable(m.clone()),
-            other => ApiError::Unauthorized(other.to_string()),
+            // The body says nothing about WHY, on purpose. Rendering the
+            // rejection told an UNAUTHENTICATED caller whether a token was
+            // expired or forged — an oracle that separates "a real token, just
+            // stale" from "my forgery was caught", which is exactly the
+            // distinction an attacker probes for. RFC 6750 §3 asks only that the
+            // challenge carry an `error` code, which it does; the reason stays
+            // in the log, where the operator can read it and the caller cannot.
+            _ => ApiError::Unauthorized("authentication failed".to_owned()),
         }
     }
 
@@ -197,6 +370,23 @@ impl AuthError {
             AuthError::MissingCredentials
             | AuthError::KeyResolution(_)
             | AuthError::VerificationUnavailable(_) => None,
+        }
+    }
+
+    /// A stable, low-cardinality label naming this outcome.
+    ///
+    /// Carries no credential material, so it is safe as a structured log field
+    /// or a metric label; a bearer refusal delegates to
+    /// [`TokenRejection::label`] so expired-versus-invalid is countable.
+    pub(crate) const fn label(&self) -> &'static str {
+        match self {
+            AuthError::MissingCredentials => "missing_credentials",
+            AuthError::InvalidCredentials => "invalid_credentials",
+            AuthError::MalformedRequest(_) => "malformed_request",
+            AuthError::InvalidToken(rejection) => rejection.label(),
+            AuthError::KeyResolution(_) => "key_resolution",
+            AuthError::Forbidden(_) => "forbidden",
+            AuthError::VerificationUnavailable(_) => "verification_unavailable",
         }
     }
 }
@@ -553,12 +743,23 @@ pub(crate) async fn middleware(
         Err(e) => {
             let api = e.to_api_error();
             let status = api.status();
+            let mechanism = scheme_label(req.headers());
             metrics::counter!(
                 ferroehr::telemetry::prometheus::AUTH_FAILURES,
-                "mechanism" => scheme_label(req.headers()),
+                "mechanism" => mechanism,
                 "status" => if status == StatusCode::FORBIDDEN { "403" } else { "401" },
             )
             .increment(1);
+            // A refusal that presented no credential is routine (an
+            // unauthenticated probe); a presented-and-rejected one is the
+            // operator's signal. Neither record carries the token or a claim
+            // value.
+            let reason = e.label();
+            if matches!(e, AuthError::MissingCredentials) {
+                tracing::debug!(mechanism, reason, "authentication refused");
+            } else {
+                tracing::warn!(mechanism, reason, detail = %e, "authentication refused");
+            }
             // ITS-REST §Authentication and authorization: a `401` MUST carry a
             // `WWW-Authenticate` challenge. RFC 6750 §3 additionally carries one
             // on a bearer `403` — the `insufficient_scope` case — because there
@@ -580,7 +781,7 @@ pub(crate) async fn middleware(
 /// The RFC 6750 §2.1 grammar and the challenge shapes, asserted per clause.
 #[cfg(test)]
 mod bearer_grammar_tests {
-    use super::{AuthError, bearer_credential};
+    use super::{AuthError, TokenRejection, bearer_credential};
 
     #[test]
     fn bearer_credentials_follow_rfc6750_abnf() {
@@ -625,7 +826,7 @@ mod bearer_grammar_tests {
             Some("invalid_token")
         );
         assert_eq!(
-            AuthError::InvalidToken("x".to_owned()).bearer_error_code(),
+            AuthError::InvalidToken(TokenRejection::NoUsableKey).bearer_error_code(),
             Some("invalid_token")
         );
         assert_eq!(
@@ -885,6 +1086,172 @@ mod tests {
             .authenticate(&headers("Bearer not-a-jwt"))
             .await
             .expect_err("reject");
-        assert!(matches!(err, AuthError::InvalidToken(_)), "got {err:?}");
+        assert!(
+            matches!(err, AuthError::InvalidToken(TokenRejection::Malformed(_))),
+            "got {err:?}"
+        );
+    }
+
+    /// One value of every [`TokenRejection`] variant, for the wire-identity
+    /// assertion below.
+    fn every_token_rejection() -> Vec<TokenRejection> {
+        let cause = || jsonwebtoken::errors::Error::from(ErrorKind::ExpiredSignature);
+        vec![
+            TokenRejection::Expired(cause()),
+            TokenRejection::NotYetValid(cause()),
+            TokenRejection::Signature(cause()),
+            TokenRejection::Issuer(cause()),
+            TokenRejection::Audience(cause()),
+            TokenRejection::Subject(cause()),
+            TokenRejection::ClaimSet(cause()),
+            TokenRejection::Malformed(cause()),
+            TokenRejection::AlgorithmMismatch(cause()),
+            TokenRejection::KeyMaterial(cause()),
+            TokenRejection::Unclassified(cause()),
+            TokenRejection::AlgorithmNotAccepted(Algorithm::HS256),
+            TokenRejection::TokenTypeNotAccessToken("JWT+ID".to_owned()),
+            TokenRejection::AtJwtProfileRequired,
+            TokenRejection::AtJwtProfileClaimMissing("jti".to_owned()),
+            TokenRejection::SubjectMissing,
+            TokenRejection::UnknownKeyId("k1".to_owned()),
+            TokenRejection::NoUsableKey,
+            TokenRejection::AmbiguousKey(2),
+            TokenRejection::UnusableJwk(cause()),
+        ]
+    }
+
+    /// RFC 6750 §3.1 gives ONE code to every rejected token — `invalid_token`
+    /// covers a token that "is expired, revoked, malformed, or invalid for
+    /// other reasons" — so neither the status nor the challenge a client sees
+    /// may vary with the reason the server classified internally.
+    #[test]
+    fn every_token_rejection_renders_one_status_and_one_challenge() {
+        let auth = hmac_oidc();
+        let mut challenges: Vec<HeaderValue> = Vec::new();
+        for rejection in every_token_rejection() {
+            let err = AuthError::InvalidToken(rejection);
+            assert_eq!(
+                err.to_api_error().status(),
+                StatusCode::UNAUTHORIZED,
+                "{err:?}"
+            );
+            assert_eq!(err.bearer_error_code(), Some("invalid_token"), "{err:?}");
+            challenges.push(auth.challenge(Some(&err)));
+        }
+        let first = challenges.first().expect("rejection kinds exist").clone();
+        assert!(
+            challenges.iter().all(|c| *c == first),
+            "the challenge must not vary with the refusal reason: {challenges:?}"
+        );
+        assert_eq!(
+            first,
+            HeaderValue::from_static(r#"Bearer realm="ferroehr", error="invalid_token""#)
+        );
+    }
+
+    /// Collects every tracing EVENT's fields, so the refusal record can be read
+    /// back field by field.
+    #[derive(Clone, Default)]
+    struct EventCapture(Arc<std::sync::Mutex<Vec<std::collections::BTreeMap<String, String>>>>);
+
+    /// Renders one event's fields into `name -> value`.
+    struct FieldSink(std::collections::BTreeMap<String, String>);
+
+    impl tracing::field::Visit for FieldSink {
+        fn record_debug(&mut self, field: &tracing::field::Field, value: &dyn std::fmt::Debug) {
+            self.0.insert(field.name().to_owned(), format!("{value:?}"));
+        }
+
+        fn record_str(&mut self, field: &tracing::field::Field, value: &str) {
+            self.0.insert(field.name().to_owned(), value.to_owned());
+        }
+    }
+
+    impl<S: tracing::Subscriber> tracing_subscriber::layer::Layer<S> for EventCapture {
+        fn on_event(
+            &self,
+            event: &tracing::Event<'_>,
+            _ctx: tracing_subscriber::layer::Context<'_, S>,
+        ) {
+            let mut sink = FieldSink(std::collections::BTreeMap::new());
+            event.record(&mut sink);
+            self.0.lock().expect("lock").push(sink.0);
+        }
+    }
+
+    /// The refusal reason must reach the LOG as its own field — countable
+    /// rather than greppable — and neither the token nor a claim value may
+    /// appear anywhere in the record.
+    #[tokio::test]
+    async fn a_refused_token_logs_its_reason_and_never_the_token() {
+        use tracing_subscriber::layer::SubscriberExt as _;
+
+        const TOKEN: &str = "not-a-jwt-at-all";
+
+        let capture = EventCapture::default();
+        let subscriber = tracing_subscriber::registry().with(capture.clone());
+        let _guard = tracing::subscriber::set_default(subscriber);
+
+        let layer = AuthLayer {
+            authenticator: hmac_oidc(),
+            authz: None,
+        };
+        let app = axum::Router::new()
+            .route("/x", axum::routing::get(|| async { "ok" }))
+            .layer(axum::middleware::from_fn_with_state(layer, middleware));
+
+        let response = tower::ServiceExt::oneshot(
+            app,
+            Request::builder()
+                .uri("/x")
+                .header(header::AUTHORIZATION, format!("Bearer {TOKEN}"))
+                .body(axum::body::Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("response");
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+
+        let events = capture.0.lock().expect("lock").clone();
+        let refusal = events
+            .iter()
+            .find(|fields| {
+                fields
+                    .get("message")
+                    .is_some_and(|m| m == "authentication refused")
+            })
+            .expect("the refusal is logged");
+        assert_eq!(
+            refusal.get("reason").map(String::as_str),
+            Some("malformed"),
+            "{refusal:?}"
+        );
+        assert_eq!(
+            refusal.get("mechanism").map(String::as_str),
+            Some("bearer"),
+            "{refusal:?}"
+        );
+        for fields in &events {
+            for (name, value) in fields {
+                assert!(
+                    !value.contains(TOKEN),
+                    "the credential leaked into the `{name}` field: {value}"
+                );
+            }
+        }
+    }
+
+    /// Each classified reason gets its own stable label, so a burst of one kind
+    /// is countable in the logs rather than greppable out of a message.
+    #[test]
+    fn token_rejection_labels_are_distinct() {
+        let mut labels: Vec<&'static str> = every_token_rejection()
+            .iter()
+            .map(TokenRejection::label)
+            .collect();
+        let total = labels.len();
+        labels.sort_unstable();
+        labels.dedup();
+        assert_eq!(labels.len(), total, "two rejection kinds share a label");
     }
 }
