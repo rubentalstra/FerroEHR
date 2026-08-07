@@ -20,7 +20,7 @@
 | | ferroehr | EHRbase |
 |---|---|---|
 | Product | ferroehr 3.17.3 | ehrbase 2.34.0 |
-| Run date | 2026-08-05 | 2026-07-28 |
+| Run date | 2026-08-07 | 2026-08-07 |
 | Party statement | `tools/cnf-runner/party/ferroehr/` | `tools/cnf-runner/party/ehrbase/` |
 | Stack | root compose, built from the current sources | `docker/sut-ehrbase.yml` (official images) |
 
@@ -58,8 +58,8 @@ claimed. The verdict-bearing comparison below is therefore each party's
 
 ## In-scope outcomes
 
-Runs compared: **ferroehr** (run of 2026-08-05) vs **EHRbase
-2.34.0** (run of 2026-07-28) — the SAME catalogue through the same
+Runs compared: **ferroehr** (run of 2026-08-07) vs **EHRbase
+2.34.0** (run of 2026-08-07) — the SAME catalogue through the same
 runner, each with its own committed party statement. Per the presentation
 rule, the headline is each party's VERDICT SCOPE (the cases its own
 declarations select), never the raw record: a raw count would book
