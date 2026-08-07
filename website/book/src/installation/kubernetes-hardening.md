@@ -1198,50 +1198,79 @@ kubectl -n ferroehr rollout restart deploy/ferroehr
 | S3 credentials | update → restart | or remove them entirely with IRSA/Workload Identity |
 | Audit repository URL | update → restart | still an environment value (no `*_file` sibling) |
 | Basic user password hash | update → restart | rotate the password, re-hash at the OWASP floor |
-| **Version signing key** | **read the next section first** | not a restart-and-forget operation |
+| **Version signing key** | **read the next section first** | rotate the signing SUBKEY, not the certificate — see below |
 
-### The signing key is the one that does not simply rotate
+### Rotating the version signing key
 
 In the default `digest` mode there is no key: `VERSION.signature` is
 `sha256:` + the hash of the canonical form, recomputed at read time. Nothing to
 rotate, and nothing breaks.
 
-In `pgp` mode, rotation has a consequence the other credentials do not:
+In `pgp` mode there are two mechanisms, and the first is the one to reach for.
 
-> [!WARNING]
-> **Replacing the PGP key makes every previously-signed version fail
-> verification.** The stored signature carries no key identifier — the schema
-> holds `signature text` and nothing else — so read-time verification checks an
-> armored PGP signature against *the currently configured key*, and there is only
-> one (`signing.key_path`; the chart mounts a single key, and there is no
-> keyring). After a rotation, versions signed by the old key verify as
-> `pgp_invalid`, which with the default `verify_on_read: strict` is an **integrity
-> failure served as a 5xx** on reading historical data.
+**The ordinary path: rotate the signing subkey.** OpenPGP is built for this. A
+certificate is a primary key plus its subkeys ([RFC 9580
+§10.1](https://www.rfc-editor.org/rfc/rfc9580.html)), the primary key certifies
+while a subkey signs, and rotating means issuing a *new signing subkey* on the
+same certificate. The retired subkey stays in the certificate, so every version
+it signed keeps verifying — with no configuration change, no second key file,
+and no window where history is unreadable. It is also the only path that keeps
+the primary key's identity intact; replacing a primary key discards everything
+that has ever been said about it.
 
-The signatures themselves cannot be re-issued: a `VERSION`'s signature is an
-immutable, committed fact — re-signing would mean rewriting change-controlled
-history, which openEHR's append-only model does not permit and which would destroy
-the property the signature exists to provide.
+```console
+# add a fresh signing subkey to the existing certificate
+gpg --quick-add-key <FINGERPRINT> ed25519 sign 1y
+# revoke or expire the previous one, then re-export BOTH halves
+gpg --export-secret-keys --armor <FINGERPRINT> > signing.asc
+```
 
-So the options, none of which is "rotate and move on":
+Update the mounted Secret and `rollout restart`. The server signs with the
+newest signing-capable subkey and verifies against every subkey the certificate
+carries, so the switch is invisible to readers.
 
-1. **Treat the PGP signing key as long-lived**, protected accordingly (an HSM or a
-   secret manager rather than a chart value), and rotate it only when it is
-   actually compromised.
-2. **If you must rotate**, set `signing.verify_on_read: warn` before doing so.
-   Verification failures are then logged and metered
-   (`version_signature_invalid_total{verdict="pgp_invalid"}`) rather than
-   returned as 5xx, so historical reads keep working while remaining visible. This
-   is a deliberate, recorded reduction in an integrity guarantee — not a setting
-   to leave on by default and forget.
-3. **Use `digest` mode** where the requirement is tamper-evidence rather than
-   attributable authorship. It detects modification of stored content, needs no
-   key, and has no rotation problem.
+**The exception: a whole certificate is replaced.** A compromised primary key,
+an organisational change, or migrating from a different signer means a genuinely
+new certificate — and then the old one must be retained, because a stored
+signature carries no key identifier and a `VERSION` signature is an immutable
+committed fact that cannot be re-issued. Keep the retired **public** key:
 
-There is no multi-key or keyring support, so "verify old signatures with the old
-public key while signing new ones with the new key" is not currently expressible.
-If your governance requires periodic signing-key rotation with historical
-verifiability, that is a gap to raise before choosing `pgp` mode.
+```toml
+[signing]
+mode = "pgp"
+key_path = "/etc/ferroehr/signing.asc"                  # the new certificate
+retired_key_paths = ["/etc/ferroehr/signing-2025.pub.asc"]   # public, verify-only
+```
+
+Under Helm these are `config.signing.key_path` and
+`config.signing.retired_key_paths`, with the files mounted through
+`config.files`.
+
+> [!NOTE]
+> Retired entries are **public** keys, which is what makes the safety property
+> structural rather than a promise: no secret key is loaded for them, so a
+> retired certificate can verify and can never sign again. Verification does not
+> become permissive either — a signature matching neither the active certificate
+> nor any retired one still fails, and tampered content still fails.
+
+This is the same mechanism Debian uses for its archive: `debian-archive-keyring`
+ships current *and* retired keys so packages signed under an older key stay
+verifiable ([Debian archive keys](https://ftp-master.debian.org/keys.html)).
+
+**What neither mechanism covers.** Key *expiry* and *revocation* are a different
+problem: a strict verifier arguably should accept a signature made while the key
+was valid and reject one made after, and nothing in a detached signature proves
+*when* it was made. Solving that needs trusted timestamps (RFC 3161), the
+approach [Sigstore](https://docs.sigstore.dev/about/security/) takes with
+short-lived keys and a timestamp authority. FerroEHR does not implement it, so
+treat an expired signing key as a certificate replacement and use
+`retired_key_paths`.
+
+If you are mid-rotation and need reads to keep working before either mechanism
+is in place, `signing.verify_on_read: warn` downgrades a verification failure
+from a 5xx to a logged and metered event
+(`version_signature_invalid_total{verdict="pgp_invalid"}`). That is a deliberate,
+recorded reduction in an integrity guarantee — not a setting to leave on.
 
 ## Logging: two streams that are not interchangeable
 
