@@ -134,8 +134,8 @@ impl FerroEhrService {
         kind: Option<String>,
     ) -> Result<Value, ServiceError> {
         let level =
-            DetailLevel::from_query(detail_level.as_deref()).map_err(ServiceError::BadRequest)?;
-        let kind = ExampleType::from_query(kind.as_deref()).map_err(ServiceError::BadRequest)?;
+            DetailLevel::from_query(detail_level.as_deref()).map_err(ServiceError::precondition)?;
+        let kind = ExampleType::from_query(kind.as_deref()).map_err(ServiceError::precondition)?;
         self.adl2_example(&template_id, level, kind).await
     }
 

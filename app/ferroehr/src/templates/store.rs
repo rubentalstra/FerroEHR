@@ -96,14 +96,14 @@ impl FerroEhrService {
 
         let template_id = opt.template_id.value;
         if template_id.trim().is_empty() {
-            return Err(ServiceError::Unprocessable(
+            return Err(ServiceError::content_invalid(
                 Violation::new("is missing from the operational template").with_path("template_id"),
             ));
         }
         // `concept` is a mandatory `OPERATIONAL_TEMPLATE` attribute; an empty one
         // is a malformed OPT (CNF `removed_mandatory_elements/…removed_concept_value`).
         if opt.concept.trim().is_empty() {
-            return Err(ServiceError::Unprocessable(
+            return Err(ServiceError::content_invalid(
                 Violation::new("of the operational template is empty").with_path("concept"),
             ));
         }
@@ -131,7 +131,7 @@ impl FerroEhrService {
         .fetch_optional(&mut *tx)
         .await?
         .ok_or_else(|| {
-            ServiceError::Conflict(format!(
+            ServiceError::conflict(format!(
                 "an operational template with template_id '{template_id}' already exists"
             ))
         })?;

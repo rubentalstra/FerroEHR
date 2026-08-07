@@ -96,7 +96,7 @@ impl FerroEhrService {
         // is our choice (CNF master09 E.2 requires an error for a live
         // directory only).
         if crate::storage::ehr_repo::live_directory_exists(&self.pool, ehr_id).await? {
-            return Err(ServiceError::Conflict(format!(
+            return Err(ServiceError::conflict(format!(
                 "EHR {ehr_id} already has a directory"
             )));
         }

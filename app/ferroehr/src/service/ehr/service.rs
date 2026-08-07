@@ -114,12 +114,12 @@ impl FerroEhrService {
         {
             Ok(Some(t)) => t,
             Ok(None) => {
-                return Err(ServiceError::Conflict(format!(
+                return Err(ServiceError::conflict(format!(
                     "EHR {ehr_id} already exists"
                 )));
             }
             Err(crate::storage::error::StorageError::SubjectInUse(id, ns)) => {
-                return Err(ServiceError::Conflict(format!(
+                return Err(ServiceError::conflict(format!(
                     "an EHR already exists for subject {id}@{ns}"
                 )));
             }
@@ -399,7 +399,7 @@ fn ehr_object(
         .map(|vo| container_ref("VERSIONED_EHR_ACCESS", vo))
         .transpose()?;
     let (Some(ehr_status), Some(ehr_access)) = (ehr_status, ehr_access) else {
-        return Err(ServiceError::Internal(format!(
+        return Err(ServiceError::exception(format!(
             "EHR {ehr_id} has no EHR_STATUS or no EHR_ACCESS version; both are \
              mandatory on the RM EHR class"
         )));

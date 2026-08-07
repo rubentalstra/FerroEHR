@@ -242,6 +242,18 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- Service-layer refusals now report the precise openEHR Service Model call
+  status they were raised with, instead of a generic stand-in. An unusable
+  archetype-id regex pattern answers `invalid_id_pattern` (not
+  `precondition_violation`) and an invalid stored query `invalid_query` (not
+  `content_invalid`), and every conflict, bad request and semantic refusal
+  keeps its own status through the service boundary. The HTTP status and
+  response body of every affected request are unchanged — only the status a
+  Service Model caller reads back becomes accurate.
+- An unusable id pattern, an unparseable stored query and an unparseable
+  ad-hoc AQL query now carry the underlying parser failure as an error cause,
+  so an operator can read the full diagnosis from the server log.
+
 - `auth.oidc.hmac_secret_file` and `auth.oidc.jwks_json_file` now appear as
   their own reference lines in the shipped `ferroehr.toml` template, so
   `ferroehr config default` teaches them. Both were real configuration keys
@@ -323,6 +335,13 @@ workflow refuses a tag that has no matching section here.
 
 
 ### Security
+
+- The error-body hygiene check now also covers Service Model faults
+  (`SmError::exception` and `exception`-coded call statuses), which are a
+  second route to a `500` response body it previously did not inspect. Three
+  boot-time terminology and subject-proxy failures were rewritten to keep the
+  underlying diagnostic out of the message and carry it as an error cause
+  instead, so it reaches the server log and never a client.
 
 - Every one of the 20 GitHub Actions referenced by the build, test, release and publish pipelines is now pinned to a full commit SHA instead of a mutable tag, so a retagged or compromised upstream release can no longer change what runs against the tokens that publish this project's releases, container images and crates. Each pin carries its human-readable version in a trailing comment and was verified to belong to the named repository.
 - 38 of the 40 repository checkouts in CI no longer leave the job's API token in `.git/config` for the rest of the job (`persist-credentials: false`), so a later step — a third-party action, a build script, an uploaded artifact — can no longer pick it up and push with it. The two exceptions are the documentation jobs that genuinely use git against the remote, and both are now annotated with the reason.

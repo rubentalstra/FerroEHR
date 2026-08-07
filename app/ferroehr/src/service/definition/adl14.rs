@@ -139,12 +139,12 @@ impl FerroEhrService {
         let mut log = ConversionLog::new();
         let converted =
             parse_and_convert(&source, &ConvertConfig::default(), &mut log).map_err(|e| {
-                ServiceError::Unprocessable(
+                ServiceError::content_invalid(
                     Violation::new(format!("1.4 → 2 conversion failed: {e}")).with_source(e),
                 )
             })?;
         openehr_adl::print::print(&converted).map_err(|e| {
-            SmError::from(ServiceError::Unprocessable(
+            SmError::from(ServiceError::content_invalid(
                 Violation::new(format!("1.4 → 2 conversion produced unprintable ADL2: {e}"))
                     .with_source(e),
             ))
@@ -186,12 +186,12 @@ impl FerroEhrService {
         // boundary re-raise needed.
         let xml = self.opt_get(&an_opt_id).await?;
         let opt = openehr_its::opt14::from_xml(&xml).map_err(|e| {
-            ServiceError::Unprocessable(
+            ServiceError::content_invalid(
                 Violation::new(format!("stored OPT no longer parses: {e:?}")).with_source(e),
             )
         })?;
         let conversion = super::opt14_convert::convert_opt_to_adl2(&opt).map_err(|e| {
-            ServiceError::Unprocessable(
+            ServiceError::content_invalid(
                 Violation::new(format!("OPT 1.4 → 2 conversion failed: {e}")).with_source(e),
             )
         })?;
@@ -611,7 +611,7 @@ impl FerroEhrService {
                 .fetch_one(&mut *tx)
                 .await?;
         if refs > 0 {
-            return Err(ServiceError::Conflict(format!(
+            return Err(ServiceError::conflict(format!(
                 "template '{template_id}' is still referenced by {refs} committed version(s); \
                  delete those compositions before deleting the template"
             )));
@@ -732,7 +732,7 @@ fn valid_opt_xml(opt_xml: &str) -> bool {
 )]
 fn parse_opt_uuid(an_opt_id: &str) -> Result<Uuid, ServiceError> {
     Uuid::parse_str(an_opt_id)
-        .map_err(|_| ServiceError::BadRequest(format!("OPT id is not a UUID: {an_opt_id}")))
+        .map_err(|_| ServiceError::precondition(format!("OPT id is not a UUID: {an_opt_id}")))
 }
 
 /// Extract the `ARCHETYPE_ID` from ADL 1.4 source: the source must begin with

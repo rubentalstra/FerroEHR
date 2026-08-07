@@ -129,13 +129,13 @@ pub(crate) async fn revision_history(
     let last_modified = history
         .most_recent_version_time_committed()
         .ok_or_else(|| {
-            ServiceError::Internal(format!(
+            ServiceError::exception(format!(
                 "the REVISION_HISTORY built for versioned object {vo_id} has no commit audit"
             ))
         })?
         .parse::<jiff::Timestamp>()
         .map_err(|e| {
-            ServiceError::Internal(format!(
+            ServiceError::exception(format!(
                 "the commit instant of versioned object {vo_id}'s newest version is not a \
                  valid instant: {e}"
             ))
@@ -156,7 +156,7 @@ pub(crate) async fn revision_history(
 /// `AUDIT_DETAILS` / `ATTESTATION`.
 fn stored_attestation(stored: &Value) -> Result<AuditDetails, ServiceError> {
     openehr_its::json::from_canonical_value::<AuditDetails>(stored).map_err(|e| {
-        ServiceError::Unprocessable(
+        ServiceError::content_invalid(
             Violation::new("a stored attestation is not a canonical ATTESTATION")
                 .with_decode_failure(&e),
         )
@@ -403,7 +403,7 @@ fn build_wrapped_original(
     wrapped: &WrappedOriginal,
 ) -> Result<Value, ServiceError> {
     if !wrapped.commit_audit.is_object() {
-        return Err(ServiceError::Unprocessable(
+        return Err(ServiceError::content_invalid(
             Violation::new(format!(
                 "of the wrapped ORIGINAL_VERSION stored for versioned object {} is not \
                  an object",

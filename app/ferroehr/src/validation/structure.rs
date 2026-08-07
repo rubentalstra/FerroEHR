@@ -56,7 +56,7 @@ pub(super) fn validate_opt_structure(xml: &str) -> Result<(), ServiceError> {
     let mut check = |raw: &[u8]| -> Result<(), ServiceError> {
         let name = String::from_utf8_lossy(raw).into_owned();
         if !OPT_TOP_LEVEL.contains(&name.as_str()) {
-            return Err(ServiceError::Unprocessable(
+            return Err(ServiceError::content_invalid(
                 Violation::new(
                     "is an unexpected top-level element of an operational template \
                      (not an OPERATIONAL_TEMPLATE attribute)",
@@ -67,7 +67,7 @@ pub(super) fn validate_opt_structure(xml: &str) -> Result<(), ServiceError> {
         let count = seen.entry(name.clone()).or_insert(0);
         *count += 1;
         if *count > 1 && !OPT_TOP_LEVEL_MULTIPLE.contains(&name.as_str()) {
-            return Err(ServiceError::Unprocessable(
+            return Err(ServiceError::content_invalid(
                 Violation::new("is a duplicate single-valued element of an operational template")
                     .with_path(format!("<{name}>")),
             ));
@@ -93,7 +93,7 @@ pub(super) fn validate_opt_structure(xml: &str) -> Result<(), ServiceError> {
             Ok(Event::End(_)) => depth -= 1,
             Ok(Event::Eof) => break,
             Err(e) => {
-                return Err(ServiceError::Unprocessable(Violation::new(format!(
+                return Err(ServiceError::content_invalid(Violation::new(format!(
                     "operational template XML is malformed: {e}"
                 ))));
             }

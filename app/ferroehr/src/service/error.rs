@@ -176,33 +176,61 @@ impl std::fmt::Display for Violation {
 
 /// Service-layer error, mapped to the ITS-REST [`ApiError`] at the protocol
 /// boundary so the REST layer stays free of persistence concerns.
+///
+/// Every variant that stands for an SM `CALL_STATUS_TYPE` row carries the
+/// status it was classified from — as an [`SmError`], which also carries the
+/// failure that caused it — so the `ServiceError → SmError` conversion below
+/// restores both verbatim. The one deliberate exception is the `500`-class
+/// [`ServiceError::Internal`] row, whose body and reported status are curated
+/// (see its docs).
 #[derive(Debug, thiserror::Error)]
 pub enum ServiceError {
     /// The requested resource does not exist. Carries the granular SM
     /// does-not-exist status ([`CallStatusType`] `*_does_not_exist` family,
-    /// `master03-common_package.adoc` §Representing Call Status) so the
-    /// [`SmError`] conversion below restores it losslessly — construct via
-    /// [`ServiceError::sm`] naming the precise status; extension resources the
-    /// SM has no status for (tenants, event subscriptions, FHIR mappings, item
-    /// tags) use the generic `versioned_object_does_not_exist`.
+    /// `master03-common_package.adoc` §Representing Call Status) — construct
+    /// via [`ServiceError::sm`] naming the precise status; extension resources
+    /// the SM has no status for (tenants, event subscriptions, FHIR mappings,
+    /// item tags) use the generic `versioned_object_does_not_exist`.
     #[error("{0} not found")]
     NotFound(#[source] SmError),
     /// The request is malformed at the semantic level (e.g. a stale/invalid
     /// `preceding_version_uid`, or an operation on an already-deleted object) —
     /// ITS-REST `400 Bad Request` (`400_already_deleted.yaml`).
+    ///
+    /// Carries the `400`-class SM status: the generic
+    /// `precondition_violation` ([`ServiceError::precondition`]) or the
+    /// definition service's `invalid_id_pattern`
+    /// (`definition_call_status_type.adoc`).
     #[error("bad request: {0}")]
-    BadRequest(String),
-    /// The request conflicts with current state (e.g. EHR already exists).
+    BadRequest(#[source] SmError),
+    /// The request conflicts with current state (e.g. EHR already exists) —
+    /// ITS-REST `409 Conflict`.
+    ///
+    /// Carries the `409`-class SM status: `composition_already_exists`,
+    /// `ehr_create_fail_duplicate_id` or `ehr_for_subject_already_exists`
+    /// (`ehr_call_status_type.adoc`), or the generic `conflict` the storage
+    /// bridge classifies.
     #[error("conflict: {0}")]
-    Conflict(String),
-    /// Optimistic-concurrency precondition (`If-Match`) failed.
+    Conflict(#[source] SmError),
+    /// Optimistic-concurrency precondition (`If-Match`) failed — the SM
+    /// `version_mismatch` status (`call_status_type.adoc`), ITS-REST `412`.
     #[error("version conflict: {0}")]
-    VersionConflict(String),
+    VersionConflict(#[source] SmError),
     /// The submitted payload is malformed or fails a structural rule —
     /// carrying the violated rule as DATA ([`Violation`]: path, invariant,
     /// causes), rendered into prose only at the protocol edge.
-    #[error("unprocessable: {0}")]
-    Unprocessable(#[source] Violation),
+    #[error("unprocessable: {violation}")]
+    Unprocessable {
+        /// The `422`-class SM status the refusal reports: the generic
+        /// `content_invalid` ([`ServiceError::content_invalid`]), an
+        /// `invalid_archetype`/`invalid_template`/`invalid_artefact`/
+        /// `invalid_query` from `definition_call_status_type.adoc`, or
+        /// `composition_archetype_invalid` from `ehr_call_status_type.adoc`.
+        status: CallStatusType,
+        /// The violated rule, as data.
+        #[source]
+        violation: Violation,
+    },
     /// A well-formed payload that fails semantic (template/RM/terminology)
     /// validation — carries the per-path violations as the RM validation data
     /// type ([`InvariantViolation`]), which the protocol bridges below render
@@ -240,33 +268,19 @@ pub enum ServiceError {
     /// below trace it and answer with `INTERNAL_MESSAGE`.
     #[error("signing: {0}")]
     Signing(String),
-    /// A server-side fault with no more specific variant (SM
-    /// `CALL_STATUS_TYPE.exception` / `file_not_writable` — → HTTP 500).
+    /// A server-side fault with no more specific variant (the `500`-class SM
+    /// statuses — `exception`, `file_not_writable`, `auth_failure`,
+    /// `not_implemented`, `service_overloaded`).
     ///
-    /// The carried text is a LOG detail, not a wire message. Sites construct
-    /// it with whatever diagnoses the fault (a codec error, an unexpected
-    /// stored shape, a failed conversion); both bridges below put that on the
-    /// trace record and answer with `INTERNAL_MESSAGE`, because a `500` is
-    /// by definition something the client cannot act on.
+    /// The carried [`SmError`]'s message is a LOG detail, not a wire message,
+    /// and this is the ONE row whose SM status does not survive the round trip:
+    /// both bridges below trace the detail (and the whole cause chain) and
+    /// answer with `exception` + `INTERNAL_MESSAGE`, because a `500` is by
+    /// definition something the client cannot act on and must disclose no
+    /// internal error value. Construct with [`ServiceError::exception`], or
+    /// with [`ServiceError::internal`] to carry the failure that caused it.
     #[error("internal: {0}")]
-    Internal(String),
-    /// A failure carrying the error that CAUSED it, beside the SM status and
-    /// message the variants above carry as a bare string.
-    ///
-    /// The carried status routes to exactly the wire outcome
-    /// [`ServiceError::sm`] gives it, and the message is what the equivalent
-    /// flat variant would carry, so no response body changes. What the flat
-    /// variants cannot hold is the cause: a `String` payload has nowhere to put
-    /// the `sqlx`/codec/transport error that actually failed, and
-    /// `format!("…{e}")` destroys it before anything can walk it
-    /// ([RFC 0201](https://rust-lang.github.io/rfcs/0201-error-chaining.html)).
-    /// Here it rides [`SmError`]'s source field, out of the message — a
-    /// `500`-class body must disclose no internal error value.
-    ///
-    /// Construct via [`ServiceError::internal`] (a `500`) or
-    /// [`ServiceError::bad_request`] (a `400`).
-    #[error("{0}")]
-    Caused(#[source] SmError),
+    Internal(#[source] SmError),
 }
 
 /// The client-visible message of a server-side fault (`500`). Deliberately
@@ -363,30 +377,32 @@ impl std::fmt::Display for ErrorChain<'_> {
     }
 }
 
-impl ServiceError {
-    /// Construct the [`ServiceError`] variant for an SM call status — the
+impl From<SmError> for ServiceError {
+    /// Classify an SM call status into its [`ServiceError`] row — the
     /// service-side entry into the single SM ↔ `ServiceError` ↔ HTTP table
     /// (statuses per `CALL_STATUS_TYPE` + descendants, [`super::status`]).
     ///
-    /// Consistency with the wire is test-enforced: for every status,
-    /// `ApiError::from(ServiceError::sm(s, m))` and the protocol adapter's
-    /// SM → HTTP row (`ferroehr-rest::overview::error::sm_api_error`) produce
-    /// the same HTTP status.
-    #[must_use]
-    pub fn sm(status: CallStatusType, message: impl Into<String>) -> Self {
+    /// The whole [`SmError`] travels into the classified variant, so the
+    /// granular status and the carried cause both survive the return trip
+    /// through `From<ServiceError> for SmError`. The `500`-class rows are the
+    /// one deliberate exception (see [`ServiceError::Internal`]).
+    fn from(e: SmError) -> Self {
         use super::status::CallStatusType as S;
-        let m = message.into();
-        match status {
+        match e.status {
             // `success` is not an error; constructing it is a server bug.
             // Auth is decided at the adapter (401/403 before dispatch), so a
-            // service-side auth failure is likewise a server fault.
-            S::Success | S::Exception | S::FileNotWritable | S::AuthFailure => {
-                ServiceError::Internal(m)
-            }
-            S::PreconditionViolation | S::InvalidIdPattern => ServiceError::BadRequest(m),
-            // The does-not-exist family keeps its granular status inside the
-            // variant, so the `SmError` round-trip below is lossless — no
-            // per-method boundary re-raise needed.
+            // service-side auth failure is likewise a server fault. A
+            // not-implemented status is unreachable (the service implements
+            // every catalog call), and `service_overloaded` originates at the
+            // storage bridge and flows *up* to the wire as an `SmError`
+            // (→ `503`) rather than back into a `ServiceError`.
+            S::Success
+            | S::Exception
+            | S::FileNotWritable
+            | S::AuthFailure
+            | S::NotImplemented
+            | S::ServiceOverloaded => ServiceError::Internal(e),
+            S::PreconditionViolation | S::InvalidIdPattern => ServiceError::BadRequest(e),
             S::ObjectVersionDoesNotExist
             | S::VersionedObjectDoesNotExist
             | S::EhrIdDoesNotExist
@@ -397,64 +413,140 @@ impl ServiceError {
             | S::TemplateDoesNotExist
             | S::VersionDoesNotExist
             | S::SubjectIdDoesNotExist
-            | S::VersionedCompositionDoesNotExist => {
-                ServiceError::NotFound(SmError::new(status, m))
-            }
-            S::VersionMismatch => ServiceError::VersionConflict(m),
+            | S::VersionedCompositionDoesNotExist => ServiceError::NotFound(e),
+            S::VersionMismatch => ServiceError::VersionConflict(e),
             S::EhrCreateFailDuplicateId
             | S::CompositionAlreadyExists
             | S::EhrForSubjectAlreadyExists
             // A storage-classified generic conflict is also a `409`.
-            | S::Conflict => ServiceError::Conflict(m),
+            | S::Conflict => ServiceError::Conflict(e),
             S::CompositionArchetypeInvalid
             | S::InvalidArchetype
             | S::InvalidTemplate
             | S::InvalidArtefact
             | S::InvalidQuery
             | S::DefinitionUnknown
-            // An SM status arrives with a message and no separable facts, so
-            // the violation it becomes carries only its detail.
-            | S::ContentInvalid => ServiceError::Unprocessable(Violation::new(m)),
-            // No service-side `ServiceError::NotImplemented`; a not-implemented
-            // status surfaces as a server fault (the service implements every
-            // catalog call, so this row is unreachable in practice).
-            // `ServiceOverloaded` originates only at the storage bridge and
-            // flows *up* to the wire as an `SmError` (→ `503`); it never
-            // round-trips back into a `ServiceError`, so this defensive reverse
-            // mapping degrades to a server fault too.
-            S::NotImplemented | S::ServiceOverloaded => ServiceError::Internal(m),
+            | S::ContentInvalid => unprocessable_from_sm(e),
         }
+    }
+}
+
+/// The `422`-class row of the `From<SmError>` classifier: an SM status arrives
+/// with a message and no separable facts, so the [`Violation`] it becomes
+/// carries only its detail — plus the SM error itself as the violation's cause
+/// when one was attached, so no chain is dropped on the way in.
+fn unprocessable_from_sm(e: SmError) -> ServiceError {
+    let status = e.status;
+    let violation = Violation::new(e.message.clone());
+    let violation = if std::error::Error::source(&e).is_some() {
+        violation.with_source(e)
+    } else {
+        violation
+    };
+    ServiceError::Unprocessable { status, violation }
+}
+
+impl ServiceError {
+    /// Construct the [`ServiceError`] variant for an SM call status and message.
+    ///
+    /// Consistency with the wire is test-enforced: for every status,
+    /// `ApiError::from(ServiceError::sm(s, m))` and the protocol adapter's
+    /// SM → HTTP row (`ferroehr-rest::overview::error::sm_api_error`) produce
+    /// the same HTTP status.
+    #[must_use]
+    pub fn sm(status: CallStatusType, message: impl Into<String>) -> Self {
+        Self::from(SmError::new(status, message))
+    }
+
+    /// A malformed-request refusal (`400`) reporting the generic SM
+    /// `precondition_violation` status.
+    ///
+    /// The message is client-visible: a `4xx` describes the caller's own
+    /// request, so naming the defect there is the contract. A `400` the SM
+    /// names more precisely (`invalid_id_pattern`) is built with
+    /// [`ServiceError::sm`] instead.
+    #[must_use]
+    pub fn precondition(message: impl Into<String>) -> Self {
+        ServiceError::BadRequest(SmError::precondition(message))
+    }
+
+    /// A state-conflict refusal (`409`) reporting the SM
+    /// `composition_already_exists` status.
+    ///
+    /// That is the representative `409` of `ehr_call_status_type.adoc`; a
+    /// conflict the SM names more precisely
+    /// (`ehr_create_fail_duplicate_id`, `ehr_for_subject_already_exists`) is
+    /// built with [`ServiceError::sm`] instead.
+    #[must_use]
+    pub fn conflict(message: impl Into<String>) -> Self {
+        ServiceError::Conflict(SmError::new(
+            CallStatusType::CompositionAlreadyExists,
+            message,
+        ))
+    }
+
+    /// An optimistic-concurrency refusal (`412`) — the SM `version_mismatch`
+    /// status.
+    #[must_use]
+    pub fn version_conflict(message: impl Into<String>) -> Self {
+        ServiceError::VersionConflict(SmError::version_mismatch(message))
+    }
+
+    /// A semantic refusal (`422`) reporting the generic SM `content_invalid`
+    /// status, carrying the violated rule as data.
+    ///
+    /// A `422` the SM names more precisely (`invalid_archetype`,
+    /// `invalid_template`, `invalid_artefact`, `invalid_query`,
+    /// `composition_archetype_invalid`) is built with [`ServiceError::sm`], or
+    /// by naming the `status` field directly when the [`Violation`] carries
+    /// separable facts.
+    #[must_use]
+    pub fn content_invalid(violation: Violation) -> Self {
+        ServiceError::Unprocessable {
+            status: CallStatusType::ContentInvalid,
+            violation,
+        }
+    }
+
+    /// A server-side fault (`500`) whose diagnosis is a log detail.
+    ///
+    /// `detail` diagnoses the fault (a codec error, an unexpected stored shape,
+    /// a failed conversion); both bridges below put it on the trace record and
+    /// answer with `INTERNAL_MESSAGE`. Use [`ServiceError::internal`] when the
+    /// failure that caused it is available as an error value.
+    #[must_use]
+    pub fn exception(detail: impl Into<String>) -> Self {
+        ServiceError::Internal(SmError::exception(detail))
     }
 
     /// A server-side fault (`500`) that carries the failure which caused it.
     ///
     /// `context` names the step that failed and is a LOG detail: the client
-    /// body is the fixed internal message on both bridges, never this text and never
-    /// the cause. The cause is reachable through
+    /// body is the fixed internal message on both bridges, never this text and
+    /// never the cause. The cause is reachable through
     /// [`std::error::Error::source`], which is what lets an operator read the
-    /// `sqlx`/codec diagnosis the flat [`ServiceError::Internal`] string
-    /// destroys.
+    /// `sqlx`/codec diagnosis a stringified cause destroys
+    /// ([RFC 0201](https://rust-lang.github.io/rfcs/0201-error-chaining.html)).
     #[must_use]
     pub fn internal(
         context: impl Into<String>,
         source: impl std::error::Error + Send + Sync + 'static,
     ) -> Self {
-        ServiceError::Caused(SmError::exception(context).with_source(source))
+        ServiceError::Internal(SmError::exception(context).with_source(source))
     }
 
     /// A malformed-request refusal (`400`) that carries the failure which
     /// caused it.
     ///
-    /// `detail` is the client-visible text, unchanged from what the flat
-    /// [`ServiceError::BadRequest`] carried: a `4xx` describes the caller's own
-    /// request, so naming the defect there is the contract. The cause rides the
-    /// source chain for the log and for callers that branch on it.
+    /// `detail` is the client-visible text, identical to what
+    /// [`ServiceError::precondition`] carries; the cause rides the source chain
+    /// for the log and for callers that branch on it.
     #[must_use]
     pub fn bad_request(
         detail: impl Into<String>,
         source: impl std::error::Error + Send + Sync + 'static,
     ) -> Self {
-        ServiceError::Caused(SmError::precondition(detail).with_source(source))
+        ServiceError::BadRequest(SmError::precondition(detail).with_source(source))
     }
 }
 
@@ -470,21 +562,22 @@ impl From<ServiceError> for SmError {
     /// | `ServiceError`            | `CallStatusType`             | HTTP |
     /// |---------------------------|------------------------------|------|
     /// | `NotFound`                | its carried granular status  | 404  |
-    /// | `VersionConflict`         | `VersionMismatch`            | 412  |
-    /// | `Conflict`                | `CompositionAlreadyExists`   | 409  |
-    /// | `Unprocessable`           | `ContentInvalid`             | 422  |
+    /// | `BadRequest`              | its carried granular status  | 400  |
+    /// | `Conflict`                | its carried granular status  | 409  |
+    /// | `VersionConflict`         | its carried `VersionMismatch`| 412  |
+    /// | `Unprocessable`           | its carried granular status  | 422  |
     /// | `ValidationFailed`        | `ContentInvalid`             | 422  |
-    /// | `BadRequest`              | `PreconditionViolation`      | 400  |
     /// | `Storage`/`Database`      | classified: 409/503/500      |      |
     /// | `JsonRead`                | `PreconditionViolation`      | 400  |
-    /// | `JsonWrite`/`Signing`/`Internal` | `Exception`           | 500  |
-    /// | `Caused`                  | its carried status            |      |
+    /// | `JsonWrite`/`Signing`     | `Exception`                  | 500  |
+    /// | `Internal`                | `Exception` (curated)        | 500  |
     ///
-    /// `NotFound` carries the granular does-not-exist [`SmError`] it was
-    /// constructed with ([`ServiceError::sm`]), so the round-trip restores the
-    /// precise status — `ehr_id_does_not_exist` stays `ehr_id_does_not_exist`,
-    /// never a resurrected generic. `Conflict` maps to a representative
-    /// already-exists status (all 409s).
+    /// Every status-carrying row restores the [`SmError`] it was constructed
+    /// with ([`ServiceError::sm`]), so the round-trip is lossless —
+    /// `ehr_id_does_not_exist` stays `ehr_id_does_not_exist` and
+    /// `invalid_id_pattern` stays `invalid_id_pattern`, never a resurrected
+    /// generic. Only the `500`-class `Internal` row substitutes a curated
+    /// status and message, because its detail must not reach a client.
     ///
     /// NOTE (wire — settled, adjudicated divergence): the structured per-path
     /// violations of `ValidationFailed` (the ITS-REST `Error.validationErrors[]`
@@ -511,14 +604,17 @@ impl From<ServiceError> for SmError {
     fn from(e: ServiceError) -> Self {
         use super::status::CallStatusType as S;
         match e {
-            // Lossless: the granular does-not-exist status travels inside the
-            // variant (see `ServiceError::sm`).
-            ServiceError::NotFound(e) => e,
-            ServiceError::VersionConflict(m) => SmError::new(S::VersionMismatch, m),
-            ServiceError::Conflict(m) => SmError::new(S::CompositionAlreadyExists, m),
+            // Lossless: the granular status travels inside the variant, cause
+            // and message untouched (see `From<SmError> for ServiceError`).
+            ServiceError::NotFound(e)
+            | ServiceError::BadRequest(e)
+            | ServiceError::Conflict(e)
+            | ServiceError::VersionConflict(e) => e,
             // The ONE rendering point of a `Violation` on the SM bridge: the
             // facts travel as data all the way from the throw site to here.
-            ServiceError::Unprocessable(v) => SmError::new(S::ContentInvalid, v.to_string()),
+            ServiceError::Unprocessable { status, violation } => {
+                SmError::new(status, violation.to_string())
+            }
             ServiceError::ValidationFailed(v) => {
                 let joined = v
                     .into_iter()
@@ -527,7 +623,6 @@ impl From<ServiceError> for SmError {
                     .join("; ");
                 SmError::new(S::ContentInvalid, joined)
             }
-            ServiceError::BadRequest(m) => SmError::new(S::PreconditionViolation, m),
             ServiceError::Storage(e) => SmError::from(e),
             // A raw `sqlx` error carries SQLSTATE/constraint detail: classify it
             // (integrity/serialization conflict → 409, pool exhaustion → 503)
@@ -540,41 +635,11 @@ impl From<ServiceError> for SmError {
             ServiceError::JsonRead(e) => SmError::new(S::PreconditionViolation, e.to_string()),
             ServiceError::JsonWrite(e) => internal_fault("serialize a JSON payload", &e),
             ServiceError::Signing(m) => internal_fault("sign or verify a version", &m),
-            ServiceError::Internal(m) => internal_fault("complete the request", &m),
-            ServiceError::Caused(sm) => caused_sm_error(sm),
+            // The curated row: the detail and the whole cause chain go to the
+            // trace record, the client gets `exception` + `INTERNAL_MESSAGE`.
+            ServiceError::Internal(sm) => internal_fault_caused("complete the request", &sm),
         }
     }
-}
-
-/// The SM half of the [`ServiceError::Caused`] row: a `500`-class status
-/// answers the curated opaque message (with the whole cause chain traced),
-/// every other status IS already the [`SmError`] the wire needs — cause
-/// included, message untouched.
-fn caused_sm_error(sm: SmError) -> SmError {
-    if is_server_fault(sm.status) {
-        internal_fault_caused("complete the request", &sm)
-    } else {
-        sm
-    }
-}
-
-/// Whether an SM status is one [`ServiceError::sm`] routes to
-/// [`ServiceError::Internal`] — the `500`-class rows whose body is the curated
-/// opaque message, never the carried detail.
-///
-/// The single authority both [`ServiceError::Caused`] bridges consult, so a
-/// cause-carrying failure lands on exactly the wire outcome its flat twin does.
-fn is_server_fault(status: CallStatusType) -> bool {
-    use super::status::CallStatusType as S;
-    matches!(
-        status,
-        S::Success
-            | S::Exception
-            | S::FileNotWritable
-            | S::AuthFailure
-            | S::NotImplemented
-            | S::ServiceOverloaded
-    )
 }
 
 impl From<ServiceError> for ApiError {
@@ -583,11 +648,13 @@ impl From<ServiceError> for ApiError {
             // Every does-not-exist status is a wire 404; the message is the
             // carried `SmError`'s text (unchanged from construction).
             ServiceError::NotFound(e) => ApiError::NotFound(e.message),
-            ServiceError::BadRequest(m) => ApiError::BadRequest(m),
-            ServiceError::Conflict(m) => ApiError::Conflict(m),
-            ServiceError::VersionConflict(m) => ApiError::PreconditionFailed(m),
+            ServiceError::BadRequest(e) => ApiError::BadRequest(e.message),
+            ServiceError::Conflict(e) => ApiError::Conflict(e.message),
+            ServiceError::VersionConflict(e) => ApiError::PreconditionFailed(e.message),
             // The ONE rendering point of a `Violation` on the wire bridge.
-            ServiceError::Unprocessable(v) => ApiError::Unprocessable(v.to_string()),
+            ServiceError::Unprocessable { violation, .. } => {
+                ApiError::Unprocessable(violation.to_string())
+            }
             // The ONE place the RM violation data becomes the protocol's
             // `validationErrors[]` shape (the two carry the same `{path,
             // message}` facts).
@@ -623,15 +690,9 @@ impl From<ServiceError> for ApiError {
             ServiceError::Signing(m) => {
                 ApiError::Internal(internal_fault("sign or verify a version", &m).message)
             }
-            ServiceError::Internal(m) => {
-                ApiError::Internal(internal_fault("complete the request", &m).message)
-            }
-            // The cause-carrying row: routed by its SM status through exactly
-            // the table above, so the wire outcome equals the flat variant's.
-            ServiceError::Caused(sm) if is_server_fault(sm.status) => {
+            ServiceError::Internal(sm) => {
                 ApiError::Internal(internal_fault_caused("complete the request", &sm).message)
             }
-            ServiceError::Caused(sm) => ApiError::from(ServiceError::sm(sm.status, sm.message)),
         }
     }
 }
@@ -861,7 +922,7 @@ mod tests {
         let detail = "typing the ORIGINAL_VERSION: unknown field `_kind` at line 3 column 12";
         let markers = ["ORIGINAL_VERSION", "unknown field", "_kind", "line 3"];
         let variants: [fn(String) -> ServiceError; 2] =
-            [ServiceError::Internal, ServiceError::Signing];
+            [ServiceError::exception, ServiceError::Signing];
         for make in variants {
             let sm = crate::service::status::SmError::from(make(detail.to_owned()));
             assert_eq!(sm.status, S::Exception);
@@ -882,8 +943,9 @@ mod tests {
         }
     }
 
-    /// Every SM status a [`ServiceError::Caused`] can carry lands on exactly
-    /// the wire outcome — status AND body text — its cause-less twin produces.
+    /// Every SM status carried with a cause lands on exactly the wire outcome —
+    /// status AND body text — its cause-less twin produces, and reports the
+    /// same SM status back.
     ///
     /// This is the whole safety property of carrying a cause: the chain is a
     /// new fact for the operator, never a change to what the client is told.
@@ -891,10 +953,13 @@ mod tests {
     #[test]
     fn a_carried_cause_changes_no_wire_outcome() {
         for status in every_status() {
+            let caused = || {
+                ServiceError::from(
+                    crate::service::status::SmError::new(status, "m").with_source(cause()),
+                )
+            };
             let flat_api = ApiError::from(ServiceError::sm(status, "m"));
-            let caused_api = ApiError::from(ServiceError::Caused(
-                crate::service::status::SmError::new(status, "m").with_source(cause()),
-            ));
+            let caused_api = ApiError::from(caused());
             assert_eq!(
                 caused_api.status(),
                 flat_api.status(),
@@ -909,25 +974,17 @@ mod tests {
             );
 
             let flat_sm = crate::service::status::SmError::from(ServiceError::sm(status, "m"));
-            let caused_sm = crate::service::status::SmError::from(ServiceError::Caused(
-                crate::service::status::SmError::new(status, "m").with_source(cause()),
-            ));
+            let caused_sm = crate::service::status::SmError::from(caused());
             assert_eq!(
                 caused_sm.message,
                 flat_sm.message,
                 "row {} diverged on the SM message",
                 status.sm_name()
             );
-            // The two SM statuses need not be the same NAME: a flat variant with
-            // a bare-string payload (`Conflict`, `Unprocessable`) has no slot for
-            // WHICH conflict or WHICH 422 it was, so its bridge substitutes a
-            // representative status (see the conversion table above) where the
-            // cause-carrying row keeps the one it was built with. What must hold
-            // is that both land on the same wire outcome.
             assert_eq!(
-                ApiError::from(ServiceError::sm(caused_sm.status, "m")).status(),
-                ApiError::from(ServiceError::sm(flat_sm.status, "m")).status(),
-                "row {} routed the two SM statuses to different wire codes",
+                caused_sm.status,
+                flat_sm.status,
+                "row {} diverged on the SM status",
                 status.sm_name()
             );
         }
@@ -1002,10 +1059,10 @@ mod tests {
             Some(std::io::ErrorKind::PermissionDenied)
         );
 
-        let api = ApiError::from(ServiceError::Unprocessable(carried));
+        let api = ApiError::from(ServiceError::content_invalid(carried));
         assert_eq!(
             api.to_string(),
-            ApiError::from(ServiceError::Unprocessable(plain)).to_string()
+            ApiError::from(ServiceError::content_invalid(plain)).to_string()
         );
     }
 
@@ -1094,5 +1151,142 @@ mod tests {
             );
             assert_eq!(restored.message, "m", "message must survive unchanged");
         }
+    }
+
+    /// EVERY SM status survives the `ServiceError` round-trip verbatim, except
+    /// the `500`-class rows that are curated by design.
+    ///
+    /// The total form of the property the does-not-exist test above pins for one
+    /// family: the SM models each of these as a distinct `CALL_STATUS_TYPE`
+    /// code (`master03-common_package.adoc` §Representing Call Status,
+    /// `ehr_call_status_type.adoc`, `definition_call_status_type.adoc`), so a
+    /// status normalized away on the way through is information the caller
+    /// cannot get back. The exceptions are enumerated here rather than skipped:
+    /// a `500` answers `exception` + the curated message because its detail
+    /// must not reach a client (see [`ServiceError::Internal`]).
+    #[test]
+    fn every_status_round_trips_except_the_curated_server_faults() {
+        let curated = [
+            S::Success,
+            S::Exception,
+            S::FileNotWritable,
+            S::AuthFailure,
+            S::NotImplemented,
+            S::ServiceOverloaded,
+        ];
+        for status in every_status() {
+            let restored = crate::service::status::SmError::from(ServiceError::sm(status, "m"));
+            if curated.contains(&status) {
+                assert_eq!(
+                    restored.status,
+                    S::Exception,
+                    "{} is a curated server fault and must answer `exception`",
+                    status.sm_name()
+                );
+                assert_eq!(
+                    restored.message,
+                    super::INTERNAL_MESSAGE,
+                    "{} must answer the curated opaque message",
+                    status.sm_name()
+                );
+                continue;
+            }
+            assert_eq!(
+                restored.status,
+                status,
+                "{} resurrected as {}",
+                status.sm_name(),
+                restored.status.sm_name()
+            );
+            assert_eq!(
+                restored.message,
+                "m",
+                "{} must carry its message unchanged",
+                status.sm_name()
+            );
+        }
+    }
+
+    /// The three families #2124 named — the `400`, `409` and `422` rows — each
+    /// classify into their own variant AND report their granular status back.
+    ///
+    /// Named separately from the total sweep above because it is the specific
+    /// regression: `invalid_id_pattern` used to return as
+    /// `precondition_violation`, every `409` as `composition_already_exists`,
+    /// and the whole `422` family as `content_invalid`.
+    #[test]
+    fn the_bad_request_conflict_and_unprocessable_families_keep_their_status() {
+        let rows = [
+            (S::PreconditionViolation, "BadRequest"),
+            (S::InvalidIdPattern, "BadRequest"),
+            (S::EhrCreateFailDuplicateId, "Conflict"),
+            (S::CompositionAlreadyExists, "Conflict"),
+            (S::EhrForSubjectAlreadyExists, "Conflict"),
+            (S::Conflict, "Conflict"),
+            (S::VersionMismatch, "VersionConflict"),
+            (S::CompositionArchetypeInvalid, "Unprocessable"),
+            (S::InvalidArchetype, "Unprocessable"),
+            (S::InvalidTemplate, "Unprocessable"),
+            (S::InvalidArtefact, "Unprocessable"),
+            (S::InvalidQuery, "Unprocessable"),
+            (S::DefinitionUnknown, "Unprocessable"),
+            (S::ContentInvalid, "Unprocessable"),
+        ];
+        for (status, variant) in rows {
+            let service_err = ServiceError::sm(status, "m");
+            let classified = match &service_err {
+                ServiceError::BadRequest(_) => "BadRequest",
+                ServiceError::Conflict(_) => "Conflict",
+                ServiceError::VersionConflict(_) => "VersionConflict",
+                ServiceError::Unprocessable { .. } => "Unprocessable",
+                other => panic!("{} classified as {other:?}", status.sm_name()),
+            };
+            assert_eq!(
+                classified,
+                variant,
+                "row {} classified wrong",
+                status.sm_name()
+            );
+            let restored = crate::service::status::SmError::from(service_err);
+            assert_eq!(
+                restored.status,
+                status,
+                "{} resurrected as {}",
+                status.sm_name(),
+                restored.status.sm_name()
+            );
+            assert_eq!(restored.message, "m", "message must survive unchanged");
+        }
+    }
+
+    /// A cause attached to a `422`-class SM status survives the classifier: the
+    /// chain reaches the concrete underlying error and the rendered body is
+    /// unchanged.
+    #[test]
+    fn a_cause_on_an_unprocessable_status_stays_walkable() {
+        use std::error::Error;
+
+        let caused = ServiceError::from(
+            crate::service::status::SmError::new(S::InvalidQuery, "not valid AQL")
+                .with_source(cause()),
+        );
+        let mut found = None;
+        let mut next = Error::source(&caused);
+        while let Some(step) = next {
+            if let Some(io) = step.downcast_ref::<std::io::Error>() {
+                found = Some(io.kind());
+            }
+            next = step.source();
+        }
+        assert_eq!(
+            found,
+            Some(std::io::ErrorKind::PermissionDenied),
+            "the cause attached to a 422 status must stay reachable"
+        );
+        assert_eq!(
+            ApiError::from(caused).to_string(),
+            ApiError::from(ServiceError::sm(S::InvalidQuery, "not valid AQL")).to_string(),
+            "a carried cause must not change the 422 body"
+        );
     }
 }

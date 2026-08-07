@@ -49,7 +49,7 @@ const RELATIONSHIP_RM_TYPE: &str = "PARTY_RELATIONSHIP";
 /// §Attributes), which a partial hand check cannot see.
 fn validate_party_ref(reference: &Value, context: &str) -> Result<(), ServiceError> {
     let typed = openehr_its::json::from_canonical_value::<PartyRef>(reference).map_err(|e| {
-        ServiceError::Unprocessable(
+        ServiceError::content_invalid(
             Violation::new("is not a well-formed PARTY_REF")
                 .with_path(context)
                 .with_decode_failure(&e),
@@ -59,7 +59,7 @@ fn validate_party_ref(reference: &Value, context: &str) -> Result<(), ServiceErr
     if !violations.is_empty() {
         // The class's own `InvariantViolation`s travel on as data; only the
         // first is rendered, exactly as before.
-        return Err(ServiceError::Unprocessable(
+        return Err(ServiceError::content_invalid(
             Violation::new("fails its BASE class invariants")
                 .with_path(context)
                 .with_causes(violations.into_iter().take(1).collect()),
@@ -98,7 +98,7 @@ pub(crate) fn party_check(
         "PERSON" => openehr_its::json::from_canonical_value::<Person>(data).map(drop),
         "ROLE" => openehr_its::json::from_canonical_value::<Role>(data).map(drop),
         other => {
-            return Err(ServiceError::Unprocessable(
+            return Err(ServiceError::content_invalid(
                 Violation::new(format!("not a demographic party type: {other:?}"))
                     .with_path("_type"),
             ));
@@ -171,7 +171,7 @@ pub(super) fn party_invariants(
         for (i, rel) in relationships.iter().enumerate() {
             let source = rel.pointer("/source/id/value").and_then(Value::as_str);
             if source.is_some_and(|s| !composite_ids_equal(s, &container_id)) {
-                return Err(ServiceError::Unprocessable(
+                return Err(ServiceError::content_invalid(
                     Violation::new(format!(
                         "must reference this party's version container \
                          ({container_id}) — relationships are stored under their \
@@ -253,7 +253,7 @@ pub(crate) fn relationship_check(data: &Value, incomplete: bool) -> Result<(), S
         // OBJECT_VERSION_ID (one particular version) — RM demographic
         // master02 §Modelling of Parties and Relationships.
         if matches!(reference.id, ObjectId::ObjectVersionId(_)) {
-            return Err(ServiceError::Unprocessable(
+            return Err(ServiceError::content_invalid(
                 Violation::new(
                     "must identify the party's version container (HIER_OBJECT_ID), \
                      not one version (OBJECT_VERSION_ID)",
@@ -267,7 +267,7 @@ pub(crate) fn relationship_check(data: &Value, incomplete: bool) -> Result<(), S
         // ref: no second decode, so no second way to answer the same question.
         let violations = reference.invariants();
         if !violations.is_empty() {
-            return Err(ServiceError::Unprocessable(
+            return Err(ServiceError::content_invalid(
                 Violation::new("fails its BASE class invariants")
                     .with_path(format!("PARTY_RELATIONSHIP.{field}"))
                     .with_causes(violations.into_iter().take(1).collect()),
@@ -337,7 +337,7 @@ mod tests {
             .unwrap()
             .remove("archetype_details");
         let msg = match party_check("PERSON", &no_details, false) {
-            Err(ServiceError::Unprocessable(v)) => v,
+            Err(ServiceError::Unprocessable { violation: v, .. }) => v,
             other => panic!("expected Unprocessable, got {other:?}"),
         };
         assert_eq!(msg.path(), Some("PERSON.archetype_details"));
@@ -408,7 +408,7 @@ mod tests {
         let bad_type = json!({ "_type": "PARTY_REF", "namespace": "demographic",
             "type": "COMPOSITION", "id": { "_type": "HIER_OBJECT_ID", "value": "x" } });
         match validate_party_ref(&bad_type, "ctx") {
-            Err(ServiceError::Unprocessable(v)) => assert!(
+            Err(ServiceError::Unprocessable { violation: v, .. }) => assert!(
                 v.causes()
                     .iter()
                     .any(|c| c.message.contains("Type_validity")),
@@ -440,7 +440,7 @@ mod tests {
         let bad_ns = json!({ "_type": "PARTY_REF", "namespace": "1nope",
             "type": "PERSON", "id": { "_type": "HIER_OBJECT_ID", "value": "x" } });
         match validate_party_ref(&bad_ns, "ctx") {
-            Err(ServiceError::Unprocessable(v)) => {
+            Err(ServiceError::Unprocessable { violation: v, .. }) => {
                 assert!(
                     v.causes()
                         .iter()
@@ -462,13 +462,13 @@ mod tests {
         let no_id = json!({ "_type": "PARTY_REF", "namespace": "local", "type": "PERSON" });
         assert!(matches!(
             validate_party_ref(&no_id, "ctx"),
-            Err(ServiceError::Unprocessable(_))
+            Err(ServiceError::Unprocessable { .. })
         ));
         let no_type = json!({ "_type": "PARTY_REF", "namespace": "local",
             "id": { "_type": "HIER_OBJECT_ID", "value": "x" } });
         assert!(matches!(
             validate_party_ref(&no_type, "ctx"),
-            Err(ServiceError::Unprocessable(_))
+            Err(ServiceError::Unprocessable { .. })
         ));
     }
 
@@ -492,7 +492,7 @@ mod tests {
         };
         party_check("ROLE", &role("PERSON"), false).expect("a legal performer ref is accepted");
         match party_check("ROLE", &role("COMPOSITION"), false) {
-            Err(ServiceError::Unprocessable(v)) => assert!(
+            Err(ServiceError::Unprocessable { violation: v, .. }) => assert!(
                 v.causes()
                     .iter()
                     .any(|c| c.message.contains("Type_validity")),

@@ -60,7 +60,7 @@ impl FerroEhrService {
                 format!("ehr: URI {uri} resolved to no item"),
             )),
             1 => Ok(items.remove(0)),
-            n => Err(ServiceError::BadRequest(format!(
+            n => Err(ServiceError::precondition(format!(
                 "ehr: URI {uri} path is not unique ({n} matches); item_at_path requires \
                  path_unique (RM common pathable)"
             ))),
@@ -93,7 +93,7 @@ impl FerroEhrService {
         }
         // A relative URI (no ehr_id) carries no EHR context to resolve against.
         let ehr_id = EhrId(uri.ehr_id.ok_or_else(|| {
-            ServiceError::BadRequest(
+            ServiceError::precondition(
                 "relative ehr: URI (no ehr_id) has no EHR context to resolve against".to_owned(),
             )
         })?);
@@ -162,14 +162,14 @@ impl FerroEhrService {
                         .0
                 }
                 other => {
-                    return Err(ServiceError::BadRequest(format!(
+                    return Err(ServiceError::precondition(format!(
                         "ehr: locator {other:?} requires a versioned-object id"
                     )));
                 }
             };
             (vo_id, None)
         } else {
-            return Err(ServiceError::BadRequest(
+            return Err(ServiceError::precondition(
                 "ehr: URI locator identifies no top-level structure".to_owned(),
             ));
         };
@@ -209,7 +209,7 @@ fn resolve_object_ref(object: &VersionLocator) -> Result<(VoId, Option<TreeId>),
     match object {
         VersionLocator::VersionedObject(uid) => {
             let vo_id = Uuid::parse_str(uid).map_err(|_| {
-                ServiceError::BadRequest(format!("ehr: locator uid {uid:?} is not a UUID"))
+                ServiceError::precondition(format!("ehr: locator uid {uid:?} is not a UUID"))
             })?;
             // A locator uid names a versioned object.
             Ok((VoId(vo_id), None))

@@ -228,10 +228,10 @@ impl FerroEhrService {
             return Ok(ir);
         }
         // Miss: full parse → terminology expansion → lowering.
-        // NOTE: `parse_str` reports a located grammar diagnostic as a `String`,
-        // so there is no cause to carry — the diagnostic IS the answer.
-        let mut ast = parse_str(aql)
-            .map_err(|e| Failure::analysis(SmError::precondition(format!("invalid AQL: {e}"))))?;
+        let mut ast = parse_str(aql).map_err(|e| {
+            let message = format!("invalid AQL: {e}");
+            Failure::analysis(SmError::precondition(message).with_source(e))
+        })?;
         // Semantic-analysis pre-pass: resolve every `TERMINOLOGY('expand', …)`
         // used in a `matches` operand through the terminology-service seam
         // and merge the codes into the value list, before planning

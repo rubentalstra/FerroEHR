@@ -215,7 +215,7 @@ impl FerroEhrService {
                 && let Some((existing_vo, _)) = self.current_vo(an_ehr_id, container.kind).await?
                 && existing_vo != container.vo_id
             {
-                return Err(ServiceError::Conflict(format!(
+                return Err(ServiceError::conflict(format!(
                     "EHR {an_ehr_id} already has a {} ({existing_vo}); cannot import a \
                      second one ({})",
                     container.kind.as_str(),

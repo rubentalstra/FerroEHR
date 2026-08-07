@@ -1086,10 +1086,10 @@ async fn create_composition_gate_error_surface_survives_the_writability_fold() {
         .create_composition(ehr_uuid, uv(&composition("obs2"), "249", None))
         .await
         .expect_err("non-modifiable EHR blocks content writes");
-    let ServiceError::Conflict(message) = &blocked else {
+    let ServiceError::Conflict(sm) = &blocked else {
         panic!("is_modifiable = false → 409 conflict, got {blocked:?}");
     };
-    assert!(message.contains("not modifiable"), "got {message}");
+    assert!(sm.message.contains("not modifiable"), "got {}", sm.message);
 }
 
 /// The temporal non-overlap invariant survives the removal of the `GiST`

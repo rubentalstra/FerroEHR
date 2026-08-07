@@ -53,7 +53,7 @@ impl WrappedOriginal {
     fn decode(vo_id: VoId, fragment: &Value) -> Result<Self, ServiceError> {
         let field = |name: &str| {
             fragment.get(name).cloned().ok_or_else(|| {
-                ServiceError::Unprocessable(
+                ServiceError::content_invalid(
                     Violation::new(format!(
                         "is missing from the wrapped ORIGINAL_VERSION stored for \
                          versioned object {vo_id}"

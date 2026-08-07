@@ -218,7 +218,7 @@ impl From<VersionIdError> for ApiError {
 
 impl From<VersionIdError> for ServiceError {
     fn from(e: VersionIdError) -> Self {
-        ServiceError::Unprocessable(crate::service::error::Violation::new(e.to_string()))
+        ServiceError::content_invalid(crate::service::error::Violation::new(e.to_string()))
     }
 }
 

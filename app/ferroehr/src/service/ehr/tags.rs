@@ -369,7 +369,7 @@ pub(in crate::service) fn normalized_target_path(raw: Option<&str>) -> Option<&s
 pub(in crate::service) fn item_tag_refusal(
     err: &openehr_rm::v1_2::common::tags::item_tag_impl::ItemTagError,
 ) -> ServiceError {
-    ServiceError::Unprocessable(
+    ServiceError::content_invalid(
         Violation::new(format!("item tag violates its RM invariants: {err}"))
             .with_path("ITEM_TAG")
             .with_source(err.clone()),

@@ -124,7 +124,7 @@ fn ensure_if_match(
         // base_types master05 §"Composite Identifiers and Case": two
         // identifiers identical apart from case identify the same thing).
         Some(meta) if composite_ids_equal(&meta.uid, pre.value()) => Ok(()),
-        Some(meta) => Err(crate::service::error::ServiceError::VersionConflict(
+        Some(meta) => Err(crate::service::error::ServiceError::version_conflict(
             format!(
                 "If-Match {:?} does not match the current latest version {:?}",
                 pre.value(),

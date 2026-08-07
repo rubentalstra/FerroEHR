@@ -448,7 +448,7 @@ impl FerroEhrService {
     pub(super) async fn adl2_wire_upload(&self, source: &str) -> Result<String, ServiceError> {
         let summary = self.adl2_validate(source).await?;
         if self.adl2_exists(&summary.archetype_id).await? {
-            return Err(ServiceError::Conflict(format!(
+            return Err(ServiceError::conflict(format!(
                 "an ADL2 template with id '{}' already exists",
                 summary.archetype_id
             )));
@@ -533,7 +533,7 @@ impl FerroEhrService {
     ///   `Unprocessable` (`422`).
     pub(super) async fn adl2_opt_json(&self, source: &str) -> Result<String, ServiceError> {
         let archetype = parse_artefact(source, Dialect::Adl2).map_err(|errs| {
-            ServiceError::Internal(format!(
+            ServiceError::exception(format!(
                 "stored ADL2 source no longer parses: {}",
                 join_syntax_errors(&errs)
             ))
@@ -545,7 +545,7 @@ impl FerroEhrService {
         }
         let repo = self.adl2_repository().await?;
         let opt = create_opt(&archetype, &repo).map_err(|e| {
-            ServiceError::Unprocessable(
+            ServiceError::content_invalid(
                 Violation::new(format!("cannot project OperationalTemplateV2: {e}")).with_source(e),
             )
         })?;
@@ -609,7 +609,7 @@ impl FerroEhrService {
     pub async fn web_template_adl2(&self, template_id: &str) -> Result<WebTemplate, ServiceError> {
         let opt = self.adl2_operational_template_for(template_id).await?;
         build_web_template_v2_4(&opt).map_err(|e| {
-            ServiceError::Unprocessable(
+            ServiceError::content_invalid(
                 Violation::new(format!(
                     "ADL2 template {template_id} could not be built into a WebTemplate: {e}"
                 ))
@@ -664,7 +664,7 @@ impl FerroEhrService {
         let opt = match self.adl2_operational_template_for(template_id).await {
             Ok(opt) => opt,
             Err(ServiceError::NotFound(_)) => {
-                return Err(ServiceError::Unprocessable(Violation::new(format!(
+                return Err(ServiceError::content_invalid(Violation::new(format!(
                     "operational template not known: {template_id}"
                 ))));
             }
@@ -674,7 +674,7 @@ impl FerroEhrService {
             .get_or_build(&key, || build_web_template_v2_4(&opt))
             .await
             .map_err(|e| {
-                ServiceError::Unprocessable(
+                ServiceError::content_invalid(
                     Violation::new(format!(
                         "ADL2 template {template_id} could not be built into a WebTemplate: {e}"
                     ))
@@ -710,7 +710,7 @@ impl FerroEhrService {
         source: &str,
     ) -> Result<OperationalTemplate, ServiceError> {
         let archetype = parse_artefact(source, Dialect::Adl2).map_err(|errs| {
-            ServiceError::Internal(format!(
+            ServiceError::exception(format!(
                 "stored ADL2 source no longer parses: {}",
                 join_syntax_errors(&errs)
             ))
@@ -722,7 +722,7 @@ impl FerroEhrService {
         }
         let repo = self.adl2_repository().await?;
         create_opt(&archetype, &repo).map_err(|e| {
-            ServiceError::Unprocessable(
+            ServiceError::content_invalid(
                 Violation::new(format!("cannot compile operational template: {e}")).with_source(e),
             )
         })
@@ -821,7 +821,7 @@ impl FerroEhrService {
             .fetch_one(&mut *tx)
             .await?;
             if refs > 0 {
-                return Err(ServiceError::Conflict(format!(
+                return Err(ServiceError::conflict(format!(
                     "template '{hrid}' is still referenced by {refs} committed version(s); \
                      delete those compositions before deleting the template"
                 )));
@@ -938,7 +938,7 @@ fn join_syntax_errors(errs: &[openehr_adl::error::SyntaxError]) -> String {
 /// content)"). AOM2 validation-phase failures (V-codes) on a *parsed* source
 /// are the semantic `422` branch instead (see [`FerroEhrService::adl2_validate`]).
 fn syntax_bad_request(errs: &[openehr_adl::error::SyntaxError]) -> ServiceError {
-    ServiceError::BadRequest(format!(
+    ServiceError::precondition(format!(
         "syntactically invalid ADL2 content: {}",
         join_syntax_errors(errs)
     ))
