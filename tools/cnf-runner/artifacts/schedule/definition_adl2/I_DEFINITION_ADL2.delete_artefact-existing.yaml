@@ -38,5 +38,5 @@ flow:
     expect: not_found
 postconditions:
   - assert: state
-    text: "The deleted artefact is no longer retrievable (verified by step 3)"
+    text: "The deleted artefact is no longer retrievable (verified by step 2)"
 ambiguities: [AMB-37]

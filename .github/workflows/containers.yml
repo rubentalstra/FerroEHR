@@ -228,6 +228,11 @@ jobs:
           retention-days: 1
 
   # ── Package + push the multi-arch app image (COPY-only; seconds) ────────────
+  # On a `v*` tag publish-chart.yml runs concurrently with this workflow and
+  # WAITS on this job by name before pulling the image it judges the chart
+  # against (#2149). Renaming it here breaks that wait, which is why that step
+  # fails loudly on a completed run with no `app image` job rather than sitting
+  # out its timeout.
   app-image:
     name: app image
     runs-on: ubuntu-26.04

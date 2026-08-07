@@ -16,7 +16,10 @@
 #   - `workflow_dispatch`, so a chart-only fix does not wait for an unrelated
 #     application release. The default dispatch is a DRY RUN — it packages and
 #     runs every pre-flight check but pushes nothing — mirroring
-#     publish-crates.yml.
+#     publish-crates.yml. The one pre-flight that is not identical across the
+#     two triggers is the image-acceptance check, which judges the chart
+#     against the release image on a tag and against an image built from the
+#     current tree on a dispatch; the reasoning sits at that step.
 #
 # WHY there is no `helm package --sign` / `.prov` provenance: PGP signing needs a
 # long-lived private key in CI, which is the exact thing the crates.io lane was
@@ -63,12 +66,18 @@ jobs:
   publish:
     name: package + publish
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # A tag run spends most of its wall clock WAITING for containers.yml to
+    # publish the image the acceptance step judges the chart against (see that
+    # step). containers.yml's own `binary` job allows 60 minutes for a cold
+    # per-arch compile, so anything shorter here would time out on the image
+    # lane rather than on this one's work.
+    timeout-minutes: 75
     permissions:
       contents: read
       packages: write # push the chart + the artifacthub.io tag to GHCR
       id-token: write # Sigstore, for the keyless attestation
       attestations: write # store it against this repository
+      actions: read # read containers.yml's run status for this tag
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -146,6 +155,114 @@ jobs:
           fi
           echo "chart version $VERSION is unpublished — proceeding."
 
+      # WHICH image the chart is judged against is a per-trigger decision,
+      # because `appVersion` and the chart's `config` defaults move on
+      # different clocks (#2144).
+      #
+      # On a tag, `appVersion` IS the version being released (the guard above
+      # refuses the run otherwise), so the image a `helm install` of this chart
+      # will actually pull is the one this cut publishes — judging against it
+      # is exactly right, and it is the only judgement that gates a push.
+      #
+      # Between releases `appVersion` is still the LAST release, while
+      # values.yaml and the server's configuration vocabulary advance together
+      # in-tree. Judging a mid-cycle dry run against it therefore fails from
+      # the first commit that adds a configuration key until the release PR —
+      # a fact about the clock, not about the artifact. A dispatch is judged
+      # against an image built from THIS tree instead: containers.yml's
+      # exact-commit `sha-` tag when it published one, otherwise `develop`.
+      # `develop` is a sound fallback rather than a guess: every path that can
+      # move the server's configuration vocabulary sits inside that workflow's
+      # `app` filter, so the `develop` tag carries this tree's vocabulary even
+      # when the head commit built no image of its own.
+      - name: Select the image the chart is judged against
+        id: judge
+        env:
+          APP: ${{ steps.chart.outputs.app }}
+          IS_TAG: ${{ startsWith(github.ref, 'refs/tags/v') }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$IS_TAG" = "true" ]; then
+            image="${APP_IMAGE}:${APP}"
+            why="the appVersion image — on a tag that is the release being cut"
+          else
+            candidate="${APP_IMAGE}:sha-${SHA:0:7}"
+            if docker manifest inspect "$candidate" >/dev/null 2>&1; then
+              image="$candidate"
+              why="the image built from this commit; appVersion ${APP} predates this tree's configuration vocabulary"
+            else
+              image="${APP_IMAGE}:develop"
+              why="the develop image (containers.yml published none for ${SHA:0:7}); appVersion ${APP} predates this tree's configuration vocabulary"
+            fi
+          fi
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+          echo "why=$why" >> "$GITHUB_OUTPUT"
+          echo "judging the chart against ${image} — ${why}"
+
+      # A `v*` tag starts containers.yml and this workflow at the same instant,
+      # and the tag the acceptance step pulls is the one that run is still
+      # pushing (#2149). The dependency is made explicit here, against the
+      # other run's `app image` JOB rather than against the registry: a failed
+      # or skipped image lane then fails this one immediately with its URL,
+      # instead of polling for a tag that will never appear.
+      #
+      # A shared workflow-level `concurrency` group cannot express this: a
+      # concurrency group has no queue-order guarantee, so the chart lane could
+      # take the group and then wait for a build queued behind itself.
+      - name: Wait for the image lane to publish this tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          REF_NAME: ${{ github.ref_name }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          deadline=$(( $(date +%s) + 3600 ))
+          # The same commit is also pushed to develop, so the run is selected by
+          # tag (a tag push reports the tag as `head_branch`), not by SHA alone.
+          run_id=""
+          until [ -n "$run_id" ]; do
+            run_id=$(gh api \
+              "/repos/${REPO}/actions/workflows/containers.yml/runs?head_sha=${HEAD_SHA}&per_page=100" \
+              --jq '[.workflow_runs[] | select(.head_branch == env.REF_NAME)] | sort_by(.run_number) | last | .id // empty')
+            [ -n "$run_id" ] && break
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              echo "::error::no containers.yml run exists for tag ${REF_NAME} — the image this chart deploys is never going to be published. Re-run containers.yml for the tag, then re-run this workflow."
+              exit 1
+            fi
+            echo "waiting for the containers.yml run for ${REF_NAME} to appear"
+            sleep 15
+          done
+          url="https://github.com/${REPO}/actions/runs/${run_id}"
+          while :; do
+            line=$(gh api "/repos/${REPO}/actions/runs/${run_id}/jobs?per_page=100" \
+              --jq '[.jobs[] | select(.name == "app image")] | map("\(.status) \(.conclusion // "")") | first // ""')
+            status=""; conclusion=""
+            read -r status conclusion <<<"$line" || true
+            # The coupling is a job NAME, so a rename in containers.yml would
+            # otherwise present as a silent hour-long wait.
+            if [ -z "$status" ] && [ "$(gh api "/repos/${REPO}/actions/runs/${run_id}" --jq .status)" = "completed" ]; then
+              echo "::error::the containers.yml run for ${REF_NAME} finished with no job named 'app image' (${url}) — the job was renamed or removed; this wait names it explicitly and must be updated with it."
+              exit 1
+            fi
+            if [ "$status" = "completed" ]; then
+              if [ "$conclusion" != "success" ]; then
+                echo "::error::containers.yml 'app image' concluded '${conclusion}' for ${REF_NAME} — the image this chart deploys was not published, so the acceptance check below has nothing correct to judge against. ${url}"
+                exit 1
+              fi
+              echo "the image lane published ${REF_NAME} (${url})"
+              break
+            fi
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              echo "::error::containers.yml 'app image' is still '${status:-not started}' after 60 minutes (${url}) — this run waited on the image lane and it has not finished. Nothing is wrong with the chart; re-run this workflow once that run completes."
+              exit 1
+            fi
+            echo "containers.yml 'app image' is ${status:-not started} — waiting (${url})"
+            sleep 20
+          done
+
       # The check that catches the failure nobody could see from a rendered
       # manifest: `helm install` with no `image.tag` pins `appVersion`, and the
       # chart's `config` defaults track development between releases, so the
@@ -153,22 +270,19 @@ jobs:
       # `unknown configuration key …`. Measured against ghcr.io/…/ferroehr:3.17.3:
       # the rendered defaults carry `server.limits` and `db.statement_timeout_ms`,
       # and that image's own `config check` refuses the file. A chart that cannot
-      # deploy its own default image is not published.
-      #
-      # On a tag push the image is built by containers.yml in a parallel run, so
-      # the pull waits for it rather than failing the race.
-      - name: The appVersion image must accept the chart's rendered defaults
+      # deploy the image it selects is not published.
+      - name: The selected image must accept the chart's rendered defaults
         env:
-          APP: ${{ steps.chart.outputs.app }}
+          IMAGE: ${{ steps.judge.outputs.image }}
+          WHY: ${{ steps.judge.outputs.why }}
         run: |
           set -euo pipefail
-          image="${APP_IMAGE}:${APP}"
-          for attempt in $(seq 1 40); do
-            if docker pull -q "$image" >/dev/null 2>&1; then break; fi
-            echo "waiting for $image to be published (attempt $attempt/40)"
-            sleep 30
-          done
-          docker pull -q "$image" >/dev/null
+          image="$IMAGE"
+          echo "judging against ${image} — ${WHY}"
+          if ! docker pull -q "$image" >/dev/null; then
+            echo "::error::${image} could not be pulled, so the chart could not be judged against anything. It was selected as ${WHY}."
+            exit 1
+          fi
           helm template ferroehr "$CHART_DIR" -f deploy/helm/ci/default-values.yaml \
             --show-only templates/configmap.yaml \
             | sed -n '/ferroehr.toml: |/,$p' | sed '1d;s/^    //' > rendered.toml
@@ -211,7 +325,7 @@ jobs:
                -v "$PWD/envfiles:/etc/ferroehr-secrets:ro" \
                $(tr '\n' ' ' < envargs) \
                --entrypoint /usr/local/bin/ferroehr "$image" config check > check.log 2>&1; then
-            echo "::error::the chart's default configuration is not accepted by ${image} — a plain 'helm install' would crash-loop."
+            echo "::error::the chart's default configuration is not accepted by ${image} (${WHY}) — a plain 'helm install' would crash-loop."
             cat check.log
             exit 1
           fi
@@ -339,12 +453,15 @@ jobs:
           VERSION: ${{ steps.chart.outputs.version }}
           APP: ${{ steps.chart.outputs.app }}
           DIGEST: ${{ steps.push.outputs.digest }}
+          JUDGED: ${{ steps.judge.outputs.image }}
+          WHY: ${{ steps.judge.outputs.why }}
         run: |
           {
             printf '## Chart publish\n\n'
             printf '| | |\n|---|---|\n'
             printf '| chart version | `%s` |\n' "$VERSION"
             printf '| appVersion | `%s` |\n' "$APP"
+            printf '| judged against | `%s` (%s) |\n' "${JUDGED:-not selected}" "${WHY:-—}"
             printf '| repository | `%s` |\n' "$CHART_REF"
             printf '| digest | `%s` |\n' "${DIGEST:-not pushed}"
             printf '\nInstall:\n\n```shell\nhelm install ferroehr oci://%s/ferroehr --version %s\n```\n' \

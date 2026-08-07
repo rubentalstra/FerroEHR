@@ -20,6 +20,8 @@ description: "upload an unparseable ADL 1.4 source"
 spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL14.upload_archetype"
 applies: { rm: ">=1.0.2" }
+guards:
+  - "EXTENSION ROUTE — no openEHR spec governs the /definition/archetype/adl1.4* routes; our own design/extension, declared in vocab/wire_surface.yaml served_extensions (family adl14-archetype) and adjudicated by register AMB-41. The row gates the Adl14ArchetypeProvisioning CAPABILITY verdict only, never ITS-REST wire conformance"
 requires: { server: any }
 data_sets: [cnf.archetype.adl14.unparseable]
 flow:
@@ -27,3 +29,4 @@ flow:
     call: upload_archetype
     with: { archetype_adl14: "${ds:cnf.archetype.adl14.unparseable}" }
     expect: validation_failed
+ambiguities: [AMB-41]
