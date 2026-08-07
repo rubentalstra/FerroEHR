@@ -110,7 +110,7 @@ fn parse_valid_time(raw: Option<&str>) -> Result<Option<jiff_sqlx::Timestamp>, S
         Some(s) => s
             .parse::<jiff::Timestamp>()
             .map(|t| Some(t.to_sqlx()))
-            .map_err(|_| ServiceError::BadRequest(format!("invalid valid_time: {s}"))),
+            .map_err(|_| ServiceError::precondition(format!("invalid valid_time: {s}"))),
     }
 }
 

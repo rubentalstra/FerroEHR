@@ -440,7 +440,7 @@ impl FerroEhrService {
                 subject_id.as_deref(),
             )
             .map_err(|e| {
-                ServiceError::Unprocessable(Violation::new(e.to_string()).with_source(e))
+                ServiceError::content_invalid(Violation::new(e.to_string()).with_source(e))
             })?;
             out.push((resource_type, template_id.clone(), resource));
         }
@@ -456,15 +456,13 @@ fn validated_name(body: &Value) -> Result<String, ServiceError> {
         .and_then(Value::as_str)
         .map(str::trim)
         .filter(|s| !s.is_empty())
-        .ok_or_else(|| {
-            ServiceError::BadRequest("FHIR mapping requires a non-empty 'name'".into())
-        })?;
+        .ok_or_else(|| ServiceError::precondition("FHIR mapping requires a non-empty 'name'"))?;
     if !name
         .chars()
         .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '.' | '-'))
     {
-        return Err(ServiceError::BadRequest(
-            "FHIR mapping 'name' must match [A-Za-z0-9_.-]".into(),
+        return Err(ServiceError::precondition(
+            "FHIR mapping 'name' must match [A-Za-z0-9_.-]",
         ));
     }
     Ok(name.to_owned())
@@ -477,7 +475,7 @@ fn validated_definition(body: &Value) -> Result<(Value, FhirMappingDefinition), 
     let raw = body
         .get("definition")
         .cloned()
-        .ok_or_else(|| ServiceError::BadRequest("FHIR mapping requires a 'definition'".into()))?;
+        .ok_or_else(|| ServiceError::precondition("FHIR mapping requires a 'definition'"))?;
     let def: FhirMappingDefinition = serde_json::from_value(raw.clone()).map_err(|e| {
         ServiceError::bad_request(format!("invalid FHIR mapping definition: {e}"), e)
     })?;
@@ -490,11 +488,11 @@ fn validated_definition(body: &Value) -> Result<(Value, FhirMappingDefinition), 
 fn map_insert_error(e: sqlx::Error) -> ServiceError {
     if let sqlx::Error::Database(db) = &e {
         if db.is_unique_violation() {
-            return ServiceError::Conflict("a FHIR mapping with that name exists".into());
+            return ServiceError::conflict("a FHIR mapping with that name exists");
         }
         if db.is_foreign_key_violation() {
-            return ServiceError::BadRequest(
-                "FHIR mapping references an unknown template_id (ingest the OPT first)".into(),
+            return ServiceError::precondition(
+                "FHIR mapping references an unknown template_id (ingest the OPT first)",
             );
         }
     }

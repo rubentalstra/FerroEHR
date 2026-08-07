@@ -39,7 +39,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use ferroehr::service::status::CallStatusType;
+use ferroehr::service::status::{CallStatusType, SmError};
 use ferroehr::service::terminology::config::{
     ExternalTerminologyConfig, FhirOperation, FhirProviderConfig, ProviderKind,
 };
@@ -333,7 +333,7 @@ fn external(cfg: FhirProviderConfig) -> ExternalTerminologyConfig {
 }
 
 /// Build the router, take its sole provider, and run one `$lookup`.
-async fn lookup(cfg: FhirProviderConfig) -> Result<bool, ferroehr::service::status::SmError> {
+async fn lookup(cfg: FhirProviderConfig) -> Result<bool, SmError> {
     let router = TerminologyRouter::build(&external(cfg))?.expect("router");
     let provider = router.default_provider().expect("default provider");
     provider
@@ -434,6 +434,13 @@ async fn a_custom_ca_bundle_trusts_a_private_server_that_default_trust_refuses()
 /// (d) Broken TLS material is a BOOT failure, not a first-request surprise: the
 /// router refuses to build. Both shapes are covered — a path that does not
 /// exist, and a file that exists but holds the wrong PEM object.
+///
+/// The diagnosis is read off the CAUSE CHAIN
+/// ([RFC 0201](https://rust-lang.github.io/rfcs/0201-error-chaining.html)), not
+/// off the message: the message is the one thing that could reach a client on
+/// a `500`, so it names the provider and the failure class only, while the
+/// `TlsMaterialError` naming the offending configuration key rides
+/// [`std::error::Error::source`] for the operator's boot log.
 #[tokio::test]
 async fn broken_tls_material_fails_at_boot() {
     let pki = Pki::write();
@@ -444,11 +451,7 @@ async fn broken_tls_material_fails_at_boot() {
     missing.client_key_path = Some(pki.client_key.clone());
     let err = TerminologyRouter::build(&external(missing))
         .expect_err("a missing certificate file must fail the build");
-    assert!(
-        err.message.contains("client_cert_path"),
-        "got {}",
-        err.message
-    );
+    assert_cause_names(&err, "client_cert_path");
 
     // A key path pointing at a certificate — readable, but not a private key.
     let mut wrong_key = provider_cfg("https://ts.example.org/fhir");
@@ -456,31 +459,38 @@ async fn broken_tls_material_fails_at_boot() {
     wrong_key.client_key_path = Some(pki.ca.clone());
     let err = TerminologyRouter::build(&external(wrong_key))
         .expect_err("a key file holding no private key must fail the build");
-    assert!(
-        err.message.contains("no PEM private key"),
-        "got {}",
-        err.message
-    );
+    assert_cause_names(&err, "no PEM private key");
 
     // A CA bundle path pointing at a private key — no trust anchor in it.
     let mut wrong_ca = provider_cfg("https://ts.example.org/fhir");
     wrong_ca.ca_bundle_path = Some(pki.client_key.clone());
     let err = TerminologyRouter::build(&external(wrong_ca))
         .expect_err("a CA bundle holding no certificate must fail the build");
-    assert!(
-        err.message.contains("ca_bundle_path"),
-        "got {}",
-        err.message
-    );
+    assert_cause_names(&err, "ca_bundle_path");
 
     // And half an identity never reaches the network either.
     let mut half = provider_cfg("https://ts.example.org/fhir");
     half.client_key_path = Some(pki.client_key.clone());
     let err = TerminologyRouter::build(&external(half))
         .expect_err("half a client identity must fail the build");
+    assert_cause_names(&err, "must be set together");
+}
+
+/// Assert that walking the boot failure's cause chain reaches `expected`, and
+/// that the client-visible message does NOT carry it.
+fn assert_cause_names(err: &SmError, expected: &str) {
+    let chain = std::iter::successors(std::error::Error::source(err), |e| {
+        std::error::Error::source(*e)
+    })
+    .map(ToString::to_string)
+    .collect::<Vec<_>>();
     assert!(
-        err.message.contains("must be set together"),
-        "got {}",
+        chain.iter().any(|hop| hop.contains(expected)),
+        "the cause chain must name {expected:?}, got {chain:?}"
+    );
+    assert!(
+        !err.message.contains(expected),
+        "the client-visible message must not carry the diagnosis, got {}",
         err.message
     );
 }

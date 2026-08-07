@@ -85,7 +85,7 @@ fn classify(
 ) -> Result<(Action, String), ServiceError> {
     let code = match token {
         Some(t) => change_type_code(t).ok_or_else(|| {
-            ServiceError::Unprocessable(
+            ServiceError::content_invalid(
                 Violation::new(format!(
                     "{t:?} is not a code in the openEHR audit_change_type group"
                 ))
@@ -108,7 +108,7 @@ fn classify(
                 // change-control semantics cannot be followed (RM
                 // change_control §Contributions: creation commits a NEW
                 // VERSIONED_OBJECT).
-                return Err(ServiceError::Unprocessable(
+                return Err(ServiceError::content_invalid(
                     Violation::new(
                         "249|creation| is invalid for an existing object \
                          (preceding_version_uid present); creation commits a new \
@@ -119,7 +119,7 @@ fn classify(
                 ));
             }
             if !has_data {
-                return Err(ServiceError::Unprocessable(
+                return Err(ServiceError::content_invalid(
                     Violation::new("is required on a creation version").with_path("data"),
                 ));
             }
@@ -131,7 +131,7 @@ fn classify(
                 // `400_CONTRIBUTION` trigger family ("the modification type
                 // does not match the operation - i.e. first version of a
                 // MODIFICATION") → 400.
-                return Err(ServiceError::BadRequest(
+                return Err(ServiceError::precondition(
                     "deleted (523) version requires preceding_version_uid — a first \
                      version's change type is 249|creation| (ITS-REST contribution \
                      400: the modification type does not match the operation)"
@@ -139,7 +139,7 @@ fn classify(
                 ));
             }
             if has_data {
-                return Err(ServiceError::Unprocessable(
+                return Err(ServiceError::content_invalid(
                     Violation::new(
                         "must not be set on a deleted (523) version — its data attribute \
                          is set to Void",
@@ -160,7 +160,7 @@ fn classify(
             // `ATTESTATION._commit_audit_._change_type_`, a path ATTESTATION
             // cannot have; the repaired reading `ATTESTATION.change_type` is used.
             if !has_preceding {
-                return Err(ServiceError::BadRequest(
+                return Err(ServiceError::precondition(
                     "change_type 666|attestation| requires preceding_version_uid to \
                      identify the ORIGINAL_VERSION being attested (RM change_control \
                      §Contributions; VERSIONED_OBJECT.commit_attestation pre \
@@ -169,7 +169,7 @@ fn classify(
                 ));
             }
             if has_data {
-                return Err(ServiceError::Unprocessable(
+                return Err(ServiceError::content_invalid(
                     Violation::new(
                         "must not be set on a 666 attestation version — attesting an \
                          existing item adds no content",
@@ -188,7 +188,7 @@ fn classify(
                 // THE released assignment: `400_CONTRIBUTION` — "the
                 // modification type does not match the operation - i.e. first
                 // version of a MODIFICATION" → 400.
-                return Err(ServiceError::BadRequest(format!(
+                return Err(ServiceError::precondition(format!(
                     "change_type {code} requires preceding_version_uid — a first \
                      version's change type is 249|creation| (ITS-REST contribution \
                      400: the modification type does not match the operation; RM \
@@ -196,7 +196,7 @@ fn classify(
                 )));
             }
             if !has_data {
-                return Err(ServiceError::Unprocessable(
+                return Err(ServiceError::content_invalid(
                     Violation::new(format!("is required on a change_type {code} version"))
                         .with_path("data"),
                 ));
@@ -305,7 +305,7 @@ fn reject_foreign_version_identity(version: &Value, index: usize) -> Result<(), 
     if let Some(map) = version.as_object() {
         for key in map.keys() {
             if !DECLARED.contains(&key.as_str()) && !SPECIFICALLY_REFUSED.contains(&key.as_str()) {
-                return Err(ServiceError::BadRequest(format!(
+                return Err(ServiceError::precondition(format!(
                     "versions[{index}]/{key} is not a member of UPDATE_VERSION — the \
                      released commit wire declares preceding_version_uid, signature, \
                      lifecycle_state, attestations, data, commit_audit (ITS-REST \
@@ -316,7 +316,7 @@ fn reject_foreign_version_identity(version: &Value, index: usize) -> Result<(), 
         }
     }
     if version.get("item").is_some() {
-        return Err(ServiceError::BadRequest(
+        return Err(ServiceError::precondition(
             "item is not a member of UPDATE_VERSION — it is the sole own attribute of \
              IMPORTED_VERSION, and the released commit wire declares no import shape \
              (ITS-REST UpdateVersion.yaml / NewContribution.yaml). An imported \
@@ -326,7 +326,7 @@ fn reject_foreign_version_identity(version: &Value, index: usize) -> Result<(), 
         ));
     }
     if version.get("uid").is_some() {
-        return Err(ServiceError::BadRequest(
+        return Err(ServiceError::precondition(
             "uid is not carried on a CONTRIBUTION version member — the member is the \
              commit-wire PARTIAL of the version it becomes (ITS-REST \
              UpdateVersion.yaml declares six properties and no uid), and the version \
@@ -342,7 +342,7 @@ fn reject_foreign_version_identity(version: &Value, index: usize) -> Result<(), 
     match version.get("_type") {
         None => Ok(()),
         Some(Value::String(name)) if COMMITTABLE_MEMBER_TYPES.contains(&name.as_str()) => Ok(()),
-        Some(other) => Err(ServiceError::BadRequest(format!(
+        Some(other) => Err(ServiceError::precondition(format!(
             "_type {other} does not name a class the CONTRIBUTION commit wire commits \
              — a member self-tags as UPDATE_VERSION or ORIGINAL_VERSION or not at all \
              (ITS-REST Resources.md: the value \"MUST be the uppercase class name from \
@@ -395,7 +395,7 @@ pub(crate) async fn commit_version_set(
         .and_then(Value::as_array)
         .filter(|v| !v.is_empty())
         .ok_or_else(|| {
-            ServiceError::Unprocessable(
+            ServiceError::content_invalid(
                 Violation::new("must contain at least one version").with_path("versions"),
             )
         })?;
@@ -416,7 +416,7 @@ pub(crate) async fn commit_version_set(
                       is not part of the wire contract"
         )]
         Some(raw) => Some(raw.parse::<Uuid>().map_err(|_| {
-            ServiceError::Unprocessable(
+            ServiceError::content_invalid(
                 Violation::new(format!("{raw:?} is not a valid HIER_OBJECT_ID UUID"))
                     .with_path("CONTRIBUTION.uid"),
             )
@@ -433,7 +433,7 @@ pub(crate) async fn commit_version_set(
     let contrib_committer = match body.get("audit").and_then(|a| a.get("committer")) {
         Some(supplied) => party_proxy(supplied)?,
         None => {
-            return Err(ServiceError::Unprocessable(
+            return Err(ServiceError::content_invalid(
                 Violation::new(
                     "is required on a CONTRIBUTION audit — the change set's committer is the \
                      client's account of who committed it and is never invented by the server",
@@ -502,7 +502,7 @@ pub(crate) async fn commit_version_set(
         // and only it — it commits no new version (master06 §Contributions), so
         // it has no version lifecycle state to supply; the RM governs the gap.
         if version.get("other_input_version_uids").is_some() {
-            return Err(ServiceError::BadRequest(
+            return Err(ServiceError::precondition(
                 "other_input_version_uids is not a member of UPDATE_VERSION — the \
                  released commit wire declares no merge shape (ITS-REST \
                  UpdateVersion.yaml); merge provenance is served on reads only \
@@ -511,7 +511,7 @@ pub(crate) async fn commit_version_set(
             ));
         }
         if action != Action::Attest && lifecycle_state.is_none() {
-            return Err(ServiceError::BadRequest(
+            return Err(ServiceError::precondition(
                 "lifecycle_state is required on every CONTRIBUTION version \
                  (SM master03 §Version Update Semantics: \"The lifecycle_state must \
                  be supplied in all cases\"; ITS-REST UpdateVersion.yaml lists it \
@@ -564,7 +564,7 @@ pub(crate) async fn commit_version_set(
     // content the committed CONTRIBUTION refers to.
     let require_kind = |vo_id: VoId| -> Result<Kind, ServiceError> {
         target_kinds.get(&vo_id).copied().ok_or_else(|| {
-            ServiceError::BadRequest(format!(
+            ServiceError::precondition(format!(
                 "modification target does not exist: versioned object {vo_id} \
                  (ITS-REST contribution 400 — the modification does not match \
                  a stored object)"
@@ -579,14 +579,14 @@ pub(crate) async fn commit_version_set(
     for v in plan {
         if v.action == Action::Attest {
             let Some((vo_id, expected)) = v.target else {
-                return Err(ServiceError::Internal(
+                return Err(ServiceError::exception(
                     "attest plan entry lost its parsed preceding target".to_owned(),
                 ));
             };
             let kind = require_kind(vo_id)?;
             check_kind_scope(kind, party_only)?;
             let partial = v.commit_audit.ok_or_else(|| {
-                ServiceError::Unprocessable(
+                ServiceError::content_invalid(
                     Violation::new(
                         "is required on a 666 attestation version (the UPDATE_ATTESTATION)",
                     )
@@ -607,7 +607,7 @@ pub(crate) async fn commit_version_set(
         let change = match v.action {
             Action::Create => {
                 let data = v.data.ok_or_else(|| {
-                    ServiceError::Unprocessable(
+                    ServiceError::content_invalid(
                         Violation::new("is required on a creation version").with_path("data"),
                     )
                 })?;
@@ -646,12 +646,12 @@ pub(crate) async fn commit_version_set(
             }
             Action::Modify => {
                 let data = v.data.ok_or_else(|| {
-                    ServiceError::Unprocessable(
+                    ServiceError::content_invalid(
                         Violation::new("is required on a modification version").with_path("data"),
                     )
                 })?;
                 let Some((vo_id, expected)) = v.target else {
-                    return Err(ServiceError::Internal(
+                    return Err(ServiceError::exception(
                         "modify plan entry lost its parsed preceding target".to_owned(),
                     ));
                 };
@@ -680,7 +680,7 @@ pub(crate) async fn commit_version_set(
             }
             Action::Delete => {
                 let Some((vo_id, expected)) = v.target else {
-                    return Err(ServiceError::Internal(
+                    return Err(ServiceError::exception(
                         "delete plan entry lost its parsed preceding target".to_owned(),
                     ));
                 };
@@ -691,7 +691,7 @@ pub(crate) async fn commit_version_set(
                 // leave the EHR violating its own invariant, so a delete
                 // member targeting it is refused as a version conflict.
                 if kind == Kind::EhrStatus {
-                    return Err(ServiceError::Conflict(
+                    return Err(ServiceError::conflict(
                         "the EHR_STATUS cannot be deleted — EHR.ehr_status is mandatory \
                          (RM ehr, EHR class, ehr_status: 1..1)"
                             .to_owned(),
@@ -709,7 +709,7 @@ pub(crate) async fn commit_version_set(
             // against that branch ever stopping to cover the action — the same
             // shape the lost-target arms above use.
             Action::Attest => {
-                return Err(ServiceError::Internal(
+                return Err(ServiceError::exception(
                     "attestation version reached the change-building match".to_owned(),
                 ));
             }
@@ -741,7 +741,7 @@ pub(crate) async fn commit_version_set(
             .and_then(|a| a.get("change_type"))
             .and_then(coded_value)
             .ok_or_else(|| {
-                ServiceError::Unprocessable(
+                ServiceError::content_invalid(
                     Violation::new(
                         "is required on a CONTRIBUTION audit — the change set's own change \
                          type is the client's account of it and is never derived by the server",
@@ -750,7 +750,7 @@ pub(crate) async fn commit_version_set(
                 )
             })?;
         change_type_code(&token).ok_or_else(|| {
-            ServiceError::Unprocessable(
+            ServiceError::content_invalid(
                 Violation::new(format!(
                     "{token:?} is not a code in the openEHR audit_change_type group"
                 ))
@@ -864,7 +864,7 @@ async fn reject_duplicate_singleton(
     match kind {
         Kind::EhrStatus | Kind::EhrAccess => {
             if cx.current_vo(ehr_id, kind).await?.is_some() {
-                return Err(ServiceError::Conflict(format!(
+                return Err(ServiceError::conflict(format!(
                     "EHR {ehr_id} already has a {}; only one is permitted (RM ehr, EHR class)",
                     kind.as_str()
                 )));
@@ -880,7 +880,7 @@ async fn reject_duplicate_singleton(
                 .and_then(Value::as_str)
                 .unwrap_or_default();
             if cx.folder_root_exists(ehr_id, root, name).await? {
-                return Err(ServiceError::Conflict(format!(
+                return Err(ServiceError::conflict(format!(
                     "EHR {ehr_id} already has a folder hierarchy rooted at \
                      {root:?} named {name:?}; re-creating an existing directory \
                      is invalid (CNF schedule master08 §commit_contribution \
@@ -919,7 +919,7 @@ fn commit_audit_is_attestation(audit: &Value) -> Result<bool, ServiceError> {
     match audit.get("_type").and_then(Value::as_str) {
         None | Some("UPDATE_AUDIT" | "AUDIT_DETAILS") => Ok(false),
         Some("UPDATE_ATTESTATION" | "ATTESTATION") => Ok(true),
-        Some(other) => Err(ServiceError::Unprocessable(
+        Some(other) => Err(ServiceError::content_invalid(
             Violation::new(format!(
                 "_type {other:?} is not an AUDIT_DETAILS or its ATTESTATION subtype"
             ))
@@ -1040,7 +1040,7 @@ fn parse_audit(
 /// direction.
 fn check_kind_scope(kind: Kind, party_only: bool) -> Result<(), ServiceError> {
     if party_only && !kind.is_demographic() {
-        return Err(ServiceError::Unprocessable(
+        return Err(ServiceError::content_invalid(
             Violation::new(format!(
                 "of a demographic CONTRIBUTION may only be demographic versions, got {}",
                 kind.as_str()
@@ -1049,7 +1049,7 @@ fn check_kind_scope(kind: Kind, party_only: bool) -> Result<(), ServiceError> {
         ));
     }
     if !party_only && kind.is_demographic() {
-        return Err(ServiceError::Unprocessable(
+        return Err(ServiceError::content_invalid(
             Violation::new(format!(
                 "of an EHR CONTRIBUTION may not be demographic versions, got {}",
                 kind.as_str()
@@ -1109,7 +1109,7 @@ fn data_kind(data: &Value) -> Result<Kind, ServiceError> {
         .and_then(Value::as_str)
         .unwrap_or_default();
     Kind::from_type(rm_type).ok_or_else(|| {
-        ServiceError::Unprocessable(
+        ServiceError::content_invalid(
             Violation::new(format!(
                 "names {rm_type:?}, which is not a versioned root type"
             ))
@@ -1169,7 +1169,7 @@ fn typed_decode_gate(kind: Kind, data: &Value, incomplete: bool) -> Result<(), S
         | Kind::PartyRelationship => None,
     };
     match refused {
-        Some(e) => Err(ServiceError::BadRequest(format!(
+        Some(e) => Err(ServiceError::precondition(format!(
             "invalid canonical JSON body: {e}"
         ))),
         None => Ok(()),
@@ -1194,7 +1194,7 @@ fn parse_preceding(version: &Value) -> Result<(VoId, TreeId), ServiceError> {
                 .or_else(|| p.get("value").and_then(Value::as_str))
         })
         .ok_or_else(|| {
-            ServiceError::Unprocessable(
+            ServiceError::content_invalid(
                 Violation::new("required for modify/delete").with_path("preceding_version_uid"),
             )
         })?;
@@ -1381,7 +1381,7 @@ async fn ensure_ehr_exists(pool: &sqlx::PgPool, ehr_id: EhrId) -> Result<(), Ser
 /// `400_CONTRIBUTION` scope — never a 404.
 fn body_target_not_found_is_bad_request(e: ServiceError) -> ServiceError {
     match e {
-        ServiceError::NotFound(m) => ServiceError::BadRequest(format!(
+        ServiceError::NotFound(m) => ServiceError::precondition(format!(
             "modification target does not exist: {m} (ITS-REST contribution 400 — \
              the modification does not match a stored object)"
         )),
@@ -1546,7 +1546,7 @@ mod tests {
             match err {
                 // Asserted as DATA: the refused attribute path, and the
                 // offending `_type` in the violation's own detail.
-                ServiceError::Unprocessable(v) => {
+                ServiceError::Unprocessable { violation: v, .. } => {
                     assert_eq!(v.path(), Some("VERSION.commit_audit"), "{bad}");
                     assert_eq!(
                         v.invariant(),
@@ -1570,21 +1570,23 @@ mod tests {
         )
         .expect_err("an ATTESTATION without reason must be refused");
         match err {
-            ServiceError::Unprocessable(v) => assert_eq!(v.path(), Some("ATTESTATION.reason")),
+            ServiceError::Unprocessable { violation: v, .. } => {
+                assert_eq!(v.path(), Some("ATTESTATION.reason"));
+            }
             other => panic!("expected Unprocessable, got {other:?}"),
         }
     }
 
     fn classify_err(token: Option<&str>, has_preceding: bool, has_data: bool) -> Violation {
         match classify(token, has_preceding, has_data) {
-            Err(ServiceError::Unprocessable(v)) => v,
+            Err(ServiceError::Unprocessable { violation: v, .. }) => v,
             other => panic!("expected Unprocessable, got {other:?}"),
         }
     }
 
     fn classify_bad_request(token: Option<&str>, has_preceding: bool, has_data: bool) -> String {
         match classify(token, has_preceding, has_data) {
-            Err(ServiceError::BadRequest(msg)) => msg,
+            Err(ServiceError::BadRequest(e)) => e.message,
             other => panic!("expected BadRequest, got {other:?}"),
         }
     }

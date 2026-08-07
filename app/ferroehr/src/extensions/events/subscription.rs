@@ -243,7 +243,7 @@ impl FerroEhrService {
 fn validated_name(raw: &str) -> Result<String, ServiceError> {
     let name = raw.trim();
     if name.is_empty() {
-        return Err(ServiceError::BadRequest(
+        return Err(ServiceError::precondition(
             "event subscription requires a non-empty 'name'".to_owned(),
         ));
     }
@@ -251,7 +251,7 @@ fn validated_name(raw: &str) -> Result<String, ServiceError> {
         .chars()
         .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '.' | '-'))
     {
-        return Err(ServiceError::BadRequest(
+        return Err(ServiceError::precondition(
             "event subscription 'name' must match [A-Za-z0-9_.-]".to_owned(),
         ));
     }
@@ -273,7 +273,7 @@ fn map_insert_error(e: sqlx::Error) -> ServiceError {
     if let sqlx::Error::Database(db) = &e
         && db.is_unique_violation()
     {
-        return ServiceError::Conflict("an event subscription with that name exists".to_owned());
+        return ServiceError::conflict("an event subscription with that name exists".to_owned());
     }
     ServiceError::Database(e)
 }

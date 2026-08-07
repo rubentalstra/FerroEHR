@@ -115,7 +115,7 @@ pub(crate) async fn attest(
     // §Copying — "the ORIGINAL_VERSION instance is never modified"), so it is
     // not an attestable target.
     if target.imported {
-        return Err(ServiceError::Unprocessable(
+        return Err(ServiceError::content_invalid(
             Violation::new(
                 "names an IMPORTED_VERSION — attestations can only be added to \
                  Original versions",
@@ -251,7 +251,7 @@ impl AttestationParts {
     pub(crate) fn decode(partial: &Value) -> Result<Self, ServiceError> {
         // reason (1..1)
         let reason = partial.get("reason").ok_or_else(|| {
-            ServiceError::Unprocessable(
+            ServiceError::content_invalid(
                 Violation::new("is required (1..1)").with_path("ATTESTATION.reason"),
             )
         })?;
@@ -270,7 +270,7 @@ impl AttestationParts {
             .get("is_pending")
             .and_then(Value::as_bool)
             .ok_or_else(|| {
-                ServiceError::Unprocessable(
+                ServiceError::content_invalid(
                     Violation::new("is required (1..1 Boolean)")
                         .with_path("ATTESTATION.is_pending"),
                 )
@@ -310,7 +310,7 @@ impl AttestationParts {
                 .filter(|v| !v.is_null())
                 .map(|v| {
                     v.as_str().map(str::to_owned).ok_or_else(|| {
-                        ServiceError::Unprocessable(
+                        ServiceError::content_invalid(
                             Violation::new("must be a String (0..1)")
                                 .with_path("ATTESTATION.proof"),
                         )
@@ -512,7 +512,7 @@ fn reason_code_valid(code: &str) -> Result<(), ServiceError> {
     if openehr_term::bundle::openehr().is_valid_attestation_reason(code) {
         return Ok(());
     }
-    Err(ServiceError::Unprocessable(
+    Err(ServiceError::content_invalid(
         Violation::new(format!(
             "{code:?} is not in the openEHR `attestation reason` group"
         ))
@@ -537,7 +537,7 @@ fn reason_valid(reason: &DvText) -> Result<(), ServiceError> {
 /// common `UML/classes/org.openehr.rm.common.attestation.adoc` §Invariants) —
 /// the single violation both arrival routes raise for a present-but-empty list.
 fn items_valid_violation() -> ServiceError {
-    ServiceError::Unprocessable(
+    ServiceError::content_invalid(
         Violation::new("must be a non-empty list when present")
             .with_path("ATTESTATION.items")
             .with_invariant("ATTESTATION.Items_valid"),
@@ -552,7 +552,7 @@ fn decode<T: serde::de::DeserializeOwned>(
     rm_type: &str,
 ) -> Result<T, ServiceError> {
     openehr_its::json::from_canonical_value::<T>(value).map_err(|e| {
-        ServiceError::Unprocessable(
+        ServiceError::content_invalid(
             Violation::new(format!("is not a valid {rm_type}"))
                 .with_path(attribute)
                 .with_decode_failure(&e),
@@ -684,7 +684,7 @@ mod tests {
         // Asserted as DATA: the refused attribute path, and the decode
         // failure's own JSON path carried in the causes.
         match err {
-            ServiceError::Unprocessable(v) => {
+            ServiceError::Unprocessable { violation: v, .. } => {
                 assert_eq!(v.path(), Some("AUDIT_DETAILS.description"));
                 assert_eq!(v.causes().len(), 1, "the decode failure is the cause");
             }
@@ -708,7 +708,7 @@ mod tests {
             }))
             .expect_err("a malformed attested_view must be refused");
             match err {
-                ServiceError::Unprocessable(v) => {
+                ServiceError::Unprocessable { violation: v, .. } => {
                     assert_eq!(v.path(), Some("ATTESTATION.attested_view"));
                     assert_eq!(v.detail(), "is not a valid DV_MULTIMEDIA");
                 }
@@ -727,7 +727,7 @@ mod tests {
         }))
         .expect_err("a non-string proof must be refused");
         match err {
-            ServiceError::Unprocessable(v) => {
+            ServiceError::Unprocessable { violation: v, .. } => {
                 assert_eq!(v.path(), Some("ATTESTATION.proof"));
                 assert_eq!(v.detail(), "must be a String (0..1)");
             }
@@ -747,7 +747,9 @@ mod tests {
         .expect_err("a malformed items member must be refused");
         match err {
             // The offending INDEX is data on the path, not a substring hunt.
-            ServiceError::Unprocessable(v) => assert_eq!(v.path(), Some("ATTESTATION.items[1]")),
+            ServiceError::Unprocessable { violation: v, .. } => {
+                assert_eq!(v.path(), Some("ATTESTATION.items[1]"));
+            }
             other => panic!("expected Unprocessable, got {other:?}"),
         }
     }
@@ -773,7 +775,7 @@ mod tests {
         }))
         .expect_err("an out-of-group coded reason must be refused");
         match err {
-            ServiceError::Unprocessable(v) => {
+            ServiceError::Unprocessable { violation: v, .. } => {
                 assert_eq!(v.path(), Some("ATTESTATION.reason.defining_code"));
                 assert_eq!(v.invariant(), Some("ATTESTATION.Reason_valid"));
             }
@@ -875,7 +877,7 @@ mod tests {
             "is_pending": false
         }));
         match AttestationInput::from_update(&update) {
-            Err(ServiceError::Unprocessable(v)) => {
+            Err(ServiceError::Unprocessable { violation: v, .. }) => {
                 assert_eq!(v.path(), Some("ATTESTATION.reason.defining_code"));
                 assert_eq!(v.invariant(), Some("ATTESTATION.Reason_valid"));
             }
@@ -897,7 +899,7 @@ mod tests {
             .expect("built as an object above")
             .insert("items".to_owned(), json!([]));
         match AttestationInput::from_update(&update_attestation(&empty)) {
-            Err(ServiceError::Unprocessable(v)) => {
+            Err(ServiceError::Unprocessable { violation: v, .. }) => {
                 assert_eq!(v.path(), Some("ATTESTATION.items"));
                 assert_eq!(v.invariant(), Some("ATTESTATION.Items_valid"));
             }
@@ -957,7 +959,7 @@ mod tests {
         }))
         .expect_err("a present-but-empty items list must be refused");
         match err {
-            ServiceError::Unprocessable(v) => {
+            ServiceError::Unprocessable { violation: v, .. } => {
                 assert_eq!(v.path(), Some("ATTESTATION.items"));
                 assert_eq!(v.invariant(), Some("ATTESTATION.Items_valid"));
             }

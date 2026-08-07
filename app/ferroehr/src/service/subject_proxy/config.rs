@@ -116,7 +116,7 @@ impl FhirSystemClient {
             .build()
             .map_err(|e| {
                 SmError::exception(format!(
-                    "building subject-proxy FHIR client for system '{name}': {e}"
+                    "building the subject-proxy FHIR client for system '{name}' failed"
                 ))
                 .with_source(e)
             })?;

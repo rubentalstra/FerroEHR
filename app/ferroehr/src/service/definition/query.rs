@@ -435,7 +435,7 @@ impl FerroEhrService {
             .name
             .eq_ignore_ascii_case("aql")
         {
-            return Err(ServiceError::BadRequest(format!(
+            return Err(ServiceError::precondition(format!(
                 "`{qualified_name}`: the query-name `aql` is reserved \
                  (ITS-REST Qualified_query_name)"
             )));
@@ -445,13 +445,11 @@ impl FerroEhrService {
         // stored-query table only holds AQL (`query_type = 'AQL'`), so a non-AQL
         // or syntactically-invalid body is a `400 Bad Request`
         // (`definition_query_store` lists only `200`/`400`).
-        // NOTE: `openehr_query::parser::parse_str` reports a located grammar
-        // diagnostic as a `String`, so there is no cause to carry — the
-        // diagnostic IS the answer the client acts on.
         if let Err(err) = openehr_query::parser::parse_str(&query_text) {
-            return Err(ServiceError::BadRequest(format!(
-                "stored query text is not valid AQL: {err}"
-            )));
+            return Err(ServiceError::bad_request(
+                format!("stored query text is not valid AQL: {err}"),
+                err,
+            ));
         }
 
         // ONE canonical key for every surface (SM master04 §Registered
@@ -502,7 +500,7 @@ impl FerroEhrService {
         // create, so the refusal status is the docs text's own generic client
         // error (`Requests_and_responses.md` §"HTTP status codes", `400`).
         if !is_exact_semver(v) {
-            return Err(ServiceError::BadRequest(format!(
+            return Err(ServiceError::precondition(format!(
                 "`{v}` is not an exact SEMVER version: the versioned store requires \
                  `major.minor.patch` (the {{major}}/{{major}}.{{minor}} prefix forms are \
                  read-side resolution patterns, parameters/path/version.yaml)"
@@ -525,7 +523,7 @@ impl FerroEhrService {
         .fetch_one(&self.pool)
         .await?;
         if exists {
-            return Err(ServiceError::Conflict(format!(
+            return Err(ServiceError::conflict(format!(
                 "a stored query '{qualified_name}' at version '{v}' already exists"
             )));
         }
@@ -543,7 +541,7 @@ impl FerroEhrService {
         .await?
         .rows_affected();
         if inserted == 0 {
-            return Err(ServiceError::Conflict(format!(
+            return Err(ServiceError::conflict(format!(
                 "a stored query '{qualified_name}' at version '{v}' already exists"
             )));
         }

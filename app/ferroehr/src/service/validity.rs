@@ -77,7 +77,9 @@ impl FerroEhrService {
         };
         match self.validate_for_commit(kind, a_content, false).await {
             Ok(()) => Ok(true),
-            Err(ServiceError::ValidationFailed(_) | ServiceError::Unprocessable(_)) => Ok(false),
+            Err(ServiceError::ValidationFailed(_) | ServiceError::Unprocessable { .. }) => {
+                Ok(false)
+            }
             Err(other) => Err(other.into()),
         }
     }

@@ -362,7 +362,7 @@ impl FerroEhrService {
         update_audit: Option<&UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
         if current.deleted {
-            return Err(ServiceError::BadRequest(format!(
+            return Err(ServiceError::precondition(format!(
                 "{} {} is already deleted",
                 current.kind.rm_type(),
                 current.vo_id
@@ -376,7 +376,7 @@ impl FerroEhrService {
             // (`responses/409_PERSON_with_uid_based_id.yaml`: "Returns also
             // latest `version_uid` in the `ETag` header") — the handler's
             // mismatch arm keys on this variant.
-            return Err(ServiceError::VersionConflict(format!(
+            return Err(ServiceError::version_conflict(format!(
                 "preceding_version_uid names version {expected}, latest is {}",
                 current.tree
             )));

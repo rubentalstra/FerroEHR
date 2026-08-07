@@ -144,7 +144,7 @@ impl FerroEhrService {
         // `ext.current_tenant_id()`'s fallback in
         // `migrations/ext/0002_tenant_context.sql`.
         if id == Uuid::nil() {
-            return Err(ServiceError::Conflict(
+            return Err(ServiceError::conflict(
                 "the reserved default tenant cannot be deleted".to_owned(),
             ));
         }
@@ -168,7 +168,7 @@ impl FerroEhrService {
         .fetch_one(&mut *tx)
         .await?;
         if owned > 0 {
-            return Err(ServiceError::Conflict(format!(
+            return Err(ServiceError::conflict(format!(
                 "tenant {id} is not empty ({owned} owned object(s)); purge its data first"
             )));
         }
@@ -226,7 +226,7 @@ impl FerroEhrService {
 fn required_str<'a>(raw: &'a str, field: &str) -> Result<&'a str, ServiceError> {
     let trimmed = raw.trim();
     if trimmed.is_empty() {
-        return Err(ServiceError::BadRequest(format!(
+        return Err(ServiceError::precondition(format!(
             "`{field}` is required and non-empty"
         )));
     }
@@ -238,7 +238,7 @@ fn map_insert_error(e: sqlx::Error) -> ServiceError {
     if let sqlx::Error::Database(db) = &e
         && db.is_unique_violation()
     {
-        return ServiceError::Conflict("a tenant with that name already exists".to_owned());
+        return ServiceError::conflict("a tenant with that name already exists".to_owned());
     }
     ServiceError::Database(e)
 }
