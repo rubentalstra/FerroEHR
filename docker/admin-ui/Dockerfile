@@ -142,10 +142,19 @@ ENTRYPOINT ["/usr/local/bin/ferroehr-admin-ui"]
 # version/created at build time; these are sensible static defaults.
 ARG VERSION="0.1.0"
 ARG REVISION=""
+# See docker/Dockerfile for the split: build-independent keys here, the four
+# build-dependent ones from the publishing workflow. base.* names this runtime
+# stage's `FROM`, kept in step by scripts/checks/image-labels.sh.
 LABEL org.opencontainers.image.title="ferroehr-admin-ui" \
       org.opencontainers.image.description="Admin console for openEHR ITS-REST CDRs — pure-Rust Leptos web app (template manager, visual AQL query builder, EHR browser)" \
+      org.opencontainers.image.url="https://ferroehr.eu/" \
+      org.opencontainers.image.documentation="https://ferroehr.eu/docs/latest/" \
       org.opencontainers.image.source="https://github.com/rubentalstra/FerroEHR" \
-      org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.vendor="FerroEHR" \
+      org.opencontainers.image.authors="Ruben Talstra <https://github.com/rubentalstra>" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.base.name="gcr.io/distroless/cc-debian13:nonroot" \
+      org.opencontainers.image.base.digest="sha256:d97bc0a941b8d4be647dc0ee75b264ddbb772f1ac5ba690a4309c00723b23775" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${REVISION}"
 

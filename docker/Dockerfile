@@ -112,10 +112,25 @@ ENTRYPOINT ["/usr/local/bin/ferroehr"]
 # version/created at build time; these are sensible static defaults.
 ARG VERSION="0.1.0"
 ARG REVISION=""
+# The OCI predefined annotation keys (image-spec annotations.md). Split by who
+# can know the value: everything build-INDEPENDENT is declared here so a direct
+# `docker build` produces a correctly-labelled image, and the four
+# build-DEPENDENT ones (created, version, revision, ref.name) come from the
+# publishing workflow, which is the only place they exist.
+#
+# base.name/base.digest name the IMMEDIATE parent — the `FROM` of this runtime
+# stage, not an intermediate build stage. They are kept in step with that pin by
+# scripts/checks/image-labels.sh.
 LABEL org.opencontainers.image.title="ferroehr" \
       org.opencontainers.image.description="Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL 1.1)" \
+      org.opencontainers.image.url="https://ferroehr.eu/" \
+      org.opencontainers.image.documentation="https://ferroehr.eu/docs/latest/" \
       org.opencontainers.image.source="https://github.com/rubentalstra/FerroEHR" \
-      org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.vendor="FerroEHR" \
+      org.opencontainers.image.authors="Ruben Talstra <https://github.com/rubentalstra>" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.base.name="gcr.io/distroless/cc-debian13:nonroot" \
+      org.opencontainers.image.base.digest="sha256:d97bc0a941b8d4be647dc0ee75b264ddbb772f1ac5ba690a4309c00723b23775" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${REVISION}"
 
