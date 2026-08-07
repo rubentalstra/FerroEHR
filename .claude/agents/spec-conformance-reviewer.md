@@ -6,7 +6,8 @@ description: >
   hard rules, returning ranked findings with spec citations. Use proactively
   before committing any spec-facing subsystem (REST wire, versioning,
   validation, serialization, AQL, templates) and at phase close.
-tools: [Read, Grep, Glob, Bash]
+tools: Read, Grep, Glob, Bash
+disallowedTools: Write, Edit, MultiEdit, NotebookEdit
 model: opus
 memory: project
 color: red
