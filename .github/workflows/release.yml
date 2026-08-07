@@ -216,14 +216,44 @@ jobs:
       # A consumer verifies with:
       #   gh attestation verify ferroehr-<tag>-<target>.tar.gz -R rubentalstra/FerroEHR
       - name: Attest build provenance
+        id: provenance
         uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
         with:
           subject-path: ${{ env.ASSET }}
       - name: Attest the SBOM
+        id: sbom-attestation
         uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
         with:
           subject-path: ${{ env.ASSET }}
           sbom-path: ${{ env.SBOM }}
+
+      # The Sigstore bundles, attached AS RELEASE ASSETS beside the artifact they
+      # attest. The attestations above already live in GitHub's attestations API,
+      # which is what `gh attestation verify` reads — but that requires reaching
+      # GitHub. A bundle on the release lets a consumer verify OFFLINE, with the
+      # artifact and the bundle in hand and nothing else:
+      #
+      #   gh attestation verify ferroehr-<tag>-<target>.tar.gz \
+      #     --bundle ferroehr-<tag>-<target>.tar.gz.sigstore.json \
+      #     --repo rubentalstra/FerroEHR
+      #
+      # It is also the only form a lock-file-blind scanner can see: the OpenSSF
+      # Scorecard's signed-releases probes iterate release ASSETS and match
+      # filename suffixes (`.sigstore.json`, `.intoto.jsonl` and peers —
+      # probes/releasesAreSigned, probes/releasesHaveProvenance in v5.5.0). They
+      # do not consult the attestations API, so signing without an attached
+      # bundle scores zero while being genuinely signed.
+      - name: Name the attestation bundles after the artifact they attest
+        env:
+          ASSET_NAME: ${{ env.ASSET }}
+          PROVENANCE_BUNDLE: ${{ steps.provenance.outputs.bundle-path }}
+          SBOM_BUNDLE: ${{ steps.sbom-attestation.outputs.bundle-path }}
+        run: |
+          set -euo pipefail
+          cp "$PROVENANCE_BUNDLE" "${ASSET_NAME}.sigstore.json"
+          cp "$SBOM_BUNDLE" "${ASSET_NAME}.sbom.sigstore.json"
+          echo "PROVENANCE_ASSET=${ASSET_NAME}.sigstore.json" >> "$GITHUB_ENV"
+          echo "SBOM_BUNDLE_ASSET=${ASSET_NAME}.sbom.sigstore.json" >> "$GITHUB_ENV"
 
       - name: Upload to release
         uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
@@ -232,3 +262,5 @@ jobs:
           files: |
             ${{ env.ASSET }}
             ${{ env.SBOM }}
+            ${{ env.PROVENANCE_ASSET }}
+            ${{ env.SBOM_BUNDLE_ASSET }}
