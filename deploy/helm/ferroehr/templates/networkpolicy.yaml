@@ -29,9 +29,19 @@ spec:
         - port: management
           protocol: TCP
         {{- end }}
-      {{- with .Values.networkPolicy.ingressFrom }}
+      {{- /* An empty `ingressFrom` deliberately renders NO `from`, which admits
+             every source. Once an operator narrows it, the admin console must
+             still be admitted or enabling both this policy and `adminUi` locks
+             the console out of the CDR — a failure that looks like the CDR
+             being down. */}}
+      {{- if .Values.networkPolicy.ingressFrom }}
       from:
-        {{- toYaml . | nindent 8 }}
+        {{- toYaml .Values.networkPolicy.ingressFrom | nindent 8 }}
+        {{- if .Values.adminUi.enabled }}
+        - podSelector:
+            matchLabels:
+              {{- include "ferroehr.adminUiSelectorLabels" . | nindent 14 }}
+        {{- end }}
       {{- end }}
   {{- if .Values.networkPolicy.egress.enabled }}
   {{- /* An egress policy that forgets the database is a total outage presenting

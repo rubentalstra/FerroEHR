@@ -307,3 +307,40 @@ rendered TOML having moved there because it carries an unroutable secret.
 true
 {{- end -}}
 {{- end }}
+
+{{/*
+The admin console's resource name: the release fullname plus a suffix, so the
+console's objects never collide with the server's and are obvious in `kubectl
+get`.
+*/}}
+{{- define "ferroehr.adminUiFullname" -}}
+{{- printf "%s-admin-ui" (include "ferroehr.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Console labels. `app.kubernetes.io/component` is what separates the console's
+objects from the server's under the same release — the selector labels below
+carry it too, so the two Deployments can never select each other's pods.
+*/}}
+{{- define "ferroehr.adminUiLabels" -}}
+{{ include "ferroehr.labels" . }}
+app.kubernetes.io/component: admin-ui
+{{- end }}
+
+{{- define "ferroehr.adminUiSelectorLabels" -}}
+{{ include "ferroehr.selectorLabels" . }}
+app.kubernetes.io/component: admin-ui
+{{- end }}
+
+{{/*
+The console image reference — digest wins over tag, as for the server.
+*/}}
+{{- define "ferroehr.adminUiImage" -}}
+{{- if .Values.adminUi.image.digest }}
+{{- $digest := .Values.adminUi.image.digest }}
+{{- if not (hasPrefix "sha256:" $digest) }}{{- $digest = printf "sha256:%s" $digest }}{{- end }}
+{{- printf "%s@%s" .Values.adminUi.image.repository $digest }}
+{{- else }}
+{{- printf "%s:%s" .Values.adminUi.image.repository (.Values.adminUi.image.tag | default .Chart.AppVersion) }}
+{{- end }}
+{{- end }}

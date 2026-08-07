@@ -19,7 +19,10 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["RollingUpdate", "Recreate"]
+          "enum": [
+            "RollingUpdate",
+            "Recreate"
+          ]
         },
         "rollingUpdate": {
           "type": "object",
@@ -27,11 +30,17 @@
           "properties": {
             "maxSurge": {
               "description": "A count or a percentage string (\"25%\").",
-              "type": ["integer", "string"]
+              "type": [
+                "integer",
+                "string"
+              ]
             },
             "maxUnavailable": {
               "description": "A count or a percentage string (\"25%\").",
-              "type": ["integer", "string"]
+              "type": [
+                "integer",
+                "string"
+              ]
             }
           }
         }
@@ -47,7 +56,11 @@
         },
         "pullPolicy": {
           "type": "string",
-          "enum": ["Always", "IfNotPresent", "Never"]
+          "enum": [
+            "Always",
+            "IfNotPresent",
+            "Never"
+          ]
         },
         "tag": {
           "description": "Empty falls back to .Chart.appVersion.",
@@ -65,7 +78,9 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -251,128 +266,218 @@
       }
     },
     "config": {
-      "description": "Rendered into ferroehr.toml, so its vocabulary is the SERVER's config tree and this schema deliberately does not fork it: unknown keys are accepted here and adjudicated by the server at boot. Only the keys the chart's own templates branch on are typed, and each accepts null — setting a key to null is how an overlay deletes it when a pinned older image does not know it yet.",
+      "description": "Rendered into ferroehr.toml, so its vocabulary is the SERVER's config tree and this schema deliberately does not fork it: unknown keys are accepted here and adjudicated by the server at boot. Only the keys the chart's own templates branch on are typed, and each accepts null \u2014 setting a key to null is how an overlay deletes it when a pinned older image does not know it yet.",
       "type": "object",
       "properties": {
         "server": {
-          "type": ["object", "null"],
+          "type": [
+            "object",
+            "null"
+          ],
           "properties": {
             "base_path": {
-              "type": ["string", "null"]
+              "type": [
+                "string",
+                "null"
+              ]
             }
           }
         },
         "db": {
-          "type": ["object", "null"],
+          "type": [
+            "object",
+            "null"
+          ],
           "properties": {
             "migrate": {
-              "type": ["string", "null"]
+              "type": [
+                "string",
+                "null"
+              ]
             }
           }
         },
         "auth": {
-          "type": ["object", "null"],
+          "type": [
+            "object",
+            "null"
+          ],
           "properties": {
             "enabled": {
-              "type": ["boolean", "null"]
+              "type": [
+                "boolean",
+                "null"
+              ]
             }
           }
         },
         "admin": {
-          "type": ["object", "null"],
+          "type": [
+            "object",
+            "null"
+          ],
           "properties": {
             "enabled": {
-              "type": ["boolean", "null"]
+              "type": [
+                "boolean",
+                "null"
+              ]
             }
           }
         },
         "tenancy": {
-          "type": ["object", "null"],
+          "type": [
+            "object",
+            "null"
+          ],
           "properties": {
             "enabled": {
-              "type": ["boolean", "null"]
+              "type": [
+                "boolean",
+                "null"
+              ]
             }
           }
         },
         "management": {
-          "type": ["object", "null"],
+          "type": [
+            "object",
+            "null"
+          ],
           "properties": {
             "enabled": {
-              "type": ["boolean", "null"]
+              "type": [
+                "boolean",
+                "null"
+              ]
             },
             "base_path": {
-              "type": ["string", "null"]
+              "type": [
+                "string",
+                "null"
+              ]
             },
             "port": {
               "description": "Unset serves the management surface on the API port; set, it becomes a second container port.",
-              "type": ["integer", "null"],
+              "type": [
+                "integer",
+                "null"
+              ],
               "minimum": 1,
               "maximum": 65535
             }
           }
         },
         "audit": {
-          "type": ["object", "null"],
+          "type": [
+            "object",
+            "null"
+          ],
           "properties": {
             "enabled": {
-              "type": ["boolean", "null"]
+              "type": [
+                "boolean",
+                "null"
+              ]
             }
           }
         },
         "events": {
-          "type": ["object", "null"],
+          "type": [
+            "object",
+            "null"
+          ],
           "properties": {
             "enabled": {
-              "type": ["boolean", "null"]
+              "type": [
+                "boolean",
+                "null"
+              ]
             }
           }
         },
         "fhir": {
-          "type": ["object", "null"],
+          "type": [
+            "object",
+            "null"
+          ],
           "properties": {
             "api_enabled": {
-              "type": ["boolean", "null"]
+              "type": [
+                "boolean",
+                "null"
+              ]
             },
             "outbound": {
-              "type": ["object", "null"],
+              "type": [
+                "object",
+                "null"
+              ],
               "properties": {
                 "enabled": {
-                  "type": ["boolean", "null"]
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
                 },
                 "exchange": {
-                  "type": ["string", "null"]
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 }
               }
             }
           }
         },
         "terminology": {
-          "type": ["object", "null"],
+          "type": [
+            "object",
+            "null"
+          ],
           "properties": {
             "external": {
-              "type": ["object", "null"],
+              "type": [
+                "object",
+                "null"
+              ],
               "properties": {
                 "enabled": {
-                  "type": ["boolean", "null"]
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
                 }
               }
             }
           }
         },
         "multimedia": {
-          "type": ["object", "null"],
+          "type": [
+            "object",
+            "null"
+          ],
           "properties": {
             "enabled": {
-              "type": ["boolean", "null"]
+              "type": [
+                "boolean",
+                "null"
+              ]
             },
             "allow_http": {
-              "type": ["boolean", "null"]
+              "type": [
+                "boolean",
+                "null"
+              ]
             }
           }
         },
         "files": {
           "description": "NOT part of the TOML: each key becomes /etc/ferroehr/<key> from a chart Secret. Values are file contents, so they are strings.",
-          "type": ["object", "null"],
+          "type": [
+            "object",
+            "null"
+          ],
           "additionalProperties": {
             "type": "string"
           }
@@ -383,7 +488,9 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -404,7 +511,12 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["ClusterIP", "NodePort", "LoadBalancer", "ExternalName"]
+          "enum": [
+            "ClusterIP",
+            "NodePort",
+            "LoadBalancer",
+            "ExternalName"
+          ]
         },
         "port": {
           "$ref": "#/definitions/port"
@@ -455,7 +567,11 @@
                     },
                     "pathType": {
                       "type": "string",
-                      "enum": ["Exact", "Prefix", "ImplementationSpecific"]
+                      "enum": [
+                        "Exact",
+                        "Prefix",
+                        "ImplementationSpecific"
+                      ]
                     }
                   }
                 }
@@ -546,15 +662,6 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "exec": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "enabled": {
-              "type": "boolean"
-            }
-          }
-        },
         "liveness": {
           "$ref": "#/definitions/probeTiming"
         },
@@ -627,10 +734,24 @@
           "type": "boolean"
         },
         "minAvailable": {
-          "type": ["integer", "string"]
+          "type": [
+            "integer",
+            "string"
+          ]
         },
         "maxUnavailable": {
-          "type": ["integer", "string"]
+          "type": [
+            "integer",
+            "string"
+          ]
+        },
+        "unhealthyPodEvictionPolicy": {
+          "description": "Whether a node drain may evict already-unhealthy pods. AlwaysAllow is the documented recommendation; IfHealthyBudget is the API default and can hang a drain.",
+          "type": "string",
+          "enum": [
+            "AlwaysAllow",
+            "IfHealthyBudget"
+          ]
         }
       }
     },
@@ -682,6 +803,158 @@
       "items": {
         "type": "object"
       }
+    },
+    "adminUi": {
+      "description": "The optional admin console, deployed as its own workload. Off by default: it is a separate product surface with its own attack surface, and a CDR is complete without it. It reaches the CDR strictly over ITS-REST, which is what makes its egress policy enforceable.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "description": "Deploy the console alongside the CDR.",
+          "type": "boolean"
+        },
+        "replicaCount": {
+          "description": "Replicas. Session state is in-process, so >1 needs sticky sessions at the ingress.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "image": {
+          "description": "Console image.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "repository": {
+              "type": "string",
+              "minLength": 1
+            },
+            "pullPolicy": {
+              "type": "string",
+              "enum": [
+                "Always",
+                "IfNotPresent",
+                "Never"
+              ]
+            },
+            "tag": {
+              "description": "Empty falls back to .Chart.appVersion.",
+              "type": "string"
+            },
+            "digest": {
+              "description": "sha256 digest; wins over tag. Bare hex or sha256:-prefixed.",
+              "type": "string",
+              "pattern": "^$|^(sha256:)?[a-fA-F0-9]{64}$"
+            }
+          }
+        },
+        "service": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "ClusterIP",
+                "NodePort",
+                "LoadBalancer",
+                "ExternalName"
+              ]
+            },
+            "port": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535
+            }
+          }
+        },
+        "ingress": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "className": {
+              "type": "string"
+            },
+            "annotations": {
+              "type": "object"
+            },
+            "hosts": {
+              "type": "array"
+            },
+            "tls": {
+              "type": "array"
+            }
+          }
+        },
+        "auth": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "oidc": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "issuer": {
+                  "description": "Issuer URL; https for anything but local development.",
+                  "type": "string"
+                },
+                "clientId": {
+                  "type": "string"
+                },
+                "publicBaseUrl": {
+                  "description": "The console's externally-reachable base URL, used to build the OIDC redirect.",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "existingSecret": {
+          "description": "Secret holding the OIDC client secret; mounted as a file, never env-borne.",
+          "type": "string"
+        },
+        "existingSecretKey": {
+          "type": "string"
+        },
+        "networkPolicy": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "ingressFrom": {
+              "description": "Empty means the rule carries no `from`, which admits EVERY source.",
+              "type": "array"
+            }
+          }
+        },
+        "podSecurityContext": {
+          "type": "object"
+        },
+        "securityContext": {
+          "type": "object"
+        },
+        "resources": {
+          "type": "object"
+        },
+        "nodeSelector": {
+          "type": "object"
+        },
+        "tolerations": {
+          "type": "array"
+        },
+        "affinity": {
+          "type": "object"
+        },
+        "extraEnv": {
+          "type": "array"
+        }
+      }
     }
   },
   "definitions": {
@@ -696,8 +969,11 @@
       "pattern": "^([0-9]+(ms|[smhdwy]))+$"
     },
     "quantity": {
-      "description": "A Kubernetes quantity — \"250m\", \"1Gi\", or a bare number.",
-      "type": ["string", "number"]
+      "description": "A Kubernetes quantity \u2014 \"250m\", \"1Gi\", or a bare number.",
+      "type": [
+        "string",
+        "number"
+      ]
     },
     "resourceRequirements": {
       "type": "object",
@@ -725,7 +1001,10 @@
     },
     "probeTiming": {
       "description": "Rendered whole beside the chart's own httpGet/exec handler, so any Kubernetes probe field is permitted; these four are typed because they are the ones the chart ships.",
-      "type": ["object", "null"],
+      "type": [
+        "object",
+        "null"
+      ],
       "properties": {
         "initialDelaySeconds": {
           "type": "integer",

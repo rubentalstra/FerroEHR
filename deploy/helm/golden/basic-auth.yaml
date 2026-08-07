@@ -29,6 +29,7 @@ spec:
     - ports:
         - port: http
           protocol: TCP
+
 ---
 # Source: ferroehr/templates/poddisruptionbudget.yaml
 apiVersion: policy/v1
@@ -43,11 +44,13 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
+  unhealthyPodEvictionPolicy: AlwaysAllow
   minAvailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: ferroehr
       app.kubernetes.io/instance: ferroehr
+
 ---
 # Source: ferroehr/templates/serviceaccount.yaml
 apiVersion: v1
@@ -62,6 +65,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 automountServiceAccountToken: false
+
 ---
 # Source: ferroehr/templates/secret.yaml
 # Chart-managed Secret. In production prefer database.existingSecret (and an
@@ -93,6 +97,7 @@ metadata:
 type: Opaque
 stringData:
   auth.basic.users.clinician.password_hash: "$argon2id$v=19$m=19456,t=2,p=1$ZmVycm9laHJEZXZTYWx0$be5nPwWjfUl1qvSrvkvqvdMOuCgM0VFcN/VN4MFLjT8"
+
 ---
 # Source: ferroehr/templates/configmap.yaml
 apiVersion: v1
@@ -221,6 +226,8 @@ data:
       [terminology.external]
         enabled = false
         fail_on_error = false
+    
+
 ---
 # Source: ferroehr/templates/service.yaml
 apiVersion: v1
@@ -244,6 +251,7 @@ spec:
   selector:
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
+
 ---
 # Source: ferroehr/templates/deployment.yaml
 apiVersion: apps/v1

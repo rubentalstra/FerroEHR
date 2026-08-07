@@ -75,6 +75,7 @@ spec:
       to:
       - ipBlock:
           cidr: 203.0.113.0/24
+
 ---
 # Source: ferroehr/templates/poddisruptionbudget.yaml
 apiVersion: policy/v1
@@ -89,11 +90,13 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
+  unhealthyPodEvictionPolicy: AlwaysAllow
   minAvailable: 2
   selector:
     matchLabels:
       app.kubernetes.io/name: ferroehr
       app.kubernetes.io/instance: ferroehr
+
 ---
 # Source: ferroehr/templates/serviceaccount.yaml
 apiVersion: v1
@@ -110,6 +113,7 @@ metadata:
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/ferroehr-s3
 automountServiceAccountToken: false
+
 ---
 # Source: ferroehr/templates/secret.yaml
 # Chart-managed Secret. In production prefer database.existingSecret (and an
@@ -170,6 +174,8 @@ stringData:
     -----BEGIN PGP PRIVATE KEY BLOCK-----
     (dev placeholder)
     -----END PGP PRIVATE KEY BLOCK-----
+    
+
 ---
 # Source: ferroehr/templates/configmap.yaml
 apiVersion: v1
@@ -361,6 +367,8 @@ data:
             operation = "validate_code"
             type = "fhir"
             url = "https://tx.example.com/fhir"
+    
+
 ---
 # Source: ferroehr/templates/service.yaml
 apiVersion: v1
@@ -388,6 +396,7 @@ spec:
   selector:
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
+
 ---
 # Source: ferroehr/templates/deployment.yaml
 apiVersion: apps/v1
@@ -591,6 +600,7 @@ spec:
                       path: multimedia.secret_access_key
                     - key: terminology.external.oauth2_clients.tx.client_secret
                       path: terminology.external.oauth2_clients.tx.client_secret
+
 ---
 # Source: ferroehr/templates/hpa.yaml
 apiVersion: autoscaling/v2
@@ -624,6 +634,7 @@ spec:
         target:
           type: Utilization
           averageUtilization: 80
+
 ---
 # Source: ferroehr/templates/ingress.yaml
 apiVersion: networking.k8s.io/v1
@@ -654,6 +665,7 @@ spec:
                 name: ferroehr
                 port:
                   number: 8080
+
 ---
 # Source: ferroehr/templates/servicemonitor.yaml
 # A Prometheus Operator ServiceMonitor. The prometheus.io/* pod annotations that

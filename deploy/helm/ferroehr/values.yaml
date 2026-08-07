@@ -573,15 +573,27 @@ resources:
     memory: 1Gi
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Probes. httpGet against the always-on public health family on the HTTP port
-# (/health/liveness + /health/readiness) — no configuration prerequisite. Set
-# exec.enabled to use the binary's `healthcheck` subcommand instead (e.g. when
-# the HTTP port is not reachable from the kubelet).
+# Probes — three roles, and the split is load-bearing
+# (https://kubernetes.io/docs/concepts/workloads/pods/probes/).
+#
+#   liveness  → /health/liveness, a CONSTANT the server answers by existing. It
+#               must never consult a dependency: "Incorrect implementation of
+#               liveness probes can lead to cascading failures", and a database
+#               blip that restarts every pod is exactly that.
+#   readiness → /health/readiness, which DOES consult dependencies (DB ping,
+#               migrations applied) and answers 503 when they are down. That is
+#               its job: "the readiness probe additionally checks that each
+#               required back-end service is available".
+#   startup   → the same constant as liveness, with a long failureThreshold, so
+#               a cold start (migrations, template cache) is never killed
+#               mid-boot by the liveness probe.
+#
+# A `probes.exec` option once ran `ferroehr healthcheck` for all three. It was
+# removed: it passed no --url, so it probed the openEHR status document rather
+# than a health endpoint, and READINESS therefore never touched the database —
+# a pod with a dead database reported Ready and took clinical traffic.
 # ─────────────────────────────────────────────────────────────────────────────
 probes:
-  # -- Use `ferroehr healthcheck` exec probes instead of httpGet.
-  exec:
-    enabled: false
   liveness:
     initialDelaySeconds: 10
     periodSeconds: 15
@@ -616,6 +628,12 @@ podDisruptionBudget:
   enabled: true
   minAvailable: 1
   # maxUnavailable: ""   # set one of minAvailable / maxUnavailable
+  # -- Whether a node drain may evict pods that are already unhealthy.
+  # `AlwaysAllow` is the documented recommendation; the alternative,
+  # `IfHealthyBudget`, is the API default and makes a drain wait for pods to
+  # become healthy first — which never completes when they are unhealthy
+  # because of the drain itself.
+  unhealthyPodEvictionPolicy: AlwaysAllow
 
 # -- Extra pod labels / annotations.
 podLabels: {}
@@ -634,3 +652,111 @@ terminationGracePeriodSeconds: 30
 # -- Extra volumes / volumeMounts (e.g. an external secret store for the PGP key).
 extraVolumes: []
 extraVolumeMounts: []
+
+# ── Admin console (optional companion workload) ──────────────────────────────
+# The Leptos admin console. OFF by default: it is a separate product surface
+# with its own OCI image and its own attack surface, and a CDR is complete
+# without it. Enabling it renders a second Deployment/Service (and optionally an
+# Ingress) alongside the server.
+#
+# It reaches the CDR STRICTLY over ITS-REST — that is the console's binding
+# mandate, not an implementation detail — so its egress is narrow and the
+# NetworkPolicy below enforces it rather than trusting it.
+adminUi:
+  # -- Deploy the admin console alongside the CDR.
+  enabled: false
+  # -- Replica count. The console holds session state in process, so more than
+  # one replica needs sticky sessions at the ingress or users get logged out on
+  # a reroute; left at 1 deliberately.
+  replicaCount: 1
+  image:
+    # -- Console image repository.
+    repository: ghcr.io/rubentalstra/ferroehr-admin-ui
+    # -- Pull policy.
+    pullPolicy: IfNotPresent
+    # -- Image tag. Empty falls back to .Chart.appVersion, so the console and
+    # the server move together by default.
+    tag: ""
+    # -- Image digest (`sha256:…`); wins over `tag` when set, exactly as the
+    # server's `image.digest` does.
+    digest: ""
+  service:
+    # -- Service type for the console.
+    type: ClusterIP
+    # -- Service port. The container always listens on 3000.
+    port: 3000
+  ingress:
+    # -- Publish the console through an Ingress. The console is a human-facing
+    # web UI, so unlike the API this is the normal way to reach it.
+    enabled: false
+    # -- IngressClass name.
+    className: ""
+    # -- Extra annotations for the console Ingress.
+    annotations: {}
+    # -- Hosts and paths.
+    hosts: []
+    # -- TLS blocks.
+    tls: []
+  auth:
+    oidc:
+      # -- Authenticate console users through OIDC. Off means the console's own
+      # session auth is whatever its defaults provide — acceptable for a private
+      # cluster, not for anything reachable by a person who should not see PHI.
+      enabled: false
+      # -- Issuer URL (must be https for anything but local development).
+      issuer: ""
+      # -- OAuth2 client id.
+      clientId: ""
+      # -- The console's own externally-reachable base URL, used to build the
+      # OIDC redirect. Must match what the identity provider has registered.
+      publicBaseUrl: ""
+  # -- Name of an existing Secret holding the console's OIDC client secret. The
+  # chart mounts that key as a FILE and passes only its path, so the credential
+  # never enters the pod's environment — the same discipline the server's DSN
+  # uses.
+  existingSecret: ""
+  # -- Key within `existingSecret` carrying the client secret.
+  existingSecretKey: FERROEHR_ADMIN__AUTH__OIDC__CLIENT_SECRET
+  networkPolicy:
+    # -- Install a NetworkPolicy for the console. Ingress admits `ingressFrom`;
+    # egress admits the CDR Service and DNS, and nothing else. The console is a
+    # REST client of the CDR by mandate, so this is enforceable rather than
+    # aspirational.
+    enabled: true
+    # -- Ingress `from` selectors admitted to the console port. Empty means the
+    # rule carries no `from`, which admits EVERY source — set this to your
+    # ingress-controller namespace/pods.
+    ingressFrom: []
+  # -- Pod-level security context. Mirrors the server's; a second workload is
+  # where a hardened posture is most easily lost.
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    fsGroup: 65532
+    seccompProfile:
+      type: RuntimeDefault
+  # -- Container-level security context. Mirrors the server's.
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    allowPrivilegeEscalation: false
+    privileged: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop: [ALL]
+  # -- Resource requests/limits.
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+  # -- Node selector.
+  nodeSelector: {}
+  # -- Tolerations.
+  tolerations: []
+  # -- Affinity.
+  affinity: {}
+  # -- Extra environment for the console (escape hatch).
+  extraEnv: []

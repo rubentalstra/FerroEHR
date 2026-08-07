@@ -132,29 +132,6 @@ spec:
           envFrom:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- if .Values.probes.exec.enabled }}
-          livenessProbe:
-            exec:
-              command: ["/usr/local/bin/ferroehr", "healthcheck"]
-            {{- with .Values.probes.liveness }}
-            {{- toYaml . | nindent 12 }}
-            {{- end }}
-          readinessProbe:
-            exec:
-              command: ["/usr/local/bin/ferroehr", "healthcheck"]
-            {{- with .Values.probes.readiness }}
-            {{- toYaml . | nindent 12 }}
-            {{- end }}
-          {{- if .Values.probes.startup.enabled }}
-          startupProbe:
-            exec:
-              command: ["/usr/local/bin/ferroehr", "healthcheck"]
-            initialDelaySeconds: {{ .Values.probes.startup.initialDelaySeconds }}
-            periodSeconds: {{ .Values.probes.startup.periodSeconds }}
-            timeoutSeconds: {{ .Values.probes.startup.timeoutSeconds }}
-            failureThreshold: {{ .Values.probes.startup.failureThreshold }}
-          {{- end }}
-          {{- else }}
           {{- /* The health family is always mounted on the main HTTP port and
                  never gated by config, so httpGet probes need no prerequisite. */}}
           livenessProbe:
@@ -180,7 +157,6 @@ spec:
             periodSeconds: {{ .Values.probes.startup.periodSeconds }}
             timeoutSeconds: {{ .Values.probes.startup.timeoutSeconds }}
             failureThreshold: {{ .Values.probes.startup.failureThreshold }}
-          {{- end }}
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
