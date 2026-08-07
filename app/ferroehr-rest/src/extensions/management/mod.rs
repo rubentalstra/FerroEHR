@@ -51,7 +51,6 @@ use axum::middleware::{Next, from_fn_with_state};
 use axum::response::{IntoResponse, Json, Response};
 use axum::routing::get;
 use http::{HeaderMap, StatusCode, header};
-use metrics_exporter_prometheus::PrometheusHandle;
 use serde_json::Value;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
@@ -74,7 +73,7 @@ pub struct ManagementState {
     /// The RBAC configuration the `AdminOnly` access level gates on.
     pub rbac: RbacConfig,
     /// The Prometheus render handle (present iff the recorder is installed).
-    pub prometheus: Option<PrometheusHandle>,
+    pub prometheus: Option<::prometheus::Registry>,
     /// The runtime log-filter control (present iff the reloadable filter is set).
     pub log_reload: Option<LogReload>,
     /// Build/spec provenance for `/info` and the build-info gauge.
@@ -132,7 +131,7 @@ pub struct Observability {
     /// The management surface configuration.
     pub management: ManagementConfig,
     /// The Prometheus render handle (present iff the recorder is installed).
-    pub prometheus: Option<PrometheusHandle>,
+    pub prometheus: Option<::prometheus::Registry>,
     /// The runtime log-filter control (present iff the reloadable filter is set).
     pub log_reload: Option<LogReload>,
     /// The health-indicator registry.

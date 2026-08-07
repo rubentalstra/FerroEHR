@@ -358,8 +358,6 @@ opentelemetry-semantic-conventions = "0.32.1"
 # surface and not the other (#2181). Needs the SDK's custom-reader feature.
 opentelemetry-prometheus = "0.32"
 prometheus = "0.14"
-metrics = "0.24"
-metrics-exporter-prometheus = "0.18.3"   # verify latest
 axum-prometheus = "0.10.0"                # verify latest
 # In-process sampling CPU profiler (flamegraph SVG via inferno). Its own
 # `criterion` feature is pinned to criterion ^0.5 (verified on crates.io

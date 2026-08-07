@@ -187,9 +187,7 @@ impl FerroEhrService {
 /// [`crate::telemetry::prometheus::WEBTEMPLATE_CACHE_EVENTS`] counter. No
 /// openEHR spec governs this — our own observability design.
 fn note_cache_event(event: &'static str) {
-    metrics::counter!(
-        crate::telemetry::prometheus::WEBTEMPLATE_CACHE_EVENTS,
-        "event" => event,
-    )
-    .increment(1);
+    crate::telemetry::metrics::metrics()
+        .webtemplate_cache_events
+        .add(1, &[opentelemetry::KeyValue::new("event", event)]);
 }

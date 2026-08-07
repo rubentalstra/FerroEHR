@@ -131,11 +131,15 @@ impl Committed {
 /// stable when terminology display text changes.
 pub(crate) fn meter_committed(committed: &Committed) {
     if committed.kind == Kind::Composition {
-        metrics::counter!(
-            crate::telemetry::prometheus::COMPOSITIONS_COMMITTED,
-            "change_type" => committed.change_type.clone(),
-        )
-        .increment(1);
+        crate::telemetry::metrics::metrics()
+            .compositions_committed
+            .add(
+                1,
+                &[opentelemetry::KeyValue::new(
+                    "change_type",
+                    committed.change_type.clone(),
+                )],
+            );
     }
 }
 

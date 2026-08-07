@@ -182,11 +182,12 @@ pub(crate) fn verify_on_read(
             .map_err(|e| ServiceError::Signing(e.to_string()))?;
     let verdict = signer.verify(&canonical, signature);
     if verdict.is_failure() {
-        metrics::counter!(
-            crate::telemetry::prometheus::VERSION_SIGNATURE_INVALID,
-            "verdict" => verdict.label(),
-        )
-        .increment(1);
+        crate::telemetry::metrics::metrics()
+            .version_signature_invalid
+            .add(
+                1,
+                &[opentelemetry::KeyValue::new("verdict", verdict.label())],
+            );
         tracing::error!(
             verdict = verdict.label(),
             "version signature failed verification (verify_on_read)"

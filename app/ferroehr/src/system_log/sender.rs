@@ -163,10 +163,14 @@ impl AuditSender {
     /// the store recovers), but the operation must not be reported as having
     /// been audited.
     pub fn emit(&self, event: AuditEvent) -> EmitOutcome {
-        metrics::counter!(METRIC_EMITTED).increment(1);
+        crate::telemetry::metrics::metrics()
+            .atna_audit_emitted
+            .add(1, &[]);
         let enqueued = self.inner.tx.try_send(event).is_ok();
         if !enqueued {
-            metrics::counter!(METRIC_DROPPED).increment(1);
+            crate::telemetry::metrics::metrics()
+                .atna_audit_dropped
+                .add(1, &[]);
             self.inner.warn_dropped();
         }
         match self.inner.fail_mode {
@@ -179,14 +183,18 @@ impl AuditSender {
             }
             FailMode::Closed => {
                 if !enqueued {
-                    metrics::counter!(METRIC_REJECTED).increment(1);
+                    crate::telemetry::metrics::metrics()
+                        .atna_audit_rejected
+                        .add(1, &[]);
                     return EmitOutcome::Rejected;
                 }
                 if !self.inner.store_healthy.load(Ordering::Relaxed) {
                     // No un-audited PHI access: the store stopped accepting
                     // writes, so auditable operations 503 until it recovers
                     // (the enqueued record delivers on recovery).
-                    metrics::counter!(METRIC_REJECTED).increment(1);
+                    crate::telemetry::metrics::metrics()
+                        .atna_audit_rejected
+                        .add(1, &[]);
                     tracing::warn!(
                         "ATNA fail-closed: local audit store unhealthy — rejecting the operation"
                     );
@@ -478,8 +486,10 @@ async fn drain(
                             reason = "the batch record count widens exactly: usize is at \
                                       most 64 bits on every supported target"
                         )]
-                        metrics::counter!(METRIC_SENT, "sink" => "store")
-                            .increment(records.len() as u64);
+                        crate::telemetry::metrics::metrics().atna_audit_sent.add(
+                            records.len() as u64,
+                            &[opentelemetry::KeyValue::new("sink", "store")],
+                        );
                         if let Some(notify) = &sinks.feed_notify {
                             notify.notify_one();
                         }
@@ -491,8 +501,12 @@ async fn drain(
                             reason = "the batch record count widens exactly: usize is at \
                                       most 64 bits on every supported target"
                         )]
-                        metrics::counter!(METRIC_SEND_FAILED, "sink" => "store")
-                            .increment(records.len() as u64);
+                        crate::telemetry::metrics::metrics()
+                            .atna_audit_send_failed
+                            .add(
+                                records.len() as u64,
+                                &[opentelemetry::KeyValue::new("sink", "store")],
+                            );
                         tracing::warn!("ATNA audit store batch write failed: {e}");
                     }
                 }
@@ -516,14 +530,18 @@ async fn drain(
                                 *slot = Some(id);
                             }
                             store_healthy.store(true, Ordering::Relaxed);
-                            metrics::counter!(METRIC_SENT, "sink" => "store").increment(1);
+                            crate::telemetry::metrics::metrics()
+                                .atna_audit_sent
+                                .add(1, &[opentelemetry::KeyValue::new("sink", "store")]);
                             if let Some(notify) = &sinks.feed_notify {
                                 notify.notify_one();
                             }
                         }
                         Err(e) => {
                             store_healthy.store(false, Ordering::Relaxed);
-                            metrics::counter!(METRIC_SEND_FAILED, "sink" => "store").increment(1);
+                            crate::telemetry::metrics::metrics()
+                                .atna_audit_send_failed
+                                .add(1, &[opentelemetry::KeyValue::new("sink", "store")]);
                             tracing::warn!("ATNA audit store write failed: {e}");
                         }
                     }
@@ -542,7 +560,9 @@ async fn drain(
                             assemble_syslog(&ctx.server_ip, &ctx.source_id, &event.timestamp, &xml);
                         match transport.send(&syslog).await {
                             Ok(()) => {
-                                metrics::counter!(METRIC_SENT, "sink" => "syslog").increment(1);
+                                crate::telemetry::metrics::metrics()
+                                    .atna_audit_sent
+                                    .add(1, &[opentelemetry::KeyValue::new("sink", "syslog")]);
                                 if let (Some(store), Some(Some(id))) =
                                     (&sinks.store, row_ids.get(index))
                                 {
@@ -550,14 +570,17 @@ async fn drain(
                                 }
                             }
                             Err(e) => {
-                                metrics::counter!(METRIC_SEND_FAILED, "sink" => "syslog")
-                                    .increment(1);
+                                crate::telemetry::metrics::metrics()
+                                    .atna_audit_send_failed
+                                    .add(1, &[opentelemetry::KeyValue::new("sink", "syslog")]);
                                 tracing::warn!("ATNA audit syslog send failed: {e}");
                             }
                         }
                     }
                     Err(e) => {
-                        metrics::counter!(METRIC_SERIALIZE_FAILED).increment(1);
+                        crate::telemetry::metrics::metrics()
+                            .atna_audit_serialize_failed
+                            .add(1, &[]);
                         tracing::warn!("ATNA audit message serialization failed: {e}");
                     }
                 }
@@ -573,10 +596,14 @@ async fn drain(
                 };
                 match feed.post(body).await {
                     Ok(()) => {
-                        metrics::counter!(METRIC_SENT, "sink" => "fhir_feed").increment(1);
+                        crate::telemetry::metrics::metrics()
+                            .atna_audit_sent
+                            .add(1, &[opentelemetry::KeyValue::new("sink", "fhir_feed")]);
                     }
                     Err(e) => {
-                        metrics::counter!(METRIC_SEND_FAILED, "sink" => "fhir_feed").increment(1);
+                        crate::telemetry::metrics::metrics()
+                            .atna_audit_send_failed
+                            .add(1, &[opentelemetry::KeyValue::new("sink", "fhir_feed")]);
                         tracing::warn!("ATNA audit FHIR feed send failed: {e}");
                     }
                 }
@@ -597,7 +624,9 @@ fn render_audit_event(
     match crate::system_log::fhir::to_fhir(event, ctx, subject) {
         Ok(document) => Some(document),
         Err(e) => {
-            metrics::counter!(METRIC_SERIALIZE_FAILED).increment(1);
+            crate::telemetry::metrics::metrics()
+                .atna_audit_serialize_failed
+                .add(1, &[]);
             tracing::warn!("ATNA audit FHIR rendering failed: {e}");
             None
         }
@@ -647,10 +676,14 @@ async fn feed_outbox(
             match feed.post(&body).await {
                 Ok(()) => {
                     store.mark_fhir_feed_delivered(id).await;
-                    metrics::counter!(METRIC_SENT, "sink" => "fhir_feed").increment(1);
+                    crate::telemetry::metrics::metrics()
+                        .atna_audit_sent
+                        .add(1, &[opentelemetry::KeyValue::new("sink", "fhir_feed")]);
                 }
                 Err(e) => {
-                    metrics::counter!(METRIC_SEND_FAILED, "sink" => "fhir_feed").increment(1);
+                    crate::telemetry::metrics::metrics()
+                        .atna_audit_send_failed
+                        .add(1, &[opentelemetry::KeyValue::new("sink", "fhir_feed")]);
                     tracing::warn!("ATNA audit FHIR feed delivery failed (row stays pending): {e}");
                     tokio::time::sleep(idle).await;
                     break;
@@ -674,7 +707,9 @@ async fn reaper(store: AuditStore, retention_days: u32) {
         match store.reap(retention_days).await {
             Ok(0) => {}
             Ok(n) => {
-                metrics::counter!(METRIC_REAPED).increment(n);
+                crate::telemetry::metrics::metrics()
+                    .atna_audit_reaped
+                    .add(n, &[]);
                 tracing::debug!("ATNA audit retention reaped {n} records");
             }
             Err(e) => tracing::warn!("ATNA audit retention reap failed: {e}"),
