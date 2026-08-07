@@ -320,7 +320,7 @@ build-phase control and what actually satisfies it:
 | Vulnerability identification in CI (§3.3) | Trivy on every published image, hadolint on every Dockerfile, plus secret and misconfiguration scanning over the tree |
 | Continuous scanning after release (§4.3) | a scheduled scan of the *published* tags — [below](#continuous-scanning-of-published-images) |
 | Authorized images only (§3.2) | signed provenance published; **enforcement is the operator's** — [below](#image-provenance-at-admission) |
-| Non-root by construction | the image declares `USER nonroot`, and the pod pins `runAsNonRoot` + uid 65532 independently |
+| Non-root by construction | the image declares `USER 65532:65532` (numeric, so the kubelet can verify it), and the pod pins `runAsNonRoot` + uid 65532 independently |
 
 **What distroless costs, stated before an incident rather than during one: there
 is no shell in the image, so `kubectl exec … -- sh` does not work.** That is the
