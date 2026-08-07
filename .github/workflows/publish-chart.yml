@@ -24,12 +24,17 @@
 # WHY there is no `helm package --sign` / `.prov` provenance: PGP signing needs a
 # long-lived private key in CI, which is the exact thing the crates.io lane was
 # built to avoid (Trusted Publishing via OIDC, no long-lived token anywhere), and
-# a key in a repository secret is a worse posture than no key at all. The chart is
-# instead attested KEYLESS through Sigstore, the same mechanism and the same
-# verification command as the images:
-#   gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:X.Y.Z -R rubentalstra/FerroEHR
+# a key in a repository secret is a worse posture than no key at all. The chart
+# instead carries two KEYLESS Sigstore artifacts, which answer different
+# questions and are both produced below:
+#   * a cosign SIGNATURE — "this artifact was signed by this workflow"
+#       cosign verify ghcr.io/rubentalstra/charts/ferroehr@sha256:… \
+#         --certificate-identity-regexp '^https://github\.com/rubentalstra/FerroEHR/\.github/workflows/publish-chart\.yml@' \
+#         --certificate-oidc-issuer https://token.actions.githubusercontent.com
+#   * a SLSA build PROVENANCE attestation — "it was built from this source, this way"
+#       gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:X.Y.Z -R rubentalstra/FerroEHR
 # The consequence for consumers is honest: `helm install --verify` (which only
-# understands a `.prov`) does not apply; `gh attestation verify` does.
+# understands a `.prov`) does not apply; the two commands above do.
 name: Publish chart
 
 on:
@@ -101,6 +106,9 @@ jobs:
       - uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d # v2.0.1
         with:
           version: 1.3.3
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        with:
+          cosign-release: v3.1.3
 
       # No build cache is restored anywhere in this lane (#2011): everything it
       # publishes is built from this checkout and nothing else.
@@ -384,8 +392,62 @@ jobs:
           [ -n "$digest" ] || { echo "::error::could not read the pushed digest from helm push output"; exit 1; }
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
 
+      # A keyless cosign SIGNATURE over the pushed digest. Distinct from the
+      # attestation below and not redundant with it: the attestation answers
+      # "built from this source, this way", the signature answers "signed by this
+      # workflow" — and the signature is the artifact a Helm consumer's tooling
+      # and Artifact Hub's listing actually look for.
+      #
+      # `--new-bundle-format=false` is a DECISION, not inertia. cosign 3 defaults
+      # to the protobuf bundle attached as an OCI 1.1 referring artifact, and
+      # GHCR implements no referrers API at all — measured against the published
+      # chart, `GET /v2/rubentalstra/charts/ferroehr/referrers/<digest>` answers
+      # `404 MANIFEST_UNKNOWN`, so a referring artifact reaches the registry only
+      # through the OCI fallback TAG (`sha256-<hex>`), which on this repository is
+      # the very index the attestation step below already writes. Two writers to
+      # one index is a way to lose the attestation, for no gain: Artifact Hub
+      # checks the classic `sha256-<hex>.sig` tag FIRST (tag-based discovery in
+      # `HasCosignSignature`, `internal/oci/oci.go`), and a plain tag needs no
+      # registry capability whatever. Revisit when GHCR serves referrers.
+      - name: Sign the chart with keyless cosign
+        id: sign
+        if: steps.push.outputs.digest != ''
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          set -euo pipefail
+          cosign sign --yes --new-bundle-format=false "${CHART_REF}@${DIGEST}"
+
+      # Read the signature back the way a consumer and Artifact Hub each do,
+      # because both failure modes are silent: a signature that does not verify
+      # against this workflow's identity is worse than none, and a signature the
+      # hub cannot locate presents weeks later as a listing that still says
+      # "not signed" with no error anywhere.
+      - name: Verify the signature verifies, and is where the hub looks
+        id: verify
+        if: steps.sign.outcome == 'success'
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          cosign verify "${CHART_REF}@${DIGEST}" \
+            --certificate-identity-regexp "^https://github\.com/${REPO}/\.github/workflows/publish-chart\.yml@" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            > /dev/null
+          echo "the signature verifies against ${REPO}/.github/workflows/publish-chart.yml"
+          # `cosign triangulate` prints the tag the classic layout stores the
+          # signature under — the same tag the hub's tag-based discovery reads.
+          sig_ref="$(cosign triangulate "${CHART_REF}@${DIGEST}")"
+          if ! oras manifest fetch "$sig_ref" > /dev/null; then
+            echo "::error::${sig_ref} is not fetchable — the signature verified but Artifact Hub's tag-based discovery will not find it."
+            exit 1
+          fi
+          echo "sig=${sig_ref}" >> "$GITHUB_OUTPUT"
+          echo "::notice::signature readable at ${sig_ref}; Artifact Hub reports it on its next processing cycle."
+
       # Keyless provenance for the chart artifact, the same mechanism the images
-      # use — see the header for why this replaces a PGP `.prov`.
+      # use — see the header for why neither of these is a PGP `.prov`.
       - name: Attest build provenance
         if: steps.push.outputs.digest != ''
         uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
@@ -453,6 +515,7 @@ jobs:
           VERSION: ${{ steps.chart.outputs.version }}
           APP: ${{ steps.chart.outputs.app }}
           DIGEST: ${{ steps.push.outputs.digest }}
+          SIGNATURE: ${{ steps.verify.outputs.sig }}
           JUDGED: ${{ steps.judge.outputs.image }}
           WHY: ${{ steps.judge.outputs.why }}
         run: |
@@ -464,6 +527,7 @@ jobs:
             printf '| judged against | `%s` (%s) |\n' "${JUDGED:-not selected}" "${WHY:-—}"
             printf '| repository | `%s` |\n' "$CHART_REF"
             printf '| digest | `%s` |\n' "${DIGEST:-not pushed}"
+            printf '| signature | `%s` |\n' "${SIGNATURE:-not signed}"
             printf '\nInstall:\n\n```shell\nhelm install ferroehr oci://%s/ferroehr --version %s\n```\n' \
               "${CHART_REF%/ferroehr}" "$VERSION"
           } >> "$GITHUB_STEP_SUMMARY"

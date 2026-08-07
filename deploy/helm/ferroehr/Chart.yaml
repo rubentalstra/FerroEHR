@@ -10,10 +10,15 @@ type: application
 
 # Chart versioning is independent of the application version, and is SemVer 2
 # over the CHART's own contract — its values schema and rendered output
-# (https://helm.sh/docs/topics/charts/#charts-and-versioning). 4.0.0 is a major
+# (https://helm.sh/docs/topics/charts/#charts-and-versioning). 4.0.0 was a major
 # bump because a values file that set a secret-bearing key under `config:` used
-# to render (into a ConfigMap) and is now refused.
-version: 4.1.0
+# to render (into a ConfigMap) and is now refused. 5.0.0 is one for the same
+# reason in a wider form: the chart now ships `values.schema.json`, which helm
+# enforces on install/upgrade/lint/template, so a values file carrying a
+# misspelled or wrong-typed key of the CHART's own vocabulary is refused where it
+# previously rendered with the key silently ignored. The server's `config:` tree
+# stays open — that vocabulary belongs to the binary, not to this schema.
+version: 5.0.0
 # The default container image tag (overridable via image.tag), and the released
 # application version — kept equal to the workspace version by the
 # `chart-appversion` CI guard, so a release cannot ship a chart pointing at the
@@ -67,11 +72,14 @@ maintainers:
 # Deliberately absent, so a later reader does not wonder:
 #   operator, operatorCapabilities — this is not an operator.
 #   crds, crdsExamples             — the chart defines no CustomResourceDefinition.
-#   signKey                        — the chart carries no PGP provenance (`.prov`);
-#                                    it is attested keyless through Sigstore
-#                                    instead, and this annotation has no field for
-#                                    that (its `url` is mandatory and would have to
-#                                    point at a key that does not exist).
+#   signKey                        — the chart carries no PGP provenance (`.prov`).
+#                                    It is signed keyless with cosign and attested
+#                                    through Sigstore, and this annotation cannot
+#                                    describe either: its `url` is mandatory and
+#                                    would have to point at a public key that does
+#                                    not exist. Artifact Hub reports the cosign
+#                                    signature from the registry itself, so the
+#                                    "Signed" state needs no annotation.
 #   alternativeName, recommendations — nothing to name or recommend.
 # ─────────────────────────────────────────────────────────────────────────────
 annotations:

@@ -24,7 +24,7 @@ kubectl -n ferroehr create secret generic ferroehr-db \
   --from-literal=FERROEHR__DB__URL='postgres://ferroehr_app:***@pg-host:5432/ferroehr?sslmode=verify-full'
 
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 4.0.0 -n ferroehr \
+  --version 5.0.0 -n ferroehr \
   --set database.existingSecret=ferroehr-db \
   --set image.tag=3.17.3
 ```
@@ -41,7 +41,7 @@ helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
 `oci://` reference. To read the chart's metadata without installing it:
 
 ```shell
-helm show chart oci://ghcr.io/rubentalstra/charts/ferroehr --version 4.0.0
+helm show chart oci://ghcr.io/rubentalstra/charts/ferroehr --version 5.0.0
 ```
 
 ### Pin two versions, not one
@@ -54,7 +54,7 @@ against.
 
 | | Selects | Pin with | Line |
 |---|---|---|---|
-| Chart version | templates, values schema, defaults | `--version 4.0.0` | SemVer over the chart's own contract |
+| Chart version | templates, values schema, defaults | `--version 5.0.0` | SemVer over the chart's own contract |
 | Image tag | the server binary | `--set image.tag=3.17.3` (or `image.digest`) | the application's SemVer line |
 
 Always pin the image to an immutable version or, better, a `@sha256` digest —
@@ -67,9 +67,26 @@ artifact.
 
 ### Verifying what you installed
 
-The chart and the images are published with **signed, keyless
-[Sigstore](https://docs.sigstore.dev/) provenance**, bound to this repository's
-build identity, so every claim here is checkable rather than asserted:
+Everything published here is signed **keyless** through
+[Sigstore](https://docs.sigstore.dev/), bound to this repository's build
+identity, so every claim is checkable rather than asserted. Two different
+artifacts answer two different questions, and you can ask both.
+
+**Who signed this chart** — a [cosign](https://docs.sigstore.dev/cosign/)
+signature over the chart's digest:
+
+```shell
+cosign verify ghcr.io/rubentalstra/charts/ferroehr:<chart-version> \
+  --certificate-identity-regexp '^https://github\.com/rubentalstra/FerroEHR/\.github/workflows/publish-chart\.yml@' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+Both flags matter. Without them `cosign verify` would accept a signature from
+*any* identity in the transparency log; with them you are requiring that this
+repository's chart-publishing workflow, authenticated by GitHub's OIDC issuer,
+is what signed the bytes you pulled.
+
+**What it was built from** — a SLSA build provenance attestation:
 
 ```shell
 # the chart
@@ -79,23 +96,43 @@ gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:<tag> -R rubentalstra/
 ```
 
 > [!IMPORTANT]
-> Signing was added to the publishing lanes **after** `3.17.3` was built, so that
-> tag and everything before it carry no attestation and the command above answers
-> `HTTP 404: Not Found` for them. Attestations exist from the first release
-> published by the signing lane onward. If you are pinning an older tag and need
-> provenance, pin a newer one — the development images
-> (`ghcr.io/rubentalstra/ferroehr:develop`) already verify. **No chart version has
-> been published yet**, so the chart command has nothing to answer for until the
-> first release cut by the signing lanes; the images it deploys are already
-> verifiable.
+> Signing was added to the publishing lanes over time, so the answer depends on
+> what you pinned. Image attestations exist from the first release published by
+> the signing lane onward — `3.17.3` and everything before it answer `HTTP 404:
+> Not Found`, which is the honest state rather than a verification failure (the
+> development images, `ghcr.io/rubentalstra/ferroehr:develop`, already verify).
+> For the chart, attestations exist from the first published version and the
+> **cosign signature from chart `5.0.0` onward**; chart `4.1.0` carries the
+> attestation but no signature.
 
 > [!NOTE]
 > `helm install --verify` and `helm verify` do **not** apply: they check a PGP
 > `.prov` file, and this chart ships none. That is deliberate — a `.prov` needs a
 > long-lived private key in CI, which is the exact thing this project's publishing
 > lanes are built to avoid (the crates.io lane uses OIDC Trusted Publishing and
-> holds no token at all). Keyless attestation gives a stronger guarantee with no
-> key to leak, and it is the same command and the same trust root as the images.
+> holds no token at all). The two keyless commands above are what replace it:
+> nothing to leak, and the same trust root as the images.
+
+### Your values file is checked before anything is applied
+
+The chart ships a `values.schema.json`, so `helm install`, `helm upgrade`, `helm
+lint` and `helm template` **refuse** a values file that misspells one of the
+chart's own keys, gets a type wrong, or names a value outside the permitted set —
+rather than rendering and silently ignoring it:
+
+```text
+Error: values don't meet the specifications of the schema(s) in the following chart(s):
+ferroehr:
+- at '/image/pullPolicy': value must be one of 'Always', 'IfNotPresent', 'Never'
+```
+
+**The `config:` tree is deliberately exempt.** Those keys are the *server's*
+(see the [configuration reference](configuration.md)), the binary validates them
+at boot, and copying that vocabulary into the chart's schema would fork it — a
+new configuration key would then be rejected by the chart until someone
+remembered to widen the schema. So a mistake under `config:` is reported when the
+pod starts, not when the chart renders; `--skip-schema-validation` disables the
+check entirely if you ever need to bypass it.
 
 The chart is also listed on **[Artifact
 Hub](https://artifacthub.io/packages/helm/ferroehr/ferroehr)**, which renders this
@@ -107,7 +144,7 @@ chapter's metadata plus a security report over the published images.
 > the image itself as the authority:
 >
 > ```shell
-> helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 4.0.0 \
+> helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 5.0.0 \
 >   -s templates/configmap.yaml --set database.existingSecret=ferroehr-db \
 >   | sed -n '/ferroehr.toml/,$p' | sed '1d;s/^    //' > /tmp/ferroehr.toml
 > docker run --rm -v /tmp/ferroehr.toml:/etc/ferroehr/ferroehr.toml:ro \
@@ -462,7 +499,7 @@ Preview an upgrade against what you have installed with
 `helm diff`, or render the new chart version and read it:
 
 ```shell
-helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 4.0.0 \
+helm template ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr --version 5.0.0 \
   -n ferroehr -f my-values.yaml | less
 ```
 

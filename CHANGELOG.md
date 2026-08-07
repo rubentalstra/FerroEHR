@@ -18,6 +18,23 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The Helm chart validates your values file** (`values.schema.json`, chart
+  `5.0.0`). `helm install`, `upgrade`, `lint` and `template` now refuse a values
+  file that misspells one of the chart's own keys, gets a type wrong, or names a
+  value outside the permitted set, instead of rendering and ignoring it — a
+  breaking chart change, which is why the chart's major version moves. The
+  `config:` tree stays deliberately open: that vocabulary belongs to the server
+  and is validated by the binary at boot, so copying it into the chart would fork
+  it. Artifact Hub renders the schema on the chart's listing. (#2184)
+- **The published Helm chart is signed** with a keyless
+  [cosign](https://docs.sigstore.dev/cosign/) signature, from chart `5.0.0`
+  onward, alongside the SLSA build provenance attestation it already carried —
+  the attestation says what the chart was built from, the signature says who
+  signed the artifact you pulled. No key material exists anywhere; verification
+  requires an identity and an issuer, and both are in the installation guide.
+  `helm install --verify` still does not apply: the chart ships no PGP `.prov`.
+  (#2184)
+
 - **The PGP signing key can be rotated without losing history.** Signing now
   uses a signing-capable *subkey* selected by its OpenPGP key flags, which is
   the rotation mechanism the standard provides: issue a new subkey, the

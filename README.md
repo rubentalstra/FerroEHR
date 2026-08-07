@@ -506,15 +506,17 @@ deploys, and listed on
 
 ```shell
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 4.0.0 --set database.existingSecret=my-db-secret
+  --version 5.0.0 --set database.existingSecret=my-db-secret
 ```
 
 There is no HTTP chart repository, so `helm repo add` does not apply — OCI is the
 only publication path. The chart version and the image tag are separate SemVer
-lines: `--version` pins the chart, `--set image.tag=` pins the server. The chart
-and the images are published with signed keyless provenance
-(`gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:<chart-version> -R rubentalstra/FerroEHR`);
-signing landed in the 3.17.4 cycle, so tags built before it carry none.
+lines: `--version` pins the chart, `--set image.tag=` pins the server. Your values
+file is checked against the chart's `values.schema.json` before anything is
+applied. The chart and the images are published with signed keyless provenance
+(`gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:<chart-version> -R rubentalstra/FerroEHR`),
+and the chart additionally carries a keyless `cosign` signature from chart `5.0.0`
+onward; signing landed in the 3.17.4 cycle, so tags built before it carry none.
 
 See the [Kubernetes chapter](https://ferroehr.eu/docs/latest/installation/kubernetes.html)
 and the [documentation website](https://ferroehr.eu/)
