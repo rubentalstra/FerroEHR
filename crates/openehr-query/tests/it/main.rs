@@ -5,3 +5,4 @@
 //! (`.claude/rules/testing.md` §One integration-test binary per crate).
 
 mod corpus;
+mod printer_round_trip;

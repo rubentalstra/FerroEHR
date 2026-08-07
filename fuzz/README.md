@@ -1,0 +1,114 @@
+# Fuzzing the parsers that read untrusted bytes
+
+libFuzzer harnesses (via [cargo-fuzz]) for every parser in this repository that
+reads bytes an attacker controls off the network. Each harness is a **pure parse
+of `&[u8]`** — no I/O, no database, no network, no global mutable state — so a
+finding is always reproducible from the recorded input alone.
+
+Why it exists rather than only property tests: `proptest` explores the *valid*
+space and proves round-trip and structural invariants. A missing nesting bound in
+the XML reader lived in the *malformed* space — a deeply nested document recursed
+the generated `FromXml` impls off the stack, and a Rust stack overflow **aborts**
+the process instead of unwinding, so the `tower-http` catch-panic layer that
+renders this server's clean `500` could not intercept it. One request would have
+taken the process down for every caller. That is the class this directory exists
+to catch.
+
+## The targets
+
+| target | reads | entry points |
+|---|---|---|
+| `canonical_json` | every REST write body | `openehr_its::json` typed reader, the negotiation wire door, the RM/terminology validators |
+| `canonical_xml` | the same writes via content negotiation, plus archetype XML | `openehr_its::xml::runtime::XmlReader`, `from_canonical_xml`, `openehr_its::aom2`/`aom2_model` |
+| `aql_query` | arbitrary query text from any authenticated caller | `openehr_query::parser::parse_str`, plus the printer's documented `parse(to_aql(ast)) == ast` invariant |
+| `simplified_formats` | FLAT / STRUCTURED composition bodies | `openehr_its::flat::sim`, `openehr_its::flat::convert` |
+| `adl2_source` | archetype uploads, both dialects | `openehr_adl::source::parse_source` |
+| `opt14_template` | operational-template uploads | `openehr_its::opt14::from_xml`, then `build_web_template` |
+
+## Seeds
+
+`fuzz/seeds.sh` builds `fuzz/seeds/<target>/` from corpora that are **already
+committed and provenance-stamped**, as symlinks — the archetype and template
+packs are around 100 MB and are never copied. Selection is size-bounded and
+deterministic, because libFuzzer re-reads every seed on each run and derives its
+default input length from the largest one.
+
+```sh
+fuzz/seeds.sh                 # all targets
+fuzz/seeds.sh canonical_xml   # one target
+```
+
+The script fails loud if a source directory has moved, so a renamed corpus can
+never quietly degrade into an empty seed set. Two AQL sources are extracted
+rather than linked: the official worked-example queries inside the AsciiDoc
+listing blocks of the vendored QUERY spec examples (the same extraction the
+`openehr-query` corpus test performs), and the query text of the CNF catalogue's
+cases.
+
+## Running
+
+`cargo-fuzz` needs a **nightly** toolchain, and `fuzz/` is therefore its own
+workspace: no ordinary `cargo build`, `cargo clippy` or `cargo nextest` run over
+`crates/*`, `app/*` or `tools/*` ever sees this package, and the CDR workspace
+stays on its pinned stable toolchain.
+
+```sh
+rustup toolchain install nightly
+cargo install cargo-fuzz --locked
+
+fuzz/seeds.sh
+
+# A short run, the shape CI uses.
+cargo +nightly fuzz run canonical_xml fuzz/corpus/canonical_xml fuzz/seeds/canonical_xml \
+  -- -max_total_time=300 -max_len=32768 -timeout=25
+
+# A long local campaign: several cores, no time limit, until you stop it.
+cargo +nightly fuzz run --jobs 8 canonical_xml \
+  fuzz/corpus/canonical_xml fuzz/seeds/canonical_xml \
+  -- -max_len=32768 -timeout=25
+```
+
+`fuzz/seeds.sh` also creates `fuzz/corpus/<target>/`, because libFuzzer refuses
+to start when a corpus directory it was given does not exist.
+
+The seed directory is passed as a **second** corpus argument on purpose:
+libFuzzer writes only to the first one, so the committed corpora stay read-only
+inputs and `fuzz/corpus/<target>/` accumulates everything new.
+
+Coverage of a corpus, to see what a campaign actually reached:
+
+```sh
+cargo +nightly fuzz coverage canonical_xml fuzz/corpus/canonical_xml
+```
+
+## When a target crashes
+
+A crash writes its input to `fuzz/artifacts/<target>/`. The sequence is fixed:
+
+1. **Minimize** it — `cargo +nightly fuzz tmin <target> fuzz/artifacts/<target>/<input>`.
+2. **Fix the defect** in the crate that owns the parser. For a `// @generated`
+   file that means an `openehr-codegen` emitter change plus regeneration, never a
+   hand-edit.
+3. **Pin the refusal** as an asserted regression test in that crate's normal test
+   tree, the way `crates/openehr-its/tests/it/xml_hostile_input.rs` pins the
+   DOCTYPE and depth refusals. A fuzz finding that is only fixed, not pinned,
+   comes back.
+
+Step 3 is the one that matters: the crash artifact itself is not a test, it is a
+scratch file, and `fuzz/artifacts/` is not tracked.
+
+## CI
+
+`.github/workflows/fuzz.yml` runs a bounded campaign per target on a nightly
+schedule (and on `workflow_dispatch`, where the per-target duration is an input),
+with each corpus persisted in the Actions cache between runs so coverage
+accumulates. It is deliberately not on the pull-request path.
+
+## Working in an IDE
+
+`fuzz/` is a separate Cargo workspace, so an IDE that only knows the root
+workspace reports "file does not belong to a known Cargo project" for the
+harnesses. Attach `fuzz/Cargo.toml` as a second Cargo project (in RustRover:
+*File → Link Cargo Project*). Nothing in the repository needs to change.
+
+[cargo-fuzz]: https://rust-fuzz.github.io/book/cargo-fuzz.html

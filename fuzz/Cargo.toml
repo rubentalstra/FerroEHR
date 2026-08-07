@@ -1,0 +1,76 @@
+# The libFuzzer harnesses for every parser that reads attacker-controlled
+# bytes off the REST wire. Deliberately its OWN workspace (the empty
+# `[workspace]` table below): cargo-fuzz needs a nightly toolchain and its own
+# build directory, and the CDR workspace stays on pinned stable 1.96, so no
+# ordinary `cargo build`/`clippy`/`nextest` run over `crates/*`, `app/*` or
+# `tools/*` sees this package at all.
+[workspace]
+
+[package]
+name = "ferroehr-fuzz"
+version = "0.0.0"
+edition = "2024"
+license = "MIT"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4.13"
+serde_json = { version = "1", features = ["preserve_order"] }
+openehr-adl = { path = "../crates/openehr-adl" }
+openehr-its = { path = "../crates/openehr-its" }
+openehr-query = { path = "../crates/openehr-query" }
+openehr-rm = { path = "../crates/openehr-rm" }
+
+# The harnesses are release-optimized with debug assertions and overflow checks
+# ON: an arithmetic overflow or a debug-only invariant break is exactly the kind
+# of finding this exists to catch, and libFuzzer needs the optimized build to
+# reach a useful execution rate.
+[profile.release]
+debug = 1
+debug-assertions = true
+overflow-checks = true
+
+[[bin]]
+name = "canonical_json"
+path = "fuzz_targets/canonical_json.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "canonical_xml"
+path = "fuzz_targets/canonical_xml.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "aql_query"
+path = "fuzz_targets/aql_query.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "simplified_formats"
+path = "fuzz_targets/simplified_formats.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "adl2_source"
+path = "fuzz_targets/adl2_source.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "opt14_template"
+path = "fuzz_targets/opt14_template.rs"
+test = false
+doc = false
+bench = false
