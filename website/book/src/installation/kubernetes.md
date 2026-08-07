@@ -465,6 +465,41 @@ objects instead, so set `metrics.serviceMonitor.enabled=true` there —
 `serviceMonitorSelector` matches on goes. It needs the `monitoring.coreos.com`
 CRDs installed first, or the install fails on an unknown kind.
 
+## Authentication is required, and the chart says so before it installs
+
+`config.auth.enabled` defaults to **true**, and the server requires at least one
+mechanism with it: a `401` challenge has to name a scheme the server actually
+implements ([RFC 9110 §11.6.1](https://www.rfc-editor.org/rfc/rfc9110#section-11.6.1)),
+so it exits rather than run as an openEHR API that can only refuse every request.
+
+The chart therefore **refuses to render** a values file that enables
+authentication without configuring one, so `helm install` stops with an
+actionable error instead of reporting success and crash-looping:
+
+```text
+Error: execution error at (ferroehr/templates/deployment.yaml:...):
+config.auth.enabled is true but no authentication mechanism is configured...
+```
+
+Pick one:
+
+```yaml
+config:
+  auth:
+    oidc:
+      issuer: https://keycloak.example.org/realms/ferroehr
+      audiences: [ferroehr]
+```
+
+or Basic auth, whose password hashes are secrets — see
+`deploy/helm/ci/basic-auth-values.yaml` for the full shape.
+
+> [!WARNING]
+> `config.auth.enabled: false` makes the chart render, and serves **every**
+> request unauthenticated. On a repository holding patient data that is a
+> development-only choice; the chart makes you state it explicitly rather than
+> reaching it by omission.
+
 ## Optional integrations
 
 ### Any server setting is reachable, not only the ones listed here

@@ -407,6 +407,45 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **A stock `helm install` no longer appears to succeed and then crash-loops.**
+  `config.auth.enabled` defaults to true and the server requires a mechanism with
+  it (RFC 9110 §11.6.1 — a 401 challenge must name a scheme the server
+  implements), so the default values produced a pod that exited at boot with the
+  reason visible only in its log. The chart now refuses to **render** that
+  combination, naming both ways to configure authentication and the explicit
+  development-only opt-out. The default was deliberately *not* changed to
+  disable authentication: that would hand a fresh install an unauthenticated CDR
+  serving patient data, which is a worse outcome than a loud failure.
+
+- **The CDR Service no longer load-balances openEHR traffic into the admin
+  console.** A Service selector is a subset match, and the console's pods carried
+  the server's `app.kubernetes.io/name` plus a `component` label — so they matched
+  the server's own Service, whose `targetPort: http` then resolved to the
+  console's port 3000. With the console enabled, a share of API requests were
+  answered by a web UI. The same overlap inflated the PodDisruptionBudget's
+  `disruptionsAllowed` from 1 to 2, enough for a node drain to evict both server
+  replicas at once. The console now carries its own `app.kubernetes.io/name`.
+  Verified on a live cluster: the CDR Service's endpoints are exactly the two
+  server pods and the PDB reports `expectedPods=2`.
+
+- **An Ingress with a path but no `pathType` is no longer rejected by the API
+  server.** `pathType` is required on `networking.k8s.io/v1` but optional in the
+  chart's schema; it now defaults to `Prefix`.
+
+- **A Service with custom `annotations` no longer loses its description.** The
+  template emitted two `annotations` mappings under one `metadata`, so the later
+  one won and `kubernetes.io/description` silently disappeared.
+
+- **An autoscaler with every metric disabled is refused instead of installed
+  inert.** Setting both HPA targets to 0 rendered an HPA with no metrics, which
+  the API accepts and the controller can never act on — while the Deployment
+  omits `replicas` under autoscaling, so a fresh install silently ran a single
+  replica.
+
+- **The install notes no longer advertise a Prometheus endpoint that is off.**
+  The endpoint was reported as public whenever metrics were enabled, ignoring
+  `config.management.endpoints.prometheus`, which defaults to `off`.
+
 - **The chart no longer promises drain-safety it cannot deliver on older
   clusters.** `PodDisruptionBudget.unhealthyPodEvictionPolicy` was rendered
   unconditionally under a `kubeVersion` floor of `>=1.25.0-0`, but the field is
