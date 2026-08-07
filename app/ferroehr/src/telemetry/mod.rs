@@ -23,7 +23,6 @@ pub mod indicators;
 mod layers;
 mod log_sanitize;
 pub mod metrics;
-pub mod prometheus;
 pub mod samplers;
 
 pub mod build_info;
@@ -33,7 +32,6 @@ pub mod provenance;
 
 use build_info::BuildInfo;
 use log_reload::LogReload;
-use metrics_exporter_prometheus::PrometheusHandle;
 use opentelemetry::KeyValue;
 use opentelemetry::metrics::Meter;
 use opentelemetry::trace::TracerProvider as _;
@@ -51,9 +49,6 @@ const SCOPE: &str = "ferroehr";
 /// Telemetry setup failure.
 #[derive(Debug, thiserror::Error)]
 pub enum TelemetryError {
-    /// The Prometheus recorder could not be installed.
-    #[error("prometheus recorder: {0}")]
-    Prometheus(#[from] metrics_exporter_prometheus::BuildError),
     /// The global subscriber could not be installed.
     #[error("subscriber init failed")]
     Subscriber(#[from] tracing_subscriber::util::TryInitError),
@@ -63,6 +58,9 @@ pub enum TelemetryError {
     /// The span-flamegraph capture file could not be created.
     #[error("flame capture file could not be created")]
     Flame(#[from] tracing_flame::Error),
+    /// The meter provider or its Prometheus reader could not be built.
+    #[error("{0}")]
+    Metrics(String),
 }
 
 /// Initialize telemetry from configuration. Call once, early in `main`.
@@ -71,30 +69,35 @@ pub enum TelemetryError {
 /// Returns [`TelemetryError`] if the recorder, an OTLP exporter, or the
 /// subscriber cannot be installed.
 pub fn init(cfg: &TelemetryConfig, build: &BuildInfo) -> Result<TelemetryGuard, TelemetryError> {
-    // 1) Metrics: the Prometheus recorder is always installed (pull default).
-    let prometheus = prometheus::install(build)?;
-
-    // 2) Traces + optional metrics push: only when an OTLP endpoint is set.
+    // 1) Metrics: ONE meter provider. The Prometheus reader always serves the
+    //    pull surface; the OTLP periodic reader is added when the push is on,
+    //    so both surfaces carry every instrument (#2181).
     let mut tracer_provider = None;
-    let mut meter_provider = None;
-    let mut meter = None;
     let mut tracer = None;
 
+    let otel_resource = resource(&cfg.otel, build);
+    let otlp_reader = if cfg.otel.export_enabled() && cfg.otel.metrics_push {
+        Some(build_metric_reader(
+            &cfg.otel.otlp_endpoint.clone().unwrap_or_default(),
+        )?)
+    } else {
+        None
+    };
+    let (meter_provider, registry) = metrics::build_provider(otel_resource.clone(), otlp_reader)
+        .map_err(|e| TelemetryError::Metrics(format!("building the meter provider failed: {e}")))?;
+    opentelemetry::global::set_meter_provider(meter_provider.clone());
+    let meter = opentelemetry::global::meter(metrics::SCOPE);
+    metrics::init(&meter);
+    metrics::register_static_gauges(&meter, build);
+    let meter_provider = Some(meter_provider);
+
+    // 2) Traces: only when an OTLP endpoint is set.
     if cfg.otel.export_enabled() {
         let endpoint = cfg.otel.otlp_endpoint.clone().unwrap_or_default();
-        let resource = resource(&cfg.otel, build);
 
-        let provider = build_tracer_provider(&endpoint, &cfg.otel, resource.clone())?;
+        let provider = build_tracer_provider(&endpoint, &cfg.otel, otel_resource)?;
         tracer = Some(provider.tracer(SCOPE));
         tracer_provider = Some(provider);
-
-        if cfg.otel.metrics_push {
-            let mp = build_meter_provider(&endpoint, resource)?;
-            opentelemetry::global::set_meter_provider(mp.clone());
-            meter = Some(opentelemetry::global::meter(SCOPE));
-            meter_provider = Some(mp);
-            warn_metrics_push_is_partial();
-        }
 
         // W3C context propagation for ingress/egress correlation.
         opentelemetry::global::set_text_map_propagator(TraceContextPropagator::new());
@@ -111,38 +114,32 @@ pub fn init(cfg: &TelemetryConfig, build: &BuildInfo) -> Result<TelemetryGuard, 
 
     Ok(TelemetryGuard {
         reload,
-        prometheus,
+        registry,
         tracer_provider,
         meter_provider,
-        meter,
+        meter: Some(meter),
         flame,
         sampler: None,
         shut: false,
     })
 }
 
-/// Announce, at the moment `metrics_push` is enabled, which families it does
-/// NOT carry.
+/// The OTLP periodic metric reader for the push path.
 ///
-/// The server keeps two metric systems: the `OpenTelemetry` SDK's own
-/// instruments, which the OTLP push exports, and the `metrics`-crate recorder
-/// behind `/management/prometheus`, which it does not (#2175). An operator who
-/// enables the push sees metrics appear in their collector and reasonably
-/// concludes the wiring is complete — while the build identity, the request
-/// latency histogram and the audit counters are silently absent. A partial
-/// export that looks complete is worse than one that fails, so it says so.
-///
-/// The list is derived from the catalogue rather than written out, so a metric
-/// added later cannot quietly fall out of this warning.
-fn warn_metrics_push_is_partial() {
-    let scrape_only: Vec<&str> = prometheus::catalog().iter().map(|spec| spec.name).collect();
-    tracing::warn!(
-        families = %scrape_only.join(", "),
-        "telemetry.metrics_push exports the OpenTelemetry SDK instruments ONLY. The families \
-         listed here are recorded through the metrics-crate recorder and reach /management/\
-         prometheus by scrape alone — they will NOT appear in your OTLP collector. Scrape \
-         /management/prometheus as well if you need them (see #2175)."
-    );
+/// # Errors
+/// Returns the exporter build error.
+fn build_metric_reader(
+    endpoint: &str,
+) -> Result<
+    opentelemetry_sdk::metrics::PeriodicReader<opentelemetry_otlp::MetricExporter>,
+    TelemetryError,
+> {
+    let exporter = opentelemetry_otlp::MetricExporter::builder()
+        .with_tonic()
+        .with_endpoint(endpoint)
+        .with_temporality(metrics::otlp_temporality())
+        .build()?;
+    Ok(opentelemetry_sdk::metrics::PeriodicReader::builder(exporter).build())
 }
 
 /// The `OTel` resource attributes (`service.name`/`service.version` + git sha,
@@ -182,27 +179,11 @@ fn build_tracer_provider(
         .build())
 }
 
-/// Build the periodic OTLP/gRPC meter provider (metrics push).
-fn build_meter_provider(
-    endpoint: &str,
-    resource: Resource,
-) -> Result<SdkMeterProvider, TelemetryError> {
-    let exporter = opentelemetry_otlp::MetricExporter::builder()
-        .with_tonic()
-        .with_endpoint(endpoint)
-        .build()?;
-
-    Ok(SdkMeterProvider::builder()
-        .with_periodic_exporter(exporter)
-        .with_resource(resource)
-        .build())
-}
-
 /// Owns the telemetry runtime handles and shuts them down on the same path the
 /// ATNA sender drains on.
 pub struct TelemetryGuard {
     reload: LogReload,
-    prometheus: PrometheusHandle,
+    registry: prometheus::Registry,
     tracer_provider: Option<SdkTracerProvider>,
     meter_provider: Option<SdkMeterProvider>,
     meter: Option<Meter>,
@@ -229,21 +210,19 @@ impl TelemetryGuard {
         self.reload.clone()
     }
 
-    /// The Prometheus render handle (for `/management/prometheus`).
+    /// The Prometheus registry backing `/management/prometheus`.
     #[must_use]
-    pub fn prometheus_handle(&self) -> PrometheusHandle {
-        self.prometheus.clone()
+    pub fn registry(&self) -> prometheus::Registry {
+        self.registry.clone()
     }
 
     /// Start the background gauge sampler over the connection pool. Call once
     /// the pool is connected; the handle is aborted on [`Self::shutdown`].
     pub fn start_samplers(&mut self, pool: PgPool) {
-        if self.sampler.is_none() {
-            self.sampler = Some(samplers::spawn(
-                pool,
-                self.prometheus.clone(),
-                self.meter.clone(),
-            ));
+        if self.sampler.is_none()
+            && let Some(meter) = self.meter.clone()
+        {
+            self.sampler = Some(samplers::spawn(pool, meter));
         }
     }
 

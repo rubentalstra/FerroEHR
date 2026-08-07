@@ -4,24 +4,16 @@
 //! a live collector), and readiness reflecting a DOWN database.
 
 use ferroehr::telemetry::health::{Health, HealthIndicator, HealthStatus};
-use ferroehr::telemetry::prometheus::{MetricKind, catalog};
+use ferroehr::telemetry::metrics::histogram_views;
 
-/// The full metric catalog as a stable text table: `name kind [buckets]`. A
-/// snapshot pins it so any rename/bucket change is reviewed deliberately.
+/// The histogram bucket ladders as a stable text table, so a re-bucketing is
+/// reviewed deliberately: `OTel`'s defaults are not ours, and a silently changed
+/// ladder invalidates every dashboard and alert built on the histogram.
 #[test]
-fn metric_catalog_snapshot() {
+fn histogram_bucket_ladders_snapshot() {
     let mut lines = Vec::new();
-    for spec in catalog() {
-        let kind = match spec.kind {
-            MetricKind::Counter => "counter",
-            MetricKind::Gauge => "gauge",
-            MetricKind::Histogram => "histogram",
-        };
-        let buckets = spec
-            .buckets
-            .map(|b| format!(" buckets={b:?}"))
-            .unwrap_or_default();
-        lines.push(format!("{} {kind}{buckets}", spec.name));
+    for (name, buckets) in histogram_views() {
+        lines.push(format!("{name} buckets={buckets:?}"));
     }
     insta::assert_snapshot!(lines.join("\n"));
 }

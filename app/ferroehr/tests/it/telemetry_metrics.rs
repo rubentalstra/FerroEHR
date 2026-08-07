@@ -23,27 +23,37 @@ use std::sync::OnceLock;
 use ferroehr::service::FerroEhrService;
 use ferroehr::service::version_update::{change_type_coded, lifecycle_state_coded};
 use ferroehr::telemetry::build_info::BuildInfo;
-use ferroehr::telemetry::prometheus::install;
-use metrics_exporter_prometheus::PrometheusHandle;
+use ferroehr::telemetry::metrics;
 use openehr_base::prelude::ObjectVersionId;
 use openehr_its::rest::generated::common::{UpdateAudit, UpdateAuditData, UpdateVersion};
 use openehr_rm::prelude::PartyProxy;
 use serde_json::{Value, json};
 
-/// The process-wide recorder, installed through the real
-/// [`install`] entry point (so the catalog's `describe_*` registrations run too)
-/// and shared because only one global `metrics` recorder can exist per process.
-fn recorder() -> &'static PrometheusHandle {
-    static HANDLE: OnceLock<PrometheusHandle> = OnceLock::new();
-    HANDLE.get_or_init(|| install(&BuildInfo::current()).expect("install prometheus recorder"))
+/// The process-wide meter provider + its Prometheus registry, built through the
+/// real entry point so the instruments and their bucket views are the shipped
+/// ones. Shared because a process has one global meter provider.
+fn recorder() -> &'static prometheus::Registry {
+    static REGISTRY: OnceLock<prometheus::Registry> = OnceLock::new();
+    REGISTRY.get_or_init(|| {
+        let (provider, registry) = metrics::build_provider(
+            opentelemetry_sdk::Resource::builder().build(),
+            None::<opentelemetry_sdk::metrics::PeriodicReader<opentelemetry_otlp::MetricExporter>>,
+        )
+        .expect("build the meter provider");
+        opentelemetry::global::set_meter_provider(provider);
+        let meter = opentelemetry::global::meter(metrics::SCOPE);
+        metrics::init(&meter);
+        metrics::register_static_gauges(&meter, &BuildInfo::current());
+        registry
+    })
 }
 
 /// The rendered value of `compositions_committed_total{change_type="<code>"}`,
 /// or `0` when the series has not been emitted yet.
-fn committed(handle: &PrometheusHandle, change_type: &str) -> u64 {
+fn committed(registry: &prometheus::Registry, change_type: &str) -> u64 {
     let needle = format!("change_type=\"{change_type}\"");
-    handle
-        .render()
+    metrics::render(registry)
+        .expect("render the exposition")
         .lines()
         .filter(|l| l.starts_with("compositions_committed_total{") && l.contains(&needle))
         .find_map(|l| l.rsplit(' ').next().and_then(|v| v.parse::<u64>().ok()))
@@ -236,7 +246,7 @@ async fn compositions_committed_total_counts_every_committed_composition_version
 
     // The rendered exposition carries the counter with its catalog description,
     // so the operational dashboards read a real series (not a dead metric).
-    let rendered = handle.render();
+    let rendered = metrics::render(handle).expect("render");
     assert!(
         rendered.contains("# TYPE compositions_committed_total counter"),
         "the counter must render with its TYPE: {rendered}"

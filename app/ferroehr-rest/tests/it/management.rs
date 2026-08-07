@@ -31,7 +31,6 @@ use ferroehr_rest::extensions::management::Observability;
 use crate::common;
 use http::{Request, StatusCode, header};
 use http_body_util::BodyExt;
-use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 use tower::ServiceExt;
 
 /// Base64 of `admin:pw` for a Basic credential.
@@ -241,12 +240,21 @@ async fn health_family_survives_management_disabled() {
 
 /// A process-wide Prometheus recorder (installed once; the global `metrics`
 /// facade the HTTP layer emits through requires a single global recorder).
-fn recorder() -> &'static PrometheusHandle {
-    static HANDLE: OnceLock<PrometheusHandle> = OnceLock::new();
-    HANDLE.get_or_init(|| {
-        PrometheusBuilder::new()
-            .install_recorder()
-            .expect("install recorder")
+fn recorder() -> &'static prometheus::Registry {
+    static REGISTRY: OnceLock<prometheus::Registry> = OnceLock::new();
+    REGISTRY.get_or_init(|| {
+        // A real provider, not a bare registry: instruments bind to the global
+        // meter provider, so a registry with nothing attached renders empty.
+        let (provider, registry) = ferroehr::telemetry::metrics::build_provider(
+            opentelemetry_sdk::Resource::builder().build(),
+            None::<opentelemetry_sdk::metrics::PeriodicReader<opentelemetry_otlp::MetricExporter>>,
+        )
+        .expect("build the meter provider");
+        opentelemetry::global::set_meter_provider(provider);
+        ferroehr::telemetry::metrics::init(&opentelemetry::global::meter(
+            ferroehr::telemetry::metrics::SCOPE,
+        ));
+        registry
     })
 }
 

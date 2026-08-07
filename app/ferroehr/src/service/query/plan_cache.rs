@@ -37,7 +37,6 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use moka::future::Cache;
 
 use crate::aql::ir::QueryIr;
-use crate::telemetry::prometheus::AQL_PLAN_CACHE_EVENTS;
 
 /// A point-in-time view of the plan cache's activity, for observability and
 /// tests (`entries` is `moka`'s eventually-consistent estimate).
@@ -112,10 +111,14 @@ impl PlanCache {
         };
         if hit.is_some() {
             self.hits.fetch_add(1, Ordering::Relaxed);
-            metrics::counter!(AQL_PLAN_CACHE_EVENTS, "event" => "hit").increment(1);
+            crate::telemetry::metrics::metrics()
+                .aql_plan_cache_events
+                .add(1, &[opentelemetry::KeyValue::new("event", "hit")]);
         } else {
             self.misses.fetch_add(1, Ordering::Relaxed);
-            metrics::counter!(AQL_PLAN_CACHE_EVENTS, "event" => "miss").increment(1);
+            crate::telemetry::metrics::metrics()
+                .aql_plan_cache_events
+                .add(1, &[opentelemetry::KeyValue::new("event", "miss")]);
         }
         hit
     }

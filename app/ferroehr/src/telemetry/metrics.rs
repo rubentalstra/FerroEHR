@@ -80,8 +80,18 @@ pub const WEBTEMPLATE_CACHE_EVENTS: &str = "webtemplate_cache_events";
 pub const EVENTS_PUBLISHED: &str = "events_published";
 /// ATNA audit records emitted.
 pub const ATNA_AUDIT_EMITTED: &str = "atna_audit_emitted";
-/// ATNA audit records delivered to a sink.
+/// ATNA audit records dropped because the queue was full.
+pub const ATNA_AUDIT_DROPPED: &str = "atna_audit_dropped";
+/// ATNA audit records rejected as malformed.
+pub const ATNA_AUDIT_REJECTED: &str = "atna_audit_rejected";
+/// ATNA audit records that failed to serialize.
+pub const ATNA_AUDIT_SERIALIZE_FAILED: &str = "atna_audit_serialize_failed";
+/// ATNA audit records delivered to a sink (`sink`).
 pub const ATNA_AUDIT_SENT: &str = "atna_audit_sent";
+/// ATNA audit deliveries that failed (`sink`).
+pub const ATNA_AUDIT_SEND_FAILED: &str = "atna_audit_send_failed";
+/// ATNA audit records reaped by retention.
+pub const ATNA_AUDIT_REAPED: &str = "atna_audit_reaped";
 /// Process start time, unix seconds.
 pub const PROCESS_START_TIME: &str = "process_start_time";
 /// Build identity, always `1`, carrying `version`/`git_sha`/`rm_version`.
@@ -99,20 +109,26 @@ pub const TOKIO_ALIVE_TASKS: &str = "tokio_alive_tasks";
 pub const HTTP_DURATION_BUCKETS: &[f64] = &[
     0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0,
 ];
-/// DB connection acquire: 100 µs … 1 s.
-pub const DB_ACQUIRE_BUCKETS: &[f64] = &[0.0001, 0.000_5, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0];
-/// AQL query phases: 1 ms … 30 s.
-pub const AQL_DURATION_BUCKETS: &[f64] =
-    &[0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0, 30.0];
-/// Request/response bodies: 1 KiB … 64 MiB.
+/// DB connection-acquire duration: 100 µs … 1 s.
+pub const DB_ACQUIRE_BUCKETS: &[f64] = &[
+    0.0001, 0.00025, 0.0005, 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0,
+];
+/// AQL query duration: 1 ms … 30 s.
+pub const AQL_DURATION_BUCKETS: &[f64] = &[
+    0.001, 0.005, 0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0,
+];
+/// HTTP body sizes: 64 B … 16 MiB.
 pub const BODY_SIZE_BUCKETS: &[f64] = &[
+    64.0,
+    256.0,
     1024.0,
-    16_384.0,
+    4096.0,
+    16384.0,
+    65536.0,
     262_144.0,
     1_048_576.0,
     4_194_304.0,
     16_777_216.0,
-    67_108_864.0,
 ];
 
 /// Every histogram and its bucket ladder, in one place.
@@ -176,12 +192,31 @@ pub struct Metrics {
     pub events_published: Counter<u64>,
     /// ATNA audit records emitted.
     pub atna_audit_emitted: Counter<u64>,
-    /// ATNA audit records delivered.
+    /// ATNA audit records dropped because the queue was full.
+    pub atna_audit_dropped: Counter<u64>,
+    /// ATNA audit records rejected as malformed.
+    pub atna_audit_rejected: Counter<u64>,
+    /// ATNA audit records that failed to serialize.
+    pub atna_audit_serialize_failed: Counter<u64>,
+    /// ATNA audit records delivered to a sink.
     pub atna_audit_sent: Counter<u64>,
+    /// ATNA audit deliveries that failed.
+    pub atna_audit_send_failed: Counter<u64>,
+    /// ATNA audit records reaped by retention.
+    pub atna_audit_reaped: Counter<u64>,
 }
 
 impl Metrics {
     /// Create every instrument on `meter`.
+    ///
+    /// One flat struct literal on purpose: the whole instrument set is visible
+    /// in one place, which is what makes an omission obvious. Splitting it into
+    /// themed halves would hide exactly that.
+    #[expect(
+        clippy::too_many_lines,
+        reason = "a single struct literal enumerating every instrument; splitting it \
+                  would scatter the set this module exists to keep in one place"
+    )]
     #[must_use]
     pub fn new(meter: &Meter) -> Self {
         Self {
@@ -266,9 +301,29 @@ impl Metrics {
                 .u64_counter(ATNA_AUDIT_EMITTED)
                 .with_description("ATNA audit records emitted")
                 .build(),
+            atna_audit_dropped: meter
+                .u64_counter(ATNA_AUDIT_DROPPED)
+                .with_description("ATNA audit records dropped because the queue was full")
+                .build(),
+            atna_audit_rejected: meter
+                .u64_counter(ATNA_AUDIT_REJECTED)
+                .with_description("ATNA audit records rejected as malformed")
+                .build(),
+            atna_audit_serialize_failed: meter
+                .u64_counter(ATNA_AUDIT_SERIALIZE_FAILED)
+                .with_description("ATNA audit records that failed to serialize")
+                .build(),
             atna_audit_sent: meter
                 .u64_counter(ATNA_AUDIT_SENT)
                 .with_description("ATNA audit records delivered to a sink")
+                .build(),
+            atna_audit_send_failed: meter
+                .u64_counter(ATNA_AUDIT_SEND_FAILED)
+                .with_description("ATNA audit deliveries that failed")
+                .build(),
+            atna_audit_reaped: meter
+                .u64_counter(ATNA_AUDIT_REAPED)
+                .with_description("ATNA audit records reaped by retention")
                 .build(),
         }
     }
@@ -277,13 +332,16 @@ impl Metrics {
 /// The process-wide instruments.
 static METRICS: OnceLock<Metrics> = OnceLock::new();
 
-/// The instruments, once [`init`] has run.
+/// The instruments.
 ///
-/// Returns `None` before initialisation — a caller that records early is a
-/// no-op rather than a panic, because a metric is never worth a crash.
+/// Infallible on purpose: before [`init`] runs, this builds them on the global
+/// no-op meter, so every recording site is a plain `metrics().x.add(..)` with
+/// no `Option` dance and no chance that a metric is worth a panic. A test
+/// binary that never initialises telemetry records into the void, which is the
+/// correct behaviour there.
 #[must_use]
-pub fn metrics() -> Option<&'static Metrics> {
-    METRICS.get()
+pub fn metrics() -> &'static Metrics {
+    METRICS.get_or_init(|| Metrics::new(&opentelemetry::global::meter(SCOPE)))
 }
 
 /// Install the instruments for the process.
