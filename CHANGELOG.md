@@ -18,6 +18,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- Six more OCI annotation keys on every image: `authors`, `vendor`,
+  `documentation` (the docs site, which no image pointed at), `url`, and
+  `base.name`/`base.digest` naming the exact pinned base image each one is built
+  on — so "what is this built from" is answerable from the image rather than from
+  the Dockerfile. Every image also reports its own title and description now,
+  where all three previously inherited the repository's.
+
 - **The Helm chart can deploy by digest.** `image.digest` renders the pod's
   image as `repository@sha256:…` and takes precedence over `image.tag`. The
   hardening chapter had been telling operators to deploy by digest "so what you
@@ -241,6 +248,20 @@ workflow refuses a tag that has no matching section here.
 
 
 ### Fixed
+
+- **The published images carry OCI annotations, so registries can read their
+  description.** GHCR showed "No description provided" for all three packages
+  even though each carried a description *label*: a label lives in the image
+  config blob, while a registry reads the description from the image *index*
+  annotation, and no annotation was being written at all. All three lanes now
+  emit annotations at both index and manifest level.
+- **The container images no longer claim the wrong licence.** All three
+  Dockerfiles declared `org.opencontainers.image.licenses="Apache-2.0"` for an
+  MIT-licensed project. Images published by CI were unaffected — the workflow's
+  label overrode the Dockerfile's — so this was only ever visible to someone
+  building the Dockerfiles directly, which is the documented compose path. The
+  app and console images now declare `MIT`, and the postgres image the SPDX
+  expression `MIT AND PostgreSQL`, which is what it actually contains.
 
 - Service-layer refusals now report the precise openEHR Service Model call
   status they were raised with, instead of a generic stand-in. An unusable

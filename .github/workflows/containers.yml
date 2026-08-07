@@ -264,9 +264,22 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # ANNOTATIONS_LEVELS is not cosmetic. A LABEL lives in the image config
+      # blob; an ANNOTATION lives in the manifest or the index — and GHCR reads
+      # the package description from the INDEX annotation, which is why a
+      # perfectly good description label showed as "No description provided".
+      # The action attaches annotations to manifests only by default.
+      #
+      # The `labels:` block overrides the action's repository-derived guesses,
+      # which are wrong for a repository that publishes three images: title
+      # comes from the repo NAME, so all three would claim to be "FerroEHR".
+      # These values mirror the Dockerfile's, and scripts/checks/image-labels.sh
+      # fails if the two ever disagree.
       - name: Metadata
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: index,manifest
         with:
           images: ${{ env.APP_IMAGE }}
           tags: |
@@ -275,6 +288,17 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+          labels: |
+            org.opencontainers.image.title=ferroehr
+            org.opencontainers.image.description=Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL 1.1)
+            org.opencontainers.image.source=https://github.com/rubentalstra/FerroEHR
+            org.opencontainers.image.url=https://ferroehr.eu/
+            org.opencontainers.image.documentation=https://ferroehr.eu/docs/latest/
+            org.opencontainers.image.vendor=FerroEHR
+            org.opencontainers.image.authors=Ruben Talstra <https://github.com/rubentalstra>
+            org.opencontainers.image.licenses=MIT
+            org.opencontainers.image.base.name=gcr.io/distroless/cc-debian13:nonroot
+            org.opencontainers.image.base.digest=sha256:d97bc0a941b8d4be647dc0ee75b264ddbb772f1ac5ba690a4309c00723b23775
 
       - name: Package and push
         id: build
@@ -287,6 +311,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
           # REVISION is the OCI-standard git-SHA arg (org.opencontainers.image.revision).
           # runtime-prebuilt is COPY-only, so it only sets the label here; the
           # binary's own /management/info SHA was stamped in the compile job below.
@@ -458,9 +483,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # See the app lane for why ANNOTATIONS_LEVELS and the explicit labels are
+      # both required.
       - name: Metadata
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: index,manifest
         with:
           images: ${{ env.ADMIN_UI_IMAGE }}
           tags: |
@@ -469,6 +498,17 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+          labels: |
+            org.opencontainers.image.title=ferroehr-admin-ui
+            org.opencontainers.image.description=Admin console for openEHR ITS-REST CDRs — pure-Rust Leptos web app (template manager, visual AQL query builder, EHR browser)
+            org.opencontainers.image.source=https://github.com/rubentalstra/FerroEHR
+            org.opencontainers.image.url=https://ferroehr.eu/
+            org.opencontainers.image.documentation=https://ferroehr.eu/docs/latest/
+            org.opencontainers.image.vendor=FerroEHR
+            org.opencontainers.image.authors=Ruben Talstra <https://github.com/rubentalstra>
+            org.opencontainers.image.licenses=MIT
+            org.opencontainers.image.base.name=gcr.io/distroless/cc-debian13:nonroot
+            org.opencontainers.image.base.digest=sha256:d97bc0a941b8d4be647dc0ee75b264ddbb772f1ac5ba690a4309c00723b23775
 
       - name: Package and push
         id: build_admin_ui
@@ -481,6 +521,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
           build-args: |
             VERSION=${{ steps.meta.outputs.version }}
             REVISION=${{ github.sha }}
@@ -524,9 +565,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # See the app lane for why ANNOTATIONS_LEVELS and the explicit labels are
+      # both required. `licenses` is an SPDX expression here because the image
+      # really is mixed: our init scripts over an upstream `postgres` base.
       - name: Metadata
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: index,manifest
         with:
           images: ${{ env.POSTGRES_IMAGE }}
           tags: |
@@ -535,6 +581,17 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+          labels: |
+            org.opencontainers.image.title=ferroehr-postgres
+            org.opencontainers.image.description=PostgreSQL 18 preconfigured (role/db/schemas/extensions) for ferroehr
+            org.opencontainers.image.source=https://github.com/rubentalstra/FerroEHR
+            org.opencontainers.image.url=https://ferroehr.eu/
+            org.opencontainers.image.documentation=https://ferroehr.eu/docs/latest/
+            org.opencontainers.image.vendor=FerroEHR
+            org.opencontainers.image.authors=Ruben Talstra <https://github.com/rubentalstra>
+            org.opencontainers.image.licenses=MIT AND PostgreSQL
+            org.opencontainers.image.base.name=postgres:18.4
+            org.opencontainers.image.base.digest=sha256:3a82e1f56c8f0f5616a11103ac3d47e632c3938698946a7ad26da0df1334744a
 
       - name: Build and push
         id: build_postgres
@@ -546,6 +603,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
           # Full provenance attestation (docs.docker.com/build/metadata/attestations).
           provenance: mode=max
           sbom: true

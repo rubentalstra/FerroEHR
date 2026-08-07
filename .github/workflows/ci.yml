@@ -323,6 +323,15 @@ jobs:
           fetch-depth: 0
       - name: Documented keys resolve in their source
         run: bash scripts/checks/docs-claims.sh --all
+      # Image metadata (#2146): the OCI keys are declared in two places — the
+      # Dockerfile, so a direct build is labelled correctly, and the publishing
+      # workflow, whose repo-derived defaults are wrong for a repo shipping three
+      # images. Two declarations of one fact drift; this fails instead. It also
+      # holds base.name/base.digest to the runtime stage's actual FROM pin, and
+      # checks that annotations reach the INDEX (the only place GHCR reads a
+      # package description from).
+      - name: Image metadata is declared once and agrees
+        run: bash scripts/checks/image-labels.sh
 
   # String-built-SQL guard: the AQL engine composes SQL from attacker-supplied
   # query text, so a `format!`/`push_str`-assembled clause in `app/ferroehr/src/
