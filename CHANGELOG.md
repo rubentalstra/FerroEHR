@@ -18,6 +18,62 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The PGP signing key can be rotated without losing history.** Signing now
+  uses a signing-capable *subkey* selected by its OpenPGP key flags, which is
+  the rotation mechanism the standard provides: issue a new subkey, the
+  certificate retains the old one, and every previously-signed version keeps
+  verifying with no configuration change. For a certificate that is genuinely
+  replaced — a compromised key, an organisational change — `signing.retired_key_paths`
+  holds the retired **public** keys, verify-only, so a retired key can never
+  sign again. Verification also no longer ignores subkeys, which it did before.
+
+- **`deploy/helm/ci/boot-check.sh`** — runs a real ferroehr image against every
+  values overlay the chart ships, replaying the complete delivery surface: the
+  rendered `ferroehr.toml`, every `config.files` entry, every file-borne secret
+  at its real value, and the environment the Deployment declares (including
+  `valueFrom.secretKeyRef`). Point `FERROEHR_IMAGE` at the tag you intend to
+  deploy and pass your own values file to check it before installing. (#2159)
+- **CI lane `chart-boot`** — boots every committed values overlay against an
+  image packaged from the branch under test, on every pull request that touches
+  the chart or the configuration vocabulary the overlays are written against.
+  Previously the equivalent check ran only on a release tag, which is after the
+  cut has already failed. (#2159)
+
+- **The server can run with no DDL rights at all.** `db.migrate = "verify"`
+  makes it issue no schema statements: at boot it checks that the database
+  already carries exactly this build's migrations and refuses to start
+  otherwise, naming the schema and what is wrong with it (never migrated,
+  behind this build, ahead of it, a failed migration, or a migration applied
+  from different source text). The runtime DSN can then authenticate as
+  `ferroehr_app` alone, so an application-level SQL flaw reaches rows and never
+  the schema. `apply` remains the default, so an empty configuration still
+  boots against an empty database. (#2049)
+- **`ferroehr db migrate` and `ferroehr db verify`** — the out-of-band schema
+  step and its read-only check, for running migrations under a
+  `ferroehr_migrator` DSN separately from the serving process. (#2049)
+- **A migration Job in the Helm chart** (`migrations.job.enabled`): a
+  `pre-install,pre-upgrade` hook Job that Helm waits on, so a failed migration
+  fails the release instead of rolling pods against a schema that was never
+  applied. It authenticates from its own Secret — deliberately a different
+  credential from `database.existingSecret` — and rendering is refused if that
+  Secret is not named. The install NOTES report the resulting posture,
+  including the case where the Job is enabled but `config.db.migrate` is still
+  `apply`. (#2049)
+- **Tamper evidence on the audit trail.** Every record in the local Audit
+  Record Repository is linked into a SHA-256 hash chain maintained inside
+  PostgreSQL, committing to its predecessor and to its own content, so the
+  protection covers every writer rather than only the server's own code. The
+  table now refuses every rewrite path but the per-sink forwarding stamp — a
+  content `UPDATE`, a `DELETE` and a `TRUNCATE` are all rejected — and
+  retention pruning goes through the one sanctioned deletion path, which
+  records which positions it removed so reaping is distinguishable from
+  tampering. `SELECT * FROM audit.verify_audit_chain()` reports one row per
+  damaged record naming what is wrong with it, and nothing at all when the
+  trail is intact; it is also reachable in-process as
+  `AuditStore::verify_chain`. Detection, not prevention: the chain is unkeyed,
+  so the controls for a party with unrestricted write access remain the
+  least-privilege role and the off-box syslog/ATX:FHIR sinks. (#2059)
+
 - `openehr-query`: a spanned lexing entry point, `lexer::lex_spanned`, returning
   each token together with the byte range of the source it was lexed from
   (`lexer::SpannedTokens`, with a `byte_span` mapping from token indices to a
@@ -130,6 +186,35 @@ workflow refuses a tag that has no matching section here.
 - Boot warnings for two deliberate weakenings that are easy to leave switched on: `cors_permissive`, and authentication enabled on a **plaintext** listener bound to a routable address.
 
 ### Changed
+
+- `deploy/helm/validate.sh` now ends every run by stating the properties it does
+  **not** check — that the server accepts the render, that the selected image
+  understands its keys, that a pod starts and serves — each with the command
+  that does check it. A green render was being read as a working deployment.
+  (#2159)
+
+- The Kubernetes, Compose, Operations, Audit, Security, From-source and
+  configuration-reference pages now state both migration postures plainly —
+  what the quickstart does and why, and what a least-privilege deployment does
+  instead — and document the audit trail's tamper evidence and its verification
+  query. The `[db]` reference table gained `migrate` and the previously
+  undocumented `statement_timeout_ms`.
+
+- Bearer-token refusals are now classified: the authentication layer records
+  *why* a token was rejected — expired, not yet valid, bad signature, wrong
+  issuer, wrong audience, missing claim, malformed, unusable key material and
+  twelve more — instead of collapsing every one into a single opaque string.
+  Each refusal reaches the log as a stable `reason` field alongside the
+  authentication mechanism, so a burst of expired tokens (clock skew, or a
+  token lifetime that is too short) is countable and no longer hides a burst of
+  bad signatures (someone presenting tokens this server was never meant to
+  accept). The underlying `jsonwebtoken` error is carried as the error's
+  source, so the cause chain can be walked instead of grepped.
+
+  No wire change: RFC 6750 §3.1 assigns one `invalid_token` code to a token
+  that "is expired, revoked, malformed, or invalid for other reasons", so every
+  refusal keeps answering `401` with the identical `WWW-Authenticate` challenge
+  it did before — now asserted for every refusal kind.
 
 - `openehr-query`: a syntax failure now locates itself in the source.
   `parser::SyntaxFault` carries `bytes: Option<Range<usize>>` — the byte range of
@@ -264,6 +349,24 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The Helm chart's shipped values overlays now produce configurations the
+  server accepts.** All three rendered, linted and matched their goldens while
+  none of them would boot: `default-values.yaml` enabled authentication with no
+  mechanism, `basic-auth-values.yaml` carried a placeholder that is not an
+  Argon2id PHC string, and `all-features-values.yaml` carried a 15-byte HMAC
+  secret under the RFC 8725 §3.5 32-byte floor and enabled SMART without its
+  required public base URL and endpoint metadata. The tag lane boots the
+  `appVersion` image against the rendered default, so the next release cut would
+  have failed. (#2159)
+
+- **The `audit` schema was unreachable under the least-privilege role model.**
+  It carried no grants at all, so only the database owner could write audit
+  records — a deployment connecting as `ferroehr_app` could not record one. The
+  runtime role now holds exactly `SELECT`, `INSERT`, a column-scoped `UPDATE`
+  on the two delivery stamps, and `EXECUTE` on the reaping and verification
+  functions. The compose PostgreSQL image also pre-creates the `audit` schema
+  alongside `ehr` and `ext`. (#2049, #2059)
+
 - Publishing a chart-only fix between releases works again. The chart lane's
   pre-flight check — that a plain `helm install` of the chart will not
   crash-loop — now compares the chart against the image it is actually judged
@@ -387,6 +490,17 @@ workflow refuses a tag that has no matching section here.
 
 
 ### Security
+
+- The admin console's `Content-Security-Policy` no longer allows inline scripts.
+  `script-src` is now `'self' 'wasm-unsafe-eval' 'nonce-…'`, where the nonce is
+  freshly generated for every response and stamped on the only inline script the
+  console emits — Leptos's hydration bootstrap and its resource-serialization
+  chunks. An injected inline script no longer runs. `style-src` keeps
+  `'unsafe-inline'`, because the console's component library creates its
+  stylesheets in the browser through the DOM without a nonce attribute; adding a
+  nonce there would suppress the inline allowance under CSP Level 3 and leave the
+  console unstyled, so the allowance stays with its reason recorded rather than
+  being traded for a policy that looks stricter and works worse.
 
 - The error-body hygiene check now also covers Service Model faults
   (`SmError::exception` and `exception`-coded call statuses), which are a
