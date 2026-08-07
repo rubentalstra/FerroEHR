@@ -8,7 +8,8 @@ description: >
   keep heavy .adoc reading out of the main context: before implementing
   spec-facing behaviour, when extracting a requirements checklist for a
   /spec-audit chapter, or to settle any "what does the spec say" question.
-tools: [Read, Grep, Glob, Bash]
+tools: Read, Grep, Glob, Bash
+disallowedTools: Write, Edit, MultiEdit, NotebookEdit
 model: opus
 memory: project
 color: blue
