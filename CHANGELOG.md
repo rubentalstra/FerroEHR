@@ -18,6 +18,22 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- The [OpenSSF Best Practices badge](https://www.bestpractices.dev/projects/13982) at
+  the passing level, alongside the Scorecard badge in the README. Every
+  criterion is answered from something a reader can check — the vulnerability
+  process in `SECURITY.md`, the release signing and provenance in the security
+  chapter, the test and analysis gates in CI — rather than self-asserted.
+
+- Fuzzing for every parser that reads attacker-controlled bytes off the wire:
+  `cargo-fuzz` (libFuzzer) harnesses for the canonical-JSON reader, the
+  canonical-XML reader, the AQL lexer/parser, the FLAT/STRUCTURED simplified
+  formats, the ADL source parser and the OPT 1.4 template reader, each a pure
+  parse of a byte slice, seeded from the openEHR corpora already committed in
+  the repository. A bounded campaign per target runs on a nightly schedule with
+  its corpus persisted between runs; long campaigns are a documented local
+  command (`fuzz/README.md`). The harnesses live in their own workspace, so no
+  ordinary build, clippy or test run is affected.
+
 - **The cluster-hardening chapter now covers breach containment, logging, managed
   control planes and the supply chain.** What scaling to zero does and does not
   stop (it halts clinical access immediately — a clinical-safety decision to make
@@ -186,6 +202,8 @@ workflow refuses a tag that has no matching section here.
 
 
 ### Fixed
+
+- **The AQL printer emitted queries that meant something different when read back.** Found by the new fuzzer, and it is a correctness defect rather than a formatting one: `to_aql` dropped parentheses that the grammar needs, so re-parsing the printed text produced a *different* query. Two causes. The `AND`/`OR` operators are stated in the grammar as binary alternatives of one recursive rule, which resolves left-associatively — so a same-precedence operand survives a re-parse on the left and silently **re-associates** on the right, and the printer treated both sides alike. And a `CONTAINS` chain used as a boolean operand absorbs whatever operator follows it, moving that operator *inside* the CONTAINS scope. The printer's own documented invariant — parse(print(q)) == q — now holds across every boolean shape, asserted rather than assumed.
 
 - **The container images declare their user numerically, so Kubernetes can actually verify it.** Both images stated `USER nonroot:nonroot`, which reads well and defeats the check it was meant to support: the kubelet cannot resolve a username against an image it does not read, so `runAsNonRoot: true` without an explicit `runAsUser` refuses the pod with *"cannot verify user is non-root"*. The distroless base already declared the numeric `65532`, and that line was overriding it with a name. Both now declare `USER 65532:65532` — the same identity, stated the way every consumer can check. The Helm chart was unaffected because it pins `runAsUser: 65532` itself; a plain `kubectl run` of these images was not.
 

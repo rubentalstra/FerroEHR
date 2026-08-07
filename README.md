@@ -16,6 +16,7 @@ ITS-REST 1.1.0 &nbsp;·&nbsp; AQL 1.1 &nbsp;·&nbsp; RM 1.2.0 **+ 1.1.0** &nbsp;
 
 [![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fbadges%2Fcoverage.json)](https://github.com/rubentalstra/FerroEHR/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/rubentalstra/FerroEHR/badge)](https://scorecard.dev/viewer/?uri=github.com/rubentalstra/FerroEHR)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13982/badge)](https://www.bestpractices.dev/projects/13982)
 [![GHCR](https://img.shields.io/badge/ghcr.io-ferroehr-2496ED.svg?logo=docker&logoColor=white)](https://github.com/rubentalstra/FerroEHR/pkgs/container/ferroehr)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/ferroehr)](https://artifacthub.io/packages/search?repo=ferroehr)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)

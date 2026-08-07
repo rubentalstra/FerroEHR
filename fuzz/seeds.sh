@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+# Populate fuzz/seeds/<target>/ from the corpora already committed in this
+# repository, as SYMLINKS — the archetype and template packs are ~100 MB, are
+# provenance-stamped where they live, and are never copied.
+#
+# Selection is size-bounded and deterministic (sorted, then capped): libFuzzer
+# derives its default input length from the largest seed and re-reads every seed
+# on each run, so a handful of multi-megabyte templates would sink the execution
+# rate for no extra coverage.
+#
+# Usage: fuzz/seeds.sh            (all targets)
+#        fuzz/seeds.sh <target>…  (named targets only)
+#
+# Reference: the cargo-fuzz book, "Corpora"
+# <https://rust-fuzz.github.io/book/cargo-fuzz/tutorial.html>.
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+seeds_root="$repo_root/fuzz/seeds"
+
+# Every seed source must exist: a renamed corpus directory silently producing an
+# empty seed set is the failure mode this guards.
+require_dir() {
+  if [[ ! -d "$repo_root/$1" ]]; then
+    echo "seeds.sh: missing corpus directory: $1" >&2
+    exit 1
+  fi
+}
+
+# link_from <target> <source-dir> <max-size> <cap> <find-name-pattern>…
+#
+# Symlinks up to <cap> files under <source-dir> smaller than <max-size>
+# (a find -size argument, e.g. 32k) into fuzz/seeds/<target>/, naming each after
+# its path so two corpora cannot collide.
+link_from() {
+  local target="$1" source="$2" max_size="$3" cap="$4"
+  shift 4
+  require_dir "$source"
+
+  local find_args=()
+  local pattern
+  for pattern in "$@"; do
+    find_args+=(-o -name "$pattern")
+  done
+
+  local dest="$seeds_root/$target"
+  mkdir -p "$dest"
+
+  local linked=0 path relative name
+  while IFS= read -r path; do
+    relative="${path#"$repo_root"/}"
+    name="${relative//\//_}"
+    ln -sf "../../../$relative" "$dest/$name"
+    linked=$((linked + 1))
+  done < <(
+    find "$repo_root/$source" -type f \( -false "${find_args[@]}" \) \
+      -size "-$max_size" | LC_ALL=C sort | head -n "$cap"
+  )
+  echo "  $target <- $source ($linked files)"
+}
+
+# The AQL seeds are the only ones that are not already files on disk. Two
+# sources, both committed: the official worked-example corpus, which lives inside
+# AsciiDoc `----` listing blocks in the vendored QUERY spec examples (the same
+# extraction the `openehr-query` corpus test performs), and the query text of the
+# CNF catalogue's own cases.
+extract_aql_examples() {
+  local dest="$seeds_root/aql_query"
+  mkdir -p "$dest"
+  require_dir "crates/openehr-query/vendor/examples"
+  local written
+  written=$(
+    awk -v dest="$dest" '
+      /^----$/ { inside = !inside; if (!inside && block != "") {
+                   file = sprintf("%s/adoc_%04d.aql", dest, ++n)
+                   printf "%s", block > file
+                   close(file)
+                 }
+                 block = ""; next }
+      inside   { block = block $0 "\n" }
+      END      { print n + 0 }
+    ' "$repo_root"/crates/openehr-query/vendor/examples/*.adoc
+  )
+  echo "  aql_query <- crates/openehr-query/vendor/examples ($written listing blocks)"
+}
+
+extract_aql_catalogue_queries() {
+  local dest="$seeds_root/aql_query"
+  mkdir -p "$dest"
+  require_dir "$schedule"
+  local written=0 query index=0
+  while IFS= read -r query; do
+    index=$((index + 1))
+    printf '%s\n' "$query" > "$(printf '%s/cnf_%04d.aql' "$dest" "$index")"
+    written=$((written + 1))
+  done < <(
+    grep -rhE '^[[:space:]]*(q|query|aql):[[:space:]]*"' \
+      "$repo_root/$schedule" --include='*.yaml' |
+      sed -E 's/^[[:space:]]*(q|query|aql):[[:space:]]*"(.*)"[[:space:]]*$/\2/' |
+      LC_ALL=C sort -u
+  )
+  echo "  aql_query <- $schedule ($written catalogue queries)"
+}
+
+catalogue=tools/cnf-runner/artifacts
+corpus="$catalogue/corpus"
+schedule="$catalogue/schedule"
+
+seed_canonical_json() {
+  link_from canonical_json crates/openehr-its/tests/vendor 512k 400 '*.json'
+  link_from canonical_json crates/openehr-its/tests/fixtures 512k 400 '*.json'
+  link_from canonical_json "$corpus/fixtures" 512k 400 '*.json'
+}
+
+seed_canonical_xml() {
+  link_from canonical_xml "$corpus/fixtures" 512k 400 '*.xml'
+  link_from canonical_xml "$corpus/archetypes/ckm/xml" 32k 250 '*.xml'
+}
+
+seed_aql_query() {
+  link_from aql_query "$corpus/fixtures/query" 64k 100 '*.aql'
+  link_from aql_query app/ferroehr/tests/resources/service/samples 64k 200 '*.aql'
+  extract_aql_examples
+  extract_aql_catalogue_queries
+}
+
+seed_simplified_formats() {
+  link_from simplified_formats "$corpus/fixtures/sf" 512k 300 '*.json'
+  link_from simplified_formats "$corpus/fixtures/flat" 512k 100 '*.json'
+}
+
+seed_adl2_source() {
+  link_from adl2_source crates/openehr-adl/tests/corpus 64k 400 '*.adls' '*.adl' '*.adlf'
+  link_from adl2_source "$corpus/archetypes/adl2" 32k 250 '*.adls' '*.adl'
+  link_from adl2_source "$corpus/archetypes/ckm/adl14" 16k 250 '*.adl'
+}
+
+seed_opt14_template() {
+  link_from opt14_template "$corpus/fixtures/opt" 512k 200 '*.opt' '*.xml'
+  link_from opt14_template "$corpus/templates" 64k 250 '*.opt'
+}
+
+targets=("$@")
+if [[ ${#targets[@]} -eq 0 ]]; then
+  targets=(canonical_json canonical_xml aql_query simplified_formats adl2_source opt14_template)
+fi
+
+for target in "${targets[@]}"; do
+  if [[ "$(type -t "seed_$target")" != function ]]; then
+    echo "seeds.sh: unknown target: $target" >&2
+    exit 1
+  fi
+  rm -rf "${seeds_root:?}/${target:?}"
+  # libFuzzer refuses to start when a corpus directory it was given does not
+  # exist, and the writable corpus is empty on a first run (or a CI cache miss).
+  mkdir -p "$repo_root/fuzz/corpus/$target"
+  echo "$target:"
+  "seed_$target"
+  echo "  total: $(find "$seeds_root/$target" \( -type l -o -type f \) | wc -l | tr -d ' ') seeds"
+done
