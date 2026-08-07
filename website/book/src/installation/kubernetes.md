@@ -342,9 +342,25 @@ Verified on a running pod rather than inferred from the rendered manifest: the
 container runs as uid/gid 65532 with an **empty** capability bounding set,
 `noNewPrivileges`, a read-only root filesystem, and a default-deny seccomp
 filter; the only writable path is the `emptyDir` at `/tmp`. The whole set
-satisfies the Pod Security **Restricted** profile, so the chart installs
-unchanged into a namespace labelled
-`pod-security.kubernetes.io/enforce=restricted`.
+satisfies the Pod Security **Restricted** profile.
+
+Satisfying it and **enforcing** it are different things, and only one of them is
+yours to do. Enforcement comes from a label on the namespace, which a chart
+cannot set for a namespace it does not own — so label it, or the posture above
+is a convention nothing checks and nothing fails when a future change regresses
+it:
+
+```shell
+kubectl label --overwrite namespace ferroehr \
+  pod-security.kubernetes.io/enforce=restricted \
+  pod-security.kubernetes.io/enforce-version=latest
+```
+
+With the label in place the API server refuses a non-compliant pod outright
+([Pod Security
+Admission](https://kubernetes.io/docs/concepts/security/pod-security-admission/)),
+which is a stronger guarantee than any check the chart can make about itself.
+The install prints this as a prerequisite for the same reason.
 
 `enableServiceLinks: false` is load-bearing, not hygiene. The kubelet injects a
 [set of Service link environment

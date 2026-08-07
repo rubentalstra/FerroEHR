@@ -541,6 +541,12 @@ networkPolicy:
 # (https://kubernetes.io/docs/concepts/security/pod-security-standards/) —
 # plus a read-only root filesystem.
 # ─────────────────────────────────────────────────────────────────────────────
+# The fields below satisfy the Kubernetes "restricted" Pod Security Standard,
+# but satisfying it and ENFORCING it are different things: enforcement comes
+# from a namespace label the chart cannot set for you —
+#   pod-security.kubernetes.io/enforce=restricted
+# Without it these values are a convention nothing checks. See the NOTES printed
+# on install (https://kubernetes.io/docs/concepts/security/pod-security-admission/).
 podSecurityContext:
   runAsNonRoot: true
   # 65532 = the distroless `nonroot` uid/gid.
