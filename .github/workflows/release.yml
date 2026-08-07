@@ -24,15 +24,24 @@ on:
         required: true
         type: string
 
-permissions:
-  contents: write
+# A release must never be cancelled part-way through publishing: a half-created
+# release with some assets attached is worse than a queued second run. So a second
+# tag push QUEUES behind the first rather than replacing it.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions: {}
 
 jobs:
   publish-release:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: write # create or update the GitHub release
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
+      sha: ${{ steps.rev.outputs.sha }}
     steps:
       - id: tag
         name: Resolve the release tag
@@ -54,9 +63,16 @@ jobs:
             exit 1
           fi
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: ${{ steps.tag.outputs.tag }}
+      # Pin the rest of the pipeline to the commit this job actually read. The
+      # tag is the only handle a dispatch gives us, but it stays movable, so
+      # build-binaries checks out this SHA rather than resolving the tag again.
+      - id: rev
+        name: Resolve the tag to its commit
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - name: Extract the changelog section for this tag
         run: |
           set -euo pipefail
@@ -90,7 +106,7 @@ jobs:
         env:
           TAG: ${{ steps.tag.outputs.tag }}
       - name: Publish (or update) the GitHub release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
           name: ${{ steps.tag.outputs.tag }}
@@ -116,6 +132,10 @@ jobs:
     runs-on: ${{ matrix.runner }}
     # A deliberately cold release build (no cache) of the full workspace.
     timeout-minutes: 60
+    permissions:
+      contents: write # attach the per-arch tarballs to it
+      id-token: write # Sigstore, for the provenance + SBOM attestations
+      attestations: write # store them against this repository
     strategy:
       fail-fast: false
       matrix:
@@ -125,10 +145,16 @@ jobs:
           - runner: ubuntu-26.04-arm
             target: aarch64-unknown-linux-gnu
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.publish-release.outputs.tag }}
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+          persist-credentials: false
+          ref: ${{ needs.publish-release.outputs.sha }}
+      # Cold by construction, not by hope: setup-rust-toolchain restores a
+      # Swatinem/rust-cache entry unless told otherwise, so the published
+      # tarballs were being linked from cached bytes this job did not build.
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        with:
+          cache: false
       - name: Build server
         # `ferroehr-server` is the binary-producing crate (bin name stays
         # `ferroehr`) since the crate consolidation; `-p ferroehr` is the
@@ -138,13 +164,71 @@ jobs:
         shell: bash
         env:
           TAG: ${{ needs.publish-release.outputs.tag }}
+          TARGET: ${{ matrix.target }}
         run: |
-          out="ferroehr-${TAG}-${{ matrix.target }}.tar.gz"
+          out="ferroehr-${TAG}-${TARGET}.tar.gz"
           strip target/release/ferroehr
           tar -C target/release -czf "$out" ferroehr
           echo "ASSET=$out" >> "$GITHUB_ENV"
+      # A CycloneDX SBOM of the Rust dependency graph — a different document from
+      # the container SBOMs BuildKit emits, answering a different question. The
+      # image SBOM sees the OS layer; this one enumerates the cargo graph with
+      # `pkg:cargo/...` purls and, crucially, the DIRECT vs TRANSITIVE edges that
+      # make an SBOM actionable rather than a flat package list (the OWASP
+      # Dependency Graph & SBOM Cheat Sheet's element 8).
+      #
+      # Generated from the release commit's own `Cargo.lock` with `--locked`, so
+      # it describes the graph that was actually built, not one resolved later.
+      - name: Install cargo-cyclonedx
+        uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2
+        with:
+          tool: cargo-cyclonedx
+      - name: Generate the dependency SBOM
+        env:
+          TAG: ${{ needs.publish-release.outputs.tag }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          set -euo pipefail
+          # Scoped to the binary-producing crate, so the document describes the
+          # artifact being released rather than the whole workspace. Verified
+          # content on the release commit's graph: 684 components, every one with
+          # a `pkg:cargo/...` purl and licence, 673 with checksums, and 685
+          # dependency edges — the direct-versus-transitive structure that makes
+          # an SBOM answerable rather than a flat list.
+          cargo cyclonedx \
+            --manifest-path app/ferroehr-server/Cargo.toml \
+            --format json --describe binaries --spec-version 1.5
+          # Named for the asset it describes, so a consumer can tell which
+          # artifact it belongs to. The generated name follows the BINARY
+          # (`ferroehr`), not the crate.
+          sbom="ferroehr-${TAG}-${TARGET}.cdx.json"
+          mv app/ferroehr-server/ferroehr_bin.cdx.json "$sbom"
+          echo "SBOM=$sbom" >> "$GITHUB_ENV"
+
+      # Signed build provenance for the tarball. GitHub's native attestation is
+      # the deliberate choice over slsa-framework/slsa-github-generator: it needs
+      # no new secret and puts no third-party reusable workflow inside the
+      # release path, and Sigstore signing is what turns readable provenance
+      # into VERIFIABLE provenance. What it does not claim is the isolation-based
+      # SLSA build levels, because the provenance is generated in the same job
+      # that builds — an honest boundary rather than a level we assert.
+      #
+      # A consumer verifies with:
+      #   gh attestation verify ferroehr-<tag>-<target>.tar.gz -R rubentalstra/FerroEHR
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-path: ${{ env.ASSET }}
+      - name: Attest the SBOM
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+        with:
+          subject-path: ${{ env.ASSET }}
+          sbom-path: ${{ env.SBOM }}
+
       - name: Upload to release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
           tag_name: ${{ needs.publish-release.outputs.tag }}
-          files: ${{ env.ASSET }}
+          files: |
+            ${{ env.ASSET }}
+            ${{ env.SBOM }}

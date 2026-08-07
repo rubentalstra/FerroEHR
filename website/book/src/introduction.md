@@ -60,6 +60,9 @@ user terms; if you are new to openEHR itself, start with the
 
 ## Where to go next
 
+- **Wondering why this exists?** [Why FerroEHR exists](why-ferroehr.md) is the
+  project's position: what openEHR is worth, what we commit to, and why
+  companies are invited to build on, resell and contribute back to it.
 - **Just want to try it?** [Getting started](getting-started.md) takes you from
   `docker compose up` to a stored composition and an AQL result in a few
   minutes.

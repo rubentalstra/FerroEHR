@@ -1,0 +1,81 @@
+# A THROWAWAY PostgreSQL 18 for cluster testing — never a deployment pattern.
+#
+# The chart ships no database on purpose (a CDR's PostgreSQL must be externally
+# managed, backed up and PITR-capable), so a cluster test has to supply one. This
+# is that supply: the project's own PostgreSQL image, `emptyDir` storage, and no
+# hardening beyond the defaults, because the entrypoint starts as root to chown
+# the data directory and then drops privileges. It exists to be deleted.
+#
+# The DSN Secret it creates is what `database.existingSecret` points at.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ferroehr-db
+type: Opaque
+stringData:
+  FERROEHR__DB__URL: postgres://ferroehr:ferroehr@ferroehr-postgres:5432/ferroehr
+  POSTGRES_PASSWORD: postgres
+  PG_INIT_PASSWORD: ferroehr
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ferroehr-postgres
+spec:
+  selector:
+    app.kubernetes.io/name: postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ferroehr-postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: ghcr.io/rubentalstra/ferroehr-postgres:3.17.3
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ferroehr-db
+                  key: POSTGRES_PASSWORD
+            - name: PG_INIT_USER
+              value: ferroehr
+            - name: PG_INIT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ferroehr-db
+                  key: PG_INIT_PASSWORD
+            - name: PG_INIT_DB
+              value: ferroehr
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - containerPort: 5432
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "ferroehr", "-d", "ferroehr"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql
+      volumes:
+        # Deliberately ephemeral. Scaling this Deployment to 0 and back DESTROYS
+        # the schema, and the server migrates only at boot — so the pods then sit
+        # NotReady with `migrations: DOWN` until they are restarted.
+        - name: data
+          emptyDir: {}

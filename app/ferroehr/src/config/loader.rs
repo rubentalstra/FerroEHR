@@ -9,6 +9,10 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use crate::config::secret::Secret;
+use crate::config::secret::SecretUrl;
+use crate::db::DbConfig;
+use crate::extensions::events::config::EventsConfig;
+use crate::extensions::fhir::config::FhirOutboundConfig;
 use config::{Config, Environment, File, FileFormat};
 
 use super::FerroEhrConfig;
@@ -309,6 +313,42 @@ fn resolve_secret_files(config: &mut FerroEhrConfig, errors: &mut Vec<ConfigErro
             errors,
         );
     }
+    if let Some(basic) = config.auth.basic.as_mut() {
+        for user in &mut basic.users {
+            let file = user.password_hash_file.take();
+            let key = format!("auth.basic.users[{:?}].password_hash", user.username);
+            resolve_set_secret(&key, &mut user.password_hash, file, errors);
+        }
+    }
+
+    // The credential-bearing URLs. Each has a non-empty dev default, so "the
+    // operator set it" means "it differs from that default" — a default is not
+    // a setting, and comparing against `Default::default()` cannot drift from
+    // the `Default` impl the way a duplicated literal would.
+    let default_dsn = DbConfig::default().url;
+    resolve_secret_url(
+        "db.url",
+        &mut config.db.url,
+        &default_dsn,
+        config.db.url_file.take(),
+        errors,
+    );
+    let default_broker = EventsConfig::default().url;
+    resolve_secret_url(
+        "events.url",
+        &mut config.events.url,
+        &default_broker,
+        config.events.url_file.take(),
+        errors,
+    );
+    let default_fhir_broker = FhirOutboundConfig::default().url;
+    resolve_secret_url(
+        "fhir.outbound.url",
+        &mut config.fhir.outbound.url,
+        &default_fhir_broker,
+        config.fhir.outbound.url_file.take(),
+        errors,
+    );
 }
 
 /// Read `path`'s contents (trailing newline trimmed) into `target` as a
@@ -328,6 +368,52 @@ fn resolve_secret(
     }
     match read_trim(&path) {
         Ok(secret) => *target = Some(Secret::new(secret)),
+        Err(e) => errors.push(e),
+    }
+}
+
+/// Read `path`'s contents into a [`Secret`] field that is always present, using
+/// emptiness as "unset".
+///
+/// The `Option<Secret>` fields above can say "the operator set this" with
+/// `is_some`; a mandatory field cannot, so an empty value is the unset state.
+fn resolve_set_secret(
+    key: &str,
+    target: &mut Secret,
+    file: Option<PathBuf>,
+    errors: &mut Vec<ConfigError>,
+) {
+    let Some(path) = file else { return };
+    if !target.expose().is_empty() {
+        errors.push(ConfigError::new(format!(
+            "set only one of {key} / {key}_file"
+        )));
+        return;
+    }
+    match read_trim(&path) {
+        Ok(secret) => *target = Secret::new(secret),
+        Err(e) => errors.push(e),
+    }
+}
+
+/// Read `path`'s contents into a [`SecretUrl`] field whose unset state is its
+/// own default value.
+fn resolve_secret_url(
+    key: &str,
+    target: &mut SecretUrl,
+    default: &SecretUrl,
+    file: Option<PathBuf>,
+    errors: &mut Vec<ConfigError>,
+) {
+    let Some(path) = file else { return };
+    if target.expose() != default.expose() {
+        errors.push(ConfigError::new(format!(
+            "set only one of {key} / {key}_file"
+        )));
+        return;
+    }
+    match read_trim(&path) {
+        Ok(url) => *target = SecretUrl::new(url),
         Err(e) => errors.push(e),
     }
 }

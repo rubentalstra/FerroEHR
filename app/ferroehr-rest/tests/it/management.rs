@@ -52,6 +52,7 @@ fn auth_config(roles: &[&str]) -> AuthConfig {
             users: vec![BasicUser {
                 username: "admin".to_owned(),
                 password_hash: ferroehr::config::secret::Secret::new(hash("pw")),
+                password_hash_file: None,
                 roles: roles.iter().map(|r| (*r).to_owned()).collect(),
             }],
         }),

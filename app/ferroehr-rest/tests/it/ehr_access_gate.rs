@@ -62,6 +62,7 @@ fn user(name: &str, roles: &[&str]) -> BasicUser {
     BasicUser {
         username: name.to_owned(),
         password_hash: ferroehr::config::secret::Secret::new(hash_pw("pw")),
+        password_hash_file: None,
         roles: roles.iter().map(|r| (*r).to_owned()).collect(),
     }
 }

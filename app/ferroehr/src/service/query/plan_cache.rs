@@ -39,14 +39,6 @@ use moka::future::Cache;
 use crate::aql::ir::QueryIr;
 use crate::telemetry::prometheus::AQL_PLAN_CACHE_EVENTS;
 
-/// The default maximum number of distinct query plans held. Bounded so a
-/// churn of one-off ad-hoc queries cannot grow the cache without limit. The
-/// effective capacity comes from `[query].plan_cache_capacity`
-/// (`super::QueryConfig`), applied when the binary builds the service; a
-/// bare service (tests/embeddings) uses this default. No openEHR spec governs
-/// this — our own tuning knob.
-const DEFAULT_CAPACITY: u64 = 256;
-
 /// A point-in-time view of the plan cache's activity, for observability and
 /// tests (`entries` is `moka`'s eventually-consistent estimate).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -85,8 +77,15 @@ impl std::fmt::Debug for PlanCache {
 }
 
 impl Default for PlanCache {
+    /// Holds up to 256 distinct plans — bounded so a churn of one-off ad-hoc
+    /// queries cannot grow the cache without limit.
+    ///
+    /// The effective capacity comes from `[query].plan_cache_capacity`
+    /// ([`super::config::QueryConfig`]), applied when the binary builds the service; a
+    /// bare service (tests/embeddings) uses this default. No openEHR spec
+    /// governs this — our own tuning knob.
     fn default() -> Self {
-        Self::new(DEFAULT_CAPACITY)
+        Self::new(256)
     }
 }
 

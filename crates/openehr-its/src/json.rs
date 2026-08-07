@@ -255,6 +255,10 @@ pub fn from_canonical_value<T: DeserializeOwned>(
 /// The compiled ITS-JSON validator, built once from [`RM_SCHEMA_JSON`]. Stored
 /// as a `Result` (not `expect`ed) so a schema-compile failure surfaces as a
 /// validation error rather than a panic in library code.
+///
+/// NOTE: the two causes stay flattened into the stored `String` rather than
+/// carried as a source (RFC 0201) — the schema is a compiled-in constant, so a
+/// failure here is a packaging fault with no caller that could branch on it.
 static RM_VALIDATOR: std::sync::LazyLock<Result<jsonschema::Validator, String>> =
     std::sync::LazyLock::new(|| {
         let schema: serde_json::Value =

@@ -80,10 +80,9 @@ impl AuditStore {
         .bind(event.tenant_id)
         .bind(fhir.clone())
         .fetch_one(&self.pool)
-        .await
-        .map_err(|e| AuditError::Store(e.to_string()))?
+        .await?
         .try_get::<Uuid, _>("id")
-        .map_err(|e| AuditError::Store(e.to_string()))
+        .map_err(AuditError::Store)
     }
 
     /// Persist a whole drained batch in ONE multi-row `INSERT` (UNNEST over
@@ -162,8 +161,7 @@ impl AuditStore {
         .bind(tenant_ids)
         .bind(fhir_docs)
         .execute(&self.pool)
-        .await
-        .map_err(|e| AuditError::Store(e.to_string()))?;
+        .await?;
         Ok(())
     }
 
@@ -211,15 +209,12 @@ impl AuditStore {
         )
         .bind(limit.max(1))
         .fetch_all(&self.pool)
-        .await
-        .map_err(|e| AuditError::Store(e.to_string()))?;
+        .await?;
         rows.into_iter()
             .map(|row| {
                 Ok((
-                    row.try_get::<Uuid, _>("id")
-                        .map_err(|e| AuditError::Store(e.to_string()))?,
-                    row.try_get::<serde_json::Value, _>("fhir")
-                        .map_err(|e| AuditError::Store(e.to_string()))?,
+                    row.try_get::<Uuid, _>("id")?,
+                    row.try_get::<serde_json::Value, _>("fhir")?,
                 ))
             })
             .collect()
@@ -240,8 +235,7 @@ impl AuditStore {
         )
         .bind(i32::try_from(retention_days).unwrap_or(i32::MAX))
         .execute(&self.pool)
-        .await
-        .map_err(|e| AuditError::Store(e.to_string()))?;
+        .await?;
         Ok(result.rows_affected())
     }
 
@@ -255,77 +249,111 @@ impl AuditStore {
         &self,
         filter: &AuditSearchFilter,
     ) -> Result<(i64, Vec<serde_json::Value>), AuditError> {
-        use sea_query::{Alias, Expr, ExprTrait, Order, PostgresQueryBuilder, Query};
-        use sea_query_sqlx::SqlxBinder as _;
-
-        let table = (Alias::new("audit"), Alias::new("audit_event"));
-        let condition = {
-            let mut cond = sea_query::Cond::all();
-            // Timestamps bind as RFC 3339 text cast to timestamptz: the
-            // sea-query binder's with-jiff is unimplemented upstream (see the
-            // workspace manifest note), so the value crosses as text.
-            if let Some(from) = filter.from {
-                cond = cond.add(
-                    Expr::col(Alias::new("recorded_at"))
-                        .gte(Expr::val(from.to_string()).cast_as("timestamptz")),
-                );
-            }
-            if let Some(to) = filter.to {
-                cond = cond.add(
-                    Expr::col(Alias::new("recorded_at"))
-                        .lte(Expr::val(to.to_string()).cast_as("timestamptz")),
-                );
-            }
-            if let Some(patient) = &filter.patient {
-                cond = cond.add(Expr::col(Alias::new("patient_id")).eq(patient.clone()));
-            }
-            if let Some(agent) = &filter.agent {
-                cond = cond.add(Expr::col(Alias::new("principal")).eq(agent.clone()));
-            }
-            if let Some(entity) = &filter.entity {
-                cond = cond.add(Expr::col(Alias::new("resource_id")).eq(entity.clone()));
-            }
-            if let Some(outcome) = filter.outcome {
-                cond = cond.add(Expr::col(Alias::new("outcome")).eq(outcome));
-            }
-            if let Some(action) = &filter.action {
-                cond = cond.add(Expr::col(Alias::new("action")).eq(action.clone()));
-            }
-            cond
-        };
-
-        let (count_sql, count_values) = Query::select()
-            .expr(Expr::col(sea_query::Asterisk).count())
-            .from(table.clone())
-            .cond_where(condition.clone())
-            .build_sqlx(PostgresQueryBuilder);
+        let (count_sql, count_values, sql, values) = build_search_statements(filter);
         let total: i64 = sqlx::query_scalar_with(sqlx::AssertSqlSafe(count_sql), count_values)
             .fetch_one(&self.pool)
-            .await
-            .map_err(|e| AuditError::Store(e.to_string()))?;
+            .await?;
 
-        let (sql, values) = Query::select()
-            .column(Alias::new("fhir"))
-            .from(table)
-            .cond_where(condition)
-            .order_by(Alias::new("recorded_at"), Order::Desc)
-            .order_by(Alias::new("stored_at"), Order::Desc)
-            .limit(u64::try_from(filter.count.clamp(1, 1000)).unwrap_or(50))
-            .offset(u64::try_from(Ord::max(filter.offset, 0)).unwrap_or(0))
-            .build_sqlx(PostgresQueryBuilder);
         let rows = sqlx::query_with(sqlx::AssertSqlSafe(sql), values)
             .fetch_all(&self.pool)
-            .await
-            .map_err(|e| AuditError::Store(e.to_string()))?;
+            .await?;
         let documents = rows
             .into_iter()
             .map(|row| {
                 row.try_get::<serde_json::Value, _>("fhir")
-                    .map_err(|e| AuditError::Store(e.to_string()))
+                    .map_err(AuditError::Store)
             })
             .collect::<Result<Vec<_>, _>>()?;
         Ok((total, documents))
     }
+}
+
+/// The `WHERE` condition for the ITI-81 filter.
+///
+/// Every column name is a literal here; every caller-supplied value goes through
+/// `Expr::val` and therefore binds as a parameter rather than entering the SQL
+/// text. That split is the property `sql_injection`-style tests pin.
+fn search_condition(filter: &AuditSearchFilter) -> sea_query::Cond {
+    use sea_query::{Alias, Expr, ExprTrait};
+
+    let mut cond = sea_query::Cond::all();
+    // Timestamps bind as RFC 3339 text cast to timestamptz: the sea-query
+    // binder's with-jiff is unimplemented upstream (see the workspace manifest
+    // note), so the value crosses as text.
+    if let Some(from) = filter.from {
+        cond = cond.add(
+            Expr::col(Alias::new("recorded_at"))
+                .gte(Expr::val(from.to_string()).cast_as("timestamptz")),
+        );
+    }
+    if let Some(to) = filter.to {
+        cond = cond.add(
+            Expr::col(Alias::new("recorded_at"))
+                .lte(Expr::val(to.to_string()).cast_as("timestamptz")),
+        );
+    }
+    if let Some(patient) = &filter.patient {
+        cond = cond.add(Expr::col(Alias::new("patient_id")).eq(patient.clone()));
+    }
+    if let Some(agent) = &filter.agent {
+        cond = cond.add(Expr::col(Alias::new("principal")).eq(agent.clone()));
+    }
+    if let Some(entity) = &filter.entity {
+        cond = cond.add(Expr::col(Alias::new("resource_id")).eq(entity.clone()));
+    }
+    if let Some(outcome) = filter.outcome {
+        cond = cond.add(Expr::col(Alias::new("outcome")).eq(outcome));
+    }
+    if let Some(action) = &filter.action {
+        cond = cond.add(Expr::col(Alias::new("action")).eq(action.clone()));
+    }
+    cond
+}
+
+/// Build the ITI-81 retrieval's two statements — the count and the page — from a
+/// filter, with no database involved.
+///
+/// Extracted from [`AuditStore::search`] so the SQL is reachable by a test. This
+/// is the server's second runtime dynamic-SQL site after the AQL engine, and the
+/// property that matters is the same one: every IDENTIFIER here — the schema, the
+/// table, every column, the sort direction — is a literal in this function, while
+/// every caller-supplied value goes through `Expr::val` and arrives as a bound
+/// parameter. `limit`/`offset` are clamped integers, never text.
+///
+/// The guard `scripts/checks/sql-string-building.sh` catches string-built SQL but
+/// cannot see an `Alias::new` argument, which is why the closed set is pinned by a
+/// test rather than only by the guard.
+fn build_search_statements(
+    filter: &AuditSearchFilter,
+) -> (
+    String,
+    sea_query_sqlx::SqlxValues,
+    String,
+    sea_query_sqlx::SqlxValues,
+) {
+    use sea_query::{Alias, Expr, ExprTrait, Order, PostgresQueryBuilder, Query};
+    use sea_query_sqlx::SqlxBinder as _;
+
+    let table = (Alias::new("audit"), Alias::new("audit_event"));
+    let condition = search_condition(filter);
+
+    let (count_sql, count_values) = Query::select()
+        .expr(Expr::col(sea_query::Asterisk).count())
+        .from(table.clone())
+        .cond_where(condition.clone())
+        .build_sqlx(PostgresQueryBuilder);
+
+    let (sql, values) = Query::select()
+        .column(Alias::new("fhir"))
+        .from(table)
+        .cond_where(condition)
+        .order_by(Alias::new("recorded_at"), Order::Desc)
+        .order_by(Alias::new("stored_at"), Order::Desc)
+        .limit(u64::try_from(filter.count.clamp(1, 1000)).unwrap_or(50))
+        .offset(u64::try_from(Ord::max(filter.offset, 0)).unwrap_or(0))
+        .build_sqlx(PostgresQueryBuilder);
+
+    (count_sql, count_values, sql, values)
 }
 
 /// The supported ITI-81 search-parameter subset, resolved by the REST layer.
@@ -394,4 +422,172 @@ const fn resource_class(object: ObjectClass) -> &'static str {
 
 fn nonempty_opt(value: &str) -> Option<&str> {
     (!value.is_empty()).then_some(value)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::AuditSearchFilter;
+    use super::build_search_statements;
+
+    /// Twenty payloads that break SQL when they reach the statement text rather
+    /// than a bound parameter.
+    const HOSTILE: [&str; 20] = [
+        "'",
+        "\"",
+        "--",
+        "/*",
+        "*/",
+        ";",
+        "\\",
+        "' OR '1'='1",
+        "'; DROP TABLE audit.audit_event; --",
+        "') OR 1=1 --",
+        "1; SELECT pg_sleep(10)",
+        "$1",
+        "$$",
+        "\0",
+        "\n",
+        "\r\n",
+        "0x27",
+        "%27",
+        "\u{2019}",
+        "' UNION SELECT fhir FROM audit.audit_event --",
+    ];
+
+    fn filter_with(value: &str) -> AuditSearchFilter {
+        AuditSearchFilter {
+            patient: Some(value.to_owned()),
+            agent: Some(value.to_owned()),
+            entity: Some(value.to_owned()),
+            action: Some(value.to_owned()),
+            ..AuditSearchFilter::default()
+        }
+    }
+
+    /// Hostile filter values never change the generated SQL — only the bound
+    /// values.
+    ///
+    /// The assertion is byte-equality of the statement text against a benign
+    /// baseline. That is stronger than looking for the payload in the SQL: it
+    /// catches a value that alters the statement's SHAPE as well as one that
+    /// appears in it.
+    #[test]
+    fn hostile_filter_values_never_change_the_generated_sql() {
+        let (baseline_count, _, baseline_page, _) = build_search_statements(&filter_with("benign"));
+
+        for payload in HOSTILE {
+            // The page statement's own values are not inspected: both statements
+            // bind from the same condition, so asserting the count's bindings
+            // covers both, and the page text is compared byte for byte below.
+            let (count_sql, count_values, sql, _page_values) =
+                build_search_statements(&filter_with(payload));
+            assert_eq!(
+                count_sql, baseline_count,
+                "the count statement changed for {payload:?}"
+            );
+            assert_eq!(
+                sql, baseline_page,
+                "the page statement changed for {payload:?}"
+            );
+            // The "absent from the SQL" check skips payloads that ARE the
+            // placeholder syntax (`$1`, `$$`) or a single metacharacter: `$1`
+            // legitimately appears because that is what a bound parameter looks
+            // like. The byte-equality above already covers them — a value that
+            // altered the statement would have changed it — so this is the
+            // narrower check, not a weaker one.
+            let is_placeholder_shaped = payload.starts_with('$') || payload.len() < 2;
+            assert!(
+                is_placeholder_shaped || !sql.contains(payload),
+                "the payload must not appear in the SQL text: {payload:?} in {sql}"
+            );
+            // The values still travel — the point is that they travel as
+            // parameters, not that they are dropped. Compared in the DEBUG
+            // representation on both sides: the bound values render a newline as
+            // an escape, so comparing a raw control character against that text
+            // would fail for the wrong reason.
+            let bound = format!("{count_values:?}");
+            let rendered = format!("{payload:?}");
+            let rendered = rendered.trim_matches('"');
+            assert!(
+                bound.contains(rendered),
+                "the payload must be bound as a value: {payload:?} not in {bound}"
+            );
+        }
+    }
+
+    /// The identifiers and the sort direction come from a closed set in this
+    /// module — the enumeration, recorded so a new filter cannot quietly add one.
+    ///
+    /// Written as an exact-set assertion over the quoted identifiers the builder
+    /// emits: a filter that introduced a caller-supplied column would appear here
+    /// and fail, which is what the guard script cannot see (it reads for
+    /// string-built SQL, not for an `Alias::new` argument).
+    #[test]
+    fn every_identifier_comes_from_the_closed_set() {
+        let (count_sql, _, sql, _) = build_search_statements(&AuditSearchFilter {
+            patient: Some("p".to_owned()),
+            agent: Some("a".to_owned()),
+            entity: Some("e".to_owned()),
+            action: Some("x".to_owned()),
+            outcome: Some(0),
+            ..AuditSearchFilter::default()
+        });
+
+        let mut seen: Vec<String> = format!("{count_sql} {sql}")
+            .split('"')
+            .skip(1)
+            .step_by(2)
+            .map(str::to_owned)
+            .collect();
+        seen.sort_unstable();
+        seen.dedup();
+
+        let mut expected = vec![
+            "action",
+            "audit",
+            "audit_event",
+            "fhir",
+            "outcome",
+            "patient_id",
+            "principal",
+            "recorded_at",
+            "resource_id",
+            "stored_at",
+        ];
+        expected.sort_unstable();
+        assert_eq!(
+            seen,
+            expected.iter().map(|s| (*s).to_owned()).collect::<Vec<_>>(),
+            "the identifier set moved: {sql}"
+        );
+        assert!(sql.contains("DESC"), "newest-first is the ITI-81 order");
+        assert!(!sql.contains("ASC"), "no ascending sort is emitted");
+    }
+
+    /// `limit`/`offset` are clamped integers, so no caller value reaches the
+    /// statement as text — including a negative offset or an absurd count.
+    #[test]
+    fn paging_is_clamped_and_never_textual() {
+        let (_, _, sql, values) = build_search_statements(&AuditSearchFilter {
+            count: i64::MAX,
+            offset: i64::MIN,
+            ..AuditSearchFilter::default()
+        });
+        // Paging binds as parameters rather than being written into the
+        // statement, which is stronger than the clamp alone — so the clamped
+        // values are asserted where they actually travel.
+        assert!(
+            sql.contains("LIMIT $") && sql.contains("OFFSET $"),
+            "paging must bind, not interpolate: {sql}"
+        );
+        let bound = format!("{values:?}");
+        assert!(
+            bound.contains("1000"),
+            "the count clamps to the cap: {bound}"
+        );
+        assert!(
+            !bound.contains(&i64::MIN.to_string()),
+            "a negative offset must never reach the database: {bound}"
+        );
+    }
 }

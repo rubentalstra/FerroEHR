@@ -139,6 +139,7 @@ mod tests {
             users: vec![BasicUser {
                 username: "alice".to_owned(),
                 password_hash: ferroehr::config::secret::Secret::new(hash("s3cret")),
+                password_hash_file: None,
                 roles: vec!["user".to_owned()],
             }],
         }
@@ -175,6 +176,7 @@ mod tests {
             users: vec![BasicUser {
                 username: "root".to_owned(),
                 password_hash: ferroehr::config::secret::Secret::new(hash("s3cret")),
+                password_hash_file: None,
                 roles: vec!["ADMIN".to_owned()],
             }],
         };

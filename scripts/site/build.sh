@@ -65,21 +65,15 @@ fi
 #    to the CURRENT SITE_BASE by keeping only the `/docs/<id>/` tail, which is
 #    invariant. The frozen trees themselves are NOT rebuilt ("generate once"):
 #    their internal links are relative, so only this manifest needs re-anchoring.
-python3 - "$VERSIONS_SRC" "$OUT/versions.json" "$SITE_BASE" <<'PY'
-import json, sys
-
-src, dest, base = sys.argv[1], sys.argv[2], sys.argv[3]
-manifest = json.load(open(src))
-for entry in manifest.get("versions", []):
-    path = entry.get("path")
-    if isinstance(path, str):
-        marker = path.find("/docs/")
-        if marker != -1:
-            entry["path"] = base + path[marker:]
-with open(dest, "w") as fh:
-    json.dump(manifest, fh, indent=2)
-    fh.write("\n")
-PY
+#    `sub` anchors on the first `/docs/` and keeps its tail, so a path already
+#    written under the current base re-anchors to itself: idempotent.
+jq --indent 2 --arg base "$SITE_BASE" '
+  .versions |= map(
+    if (.path | type) == "string" and (.path | test("/docs/"))
+    then .path = $base + (.path | sub("^.*?(?=/docs/)"; ""))
+    else . end
+  )
+' "$VERSIONS_SRC" > "$OUT/versions.json"
 
 if [[ "$MODE" != "--full" ]]; then
   # The landing page links to /docs/latest/; alias it to the dev book so the
@@ -104,37 +98,34 @@ if [[ -d "$ROOT/docs-dist/docs" ]]; then
   # to the CURRENT base in the ASSEMBLED OUTPUT only — docs-dist is untouched,
   # so "generate once, never rebuilt" still holds for the frozen trees.
   log "re-anchoring absolute links in frozen trees"
-  python3 - "$OUT/docs" "$SITE_BASE" <<'PY'
-import pathlib, re, sys
-
-root, base = pathlib.Path(sys.argv[1]), sys.argv[2]
-# A legacy base is exactly one path segment before /docs/; a already-correct
-# "/docs/..." has no such segment and is left alone (so this is idempotent).
-LEGACY = re.compile(r'(?<=["\'])/[A-Za-z0-9._-]+/docs/')
-patched = 0
-for html in root.rglob("*.html"):
-    text = html.read_text(encoding="utf-8", errors="surrogateescape")
-    fixed, n = LEGACY.subn(f"{base}/docs/", text)
-    if n:
-        html.write_text(fixed, encoding="utf-8", errors="surrogateescape")
-        patched += 1
-print(f"  re-anchored {patched} file(s)")
-PY
+  # A legacy base is exactly one path segment between the quote and `/docs/`; an
+  # already-correct `"/docs/..."` has no such segment and is left alone, and a
+  # path already under the current base rewrites to itself — so this is
+  # idempotent. Two expressions rather than a `["']` class so the pattern stays
+  # readable under shell quoting, and BSD and GNU sed agree on it.
+  patched=0
+  while IFS= read -r html; do
+    sed -E -e 's#"/[A-Za-z0-9._-]+/docs/#"'"$SITE_BASE"'/docs/#g' \
+           -e "s#'/[A-Za-z0-9._-]+/docs/#'${SITE_BASE}/docs/#g" \
+           "$html" > "$html.reanchored"
+    if cmp -s "$html" "$html.reanchored"; then
+      rm -f "$html.reanchored"
+    else
+      mv "$html.reanchored" "$html"
+      patched=$((patched + 1))
+    fi
+  done < <(find "$OUT/docs" -name '*.html')
+  echo "  re-anchored $patched file(s)"
 else
   log "no docs-dist worktree — skipping frozen versions (dev-only content only)"
 fi
 
 # 8. Build /docs/latest/ fresh from the newest tag's sources (deep links work).
-LATEST_TAG="$(python3 - "$OUT/versions.json" <<'PY'
-import json, sys
-try:
-    m = json.load(open(sys.argv[1]))
-except Exception:
-    print(""); sys.exit(0)
-lt = m.get("latest")
-print(lt if lt and lt != "dev" else "")
-PY
-)"
+# An unreadable manifest, an absent `latest`, or `latest: "dev"` all yield the
+# empty string, which the guard below reads as "no frozen tag to build from" —
+# so a malformed file skips this step rather than failing the whole site build.
+LATEST_TAG="$(jq -r 'if (.latest // "") == "dev" then "" else (.latest // "") end' \
+  "$OUT/versions.json" 2>/dev/null || true)"
 if [[ -n "$LATEST_TAG" ]] && git rev-parse -q --verify "refs/tags/$LATEST_TAG" >/dev/null 2>&1; then
   log "building /docs/latest/ from tag $LATEST_TAG"
   WT="$ROOT/.latest-src"
@@ -178,20 +169,15 @@ log "writing robots.txt disallows"
   echo 'User-agent: *'
   echo 'Allow: /'
   echo "Disallow: ${SITE_BASE}/docs/dev/"
-  python3 - "$OUT/versions.json" "$SITE_BASE" <<'PY'
-import json, sys
-try:
-    m = json.load(open(sys.argv[1]))
-except Exception:
-    sys.exit(0)
-base = sys.argv[2]
-latest = m.get("latest")
-for v in m.get("versions", []):
-    vid = v.get("id")
-    if vid in ("dev", "latest") or vid == latest or v.get("aliasOf"):
-        continue
-    print(f"Disallow: {base}/docs/{vid}/")
-PY
+  # Every archived non-latest version. An unreadable or malformed manifest emits
+  # nothing rather than failing the build — the same tolerance the `latest` read
+  # above has, since robots.txt disallows are an SEO nicety, not correctness.
+  jq -r --arg base "$SITE_BASE" '
+    .latest as $latest
+    | .versions[]?
+    | select(.aliasOf == null and .id != "dev" and .id != "latest" and .id != $latest)
+    | "Disallow: \($base)/docs/\(.id)/"
+  ' "$OUT/versions.json" 2>/dev/null || true
   echo ""
   echo "Sitemap: ${SITE_ORIGIN}${SITE_BASE}/sitemap.xml"
 } > "$OUT/robots.txt"

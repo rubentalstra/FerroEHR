@@ -3,19 +3,24 @@
 # authenticated, and is refused anyway.
 #
 # One behaviour: an authenticated principal whose authorization is read-only is
-# refused on every WRITE of this capability (the upload and the delete), while
-# the reads stay open to it. The reads are the control that makes the row a
+# refused on every MUTATING route of this capability (the upload and the
+# delete), while the reads stay open to it. The reads are the control that makes the row a
 # statement about WRITES rather than a statement about the principal — a server
 # that refused everything would pass a write-only probe for the wrong reason.
 #
 # EXTENSION ROUTES (register AMB-41): the outcome mapping is UNIVERSAL
 # (vocab/selectors.yaml universal_outcomes: forbidden -> 403, route-table-wide).
-# The routes carry the coarse `Clinical` operation class — they are NOT under
-# /admin/ and require no ADMIN role — so the ONLY documented role class here is
-# the read-only restriction, which is what this row drives. No openEHR spec
-# governs role semantics on a route it does not define; the refusal is the
-# served routes' own documented contract (their `#[utoipa::path]` declares the
-# 403 branch on the write operations and not on the reads).
+# OPERATION CLASSES on this family are SPLIT: the upload and the reads carry the
+# coarse `Clinical` class, while the archetype DELETE carries `Admin` despite
+# not sitting under /admin/. So step 1 is the read-only restriction proper (a
+# Clinical write refused for the restriction alone) and step 2 is refused twice
+# over — the Admin class first, the restriction behind it. The class assignment
+# is our own design on the delete's blast radius; SM openehr_platform
+# master02-overview.adoc §Functional Style lists "approach to access control and
+# authorisation" among the implementation choices and assumes authorisation
+# "dealt with before any particular call has been made … and role-based access
+# control", so no released clause governs it. The delete's Admin branch has its
+# own row (I_DEFINITION_ADL14.delete_archetype-clinical_forbidden).
 id: I_DEFINITION_ADL14.upload_archetype-readonly_forbidden
 kind: functional
 component: DEFINITION_ADL14
@@ -43,6 +48,8 @@ flow:
     on: readonly
     with: { archetype_adl14: "${ds:cnf.archetype.adl14.medication}" }
     expect: forbidden                    # universal 403 (route-table-wide)
+  # The delete carries the `Admin` class, so this principal is refused by the
+  # role gate before the read-only restriction is reached — both refusals hold.
   - step: 2
     call: delete_archetype
     on: readonly

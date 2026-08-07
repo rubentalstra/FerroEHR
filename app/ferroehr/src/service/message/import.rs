@@ -491,6 +491,7 @@ fn parse_wrapped_commit_audit(ov: &Value) -> Result<Value, SmError> {
             "imported commit_audit is not a canonical AUDIT_DETAILS or its ATTESTATION \
              subtype (RM common master06 §Committal and Audits): {e}"
         ))
+        .with_source(e)
     })?;
     let (system_id, change_type, time_committed) = match &typed {
         AuditDetails::AuditDetails(a) => (&a.system_id, &a.change_type, &a.time_committed),

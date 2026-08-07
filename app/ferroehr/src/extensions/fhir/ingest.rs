@@ -427,9 +427,10 @@ impl FerroEhrService {
             // diagnostic traced — the sibling read paths already classify it
             // that way.
             let def: FhirMappingDefinition = serde_json::from_value(definition).map_err(|e| {
-                ServiceError::Internal(format!(
-                    "read a stored FHIR mapping definition for {resource_type}: {e}"
-                ))
+                ServiceError::internal(
+                    format!("read a stored FHIR mapping definition for {resource_type}"),
+                    e,
+                )
             })?;
             let resource = ferroehr_ext::fhir::reverse::to_fhir(
                 &resource_type,
@@ -438,7 +439,9 @@ impl FerroEhrService {
                 &def,
                 subject_id.as_deref(),
             )
-            .map_err(|e| ServiceError::Unprocessable(Violation::new(e.to_string())))?;
+            .map_err(|e| {
+                ServiceError::Unprocessable(Violation::new(e.to_string()).with_source(e))
+            })?;
             out.push((resource_type, template_id.clone(), resource));
         }
         Ok(out)
@@ -475,8 +478,9 @@ fn validated_definition(body: &Value) -> Result<(Value, FhirMappingDefinition), 
         .get("definition")
         .cloned()
         .ok_or_else(|| ServiceError::BadRequest("FHIR mapping requires a 'definition'".into()))?;
-    let def: FhirMappingDefinition = serde_json::from_value(raw.clone())
-        .map_err(|e| ServiceError::BadRequest(format!("invalid FHIR mapping definition: {e}")))?;
+    let def: FhirMappingDefinition = serde_json::from_value(raw.clone()).map_err(|e| {
+        ServiceError::bad_request(format!("invalid FHIR mapping definition: {e}"), e)
+    })?;
     Ok((raw, def))
 }
 
@@ -581,7 +585,7 @@ impl FerroEhrService {
 
         // 2. Resolve-or-create the target EHR from the resource's subject.
         let subject = ferroehr_ext::fhir::mapping::extract_subject(&a_resource, &def)
-            .map_err(|e| SmError::precondition(e.to_string()))?;
+            .map_err(|e| SmError::precondition(e.to_string()).with_source(e))?;
         // The mapping's output identity resolves through the EHR index as a
         // PERSON subject (the inbound connector's contract).
         let ehr_id = self
@@ -593,7 +597,7 @@ impl FerroEhrService {
         //    the FEEDER_AUDIT provenance instant — one ingestion instant for both.
         let wt = self.web_template_for(&def.template_id).await?;
         let flat = ferroehr_ext::fhir::mapping::build_flat(&a_resource, &def)
-            .map_err(|e| SmError::precondition(e.to_string()))?;
+            .map_err(|e| SmError::precondition(e.to_string()).with_source(e))?;
         let now = ferroehr_ext::fhir::feeder_audit::now_iso();
         let mut composition = openehr_its::flat::convert::composition_from_flat(&flat, &wt, &now)
             .map_err(|e| {
@@ -601,6 +605,7 @@ impl FerroEhrService {
                 CallStatusType::ContentInvalid,
                 format!("FHIR resource did not map to a valid COMPOSITION: {e}"),
             )
+            .with_source(e)
         })?;
 
         // 4. Stamp FEEDER_AUDIT provenance.
@@ -625,6 +630,7 @@ impl FerroEhrService {
                     CallStatusType::ContentInvalid,
                     format!("FHIR resource did not map to a valid COMPOSITION: {e}"),
                 )
+                .with_source(e)
             })?;
         // Boxed: the typed COMPOSITION envelope makes this future large enough
         // to matter on the stack of an async ingest path (clippy

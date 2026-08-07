@@ -28,7 +28,7 @@
 services:
   ferroehr-postgres:
     ports: !override
-      - "${FERROEHR_PGP_DB_PORT:-5433}:5432"
+      - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_PGP_DB_PORT:-5433}:5432"
 
   ferroehr:
     environment:
@@ -37,4 +37,4 @@ services:
       # the origin IT is reached on, not the primary's.
       FERROEHR__SMART__PUBLIC_BASE_URL: "http://localhost:${FERROEHR_PGP_PORT:-8081}"
     ports: !override
-      - "${FERROEHR_PGP_PORT:-8081}:8080"
+      - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_PGP_PORT:-8081}:8080"

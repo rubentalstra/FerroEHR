@@ -263,14 +263,11 @@ impl FeedClient {
                 .json(body)
                 .send()
                 .await
-                .map_err(|e| AuditError::Transport(e.to_string()))?;
+                .map_err(|e| AuditError::Transport(Box::new(e)))?;
             if resp.status().is_success() {
                 Ok(())
             } else {
-                Err(AuditError::Transport(format!(
-                    "FHIR feed answered {}",
-                    resp.status()
-                )))
+                Err(AuditError::FeedRejected(resp.status()))
             }
         };
         send.retry(
@@ -298,7 +295,7 @@ pub async fn start(
         Some(
             Transport::connect(&config.syslog)
                 .await
-                .map_err(|e| AuditError::Transport(e.to_string()))?,
+                .map_err(|e| AuditError::Transport(Box::new(e)))?,
         )
     } else {
         None

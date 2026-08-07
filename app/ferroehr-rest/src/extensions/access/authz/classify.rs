@@ -50,9 +50,9 @@ pub fn class_of(op: &str) -> Option<OperationClass> {
         "admin_ehr_delete" | "admin_ehr_delete_all" => Admin,
 
         // ── SYSTEM (the OPTIONS-and-Conformance manifest) ────────────────────
-        // Readable by any AUTHENTICATED principal: the STABLE System API is an
-        // ordinary API-surface read (service discovery), not an Admin surface
-        // (ITS-REST system `Description.md`); it carries no PHI.
+        // NOTE: unreachable — `crate::router` mounts the live manifest above the
+        // auth layer, so it answers uncredentialed (ITS-REST system
+        // `Description.md`, service discovery); kept for totality (#2072).
         "options" => Clinical,
 
         // ── EHR ──────────────────────────────────────────────────────────────

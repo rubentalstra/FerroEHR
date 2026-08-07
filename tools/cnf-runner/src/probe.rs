@@ -25,6 +25,7 @@
 use std::process::Command;
 use std::time::Instant;
 
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 
 use crate::ixit::{Containers, Environment};
@@ -358,7 +359,7 @@ pub fn run_probe(
             );
             let elapsed_ms = started.elapsed().as_secs_f64() * 1_000.0;
             match reply {
-                Ok(reply) if reply.status == 200 => samples_ms.push(elapsed_ms),
+                Ok(reply) if reply.status == StatusCode::OK => samples_ms.push(elapsed_ms),
                 Ok(_) | Err(_) => {
                     failures = failures.saturating_add(1);
                     samples_ms.push(elapsed_ms);

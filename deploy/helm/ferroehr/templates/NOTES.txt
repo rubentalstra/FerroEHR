@@ -2,8 +2,17 @@ ferroehr {{ .Chart.AppVersion }} has been deployed as release "{{ .Release.Name 
 
 A pure-Rust openEHR CDR (ITS-REST 1.1.0 + AQL 1.1).
 
-Configuration: one ferroehr.toml, rendered from .Values.config into a ConfigMap
-and mounted at /etc/ferroehr/ferroehr.toml. Secrets are injected as FERROEHR_* env.
+Configuration: one ferroehr.toml, rendered from .Values.config and mounted at
+/etc/ferroehr/ferroehr.toml. Secrets never reach a ConfigMap: each is injected
+from a Secret, as a mounted file where the config key has a *_file sibling.
+{{ if eq (include "ferroehr.configInSecret" .) "true" -}}
+  ferroehr.toml source: Secret "{{ include "ferroehr.configSecretName" . }}" — NO ConfigMap was created,
+  because the configuration carries a secret this chart has no secrets: route
+  for (a Basic user's password_hash has no password_hash_file sibling). Read it
+  with `kubectl get secret {{ include "ferroehr.configSecretName" . }} -o jsonpath='{.data.ferroehr\.toml}' | base64 -d`.
+{{ else -}}
+  ferroehr.toml source: ConfigMap "{{ include "ferroehr.fullname" . }}"
+{{ end -}}
 
 API base path: {{ .Values.config.server.base_path }}
 Service:       {{ include "ferroehr.fullname" . }}:{{ .Values.service.port }} ({{ .Values.service.type }})

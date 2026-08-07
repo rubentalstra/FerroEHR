@@ -26,7 +26,7 @@
 
 ## Methodology
 
-Both systems execute the **same committed CNF 2.0 catalogue** (1049 case-by-format
+Both systems execute the **same committed CNF 2.0 catalogue** (1052 case-by-format
 executions) through the same reference runner (`tools/cnf-runner`), each on
 fresh volumes with its own committed party set: the ixit names the reachable
 instances (EHRbase declares no readonly principal), and the statement (the
@@ -68,8 +68,8 @@ them.
 
 | | verdict scope (selected) | driven | in-scope passed | in-scope failed | in-scope inconclusive |
 |---|---|---|---|---|---|
-| **ferroehr** | 1049 | 1011 | 1011 | 0 | 0 |
-| **EHRbase** | 499 | 459 | 136 | 132 | 191 |
+| **ferroehr** | 1052 | 1014 | 1014 | 0 | 0 |
+| **EHRbase** | 613 | 568 | 151 | 146 | 271 |
 
 An **inconclusive** row's wire answered outside the operation's bound outcome
 map, or its required ground could not be established (e.g. a refused
@@ -93,7 +93,7 @@ party's ICS).
 | Capability | ferroehr | EHRbase |
 |---|---|---|
 | ActivityReport | passed | not_evidenced |
-| Adl14ArchetypeProvisioning | passed | not_evidenced |
+| Adl14ArchetypeProvisioning | passed | inconclusive |
 | Adl14OptProvisioning | passed | failed |
 | Adl2ArchetypeProvisioning | passed | not_evidenced |
 | Adl2OptProvisioning | passed | not_evidenced |
@@ -149,12 +149,12 @@ party's ICS).
 | Chapter | failed cases |
 |---|---|
 | CONT | 67 |
-| I_EHR_STATUS | 24 |
-| I_EHR_DIRECTORY | 12 |
+| I_EHR_STATUS | 27 |
+| I_EHR_CONTRIBUTION | 13 |
+| I_EHR_DIRECTORY | 13 |
 | I_DEFINITION_QUERY | 10 |
+| I_DEFINITION_ADL14 | 7 |
 | I_DEFINITION_ADL2 | 7 |
-| I_EHR_CONTRIBUTION | 7 |
-| I_DEFINITION_ADL14 | 6 |
 | I_EHR_SERVICE | 5 |
 | I_QUERY_SERVICE | 3 |
 | I_EHR_COMPOSITION | 1 |
@@ -179,7 +179,7 @@ party's ICS).
 | CONT-COMP-content_card_opt-context_mand | — | expected `created`, observed `validation_failed` | passed |
 | CONT-COMPOSITION-content_cardinality_count6 | — | expected `created`, observed `validation_failed` | passed |
 | CONT-COMPOSITION-context_existence | — | expected `created`, observed `validation_failed` | passed |
-| CONT-DV_CODED_TEXT-validate_open | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_CODED_TEXT-validate_open | — | expected `bad_request`, observed `validation_failed` | passed |
 | CONT-DV_DATE-validate_constraint | — | expected `created`, observed `validation_failed` | passed |
 | CONT-DV_DATE-validate_range | — | expected `created`, observed `validation_failed` | passed |
 | CONT-DV_DATE_TIME-validate_constraint | — | expected `created`, observed `validation_failed` | passed |
@@ -202,11 +202,11 @@ party's ICS).
 | CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_range | — | expected `created`, observed `validation_failed` | passed |
 | CONT-DV_MULTIMEDIA-validate_media_type | — | expected `created`, observed `validation_failed` | passed |
 | CONT-DV_PARSABLE-validate_value_formalism | — | expected `created`, observed `validation_failed` | passed |
-| CONT-DV_TEXT-validate_open | — | expected `created`, observed `validation_failed` | passed |
+| CONT-DV_TEXT-validate_open | — | expected `bad_request`, observed `validation_failed` | passed |
 | CONT-DV_TIME-validate_constraint | — | expected `created`, observed `validation_failed` | passed |
 | CONT-DV_TIME-validate_range | — | expected `created`, observed `validation_failed` | passed |
-| CONT-EVENT-state_ex_mand | — | expected `created`, observed `validation_failed` | passed |
-| CONT-EVENT-state_ex_opt | — | expected `created`, observed `validation_failed` | passed |
+| CONT-EVENT-state_ex_mand | — | expected `bad_request`, observed `validation_failed` | passed |
+| CONT-EVENT-state_ex_opt | — | expected `bad_request`, observed `validation_failed` | passed |
 | CONT-EVENT-type_any | — | expected `created`, observed `validation_failed` | passed |
 | CONT-EVENT-type_interval_event | — | expected `created`, observed `validation_failed` | passed |
 | CONT-EVENT-type_point_event | — | expected `created`, observed `validation_failed` | passed |
@@ -228,11 +228,12 @@ party's ICS).
 | CONT-ITEM_STR-type_item_single | — | expected `created`, observed `validation_failed` | passed |
 | CONT-ITEM_STR-type_item_table | — | expected `created`, observed `validation_failed` | passed |
 | CONT-ITEM_STR-type_item_tree | — | expected `created`, observed `validation_failed` | passed |
-| CONT-OBS-state_ex_mand-protocol_ex_mand | — | expected `created`, observed `validation_failed` | passed |
-| CONT-OBS-state_ex_mand-protocol_ex_opt | — | expected `created`, observed `validation_failed` | passed |
-| CONT-OBS-state_ex_opt-protocol_ex_mand | — | expected `created`, observed `validation_failed` | passed |
-| CONT-OBS-state_ex_opt-protocol_ex_opt | — | expected `created`, observed `validation_failed` | passed |
+| CONT-OBS-state_ex_mand-protocol_ex_mand | — | expected `bad_request`, observed `validation_failed` | passed |
+| CONT-OBS-state_ex_mand-protocol_ex_opt | — | expected `bad_request`, observed `validation_failed` | passed |
+| CONT-OBS-state_ex_opt-protocol_ex_mand | — | expected `bad_request`, observed `validation_failed` | passed |
+| CONT-OBS-state_ex_opt-protocol_ex_opt | — | expected `bad_request`, observed `validation_failed` | passed |
 | I_DEFINITION_ADL14.upload_opt-invalid_opt | — | expected `validation_failed`, observed `not_acceptable` | passed |
+| I_DEFINITION_ADL14.upload_opt-largest_published | — | expected `created`, observed `not_acceptable` | passed |
 | I_DEFINITION_ADL14.upload_opt-valid_opt | — | expected `created`, observed `not_acceptable` | passed |
 | I_DEFINITION_ADL14.upload_opt-valid_opt_twice_conflict | — | expected `created`, observed `not_acceptable` | passed |
 | I_DEFINITION_ADL14.upload_opt-valid_opt_twice_no_conflict | — | expected `created`, observed `not_acceptable` | passed |
@@ -261,20 +262,27 @@ party's ICS).
 | I_EHR_CONTRIBUTION.commit_contribution-ehr_status_incomplete_lifecycle | — | expected `validation_failed`, observed `created` | passed |
 | I_EHR_CONTRIBUTION.commit_contribution-ehr_status_invalid_change_type | — | expected `conflict`, observed `validation_failed` | passed |
 | I_EHR_CONTRIBUTION.commit_contribution-ehr_status_invalid_change_type_deleted | — | expected `conflict`, observed `not_found` | passed |
+| I_EHR_CONTRIBUTION.commit_contribution-ehr_status_valid_combinations | — | header Last-Modified: expected present, got none | passed |
 | I_EHR_CONTRIBUTION.commit_contribution-fail_modify_non_existing_directory | — | expected `validation_failed`, observed `precondition_failed` | passed |
+| I_EHR_CONTRIBUTION.commit_contribution-full_ehr_status | — | header Last-Modified: expected present, got none | passed |
+| I_EHR_CONTRIBUTION.commit_contribution-minimal_ehr_status | — | header Last-Modified: expected present, got none | passed |
 | I_EHR_CONTRIBUTION.commit_contribution-non_exiting_opt | — | expected `template_not_found`, observed `validation_failed` | passed |
+| I_EHR_CONTRIBUTION.commit_contribution-update_existing_directory | — | header Last-Modified: expected present, got none | passed |
+| I_EHR_CONTRIBUTION.commit_contribution-valid_directory | — | header Last-Modified: expected present, got none | passed |
+| I_EHR_CONTRIBUTION.get_contribution-version_ref_shape | — | header Last-Modified: expected present, got none | passed |
 | I_EHR_DIRECTORY.create_directory-ehr_not_modifiable | — | expected `updated`, observed `precondition_missing` | passed |
+| I_EHR_DIRECTORY.create_directory-root_archetype_id_mismatch | — | expected `validation_failed`, observed `created` | passed |
+| I_EHR_DIRECTORY.create_directory-versioned_id_items | — | expected `created`, observed `bad_request` | passed |
+| I_EHR_DIRECTORY.create_directory-wide_id_items | — | expected `created`, observed `bad_request` | passed |
 | I_EHR_DIRECTORY.delete_directory-ehr_with_directory | — | header Last-Modified: expected present, got none | passed |
 | I_EHR_DIRECTORY.delete_directory-empty_ehr | — | expected `not_found`, observed `precondition_failed` | passed |
 | I_EHR_DIRECTORY.delete_directory-etag_names_new_version | — | header Last-Modified: expected present, got none | passed |
 | I_EHR_DIRECTORY.get_directory-deleted_head | — | header Last-Modified: expected present, got none | passed |
-| I_EHR_DIRECTORY.get_directory-directory_with_structure | — | equivalent: retrieved content differs from committed (modulo the normative ignore-set); $/ | passed |
 | I_EHR_DIRECTORY.get_directory_at_time-deleted_at_time | — | header Last-Modified: expected present, got none | passed |
 | I_EHR_DIRECTORY.get_directory_at_version-deleted_version | — | header Last-Modified: expected present, got none | passed |
 | I_EHR_DIRECTORY.update_directory-empty_ehr | — | expected `not_found`, observed `precondition_failed` | passed |
-| I_EHR_DIRECTORY.update_directory-invalid_folder | — | expected `validation_failed`, observed `precondition_missing` | passed |
+| I_EHR_DIRECTORY.update_directory-root_archetype_id_mismatch | — | expected `validation_failed`, observed `updated` | passed |
 | I_EHR_DIRECTORY.update_directory-stale_if_match | — | header ETag: expected the latest version uid, got none | passed |
-| I_EHR_DIRECTORY.update_directory-xml | canonical-xml | expected `updated`, observed `precondition_missing` | — |
 | I_EHR_SERVICE.create_ehr-bulk_load_population | — | expected `created`, observed `validation_failed` | passed |
 | I_EHR_SERVICE.create_ehr-committal_headers | — | commit_audit/description/value: path resolves to nothing | passed |
 | I_EHR_SERVICE.create_ehr-invalid_status | — | expected `validation_failed`, observed `created` | passed |
@@ -282,9 +290,11 @@ party's ICS).
 | I_EHR_SERVICE.get_ehr-malformed_ehr_id | — | expected `bad_request`, observed `not_found` | passed |
 | I_EHR_STATUS.clear_ehr_modifiable-bad_ehr | — | expected `not_found`, observed `precondition_missing` | passed |
 | I_EHR_STATUS.clear_ehr_modifiable-existing_ehr | — | expected `updated`, observed `precondition_missing` | passed |
+| I_EHR_STATUS.clear_ehr_modifiable-invalid_body | — | expected `validation_failed`, observed `bad_request` | passed |
 | I_EHR_STATUS.clear_ehr_modifiable-stale_if_match | — | expected `updated`, observed `precondition_missing` | passed |
 | I_EHR_STATUS.clear_ehr_queryable-bad_ehr | — | expected `not_found`, observed `precondition_missing` | passed |
 | I_EHR_STATUS.clear_ehr_queryable-existing_ehr | — | expected `updated`, observed `precondition_missing` | passed |
+| I_EHR_STATUS.clear_ehr_queryable-invalid_body | — | expected `validation_failed`, observed `bad_request` | passed |
 | I_EHR_STATUS.clear_ehr_queryable-stale_if_match | — | expected `updated`, observed `precondition_missing` | passed |
 | I_EHR_STATUS.get_ehr_status-at_time_future | — | expected `updated`, observed `precondition_missing` | passed |
 | I_EHR_STATUS.get_ehr_status-at_time_omitted | — | expected `updated`, observed `precondition_missing` | passed |
@@ -296,14 +306,15 @@ party's ICS).
 | I_EHR_STATUS.get_versioned_ehr_status-xml | canonical-xml | header Last-Modified: expected present, got none | passed |
 | I_EHR_STATUS.set_ehr_modifiable-bad_ehr | — | expected `not_found`, observed `precondition_missing` | passed |
 | I_EHR_STATUS.set_ehr_modifiable-existing_ehr | — | expected `updated`, observed `precondition_missing` | passed |
+| I_EHR_STATUS.set_ehr_modifiable-invalid_body | — | expected `validation_failed`, observed `bad_request` | passed |
 | I_EHR_STATUS.set_ehr_modifiable-missing_if_match | — | expected `updated`, observed `precondition_missing` | passed |
 | I_EHR_STATUS.set_ehr_modifiable-stale_if_match | — | expected `updated`, observed `precondition_missing` | passed |
-| I_EHR_STATUS.set_ehr_modifiable-xml_body | canonical-xml | expected `updated`, observed `precondition_missing` | — |
 | I_EHR_STATUS.set_ehr_queryable-bad_ehr | — | expected `not_found`, observed `precondition_missing` | passed |
 | I_EHR_STATUS.set_ehr_queryable-existing_ehr | — | expected `updated`, observed `precondition_missing` | passed |
+| I_EHR_STATUS.set_ehr_queryable-invalid_body | — | expected `validation_failed`, observed `bad_request` | passed |
 | I_EHR_STATUS.set_ehr_queryable-missing_if_match | — | expected `updated`, observed `precondition_missing` | passed |
+| I_EHR_STATUS.set_ehr_queryable-rm_version_empty | — | expected `validation_failed`, observed `bad_request` | passed |
 | I_EHR_STATUS.set_ehr_queryable-stale_if_match | — | expected `updated`, observed `precondition_missing` | passed |
-| I_EHR_STATUS.set_ehr_queryable-xml_body | canonical-xml | expected `updated`, observed `precondition_missing` | — |
 | I_ITS_REST_REVISION_HISTORY.versioned_ehr_status_revision_history-two_versions | canonical-json | expected `updated`, observed `precondition_missing` | passed |
 | I_QUERY_SERVICE.execute_ad_hoc_query-empty_db_bare_ehr | — | row count 100 != expected 1 | passed |
 | I_QUERY_SERVICE.execute_ad_hoc_query-unknown_ehr_scope | — | expected `not_found`, observed `ok` | passed |

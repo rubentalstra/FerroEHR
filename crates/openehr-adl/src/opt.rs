@@ -577,7 +577,7 @@ impl RootParts {
             original_language: v
                 .original_language
                 .cloned()
-                .unwrap_or_else(default_language),
+                .unwrap_or_else(fallback_language),
             description: v.description.cloned(),
             annotations: v.annotations.cloned(),
             translations: v.translations.cloned(),
@@ -598,7 +598,7 @@ fn rules_of(archetype: &Archetype) -> Vec<StatementSet> {
     }
 }
 
-fn default_language() -> TerminologyCode {
+fn fallback_language() -> TerminologyCode {
     TerminologyCode {
         terminology_id: "ISO_639-1".to_owned(),
         terminology_version: None,

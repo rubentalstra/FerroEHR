@@ -17,6 +17,8 @@
 //! 1.0.3 + the CNF/ECC schedule remain the wire oracle: where the SM name and
 //! the wire disagree, the wire's status code wins in that adapter table.
 
+use std::sync::Arc;
+
 /// `CALL_STATUS_TYPE` and its service-specific descendants, as one Rust enum.
 ///
 /// The SM models the extension as inheritance ("Particular services may add
@@ -174,18 +176,48 @@ impl CallStatusType {
     }
 }
 
-/// The native error type — a `CALL_STATUS_TYPE` code plus a message.
+/// The native error type — a `CALL_STATUS_TYPE` code, a message, and the
+/// lower-level failure that caused them.
 ///
 /// Realizes the SM `I_STATUS` protocol (`i_status.adoc`:
 /// `last_call_failed()`/`last_call_status()`) in the stateless typed-`Result`
 /// style the spec sanctions (`master02-overview.adoc` §Functional Style).
-#[derive(Debug, Clone, thiserror::Error)]
-#[error("{message}")]
+#[derive(Debug, Clone)]
 pub struct SmError {
     /// The `CALL_STATUS_TYPE` code the failed call reports.
     pub status: CallStatusType,
     /// Human-readable error message.
     pub message: String,
+    /// The failure this call status was raised FOR — an `sqlx` driver error, a
+    /// codec refusal, an HTTP transport failure — reachable through
+    /// [`std::error::Error::source`].
+    ///
+    /// Kept OUT of [`Self::message`] and never interpolated into it: the
+    /// message reaches client response bodies, and a `500`-class body must
+    /// disclose no internal error value (OWASP REST Security Cheat Sheet
+    /// §Error handling — "Do not pass technical details … to the client").
+    /// Attach one with [`SmError::with_source`].
+    ///
+    /// `Arc`, not `Box`, because this type is [`Clone`].
+    source: Option<Arc<dyn std::error::Error + Send + Sync>>,
+}
+
+impl std::fmt::Display for SmError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.message)
+    }
+}
+
+// NOTE: hand-written, because `#[derive(thiserror::Error)]` over an
+// `Option<Arc<dyn Error>>` yields the `Arc` WRAPPER as the source hop
+// (<https://docs.rs/thiserror/2.0.18/thiserror/index.html>), not the real cause.
+impl std::error::Error for SmError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self.source {
+            Some(source) => Some(&**source),
+            None => None,
+        }
+    }
 }
 
 impl SmError {
@@ -195,7 +227,20 @@ impl SmError {
         Self {
             status,
             message: message.into(),
+            source: None,
         }
+    }
+
+    /// Attach the failure that caused this call status, keeping the message —
+    /// and therefore the wire body — byte-identical.
+    ///
+    /// The cause is carried for the log and for anything walking the chain
+    /// ([RFC 0201](https://rust-lang.github.io/rfcs/0201-error-chaining.html)),
+    /// never rendered into the message.
+    #[must_use]
+    pub fn with_source(mut self, source: impl std::error::Error + Send + Sync + 'static) -> Self {
+        self.source = Some(Arc::new(source));
+        self
     }
 
     /// `precondition_violation` — an argument-validity precondition failed

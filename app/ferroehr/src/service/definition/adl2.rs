@@ -545,9 +545,9 @@ impl FerroEhrService {
         }
         let repo = self.adl2_repository().await?;
         let opt = create_opt(&archetype, &repo).map_err(|e| {
-            ServiceError::Unprocessable(Violation::new(format!(
-                "cannot project OperationalTemplateV2: {e}"
-            )))
+            ServiceError::Unprocessable(
+                Violation::new(format!("cannot project OperationalTemplateV2: {e}")).with_source(e),
+            )
         })?;
         Ok(openehr_its::json::to_canonical_json(&opt))
     }
@@ -609,9 +609,12 @@ impl FerroEhrService {
     pub async fn web_template_adl2(&self, template_id: &str) -> Result<WebTemplate, ServiceError> {
         let opt = self.adl2_operational_template_for(template_id).await?;
         build_web_template_v2_4(&opt).map_err(|e| {
-            ServiceError::Unprocessable(Violation::new(format!(
-                "ADL2 template {template_id} could not be built into a WebTemplate: {e}"
-            )))
+            ServiceError::Unprocessable(
+                Violation::new(format!(
+                    "ADL2 template {template_id} could not be built into a WebTemplate: {e}"
+                ))
+                .with_source(e),
+            )
         })
     }
 
@@ -671,9 +674,12 @@ impl FerroEhrService {
             .get_or_build(&key, || build_web_template_v2_4(&opt))
             .await
             .map_err(|e| {
-                ServiceError::Unprocessable(Violation::new(format!(
-                    "ADL2 template {template_id} could not be built into a WebTemplate: {e}"
-                )))
+                ServiceError::Unprocessable(
+                    Violation::new(format!(
+                        "ADL2 template {template_id} could not be built into a WebTemplate: {e}"
+                    ))
+                    .with_source(e),
+                )
             })
     }
 
@@ -716,9 +722,9 @@ impl FerroEhrService {
         }
         let repo = self.adl2_repository().await?;
         create_opt(&archetype, &repo).map_err(|e| {
-            ServiceError::Unprocessable(Violation::new(format!(
-                "cannot compile operational template: {e}"
-            )))
+            ServiceError::Unprocessable(
+                Violation::new(format!("cannot compile operational template: {e}")).with_source(e),
+            )
         })
     }
 

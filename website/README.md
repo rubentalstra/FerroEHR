@@ -23,7 +23,7 @@ The build needs a Rust-only toolchain: `mdbook`, `mdbook-mermaid`, `mdbook-toc`
 ```shell
 bash scripts/site/assemble-oas.sh          # copy the 7 vendored OAS bundles into api/spec/
 bash scripts/site/build.sh --dev-only # assemble ./_site (landing + /docs/dev/ + /api/)
-# serve _site/ with any static server, e.g.:  python3 -m http.server -d _site
+# serve _site/ with any static server, e.g.:  npx --yes serve _site
 ```
 
 `--full` additionally materializes the frozen versions from the `docs-dist`

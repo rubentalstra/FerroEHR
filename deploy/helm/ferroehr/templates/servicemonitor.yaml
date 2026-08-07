@@ -1,0 +1,36 @@
+{{- if .Values.metrics.serviceMonitor.enabled }}
+# A Prometheus Operator ServiceMonitor. The prometheus.io/* pod annotations that
+# `metrics.enabled` adds are honoured only by a Prometheus whose scrape config
+# does kubernetes_sd discovery; an operator-managed Prometheus selects its
+# targets through ServiceMonitor objects instead
+# (https://prometheus-operator.dev/docs/developer/getting-started/), so a
+# kube-prometheus-stack cluster needs this object and not those annotations.
+# Requires the monitoring.coreos.com CRDs to be installed first.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "ferroehr.fullname" . }}
+  {{- with .Values.metrics.serviceMonitor.namespace }}
+  namespace: {{ . }}
+  {{- end }}
+  labels:
+    {{- include "ferroehr.labels" . | nindent 4 }}
+    {{- with .Values.metrics.serviceMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "ferroehr.selectorLabels" . | nindent 6 }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  endpoints:
+    # The Service port the ops-introspection surface answers on: its own
+    # `management` port when config.management.port is set, else the API port.
+    - port: {{ if and .Values.config.management.enabled .Values.config.management.port }}management{{ else }}http{{ end }}
+      path: {{ printf "%s/prometheus" (.Values.config.management.base_path | trimSuffix "/") | quote }}
+      interval: {{ .Values.metrics.serviceMonitor.interval }}
+      scrapeTimeout: {{ .Values.metrics.serviceMonitor.scrapeTimeout }}
+      scheme: http
+{{- end }}

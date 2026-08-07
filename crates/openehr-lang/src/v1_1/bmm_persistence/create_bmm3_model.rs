@@ -310,7 +310,7 @@ fn documentation_of(text: Option<&str>) -> Option<BTreeMap<String, serde_json::V
 /// (`org.openehr.lang.bmm3.bmm_feature.adoc` /
 /// `…bmm3.bmm_feature_group.adoc` §Attributes) — the group the CLASS carries
 /// (`BMM_CLASS.feature_groups`) is the populated one.
-fn default_group() -> BmmFeatureGroup {
+fn group_back_reference() -> BmmFeatureGroup {
     BmmFeatureGroup {
         name: DEFAULT_FEATURE_GROUP_NAME.to_owned(),
         properties: BTreeMap::new(),
@@ -1049,7 +1049,7 @@ fn build_property(
                     is_nullable: is_nullable(container.is_mandatory),
                     is_synthesised_generic: None,
                     feature_extensions: present(Vec::new()),
-                    group: default_group(),
+                    group: group_back_reference(),
                     is_im_runtime: container.is_im_runtime,
                     is_im_infrastructure: container.is_im_infrastructure,
                     // P_BMM declares no composition flag
@@ -1080,7 +1080,7 @@ fn build_property(
                     is_nullable: is_nullable(indexed.is_mandatory),
                     is_synthesised_generic: None,
                     feature_extensions: present(Vec::new()),
-                    group: default_group(),
+                    group: group_back_reference(),
                     is_im_runtime: indexed.is_im_runtime,
                     is_im_infrastructure: indexed.is_im_infrastructure,
                     is_composition: None,
@@ -1118,7 +1118,7 @@ fn unitary_property(
         is_nullable: is_nullable(is_mandatory),
         is_synthesised_generic: None,
         feature_extensions: present(Vec::new()),
-        group: default_group(),
+        group: group_back_reference(),
         is_im_runtime,
         is_im_infrastructure,
         is_composition: None,
@@ -1517,7 +1517,7 @@ fn build_function(
         is_nullable: function.is_nullable,
         is_synthesised_generic: None,
         feature_extensions: present(Vec::new()),
-        group: default_group(),
+        group: group_back_reference(),
         parameters: present(build_parameters(builder, owner, function, visiting)?),
         pre_conditions: present(routine_conditions(
             builder,
@@ -1575,7 +1575,7 @@ fn build_procedure(
         is_nullable: function.is_nullable,
         is_synthesised_generic: None,
         feature_extensions: present(Vec::new()),
-        group: default_group(),
+        group: group_back_reference(),
         parameters: present(build_parameters(builder, owner, function, visiting)?),
         pre_conditions: present(routine_conditions(
             builder,
@@ -1787,7 +1787,7 @@ fn build_constant(
         is_nullable: Some(false),
         is_synthesised_generic: None,
         feature_extensions: present(Vec::new()),
-        group: default_group(),
+        group: group_back_reference(),
         generator: BmmLiteralValue::BmmPrimitiveValue(BmmPrimitiveValue::BmmPrimitiveValue(
             BmmPrimitiveValueData {
                 value_literal: constant.value.clone().unwrap_or_default(),

@@ -282,8 +282,9 @@ fn server_bind_port(bind: &str) -> Option<u16> {
 }
 
 /// Semantic checks on `[terminology.external]`: enabling it needs a provider,
-/// and every cross-reference must resolve. A dangling reference would degrade
-/// silently — a route to a missing provider quietly falls back to the default
+/// every provider needs its base URL, and every cross-reference must resolve.
+/// A dangling reference would degrade silently — a route to a missing provider
+/// quietly falls back to the default
 /// server, an `oauth2_client` naming a missing client would send
 /// unauthenticated requests, and half a mutual-TLS identity would connect
 /// without a client certificate — so all three are boot errors (never make a
@@ -311,6 +312,12 @@ fn validate_terminology(
         }
     }
     for (name, provider) in &terminology.providers {
+        if provider.url.trim().is_empty() {
+            errors.push(ConfigError::semantic(format!(
+                "terminology.external.providers.{name}.url must not be empty (the FHIR R4B base \
+                 URL of the terminology server)"
+            )));
+        }
         // A mutual-TLS identity is a certificate AND its key; half of one
         // would connect with no client certificate at all, which the server
         // rejects at handshake time — a boot error, not a runtime surprise.
@@ -722,6 +729,149 @@ mod tests {
         assert!(assemble(Some(file.path()), &env(&[]), &[]).is_err());
     }
 
+    /// Every credential-bearing key reaches the same configuration through its
+    /// `*_file` sibling as it does inline.
+    ///
+    /// These four had no file route at all, so the most valuable secret in the
+    /// deployment — the database DSN — could only travel as an environment value,
+    /// readable through `/proc/<pid>/environ` and inherited by every child
+    /// process. The assertion is equivalence: the file route is an additional
+    /// delivery mechanism, not a second configuration path that might differ.
+    #[test]
+    fn the_credential_keys_resolve_identically_from_a_file_and_inline() {
+        const DSN: &str = "postgres://u:p@db.internal:5432/ferroehr";
+        const BROKER: &str = "amqps://u:p@broker.internal:5671/%2f";
+        const FHIR_BROKER: &str = "amqps://u:p@fhir-broker.internal:5671/%2f";
+        const HASH: &str = "$argon2id$v=19$m=19456,t=2,p=1$c2FsdHNhbHQ$aGFzaGhhc2g";
+
+        let secret_file = |name: &str, contents: &str| {
+            let f = assert_fs::NamedTempFile::new(name).expect("temp");
+            // A trailing newline is what `echo >` and a Kubernetes secret editor
+            // both produce, so the reader must trim it.
+            f.write_str(&format!("{contents}\n")).expect("write");
+            f
+        };
+
+        let dsn = secret_file("dsn", DSN);
+        let broker = secret_file("broker", BROKER);
+        let fhir_broker = secret_file("fhir-broker", FHIR_BROKER);
+        let hash = secret_file("hash", HASH);
+
+        let from_files = toml_file(&format!(
+            "[db]\nurl_file = \"{}\"\n\
+             [events]\nurl_file = \"{}\"\n\
+             [fhir.outbound]\nurl_file = \"{}\"\n\
+             [[auth.basic.users]]\nusername = \"alice\"\npassword_hash_file = \"{}\"\n",
+            dsn.path().display(),
+            broker.path().display(),
+            fhir_broker.path().display(),
+            hash.path().display(),
+        ));
+        let via_file = assemble_ok(Some(from_files.path()), &env(&[]), &[]);
+
+        let inline = toml_file(&format!(
+            "[db]\nurl = \"{DSN}\"\n\
+             [events]\nurl = \"{BROKER}\"\n\
+             [fhir.outbound]\nurl = \"{FHIR_BROKER}\"\n\
+             [[auth.basic.users]]\nusername = \"alice\"\npassword_hash = \"{HASH}\"\n"
+        ));
+        let via_inline = assemble_ok(Some(inline.path()), &env(&[]), &[]);
+
+        assert_eq!(via_file.db.url.expose(), DSN);
+        assert_eq!(via_file.db.url.expose(), via_inline.db.url.expose());
+        assert_eq!(via_file.events.url.expose(), BROKER);
+        assert_eq!(via_file.fhir.outbound.url.expose(), FHIR_BROKER);
+        let user = &via_file.auth.basic.as_ref().expect("basic").users[0];
+        assert_eq!(user.password_hash.expose(), HASH);
+
+        // And a file-delivered DSN redacts exactly like an inline one — the
+        // whole point of the `SecretUrl` type is that redaction is a property of
+        // the type rather than of how the value arrived.
+        let rendered = via_file.to_redacted_toml().expect("toml");
+        assert!(
+            !rendered.contains("u:p@"),
+            "a file-loaded DSN must redact its credentials: {rendered}"
+        );
+        assert!(
+            !serde_json::to_string(&via_file)
+                .expect("json")
+                .contains(HASH),
+            "a file-loaded password hash must not render"
+        );
+    }
+
+    /// Setting a credential both inline and as a file is refused for each of the
+    /// four, rather than one silently winning.
+    ///
+    /// Each of these fields has a non-empty dev default, so "the operator set it"
+    /// means "it differs from that default" — the default itself must NOT count
+    /// as a conflicting value, or the file route would be unusable.
+    #[test]
+    fn a_credential_set_both_inline_and_as_a_file_is_refused() {
+        let cases = [
+            "[db]\nurl = \"postgres://u:p@h:5432/d\"\nurl_file = \"/dev/null\"\n",
+            "[events]\nurl = \"amqp://u:p@h:5672/%2f\"\nurl_file = \"/dev/null\"\n",
+            "[fhir.outbound]\nurl = \"amqp://u:p@h:5672/%2f\"\nurl_file = \"/dev/null\"\n",
+            "[[auth.basic.users]]\nusername = \"a\"\npassword_hash = \"x\"\n\
+             password_hash_file = \"/dev/null\"\n",
+        ];
+        for case in cases {
+            let file = toml_file(case);
+            let outcome = assemble(Some(file.path()), &env(&[]), &[]);
+            assert!(
+                outcome.is_err(),
+                "both-set must be refused, but this was accepted: {case}"
+            );
+        }
+    }
+
+    /// The three URL file routes are reachable through the environment grammar
+    /// too, which is how a container passes a mount path without a config file.
+    ///
+    /// Without this the documented env form could ship dead — the whole reason
+    /// every section carries an env-mapping test.
+    #[test]
+    fn the_url_file_keys_are_reachable_through_the_env_grammar() {
+        let dsn = assert_fs::NamedTempFile::new("dsn").expect("temp");
+        dsn.write_str("postgres://u:p@h:5432/d\n").expect("write");
+        let broker = assert_fs::NamedTempFile::new("broker").expect("temp");
+        broker.write_str("amqps://u:p@b:5671/%2f\n").expect("write");
+
+        let c = assemble_ok(
+            None,
+            &env(&[
+                ("FERROEHR__DB__URL_FILE", &dsn.path().display().to_string()),
+                (
+                    "FERROEHR__EVENTS__URL_FILE",
+                    &broker.path().display().to_string(),
+                ),
+                (
+                    "FERROEHR__FHIR__OUTBOUND__URL_FILE",
+                    &broker.path().display().to_string(),
+                ),
+            ]),
+            &[],
+        );
+        assert_eq!(c.db.url.expose(), "postgres://u:p@h:5432/d");
+        assert_eq!(c.events.url.expose(), "amqps://u:p@b:5671/%2f");
+        assert_eq!(c.fhir.outbound.url.expose(), "amqps://u:p@b:5671/%2f");
+    }
+
+    /// The dev default is not a setting, so a `*_file` alone works without the
+    /// operator having to blank the default first.
+    #[test]
+    fn a_file_route_works_against_the_untouched_default() {
+        let dsn = assert_fs::NamedTempFile::new("dsn").expect("temp");
+        dsn.write_str("postgres://u:p@h:5432/d").expect("write");
+        let file = toml_file(&format!(
+            "[db]\nurl_file = \"{}\"\nmax_connections = 7\n",
+            dsn.path().display()
+        ));
+        let c = assemble_ok(Some(file.path()), &env(&[]), &[]);
+        assert_eq!(c.db.url.expose(), "postgres://u:p@h:5432/d");
+        assert_eq!(c.db.max_connections, 7);
+    }
+
     /// `to_redacted_json` masks EVERY secret-bearing leaf in the whole config
     /// tree — the body `GET /admin/config` returns. Each secret is populated
     /// with a unique high-entropy sentinel; none may appear in the rendered
@@ -751,6 +901,7 @@ mod tests {
             users: vec![BasicUser {
                 username: "alice".to_owned(),
                 password_hash: Secret::new(BASIC_HASH),
+                password_hash_file: None,
                 roles: vec!["ADMIN".to_owned()],
             }],
         });
@@ -1009,6 +1160,37 @@ mod tests {
         assert!(c.validate().is_err());
     }
 
+    /// A provider table with no `url` fails to boot, naming the key. The
+    /// section reads its defaults from one `Default` impl, so serde cannot
+    /// report the missing key itself — the semantic pass owns it, which is
+    /// also what lets every configuration error surface at once.
+    #[test]
+    fn validate_terminology_provider_needs_a_url() {
+        let mut c = FerroEhrConfig::default();
+        let external = &mut c.terminology.external;
+        external.enabled = true;
+        external.providers.insert(
+            "default".to_owned(),
+            crate::service::terminology::config::FhirProviderConfig::default(),
+        );
+        let err = c
+            .validate()
+            .expect_err("a provider with no url must be rejected");
+        assert!(
+            err.to_string()
+                .contains("terminology.external.providers.default.url"),
+            "got {err}"
+        );
+
+        c.terminology
+            .external
+            .providers
+            .get_mut("default")
+            .expect("provider")
+            .url = "https://ts.example/fhir".to_owned();
+        assert!(c.validate().is_ok());
+    }
+
     /// A terminology route naming a provider that is not configured is a boot
     /// error — never a silent fall-back to the default server.
     #[test]
@@ -1078,18 +1260,27 @@ mod tests {
             .expect_err("an unconfigured oauth2_client must be rejected");
         assert!(err.to_string().contains("ts-client"), "got {err}");
 
+        // A client table with none of its mandatory keys: each is named. The
+        // section reads its defaults from one `Default` impl, so serde no
+        // longer reports the missing keys and this pass owns all three.
+        c.terminology.external.oauth2_clients.insert(
+            "ts-client".to_owned(),
+            crate::service::terminology::config::TerminologyOauth2Config::default(),
+        );
+        let err = c
+            .validate()
+            .expect_err("a client with no token_url/client_id/secret is rejected");
+        for key in ["token_url", "client_id", "client_secret"] {
+            assert!(err.to_string().contains(key), "{key} unnamed in {err}");
+        }
+
         // A client with no secret cannot run the client-credentials grant.
         c.terminology.external.oauth2_clients.insert(
             "ts-client".to_owned(),
             crate::service::terminology::config::TerminologyOauth2Config {
                 token_url: "https://idp.example/token".to_owned(),
                 client_id: "cdr".to_owned(),
-                client_secret: None,
-                client_secret_file: None,
-                scopes: Vec::new(),
-                refresh_leeway_secs: 30,
-                auth_method:
-                    crate::service::terminology::config::Oauth2AuthMethod::ClientSecretBasic,
+                ..crate::service::terminology::config::TerminologyOauth2Config::default()
             },
         );
         let err = c.validate().expect_err("a secretless client is rejected");

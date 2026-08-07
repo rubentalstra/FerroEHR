@@ -4,9 +4,10 @@
 # chart renders that file from the `config:` block below (typed values mapped
 # 1:1 onto the ferroehr.toml schema) into a ConfigMap mounted at
 # /etc/ferroehr/ferroehr.toml — the server's config search order discovers it
-# automatically. Secrets never go in the ConfigMap: they are injected as
-# `FERROEHR_*` env from a Secret (see `secrets:` and `database:`), and the env
-# layer overrides the file. `config.files` mounts genuinely file-shaped material
+# automatically. Secrets never go in the ConfigMap: they come from a Secret (see
+# `secrets:` and `database:`) — mounted as read-only FILES wherever the config key
+# has a `*_file` sibling, which is now everything except `audit.fhir_feed.url` and
+# `multimedia.access_key_id`; only the mounted PATH is passed as env. `config.files` mounts genuinely file-shaped material
 # (Cedar policies, ATNA PEMs, the PGP key, JWKS) that in-TOML `*_path`/`*_file`
 # keys point at. `extraEnv` is the escape hatch for anything not surfaced here.
 #
@@ -29,6 +30,30 @@
 
 # -- Number of replicas (ignored when autoscaling.enabled is true).
 replicaCount: 2
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Rollout strategy. The OWASP Kubernetes Security Cheat Sheet's upgrade rule is
+# that a new version arrives as a rolling update rather than by mutating a
+# running container, so the strategy is stated here rather than inherited
+# silently from the API server's defaults
+# (https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy).
+#
+# `maxUnavailable: 0` guarantees the served capacity never DROPS during an
+# upgrade: a new pod must pass its readiness probe before an old one is removed.
+# At the default two replicas this is exactly what Kubernetes already computed
+# (25% of 2 rounds down to 0), so it changes nothing here — it only matters above
+# two replicas, where the percentage default would take a pod out of service.
+# The trade-off, stated because it is real: with no spare scheduling capacity a
+# `maxUnavailable: 0` rollout STALLS rather than proceeding at reduced capacity.
+# That is the safe direction for a clinical API, and it fails visibly.
+# ─────────────────────────────────────────────────────────────────────────────
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    # -- Extra pods allowed above `replicaCount` while rolling.
+    maxSurge: 1
+    # -- Pods allowed to be unavailable while rolling. 0 = capacity never drops.
+    maxUnavailable: 0
 
 image:
   # -- Image repository. Multi-arch distroless (gcr.io/distroless/cc-debian12:nonroot base).
@@ -67,8 +92,11 @@ serviceAccount:
 # LOGIN role granted the DML privileges the runtime needs and none of the DDL
 # ones, so a compromised app process cannot alter the schema (PostgreSQL 18
 # docs, "Database Roles": https://www.postgresql.org/docs/18/user-manag.html).
-# The DSN is a SECRET: it is injected as FERROEHR__DB__URL env from a
-# Secret (never the ConfigMap). The non-secret pool bounds live in
+# The DSN is a SECRET, and the credential that reaches patient data: it is MOUNTED
+# from a Secret as /etc/ferroehr-secrets/db.url and reached through
+# `FERROEHR__DB__URL_FILE`, so it never enters the pod's environment (an env value
+# is readable through /proc/<pid>/environ and inherited by every child process).
+# Never the ConfigMap. The non-secret pool bounds live in
 # config.db.{max_connections,min_connections,acquire_timeout_secs}.
 # ─────────────────────────────────────────────────────────────────────────────
 database:
@@ -77,7 +105,11 @@ database:
   # secret's value must be a full `postgres://ferroehr_app:...@host:5432/ferroehr`
   # (optionally `?sslmode=verify-full`).
   existingSecret: ""
-  # -- Key within existingSecret holding the DSN (the env var name the server reads).
+  # -- Key WITHIN existingSecret that holds the DSN. This is a Secret key name,
+  # not an environment variable name: the chart mounts that key as a file and
+  # passes only its PATH as `FERROEHR__DB__URL_FILE`, so the DSN never enters the
+  # pod's environment. The default spelling is kept for compatibility with
+  # existing Secrets created for the older env-borne arrangement.
   existingSecretKey: FERROEHR__DB__URL
   # -- Inline DSN (DEV/TEST ONLY — lands in a chart-managed Secret). Leave empty
   # and use existingSecret in production. Ignored when existingSecret is set.
@@ -104,35 +136,94 @@ migrations:
   runByMigratorRole: true
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Secret values injected as FERROEHR_* env from a chart-managed Secret. Anything
-# set here is rendered from values (keep it out of committed values — prefer an
-# external secret store / IRSA, or set these via `helm --set`/a values overlay
-# from your secret manager). Each maps to the matching in-TOML key but wins over
-# the file (env layer). Empty = not injected (the ConfigMap value, if any, stands).
+# Secret values carried by a chart-managed Secret. Anything set here is rendered
+# from values (keep it out of committed values — prefer an external secret store
+# / IRSA, or set these via `helm --set`/a values overlay from your secret
+# manager). Each maps to the matching in-TOML key and wins over the file layer;
+# empty = not supplied (the ConfigMap value, if any, stands).
+#
+# HOW each one reaches the process differs, and the reason is a security one: a
+# secret mounted as a read-only FILE is preferred over an environment variable,
+# which is readable through /proc/<pid>/environ and inherited by every child
+# process (OWASP Kubernetes Security Cheat Sheet,
+# https://cheatsheetseries.owasp.org/cheatsheets/Kubernetes_Security_Cheat_Sheet.html).
+# So every value whose config key has a `*_file` sibling is MOUNTED at
+# /etc/ferroehr-secrets/<config.path> and the chart passes only the PATH as env.
+# The four that have no `*_file` sibling (db.url, events.url, fhir.outbound.url,
+# audit.fhir_feed.url) still pass their value as env — that is a config-tree gap,
+# not a chart choice.
+#
+# Setting any of these under `config:` instead REFUSES to render: they would land
+# in the ConfigMap, which is not a sensitive object. The refusal names the key
+# here that carries it securely.
 # ─────────────────────────────────────────────────────────────────────────────
 secrets:
-  # -- Symmetric HS256 secret for [auth.oidc] (dev/test) → FERROEHR__AUTH__OIDC__HMAC_SECRET.
+  # -- Symmetric HS256 secret for [auth.oidc] (dev/test). MOUNTED as
+  # /etc/ferroehr-secrets/auth.oidc.hmac_secret (auth.oidc.hmac_secret_file).
   authOidcHmacSecret: ""
-  # -- PGP key passphrase (config.signing.mode=pgp) → FERROEHR__SIGNING__KEY_PASSPHRASE.
+  # -- PGP key passphrase (config.signing.mode=pgp). MOUNTED as
+  # /etc/ferroehr-secrets/signing.key_passphrase (signing.key_passphrase_file).
   signingKeyPassphrase: ""
-  # -- AMQP broker URL for [events] (carries credentials) → FERROEHR__EVENTS__URL.
+  # -- AMQP broker URL for [events] (carries credentials). MOUNTED as
+  # /etc/ferroehr-secrets/events.url (events.url_file).
   eventsUrl: ""
-  # -- AMQP broker URL for [fhir.outbound] (carries credentials) → FERROEHR__FHIR__OUTBOUND__URL.
+  # -- AMQP broker URL for [fhir.outbound] (carries credentials). MOUNTED as
+  # /etc/ferroehr-secrets/fhir.outbound.url (fhir.outbound.url_file).
   fhirOutboundUrl: ""
-  # -- S3 access key id for [multimedia] → FERROEHR__MULTIMEDIA__ACCESS_KEY_ID.
-  # Prefer IRSA/Workload-Identity (leave empty) on cloud.
+  # -- Argon2id password hashes for [[auth.basic.users]], keyed by username. Each
+  # is MOUNTED as /etc/ferroehr-secrets/auth.basic.users.<username>.password_hash
+  # and the chart injects the matching `password_hash_file` into the rendered TOML.
+  # Declare the user itself — `username`, `roles` — under
+  # config.auth.basic.users; a username with no matching entry is a render error.
+  # A hash under `config:` is refused: it would reach the ConfigMap.
+  basicUserPasswordHashes: {}
+  # -- FHIR base URL of the external Audit Record Repository for
+  # [audit.fhir_feed] (may carry basic-auth credentials in its userinfo) →
+  # FERROEHR__AUDIT__FHIR_FEED__URL env: audit.fhir_feed.url has no `*_file`
+  # sibling either.
+  auditFhirFeedUrl: ""
+  # -- OAuth2 client secrets for [terminology.external.oauth2_clients.<name>],
+  # keyed by client name. Each is MOUNTED as
+  # /etc/ferroehr-secrets/terminology.external.oauth2_clients.<name>.client_secret
+  # and the chart injects the matching `client_secret_file` into the rendered
+  # TOML (a path is not sensitive). Declare the client itself — token_url,
+  # client_id, scopes — under config.terminology.external.oauth2_clients.<name>;
+  # a name with no such declaration is a render error.
+  terminologyOauth2ClientSecrets: {}
+  # -- S3 access key id for [multimedia] → FERROEHR__MULTIMEDIA__ACCESS_KEY_ID
+  # env. Not a secret in the server's own model (it is reported unredacted by
+  # /management/env); prefer IRSA/Workload-Identity (leave empty) on cloud.
   multimediaAccessKeyId: ""
-  # -- S3 secret access key for [multimedia] → FERROEHR__MULTIMEDIA__SECRET_ACCESS_KEY.
+  # -- S3 secret access key for [multimedia]. MOUNTED as
+  # /etc/ferroehr-secrets/multimedia.secret_access_key
+  # (multimedia.secret_access_key_file).
   multimediaSecretAccessKey: ""
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Prometheus scraping. When enabled the chart adds the prometheus.io scrape pod
-# annotations (requires config.management.enabled). Set the endpoint itself to
-# `public` via config.management.endpoints.prometheus.
+# Prometheus scraping. Whichever mechanism you use, the endpoint itself must be
+# opened with config.management.endpoints.prometheus (requires
+# config.management.enabled) — the chart only arranges DISCOVERY.
+#
+# Two mechanisms, and they are not interchangeable: the prometheus.io/* pod
+# annotations work with a Prometheus that does kubernetes_sd discovery in its own
+# scrape config, while an operator-managed Prometheus (kube-prometheus-stack)
+# ignores them entirely and selects targets through ServiceMonitor objects
+# (https://prometheus-operator.dev/docs/developer/getting-started/).
 # ─────────────────────────────────────────────────────────────────────────────
 metrics:
-  # -- Add prometheus.io scrape annotations.
+  # -- Add prometheus.io scrape annotations to the pods.
   enabled: false
+  serviceMonitor:
+    # -- Render a Prometheus Operator ServiceMonitor. Needs the
+    # monitoring.coreos.com CRDs installed, or the install fails on an unknown kind.
+    enabled: false
+    # -- Namespace for the ServiceMonitor; empty = the release namespace.
+    namespace: ""
+    # -- Extra labels, for the `serviceMonitorSelector` your Prometheus matches on.
+    labels: {}
+    # -- Scrape interval / timeout.
+    interval: 30s
+    scrapeTimeout: 10s
 
 # ═════════════════════════════════════════════════════════════════════════════
 # ferroehr.toml — rendered VERBATIM into the ConfigMap as /etc/ferroehr/ferroehr.toml
@@ -157,12 +248,43 @@ config:
     swagger_ui: true
     # Permissive CORS — DEV ONLY. Production configures explicit origins.
     cors_permissive: false
+    # [server.limits] — the largest accepted request body per route family.
+    # Raise body_bytes if compositions embed large DV_MULTIMEDIA data; the bulk
+    # tier covers template upload and the /message imports. Over-limit is 413.
+    limits:
+      body_bytes: 16777216
+      bulk_body_bytes: 67108864
+    # [server.rate_limit] — per-caller rates, refused 429 + Retry-After. Not the
+    # same control as the in-flight shed (503): this one is per caller over time.
+    # The defaults sit above the reference SUT's measured whole-server ceiling
+    # (512 req/s) — raise them in proportion on server-class hardware. Turn the
+    # limiter off before benchmarking, or the benchmark measures the limiter.
+    rate_limit:
+      enabled: true
+      principal_per_second: 1024
+      principal_burst: 2048
+      address_per_second: 2048
+      address_burst: 4096
+    # [server.connection] — the bounds that apply BEFORE a request exists. Every
+    # other limit engages after a request head is parsed, so a client that opens a
+    # socket and trickles headers reaches none of them. h1 and h2 differ: h1
+    # streams a request head (trickle-able), h2 multiplexes streams (so the
+    # exposure is concurrency — the rapid-reset class).
+    connection:
+      header_read_timeout_secs: 10
+      max_concurrent_streams: 256
+      http2_keep_alive_interval_secs: 30
+      http2_keep_alive_timeout_secs: 10
 
   # [db] — pool bounds (the DSN itself is the FERROEHR__DB__URL secret, above).
   db:
     max_connections: 10
     min_connections: 0
     acquire_timeout_secs: 30
+    # The backstop the HTTP request timeout cannot be: dropping a handler future
+    # does not cancel the statement PostgreSQL is running. Above query.timeout_ms
+    # so the engine's typed 408 fires first.
+    statement_timeout_ms: 60000
 
   # [log] — logging. json is correct for cluster log collectors.
   log:
@@ -328,15 +450,46 @@ networkPolicy:
   # -- Install a default-deny-ingress NetworkPolicy that only admits traffic to
   # the API (and management) port. Strongly recommended for a PHI workload.
   enabled: true
-  # -- Additional ingress `from` selectors admitted to the API port. Empty =
-  # admit from any pod in the namespace to the API port only (still default-deny
-  # for every other port). Tighten to your ingress-controller namespace/pods.
+  # -- Ingress `from` selectors admitted to the API port. Empty means the rule
+  # carries no `from` at all, and a NetworkPolicy ingress rule without `from`
+  # admits EVERY source — other namespaces and off-cluster clients included, not
+  # just this namespace
+  # (https://kubernetes.io/docs/concepts/services-networking/network-policies/).
+  # Only the port list is narrowed in that state, so SET this to your
+  # ingress-controller namespace/pods for a PHI workload.
   ingressFrom: []
-  # -- Restrict egress too (default-deny egress except DNS + the DB/broker/TS).
-  # Off by default because egress targets are deployment-specific; see the doc.
+  # ── Egress ────────────────────────────────────────────────────────────────
+  # Default-deny egress: everything outbound is refused except what is listed
+  # here. Off by default, and that is a deliberate choice rather than laziness —
+  # every destination below the database is OPTIONAL and switched on by a
+  # configuration key, and most are off-cluster, where a NetworkPolicy can only
+  # name an `ipBlock` CIDR because **the API has no way to match a DNS name**
+  # (https://kubernetes.io/docs/concepts/services-networking/network-policies/
+  # — "you cannot … target Services or Pods by name"). So the destination set is
+  # deployment-specific by construction, and shipping it on with a guessed set
+  # would break features in a way that looks like the feature being broken.
+  #
+  # The full config-key-to-destination table, with the port each needs and the
+  # order to add them in, is in the book: installation/kubernetes-hardening.md
+  # §Egress. Read it before enabling this.
+  #
+  # DNS is always allowed when this is on — without it nothing resolves and
+  # every destination below fails regardless of its own rule.
   egress:
+    # -- Refuse all outbound traffic except DNS, `database` and `rules`.
     enabled: false
-    # Extra egress `to`/`ports` rules (raw NetworkPolicyEgressRule entries).
+    # -- The database, which is NOT optional: the server cannot pass readiness
+    # without it. Rendering an egress policy with no database destination is a
+    # refusal, not a warning (see the template) — an egress policy that forgets
+    # the DSN is a total outage that looks like a database failure.
+    # `to` takes raw NetworkPolicyPeer entries: a `podSelector`/
+    # `namespaceSelector` for an in-cluster database, or an `ipBlock` for a
+    # managed one. `port` is the DSN's port.
+    database:
+      to: []
+      port: 5432
+    # -- Every other destination, as raw NetworkPolicyEgressRule entries — one
+    # per integration you have switched on. See the book's table.
     rules: []
 
 # ─────────────────────────────────────────────────────────────────────────────

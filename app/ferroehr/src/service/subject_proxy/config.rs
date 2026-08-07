@@ -34,11 +34,6 @@ use serde_json::Value;
 
 use crate::service::status::SmError;
 
-/// Default per-system connect timeout (ms).
-const DEFAULT_CONNECT_TIMEOUT_MS: u64 = 2_000;
-/// Default per-system request timeout (ms).
-const DEFAULT_REQUEST_TIMEOUT_MS: u64 = 10_000;
-
 /// Subject-proxy FHIR-frame configuration (`[subject_proxy]`): the named FHIR
 /// systems an `API_CALL`/`fhir_get` frame may retrieve from.
 ///
@@ -53,26 +48,26 @@ pub struct SubjectProxyConfig {
 
 /// One configured FHIR system (`data_frame.adoc` `SYSTEM_CALL.system_id`).
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(default, deny_unknown_fields)]
 pub struct SpFhirSystem {
     /// FHIR R4B base URL, e.g. `https://fhir.example.org/r4` — the frame's
     /// `query_text` is resolved relative to this after `$subject_id`
-    /// substitution.
+    /// substitution. Empty is a boot error ([`SubjectProxyConfig::build`]).
     pub base_url: String,
     /// TCP connect timeout (ms).
-    #[serde(default = "default_connect_timeout_ms")]
     pub connect_timeout_ms: u64,
     /// Overall request timeout (ms).
-    #[serde(default = "default_request_timeout_ms")]
     pub request_timeout_ms: u64,
 }
 
-const fn default_connect_timeout_ms() -> u64 {
-    DEFAULT_CONNECT_TIMEOUT_MS
-}
-
-const fn default_request_timeout_ms() -> u64 {
-    DEFAULT_REQUEST_TIMEOUT_MS
+impl Default for SpFhirSystem {
+    fn default() -> Self {
+        Self {
+            base_url: String::new(),
+            connect_timeout_ms: 2_000,
+            request_timeout_ms: 10_000,
+        }
+    }
 }
 
 impl SubjectProxyConfig {
@@ -123,6 +118,7 @@ impl FhirSystemClient {
                 SmError::exception(format!(
                     "building subject-proxy FHIR client for system '{name}': {e}"
                 ))
+                .with_source(e)
             })?;
         Ok(Self { base, client })
     }
@@ -232,17 +228,36 @@ mod tests {
         assert!(!fhir.has_system("other"));
     }
 
+    /// A blank or absent `base_url` fails the boot build, naming the key: the
+    /// section reads its defaults from one `Default` impl, so serde no longer
+    /// reports the missing key and this is the only gate.
     #[test]
     fn empty_base_url_is_rejected() {
-        let mut systems = BTreeMap::new();
-        systems.insert(
-            "pas".to_owned(),
+        for system in [
             SpFhirSystem {
                 base_url: "   ".to_owned(),
                 connect_timeout_ms: 500,
                 request_timeout_ms: 800,
             },
-        );
-        assert!(SubjectProxyConfig { systems }.build().is_err());
+            SpFhirSystem::default(),
+        ] {
+            let systems = BTreeMap::from([("pas".to_owned(), system)]);
+            let err = SubjectProxyConfig { systems }
+                .build()
+                .expect_err("a system with no base_url must be rejected");
+            assert!(
+                err.message.contains("base_url") && err.message.contains("pas"),
+                "got {}",
+                err.message
+            );
+        }
+    }
+
+    /// The section's defaults are the literals its `Default` impl declares.
+    #[test]
+    fn system_defaults_are_the_documented_timeouts() {
+        let sys = SpFhirSystem::default();
+        assert_eq!(sys.connect_timeout_ms, 2_000);
+        assert_eq!(sys.request_timeout_ms, 10_000);
     }
 }

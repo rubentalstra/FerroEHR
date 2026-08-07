@@ -28,9 +28,7 @@ on:
         type: string
         default: "14"
 
-permissions:
-  issues: write
-  contents: read
+permissions: {}
 
 concurrency:
   group: spec-update-watcher
@@ -40,8 +38,13 @@ jobs:
   watch:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: write # file one spec-update issue per completed Jira change
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Poll Jira + amendment records, open spec-update issues
         env:
           GH_TOKEN: ${{ github.token }}

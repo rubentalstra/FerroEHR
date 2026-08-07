@@ -1,0 +1,28 @@
+# The MEASUREMENT posture overlay — composed on top of docker/sut-ferroehr.yml
+# only for the measured-performance (`cnf-runner perf`) and step-load
+# (`cnf-runner stress`) lanes, which scripts/conformance.sh selects when
+# CONF_PERF_CLASS or CONF_STRESS is set.
+#
+# Why an overlay rather than an environment default: a measurement's posture is
+# part of the record, so it must be a file that can be read after the fact, not
+# a variable a shell may or may not have exported. Compose merges this onto the
+# base service definition (docs.docker.com/compose/how-tos/multiple-compose-files/merge),
+# so only the keys below differ from the ordinary SUT — and the base file's
+# isolation floor (cap_drop, no-new-privileges) still applies, which is why this
+# file must never restate it.
+services:
+  ferroehr:
+    environment:
+      # Rate limiting OFF for the duration of a measurement.
+      #
+      # The instruments deliberately offer load past the server's knee — the
+      # step ladder reaches 1024 requests/second, all of it from one principal
+      # and one address — so with the limiter on, the ceiling being measured
+      # would be `server.rate_limit`, not the server. The functional catalogue
+      # keeps the limiter on (the base file's default), so the production
+      # posture is still what conformance exercises.
+      #
+      # This is belt AND braces: both instruments refuse to write a record if
+      # the SUT answered any 429, so a measurement can never be silently
+      # limiter-shaped even if this overlay is left out.
+      FERROEHR__SERVER__RATE_LIMIT__ENABLED: "false"

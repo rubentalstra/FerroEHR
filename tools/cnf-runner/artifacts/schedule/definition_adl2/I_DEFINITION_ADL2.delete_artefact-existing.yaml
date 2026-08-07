@@ -29,6 +29,7 @@ data_sets: [cnf.adl2.opt.minimal]
 flow:
   - step: 1
     call: delete_artefact
+    on: admin                              # ADMIN-role principal (ixit) — the delete carries the Admin operation class
     with: { template_id: "openEHR-EHR-COMPOSITION.cnf_minimal.v1.0.0" }
     expect: deleted
   - step: 2

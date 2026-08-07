@@ -61,8 +61,35 @@ use self::remote::RemotePdp;
 /// An attribute-resolution failure (a DB lookup error). Fail-closed at the
 /// PEP: a resolution failure denies (→ 403/500), never silently permits.
 #[derive(Debug, thiserror::Error)]
-#[error("attribute resolution failed: {0}")]
-pub struct ResolveError(pub String);
+#[error("attribute resolution failed: {context}")]
+pub struct ResolveError {
+    /// What was being resolved when the lookup failed.
+    context: String,
+    /// The lookup failure itself — an `sqlx` driver error, an identifier
+    /// refusal — reachable through [`std::error::Error::source`].
+    ///
+    /// Kept out of the message: the PEP renders a resolution failure as a
+    /// `500`, whose body must disclose no internal error value (OWASP REST
+    /// Security Cheat Sheet §Error handling). The chain goes to the trace
+    /// record instead.
+    #[source]
+    source: Box<dyn std::error::Error + Send + Sync>,
+}
+
+impl ResolveError {
+    /// A resolution failure: what was being resolved, and the error that broke
+    /// it.
+    #[must_use]
+    pub fn new(
+        context: impl Into<String>,
+        source: impl std::error::Error + Send + Sync + 'static,
+    ) -> Self {
+        Self {
+            context: context.into(),
+            source: Box::new(source),
+        }
+    }
+}
 
 /// The future a resolver closure returns.
 pub type ResolverFuture<T> = Pin<Box<dyn Future<Output = Result<T, ResolveError>> + Send>>;
@@ -267,6 +294,31 @@ pub(crate) struct RbacGate {
 /// No openEHR spec governs role semantics — our own design/extension.
 const EXTENSION_READ_ROUTES: &[(&str, &str)] = &[("POST", "/message/export")];
 
+/// Extension routes that are [`OperationClass::Admin`] despite not sitting under
+/// `/admin/` — the destructive half of the shared-definition surface.
+///
+/// Each deletes a deployment-wide definition artefact every EHR validates
+/// against, and the deletion is physical: this store has no logical tier to
+/// undelete from.
+///
+/// The class is OUR OWN DESIGN, on the blast radius, and the specification
+/// explicitly leaves it to us rather than being silent on it. SM
+/// `master02-overview.adoc` §Global Conventions → §Functional Style lists
+/// "approach to access control and authorisation" among the implementation
+/// choices and states that "Authentication and authorisation is assumed to have
+/// been dealt with before any particular call has been made … and role-based
+/// access control"; ITS-REST `Requests_and_responses.md` §Authentication and
+/// authorization adds that it "does not mandate a specific authentication
+/// scheme". So no released clause requires or forbids this, and the uploads
+/// staying Clinical is a deliberate asymmetry: an upload is additive and
+/// reversible, a delete is neither.
+///
+/// Matched by method + path SUFFIX so the configured base path is irrelevant.
+const EXTENSION_ADMIN_ROUTES: &[(&str, &str)] = &[
+    ("DELETE", "/definition/archetype/adl1.4/{archetype_id}"),
+    ("DELETE", "/definition/artefact/adl2/{artefact_id}"),
+];
+
 /// Whether an EXTENSION route (one outside the generated ITS-REST tables) is a
 /// write for the read-only gate: the mutating verbs are, except for the pinned
 /// [`EXTENSION_READ_ROUTES`] reads. Fail-safe by construction — an unlisted
@@ -324,7 +376,11 @@ impl RbacGate {
                 .get(&(method.clone(), mp.to_owned()))
                 .map_or_else(
                     || {
-                        if mp.contains("/admin/") {
+                        let admin = mp.contains("/admin/")
+                            || EXTENSION_ADMIN_ROUTES.iter().any(|(verb, suffix)| {
+                                method.as_str() == *verb && mp.ends_with(suffix)
+                            });
+                        if admin {
                             OperationClass::Admin
                         } else {
                             OperationClass::Clinical

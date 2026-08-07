@@ -53,6 +53,7 @@ use axum::middleware::from_fn_with_state;
 use axum::response::{IntoResponse, Response};
 use http::StatusCode;
 use http::header::{AUTHORIZATION, CONTENT_TYPE};
+use http::{HeaderName, HeaderValue, header};
 use openehr_its::rest::runtime::ApiError;
 use tower::ServiceBuilder;
 use tower_http::catch_panic::CatchPanicLayer;
@@ -61,6 +62,7 @@ use tower_http::cors::CorsLayer;
 use tower_http::limit::RequestBodyLimitLayer;
 use tower_http::request_id::{MakeRequestUuid, PropagateRequestIdLayer, SetRequestIdLayer};
 use tower_http::sensitive_headers::SetSensitiveRequestHeadersLayer;
+use tower_http::set_header::SetResponseHeaderLayer;
 use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
 
@@ -73,8 +75,6 @@ use crate::overview::{error, status};
 use crate::smart;
 use crate::state::AppState;
 
-/// Maximum accepted request body (16 MiB) — compositions/templates are large.
-const REQUEST_BODY_LIMIT: usize = 16 * 1024 * 1024;
 /// Per-request timeout.
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 
@@ -134,6 +134,19 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
         state.clone(),
         crate::system_log::middleware::middleware,
     ));
+    // The principal-keyed rate-limit tier (`crate::rate_limit`): added before the
+    // authentication layer, which in axum's outermost-last ordering is what puts
+    // it INSIDE — the subject it keys on only exists once authentication has run.
+    let api = match crate::rate_limit::principal_layer(&cfg.server.rate_limit) {
+        Some(tier) => api.layer(tier),
+        None => api,
+    };
+    // Per-route-family body limits (`crate::limits`): the clinical tier for the
+    // ordinary surface, the bulk tier for template upload and the `/message`
+    // imports. Above the audit layer so an over-large body is refused before it
+    // is read, buffered, or audited; the outer `RequestBodyLimitLayer` remains
+    // the ceiling across the whole tree.
+    let api = api.layer(from_fn_with_state(state.clone(), crate::limits::middleware));
     let api = api
         .layer(axum::middleware::from_fn(
             management::http_metrics::http_metrics,
@@ -160,37 +173,16 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
         CorsLayer::new()
     };
 
-    // Wrap the whole inner tree in the shared request stack and bind the state,
-    // yielding a protocol-complete, state-less service.
-    //
-    // The stack is applied in two halves with [`align_transport_error_body`]
-    // between them: `TimeoutLayer` and `RequestBodyLimitLayer` render their own
-    // responses without ever reaching [`crate::overview::error`], so the mapping
-    // must sit OUTSIDE both. Order (outermost → innermost): request-id, tracing,
-    // catch-panic, CORS, body limit, timeout, compression.
-    let inner: Router = inner
-        .layer(
-            ServiceBuilder::new()
-                .layer(RequestBodyLimitLayer::new(REQUEST_BODY_LIMIT))
-                .layer(TimeoutLayer::with_status_code(
-                    StatusCode::REQUEST_TIMEOUT,
-                    REQUEST_TIMEOUT,
-                ))
-                .layer(CompressionLayer::new()),
-        )
-        .layer(axum::middleware::map_response(align_transport_error_body))
-        .layer(
-            ServiceBuilder::new()
-                .layer(SetRequestIdLayer::x_request_id(MakeRequestUuid))
-                .layer(PropagateRequestIdLayer::x_request_id())
-                .layer(SetSensitiveRequestHeadersLayer::new(std::iter::once(
-                    AUTHORIZATION,
-                )))
-                .layer(TraceLayer::new_for_http())
-                .layer(CatchPanicLayer::custom(handle_panic))
-                .layer(cors),
-        )
-        .with_state(state);
+    // The address-keyed tier covers the WHOLE tree, the always-on health family
+    // included: an orchestrator probe is cheap and its rate is nowhere near this
+    // ceiling, while a flood arriving at any path is refused here before it
+    // reaches authentication.
+    let inner = match crate::rate_limit::address_layer(&cfg.server.rate_limit) {
+        Some(tier) => inner.layer(tier),
+        None => inner,
+    };
+
+    let inner: Router = with_shared_stack(inner, cfg.server.limits.ceiling(), cors, state);
 
     // ── System Options and Conformance — `OPTIONS`, above the CORS layer ─────
     // The manifest advertises the **live** mounted-group set (System API): the
@@ -231,7 +223,7 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
 
     // Merge the management surface only when enabled AND not bound to a separate
     // port (the binary serves the separate-port case on its own listener).
-    if observability.management.enabled && observability.management.port.is_none() {
+    let app = if observability.management.enabled && observability.management.port.is_none() {
         let mgmt = management::router(ManagementState::from_observability(
             observability,
             authenticator,
@@ -240,7 +232,142 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
         app.merge(mgmt)
     } else {
         app
-    }
+    };
+    with_security_headers(app)
+}
+
+/// Applies the shared request stack and binds the state, yielding a
+/// protocol-complete, state-less service.
+///
+/// The stack is applied in two halves with [`align_transport_error_body`]
+/// between them: `TimeoutLayer` and `RequestBodyLimitLayer` render their own
+/// responses without ever reaching [`crate::overview::error`], so the mapping
+/// must sit OUTSIDE both. Order (outermost → innermost): request-id, tracing,
+/// catch-panic, CORS, body-limit ceiling, timeout, compression.
+///
+/// `body_ceiling` is the widest tier any route accepts
+/// ([`BodyLimits::ceiling`](ferroehr::config::server::BodyLimits::ceiling)); the
+/// narrower per-family tier is applied inside, by [`crate::limits`].
+fn with_shared_stack(
+    inner: Router<AppState>,
+    body_ceiling: usize,
+    cors: CorsLayer,
+    state: AppState,
+) -> Router {
+    inner
+        .layer(
+            ServiceBuilder::new()
+                .layer(RequestBodyLimitLayer::new(body_ceiling))
+                .layer(TimeoutLayer::with_status_code(
+                    StatusCode::REQUEST_TIMEOUT,
+                    REQUEST_TIMEOUT,
+                ))
+                .layer(CompressionLayer::new()),
+        )
+        .layer(axum::middleware::map_response(align_transport_error_body))
+        .layer(
+            ServiceBuilder::new()
+                .layer(SetRequestIdLayer::x_request_id(MakeRequestUuid))
+                .layer(PropagateRequestIdLayer::x_request_id())
+                .layer(SetSensitiveRequestHeadersLayer::new(std::iter::once(
+                    AUTHORIZATION,
+                )))
+                .layer(TraceLayer::new_for_http().make_span_with(path_only_span))
+                .layer(CatchPanicLayer::custom(handle_panic))
+                .layer(cors),
+        )
+        .with_state(state)
+}
+
+/// The response headers every surface carries, per the OWASP HTTP Headers Cheat
+/// Sheet — outermost, so they reach transport-layer responses (the `413` from the
+/// body-limit layer, the `408` from the timeout layer, the `500` from the panic
+/// handler) as well as handler ones.
+///
+/// The set is chosen for what this surface actually is — a clinical JSON API —
+/// rather than copied wholesale from browser advice:
+///
+/// - `Cache-Control: no-store` is the load-bearing one. Responses carry patient
+///   data, and the cheat sheet names `no-store` for exactly that. It does not
+///   affect openEHR's `ETag`/`If-Match` concurrency control, which is a
+///   precondition mechanism rather than a caching one.
+/// - `X-Content-Type-Options: nosniff` stops a browser or proxy from re-guessing
+///   a declared `application/json` as something executable.
+/// - `Referrer-Policy: strict-origin-when-cross-origin` keeps request paths — which
+///   carry `ehr_id` and version identifiers — out of cross-origin `Referer`
+///   headers.
+/// - `Cross-Origin-Resource-Policy: same-site` refuses cross-site embedding of
+///   these responses.
+/// - `X-Frame-Options: DENY` and a minimal CSP are here for the HTML this origin
+///   can serve (Swagger UI, and any error page a proxy renders). The cheat sheet
+///   is explicit that CSP "might be meaningless in the response of a REST API
+///   that returns content that is not going to be rendered", so the value is the
+///   defensive minimum rather than a policy pretending to govern scripts:
+///   nothing may load, and nothing may frame it.
+///
+/// Deliberately absent: `Strict-Transport-Security`, because it is a property of
+/// the TLS edge rather than of this server — RFC 6797 §7.2 requires a browser to
+/// IGNORE it over plain HTTP, and this server is commonly reached over HTTP behind
+/// a terminating proxy that owns the header. Setting it here would be inert at
+/// best and misleading at worst. `X-XSS-Protection` and `X-Powered-By` are absent
+/// because the cheat sheet says to remove them, and hyper sends no `Server`
+/// header to begin with.
+fn with_security_headers(app: Router) -> Router {
+    app.layer(
+        ServiceBuilder::new()
+            .layer(SetResponseHeaderLayer::overriding(
+                header::CACHE_CONTROL,
+                HeaderValue::from_static("no-store"),
+            ))
+            .layer(SetResponseHeaderLayer::overriding(
+                header::X_CONTENT_TYPE_OPTIONS,
+                HeaderValue::from_static("nosniff"),
+            ))
+            .layer(SetResponseHeaderLayer::overriding(
+                header::REFERRER_POLICY,
+                HeaderValue::from_static("strict-origin-when-cross-origin"),
+            ))
+            .layer(SetResponseHeaderLayer::overriding(
+                HeaderName::from_static("cross-origin-resource-policy"),
+                HeaderValue::from_static("same-site"),
+            ))
+            .layer(SetResponseHeaderLayer::overriding(
+                header::X_FRAME_OPTIONS,
+                HeaderValue::from_static("DENY"),
+            ))
+            // `if_not_present`, not `overriding`: a surface on this origin that
+            // is actually RENDERED needs its own policy, and being outermost
+            // this layer would otherwise erase it on the way out. Swagger UI
+            // sets one (`crate::extensions::openapi`); everything else gets this
+            // default, which says nothing loads and nothing frames.
+            .layer(SetResponseHeaderLayer::if_not_present(
+                header::CONTENT_SECURITY_POLICY,
+                HeaderValue::from_static("default-src 'none'; frame-ancestors 'none'"),
+            )),
+    )
+}
+
+/// The `tower-http` request span, recording the path WITHOUT its query string.
+///
+/// `DefaultMakeSpan` records `uri = %request.uri()`, which is the whole target
+/// including the query — and `subject_id`, an external patient identifier, is a
+/// query parameter by the specification's own definition (ITS-REST EHR API,
+/// `GET /ehr?subject_id=…&subject_namespace=…`). At `log.filter = debug` that
+/// would put a patient identifier into the ordinary application log, which is a
+/// place identified data must never reach. Dropping the query keeps the path —
+/// where the ids are system-assigned `ehr_id`/version uids that the audit log
+/// records anyway — and loses the one component that carries an external
+/// identifier.
+///
+/// The route TEMPLATE (never a concrete path) is recorded separately by
+/// [`management::http_metrics::root_span`], which is the span telemetry consumes.
+fn path_only_span(request: &http::Request<axum::body::Body>) -> tracing::Span {
+    tracing::debug_span!(
+        "request",
+        method = %request.method(),
+        path = %request.uri().path(),
+        version = ?request.version(),
+    )
 }
 
 /// [`CatchPanicLayer`] handler: render a panicked handler as the standard

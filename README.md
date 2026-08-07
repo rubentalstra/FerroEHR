@@ -10,13 +10,20 @@
 ITS-REST 1.1.0 &nbsp;·&nbsp; AQL 1.1 &nbsp;·&nbsp; RM 1.2.0 **+ 1.1.0** &nbsp;·&nbsp; ADL 1.4 + 2.4 &nbsp;·&nbsp; PostgreSQL 18 &nbsp;·&nbsp; Rust 1.96
 
 [![CI](https://github.com/rubentalstra/FerroEHR/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/FerroEHR/actions/workflows/ci.yml)
+[![Containers](https://github.com/rubentalstra/FerroEHR/actions/workflows/containers.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/FerroEHR/actions/workflows/containers.yml)
+[![CodeQL](https://github.com/rubentalstra/FerroEHR/actions/workflows/codeql.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/FerroEHR/actions/workflows/codeql.yml)
+[![GitHub Release](https://img.shields.io/github/release/rubentalstra/FerroEHR.svg?logo=github)](https://github.com/rubentalstra/FerroEHR/releases/latest)
+
 [![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fbadges%2Fcoverage.json)](https://github.com/rubentalstra/FerroEHR/actions/workflows/ci.yml)
-[![openEHR CNF conformance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fdevelop%2Fdocs%2Fconformance%2Fferroehr%2Fbadge.json)](docs/conformance/ferroehr/CONFORMANCE_REPORT.md)
-[![CNF performance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fdevelop%2Fdocs%2Fconformance%2Fferroehr%2Fbadge-performance.json)](docs/conformance/ferroehr/CONFORMANCE_CERTIFICATE.md)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/rubentalstra/FerroEHR/badge)](https://scorecard.dev/viewer/?uri=github.com/rubentalstra/FerroEHR)
 [![GHCR](https://img.shields.io/badge/ghcr.io-ferroehr-2496ED.svg?logo=docker&logoColor=white)](https://github.com/rubentalstra/FerroEHR/pkgs/container/ferroehr)
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/ferroehr)](https://artifacthub.io/packages/search?repo=ferroehr)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-[**Documentation**](https://ferroehr.eu/) · [Quick start](#quick-start) · [Features](#features) · [Spec versions](#choose-your-openehr-specification-generation) · [Rust crates](#the-openehr-specification-layer-as-rust-crates) · [Architecture](#architecture) · [Conformance](#conformance-measured-not-asserted) · [Deployment](#deployment) · [Roadmap](https://github.com/users/rubentalstra/projects/4) · [Contributing](#contributing-and-security)
+[![openEHR CNF conformance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fdevelop%2Fdocs%2Fconformance%2Fferroehr%2Fbadge.json)](docs/conformance/ferroehr/CONFORMANCE_REPORT.md)
+[![CNF performance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fdevelop%2Fdocs%2Fconformance%2Fferroehr%2Fbadge-performance.json)](docs/conformance/ferroehr/CONFORMANCE_CERTIFICATE.md)
+
+[**Documentation**](https://ferroehr.eu/) · [Why this exists](#why-this-project-exists) · [Quick start](#quick-start) · [Features](#features) · [Spec versions](#choose-your-openehr-specification-generation) · [Rust crates](#the-openehr-specification-layer-as-rust-crates) · [Architecture](#architecture) · [Conformance](#conformance-measured-not-asserted) · [Deployment](#deployment) · [Roadmap](https://github.com/users/rubentalstra/projects/4) · [Contributing](#contributing-and-security)
 
 </div>
 
@@ -32,14 +39,55 @@ compliance claim it makes is **machine-verified**: each release runs the full
 conformance catalogue against the live server and generates its own
 Conformance Statement and Certificate.
 
-## Why FerroEHR
+## Why this project exists
+
+openEHR is one of the few places in health IT where clinical meaning is
+written down as a shared, computable, vendor-neutral model — which is what
+lets a record outlive the application, the vendor and the procurement cycle
+that produced it. A specification that good deserves an implementation anyone
+can actually run: complete, openly developed, permissively licensed, and
+measured against the specification rather than asserted to match it. That is
+what FerroEHR is for.
+
+So the whole thing is MIT, with no open-core tier — multi-tenancy, RBAC/ABAC,
+ATNA audit, signatures, FHIR, events and the admin console are all in this
+repository under the same licence, and nothing is held back to be sold back
+to you. **Build on it, ship it, sell it: that is the point.** Integrate it,
+embed it, host it, white-label it, build closed products on top and charge
+for them. There is no contributor licence agreement, no copyright assignment
+and no "commercial licence" conversation to have — contributors keep their
+copyright, and what you build stays yours.
+
+What we ask in return — and cannot require — is that improvements come back.
+A private fork inherits the entire maintenance surface (spec releases,
+advisories, database upgrades, conformance re-runs, a re-merge every release)
+and pays for it alone; upstreamed, the same work is maintained once for
+everyone. In clinical software a defect found once should be fixed
+everywhere, and interoperability is a property of the *population* of
+implementations, not of any one of them. When the same fix is made privately
+in five places, the standard is no stronger and five teams have paid for it.
+
+Contributions are not only code: a reproducing bug report, a conformance case
+for uncovered behaviour, a specification ambiguity you had to resolve (we
+report the genuine ones upstream), documentation, or measurement from your
+own hardware all count. The full statement is
+[**Why FerroEHR exists**](https://ferroehr.eu/docs/latest/why-ferroehr.html)
+on the documentation site.
+
+## What makes it different
 
 - **Compliance you can verify, not just read.** The built-in CNF 2.0
   conformance runner executes the complete machine-readable catalogue across
   the claimed wire formats and computes the openEHR profile verdicts as pure
   functions of the run records. The conformance badges above render straight
   from the committed run artifacts — generated from real runs, never
-  hand-edited — and the
+  hand-edited. Every badge on this page is computed by something that can
+  disagree with us: the conformance ones by the runner, the workflow ones by
+  GitHub, and the security score by OpenSSF Scorecard, which grades this
+  repository's supply chain — digest-pinned actions, minimal workflow token
+  permissions, code scanning, signed releases — independently of anything we
+  claim here. There is no self-asserted "hardened" badge, because it would
+  prove nothing. And the
   [Conformance Report](docs/conformance/ferroehr/CONFORMANCE_REPORT.md)
   carries the full per-case record.
 - **Performance is a verdict, not a slogan.** Volumetric deployment classes
@@ -450,12 +498,24 @@ for EHRbase) and `cnf-runner stress` / `cnf-runner aql-probe`
 
 ## Deployment
 
+The Helm chart is published to GHCR as an OCI artifact, beside the images it
+deploys, and listed on
+[Artifact Hub](https://artifacthub.io/packages/helm/ferroehr/ferroehr):
+
 ```shell
-helm install ferroehr deploy/helm/ferroehr \
-  --set database.existingSecret=my-db-secret
+helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
+  --version 4.0.0 --set database.existingSecret=my-db-secret
 ```
 
-See the [documentation website](https://ferroehr.eu/)
+There is no HTTP chart repository, so `helm repo add` does not apply — OCI is the
+only publication path. The chart version and the image tag are separate SemVer
+lines: `--version` pins the chart, `--set image.tag=` pins the server. The chart
+and the images are published with signed keyless provenance
+(`gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:<chart-version> -R rubentalstra/FerroEHR`);
+signing landed in the 3.17.4 cycle, so tags built before it carry none.
+
+See the [Kubernetes chapter](https://ferroehr.eu/docs/latest/installation/kubernetes.html)
+and the [documentation website](https://ferroehr.eu/)
 for the production checklist: database role separation, TLS, backup and
 point-in-time recovery, and audit logging.
 

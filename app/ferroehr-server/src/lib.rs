@@ -19,6 +19,7 @@ use std::time::Duration;
 
 use anyhow::Context as _;
 use clap::{Parser, Subcommand};
+use ferroehr::config::management::EndpointLevels;
 use ferroehr::system_log::config::AuditConfig;
 use ferroehr::system_log::sender::{AuditHandle, AuditSender, SubjectResolver};
 use ferroehr::telemetry::build_info::BuildInfo;
@@ -39,9 +40,6 @@ use ferroehr::telemetry::{self, indicators};
 
 /// How long to wait for the audit queue to flush on shutdown.
 const AUDIT_DRAIN_TIMEOUT: Duration = Duration::from_secs(5);
-
-/// The default endpoint the `healthcheck` subcommand probes.
-const DEFAULT_HEALTHCHECK_URL: &str = "http://127.0.0.1:8080/ferroehr/rest/status";
 
 /// `FerroEHR` server command-line interface.
 #[derive(Debug, Parser)]
@@ -65,7 +63,11 @@ pub enum Command {
     /// Probe the running server's status endpoint; exit 0 on 2xx, 1 otherwise.
     Healthcheck {
         /// The status URL to probe.
-        #[arg(long, env = "FERROEHR_HEALTHCHECK_URL", default_value = DEFAULT_HEALTHCHECK_URL)]
+        #[arg(
+            long,
+            env = "FERROEHR_HEALTHCHECK_URL",
+            default_value = "http://127.0.0.1:8080/ferroehr/rest/status"
+        )]
         url: String,
     },
     /// Configuration utilities (validate / print the annotated default).
@@ -160,6 +162,46 @@ async fn healthcheck(url: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Whether a bind address is loopback-only, so a plaintext listener there is
+/// not reachable off the host.
+///
+/// A host part that does not parse as an IP address (a DNS name, or the empty
+/// host of `:8080`) is treated as routable: assuming otherwise would suppress
+/// the warning in exactly the ambiguous case that deserves it.
+fn binds_loopback(bind: &str) -> bool {
+    bind.parse::<std::net::SocketAddr>()
+        .is_ok_and(|address| address.ip().is_loopback())
+}
+
+/// Summarizes which management endpoints are mounted, and at which access
+/// level, as `info=admin_only, prometheus=public`.
+///
+/// Worth a boot line of its own: every endpoint defaults to `off`, so what an
+/// operator needs to see is exactly which ones a configuration turned on and how
+/// exposed each one is — `env` renders the effective configuration and
+/// `flamegraph` starts a profiler on request, so neither should ever be a
+/// surprise. `none` when the surface is mounted with nothing enabled.
+fn mounted_management_endpoints(levels: EndpointLevels) -> String {
+    let described = [
+        ("info", levels.info),
+        ("metrics", levels.metrics),
+        ("prometheus", levels.prometheus),
+        ("env", levels.env),
+        ("loggers", levels.loggers),
+        ("flamegraph", levels.flamegraph),
+    ];
+    let mounted: Vec<String> = described
+        .iter()
+        .filter(|(_, level)| level.is_mounted())
+        .map(|(name, level)| format!("{name}={}", level.as_str()))
+        .collect();
+    if mounted.is_empty() {
+        "none".to_owned()
+    } else {
+        mounted.join(", ")
+    }
+}
+
 /// Boot the server: config, telemetry, pool, migrations, audit, health, serve.
 #[expect(
     clippy::too_many_lines,
@@ -194,6 +236,33 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
              supplied. Set db.url (FERROEHR__DB__URL / DATABASE_URL) for any non-dev deployment — \
              production MUST override it.",
             db::DEFAULT_URL,
+        );
+    }
+
+    // Permissive CORS is a deliberate weakening — every origin may read every
+    // response — and it is the kind of setting that gets switched on for a demo
+    // and left on. Announced, never silent (OWASP REST Security Cheat Sheet).
+    if config.server.cors_permissive {
+        tracing::warn!(
+            "[server].cors_permissive is ON: any origin may read API responses. This is a \
+             DEVELOPMENT setting — configure explicit origins for any deployment reachable by \
+             a browser."
+        );
+    }
+
+    // The HTTPS posture, stated rather than enforced. The cheat sheet asks for
+    // HTTPS-only endpoints; this server cannot tell "plaintext because
+    // misconfigured" from "plaintext because a TLS-terminating ingress sits in
+    // front", which is the ordinary deployment. Refusing to boot would break
+    // every such deployment, so authentication over plaintext on a non-loopback
+    // bind warns loudly and proceeds — the operator owns the edge.
+    if config.auth.enabled && !config.server.tls.enabled && !binds_loopback(&config.server.bind) {
+        tracing::warn!(
+            bind = %config.server.bind,
+            "authentication is enabled but this listener is PLAINTEXT on a routable address. \
+             Credentials and bearer tokens will cross the wire unencrypted unless a \
+             TLS-terminating proxy fronts this port. Enable [server.tls] or ensure the ingress \
+             terminates TLS."
         );
     }
 
@@ -406,12 +475,49 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         .auth
         .require_mechanism()
         .map_err(|e| anyhow::anyhow!("{e}"))?;
+    // One line per subsystem, each carrying that subsystem's own facts. The
+    // listener line stays about the listener: `rbac` already has its own line
+    // above, and auditing and the management surface have theirs below, so
+    // repeating a bare `true` for each of them said less than nothing.
+    tracing::info!(
+        mechanisms = %app_config.auth.advertised_mechanisms(),
+        enabled = app_config.auth.enabled,
+        "authentication configured"
+    );
+    if audit_enabled {
+        tracing::info!(
+            local_repository = config.audit.store.enabled,
+            syslog = config.audit.syslog.enabled,
+            fhir_feed = config.audit.fhir_feed.enabled,
+            queue_capacity = config.audit.queue_capacity,
+            fail_mode = ?config.audit.fail_mode,
+            resolve_subject = config.audit.resolve_subject,
+            "IHE ATNA audit enabled"
+        );
+    } else {
+        tracing::info!("IHE ATNA audit disabled");
+    }
+    if observability.management.enabled {
+        tracing::info!(
+            base_path = %observability.management.base_path,
+            listener = match observability.management.port {
+                Some(port) => format!("own port {port}"),
+                None => "shared with the API".to_owned(),
+            },
+            mounted = %mounted_management_endpoints(observability.management.endpoints),
+            "management surface enabled"
+        );
+    }
+    tracing::info!(
+        enabled = app_config.server.rate_limit.enabled,
+        principal_per_second = app_config.server.rate_limit.principal_per_second,
+        address_per_second = app_config.server.rate_limit.address_per_second,
+        "request-rate limiting configured"
+    );
     tracing::info!(
         bind = %app_config.server.bind,
         base_path = %app_config.server.base_path,
-        audit = audit_enabled,
-        rbac = authz.is_some(),
-        management = observability.management.enabled,
+        tls = app_config.server.tls.enabled,
         "starting ferroehr"
     );
     ferroehr_rest::serve_full(app_config, service, authz, observability)
@@ -490,13 +596,13 @@ pub fn authz_resolvers(pool: PgPool, service: Arc<FerroEhrService>) -> AuthzReso
             let pool = pool.clone();
             Box::pin(async move {
                 let id = Uuid::parse_str(&ehr_id)
-                    .map_err(|e| ResolveError(format!("ehr id {ehr_id}: {e}")))?;
+                    .map_err(|e| ResolveError::new(format!("ehr id {ehr_id}"), e))?;
                 sqlx::query_scalar::<_, Option<String>>("SELECT subject_id FROM ehr WHERE id = $1")
                     .bind(id)
                     .fetch_optional(&pool)
                     .await
                     .map(Option::flatten)
-                    .map_err(|e| ResolveError(format!("ehr subject lookup: {e}")))
+                    .map_err(|e| ResolveError::new("ehr subject lookup", e))
             })
         }),
         template_of_version: Arc::new(move |vo: String, version: Option<String>| {
@@ -504,11 +610,11 @@ pub fn authz_resolvers(pool: PgPool, service: Arc<FerroEhrService>) -> AuthzReso
             Box::pin(async move {
                 let vo_id = vo
                     .parse::<ferroehr::ids::VoId>()
-                    .map_err(|e| ResolveError(format!("vo id {vo}: {e}")))?;
+                    .map_err(|e| ResolveError::new(format!("vo id {vo}"), e))?;
                 service
                     .template_of_version(vo_id, version.as_deref())
                     .await
-                    .map_err(|e| ResolveError(format!("template lookup: {e}")))
+                    .map_err(|e| ResolveError::new("template lookup", e))
             })
         }),
     }
@@ -530,4 +636,31 @@ fn subject_resolver(pool: PgPool) -> SubjectResolver {
                 .flatten()
         })
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::binds_loopback;
+
+    #[test]
+    fn loopback_binds_are_recognized() {
+        assert!(binds_loopback("127.0.0.1:8080"));
+        assert!(binds_loopback("127.0.0.53:8080"));
+        assert!(binds_loopback("[::1]:8080"));
+    }
+
+    /// The plaintext-authentication warning must fire for anything reachable off
+    /// the host, and an unparseable host counts as reachable.
+    #[test]
+    fn routable_and_ambiguous_binds_are_not_loopback() {
+        for bind in [
+            "0.0.0.0:8080",
+            "10.0.0.4:8080",
+            "[::]:8080",
+            "ferroehr.internal:8080",
+            ":8080",
+        ] {
+            assert!(!binds_loopback(bind), "{bind} must count as routable");
+        }
+    }
 }

@@ -88,7 +88,7 @@ impl std::fmt::Debug for PerfClient {
 /// headers the bindings capture from).
 #[derive(Debug)]
 pub(crate) struct WireReply {
-    pub(crate) status: u16,
+    pub(crate) status: reqwest::StatusCode,
     pub(crate) etag: Option<String>,
     pub(crate) location: Option<String>,
 }
@@ -264,7 +264,7 @@ impl PerfClient {
                 .map(str::to_owned)
         };
         let reply = WireReply {
-            status: response.status().as_u16(),
+            status: response.status(),
             etag: header("etag"),
             location: header("location"),
         };

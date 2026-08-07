@@ -41,6 +41,12 @@
 
 services:
   ferroehr-postgres:
+    cap_drop: [ALL]
+    # The entrypoint starts as root to chown the data directory, then drops to
+    # `postgres` — these five are what that needs, against the default fourteen.
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    security_opt:
+      - no-new-privileges:true
     image: ${FERROEHR_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ferroehr-postgres:local}
     build:
       context: ./docker/postgres
@@ -74,7 +80,7 @@ services:
     volumes:
       - ferroehr-pgdata:/var/lib/postgresql
     ports:
-      - "${FERROEHR_DB_PORT:-5432}:5432"
+      - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_DB_PORT:-5432}:5432"
     deploy:
       resources:
         limits:
@@ -88,6 +94,9 @@ services:
       start_period: 10s
 
   ferroehr:
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
     image: ${FERROEHR_IMAGE:-ghcr.io/rubentalstra/ferroehr:local}
     build:
       context: .
@@ -114,6 +123,13 @@ services:
       # the same failure mode as upstream's Tomcat admission window — instead
       # of shed errors tripping the stress envelope's error-rate arm.
       FERROEHR__SERVER__MAX_IN_FLIGHT: ${FERROEHR__SERVER__MAX_IN_FLIGHT:-256}
+      # Per-caller request-rate limiting. On by default, exactly as a
+      # production deployment runs it, so the functional catalogue exercises the
+      # real posture. The MEASUREMENT lanes turn it off (scripts/conformance.sh
+      # exports it when CONF_PERF_CLASS/CONF_STRESS is set): those instruments
+      # offer load past the knee on purpose, and a 429 there would measure the
+      # limiter instead of the server.
+      FERROEHR__SERVER__RATE_LIMIT__ENABLED: ${FERROEHR__SERVER__RATE_LIMIT__ENABLED:-true}
       # Version-signing toggle pass-through (measured comparison runs disable
       # it for throughput parity — upstream has no signing.)
       FERROEHR__SIGNING__ENABLED: ${FERROEHR__SIGNING__ENABLED:-true}
@@ -125,7 +141,7 @@ services:
       # Auto-discovered at config search-order position 4 (no pointer needed).
       - ./docker/ferroehr.dev.toml:/etc/ferroehr/ferroehr.toml:ro
     ports:
-      - "${FERROEHR_PORT:-8080}:8080"
+      - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_PORT:-8080}:8080"
     deploy:
       resources:
         limits:
@@ -157,6 +173,9 @@ services:
   # systems shaped like SNOMED CT and LOINC, under the reserved example.test
   # domain. No licensed terminology content is distributed with this repo.
   terminology:
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
     profiles: [terminology]
     # Digest-pinned hapiproject/hapi:v8.10.0-3 (current release), resolved
     # 2026-07-29; no `:latest` (docs.docker.com/build/building/best-practices).
@@ -177,7 +196,7 @@ services:
       SPRING_JPA_PROPERTIES_HIBERNATE_SEARCH_BACKEND_DIRECTORY_ROOT: target/lucenefiles
       SPRING_JPA_PROPERTIES_HIBERNATE_SEARCH_BACKEND_LUCENE_VERSION: lucene_current
     ports:
-      - "${FERROEHR_TERMINOLOGY_PORT:-8090}:8080"
+      - "${FERROEHR_BIND_HOST:-127.0.0.1}:${FERROEHR_TERMINOLOGY_PORT:-8090}:8080"
     deploy:
       resources:
         limits:
@@ -193,6 +212,9 @@ services:
   # `$validate-code` + `$expand` before exiting so a misconfigured server fails
   # here instead of inside a conformance run.
   terminology-seed:
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
     profiles: [terminology]
     # Digest-pinned curlimages/curl:8.19.0, resolved 2026-07-29.
     image: curlimages/curl:8.19.0@sha256:c03110c736db81bbe1be0296f1f1608c81b954b01626bdfb0a8f84e5bd00ff3c

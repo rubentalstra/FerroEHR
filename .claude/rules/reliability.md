@@ -95,6 +95,17 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   — never rely on it inside `else`; rewrite as `match` when the guard must
   span both arms. Tail-expression temporaries drop at end of block, before
   locals (temporary-tail-expr-scope.html) — same discipline.
+- **`#[source]` over an `Option<Arc<…>>` or `Option<Box<…>>` yields the SMART
+  POINTER as the source hop, not the error inside it** (verified first-hand on
+  the pinned 1.96.1 toolchain against this workspace's `thiserror` 2, while
+  landing #2115). The failure is invisible in a log — `Display` forwards, so the
+  chain reads correctly — and `downcast_ref::<sqlx::Error>()` returns `None`,
+  which is the entire point of carrying a cause, silently lost. A non-`Option`
+  `Box<dyn Error + Send + Sync>` derives correctly; the optional form must
+  hand-write `Display` + `Error` and return `self.source.as_deref()`. There is no
+  lint for this: the only thing that catches it is a test that DOWNCASTS to the
+  concrete error type rather than asserting `source().is_some()`, so a new
+  source-carrying error type gets one.
 - **`Result → Option` inside a chain is a DECISION, and it carries NO
   automated guard** (review-enforced; the honest no-guard record, issue
   #1733). `.filter_map(|x| f(x).ok())`, `.and_then(|x| f(x).ok())` and
@@ -229,6 +240,23 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   the `Default` impl. Enforcement (tier 4):
   `scripts/checks/default-style.sh` — per-edit via the `rust_fmt_clippy.sh`
   hook, per-PR via the `default-style` CI job (`--all`).
+- **The build pipeline is code, and it is analysed like code** (issue #2007,
+  audited against the OWASP GitHub Actions Security Cheat Sheet,
+  <https://cheatsheetseries.owasp.org/cheatsheets/GitHub_Actions_Security_Cheat_Sheet.html>).
+  Four properties hold across every workflow: every `uses:` is pinned to a full
+  commit SHA with its version in a trailing comment; `permissions: {}` at
+  workflow level with the minimum granted per job; `persist-credentials: false`
+  on every `actions/checkout` that does not use git against the remote; and no
+  context value is interpolated into a `run:` block — it arrives through `env:`.
+  A lane that PUBLISHES (a release, an image, a crate) additionally restores no
+  build cache, unless no untrusted run can write its cache keys and the proof is
+  recorded at the step. Enforcement (tier 4): the `zizmor` CI job over
+  `.github/workflows/` at `--min-severity=low` with online audits enabled — the
+  `unpinned-uses`, `excessive-permissions`, `artipacked`, `template-injection`,
+  `cache-poisoning` and `impostor-commit` rules are the failing checks — plus
+  CodeQL's `actions` language on every pull request. An accepted finding is an
+  inline `# zizmor: ignore[rule]` carrying its reason, never a silent
+  suppression.
 
 ## Recorded deviations from the API Guidelines (deliberate, owner-adjudicated)
 

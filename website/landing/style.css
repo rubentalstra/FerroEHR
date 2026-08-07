@@ -164,6 +164,7 @@ section { padding: clamp(3rem, 7vw, 5rem) 0; }
   letter-spacing: -0.01em;
 }
 .section-head p { color: var(--rs-muted); margin: 0; font-size: 1.05rem; }
+.section-cta { display: flex; justify-content: center; margin-top: 2.25rem; }
 .eyebrow {
   display: inline-block;
   text-transform: uppercase;

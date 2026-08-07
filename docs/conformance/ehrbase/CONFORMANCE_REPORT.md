@@ -1,18 +1,18 @@
 # Conformance Report
 
 SUT: ehrbase 2.34.0 · schedule cnf-2.0-w2 · ITS its-rest
-Runner: cnf-runner 3.11.0 · verification pack: passed
+Runner: cnf-runner 3.17.3 · verification pack: passed
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| passed | 143 |
-| failed | 144 |
-| errored | 232 |
+| passed | 158 |
+| failed | 155 |
+| errored | 311 |
 | skipped | 0 |
-| not_applicable | 248 |
-| total | 767 |
+| not_applicable | 425 |
+| total | 1049 |
 
 ## By chapter
 
@@ -20,51 +20,51 @@ Grouping is the published per-chapter chart's taxonomy: chapters with their band
 
 | Chapter / band | passed | failed | errored | cited n/a |
 | --- | --- | --- | --- | --- |
-| **EHR** | 104 | 50 | 111 | 60 |
-| — EHR resource | 18 | 5 | 1 | 2 |
-| — EHR_STATUS | 12 | 24 | 9 | 2 |
-| — COMPOSITION | 11 | 1 | 67 | 10 |
-| — DIRECTORY | 48 | 12 | 3 | 4 |
-| — CONTRIBUTION | 13 | 7 | 30 | 10 |
-| — Item tags | 0 | 0 | 0 | 30 |
+| **EHR** | 113 | 60 | 168 | 115 |
+| — EHR resource | 18 | 5 | 0 | 4 |
+| — EHR_STATUS | 14 | 27 | 3 | 7 |
+| — COMPOSITION | 11 | 1 | 103 | 19 |
+| — DIRECTORY | 61 | 13 | 1 | 8 |
+| — CONTRIBUTION | 7 | 13 | 60 | 16 |
+| — Item tags | 0 | 0 | 0 | 59 |
 | — Revision history | 2 | 1 | 1 | 2 |
-| **Definitions** | 21 | 23 | 20 | 24 |
-| — ADL 1.4 templates | 3 | 6 | 8 | 11 |
-| — ADL 2 artefacts | 2 | 7 | 11 | 9 |
+| **Definitions** | 25 | 24 | 26 | 27 |
+| — ADL 1.4 templates | 7 | 7 | 14 | 11 |
+| — ADL 2 artefacts | 2 | 7 | 11 | 12 |
 | — Stored queries | 16 | 10 | 1 | 4 |
-| **Query** | 11 | 3 | 21 | 1 |
-| — Ad-hoc AQL | 8 | 2 | 15 | 0 |
+| **Query** | 13 | 3 | 34 | 6 |
+| — Ad-hoc AQL | 10 | 2 | 28 | 5 |
 | — Stored query execution | 3 | 1 | 6 | 1 |
-| **Demographic** | 4 | 0 | 16 | 50 |
-| — Parties | 4 | 0 | 15 | 29 |
-| — Party relationships | 0 | 0 | 0 | 15 |
+| **Demographic** | 4 | 0 | 18 | 92 |
+| — Parties | 4 | 0 | 17 | 67 |
+| — Party relationships | 0 | 0 | 0 | 19 |
 | — Versioned party | 0 | 0 | 1 | 6 |
-| **Messaging** | 0 | 0 | 0 | 14 |
-| — EHR Extract | 0 | 0 | 0 | 10 |
-| — TDD | 0 | 0 | 0 | 4 |
-| **Admin** | 0 | 0 | 0 | 25 |
-| — Admin service | 0 | 0 | 0 | 19 |
-| — Archive | 0 | 0 | 0 | 4 |
-| — Dump & load | 0 | 0 | 0 | 2 |
+| **Messaging** | 0 | 0 | 0 | 48 |
+| — EHR Extract | 0 | 0 | 0 | 32 |
+| — TDD | 0 | 0 | 0 | 16 |
+| **Admin** | 0 | 0 | 0 | 56 |
+| — Admin service | 0 | 0 | 0 | 26 |
+| — Archive | 0 | 0 | 0 | 15 |
+| — Dump & load | 0 | 0 | 0 | 15 |
 | **System** | 0 | 0 | 1 | 0 |
 | — Conformance manifest | 0 | 0 | 1 | 0 |
 | **Content validation** | 0 | 67 | 56 | 0 |
 | — Data types | 0 | 15 | 37 | 0 |
 | — Interval data types | 0 | 11 | 19 | 0 |
 | — Structure & cardinality | 0 | 41 | 0 | 0 |
-| **Simplified formats** | 0 | 0 | 0 | 64 |
-| — FLAT & STRUCTURED | 0 | 0 | 0 | 21 |
+| **Simplified formats** | 0 | 0 | 0 | 71 |
+| — FLAT & STRUCTURED | 0 | 0 | 0 | 22 |
 | — Web Template | 0 | 0 | 0 | 5 |
-| — Path mapping | 0 | 0 | 0 | 30 |
-| — Scope & legacy media | 0 | 0 | 0 | 8 |
+| — Path mapping | 0 | 0 | 0 | 31 |
+| — Scope & legacy media | 0 | 0 | 0 | 13 |
 | **Security & privacy** | 3 | 0 | 2 | 1 |
 | — Authenticated access | 2 | 0 | 0 | 0 |
 | — Authorization separation | 0 | 0 | 0 | 1 |
 | — Audit accountability | 0 | 0 | 1 | 0 |
 | — Anonymous EHRs | 0 | 0 | 1 | 0 |
 | — EHR/demographic separation | 1 | 0 | 0 | 0 |
-| **Signing** | 0 | 1 | 5 | 6 |
-| — Version signing | 0 | 1 | 5 | 6 |
+| **Signing** | 0 | 1 | 6 | 6 |
+| — Version signing | 0 | 1 | 6 | 6 |
 | **SMART App Launch** | 0 | 0 | 0 | 3 |
 | — Discovery | 0 | 0 | 0 | 1 |
 | — Resource scopes | 0 | 0 | 0 | 2 |
@@ -76,18 +76,18 @@ Selected gating cases per claimed capability. `inconclusive` counts cases whose 
 
 | Capability | Evidence | passed | failed | inconclusive | unevidenced |
 | --- | --- | --- | --- | --- | --- |
-| Adl14ArchetypeProvisioning | not evidenced | 0 | 0 | 0 | 6 |
-| Adl14OptProvisioning | FAIL | 3 | 6 | 8 | 5 |
+| Adl14ArchetypeProvisioning | INCONCLUSIVE (errored rows — never green by absorption) | 4 | 0 | 6 | 1 |
+| Adl14OptProvisioning | FAIL | 3 | 7 | 8 | 5 |
 | QueryProvisioning | FAIL | 15 | 10 | 1 | 0 |
-| EhrOperations | FAIL | 18 | 2 | 0 | 2 |
-| EhrStatus | FAIL | 12 | 21 | 7 | 5 |
-| CompositionOps | INCONCLUSIVE (errored rows — never green by absorption) | 5 | 0 | 20 | 3 |
-| DirectoryOps | FAIL | 48 | 11 | 2 | 8 |
-| ChangeSets | FAIL | 13 | 6 | 28 | 5 |
-| Versioning | FAIL | 8 | 3 | 45 | 0 |
-| ArchetypeValidation | FAIL | 0 | 67 | 54 | 0 |
-| AqlBasic | FAIL | 6 | 2 | 11 | 0 |
-| AqlAdvanced | INCONCLUSIVE (errored rows — never green by absorption) | 0 | 0 | 2 | 0 |
+| EhrOperations | FAIL | 18 | 2 | 0 | 3 |
+| EhrStatus | FAIL | 14 | 26 | 3 | 5 |
+| CompositionOps | INCONCLUSIVE (errored rows — never green by absorption) | 5 | 0 | 51 | 2 |
+| DirectoryOps | FAIL | 61 | 13 | 1 | 8 |
+| ChangeSets | FAIL | 7 | 12 | 58 | 7 |
+| Versioning | FAIL | 8 | 3 | 50 | 4 |
+| ArchetypeValidation | FAIL | 0 | 67 | 54 | 4 |
+| AqlBasic | FAIL | 7 | 2 | 23 | 0 |
+| AqlAdvanced | INCONCLUSIVE (errored rows — never green by absorption) | 0 | 0 | 3 | 0 |
 | PhysicalDeletion | not evidenced | 0 | 0 | 0 | 2 |
 | DefinitionApi | FAIL | 0 | 1 | 0 | 0 |
 | EhrApi | FAIL | 1 | 1 | 0 | 0 |
@@ -137,24 +137,54 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 459 of 499 selected cases driven.
+Coverage: 568 of 613 selected cases driven.
 
 Not-executed verdicts (each cited):
 
 | Case | Citation |
 | --- | --- |
-| I_ADMIN_ARCHIVE.archive_ehrs-archive_selected | I_ADMIN_ARCHIVE.archive_ehrs: AMB-33 |
-| I_ADMIN_ARCHIVE.archive_ehrs-archive_unknown | I_ADMIN_ARCHIVE.archive_ehrs: AMB-33 |
-| I_ADMIN_ARCHIVE.archive_parties-archive_selected | I_ADMIN_ARCHIVE.archive_parties: AMB-33 |
-| I_ADMIN_ARCHIVE.archive_parties-archive_unknown | I_ADMIN_ARCHIVE.archive_parties: AMB-33 |
-| I_ADMIN_DUMP_LOAD.export_ehrs-export_all | I_ADMIN_DUMP_LOAD.export_ehrs: AMB-33 |
-| I_ADMIN_DUMP_LOAD.export_ehrs-export_formats | I_ADMIN_DUMP_LOAD.export_ehrs: AMB-33 |
-| I_ADMIN_SERVICE.composition_version_count-all | I_ADMIN_SERVICE.composition_version_count: AMB-33 |
-| I_ADMIN_SERVICE.composition_version_count-time_range | I_ADMIN_SERVICE.composition_version_count: AMB-33 |
-| I_ADMIN_SERVICE.contribution_count-all | I_ADMIN_SERVICE.contribution_count: AMB-33 |
-| I_ADMIN_SERVICE.contribution_count-time_range | I_ADMIN_SERVICE.contribution_count: AMB-33 |
-| I_ADMIN_SERVICE.list_contributions-all | I_ADMIN_SERVICE.list_contributions: AMB-33 |
-| I_ADMIN_SERVICE.list_contributions-time_range | I_ADMIN_SERVICE.list_contributions: AMB-33 |
+| I_ADMIN_ARCHIVE.archive_ehrs-archive_selected | extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_ARCHIVE.archive_ehrs-archive_twice | extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_ARCHIVE.archive_ehrs-archive_unknown | extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_ARCHIVE.archive_ehrs-empty_list | extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_ARCHIVE.archive_ehrs-forbidden | extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_ARCHIVE.archive_ehrs-malformed_id | extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_ARCHIVE.archive_ehrs-unauthenticated | extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_ARCHIVE.archive_parties-archive_selected | extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_ARCHIVE.archive_parties-archive_twice | extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_ARCHIVE.archive_parties-archive_unknown | extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_ARCHIVE.archive_parties-empty_list | extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_ARCHIVE.archive_parties-forbidden | extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_ARCHIVE.archive_parties-malformed_id | extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_ARCHIVE.archive_parties-relationship_id_refused | extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_ARCHIVE.archive_parties-unauthenticated | extension realization (admin-archive; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_DUMP_LOAD.export_ehrs-compression_7z | extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_DUMP_LOAD.export_ehrs-encoding_unrepresentable | extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_DUMP_LOAD.export_ehrs-export_all | extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_DUMP_LOAD.export_ehrs-export_formats | extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_DUMP_LOAD.export_ehrs-forbidden | extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_DUMP_LOAD.export_ehrs-format_not_a_member | extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_DUMP_LOAD.export_ehrs-logical_format_xml | extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_DUMP_LOAD.export_ehrs-no_location | extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_DUMP_LOAD.export_ehrs-segment_split_size_non_positive | extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_DUMP_LOAD.export_ehrs-unauthenticated | extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_DUMP_LOAD.load_ehrs-container_7z | extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_DUMP_LOAD.load_ehrs-container_zip | extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_DUMP_LOAD.load_ehrs-load_archive | extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_DUMP_LOAD.load_ehrs-logical_format_xml | extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_DUMP_LOAD.load_ehrs-no_location | extension realization (admin-dump-load; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_SERVICE.composition_version_count-all | extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_SERVICE.composition_version_count-interval_not_a_pair | extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_SERVICE.composition_version_count-time_range | extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_SERVICE.contribution_count-all | extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_SERVICE.contribution_count-forbidden | extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_SERVICE.contribution_count-interval_bound_not_iso | extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_SERVICE.contribution_count-time_range | extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_SERVICE.contribution_count-unauthenticated | extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_SERVICE.list_contributions-all | extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_SERVICE.list_contributions-non_content_service | extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_SERVICE.list_contributions-service_not_a_member | extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_SERVICE.list_contributions-time_range | extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
 | I_ADMIN_SERVICE.physical_ehr_delete-delete_all_cascade | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ADMIN_SERVICE.physical_ehr_delete-delete_all_malformed_id | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ADMIN_SERVICE.physical_ehr_delete-delete_all_subset | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
@@ -166,8 +196,9 @@ Not-executed verdicts (each cited):
 | I_ADMIN_SERVICE.physical_ehr_delete-delete_non_existing | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ADMIN_SERVICE.physical_party_delete-delete_existing | I_ADMIN_SERVICE.physical_party_delete: AMB-33 |
 | I_ADMIN_SERVICE.physical_party_delete-delete_non_existing | I_ADMIN_SERVICE.physical_party_delete: AMB-33 |
-| I_ADMIN_SERVICE.versioned_composition_count-all | I_ADMIN_SERVICE.versioned_composition_count: AMB-33 |
-| I_ADMIN_SERVICE.versioned_composition_count-time_range | I_ADMIN_SERVICE.versioned_composition_count: AMB-33 |
+| I_ADMIN_SERVICE.versioned_composition_count-all | extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_SERVICE.versioned_composition_count-interval_lower_after_upper | extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_ADMIN_SERVICE.versioned_composition_count-time_range | extension realization (admin-activity-report; AMB-33): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
 | I_DEFINITION_ADL14.delete_opt-delete_existing | I_DEFINITION_ADL14.delete_opt: AMB-17 |
 | I_DEFINITION_ADL14.delete_opt-delete_latest_version | I_DEFINITION_ADL14.delete_opt: AMB-17 |
 | I_DEFINITION_ADL14.delete_opt-delete_non_existing | I_DEFINITION_ADL14.delete_opt: AMB-17 |
@@ -177,14 +208,17 @@ Not-executed verdicts (each cited):
 | I_DEFINITION_ADL14.get_opt-example_type_output | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_DEFINITION_ADL14.get_opt-flat_not_acceptable | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_DEFINITION_ADL14.get_opt-retrieve_latest_version | option adl14-partial-id-latest: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
-| I_DEFINITION_ADL14.list_archetypes-unrealized | I_DEFINITION_ADL14.list_archetypes: AMB-41 |
+| I_DEFINITION_ADL14.upload_archetype-readonly_forbidden | the ixit declares no instance readonly — the case's flow addresses it with `on:` and this party runs no such deployment/principal; ISO/IEC 9646 test selection |
 | I_DEFINITION_ADL14.upload_opt-prefer_identifier | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
-| I_DEFINITION_ADL2.archetypes_count-unrealized | I_DEFINITION_ADL2.archetypes_count: AMB-37 |
-| I_DEFINITION_ADL2.artefacts_count-unrealized | I_DEFINITION_ADL2.artefacts_count: AMB-37 |
-| I_DEFINITION_ADL2.delete_artefact-existing | I_DEFINITION_ADL2.delete_artefact: AMB-37 |
-| I_DEFINITION_ADL2.delete_artefact-non_existing | I_DEFINITION_ADL2.delete_artefact: AMB-37 |
-| I_DEFINITION_ADL2.list_archetypes-unrealized | I_DEFINITION_ADL2.list_archetypes: AMB-37 |
-| I_DEFINITION_ADL2.list_artefacts-unrealized | I_DEFINITION_ADL2.list_artefacts: AMB-37 |
+| I_DEFINITION_ADL2.archetypes_count-empty | extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_DEFINITION_ADL2.artefacts_count-empty | extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_DEFINITION_ADL2.delete_artefact-existing | extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_DEFINITION_ADL2.delete_artefact-malformed_artefact_id | extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_DEFINITION_ADL2.delete_artefact-non_existing | extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_DEFINITION_ADL2.delete_artefact-readonly_forbidden | extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_DEFINITION_ADL2.list_archetypes-all | extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_DEFINITION_ADL2.list_archetypes-unauthenticated | extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_DEFINITION_ADL2.list_artefacts-all | extension realization (adl2-archetype; AMB-37): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
 | I_DEFINITION_ADL2.opts_count-unrealized | I_DEFINITION_ADL2.opts_count: AMB-37 |
 | I_DEFINITION_ADL2.templates_count-unrealized | I_DEFINITION_ADL2.templates_count: AMB-37 |
 | I_DEFINITION_ADL2.upload_artefact-prefer_identifier | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
@@ -192,23 +226,43 @@ Not-executed verdicts (each cited):
 | I_DEFINITION_QUERY.list_matching_queries-id_pattern | I_DEFINITION_QUERY.list_matching_queries: AMB-121 |
 | I_DEFINITION_QUERY.queries_count-count | I_DEFINITION_QUERY.queries_count: AMB-127 |
 | I_DEFINITION_QUERY.store_query-reserved_name | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.create_party-agent_contact_addresses_empty | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.create_party-agent_identities_empty | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.create_party-archetype_node_id_mismatch | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.create_party-archetype_root_missing | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.create_party-archetyped_content_accepted | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.create_party-capabilities_present_empty | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.create_party-client_supplied_uid | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.create_party-cluster_no_items | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.create_party-contacts_present_empty | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.create_party-group_contact_addresses_empty | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.create_party-group_identities_empty | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.create_party-identity_details_missing | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.create_party-identity_details_wrong_type | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.create_party-inline_relationships_verbatim | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.create_party-item_tag_wrapper_headers | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.create_party-organisation_contact_addresses_empty | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.create_party-organisation_identities_empty | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.create_party-paragraph_no_items | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.create_party-person_contact_addresses_empty | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.create_party-person_identities_empty | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.create_party-prefer_minimal | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.create_party-relationship_source_foreign_container | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.create_party-relationship_source_is_the_container | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.create_party-relationships_present_empty | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.create_party-return_identifier | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.create_party-role_contact_addresses_empty | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.create_party-role_identities_empty | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.create_party-roles_present_empty | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.create_party-simplified_content_type | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.create_party-version_lifecycle | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.create_party-wrong_subtype_body | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
-| I_DEMOGRAPHIC_SERVICE.create_party-xml | option party-xml-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.create_party-xml | option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.create_party_relationship-aaaa | extension realization (party-relationship; AMB-32): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.create_party_relationship-bbbb | extension realization (party-relationship; AMB-32): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.create_party_relationship-readonly_forbidden | extension realization (party-relationship; AMB-32): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.create_party_relationship-root_identity_mismatch | extension realization (party-relationship; AMB-32): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.create_party_relationship-unauthenticated | extension realization (party-relationship; AMB-32): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.delete_party-already_deleted | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.delete_party-stale_version_conflict | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.delete_party_relationship-aaaa | extension realization (party-relationship; AMB-32): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
@@ -226,75 +280,168 @@ Not-executed verdicts (each cited):
 | I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_time-bbbb | extension realization (party-relationship; AMB-32): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_version-aaaa | extension realization (party-relationship; AMB-32): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_version-bbbb | extension realization (party-relationship; AMB-32): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party-agent_cluster_no_items | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party-agent_contact_addresses_empty | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party-agent_identities_empty | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party-agent_valid | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party-cluster_no_items | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party-contact_addresses_empty | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party-contacts_present_empty | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party-group_cluster_no_items | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party-group_contact_addresses_empty | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party-group_identities_empty | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party-group_valid | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party-identities_empty | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.update_party-invalid_body | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.update_party-missing_if_match | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party-organisation_cluster_no_items | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party-organisation_contact_addresses_empty | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party-organisation_identities_empty | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party-organisation_valid | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party-paragraph_no_items | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.update_party-prefer_minimal | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party-role_cluster_no_items | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party-role_contact_addresses_empty | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party-role_identities_empty | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party-role_valid | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.update_party-unknown_container | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.update_party-unknown_preceding_version | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
-| I_DEMOGRAPHIC_SERVICE.update_party-xml | option party-xml-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party-xml | option party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.update_party_relationship-aaaa | extension realization (party-relationship; AMB-32): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.update_party_relationship-bbbb | extension realization (party-relationship; AMB-32): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.update_party_relationship-invalid_body | extension realization (party-relationship; AMB-32): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.update_party_relationship-missing_if_match | extension realization (party-relationship; AMB-32): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_DEMOGRAPHIC_SERVICE.update_party_relationship-root_identity_mismatch | extension realization (party-relationship; AMB-32): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.versioned_party_version_at_time | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_DEMOGRAPHIC_SERVICE.versioned_party_version_unknown | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_EHR_COMPOSITION.create_composition-audit_system_id_declared | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_EHR_COMPOSITION.create_composition-item_tag_wrapper_headers | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_EHR_COMPOSITION.create_composition-return_identifier | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_EHR_COMPOSITION.create_composition-terminology_binding_member | instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection |
+| I_EHR_COMPOSITION.create_composition-terminology_binding_non_member | instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection |
+| I_EHR_COMPOSITION.create_composition-terminology_binding_unresolvable_fail_closed | the ixit declares no instance sut_pgp — the case's flow addresses it with `on:` and this party runs no such deployment/principal; ISO/IEC 9646 test selection |
+| I_EHR_COMPOSITION.create_composition-terminology_binding_unresolvable_fail_open | instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection |
+| I_EHR_COMPOSITION.delete_composition-contradictory_lifecycle_header | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_EHR_COMPOSITION.get_composition_at_time-simplified_forms | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_EHR_COMPOSITION.get_composition_latest-simplified_forms | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_EHR_COMPOSITION.get_composition_latest-xml_namespace_v1 | option xml-namespace-negotiated: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_EHR_COMPOSITION.get_composition_latest-xml_namespace_v2 | option xml-namespace-negotiated: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_EHR_COMPOSITION.get_versioned_composition-branch_version_uid | requires.import provisions over the message-extract extension routes (AMB-34): the ICS claims none of the capabilities those routes' cases gate (EhrExtract, MessageApi), and no openEHR specification governs them, so the received version this case reads cannot exist here — ISO/IEC 9646 test selection |
+| I_EHR_COMPOSITION.get_versioned_composition-imported_version | requires.import provisions over the message-extract extension routes (AMB-34): the ICS claims none of the capabilities those routes' cases gate (EhrExtract, MessageApi), and no openEHR specification governs them, so the received version this case reads cannot exist here — ISO/IEC 9646 test selection |
+| I_EHR_COMPOSITION.get_versioned_composition-imported_version_xml_root | requires.import provisions over the message-extract extension routes (AMB-34): the ICS claims none of the capabilities those routes' cases gate (EhrExtract, MessageApi), and no openEHR specification governs them, so the received version this case reads cannot exist here — ISO/IEC 9646 test selection |
 | I_EHR_COMPOSITION.update_composition-audit_system_id | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_EHR_COMPOSITION.update_composition-flat | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_EHR_COMPOSITION.update_composition-return_identifier | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_EHR_COMPOSITION.update_composition-structured | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_EHR_CONTRIBUTION.commit_contribution-attest_imported_version | requires.import provisions over the message-extract extension routes (AMB-34): the ICS claims none of the capabilities those routes' cases gate (EhrExtract, MessageApi), and no openEHR specification governs them, so the received version this case reads cannot exist here — ISO/IEC 9646 test selection |
 | I_EHR_CONTRIBUTION.commit_contribution-demographic | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_EHR_CONTRIBUTION.commit_contribution-demographic_client_uid | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_EHR_CONTRIBUTION.commit_contribution-demographic_invalid_change_types | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_EHR_CONTRIBUTION.commit_contribution-imported_version_member | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_EHR_CONTRIBUTION.commit_contribution-imported_version_type | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_EHR_CONTRIBUTION.commit_contribution-member_without_lifecycle_state | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_EHR_CONTRIBUTION.commit_contribution-merge_provenance_member | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_EHR_CONTRIBUTION.commit_contribution-return_identifier | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_EHR_CONTRIBUTION.get_contribution-demographic_unknown | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_EHR_CONTRIBUTION.get_contribution-import_contribution | requires.import provisions over the message-extract extension routes (AMB-34): the ICS claims none of the capabilities those routes' cases gate (EhrExtract, MessageApi), and no openEHR specification governs them, so the received version this case reads cannot exist here — ISO/IEC 9646 test selection |
 | I_EHR_CONTRIBUTION.list_contributions-ehr_containing_directory | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
 | I_EHR_CONTRIBUTION.list_contributions-ehr_containing_ehr_status | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
 | I_EHR_CONTRIBUTION.list_contributions-empty | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
 | I_EHR_CONTRIBUTION.list_contributions-non_existing_ehr | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
 | I_EHR_CONTRIBUTION.list_contributions-post_commit | I_EHR_CONTRIBUTION.list_contributions: AMB-22 |
+| I_EHR_DIRECTORY.create_directory-invalid_item_tag_header | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_EHR_DIRECTORY.create_directory-item_tag_wrapper_header | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_EHR_DIRECTORY.create_directory-xml | option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_EHR_DIRECTORY.get_directory-xml_not_acceptable | option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_EHR_DIRECTORY.get_versioned_directory-bad_ehr | I_EHR_DIRECTORY.get_versioned_directory: AMB-24 |
 | I_EHR_DIRECTORY.get_versioned_directory-directory_with_two_versions | I_EHR_DIRECTORY.get_versioned_directory: AMB-24 |
 | I_EHR_DIRECTORY.get_versioned_directory-empty_ehr | I_EHR_DIRECTORY.get_versioned_directory: AMB-24 |
-| I_EHR_EXTRACT_SERVICE.export_ehr_extracts-by_spec | I_EHR_EXTRACT_SERVICE.export_ehr_extracts: AMB-34 |
-| I_EHR_EXTRACT_SERVICE.export_ehr_extracts-empty_result | I_EHR_EXTRACT_SERVICE.export_ehr_extracts: AMB-34 |
-| I_EHR_EXTRACT_SERVICE.export_ehrs-export_existing | I_EHR_EXTRACT_SERVICE.export_ehrs: AMB-34 |
-| I_EHR_EXTRACT_SERVICE.export_ehrs-export_unknown | I_EHR_EXTRACT_SERVICE.export_ehrs: AMB-34 |
-| I_EHR_EXTRACT_SERVICE.import_ehr-duplicate | I_EHR_EXTRACT_SERVICE.import_ehr: AMB-34 |
-| I_EHR_EXTRACT_SERVICE.import_ehr-new | I_EHR_EXTRACT_SERVICE.import_ehr: AMB-34 |
-| I_EHR_EXTRACT_SERVICE.import_ehr-with_id | I_EHR_EXTRACT_SERVICE.import_ehr: AMB-34 |
-| I_EHR_EXTRACT_SERVICE.import_ehr_extract-into_existing | I_EHR_EXTRACT_SERVICE.import_ehr_extract: AMB-34 |
-| I_EHR_EXTRACT_SERVICE.import_ehr_extract-invalid | I_EHR_EXTRACT_SERVICE.import_ehr_extract: AMB-34 |
-| I_EHR_EXTRACT_SERVICE.import_ehr_extract-unknown_ehr | I_EHR_EXTRACT_SERVICE.import_ehr_extract: AMB-34 |
+| I_EHR_DIRECTORY.update_directory-xml | option directory-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.export_ehr_extracts-by_spec | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.export_ehr_extracts-criteria_foreign_formalism | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.export_ehr_extracts-criteria_selects_primary_set | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.export_ehr_extracts-empty_manifest | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.export_ehr_extracts-latest_across_lineages | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.export_ehr_extracts-readonly_allowed | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.export_ehr_extracts-spec_named_extract_type | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.export_ehr_extracts-term_coded_extract_type | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.export_ehr_extracts-unknown_ehr | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.export_ehr_extracts-unknown_extract_type | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.export_ehr_extracts-unresolvable_entity | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.export_ehrs-export_existing | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.export_ehrs-export_unknown | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.export_ehrs-malformed_ehr_id | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.export_ehrs-reexport_of_an_import | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.export_ehrs-unauthenticated | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.import_ehr-duplicate | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.import_ehr-local_chronology | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.import_ehr-malformed | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.import_ehr-new | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.import_ehr-with_id | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.import_ehr-wrong_media | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.import_ehr_extract-append_later_trunk_version | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.import_ehr_extract-cluster_no_items | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.import_ehr_extract-into_branched_lineage | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.import_ehr_extract-into_existing | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.import_ehr_extract-invalid | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.import_ehr_extract-manifest_no_entities | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.import_ehr_extract-paragraph_no_items | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.import_ehr_extract-readonly_forbidden | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.import_ehr_extract-second_status | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_EXTRACT_SERVICE.import_ehr_extract-unknown_ehr | extension realization (message-extract; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_EHR_SERVICE.create_ehr-clone_system_id | the ixit declares no system_id — the case reads it as ${ixit:…} and no released operation discloses the value; ISO/IEC 9646 test selection |
 | I_EHR_SERVICE.create_ehr-return_identifier | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_EHR_SERVICE.create_ehr-xml | option ehr-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_EHR_SERVICE.get_ehr-xml_not_acceptable | option ehr-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_EHR_STATUS.clear_ehr_modifiable-xml_body | option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_EHR_STATUS.clear_ehr_queryable-xml_body | option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_EHR_STATUS.get_ehr_status-xml_not_acceptable | option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_EHR_STATUS.get_versioned_ehr_status-imported_version | requires.import provisions over the message-extract extension routes (AMB-34): the ICS claims none of the capabilities those routes' cases gate (EhrExtract, MessageApi), and no openEHR specification governs them, so the received version this case reads cannot exist here — ISO/IEC 9646 test selection |
+| I_EHR_STATUS.set_ehr_modifiable-xml_body | option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_EHR_STATUS.set_ehr_queryable-return_identifier | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_EHR_STATUS.set_ehr_queryable-xml_body | option ehr-status-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.agent_tags_delete-key_scoped | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.agent_tags_delete-unknown_key | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.agent_tags_get-unknown_container | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.agent_tags_update-non_array_body | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.agent_tags_update-unknown_container | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.composition_tags_delete-key_scoped | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.composition_tags_delete-second_delete_not_found | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.composition_tags_delete-unknown_key | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.composition_tags_delete-version_container_disjoint | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.composition_tags_get-container_target_shape | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.composition_tags_get-cross_space_party_uid | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.composition_tags_get-supersession_does_not_move_tags | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.composition_tags_get-version_target_shape | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.composition_tags_get-xml_not_acceptable | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.composition_tags_update-duplicate_identity_last_wins | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.composition_tags_update-empty_target_path_absent | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.composition_tags_update-empty_value_invariant | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.composition_tags_update-key_target_path_identity | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.composition_tags_update-no_reversioning | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.composition_tags_update-non_array_body | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.composition_tags_update-prefer_identifier | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.composition_tags_update-unknown_container | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.composition_tags_update-version_container_disjoint | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.composition_tags_update-wrong_media | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.demographic_tags_get-space_wide_listing | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.ehr_status_tags_delete-key_scoped | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.ehr_status_tags_delete-wrong_kind_uid | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.ehr_status_tags_get-wrong_kind_uid | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.ehr_status_tags_update-key_target_path_identity | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.ehr_status_tags_update-non_array_body | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.ehr_status_tags_update-wrong_kind_uid | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.ehr_tags_get-ehr_wide_listing | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.ehr_tags_get-unknown_ehr | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.group_tags_delete-key_scoped | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.group_tags_delete-unknown_key | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.group_tags_get-unknown_container | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.group_tags_update-non_array_body | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.group_tags_update-unknown_container | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.organisation_tags_delete-key_scoped | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.organisation_tags_delete-wrong_kind_uid | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.organisation_tags_get-wrong_kind_uid | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.organisation_tags_update-non_array_body | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.organisation_tags_update-wrong_kind_uid | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.person_tags_delete-key_scoped | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.person_tags_delete-unknown_key | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
@@ -302,21 +449,44 @@ Not-executed verdicts (each cited):
 | I_ITS_REST_ITEM_TAGS.person_tags_get-container_target_shape | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.person_tags_get-cross_space_composition_uid | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.person_tags_get-version_target_shape | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.person_tags_update-empty_target_path_absent | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.person_tags_update-key_target_path_identity | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.person_tags_update-non_array_body | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.person_tags_update-unknown_container | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_ITEM_TAGS.person_tags_update-version_container_disjoint | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.role_tags_delete-key_scoped | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.role_tags_delete-unknown_key | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.role_tags_get-unknown_container | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.role_tags_update-non_array_body | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| I_ITS_REST_ITEM_TAGS.role_tags_update-unknown_container | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_REVISION_HISTORY.versioned_party_revision_history-two_versions | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_REVISION_HISTORY.versioned_party_revision_history-unknown_container | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_VERSIONED_PARTY.versioned_party_get-container_shape | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_VERSIONED_PARTY.versioned_party_get-unknown_container | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | I_ITS_REST_VERSIONED_PARTY.versioned_party_get-xml | option versioned-party-xml-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | I_ITS_REST_VERSIONED_PARTY.versioned_party_get-xml_not_acceptable | option versioned-party-xml-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| I_QUERY_SERVICE.execute_ad_hoc_query-terminology_routed_expand_filters | instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection |
+| I_QUERY_SERVICE.execute_ad_hoc_query-terminology_routed_validate_member | instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection |
+| I_QUERY_SERVICE.execute_ad_hoc_query-terminology_routed_validate_non_member | instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection |
+| I_QUERY_SERVICE.execute_ad_hoc_query-terminology_subsumes | instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection |
+| I_QUERY_SERVICE.execute_ad_hoc_query-terminology_two_servers | instance sut: the ixit declares no `terminology` posture — the case needs a deployment wired to a terminology query server (BASE master12 §Binding Terminology Value-sets to Archetypes), and no released operation discloses one; ISO/IEC 9646 test selection |
 | I_QUERY_SERVICE.execute_stored_query-reserved_name | case version floor unmet (rm >=1.0.2, aql >=1.1, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
-| I_TDD_SERVICE.import_tdd-invalid | I_TDD_SERVICE.import_tdd: AMB-34 |
-| I_TDD_SERVICE.import_tdd-valid | I_TDD_SERVICE.import_tdd: AMB-34 |
-| I_TDD_SERVICE.import_tdds-bulk_invalid | I_TDD_SERVICE.import_tdds: AMB-34 |
-| I_TDD_SERVICE.import_tdds-bulk_valid | I_TDD_SERVICE.import_tdds: AMB-34 |
+| I_TDD_SERVICE.import_tdd-invalid | extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_TDD_SERVICE.import_tdd-nonconforming_body | extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_TDD_SERVICE.import_tdd-readonly_forbidden | extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_TDD_SERVICE.import_tdd-unauthenticated | extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_TDD_SERVICE.import_tdd-unknown_ehr | extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_TDD_SERVICE.import_tdd-unprovisioned_template | extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_TDD_SERVICE.import_tdd-valid | extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_TDD_SERVICE.import_tdd-wrong_media | extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_TDD_SERVICE.import_tdds-atomicity_state_proof | extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_TDD_SERVICE.import_tdds-bulk_invalid | extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_TDD_SERVICE.import_tdds-bulk_valid | extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_TDD_SERVICE.import_tdds-empty_batch | extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_TDD_SERVICE.import_tdds-empty_batch_unknown_ehr | extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_TDD_SERVICE.import_tdds-nonconforming_body | extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_TDD_SERVICE.import_tdds-unknown_ehr | extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
+| I_TDD_SERVICE.import_tdds-wrong_media | extension realization (message-tdd; AMB-34): the ICS claims none of this case's capabilities, and no openEHR specification governs the route — ISO/IEC 9646 test selection |
 | SEC-AUTHORIZATION_SEPARATION-readonly_write_denied | the ixit declares no instance readonly — the case's flow addresses it with `on:` and this party runs no such deployment/principal; ISO/IEC 9646 test selection |
 | SF-CONTRIB-flat_commit | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | SF-CONTRIB-flat_read | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
@@ -325,11 +495,14 @@ Not-executed verdicts (each cited):
 | SF-CTX-composer_name | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | SF-CTX-composer_self | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | SF-CTX-missing_mandatory | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| SF-CTX-participation_missing_function | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | SF-CTX-participations_forms | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | SF-CTX-vocabulary_mapping | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | SF-DEPRECATED-accept_unsupported | option sf-deprecated-types-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | SF-DEPRECATED-media_supported | option sf-deprecated-types-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | SF-DEPRECATED-media_unsupported | option sf-deprecated-types-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| SF-DEPRECATED-structured_accept_unsupported | option sf-deprecated-types-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| SF-DEPRECATED-structured_media_unsupported | option sf-deprecated-types-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | SF-EXAMPLE-accept_forms | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | SF-EXAMPLE-roundtrip | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | SF-EXAMPLE-unsupported_accept | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
@@ -337,6 +510,7 @@ Not-executed verdicts (each cited):
 | SF-FLAT-adl2_commit | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | SF-FLAT-adl2_reject_cardinality | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | SF-FLAT-commit_roundtrip_ctx_defaults | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| SF-FLAT-malformed_path | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | SF-FLAT-missing_template_id | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | SF-FLAT-reject_cardinality | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | SF-FLAT-reject_datatype_mismatch | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
@@ -346,8 +520,11 @@ Not-executed verdicts (each cited):
 | SF-FLAT-reject_unknown_field | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | SF-INDEX-multi_event_commit | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | SF-INDEX-semantics | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
+| SF-LEGACY-nc_flat_accept_unsupported | option legacy-alt-formats-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| SF-LEGACY-nc_flat_media_supported | option legacy-alt-formats-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | SF-LEGACY-nc_flat_media_unsupported | option legacy-alt-formats-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | SF-LEGACY-tds2_accept_unsupported | option legacy-alt-formats-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| SF-LEGACY-tds2_media_unsupported | option legacy-alt-formats-unsupported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
 | SF-LEVELS-collapsed_wrappers | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | SF-LEVELS-container_attribute_elision | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |
 | SF-LEVELS-lab_panel_example | case version floor unmet (rm >=1.0.2, its_rest >=1.1.0) — the party's declared spec versions do not satisfy the case's applies ranges; ISO/IEC 9646 test selection |

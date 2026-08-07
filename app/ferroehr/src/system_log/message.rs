@@ -191,7 +191,7 @@ impl AuditMessage {
         }
 
         w.write_event(Event::End(BytesEnd::new("AuditMessage")))?;
-        String::from_utf8(w.into_inner()).map_err(|e| AuditError::Xml(e.to_string()))
+        String::from_utf8(w.into_inner()).map_err(|e| AuditError::Xml(Box::new(e)))
     }
 }
 

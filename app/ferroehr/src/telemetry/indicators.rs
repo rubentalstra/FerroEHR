@@ -39,7 +39,14 @@ impl HealthIndicator for DbHealth {
     async fn check(&self) -> Health {
         match sqlx::query("SELECT 1").execute(&self.pool).await {
             Ok(_) => Health::up(),
-            Err(e) => Health::down(format!("database ping failed: {e}")),
+            Err(e) => {
+                // The health family is UNAUTHENTICATED by design (orchestrator
+                // probes), and an `sqlx::Error` Display can name the DSN host,
+                // the database, the role, or SQL text. The operator reads the
+                // cause here; the wire gets the fact alone.
+                tracing::error!(error = %e, "health: database ping failed");
+                Health::down("database ping failed")
+            }
         }
     }
 }
@@ -74,7 +81,10 @@ impl HealthIndicator for MigrationsHealth {
         {
             Ok(true) => Health::up(),
             Ok(false) => Health::down("core schema tables missing (migrations not applied)"),
-            Err(e) => Health::down(format!("migration check failed: {e}")),
+            Err(e) => {
+                tracing::error!(error = %e, "health: migration check failed");
+                Health::down("migration check failed")
+            }
         }
     }
 }
@@ -151,5 +161,51 @@ impl HealthIndicator for EventsHealth {
 
     fn required(&self) -> bool {
         false
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{DbHealth, MigrationsHealth};
+    use crate::telemetry::health::{HealthIndicator, HealthStatus};
+
+    /// A failing database probe must report the FACT and nothing else.
+    ///
+    /// The health family is always-on and unauthenticated (orchestrator probes),
+    /// and an `sqlx::Error` Display can carry the DSN host, the database name and
+    /// the connecting role. This forces a real connection failure — a pool
+    /// pointed at a port nothing listens on — and asserts the served detail
+    /// carries none of it.
+    #[tokio::test]
+    async fn a_failing_db_probe_discloses_no_connection_detail() {
+        // Deliberately unreachable, and deliberately full of things that must not
+        // appear on the wire: a role, a password, a host and a database name.
+        let dsn = "postgres://secret_role:secret_password@127.0.0.1:1/secret_database";
+        let pool = sqlx::postgres::PgPoolOptions::new()
+            .acquire_timeout(std::time::Duration::from_millis(500))
+            .connect_lazy(dsn)
+            .expect("a lazy pool over a syntactically valid DSN should build");
+
+        for health in [
+            DbHealth::new(pool.clone()).check().await,
+            MigrationsHealth::new(pool).check().await,
+        ] {
+            assert_eq!(health.status, HealthStatus::Down);
+            let detail = health.detail.unwrap_or_default();
+            for leaked in [
+                "secret_role",
+                "secret_password",
+                "secret_database",
+                "127.0.0.1",
+                "postgres://",
+                "SELECT",
+                "to_regclass",
+            ] {
+                assert!(
+                    !detail.contains(leaked),
+                    "the unauthenticated health detail must not contain {leaked:?}: {detail:?}"
+                );
+            }
+        }
     }
 }

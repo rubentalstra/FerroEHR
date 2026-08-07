@@ -6,7 +6,6 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-authors.workspace = true
 documentation.workspace = true
 readme.workspace = true
 keywords.workspace = true
@@ -30,6 +29,19 @@ axum-server = { workspace = true }
 rustls = { workspace = true }
 tower = { workspace = true }
 tower-http = { workspace = true }
+# Per-caller request-rate limiting (GCRA via `governor`) — the OWASP REST
+# Security control; never hand-rolled.
+tower_governor = { workspace = true }
+# hyper's connection builder, reached through `axum_server::http_builder()` to
+# set the HTTP/1 and HTTP/2 connection-level bounds.
+hyper-util = { workspace = true }
+# WHATWG-conformant query-string pair splitting + decoding. Already in the graph
+# via `url`; named here because this crate uses it directly.
+form_urlencoded = { workspace = true }
+# `tower_governor` does not re-export the `governor` middleware marker its own
+# builder returns (`StateInformationMiddleware`, the `x-ratelimit-*` variant), so
+# the underlying crate is named directly to spell the layer type.
+governor = { workspace = true }
 http = { workspace = true }
 bytes = { workspace = true }
 async-trait = { workspace = true }

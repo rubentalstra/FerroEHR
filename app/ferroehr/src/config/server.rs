@@ -77,6 +77,233 @@ pub struct ServerConfig {
     /// `[server.tls]` — native TLS termination + client-certificate
     /// authentication (the IHE ATNA ITI-19 node-authentication posture).
     pub tls: TlsConfig,
+    /// `[server.limits]` — the accepted request-body sizes.
+    pub limits: BodyLimits,
+    /// `[server.rate_limit]` — per-caller request rates.
+    pub rate_limit: RateLimitConfig,
+    /// `[server.connection]` — connection-level bounds, before a request exists.
+    pub connection: ConnectionConfig,
+}
+
+/// `[server.connection]` — the bounds that apply BEFORE a request exists.
+///
+/// Every other limit in this configuration engages once a request has been
+/// parsed and dispatched: the body limit, the request timeout, the rate limiter,
+/// the in-flight shed. A client that opens a socket and then trickles request
+/// headers reaches none of them, and costs itself almost nothing while holding a
+/// connection — the slow-HTTP shape the OWASP Denial of Service Cheat Sheet
+/// names under "minimum ingress rate threshold". This block is where that is
+/// bounded.
+///
+/// No openEHR spec governs connection handling — our own design.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct ConnectionConfig {
+    /// How long a connection may take to deliver its complete request head, in
+    /// seconds; `0` disables the bound (hyper's default — no limit).
+    ///
+    /// Applies to both listeners. Ten seconds is far longer than any real client
+    /// needs to write a request head on a working link, and short enough that a
+    /// stalled connection is reclaimed rather than parked.
+    ///
+    /// HTTP/1 only, because it is an HTTP/1 concept — an HTTP/2 request head
+    /// arrives in HEADERS frames on a multiplexed connection. The HTTP/2 side is
+    /// bounded by [`Self::max_concurrent_streams`] and the keep-alive pair below.
+    pub header_read_timeout_secs: u64,
+    /// The most HTTP/2 streams one connection may have open at once; `0` leaves
+    /// hyper's default.
+    ///
+    /// This is HTTP/2's equivalent exposure, and a sharper one: a peer that opens
+    /// streams and immediately cancels them makes the server do request setup
+    /// work at almost no cost to itself — the amplification behind CVE-2023-44487
+    /// ("HTTP/2 Rapid Reset"). Bounding concurrency bounds the work in flight per
+    /// connection.
+    pub max_concurrent_streams: u32,
+    /// Interval between HTTP/2 keep-alive PINGs, in seconds; `0` disables them.
+    ///
+    /// Without a ping, a connection whose peer has vanished without a FIN is held
+    /// until the OS notices, which can be a very long time. With one, a dead peer
+    /// is detected in [`Self::http2_keep_alive_timeout_secs`] and the connection
+    /// released.
+    pub http2_keep_alive_interval_secs: u64,
+    /// How long to wait for a keep-alive PING response before closing the
+    /// connection, in seconds.
+    pub http2_keep_alive_timeout_secs: u64,
+}
+
+impl Default for ConnectionConfig {
+    fn default() -> Self {
+        Self {
+            header_read_timeout_secs: 10,
+            // 256 concurrent streams per connection: two orders of magnitude
+            // above what a real client multiplexes, and a hard bound on the
+            // rapid-reset amplification. hyper's own default is 200 for
+            // comparison; this is set explicitly so it is a decision rather
+            // than an inherited value.
+            max_concurrent_streams: 256,
+            http2_keep_alive_interval_secs: 30,
+            http2_keep_alive_timeout_secs: 10,
+        }
+    }
+}
+
+impl ConnectionConfig {
+    /// The header-read bound as a [`std::time::Duration`], or `None` when
+    /// disabled.
+    #[must_use]
+    pub const fn header_read_timeout(&self) -> Option<std::time::Duration> {
+        if self.header_read_timeout_secs > 0 {
+            Some(std::time::Duration::from_secs(
+                self.header_read_timeout_secs,
+            ))
+        } else {
+            None
+        }
+    }
+
+    /// The HTTP/2 stream-concurrency bound, or `None` to leave hyper's default.
+    #[must_use]
+    pub const fn stream_cap(&self) -> Option<u32> {
+        if self.max_concurrent_streams > 0 {
+            Some(self.max_concurrent_streams)
+        } else {
+            None
+        }
+    }
+
+    /// The HTTP/2 keep-alive interval, or `None` when disabled.
+    #[must_use]
+    pub const fn http2_keep_alive_interval(&self) -> Option<std::time::Duration> {
+        if self.http2_keep_alive_interval_secs > 0 {
+            Some(std::time::Duration::from_secs(
+                self.http2_keep_alive_interval_secs,
+            ))
+        } else {
+            None
+        }
+    }
+
+    /// The HTTP/2 keep-alive response deadline.
+    #[must_use]
+    pub const fn http2_keep_alive_timeout(&self) -> std::time::Duration {
+        std::time::Duration::from_secs(self.http2_keep_alive_timeout_secs)
+    }
+}
+
+/// `[server.rate_limit]` — the two-tier request-rate ceiling.
+///
+/// Rate limiting answers a different question from the load shed
+/// ([`ServerConfig::max_in_flight`]), and an operator must be able to tell them
+/// apart from the status alone:
+///
+/// - the **shed** protects *capacity*: too many requests in flight AT ONCE, from
+///   anyone, and the excess is refused `503` + `Retry-After` (RFC 9110 §15.6.4);
+/// - the **limiter** protects *fairness*: one caller asking too often OVER TIME,
+///   refused `429` + `Retry-After` (RFC 6585 §4, the status the OWASP REST
+///   Security Cheat Sheet names for this control).
+///
+/// Two tiers, because they defend different things. The **address** tier sits
+/// outside authentication, so a flood of unauthenticated requests is refused
+/// before it can make the server verify a signature per request — the limiter
+/// must not itself be the expensive path. The **principal** tier sits inside
+/// authentication, keyed on the authenticated subject, which is the only fair
+/// key for a clinical API: a hospital behind one NAT is a single address, so an
+/// address-keyed clinical limit would throttle a whole site for one busy client.
+///
+/// Both defaults are derived from this implementation's own measured ceiling
+/// rather than chosen: the committed step-load record
+/// (`docs/conformance/ferroehr/stress.json`) puts maximum sustainable
+/// whole-server throughput at 512 requests/second on the reference SUT. The
+/// principal tier is set at twice that and the address tier at four times, so
+/// neither can refuse a caller until it is asking for more than the entire
+/// server could serve — below that line, capacity is the shed's job, and above
+/// it the traffic is not a client. A deployment that earns a higher volumetric
+/// class raises both in proportion.
+///
+/// No openEHR spec governs request rates — our own design.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct RateLimitConfig {
+    /// Whether rate limiting is active. Off disables both tiers entirely — no
+    /// limiter state is allocated and no request pays a check.
+    pub enabled: bool,
+    /// Sustained requests per second allowed per authenticated principal, on
+    /// the clinical API subtree.
+    pub principal_per_second: u64,
+    /// How far a principal may burst above [`Self::principal_per_second`]
+    /// before refusal.
+    pub principal_burst: u32,
+    /// Sustained requests per second allowed per client address, across the
+    /// whole tree including the always-on public health family.
+    pub address_per_second: u64,
+    /// How far one address may burst above [`Self::address_per_second`].
+    pub address_burst: u32,
+}
+
+impl Default for RateLimitConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            principal_per_second: 1024,
+            principal_burst: 2048,
+            address_per_second: 2048,
+            address_burst: 4096,
+        }
+    }
+}
+
+/// `[server.limits]` — the largest request body each route family accepts.
+///
+/// Two tiers, because the payloads differ by more than an order of magnitude.
+/// `body_bytes` governs the ordinary clinical surface; `bulk_body_bytes`
+/// governs the routes that accept bulk by design — operational-template
+/// upload, EHR-Extract import, and TDD import. A request over its tier's limit
+/// is refused `413 Payload Too Large`: not in the ITS-REST status table, but
+/// admitted there as an additional, non-conflicting code
+/// (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Requests_and_responses.md`
+/// §HTTP status codes) and the code RFC 9110 §15.5.14 defines for exactly this
+/// refusal. No openEHR spec bounds a request body — our own design.
+///
+/// The defaults are sized against measured payloads rather than round numbers.
+/// The largest operational template in the vendored CKM corpus is 5.4 MB
+/// (`congenital-syphilis-case-investigation-form.opt`) and the largest example
+/// composition 526 KB, so the 16 MiB clinical tier clears the largest real
+/// template roughly threefold. The bulk tier is four times that, for payloads
+/// with no published bound: a whole-EHR extract, or a TDD batch. A deployment
+/// whose compositions embed large `DV_MULTIMEDIA` data — a base64 radiology
+/// image can exceed either tier on its own — raises `body_bytes`; that is a
+/// deliberate operator decision, not a default.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct BodyLimits {
+    /// The largest body the ordinary clinical surface accepts, in bytes.
+    pub body_bytes: usize,
+    /// The largest body the bulk-upload routes accept, in bytes (template
+    /// upload, `/message/import`, `/message/tdd`).
+    pub bulk_body_bytes: usize,
+}
+
+impl Default for BodyLimits {
+    fn default() -> Self {
+        Self {
+            body_bytes: 16 * 1024 * 1024,
+            bulk_body_bytes: 64 * 1024 * 1024,
+        }
+    }
+}
+
+impl BodyLimits {
+    /// Returns the ceiling across every tier — the limit the outermost layer
+    /// enforces, so that no request can exceed the most permissive tier
+    /// whatever path it names.
+    #[must_use]
+    pub const fn ceiling(&self) -> usize {
+        if self.bulk_body_bytes > self.body_bytes {
+            self.bulk_body_bytes
+        } else {
+            self.body_bytes
+        }
+    }
 }
 
 /// Client-certificate (mutual-TLS) policy for the main listener.
@@ -117,6 +344,37 @@ pub struct TlsConfig {
     /// (`FERROEHR__SERVER__TLS__CLIENT_CA_FILE`). Required when `client_auth`
     /// is not `off` — an explicit trust anchor, never the web PKI.
     pub client_ca_file: Option<String>,
+    /// The lowest TLS version this listener will negotiate
+    /// (`FERROEHR__SERVER__TLS__MIN_VERSION`): `"1.3"` (default) or `"1.2"`.
+    pub min_version: TlsVersion,
+}
+
+/// The TLS protocol floor for the native listener.
+///
+/// Defaults to **1.3**, with 1.2 available for compatibility — the OWASP
+/// Transport Layer Security Cheat Sheet's own position: "web applications must
+/// default to TLS 1.3 and may support TLS 1.2 for compatibility."
+///
+/// 1.0 and 1.1 are not representable here at all, which is deliberate: they are
+/// formally deprecated by RFC 8996 (March 2021), forbidden by PCI DSS,
+/// disallowed by NIST SP 800-52 Rev. 2, and removed from every mainstream
+/// browser. A configuration key that could select them would be a footgun with
+/// no legitimate use, so the type has no variant for them and the rustls
+/// provider offers none either. `SSLv2` and `SSLv3` likewise do not exist in
+/// `rustls`.
+///
+/// Choose `V1_2` only when a real client requires it — an older integration
+/// engine or a pinned Java runtime. It is a deliberate widening, and naming it
+/// in configuration is what makes it visible.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum TlsVersion {
+    /// TLS 1.3 only (RFC 8446) — the default.
+    #[default]
+    #[serde(rename = "1.3")]
+    V1_3,
+    /// TLS 1.2 and 1.3, for clients that cannot do 1.3.
+    #[serde(rename = "1.2")]
+    V1_2,
 }
 
 impl Default for ServerConfig {
@@ -136,6 +394,9 @@ impl Default for ServerConfig {
             system_id: crate::service::DEFAULT_SYSTEM_ID.to_owned(),
             identity: SystemOptionsConfig::default(),
             tls: TlsConfig::default(),
+            limits: BodyLimits::default(),
+            rate_limit: RateLimitConfig::default(),
+            connection: ConnectionConfig::default(),
         }
     }
 }

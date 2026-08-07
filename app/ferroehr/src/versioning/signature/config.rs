@@ -164,4 +164,25 @@ mod tests {
             "passphrase leaked: {dbg}"
         );
     }
+
+    /// The loader must take the WRAPPER, not a `&str`.
+    ///
+    /// This is a type-level assertion, and that is the point: if the signature
+    /// ever goes back to `Option<&str>`, the passphrase leaves its
+    /// zeroizing wrapper at the boundary and an un-zeroized copy survives in
+    /// freed memory. A runtime test cannot observe that; the compiler can.
+    #[test]
+    fn the_key_loader_takes_the_secret_wrapper_not_a_str() {
+        fn assert_signature(
+            _f: fn(
+                &std::path::Path,
+                Option<&Secret>,
+            ) -> Result<
+                crate::versioning::signature::key::PgpKey,
+                crate::versioning::signature::key::KeyError,
+            >,
+        ) {
+        }
+        assert_signature(crate::versioning::signature::key::PgpKey::load);
+    }
 }

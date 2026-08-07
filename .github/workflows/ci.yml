@@ -15,11 +15,12 @@ concurrency:
   # (https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#concurrency)
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# Least privilege for every job; the two jobs that need more (coverage pushes
-# the badge branch) elevate themselves (job-level permissions override
-# workflow-level ones — docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#permissions).
-permissions:
-  contents: read
+# No permissions by default; every job grants itself the minimum it needs
+# (job-level permissions override workflow-level ones —
+# docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#permissions).
+# A job added without a `permissions:` block therefore gets a token that can do
+# nothing, which fails loudly at its checkout rather than running over-privileged.
+permissions: {}
 
 env:
   CARGO_TERM_COLOR: always
@@ -59,13 +60,17 @@ jobs:
     name: change detection
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
     outputs:
       code: ${{ steps.filter.outputs.code }}
       admin_ui: ${{ steps.filter.outputs.admin_ui }}
       server_dockerfile: ${{ steps.filter.outputs.server_dockerfile }}
+      helm: ${{ steps.filter.outputs.helm }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
       - id: filter
         shell: bash
@@ -82,10 +87,19 @@ jobs:
           else
             base="$PUSH_BEFORE"; head="$PUSH_SHA"
           fi
-          # First push / unknown base: run everything.
+          # First push / unknown base: run everything. Every output must be set
+          # here — an unset output reads as `false` downstream, and a skipped job
+          # counts as satisfied in `conclusion`, so omitting one turns "run
+          # everything" into "silently gate nothing".
           if ! git rev-parse --verify --quiet "$base" >/dev/null; then
-            echo "Base $base unavailable — treating as code change."
-            echo "code=true" >> "$GITHUB_OUTPUT"; exit 0
+            echo "Base $base unavailable — treating as a change to everything."
+            {
+              echo "code=true"
+              echo "admin_ui=true"
+              echo "server_dockerfile=true"
+              echo "helm=true"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
           fi
           changed=$(git diff --name-only "$base" "$head")
           echo "Changed files:"; echo "$changed"
@@ -126,6 +140,14 @@ jobs:
           else
             echo "server_dockerfile=false" >> "$GITHUB_OUTPUT"
           fi
+          # Helm chart gate (#2110): the chart, its CI value overlays, the golden
+          # renders, the validator, the helm pin — and this workflow itself, so a
+          # change to the job's own recipe exercises the job it changes.
+          if echo "$changed" | grep -qE '^(deploy/helm/|\.github/workflows/ci\.yml$)' ; then
+            echo "helm=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "helm=false" >> "$GITHUB_OUTPUT"
+          fi
 
   # ── Required for code changes: formatting ───────────────────────────────────
   fmt:
@@ -134,9 +156,13 @@ jobs:
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
           components: rustfmt
           # rustfmt compiles nothing — a restored target/registry cache is
@@ -149,21 +175,36 @@ jobs:
     name: no attribution in commits
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
       - name: Scan commit messages for attribution
         shell: bash
+        # Context reaches the shell through env, never `${{ }}`-inline: the
+        # expression is substituted into the script BEFORE bash parses it, so an
+        # inline expansion is executable text (the `changes` job above is the
+        # pattern). Same discipline as the other guards in this workflow.
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            range="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            range="$PR_BASE..$PR_HEAD"
+            base="$PR_BASE"
           else
-            range="${{ github.event.before }}..${{ github.sha }}"
+            range="$PUSH_BEFORE..$PUSH_SHA"
+            base="$PUSH_BEFORE"
           fi
           # Handle first-push / shallow edge cases.
-          git rev-parse "${{ github.event.pull_request.base.sha || github.event.before || 'HEAD~1' }}" >/dev/null 2>&1 || range="HEAD"
+          git rev-parse "${base:-HEAD~1}" >/dev/null 2>&1 || range="HEAD"
           echo "Scanning range: $range"
           if git log --format='%B' "$range" 2>/dev/null | grep -iEn \
              'co-authored-by:.*(claude|anthropic|\[bot\])|generated[[:space:]]+(with|by)[[:space:]]+.*claude|claude[[:space:]]+code|🤖|assisted-by:.*claude'; then
@@ -171,6 +212,41 @@ jobs:
             exit 1
           fi
           echo "OK: no attribution found."
+
+  # ── Always required: the workflows audit themselves ─────────────────────────
+  # zizmor (docs.zizmor.sh) is static analysis for GitHub Actions, named by the
+  # OWASP GitHub Actions Security Cheat Sheet as the defence-in-depth tool for
+  # this layer. It is the machine check behind three hard properties here: every
+  # `uses:` hash-pinned (unpinned-uses, blanket policy by default), no checkout
+  # persisting credentials without a recorded exception (artipacked), and no
+  # context value spliced into a shell (template-injection).
+  #
+  # Ungated on the `changes` filter on purpose: that filter excludes `.github/`,
+  # so a workflow-only pull request would otherwise skip the one check that reads
+  # workflows.
+  workflow-audit:
+    name: zizmor
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2.85.9
+        with:
+          tool: zizmor@1.29.0
+      - name: Audit .github/workflows
+        # GH_TOKEN enables the ONLINE audits, which is the point of running this
+        # beside SHA pinning: impostor-commit verifies that a pinned commit
+        # really belongs to the repository named in front of it, and it cannot
+        # do that offline. --min-severity=low gates on every actionable tier
+        # (artipacked is Low) and leaves the informational tier advisory; zizmor
+        # exits non-zero when anything at or above the floor is found.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: zizmor --min-severity=low .github/workflows/
 
   # Comment-style guard (.claude/rules/comments.md, RFC 505/1574): block
   # comments, TODO(#N) form, NOTE/essay line budgets — over the WHOLE tree
@@ -181,9 +257,12 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
       - name: Comment style on changed Rust files
         run: bash scripts/checks/comment-style.sh --all
@@ -202,12 +281,17 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
+      # `--all` since #2033 swept the pre-existing sites: the tree is clean, so
+      # the guard covers the whole of it rather than only the changed files.
       - name: Default values live in the struct's Default impl
-        run: bash scripts/checks/default-style.sh
+        run: bash scripts/checks/default-style.sh --all
       # Typed-status guard: an HTTP status is compared as a `StatusCode`, never
       # as a number. `--all` from the start — the tree has no violations.
       - name: HTTP statuses are compared as types
@@ -217,6 +301,42 @@ jobs:
       # never another product, a plan-phase marker, or internal markdown.
       - name: Access-layer rationale cites durable sources
         run: bash scripts/checks/access-provenance.sh
+
+  # String-built-SQL guard: the AQL engine composes SQL from attacker-supplied
+  # query text, so a `format!`/`push_str`-assembled clause in `app/ferroehr/src/
+  # aql/` or `app/ferroehr/src/storage/` is refused — the OWASP SQL Injection
+  # Prevention Cheat Sheet's "validated data is not necessarily safe to insert
+  # into SQL queries via string building". `--all` from the start: the tree is
+  # clean, and the one legitimate site is a named exemption in the script.
+  sql-string-building:
+    name: sql-string-building
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: No string-built SQL in the query engine
+        run: bash scripts/checks/sql-string-building.sh --all
+
+  error-hygiene:
+    name: error-hygiene
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: No internal detail in a 5xx body or a health detail
+        run: bash scripts/checks/error-hygiene.sh
 
   # ── Always required: supply-chain policy ────────────────────────────────────
   # cargo-deny alone: `cargo deny check` reads the SAME RustSec advisory DB as
@@ -230,12 +350,16 @@ jobs:
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
           cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
-      - uses: taiki-e/install-action@v2
+      - uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2.85.9
         with:
           tool: cargo-deny
       - run: cargo deny check
@@ -246,12 +370,16 @@ jobs:
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       # rust-cache (not sccache) is load-bearing here: sccache cannot cache
       # clippy-driver invocations (mozilla/sccache#539), so the restored
       # target dir is the only compile cache clippy gets.
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
           components: clippy
           target: wasm32-unknown-unknown
@@ -282,11 +410,15 @@ jobs:
     if: needs.changes.outputs.code == 'true' || github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    permissions:
+      contents: read
     env:
       RUSTDOCFLAGS: -D warnings
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
           cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
       # --document-private-items: stale intra-doc links can hide behind
@@ -312,12 +444,16 @@ jobs:
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
           cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
-      - uses: taiki-e/install-action@v2
+      - uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2.85.9
         with:
           tool: cargo-hack
       - run: cargo hack check --rust-version --workspace --locked
@@ -329,9 +465,13 @@ jobs:
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
           components: rustfmt
           cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
@@ -355,9 +495,11 @@ jobs:
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    permissions:
+      contents: read
     services:
       postgres:
-        image: postgres:18.4
+        image: postgres:18.4@sha256:3a82e1f56c8f0f5616a11103ac3d47e632c3938698946a7ad26da0df1334744a
         env:
           POSTGRES_USER: openehr
           POSTGRES_PASSWORD: openehr
@@ -373,8 +515,10 @@ jobs:
       # directly — no per-test containers in CI at all.
       FERROEHR_TEST_PG_URL: postgres://openehr:openehr@localhost:5432/postgres
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
           cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
       - name: Enable required extensions + non-durable test tuning
@@ -389,7 +533,7 @@ jobs:
             -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; CREATE EXTENSION IF NOT EXISTS pgcrypto; CREATE EXTENSION IF NOT EXISTS pg_trgm;'
           PGPASSWORD=openehr psql -h localhost -U openehr -d postgres \
             -c "ALTER SYSTEM SET fsync = off" -c "ALTER SYSTEM SET synchronous_commit = off" -c "ALTER SYSTEM SET full_page_writes = off" -c "SELECT pg_reload_conf()"
-      - uses: taiki-e/install-action@v2
+      - uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2.85.9
         with:
           tool: cargo-nextest
       # The console is excluded from --all-features lanes (mutually exclusive
@@ -439,7 +583,7 @@ jobs:
       contents: write
     services:
       postgres:
-        image: postgres:18.4
+        image: postgres:18.4@sha256:3a82e1f56c8f0f5616a11103ac3d47e632c3938698946a7ad26da0df1334744a
         env:
           POSTGRES_USER: openehr
           POSTGRES_PASSWORD: openehr
@@ -453,19 +597,21 @@ jobs:
       # Same shared-server harness as the test job (tools/testkit).
       FERROEHR_TEST_PG_URL: postgres://openehr:openehr@localhost:5432/postgres
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Install xmllint (C14N parity gate) + non-durable test tuning
         run: |
           sudo apt-get update && sudo apt-get install -y postgresql-client libxml2-utils
           PGPASSWORD=openehr psql -h localhost -U openehr -d postgres \
             -c "ALTER SYSTEM SET fsync = off" -c "ALTER SYSTEM SET synchronous_commit = off" -c "ALTER SYSTEM SET full_page_writes = off" -c "SELECT pg_reload_conf()"
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         with:
           components: llvm-tools-preview
           # Only ever runs on develop pushes, so save unconditionally; the
           # instrumented artifacts get their own key by construction (job id).
           cache-save-if: ${{ github.ref == 'refs/heads/develop' }}
-      - uses: taiki-e/install-action@v2
+      - uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2.85.9
         with:
           tool: cargo-llvm-cov,cargo-nextest
       # The same two lanes as the test job (the old single `--workspace` run
@@ -476,7 +622,7 @@ jobs:
       - run: cargo llvm-cov --no-report nextest --locked --workspace --exclude ferroehr-admin-ui --all-features --no-tests=pass --profile ci
       - run: cargo llvm-cov --no-report nextest --locked -p ferroehr-admin-ui --features ssr --no-tests=pass --profile ci
       - run: cargo llvm-cov report --lcov --output-path lcov.info
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: coverage-lcov
           path: lcov.info
@@ -515,6 +661,41 @@ jobs:
           || gh api "repos/$REPO/git/refs" \
             -f ref="refs/heads/badges" -f sha="$commit"
 
+  # ── The Helm chart's lint + golden renders (issue #2110) ────────────────────
+  # deploy/helm/validate.sh is the only check in the repository that pins the
+  # chart's security posture — runAsNonRoot, readOnlyRootFilesystem,
+  # allowPrivilegeEscalation:false, seccomp RuntimeDefault, drop ALL,
+  # enableServiceLinks:false, the default-deny NetworkPolicy — and it ran in no
+  # workflow at all, so the goldens went stale on develop and nothing failed.
+  #
+  # helm is INSTALLED, never taken from the runner image: `helm template` output
+  # is not byte-stable across helm releases (4.2.3 emits blank lines 4.1.3 does
+  # not), so a drifting preinstalled helm would fail the golden compare with a
+  # whitespace diff. The version comes from deploy/helm/.tool-versions, the same
+  # file validate.sh checks itself against.
+  helm-golden:
+    name: helm-golden
+    needs: changes
+    if: needs.changes.outputs.helm == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version-file: deploy/helm/.tool-versions
+      - name: helm lint (default + all-features value sets)
+        run: |
+          helm lint deploy/helm/ferroehr -f deploy/helm/ci/default-values.yaml
+          helm lint deploy/helm/ferroehr -f deploy/helm/ci/all-features-values.yaml
+      # No --update: the goldens in the tree must already match this render.
+      - name: Chart validation + golden renders
+        run: bash deploy/helm/validate.sh
+
   # ── Unused dependencies ──────────────────────────────────────────────────────
   unused-deps:
     name: cargo-machete
@@ -522,9 +703,13 @@ jobs:
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v7
-      - uses: taiki-e/install-action@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2.85.9
         with:
           tool: cargo-machete
       - run: cargo machete
@@ -573,20 +758,24 @@ jobs:
     # build of the ~190 kLoC first-party graph (714 s measured cold, plus
     # dependency compiles on a lockfile bump).
     timeout-minutes: 60
+    permissions:
+      contents: read
     # Debian 13 (trixie) container so the binary targets glibc 2.41, matching
     # gcr.io/distroless/cc-debian13 exactly — the same pin and the same reason
     # as containers.yml's `binary` job. It must NOT be compiled on the bare
     # runner: glibc compatibility runs forward only, so a runner image with a
     # newer glibc than the runtime image ships yields a binary that image
     # cannot load.
-    container: rust:1.96.1-slim-trixie
+    container: rust:1.96.1-slim-trixie@sha256:31ee7fc65186be7e0e0ccb3f2ca305f14e4739e7642a1ae65753aa5d7b874523
     env:
       # Fixed build timestamp — reproducible, and the precondition for the
       # compile to be cacheable at all (see the block above; build.rs honours
       # SOURCE_DATE_EPOCH per reproducible-builds.org/docs/source-date-epoch).
       SOURCE_DATE_EPOCH: "1700000000"
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Verify toolchain pins (container == rust-toolchain.toml == Dockerfile)
         shell: bash
         run: |
@@ -611,7 +800,7 @@ jobs:
       # a binary that does not correspond to this tree
       # (docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching).
       - id: binary-cache
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: bin/amd64/ferroehr
           key: ui-e2e-server-bin-1.96.1-${{ hashFiles('Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', '.cargo/**', 'crates/**', 'app/ferroehr/**', 'app/ferroehr-rest/**', 'app/ferroehr-server/**', 'tools/**') }}
@@ -620,12 +809,12 @@ jobs:
       # whole target archive and pays a cold build, while sccache degrades to
       # partial hits (github.com/Swatinem/rust-cache — with `cache-targets:
       # false`, "only the cargo registry will be cached").
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         if: steps.binary-cache.outputs.cache-hit != 'true'
         with:
           shared-key: ui-e2e-server-binary
           cache-targets: false
-      - uses: mozilla-actions/sccache-action@v0.0.11
+      - uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
         if: steps.binary-cache.outputs.cache-hit != 'true'
       - name: Build the server binary (release, native)
         if: steps.binary-cache.outputs.cache-hit != 'true'
@@ -648,7 +837,7 @@ jobs:
         env:
           SCCACHE_GHA_ENABLED: "true"
         run: ${SCCACHE_PATH} --show-stats
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ui-e2e-server-binary
           path: bin/amd64/ferroehr
@@ -674,8 +863,12 @@ jobs:
     if: needs.changes.outputs.admin_ui == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       # Cache 1 — the built outputs themselves, exact key, no restore-keys
       # (the ui-e2e-binary pattern above): the key covers everything the
       # console + its e2e binaries read. app/ferroehr, app/ferroehr-rest,
@@ -683,20 +876,20 @@ jobs:
       # CDR strictly over ITS-REST and never links those crates, so a
       # server-only PR reuses the console artifact.
       - id: console-cache
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ui-e2e-console-stage
           key: ui-e2e-console-1.96.1-${{ hashFiles('Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', '.cargo/**', 'crates/**', 'app/ferroehr-admin-ui/**') }}
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
         if: steps.console-cache.outputs.cache-hit != 'true'
         with:
           target: wasm32-unknown-unknown
           # Registry-only cache; sccache owns compilation caching (the same
           # split, for the same lockfile-rotation reason, as the jobs above).
           cache-targets: false
-      - uses: mozilla-actions/sccache-action@v0.0.11
+      - uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba # v0.0.11
         if: steps.console-cache.outputs.cache-hit != 'true'
-      - uses: taiki-e/install-action@v2
+      - uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2.85.9
         if: steps.console-cache.outputs.cache-hit != 'true'
         with:
           # wasm-bindgen pinned to the workspace's wasm-bindgen version;
@@ -746,7 +939,7 @@ jobs:
         env:
           SCCACHE_GHA_ENABLED: "true"
         run: ${SCCACHE_PATH} --show-stats
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ui-e2e-console
           path: ui-e2e-console-stage
@@ -770,17 +963,22 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       # NOTHING compiles in this job any more (issue #335): the server binary,
       # the console, and the e2e test binaries all arrive as artifacts from
       # the two parallel jobs above. The toolchain stays only because
       # `cargo nextest run --archive-file` is a cargo subcommand; rust-cache
       # keeps just the registry (nextest resolves no dependencies here, but
       # setup-rust-toolchain's default cache would archive an empty target).
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        # This workflow publishes nothing releasable — the artifacts here are
+        # screenshots and short-lived test inputs, so the restored registry
+        # cache is not release input.
+        with: # zizmor: ignore[cache-poisoning]
           cache-targets: false
-      - uses: taiki-e/install-action@v2
+      - uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2.85.9
         with:
           tool: cargo-nextest
       # The CDR image is PACKAGED here, never compiled here (issue #335 — the
@@ -796,7 +994,7 @@ jobs:
       # preserve file permissions), which is exactly why the Dockerfile COPYs
       # the binary with `--chmod=0755`
       # (docs.docker.com/reference/dockerfile — COPY --chmod).
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: ui-e2e-server-binary
           path: bin/amd64
@@ -804,7 +1002,7 @@ jobs:
       # artifact download strips the executable bit (GitHub artifacts do not
       # preserve file permissions) — restored here for the console binary; the
       # binaries inside the nextest archive keep theirs (tar preserves modes).
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: ui-e2e-console
           path: ui-e2e-console-stage
@@ -815,9 +1013,9 @@ jobs:
           install -m0755 ui-e2e-console-stage/ferroehr-admin-ui target/debug/ferroehr-admin-ui
           cp -R ui-e2e-console-stage/site/. target/site/
           test -f ui-e2e-console-stage/ui-e2e-tests.tar.zst
-      - uses: docker/setup-buildx-action@v4
+      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
       - name: Package the app image (COPY-only, seconds)
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: .
           file: docker/Dockerfile
@@ -839,7 +1037,7 @@ jobs:
         run: bash scripts/ui-e2e.sh
       - name: Upload journey screenshots
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ui-e2e-screenshots
           path: target/ui-e2e/screenshots/
@@ -863,9 +1061,11 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v7
-      - uses: docker/setup-buildx-action@v4
-      - uses: docker/build-push-action@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+      - uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: .
           file: docker/Dockerfile
@@ -881,9 +1081,12 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
       - name: Require refreshed screenshots for UI changes
         env:
@@ -916,9 +1119,12 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
       - name: Require a lockstep version bump for packaged-content changes
         env:
@@ -957,6 +1163,107 @@ jobs:
           fi
           echo "Lockstep crate version bumped to $ver — OK."
 
+  # Chart-version guard (the crate-version-guard pattern, issue #2108): a PR that
+  # changes PACKAGED chart content must bump `Chart.yaml` version in the same PR.
+  #
+  # The immutability this protects is NOT the registry's own: an OCI tag is
+  # mutable, and a second `helm push` of the same chart version silently replaces
+  # the manifest (measured against a local registry — the digest changed with no
+  # warning). So the publish lane refuses to overwrite a published version, and
+  # this guard makes sure a change carries a version to publish under. Artifact
+  # Hub indexes versions, so a re-used one is a listing that misdescribes itself.
+  #
+  # PACKAGED content is `deploy/helm/ferroehr/**` only. The value overlays, the
+  # golden renders, the validator, the helm pin and the Artifact Hub metadata live
+  # one level up and ship in nothing — a change to those needs no bump.
+  # Escape hatch: the `no-chart-bump` label, for a packaged diff that provably
+  # cannot alter what a consumer gets. A comment in `values.yaml` does not
+  # qualify: values.yaml ships.
+  chart-version:
+    name: chart-version-guard
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Require a Chart.yaml version bump for packaged chart changes
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'no-chart-bump') }}
+        run: |
+          set -euo pipefail
+          if [ "$HAS_LABEL" = "true" ]; then
+            echo "no-chart-bump label set — guard skipped."; exit 0
+          fi
+          changed=$(git diff --name-only "$BASE" "$HEAD")
+          if ! echo "$changed" | grep -qE '^deploy/helm/ferroehr/'; then
+            echo "No packaged chart content touched — guard not required."; exit 0
+          fi
+          old=$(git show "$BASE:deploy/helm/ferroehr/Chart.yaml" | sed -nE 's/^version: *(.+)$/\1/p')
+          new=$(git show "$HEAD:deploy/helm/ferroehr/Chart.yaml" | sed -nE 's/^version: *(.+)$/\1/p')
+          if [ "$old" = "$new" ]; then
+            echo "::error::This PR changes packaged chart content (deploy/helm/ferroehr/) but leaves Chart.yaml version at $new. A published chart version is taken — bump it (SemVer over the chart's values schema and rendered output), or apply 'no-chart-bump' if the diff provably cannot change what a consumer gets." >&2
+            exit 1
+          fi
+          echo "Chart version bumped $old -> $new — OK."
+
+  # appVersion guard (issue #2108): `appVersion` is the image tag a user gets from
+  # a plain `helm install`, so it must never lag the released application version.
+  # It is kept equal to the workspace version — the same shape as
+  # compose-image-tags.sh, and the same reason: both are "an artifact references
+  # the released version" checks that would otherwise depend on someone
+  # remembering a release-procedure step.
+  #
+  # The `artifacthub.io/images` tags are checked with it, because those are what
+  # the Artifact Hub security report scans — a stale tag there means the listing
+  # reports vulnerabilities for an image nobody is running.
+  #
+  # What this guard does NOT catch, stated because it was measured rather than
+  # imagined: `appVersion` naming the right release does not mean that release's
+  # image ACCEPTS the chart's current `config` defaults. Values track development
+  # between releases, so the rendered default configuration carries
+  # `server.limits` and `db.statement_timeout_ms`, which 3.17.3 does not know — its
+  # own `config check` refuses the file, and a plain `helm install` crash-loops.
+  # Only the published image can answer that, so the check lives in
+  # publish-chart.yml, which refuses to publish a chart that cannot deploy its own
+  # default image.
+  chart-appversion:
+    name: chart-appversion-guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: appVersion and the artifacthub.io image tags match the workspace version
+        run: |
+          set -euo pipefail
+          ws=$(sed -nE 's/^version = "(.*)"$/\1/p' Cargo.toml | head -1)
+          app=$(sed -nE 's/^appVersion: *"?([^"]+)"?$/\1/p' deploy/helm/ferroehr/Chart.yaml)
+          if [ -z "$ws" ] || [ -z "$app" ]; then
+            echo "::error::could not extract versions (workspace: '$ws', appVersion: '$app')." >&2
+            exit 1
+          fi
+          if [ "$app" != "$ws" ]; then
+            echo "::error::Chart.yaml appVersion ($app) != workspace version ($ws) — the release cut bumps appVersion with the workspace version (.claude/rules/changelog.md), or a plain 'helm install' deploys the previous release." >&2
+            exit 1
+          fi
+          bad=$(grep -oE 'image: ghcr\.io/[^:]+:[^ ]+' deploy/helm/ferroehr/Chart.yaml | grep -v ":${ws}\$" || true)
+          if [ -n "$bad" ]; then
+            echo "::error::artifacthub.io/images tags do not match the workspace version ($ws):" >&2
+            echo "$bad" >&2
+            exit 1
+          fi
+          echo "appVersion and every artifacthub.io/images tag are at $ws — OK."
+
   # Changelog guard (Keep a Changelog discipline): a PR that changes
   # user-visible surfaces must update CHANGELOG.md's [Unreleased] section in
   # the same PR. Escape hatch: the `no-changelog` label for genuinely
@@ -966,9 +1273,12 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0
       # Structure check runs UNCONDITIONALLY — the no-changelog label waives
       # the entry requirement below, never the file's Keep-a-Changelog
@@ -1012,8 +1322,12 @@ jobs:
     name: citation-guard
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Validate CITATION.cff (CFF 1.2.0 schema)
         run: pipx run cffconvert --validate
       - name: CITATION.cff version matches the workspace version
@@ -1039,8 +1353,12 @@ jobs:
     name: compose-version-guard
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: docker-compose.yml image tags match the workspace version
         run: bash scripts/checks/compose-image-tags.sh
 
@@ -1056,7 +1374,11 @@ jobs:
       - changes
       - fmt
       - no-attribution
+      - workflow-audit
       - comment-style
+      - default-style
+      - sql-string-building
+      - error-hygiene
       - deny
       - clippy
       - doc
@@ -1064,6 +1386,7 @@ jobs:
       - codegen-drift
       - test
       - coverage
+      - helm-golden
       - unused-deps
       - ui-e2e-binary
       - ui-e2e-console
@@ -1073,8 +1396,12 @@ jobs:
       - changelog
       - citation
       - compose-version-guard
+      - crate-version
+      - chart-version
+      - chart-appversion
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions: {}
     steps:
       - name: Every needed job succeeded or was skipped
         env:

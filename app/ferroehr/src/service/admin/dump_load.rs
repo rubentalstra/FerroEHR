@@ -659,9 +659,10 @@ fn original_version_envelope(
         .map(|value| serde_json::from_value(value.clone()))
         .transpose()
         .map_err(|e| {
-            ServiceError::Internal(format!(
-                "archived other_input_version_uids is not a list of version uids: {e}"
-            ))
+            ServiceError::internal(
+                "archived other_input_version_uids is not a list of version uids",
+                e,
+            )
         })?
         .unwrap_or_default();
     let tree = TreeId::from_columns(v.trunk_version, v.branch_number, v.branch_version);
@@ -693,10 +694,13 @@ fn original_version_envelope(
         )
     } else {
         let time_committed: jiff::Timestamp = audit.time_committed.parse().map_err(|e| {
-            ServiceError::Internal(format!(
-                "audit {} carries an uninterpretable commit time {:?}: {e}",
-                audit.id, audit.time_committed
-            ))
+            ServiceError::internal(
+                format!(
+                    "audit {} carries an uninterpretable commit time {:?}",
+                    audit.id, audit.time_committed
+                ),
+                e,
+            )
         })?;
         let commit_audit = AuditInput {
             system_id: audit.system_id.clone(),
@@ -759,14 +763,14 @@ fn version_document_of<T: DeserializeOwned + ToXml>(
     envelope: &Value,
 ) -> Result<String, ServiceError> {
     let typed: OriginalVersion<T> = openehr_its::json::from_canonical_value(envelope)
-        .map_err(|e| ServiceError::Internal(format!("typing the ORIGINAL_VERSION: {e}")))?;
+        .map_err(|e| ServiceError::internal("typing the ORIGINAL_VERSION", e))?;
     openehr_its::xml::to_canonical_xml_declared(
         &typed,
         VERSION_ROOT_TAG,
         VERSION_ROOT_TYPE,
         Namespace::V1,
     )
-    .map_err(|e| ServiceError::Internal(format!("serializing the ORIGINAL_VERSION to XML: {e}")))
+    .map_err(|e| ServiceError::internal("serializing the ORIGINAL_VERSION to XML", e))
 }
 
 /// [`version_document_of`] dispatched on the stored `vo_version.kind` — the

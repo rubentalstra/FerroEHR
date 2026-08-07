@@ -153,7 +153,7 @@ impl FerroEhrService {
                     audit.clone(),
                     Change::Create {
                         kind: Kind::EhrAccess,
-                        canonical: super::access::default_ehr_access(),
+                        canonical: super::access::initial_ehr_access(),
                         template_id: None,
                         signature: None,
                         lifecycle_state: None,
@@ -427,7 +427,7 @@ fn ehr_object(
     Ok(openehr_its::json::to_canonical_value(&ehr))
 }
 
-/// The default `EHR_STATUS` for a new EHR (queryable, modifiable,
+/// Builds the `EHR_STATUS` a new EHR starts with (queryable, modifiable,
 /// `PARTY_SELF`) — RM ehr master04 §EHR Creation.
 ///
 /// `archetype_details` is mandatory here: `EHR_STATUS` is unconditionally an
@@ -437,7 +437,7 @@ fn ehr_object(
 /// RM-invalid; at a root, `archetype_node_id` "is always the stringified
 /// form of the `archetype_id` found in the `archetype_details` object"
 /// (`locatable.adoc` §`archetype_node_id`).
-pub(in crate::service) fn default_ehr_status() -> Value {
+pub(in crate::service) fn initial_ehr_status() -> Value {
     let status = EhrStatus {
         name: DvText::DvText(DvTextData {
             value: "EHR Status".to_owned(),
@@ -560,7 +560,7 @@ impl FerroEhrService {
     ) -> Result<EhrId, SmError> {
         let ehr_id = EhrId::new();
         let status = status_for_subject(
-            an_ehr_status.unwrap_or_else(default_ehr_status),
+            an_ehr_status.unwrap_or_else(initial_ehr_status),
             &a_subject_id,
         );
         self.commit_new_ehr(ehr_id, status, None).await?;
@@ -583,7 +583,7 @@ impl FerroEhrService {
         an_ehr_status: Option<Value>,
     ) -> Result<EhrId, SmError> {
         let status = status_for_subject(
-            an_ehr_status.unwrap_or_else(default_ehr_status),
+            an_ehr_status.unwrap_or_else(initial_ehr_status),
             &a_subject_id,
         );
         self.commit_new_ehr(an_ehr_id, status, None).await?;
@@ -730,7 +730,7 @@ impl FerroEhrService {
         // The ONE serialization boundary of the bootstrap commit: the caller's
         // typed EHR_STATUS (or the server default) becomes its canonical
         // fragment once, here.
-        let status = an_ehr_status.map_or_else(default_ehr_status, |s| {
+        let status = an_ehr_status.map_or_else(initial_ehr_status, |s| {
             openehr_its::json::to_canonical_value(&s)
         });
         let created = self.commit_new_ehr(an_ehr_id, status, committal).await?;
@@ -744,14 +744,14 @@ impl FerroEhrService {
 
 #[cfg(test)]
 mod tests {
-    use super::default_ehr_status;
+    use super::initial_ehr_status;
 
     /// The default `EHR_STATUS` must be a valid structure root for the storage
     /// codec (one root node — the decomposition granularity of
     /// `crate::storage::codec::decompose`).
     #[test]
     fn default_status_decomposes() {
-        let rows = crate::storage::codec::decompose(default_ehr_status()).expect("decompose");
+        let rows = crate::storage::codec::decompose(initial_ehr_status()).expect("decompose");
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].rm_type, "EHR_STATUS");
     }

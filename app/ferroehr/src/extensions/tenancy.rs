@@ -29,11 +29,6 @@ use crate::service::FerroEhrService;
 use crate::service::error::ServiceError;
 use crate::service::status::{CallStatusType, SmError};
 
-/// The reserved default tenant: the nil uuid, owner of every row created while
-/// tenancy is off. Matches `ext.current_tenant_id()`'s fallback
-/// (`migrations/ext/0002_tenant_context.sql`) and cannot be deleted.
-const DEFAULT_TENANT_ID: Uuid = Uuid::nil();
-
 /// A stored tenant registry record (the tenant admin API's response row).
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct TenantRecord {
@@ -145,7 +140,10 @@ impl FerroEhrService {
     /// via `SET LOCAL`, so the RLS policy admits the target's rows regardless
     /// of the caller's own tenant context.
     async fn delete_tenant(&self, id: Uuid) -> Result<(), ServiceError> {
-        if id == DEFAULT_TENANT_ID {
+        // NOTE: the nil uuid is the reserved default tenant — it matches
+        // `ext.current_tenant_id()`'s fallback in
+        // `migrations/ext/0002_tenant_context.sql`.
+        if id == Uuid::nil() {
             return Err(ServiceError::Conflict(
                 "the reserved default tenant cannot be deleted".to_owned(),
             ));

@@ -8,13 +8,37 @@ description: >-
   are run out of band by a separate migrator role).
 type: application
 
-# Chart versioning is independent of the application version.
-version: 3.2.0
-# The default container image tag (informational; overridable via image.tag).
+# Chart versioning is independent of the application version, and is SemVer 2
+# over the CHART's own contract — its values schema and rendered output
+# (https://helm.sh/docs/topics/charts/#charts-and-versioning). 4.0.0 is a major
+# bump because a values file that set a secret-bearing key under `config:` used
+# to render (into a ConfigMap) and is now refused.
+version: 4.0.0
+# The default container image tag (overridable via image.tag), and the released
+# application version — kept equal to the workspace version by the
+# `chart-appversion` CI guard, so a release cannot ship a chart pointing at the
+# previous image. It is NOT a promise that this tag accepts the chart's current
+# `config` defaults: values track development between releases, so the publish
+# lane re-checks the pairing against the image itself.
 appVersion: "3.17.3"
 
-# PDB (policy/v1, GA 1.21), HPA (autoscaling/v2, GA 1.23), and the
-# seccompProfile pod field (GA 1.27) all resolve cleanly at 1.25+.
+# A COMPATIBILITY floor, not a support statement — the two are different facts and
+# conflating them is how a chart ends up claiming to endorse an EOL cluster.
+#
+# Compatibility: the newest API this chart uses is HPA `autoscaling/v2` (GA 1.23);
+# PDB `policy/v1` is GA 1.21, NetworkPolicy and Ingress `networking.k8s.io/v1` GA
+# 1.19, and the `seccompProfile` pod field is stable since **1.19**
+# (https://kubernetes.io/docs/tutorials/security/seccomp/ — "FEATURE STATE:
+# Kubernetes v1.19 [stable]"; an earlier version of this comment said 1.27, which
+# was the kubelet's separate SeccompDefault feature, not this field). So 1.25 is a
+# true floor and is deliberately not raised: the chart does work there.
+#
+# Support: upstream maintains only the THREE most recent minor releases
+# (https://kubernetes.io/releases/), so a cluster below that window receives no
+# security backports whatever this constraint permits. The supported window is
+# stated in the book (installation/kubernetes-hardening.md) rather than encoded
+# here, because it moves three times a year and a chart that hard-failed on it
+# would refuse to install on a cluster it runs on perfectly well.
 kubeVersion: ">=1.25.0-0"
 
 keywords:
@@ -30,3 +54,66 @@ sources:
 maintainers:
   - name: FerroEHR maintainers
     url: https://github.com/rubentalstra/FerroEHR
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Artifact Hub display metadata (https://artifacthub.io/docs/topics/annotations/helm/).
+#
+# Two annotations are NOT here because they are per-release facts that would go
+# stale the moment they were committed; the publish lane injects them at package
+# time from CHANGELOG.md and the tag (deploy/helm/artifacthub-changes.sh):
+# `artifacthub.io/changes` and `artifacthub.io/containsSecurityUpdates`, plus
+# `artifacthub.io/prerelease` for an `-rc` tag.
+#
+# Deliberately absent, so a later reader does not wonder:
+#   operator, operatorCapabilities — this is not an operator.
+#   crds, crdsExamples             — the chart defines no CustomResourceDefinition.
+#   signKey                        — the chart carries no PGP provenance (`.prov`);
+#                                    it is attested keyless through Sigstore
+#                                    instead, and this annotation has no field for
+#                                    that (its `url` is mandatory and would have to
+#                                    point at a key that does not exist).
+#   alternativeName, recommendations — nothing to name or recommend.
+# ─────────────────────────────────────────────────────────────────────────────
+annotations:
+  # The fixed enum has no health/clinical category. This chart deploys a
+  # repository whose substance is stored clinical records over PostgreSQL, so
+  # `database` is the closest TRUE statement of the eight; `skip-prediction`
+  # would only remove the chart from category browsing without saying anything.
+  artifacthub.io/category: database
+  artifacthub.io/license: MIT
+  artifacthub.io/links: |
+    - name: source
+      url: https://github.com/rubentalstra/FerroEHR
+    - name: documentation
+      url: https://ferroehr.eu/docs/latest/installation/kubernetes.html
+    - name: support
+      url: https://github.com/rubentalstra/FerroEHR/issues
+  artifacthub.io/maintainers: |
+    - name: Ruben Talstra
+      email: me@rubentalstra.nl
+  # All three published images, so the hub's security report covers what the
+  # PROJECT ships. Only `ferroehr` is deployed by this chart — there is no
+  # in-chart PostgreSQL, and the admin console is its own deployment — so the
+  # other two are listed as product images rather than chart contents. Every tag
+  # here must equal `appVersion`; the `chart-appversion` CI guard checks it.
+  artifacthub.io/images: |
+    - name: ferroehr
+      image: ghcr.io/rubentalstra/ferroehr:3.17.3
+      platforms:
+        - linux/amd64
+        - linux/arm64
+    - name: ferroehr-postgres
+      image: ghcr.io/rubentalstra/ferroehr-postgres:3.17.3
+      platforms:
+        - linux/amd64
+        - linux/arm64
+    - name: ferroehr-admin-ui
+      image: ghcr.io/rubentalstra/ferroehr-admin-ui:3.17.3
+      platforms:
+        - linux/amd64
+        - linux/arm64
+  artifacthub.io/screenshots: |
+    - title: Dashboard
+      url: https://ferroehr.eu/docs/latest/admin-ui/img/dashboard/dashboard.png
+    - title: AQL query console
+      url: https://ferroehr.eu/docs/latest/admin-ui/img/queries/queries-admin-delete.png

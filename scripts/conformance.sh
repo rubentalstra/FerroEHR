@@ -97,6 +97,15 @@ FERROEHR_RS_COMPOSE=(docker compose -p ferroehr-cnf \
   -f "$REPO_ROOT/docker/sut-ferroehr.yml" \
   -f "$REPO_ROOT/docker/sut-smart.yml" \
   -f "$REPO_ROOT/docker/sut-terminology.yml")
+# A measurement lane composes one more overlay: docker/sut-measurement.yml turns
+# the rate limiter off for the run, because the instruments offer load past the
+# server's knee on purpose and a 429 would measure the limiter instead of the
+# server. Declared as a file rather than an exported variable so the posture of
+# a recorded run is readable after the fact.
+if [ -n "${CONF_PERF_CLASS:-}" ] || [ -n "${CONF_STRESS:-}" ]; then
+  FERROEHR_RS_COMPOSE+=(-f "$REPO_ROOT/docker/sut-measurement.yml")
+  echo "==> Measurement lane: composing docker/sut-measurement.yml (rate limiting off)"
+fi
 # BOTH claimed version-signing modes are exercised in the ONE record: a SECOND
 # deployment of the SAME image runs the openPGP posture in its own compose
 # project on remapped host ports (docker/sut-pgp-parallel.yml), and the ixit
@@ -141,15 +150,10 @@ export SUT_RO_PASS="${SUT_RO_PASS:-ferroehr}"
 # byo: rewrite the ixit's base URLs into a temp copy.
 if [ "$SUT" = "byo" ] && [ -n "${CONF_BASE_URL:-}" ]; then
   TMP_IXIT="$(mktemp -t cnf-ixit.XXXXXX)"
-  python3 - "$IXIT" "$CONF_BASE_URL" "$TMP_IXIT" <<'PY'
-import json
-import sys
-
-ixit = json.load(open(sys.argv[1]))
-for inst in ixit["instances"].values():
-    inst["base_url"] = sys.argv[2].rstrip("/")
-json.dump(ixit, open(sys.argv[3], "w"), indent=2)
-PY
+  # jq, not python: this is a two-key JSON edit, and jq is the tool for it.
+  jq --arg url "${CONF_BASE_URL%/}" \
+    '.instances |= map_values(.base_url = $url)' \
+    "$IXIT" > "$TMP_IXIT"
   IXIT="$TMP_IXIT"
 fi
 
@@ -263,7 +267,10 @@ if [ -n "${CONF_PERF_CLASS:-}" ]; then
   fi
 fi
 
-echo "==> Computing the verdicts (pure pipeline)"
+# The verdicts AND the shields.io badges: the badge counts quantify over the
+# same capability sets the tier verdicts do (`verdict::tier_members`), so there
+# is no second derivation here to contradict them.
+echo "==> Computing the verdicts + badges (pure pipeline)"
 verdict_rc=0
 "$REPO_ROOT/target/debug/cnf-runner" verdicts \
   --statement "$STATEMENT" --results "$OUT/results.json" \
@@ -272,161 +279,6 @@ if [ "$verdict_rc" -ge 2 ]; then
   echo "conformance: verdict pipeline defect (exit $verdict_rc)" >&2
   exit "$verdict_rc"
 fi
-
-echo "==> Deriving the badges from verdicts.json"
-python3 - "$OUT" "$ROOT/vocab/capability_matrix.yaml" <<'PY'
-import json
-import pathlib
-import re
-import sys
-
-out = pathlib.Path(sys.argv[1])
-verdicts = json.load(open(out / "verdicts.json"))
-results = json.load(open(out / "results.json"))
-
-# Tier membership from the capability matrix (Name: { tier, family, required }).
-tier_caps: dict[str, list[str]] = {}
-family: dict[str, str] = {}
-required: dict[str, bool] = {}
-for line in open(sys.argv[2]):
-    m = re.match(r"^(\w+):\s*\{(.*)\}", line)
-    if not m:
-        continue
-    name, body = m.group(1), m.group(2)
-    tier = re.search(r"tier:\s*([A-Z-]+)", body)
-    fam = re.search(r"family:\s*(\w+)", body)
-    req = re.search(r"required:\s*(\w+)", body)
-    if tier:
-        tier_caps.setdefault(tier.group(1), []).append(name)
-    if fam:
-        family[name] = fam.group(1)
-    required[name] = bool(req and req.group(1) == "true")
-
-evidence = {name: ev for name, ev in verdicts["capabilities"]}
-tiers = {tier: verdict for tier, verdict in verdicts["profiles"]}
-security = verdicts.get("security")
-if security is not None:
-    tiers["SEC-BASIC"] = security if isinstance(security, str) else security.get("verdict", "")
-
-def satisfied(names):
-    ok = sum(1 for n in names if evidence.get(n) in ("passed", "unrealized"))
-    return ok, len(names)
-
-# The counts MIRROR the verdict pipeline's own tier semantics
-# (verdict.rs::platform_profiles): CORE and STANDARD are judged on the
-# CUMULATIVE set of REQUIRED capabilities (STANDARD = CORE+STANDARD), and
-# OPTIONS on the optional Platform set — a tier-local count next to a
-# cumulative verdict produced the self-contradictory "FAIL 5/5" badge.
-counts = {}
-counts["CORE"] = satisfied([n for n in tier_caps.get("CORE", []) if required.get(n)])
-counts["STANDARD"] = satisfied(
-    [n for t in ("CORE", "STANDARD") for n in tier_caps.get(t, []) if required.get(n)]
-)
-counts["OPTIONS"] = satisfied(
-    [n for n in tier_caps.get("OPTIONS", []) if not required.get(n) and family.get(n) == "Platform"]
-)
-counts["SEC-BASIC"] = satisfied([n for n, f in family.items() if f == "Security"])
-
-colors = {"pass": "brightgreen", "fail": "red", "not_claimed": "lightgrey"}
-slug = {"CORE": "core", "STANDARD": "standard", "OPTIONS": "options", "SEC-BASIC": "sec-basic"}
-
-# SELF-CHECK: a badge whose count contradicts its verdict must never be
-# written (the "FAIL 5/5 capabilities" incident, 2026-07-28) — the verdict
-# pipeline is the authority and the count is a re-derivation of the same
-# rule, so any disagreement is a defect in THIS script and fails the
-# pipeline loudly instead of publishing a wrong badge.
-def check_consistency(tier, token, ok_n, total_n):
-    if token not in ("pass", "fail"):
-        return
-    if tier in ("CORE", "STANDARD"):
-        # verdict.rs::required_all_passed — every cumulative REQUIRED
-        # capability passed-or-unrealized <=> pass.
-        agrees = (ok_n == total_n) == (token == "pass")
-    elif tier == "OPTIONS":
-        # verdict.rs — ANY optional Platform capability passing <=> pass.
-        agrees = (ok_n >= 1) == (token == "pass")
-    else:
-        return  # SEC-BASIC's verdict has non-count inputs; no count check.
-    if not agrees:
-        sys.exit(
-            f"badge derivation defect: {tier} verdict {token!r} contradicts the "
-            f"capability count {ok_n}/{total_n} — refusing to write a wrong badge"
-        )
-
-for tier, verdict in tiers.items():
-    token = verdict if isinstance(verdict, str) else str(verdict)
-    ok_n, total_n = counts.get(tier, (0, 0))
-    check_consistency(tier, token, ok_n, total_n)
-    # A count is only meaningful next to a computed verdict; NOT CLAIMED
-    # stays a bare token (a "NOT CLAIMED 3/5" would invite the same misread).
-    show_count = total_n and token in ("pass", "fail")
-    noun = "optional capabilities" if tier == "OPTIONS" else "capabilities"
-    amount = f" {ok_n}/{total_n} {noun}" if show_count else ""
-    badge = {
-        "schemaVersion": 1,
-        "label": f"openEHR CNF {tier}",
-        "message": f"{token.upper().replace('_', ' ')}{amount}",
-        "color": colors.get(token, "lightgrey"),
-    }
-    path = out / f"badge-{slug.get(tier, tier.lower())}.json"
-    path.write_text(json.dumps(badge, indent=2) + "\n")
-
-# Performance badge — from the measured class verdicts (§8.14). The badge
-# always NAMES the class it speaks about ("class POC earned" / "class POC
-# not earned") — a bare verdict is meaningless without the volumetric
-# class it was measured against — and an un-measured state writes "not
-# measured" so no stale badge outlives its record.
-perf = verdicts.get("performance") or []
-ladder = {"POC": 0, "S": 1, "L": 2, "R": 3}
-earned = [p["class"] for p in perf if p["verdict"] == "earned"]
-measured = [p["class"] for p in perf]
-if earned:
-    best = max(earned, key=lambda c: ladder.get(c, -1))
-    message, color = f"class {best} earned", "brightgreen"
-elif measured:
-    best = max(measured, key=lambda c: ladder.get(c, -1))
-    message, color = f"class {best} not earned", "red"
-else:
-    message, color = "not measured", "lightgrey"
-(out / "badge-performance.json").write_text(json.dumps({
-    "schemaVersion": 1,
-    "label": "openEHR CNF performance",
-    "message": message,
-    "color": color,
-}, indent=2) + "\n")
-
-by_status = {}
-for o in results.get("outcomes", []):
-    by_status[o["status"]] = by_status.get(o["status"], 0) + 1
-driven = by_status.get("passed", 0) + by_status.get("failed", 0) + by_status.get("errored", 0)
-red_rows = by_status.get("failed", 0) + by_status.get("errored", 0)
-ok = tiers.get("CORE") == "pass" and tiers.get("STANDARD") == "pass"
-# Full green ONLY on a completely clean run: a red row anywhere — even in an
-# OPTIONS-tier capability that cannot fail CORE/STANDARD — is never an
-# acceptable resting state (the baseline discipline: green comes from fixing
-# the guilty component, and a brightgreen badge over a visible failure
-# invites the misread it caused on 2026-07-28). A passing-tier run with red
-# rows goes YELLOW and names the count.
-if ok and red_rows == 0:
-    message = f"CORE+STANDARD PASS · {by_status.get('passed', 0)}/{driven} cases"
-    color = "brightgreen"
-elif ok:
-    message = (
-        f"CORE+STANDARD PASS · {by_status.get('passed', 0)}/{driven} cases "
-        f"({red_rows} failing)"
-    )
-    color = "yellow"
-else:
-    message = f"NOT PASSING · {by_status.get('passed', 0)}/{driven} cases"
-    color = "red"
-(out / "badge.json").write_text(json.dumps({
-    "schemaVersion": 1,
-    "label": "openEHR conformance",
-    "message": message,
-    "color": color,
-}, indent=2) + "\n")
-print("badges written")
-PY
 
 echo "==> Artefacts in $OUT"
 ls -1 "$OUT"

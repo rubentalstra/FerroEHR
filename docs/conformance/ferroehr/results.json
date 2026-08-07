@@ -18,7 +18,7 @@
       "wt-structured"
     ]
   },
-  "ixit_digest": "160895d92245739c",
+  "ixit_digest": "da0286744e33b57f",
   "restapi_specs_version": "1.1.0",
   "outcomes": [
     {
@@ -2535,6 +2535,12 @@
       "citation": "I_EHR_CONTRIBUTION.list_contributions: AMB-22"
     },
     {
+      "case": "I_DEFINITION_ADL14.delete_archetype-clinical_forbidden",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEFINITION_ADL14.delete_archetype-existing",
       "status": "passed",
       "rows_driven": 1,
@@ -2774,6 +2780,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_DEFINITION_ADL2.delete_artefact-clinical_forbidden",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEFINITION_ADL2.delete_artefact-existing",
       "status": "passed",
       "rows_driven": 1,
@@ -2910,6 +2922,12 @@
     },
     {
       "case": "I_DEFINITION_ADL2.upload_artefact-prefer_minimal",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_ADL2.upload_artefact-readonly_forbidden",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1

@@ -1,12 +1,11 @@
 [package]
 name = "openehr-query"
-version = "0.0.11"
+version = "0.0.12"
 description = "openEHR QUERY (AQL 1.1.0): hand-written lexer, parser, typed AST and canonical printer from the official grammar (no ANTLR runtime)"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-authors.workspace = true
 documentation = "https://docs.rs/openehr-query"
 readme = "README.md"
 keywords = ["openehr", "aql", "query", "parser", "healthcare"]

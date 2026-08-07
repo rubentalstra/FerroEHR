@@ -60,6 +60,7 @@ mod xml_abstract_root;
 mod xml_c14n;
 mod xml_ehrbase;
 mod xml_hash;
+mod xml_hostile_input;
 mod xml_locatable_attr;
 mod xml_namespace;
 mod xml_roundtrip;

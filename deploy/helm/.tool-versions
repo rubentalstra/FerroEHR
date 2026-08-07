@@ -1,0 +1,11 @@
+# The helm version the golden renders in deploy/helm/golden/ were produced with,
+# in asdf/mise `.tool-versions` format so ONE file feeds both the CI job
+# (azure/setup-helm `version-file:`) and deploy/helm/validate.sh.
+#
+# The pin is load-bearing, not hygiene: `helm template` output is not byte-stable
+# across helm releases. Measured 2026-08-06 — helm 4.2.3 emits 6 blank lines the
+# default render does not carry under 4.1.3 (10 in all-features), so an unpinned
+# runner turns the golden compare into a whitespace diff nobody can act on.
+# Bumping this line therefore requires `deploy/helm/validate.sh --update` in the
+# same change.
+helm 4.1.3

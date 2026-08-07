@@ -63,8 +63,7 @@ pub(super) fn init_subscriber(
     }
     let mut flame_flush = None;
     if let Some(path) = flame_file {
-        let (flame_layer, flush) = tracing_flame::FlameLayer::with_file(path)
-            .map_err(|e| TelemetryError::Flame(e.to_string()))?;
+        let (flame_layer, flush) = tracing_flame::FlameLayer::with_file(path)?;
         layers.push(flame_layer.boxed());
         flame_flush = Some(flush);
     }
@@ -72,8 +71,7 @@ pub(super) fn init_subscriber(
     Registry::default()
         .with(filter_layer)
         .with(layers)
-        .try_init()
-        .map_err(|e| TelemetryError::Subscriber(e.to_string()))?;
+        .try_init()?;
 
     // Type-erase the reload handle (its `S` is `Registry`) behind read/apply
     // closures for `/management/loggers`.
@@ -113,7 +111,15 @@ fn fmt_layer(format: super::config::LogFormat) -> BoxedLayer {
         // (e.g. `docker compose` logs, where stdout is a pipe, not a TTY) —
         // force ANSI on. Only `auto`-selected pretty keeps TTY detection.
         let ansi = matches!(format, LogFormat::Pretty) || std::io::stdout().is_terminal();
-        fmt::layer().with_target(true).with_ansi(ansi).boxed()
+        // The text format renders `Display` fields and interpolated messages
+        // verbatim, so its writer neutralises CR/LF: a value cannot forge a
+        // record (OWASP Logging Cheat Sheet §Log Injection —
+        // `crate::telemetry::log_sanitize`). JSON escapes them itself.
+        fmt::layer()
+            .with_target(true)
+            .with_ansi(ansi)
+            .with_writer(super::log_sanitize::LineSafe::new(std::io::stdout))
+            .boxed()
     }
 }
 
