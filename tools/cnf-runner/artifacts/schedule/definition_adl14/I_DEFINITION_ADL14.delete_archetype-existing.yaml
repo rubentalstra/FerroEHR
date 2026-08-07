@@ -21,6 +21,8 @@ spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL14.delete_archetype"
   - "SM openehr_platform §I_DEFINITION_ADL14.get_archetype"
 applies: { rm: ">=1.0.2" }
+guards:
+  - "EXTENSION ROUTE — no openEHR spec governs the /definition/archetype/adl1.4* routes; our own design/extension, declared in vocab/wire_surface.yaml served_extensions (family adl14-archetype) and adjudicated by register AMB-41. The row gates the Adl14ArchetypeProvisioning CAPABILITY verdict only, never ITS-REST wire conformance"
 requires: { server: any }
 data_sets: [cnf.archetype.adl14.medication]
 flow:
@@ -37,3 +39,4 @@ flow:
     call: get_archetype
     with: { archetype_id: "openEHR-EHR-INSTRUCTION.medication.v1" }
     expect: not_found
+ambiguities: [AMB-41]

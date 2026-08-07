@@ -18,6 +18,8 @@ description: "delete a non-existing ADL 1.4 archetype"
 spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL14.delete_archetype"
 applies: { rm: ">=1.0.2" }
+guards:
+  - "EXTENSION ROUTE — no openEHR spec governs the /definition/archetype/adl1.4* routes; our own design/extension, declared in vocab/wire_surface.yaml served_extensions (family adl14-archetype) and adjudicated by register AMB-41. The row gates the Adl14ArchetypeProvisioning CAPABILITY verdict only, never ITS-REST wire conformance"
 requires: { server: any }
 flow:
   - step: 1
@@ -25,3 +27,4 @@ flow:
     on: admin                              # ADMIN-role principal (ixit) — the delete carries the Admin operation class
     with: { archetype_id: "openEHR-EHR-EVALUATION.cnf_absent.v99" }
     expect: not_found
+ambiguities: [AMB-41]
