@@ -287,23 +287,30 @@ no value is supplied the identity falls back to the workspace version with an
 
 A further Compose file adds a full local telemetry stack — an OTLP collector,
 Prometheus, Tempo, Loki, and Grafana with a provisioned service-overview
-dashboard. Like the Keycloak overlay it is standalone: the dashboard and
-scrape configuration travel inline in the file, so downloading it beside
-`docker-compose.yml` is enough:
+dashboard. Like the Keycloak overlay it is standalone: the dashboard travels
+inline in the file, so downloading it beside `docker-compose.yml` is enough:
 
 ```shell
 docker compose -f docker-compose.yml -f docker-compose.observability.yml up
 # Grafana → http://localhost:3000
 ```
 
-The overlay reconfigures the server for that stack: it exports traces over
-OTLP/gRPC (`FERROEHR__TELEMETRY__OTLP_ENDPOINT`), switches stdout to JSON lines
+The overlay reconfigures the server for that stack: it exports **traces and
+metrics** over OTLP/gRPC (`FERROEHR__TELEMETRY__OTLP_ENDPOINT` plus
+`FERROEHR__TELEMETRY__METRICS_PUSH=true`), switches stdout to JSON lines
 (`FERROEHR__LOG__FORMAT=json`), and enables the management surface on its own
-internal port 9464 (`FERROEHR__MANAGEMENT__ENABLED`, `FERROEHR__MANAGEMENT__PORT`)
-with `info`, `metrics`, and `prometheus` set to `public` so the bundled
-Prometheus can scrape `/management/prometheus` without credentials. That port is
-only reachable on the Compose network — Grafana's 3000 is the sole published
-port. Every variable uses the same `FERROEHR__…` grammar as the rest of the
+internal port 9464 (`FERROEHR__MANAGEMENT__ENABLED`, `FERROEHR__MANAGEMENT__PORT`).
+That port is only reachable on the Compose network — Grafana's 3000 is the sole
+published port.
+
+Metrics are **pushed, not scraped**, and that is a property of the bundled
+image rather than a preference: `grafana/otel-lgtm` runs Prometheus with a
+config file carrying no `scrape_configs` at all, and receives metrics over OTLP
+from its own collector. A scrape job dropped into that image is read by nothing,
+which is what an earlier version of this overlay did — every metric panel was
+empty with no error anywhere. The server pushes every metric family it has, so
+`/management/prometheus` and the collector always agree; the endpoint stays
+reachable on the Compose network for anyone who wants to compare the two. Every variable uses the same `FERROEHR__…` grammar as the rest of the
 [configuration reference](configuration.md); a single-underscore spelling is
 rejected at startup, not ignored.
 

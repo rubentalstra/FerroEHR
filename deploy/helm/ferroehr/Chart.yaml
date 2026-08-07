@@ -25,7 +25,7 @@ type: application
 # attestation. A published OCI version is immutable here by refusal rather than
 # by the registry — `helm push` over an existing tag replaces it silently — so
 # the signed artifact ships as a new version and 5.0.0 stays as it is.
-version: 5.0.1
+version: 5.1.0
 # The default container image tag (overridable via image.tag), and the released
 # application version — kept equal to the workspace version by the
 # `chart-appversion` CI guard, so a release cannot ship a chart pointing at the
@@ -111,17 +111,23 @@ annotations:
   # in-chart PostgreSQL, and the admin console is its own deployment — so the
   # other two are listed as product images rather than chart contents. Every tag
   # here must equal `appVersion`; the `chart-appversion` CI guard checks it.
+  # ONLY images this chart actually deploys. Artifact Hub scans every entry here
+  # and attributes the findings to this package, so listing an image the chart
+  # never installs reports us for software no user runs. `ferroehr-postgres` was
+  # listed and removed: the chart takes an EXTERNAL DSN and provisions no
+  # database, so an upstream postgres image's CVEs were being attributed to a
+  # chart that never installs one. The `whitelisted` flag would silence such a
+  # scan while leaving the false claim in place, so it is deliberately not used.
   artifacthub.io/images: |
     - name: ferroehr
       image: ghcr.io/rubentalstra/ferroehr:3.17.3
       platforms:
         - linux/amd64
         - linux/arm64
-    - name: ferroehr-postgres
-      image: ghcr.io/rubentalstra/ferroehr-postgres:3.17.3
-      platforms:
-        - linux/amd64
-        - linux/arm64
+    # The admin console — an OPTIONAL companion an operator may run alongside
+    # the CDR. Listed deliberately (owner call) so its vulnerability surface is
+    # visible to anyone considering it. See #2193: this chart cannot deploy it
+    # yet, so today the entry advertises intent rather than chart behaviour.
     - name: ferroehr-admin-ui
       image: ghcr.io/rubentalstra/ferroehr-admin-ui:3.17.3
       platforms:
