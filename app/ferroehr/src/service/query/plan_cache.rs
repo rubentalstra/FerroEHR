@@ -102,7 +102,7 @@ impl PlanCache {
     }
 
     /// The cached plan for `aql`, or `None` on a miss (or when disabled).
-    /// Records the hit/miss both on the [`AQL_PLAN_CACHE_EVENTS`] counter and
+    /// Records the hit/miss both on the [`AQL_PLAN_CACHE_EVENTS`](crate::telemetry::metrics::AQL_PLAN_CACHE_EVENTS) counter and
     /// on the in-process [`PlanCache::stats`] view.
     pub async fn get(&self, aql: &str) -> Option<Arc<QueryIr>> {
         let hit = match &self.inner {
