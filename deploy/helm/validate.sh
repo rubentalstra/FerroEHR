@@ -117,34 +117,79 @@ yaml_ok() {
   ' "$file"
 }
 
-# ── Security-field gate: every Restricted-profile field must be present ──────
+# ── Restricted-profile gate: EVERY pod, control by control ───────────────────
+# The Kubernetes Pod Security Standards "restricted" profile
+# (https://kubernetes.io/docs/concepts/security/pod-security-standards/) is
+# checked per CONTAINER, not by grepping the file. A substring search passes as
+# soon as one container carries a field, so with two workloads in a render — the
+# server and the optional admin console — a compliant server would vouch for a
+# non-compliant console. That is compliance by luck, and this render is the only
+# place it can be caught before a cluster refuses the pod.
 assert_security() {
   local file="$1"
-  local -a required=(
-    "runAsNonRoot: true"
-    "readOnlyRootFilesystem: true"
-    "allowPrivilegeEscalation: false"
-    "type: RuntimeDefault"
-    "- ALL"
-    # Not cosmetic: the kubelet's Service link variables land in the server's
-    # reserved FERROEHR_ namespace and its strict env sweep then refuses to boot,
-    # so losing this line makes every install crash-loop.
-    "enableServiceLinks: false"
-  )
-  local missing=0
-  for field in "${required[@]}"; do
-    if ! grep -qF -- "$field" "$file"; then
-      red "  MISSING required security field: '${field}'"
-      missing=1
-    fi
-  done
-  # The default-deny NetworkPolicy must be present (both cases enable it).
-  if ! grep -q "kind: NetworkPolicy" "$file"; then
-    red "  MISSING NetworkPolicy (default-deny ingress)"
-    missing=1
-  fi
-  [[ "$missing" -eq 0 ]] || { red "  security gate FAILED for ${file}"; exit 1; }
-  echo "  security fields pinned (runAsNonRoot, readOnlyRootFilesystem, seccomp RuntimeDefault, drop ALL, no priv-esc, NetworkPolicy)"
+  python3 - "$file" <<'PYGATE' || { red "  restricted-profile gate FAILED for ${file}"; exit 1; }
+import sys, yaml
+
+ALLOWED_VOLUMES = {
+    "configMap", "csi", "downwardAPI", "emptyDir", "ephemeral",
+    "persistentVolumeClaim", "projected", "secret",
+}
+bad = []
+
+def check_pod(kind, name, spec):
+    pod = spec.get("securityContext") or {}
+    if pod.get("runAsNonRoot") is not True:
+        bad.append(f"{kind}/{name}: pod runAsNonRoot must be true")
+    if (pod.get("seccompProfile") or {}).get("type") not in ("RuntimeDefault", "Localhost"):
+        bad.append(f"{kind}/{name}: pod seccompProfile.type must be RuntimeDefault or Localhost")
+    # The kubelet's per-Service link variables land in the reserved FERROEHR_
+    # namespace and the strict env sweep then refuses to boot, so losing this
+    # makes every install crash-loop. Not a profile control; checked here
+    # because this is where pod specs are inspected.
+    if spec.get("enableServiceLinks") is not False:
+        bad.append(f"{kind}/{name}: enableServiceLinks must be false")
+    for v in spec.get("volumes") or []:
+        used = [k for k in v if k != "name"]
+        for t in used:
+            if t not in ALLOWED_VOLUMES:
+                bad.append(f"{kind}/{name}: volume {v.get('name')} type {t} is outside the restricted set")
+    for c in (spec.get("containers") or []) + (spec.get("initContainers") or []):
+        sc = c.get("securityContext") or {}
+        cn = c.get("name")
+        if sc.get("allowPrivilegeEscalation") is not False:
+            bad.append(f"{kind}/{name}/{cn}: allowPrivilegeEscalation must be false")
+        if sc.get("runAsNonRoot") is not True and pod.get("runAsNonRoot") is not True:
+            bad.append(f"{kind}/{name}/{cn}: runAsNonRoot must be true")
+        if sc.get("readOnlyRootFilesystem") is not True:
+            bad.append(f"{kind}/{name}/{cn}: readOnlyRootFilesystem must be true")
+        caps = sc.get("capabilities") or {}
+        if "ALL" not in (caps.get("drop") or []):
+            bad.append(f"{kind}/{name}/{cn}: capabilities.drop must include ALL")
+        if caps.get("add"):
+            bad.append(f"{kind}/{name}/{cn}: capabilities.add must be empty, got {caps['add']}")
+
+pods = 0
+netpol = False
+for doc in yaml.safe_load_all(open(sys.argv[1])):
+    if not doc:
+        continue
+    kind = doc.get("kind")
+    if kind == "NetworkPolicy":
+        netpol = True
+    tmpl = (doc.get("spec") or {}).get("template")
+    if kind in ("Deployment", "StatefulSet", "DaemonSet", "Job") and tmpl:
+        pods += 1
+        check_pod(kind, (doc.get("metadata") or {}).get("name"), tmpl.get("spec") or {})
+
+if pods == 0:
+    bad.append("no pod-bearing workload found — the gate would pass vacuously")
+if not netpol:
+    bad.append("no NetworkPolicy in the render")
+for b in bad:
+    print(f"  {b}")
+sys.exit(1 if bad else 0)
+PYGATE
+  echo "  restricted profile satisfied by every pod in the render (per container)"
 }
 
 mkdir -p "$GOLDEN_DIR"

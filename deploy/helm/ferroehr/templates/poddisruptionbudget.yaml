@@ -6,6 +6,16 @@ metadata:
   labels:
     {{- include "ferroehr.labels" . | nindent 4 }}
 spec:
+  {{- /* The documented recommendation
+         (https://kubernetes.io/docs/concepts/workloads/pods/disruptions/):
+         "It is recommended to set AlwaysAllow Unhealthy Pod Eviction Policy to
+         your PodDisruptionBudgets to support eviction of misbehaving
+         applications during a node drain. The default behavior is to wait for
+         the application pods to become healthy before the drain can proceed."
+         With our maxUnavailable: 0 posture the default is worse than passive: a
+         drain waits for pods to become healthy that are unhealthy BECAUSE the
+         node is draining, so it never completes and reports nothing. */}}
+  unhealthyPodEvictionPolicy: {{ .Values.podDisruptionBudget.unhealthyPodEvictionPolicy }}
   {{- if .Values.podDisruptionBudget.maxUnavailable }}
   maxUnavailable: {{ .Values.podDisruptionBudget.maxUnavailable }}
   {{- else }}

@@ -29,6 +29,7 @@ spec:
     - ports:
         - port: http
           protocol: TCP
+
 ---
 # Source: ferroehr/templates/poddisruptionbudget.yaml
 apiVersion: policy/v1
@@ -43,11 +44,13 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
+  unhealthyPodEvictionPolicy: AlwaysAllow
   minAvailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: ferroehr
       app.kubernetes.io/instance: ferroehr
+
 ---
 # Source: ferroehr/templates/serviceaccount.yaml
 apiVersion: v1
@@ -62,6 +65,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 automountServiceAccountToken: false
+
 ---
 # Source: ferroehr/templates/configmap.yaml
 apiVersion: v1
@@ -187,6 +191,8 @@ data:
       [terminology.external]
         enabled = false
         fail_on_error = false
+    
+
 ---
 # Source: ferroehr/templates/service.yaml
 apiVersion: v1
@@ -210,6 +216,7 @@ spec:
   selector:
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
+
 ---
 # Source: ferroehr/templates/deployment.yaml
 apiVersion: apps/v1

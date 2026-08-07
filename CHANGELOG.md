@@ -18,6 +18,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **The Helm chart can deploy the admin console.** `adminUi.enabled` renders the
+  console as its own Deployment/Service/ServiceAccount, with an optional Ingress
+  and a NetworkPolicy that confines its egress to the CDR and DNS — the console
+  is a REST client of the CDR by mandate, so that is now enforced rather than
+  documented. Off by default, and off renders nothing.
+
 - **The Helm chart validates your values file** (`values.schema.json`, chart
   `5.0.0`, unchanged in `5.0.1`). `helm install`, `upgrade`, `lint` and
   `template` now refuse a values
@@ -207,6 +213,21 @@ workflow refuses a tag that has no matching section here.
 - Boot warnings for two deliberate weakenings that are easy to leave switched on: `cors_permissive`, and authentication enabled on a **plaintext** listener bound to a routable address.
 
 ### Changed
+
+- **`probes.exec` is removed** (breaking, for anyone who set it). It ran
+  `ferroehr healthcheck` for liveness, readiness *and* startup, passed no
+  `--url`, and that flag defaults to the openEHR status document rather than a
+  health endpoint — so readiness never touched the database and a pod with a
+  dead database reported Ready and took clinical traffic. The httpGet probes
+  that were already the default are correct and are now the only path:
+  `/health/liveness` for liveness and startup, `/health/readiness` for
+  readiness.
+- The PodDisruptionBudget sets `unhealthyPodEvictionPolicy: AlwaysAllow`, the
+  documented recommendation. With the previous default a node drain waited for
+  pods to become healthy that were unhealthy *because* of the drain, so it never
+  completed.
+- The chart's pinned Helm version moves to 4.2.3 (current release), with the
+  golden renders regenerated on it.
 
 - **Metric names change: `/management/prometheus` now derives its suffixes.**
   The server had two metrics systems and now has one — OpenTelemetry, feeding

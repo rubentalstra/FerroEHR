@@ -137,6 +137,34 @@ Kubernetes: `>=1.25.0-0`
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| adminUi.affinity | object | `{}` | Affinity. |
+| adminUi.auth.oidc.clientId | string | `""` | OAuth2 client id. |
+| adminUi.auth.oidc.enabled | bool | `false` | Authenticate console users through OIDC. Off means the console's own session auth is whatever its defaults provide — acceptable for a private cluster, not for anything reachable by a person who should not see PHI. |
+| adminUi.auth.oidc.issuer | string | `""` | Issuer URL (must be https for anything but local development). |
+| adminUi.auth.oidc.publicBaseUrl | string | `""` | The console's own externally-reachable base URL, used to build the OIDC redirect. Must match what the identity provider has registered. |
+| adminUi.enabled | bool | `false` | Deploy the admin console alongside the CDR. |
+| adminUi.existingSecret | string | `""` | Name of an existing Secret holding the console's OIDC client secret. The chart mounts that key as a FILE and passes only its path, so the credential never enters the pod's environment — the same discipline the server's DSN uses. |
+| adminUi.existingSecretKey | string | `"FERROEHR_ADMIN__AUTH__OIDC__CLIENT_SECRET"` | Key within `existingSecret` carrying the client secret. |
+| adminUi.extraEnv | list | `[]` | Extra environment for the console (escape hatch). |
+| adminUi.image.digest | string | `""` | Image digest (`sha256:…`); wins over `tag` when set, exactly as the server's `image.digest` does. |
+| adminUi.image.pullPolicy | string | `"IfNotPresent"` | Pull policy. |
+| adminUi.image.repository | string | `"ghcr.io/rubentalstra/ferroehr-admin-ui"` | Console image repository. |
+| adminUi.image.tag | string | `""` | Image tag. Empty falls back to .Chart.appVersion, so the console and the server move together by default. |
+| adminUi.ingress.annotations | object | `{}` | Extra annotations for the console Ingress. |
+| adminUi.ingress.className | string | `""` | IngressClass name. |
+| adminUi.ingress.enabled | bool | `false` | Publish the console through an Ingress. The console is a human-facing web UI, so unlike the API this is the normal way to reach it. |
+| adminUi.ingress.hosts | list | `[]` | Hosts and paths. |
+| adminUi.ingress.tls | list | `[]` | TLS blocks. |
+| adminUi.networkPolicy.enabled | bool | `true` | Install a NetworkPolicy for the console. Ingress admits `ingressFrom`; egress admits the CDR Service and DNS, and nothing else. The console is a REST client of the CDR by mandate, so this is enforceable rather than aspirational. |
+| adminUi.networkPolicy.ingressFrom | list | `[]` | Ingress `from` selectors admitted to the console port. Empty means the rule carries no `from`, which admits EVERY source — set this to your ingress-controller namespace/pods. |
+| adminUi.nodeSelector | object | `{}` | Node selector. |
+| adminUi.podSecurityContext | object | `{"fsGroup":65532,"runAsGroup":65532,"runAsNonRoot":true,"runAsUser":65532,"seccompProfile":{"type":"RuntimeDefault"}}` | Pod-level security context. Mirrors the server's; a second workload is where a hardened posture is most easily lost. |
+| adminUi.replicaCount | int | `1` | Replica count. The console holds session state in process, so more than one replica needs sticky sessions at the ingress or users get logged out on a reroute; left at 1 deliberately. |
+| adminUi.resources | object | `{"limits":{"memory":"512Mi"},"requests":{"cpu":"50m","memory":"128Mi"}}` | Resource requests/limits. |
+| adminUi.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true,"runAsNonRoot":true,"runAsUser":65532}` | Container-level security context. Mirrors the server's. |
+| adminUi.service.port | int | `3000` | Service port. The container always listens on 3000. |
+| adminUi.service.type | string | `"ClusterIP"` | Service type for the console. |
+| adminUi.tolerations | list | `[]` | Tolerations. |
 | affinity | object | `{}` |  |
 | autoscaling.enabled | bool | `false` |  |
 | autoscaling.maxReplicas | int | `6` |  |
@@ -251,6 +279,7 @@ Kubernetes: `>=1.25.0-0`
 | podAnnotations | object | `{}` |  |
 | podDisruptionBudget.enabled | bool | `true` |  |
 | podDisruptionBudget.minAvailable | int | `1` |  |
+| podDisruptionBudget.unhealthyPodEvictionPolicy | string | `"AlwaysAllow"` | Whether a node drain may evict pods that are already unhealthy. `AlwaysAllow` is the documented recommendation; the alternative, `IfHealthyBudget`, is the API default and makes a drain wait for pods to become healthy first — which never completes when they are unhealthy because of the drain itself. |
 | podLabels | object | `{}` | Extra pod labels / annotations. |
 | podSecurityContext.fsGroup | int | `65532` |  |
 | podSecurityContext.fsGroupChangePolicy | string | `"OnRootMismatch"` |  |
@@ -258,7 +287,6 @@ Kubernetes: `>=1.25.0-0`
 | podSecurityContext.runAsNonRoot | bool | `true` |  |
 | podSecurityContext.runAsUser | int | `65532` |  |
 | podSecurityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
-| probes.exec | object | `{"enabled":false}` | Use `ferroehr healthcheck` exec probes instead of httpGet. |
 | probes.liveness.failureThreshold | int | `3` |  |
 | probes.liveness.initialDelaySeconds | int | `10` |  |
 | probes.liveness.periodSeconds | int | `15` |  |

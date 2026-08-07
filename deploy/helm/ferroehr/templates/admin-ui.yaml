@@ -1,0 +1,249 @@
+{{- if .Values.adminUi.enabled }}
+{{- /*
+The admin console — an OPTIONAL companion workload (#2193).
+
+Everything here is gated on `adminUi.enabled`, so the default render is
+byte-identical to a chart without this file. The console is a REST client of the
+CDR by mandate (it may never reach the database or the platform library), which
+is what makes the egress policy below enforceable rather than advisory.
+
+The pod-security posture is NOT inherited from the server's values: a second
+workload is exactly where a hardened posture is quietly lost, so the console
+carries its own copy and the chart's security gate checks both.
+*/}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "ferroehr.adminUiFullname" . }}
+  labels:
+    {{- include "ferroehr.adminUiLabels" . | nindent 4 }}
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ferroehr.adminUiFullname" . }}
+  labels:
+    {{- include "ferroehr.adminUiLabels" . | nindent 4 }}
+spec:
+  type: {{ .Values.adminUi.service.type }}
+  ports:
+    - port: {{ .Values.adminUi.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "ferroehr.adminUiSelectorLabels" . | nindent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ferroehr.adminUiFullname" . }}
+  labels:
+    {{- include "ferroehr.adminUiLabels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.adminUi.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "ferroehr.adminUiSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "ferroehr.adminUiSelectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "ferroehr.adminUiFullname" . }}
+      automountServiceAccountToken: false
+      # Same reason as the server's: the kubelet's per-Service link variables
+      # land in the reserved `FERROEHR_` namespace for any Service named
+      # `ferroehr*`, and a strict boot-time sweep then refuses to start
+      # (https://kubernetes.io/docs/concepts/services-networking/service/#environment-variables).
+      enableServiceLinks: false
+      securityContext:
+        {{- toYaml .Values.adminUi.podSecurityContext | nindent 8 }}
+      containers:
+        - name: admin-ui
+          image: "{{ include "ferroehr.adminUiImage" . }}"
+          imagePullPolicy: {{ .Values.adminUi.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.adminUi.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            # The CDR is addressed by its in-cluster Service — the console never
+            # talks to the database, and the egress policy below enforces that.
+            - name: FERROEHR_ADMIN__CDR__BASE_URL
+              value: {{ printf "http://%s:%v" (include "ferroehr.fullname" .) .Values.service.port | quote }}
+            {{- if .Values.adminUi.auth.oidc.enabled }}
+            - name: FERROEHR_ADMIN__AUTH__OIDC__ENABLED
+              value: "true"
+            - name: FERROEHR_ADMIN__AUTH__OIDC__ISSUER
+              value: {{ .Values.adminUi.auth.oidc.issuer | quote }}
+            - name: FERROEHR_ADMIN__AUTH__OIDC__CLIENT_ID
+              value: {{ .Values.adminUi.auth.oidc.clientId | quote }}
+            - name: FERROEHR_ADMIN__AUTH__OIDC__PUBLIC_BASE_URL
+              value: {{ .Values.adminUi.auth.oidc.publicBaseUrl | quote }}
+            {{- if .Values.adminUi.existingSecret }}
+            # The client secret is a mounted FILE and only its path is
+            # environment: an env VALUE is readable through /proc/<pid>/environ
+            # and inherited by every child process.
+            - name: FERROEHR_ADMIN__AUTH__OIDC__CLIENT_SECRET_FILE
+              value: /etc/ferroehr-admin-secrets/client_secret
+            {{- end }}
+            {{- end }}
+            {{- with .Values.adminUi.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.adminUi.resources | nindent 12 }}
+          volumeMounts:
+            # `readOnlyRootFilesystem: true` leaves nowhere to write, so the
+            # writable scratch the runtime needs is an explicit emptyDir.
+            - name: tmp
+              mountPath: /tmp
+            {{- if and .Values.adminUi.auth.oidc.enabled .Values.adminUi.existingSecret }}
+            - name: admin-secrets
+              mountPath: /etc/ferroehr-admin-secrets
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        {{- if and .Values.adminUi.auth.oidc.enabled .Values.adminUi.existingSecret }}
+        - name: admin-secrets
+          secret:
+            secretName: {{ .Values.adminUi.existingSecret }}
+            items:
+              - key: {{ .Values.adminUi.existingSecretKey }}
+                path: client_secret
+        {{- end }}
+      {{- with .Values.adminUi.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.adminUi.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.adminUi.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- if .Values.adminUi.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "ferroehr.adminUiFullname" . }}
+  labels:
+    {{- include "ferroehr.adminUiLabels" . | nindent 4 }}
+  {{- with .Values.adminUi.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.adminUi.ingress.className }}
+  ingressClassName: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.adminUi.ingress.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    {{- range .Values.adminUi.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType | default "Prefix" }}
+            backend:
+              service:
+                name: {{ include "ferroehr.adminUiFullname" $ }}
+                port:
+                  number: {{ $.Values.adminUi.service.port }}
+          {{- end }}
+    {{- end }}
+{{- end }}
+{{- if .Values.adminUi.networkPolicy.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "ferroehr.adminUiFullname" . }}
+  labels:
+    {{- include "ferroehr.adminUiLabels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "ferroehr.adminUiSelectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - {{- with .Values.adminUi.networkPolicy.ingressFrom }}
+      from:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    # The CDR, by pod selector — the console's ONLY application destination.
+    #
+    # This matches the release's name+instance, which the console's own pods
+    # carry too, so console→console traffic is permitted as well. That is
+    # deliberate: narrowing it would need a `component` label inside
+    # `selectorLabels`, and a Deployment's `selector.matchLabels` is IMMUTABLE
+    # (https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+    # — "the selector … cannot be changed once created"), so adding one would
+    # break `helm upgrade` on every existing release. A permitted hop between
+    # two pods of the same release is a far smaller cost than that.
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "ferroehr.selectorLabels" . | nindent 14 }}
+      ports:
+        - protocol: TCP
+          port: 8080
+    # DNS. Without this the Service name above does not resolve and the console
+    # fails in a way that looks like the CDR being down.
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    {{- if .Values.adminUi.auth.oidc.enabled }}
+    # The OIDC issuer is off-cluster in nearly every deployment, and the
+    # NetworkPolicy API cannot name a DNS host
+    # (https://kubernetes.io/docs/concepts/services-networking/network-policies/
+    # — "you cannot ... target Services or Pods by name"), so the issuer is
+    # admitted as an explicit egress rule the operator narrows with an ipBlock.
+    - ports:
+        - protocol: TCP
+          port: 443
+    {{- end }}
+{{- end }}
+{{- end }}
