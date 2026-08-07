@@ -75,6 +75,28 @@ never on this port-selection path: they are always served on the main HTTP port.
 {{- end }}
 
 {{/*
+The container image reference.
+
+A digest wins over a tag, and the separator differs: `repository@sha256:…` versus
+`repository:tag`. A digest is what a build-provenance attestation is made over, so
+deploying by digest is what makes `gh attestation verify` bind to the image that
+is actually running — a tag can be moved after it is verified.
+
+`sha256:` is accepted with or without the prefix, because both spellings are in
+circulation and the one-character difference between them is an unhelpful way to
+fail a deployment.
+*/}}
+{{- define "ferroehr.image" -}}
+{{- if .Values.image.digest }}
+{{- $digest := .Values.image.digest }}
+{{- if not (hasPrefix "sha256:" $digest) }}{{- $digest = printf "sha256:%s" $digest }}{{- end }}
+{{- printf "%s@%s" .Values.image.repository $digest }}
+{{- else }}
+{{- printf "%s:%s" .Values.image.repository (.Values.image.tag | default .Chart.AppVersion) }}
+{{- end }}
+{{- end }}
+
+{{/*
 The chart-managed Secret name (env-borne secrets: DB DSN, passphrases, keys).
 */}}
 {{- define "ferroehr.secretName" -}}
