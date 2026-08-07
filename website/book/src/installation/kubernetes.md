@@ -81,9 +81,13 @@ gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:<tag> -R rubentalstra/
 > [!IMPORTANT]
 > Signing was added to the publishing lanes **after** `3.17.3` was built, so that
 > tag and everything before it carry no attestation and the command above answers
-> `no attestations found` for them. Attestations exist from the first release
+> `HTTP 404: Not Found` for them. Attestations exist from the first release
 > published by the signing lane onward. If you are pinning an older tag and need
-> provenance, pin a newer one.
+> provenance, pin a newer one — the development images
+> (`ghcr.io/rubentalstra/ferroehr:develop`) already verify. **No chart version has
+> been published yet**, so the chart command has nothing to answer for until the
+> first release cut by the signing lanes; the images it deploys are already
+> verifiable.
 
 > [!NOTE]
 > `helm install --verify` and `helm verify` do **not** apply: they check a PGP
