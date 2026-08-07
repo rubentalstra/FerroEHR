@@ -54,7 +54,7 @@ use crate::service::error::ServiceError;
 pub(crate) fn parse_opt(xml: &str) -> Result<OperationalTemplate, ServiceError> {
     require_well_formed_xml(xml)?;
     openehr_its::opt14::from_xml(xml).map_err(|e| {
-        ServiceError::Unprocessable(crate::service::error::Violation::new(format!(
+        ServiceError::content_invalid(crate::service::error::Violation::new(format!(
             "invalid OPT 1.4 XML: {e}"
         )))
     })
@@ -76,7 +76,7 @@ fn require_well_formed_xml(xml: &str) -> Result<(), ServiceError> {
             }
             Ok(_) => {}
             Err(e) => {
-                return Err(ServiceError::BadRequest(format!(
+                return Err(ServiceError::precondition(format!(
                     "syntactically invalid XML content: {e}"
                 )));
             }
@@ -85,7 +85,7 @@ fn require_well_formed_xml(xml: &str) -> Result<(), ServiceError> {
     if saw_root {
         Ok(())
     } else {
-        Err(ServiceError::BadRequest(
+        Err(ServiceError::precondition(
             "syntactically invalid XML content: the document has no root element".to_owned(),
         ))
     }

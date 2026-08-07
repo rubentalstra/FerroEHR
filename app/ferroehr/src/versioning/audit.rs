@@ -113,7 +113,7 @@ fn merged_change_type(supplied: &str, operation: &str) -> Result<String, Service
         return Ok(operation.to_owned());
     }
     let code = change_type_code(token).ok_or_else(|| {
-        ServiceError::Unprocessable(
+        ServiceError::content_invalid(
             Violation::new(format!(
                 "{token:?} is not a code in the openEHR audit_change_type group"
             ))
@@ -140,7 +140,7 @@ fn merged_change_type(supplied: &str, operation: &str) -> Result<String, Service
     if compatible {
         Ok(code)
     } else {
-        Err(ServiceError::BadRequest(format!(
+        Err(ServiceError::precondition(format!(
             "change_type {code} does not match the operation (its change type is \
              {operation}) — the modification type must match the operation \
              (RM change_control §Contributions; ITS-REST overview \
@@ -375,7 +375,7 @@ impl AuditInput {
 /// §Attributes).
 pub(crate) fn decode_description(fragment: &Value) -> Result<DvText, ServiceError> {
     openehr_its::json::from_canonical_value::<DvText>(fragment).map_err(|e| {
-        ServiceError::Unprocessable(
+        ServiceError::content_invalid(
             Violation::new("is not a canonical DV_TEXT")
                 .with_path("AUDIT_DETAILS.description")
                 .with_decode_failure(&e),
@@ -445,7 +445,7 @@ pub(crate) fn dv_text(value: &str) -> DvText {
 /// `UML/classes/org.openehr.rm.common.audit_details.adoc` §Attributes).
 pub(crate) fn party_proxy(committer: &Value) -> Result<PartyProxy, ServiceError> {
     openehr_its::json::from_canonical_value::<PartyProxy>(committer).map_err(|e| {
-        ServiceError::Unprocessable(
+        ServiceError::content_invalid(
             Violation::new("is not a canonical PARTY_PROXY")
                 .with_path("AUDIT_DETAILS.committer")
                 .with_decode_failure(&e),
@@ -476,7 +476,7 @@ pub(crate) fn party_proxy(committer: &Value) -> Result<PartyProxy, ServiceError>
 ///   committer is stored verbatim, so it is checked here.
 pub(crate) fn validate_commit_audit(audit: &AuditInput) -> Result<(), ServiceError> {
     if audit.system_id.is_empty() {
-        return Err(ServiceError::Unprocessable(
+        return Err(ServiceError::content_invalid(
             Violation::new("is mandatory and non-void")
                 .with_path("AUDIT_DETAILS.system_id")
                 .with_invariant("AUDIT_DETAILS.System_id_valid"),
@@ -525,7 +525,7 @@ fn validate_committer(committer: &PartyProxy) -> Result<(), ServiceError> {
     }
     // The dispatcher's own `InvariantViolation`s travel on as DATA — the
     // service never flattens them into a sentence here.
-    Err(ServiceError::Unprocessable(
+    Err(ServiceError::content_invalid(
         Violation::new("is not a valid PARTY_PROXY")
             .with_path("AUDIT_DETAILS.committer")
             .with_causes(violations),
@@ -598,7 +598,7 @@ mod tests {
             match merged_change_type(token, change_type::MODIFICATION) {
                 // The refusal is asserted as DATA: the attribute path and the
                 // named RM invariant, not a fragment of the sentence.
-                Err(ServiceError::Unprocessable(v)) => {
+                Err(ServiceError::Unprocessable { violation: v, .. }) => {
                     assert_eq!(v.path(), Some("change_type"), "{token}");
                     assert_eq!(
                         v.invariant(),
@@ -691,7 +691,7 @@ mod tests {
             &json!({ "_type": "PARTY_IDENTIFIED", "name": "Dr Jones" }),
         );
         match validate_commit_audit(&audit) {
-            Err(ServiceError::Unprocessable(v)) => {
+            Err(ServiceError::Unprocessable { violation: v, .. }) => {
                 assert_eq!(v.path(), Some("AUDIT_DETAILS.system_id"));
                 assert_eq!(v.invariant(), Some("AUDIT_DETAILS.System_id_valid"));
             }
@@ -705,7 +705,7 @@ mod tests {
         match validate_commit_audit(&audit) {
             // The nested dispatcher violations survive as DATA: the causes
             // list is asserted, not a substring of the rendered message.
-            Err(ServiceError::Unprocessable(v)) => {
+            Err(ServiceError::Unprocessable { violation: v, .. }) => {
                 assert_eq!(v.path(), Some("AUDIT_DETAILS.committer"));
                 assert!(
                     v.causes()
@@ -726,7 +726,7 @@ mod tests {
             &json!({ "_type": "PARTY_IDENTIFIED", "name": "" }),
         );
         match validate_commit_audit(&audit) {
-            Err(ServiceError::Unprocessable(v)) => assert!(
+            Err(ServiceError::Unprocessable { violation: v, .. }) => assert!(
                 v.causes().iter().any(|c| c.message.contains("Name_valid")),
                 "causes must carry Name_valid, got {:?}",
                 v.causes()
@@ -749,7 +749,7 @@ mod tests {
                     "relationship": { "_type": "DV_TEXT", "value": "mother" } }),
         ] {
             match party_proxy(&bad) {
-                Err(ServiceError::Unprocessable(v)) => {
+                Err(ServiceError::Unprocessable { violation: v, .. }) => {
                     assert_eq!(v.path(), Some("AUDIT_DETAILS.committer"));
                     assert!(
                         v.causes().iter().any(|c| c.message.contains("relationship")
@@ -782,7 +782,7 @@ mod tests {
         // The refusal is produced by the generated `PARTY_RELATED` core, whose
         // violation message names the invariant, not the rejected code.
         match validate_commit_audit(&bad) {
-            Err(ServiceError::Unprocessable(v)) => {
+            Err(ServiceError::Unprocessable { violation: v, .. }) => {
                 assert!(
                     v.causes()
                         .iter()

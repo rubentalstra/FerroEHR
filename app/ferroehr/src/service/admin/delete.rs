@@ -137,7 +137,7 @@ impl FerroEhrService {
                 .fetch_one(&mut *tx)
                 .await?;
         if refs > 0 {
-            return Err(ServiceError::Conflict(format!(
+            return Err(ServiceError::conflict(format!(
                 "template '{stored}' is still referenced by {refs} committed version(s); \
                  delete those compositions before deleting the template"
             )));

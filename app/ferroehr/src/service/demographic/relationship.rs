@@ -330,7 +330,7 @@ impl FerroEhrService {
         update_audit: Option<&UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
         if current.deleted {
-            return Err(ServiceError::BadRequest(format!(
+            return Err(ServiceError::precondition(format!(
                 "PARTY_RELATIONSHIP {} is already deleted",
                 current.vo_id
             )));
@@ -342,7 +342,7 @@ impl FerroEhrService {
             // answers `409` and echoes the latest `version_uid` in `ETag`,
             // mirroring the party delete's convention
             // (`responses/409_PERSON_with_uid_based_id.yaml`).
-            return Err(ServiceError::VersionConflict(format!(
+            return Err(ServiceError::version_conflict(format!(
                 "preceding_version_uid names version {expected}, latest is {}",
                 current.tree
             )));

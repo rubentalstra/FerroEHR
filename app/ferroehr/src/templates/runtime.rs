@@ -176,7 +176,7 @@ impl FerroEhrService {
             })
             .await
             .map_err(|e| {
-                ServiceError::Unprocessable(Violation::new(format!(
+                ServiceError::content_invalid(Violation::new(format!(
                     "operational template {template_id} could not be built into a WebTemplate: {e}"
                 )))
             })

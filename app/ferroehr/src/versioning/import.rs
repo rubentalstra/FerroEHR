@@ -79,7 +79,7 @@ async fn container_state(
     let kind = match row.kind {
         None => None,
         Some(text) => Some(Kind::from_type(&text).ok_or_else(|| {
-            ServiceError::Internal(format!("unknown versioned-object kind {text:?}"))
+            ServiceError::exception(format!("unknown versioned-object kind {text:?}"))
         })?),
     };
     Ok(ContainerState {
@@ -259,7 +259,7 @@ async fn enforce_copy_closure(
             )
             .await?
         {
-            return Err(ServiceError::BadRequest(format!(
+            return Err(ServiceError::precondition(format!(
                 "the extract violates the copy closure (RM common master06 §Copying): \
                  branch version {}::{}::{} arrives without its fork-point trunk \
                  version {trunk_version} (neither in the extract nor already stored)",
@@ -287,7 +287,7 @@ async fn enforce_copy_closure(
             )
             .await?
         {
-            return Err(ServiceError::BadRequest(format!(
+            return Err(ServiceError::precondition(format!(
                 "the extract violates the copy closure (RM common master06 §Copying): \
                  branch version {}::{}::{} arrives without its same-branch \
                  predecessor (branch version {}) — neither in the extract nor \
@@ -357,7 +357,7 @@ async fn commit_import_scoped(
         for pair in container.versions.windows(2) {
             let [first, second] = pair else { continue };
             if first.creating_system_id == second.creating_system_id && first.tree == second.tree {
-                return Err(ServiceError::Conflict(format!(
+                return Err(ServiceError::conflict(format!(
                     "version {}::{}::{} appears more than once in the import",
                     container.vo_id, first.creating_system_id, first.tree
                 )));
@@ -373,13 +373,13 @@ async fn commit_import_scoped(
             // to the existing clone — the kind must match, the EHR must own it,
             // and every imported trunk version must be strictly newer.
             if state.owner != ehr_id {
-                return Err(ServiceError::Conflict(format!(
+                return Err(ServiceError::conflict(format!(
                     "versioned object {} already exists in another EHR",
                     container.vo_id
                 )));
             }
             if existing_kind != container.kind {
-                return Err(ServiceError::Conflict(format!(
+                return Err(ServiceError::conflict(format!(
                     "versioned object {} is a {}, cannot import a {}",
                     container.vo_id,
                     existing_kind.as_str(),
@@ -394,7 +394,7 @@ async fn commit_import_scoped(
                 .min()
                 && first_trunk <= state.max_trunk
             {
-                return Err(ServiceError::Conflict(format!(
+                return Err(ServiceError::conflict(format!(
                     "versioned object {} already has trunk version {} — cannot \
                      re-import trunk version {first_trunk}",
                     container.vo_id, state.max_trunk

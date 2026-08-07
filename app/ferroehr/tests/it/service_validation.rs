@@ -165,7 +165,7 @@ async fn composition_validation_gates_persistence() {
         .expect_err("unknown template rejected");
     // An unknown template is a 422 `ServiceError::Unprocessable`; the cause
     // still rides in the message.
-    let ServiceError::Unprocessable(violation) = &err else {
+    let ServiceError::Unprocessable { violation, .. } = &err else {
         panic!("expected content_invalid (422) for unknown template, got {err:?}");
     };
     assert!(
@@ -547,7 +547,7 @@ async fn deleting_a_template_invalidates_its_web_template_cache() {
         )
         .await
         .expect_err("commit against a deleted template is rejected");
-    let ServiceError::Unprocessable(violation) = &err else {
+    let ServiceError::Unprocessable { violation, .. } = &err else {
         panic!("expected content_invalid (422) for the deleted template, got {err:?}");
     };
     assert!(

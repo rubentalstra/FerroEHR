@@ -210,7 +210,7 @@ impl FerroEhrService {
         // §update_other_details).
         let mut status: EhrStatus = openehr_its::json::from_canonical_value(&current.body)
             .map_err(|e| {
-                ServiceError::Unprocessable(
+                ServiceError::content_invalid(
                     crate::service::error::Violation::new("is not a canonical EHR_STATUS")
                         .with_path("EHR_STATUS")
                         .with_decode_failure(&e),
@@ -443,7 +443,7 @@ impl FerroEhrService {
     /// [`Self::ensure_ehr_content_writable`] pre-check so the message stays
     /// single-sourced.
     pub(in crate::service) fn not_modifiable_error(ehr_id: EhrId) -> ServiceError {
-        ServiceError::Conflict(format!(
+        ServiceError::conflict(format!(
             "EHR {ehr_id} is not modifiable (EHR_STATUS.is_modifiable = false); its \
              contents cannot be created, updated or deleted (RM ehr master04 §EHR Active \
              Status). Set EHR_STATUS.is_modifiable = true to reactivate it."
@@ -499,7 +499,7 @@ impl FerroEhrService {
             if let sqlx::Error::Database(db) = &e
                 && db.constraint() == Some("uq_ehr_subject")
             {
-                return ServiceError::Conflict(format!(
+                return ServiceError::conflict(format!(
                     "an EHR already exists for subject {}@{}",
                     subject_id.unwrap_or("?"),
                     namespace.unwrap_or("?"),
@@ -550,7 +550,7 @@ impl FerroEhrService {
                 crate::storage::ehr_repo::ehr_id_by_subject(&mut *tx, subject_id, namespace).await?
             && owner != ehr_id
         {
-            return Err(ServiceError::Conflict(format!(
+            return Err(ServiceError::conflict(format!(
                 "EHR {ehr_id} names subject {subject_id}@{namespace}, which EHR {owner} \
                  already holds (one EHR per subject)"
             )));
@@ -757,7 +757,7 @@ impl FerroEhrService {
             // judgement the retired post-mutation re-decode made).
             s.other_details = Some(openehr_its::json::from_canonical_value(&a_details).map_err(
                 |e| {
-                    ServiceError::Unprocessable(
+                    ServiceError::content_invalid(
                         crate::service::error::Violation::new("is not a canonical ITEM_STRUCTURE")
                             .with_path("EHR_STATUS/other_details")
                             .with_decode_failure(&e),

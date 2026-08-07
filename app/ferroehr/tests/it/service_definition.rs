@@ -148,10 +148,11 @@ async fn archetype_errors() {
     let db = testkit::db().await.expect("testkit database");
     let svc = FerroEhrService::new(db.pool());
 
-    // Invalid ADL → 422 invalid_archetype.
-    // NOTE: the SM-specific Definition statuses (invalid_archetype,
-    // artefact_does_not_exist, …) flatten through `ServiceError::sm()` to the
-    // generic `content_invalid` (422) / `precondition_violation` (400).
+    // Invalid ADL → 422. The ADL 1.4 engine refuses the source first and
+    // reports the generic `content_invalid` with its rule code, where
+    // `i_definition_adl14.adoc` §`upload_archetype` declares
+    // `invalid_archetype`; the wire status is `422` either way.
+    // TODO(#2151): name `invalid_archetype` at the 1.4 validation sites.
     let bad = svc
         .upload_archetype("this is not an archetype".to_owned())
         .await
@@ -197,7 +198,10 @@ async fn archetype_errors() {
         "got {del_missing:?}"
     );
 
-    // Uncompilable regex → 400 invalid_id_pattern (unbalanced group).
+    // Uncompilable regex → 400 invalid_id_pattern (unbalanced group) — the
+    // status `i_definition_adl14.adoc` §`list_matching_archetypes` declares
+    // (.Errors: `invalid_id_pattern`), not the generic
+    // `precondition_violation`.
     let bad_re = svc
         .list_matching_archetypes("(".to_owned(), Page::all())
         .await
@@ -206,7 +210,7 @@ async fn archetype_errors() {
         matches!(
             bad_re,
             SmError {
-                status: CallStatusType::PreconditionViolation,
+                status: CallStatusType::InvalidIdPattern,
                 ..
             }
         ),
@@ -698,13 +702,14 @@ async fn opt_errors() {
     let db = testkit::db().await.expect("testkit database");
     let svc = FerroEhrService::new(db.pool());
 
-    // Invalid OPT → 422 invalid_template.
+    // Invalid OPT → 422. The OPT ingestion path reports the generic
+    // `content_invalid`, where `i_definition_adl14.adoc` §`upload_opt`
+    // declares `invalid_template`; the wire status is `422` either way.
+    // TODO(#2151): name `invalid_template` at the OPT ingestion sites.
     let bad = svc
         .upload_opt("<not-a-template/>".to_owned())
         .await
         .expect_err("invalid opt");
-    // NOTE: the OPT ingestion path returns `ServiceError::Unprocessable`,
-    // flattened at the SM boundary to `content_invalid`.
     assert!(
         matches!(
             bad,
@@ -929,7 +934,8 @@ async fn adl2_errors() {
         "got {del_missing:?}"
     );
 
-    // Uncompilable regex → 400 invalid_id_pattern.
+    // Uncompilable regex → 400 invalid_id_pattern (`i_definition_adl2.adoc`
+    // §`list_matching_artefacts` .Errors: `invalid_id_pattern`).
     let bad_re = svc
         .list_matching_artefacts("(".to_owned(), Page::all())
         .await
@@ -938,7 +944,7 @@ async fn adl2_errors() {
         matches!(
             bad_re,
             SmError {
-                status: CallStatusType::PreconditionViolation,
+                status: CallStatusType::InvalidIdPattern,
                 ..
             }
         ),
@@ -1101,14 +1107,15 @@ async fn query_valid_store_list_match_delete() {
         matches!(
             bad,
             SmError {
-                status: CallStatusType::ContentInvalid,
+                status: CallStatusType::InvalidQuery,
                 ..
             }
         ),
         "got {bad:?}"
     );
 
-    // Bad id-pattern regex → 400.
+    // Bad id-pattern regex → 400 invalid_id_pattern
+    // (`i_definition_query.adoc` §`list_matching_queries`).
     let bad_re = svc
         .list_matching_queries("(".to_owned(), None, Page::all())
         .await
@@ -1117,7 +1124,7 @@ async fn query_valid_store_list_match_delete() {
         matches!(
             bad_re,
             SmError {
-                status: CallStatusType::PreconditionViolation,
+                status: CallStatusType::InvalidIdPattern,
                 ..
             }
         ),
@@ -1165,7 +1172,7 @@ async fn adl2_template_upload_wire_conflicts_on_duplicate() {
         .await
         .expect_err("duplicate template id conflicts on the wire surface");
     assert!(
-        matches!(&dup, ServiceError::Conflict(m) if m.contains("already exists")),
+        matches!(&dup, ServiceError::Conflict(e) if e.message.contains("already exists")),
         "got {dup:?}"
     );
 
@@ -1183,7 +1190,7 @@ async fn adl2_template_upload_wire_conflicts_on_duplicate() {
         .await
         .expect_err("invalid source rejected");
     assert!(
-        matches!(&bad, ServiceError::BadRequest(m) if m.contains("syntactically invalid")),
+        matches!(&bad, ServiceError::BadRequest(e) if e.message.contains("syntactically invalid")),
         "got {bad:?}"
     );
 }

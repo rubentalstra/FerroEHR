@@ -69,7 +69,7 @@ pub(crate) fn lifecycle_rubric(code: &str) -> String {
 pub(crate) fn resolve_lifecycle(token: Option<String>) -> Result<String, ServiceError> {
     match token {
         Some(token) => lifecycle_state_code(&token).ok_or_else(|| {
-            ServiceError::Unprocessable(
+            ServiceError::content_invalid(
                 Violation::new(format!(
                     "{token:?} is not a code in the openEHR version_lifecycle_state group"
                 ))
@@ -109,7 +109,7 @@ pub(crate) fn reject_deleted_with_data(lifecycle: &str) -> Result<(), ServiceErr
     if lifecycle != state::DELETED {
         return Ok(());
     }
-    Err(ServiceError::Unprocessable(
+    Err(ServiceError::content_invalid(
         Violation::new(
             "523|deleted| is invalid on a version that carries data — logical deletion \
              deletes the version's data and sets the deleted state in one act",
@@ -165,7 +165,7 @@ pub(crate) fn validate_transition(from: Option<&str>, to: &str) -> Result<(), Se
         Some(c) => (c, lifecycle_rubric(c)),
         None => ("(new)", "new".to_owned()),
     };
-    Err(ServiceError::Unprocessable(
+    Err(ServiceError::content_invalid(
         Violation::new(format!(
             "illegal version lifecycle transition {from_code}|{from_rubric}| -> {to}|{}|",
             lifecycle_rubric(to),
@@ -239,7 +239,7 @@ mod tests {
         // The refusal is asserted as DATA: the path and the named invariant,
         // not a substring of the rendered sentence.
         match resolve_lifecycle(Some("nonsense".into())) {
-            Err(ServiceError::Unprocessable(v)) => {
+            Err(ServiceError::Unprocessable { violation: v, .. }) => {
                 assert_eq!(v.path(), Some("lifecycle_state"));
                 assert_eq!(
                     v.invariant(),
@@ -258,7 +258,7 @@ mod tests {
     fn deleted_state_is_refused_on_a_data_carrying_commit() {
         // The refusal, asserted as DATA (path + named spec rule).
         match reject_deleted_with_data(state::DELETED) {
-            Err(ServiceError::Unprocessable(v)) => {
+            Err(ServiceError::Unprocessable { violation: v, .. }) => {
                 assert_eq!(v.path(), Some("lifecycle_state"));
                 assert_eq!(v.invariant(), Some("RM common master06 §Logical Deletion"));
             }
@@ -307,7 +307,7 @@ mod tests {
         // Illegal transitions. The first is asserted as DATA — the refusal
         // names the state machine it enforces, readable off the value.
         match validate_transition(Some(COMPLETE), ABANDONED) {
-            Err(ServiceError::Unprocessable(v)) => assert_eq!(
+            Err(ServiceError::Unprocessable { violation: v, .. }) => assert_eq!(
                 v.invariant(),
                 Some("RM common master06 §Version Lifecycle state machine")
             ),

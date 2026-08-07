@@ -389,7 +389,7 @@ impl FerroEhrService {
             (stored_template, composition_template_id(&composition))
             && stored != incoming
         {
-            return Err(ServiceError::Unprocessable(
+            return Err(ServiceError::content_invalid(
                 Violation::new(format!(
                     "is {incoming} on the update, but the stored composition was \
                      committed against template {stored} (template_id mismatch)"
@@ -531,7 +531,7 @@ impl FerroEhrService {
                     )
                 })?;
         if current.lifecycle_state == crate::versioning::lifecycle::state::DELETED {
-            return Err(ServiceError::BadRequest(format!(
+            return Err(ServiceError::precondition(format!(
                 "COMPOSITION {vo_id} is already deleted"
             )));
         }
@@ -562,7 +562,7 @@ impl FerroEhrService {
             current_tree,
         );
         if !composite_ids_equal(&latest_uid, a_version_uid.value()) {
-            return Err(ServiceError::Conflict(format!(
+            return Err(ServiceError::conflict(format!(
                 "preceding_version_uid names version {}, latest is {latest_uid}",
                 a_version_uid.value()
             )));
