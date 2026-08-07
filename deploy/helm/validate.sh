@@ -117,6 +117,42 @@ yaml_ok() {
   ' "$file"
 }
 
+
+# ── Selector immutability: the one field that breaks `helm upgrade` ──────────
+# A Deployment's spec.selector.matchLabels is IMMUTABLE
+# (https://kubernetes.io/docs/concepts/workloads/controllers/deployment/), so a
+# change here is not a diff to review — it is an upgrade that fails on every
+# existing release with an error most operators read as a chart bug. The obvious
+# way to separate the console's pods from the server's is to add `component` to
+# the shared selectorLabels helper, which is exactly the change this forbids.
+#
+# Pinned as an explicit expectation rather than left to the golden diff: a
+# golden churns for a dozen innocent reasons and this field must never move
+# quietly among them.
+assert_selector_stable() {
+  local file="$1"
+  python3 - "$file" <<'PYSEL' || { red "  selector immutability gate FAILED for ${file}"; exit 1; }
+import sys, yaml
+EXPECTED = {"ferroehr": {"app.kubernetes.io/name", "app.kubernetes.io/instance"},
+            "admin-ui": {"app.kubernetes.io/name", "app.kubernetes.io/instance",
+                         "app.kubernetes.io/component"}}
+bad = []
+for d in yaml.safe_load_all(open(sys.argv[1])):
+    if not d or d.get("kind") != "Deployment":
+        continue
+    name = d["metadata"]["name"]
+    keys = set((d["spec"]["selector"]["matchLabels"] or {}).keys())
+    which = "admin-ui" if name.endswith("-admin-ui") else "ferroehr"
+    if keys != EXPECTED[which]:
+        bad.append(f"  {name}: selector.matchLabels is {sorted(keys)}, expected {sorted(EXPECTED[which])}"
+                   f" — this field is IMMUTABLE; changing it breaks helm upgrade on every existing release")
+for b in bad:
+    print(b)
+sys.exit(1 if bad else 0)
+PYSEL
+  echo "  selector.matchLabels unchanged (the immutable upgrade-breaking field)"
+}
+
 # ── Restricted-profile gate: EVERY pod, control by control ───────────────────
 # The Kubernetes Pod Security Standards "restricted" profile
 # (https://kubernetes.io/docs/concepts/security/pod-security-standards/) is
@@ -456,6 +492,7 @@ for case in "${CASES[@]}"; do
 
   echo "security gate:"
   assert_security "$rendered"
+  assert_selector_stable "$rendered"
 
   if command -v kubeconform >/dev/null 2>&1; then
     echo "kubeconform:"

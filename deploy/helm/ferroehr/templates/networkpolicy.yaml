@@ -10,6 +10,9 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: {{ include "ferroehr.fullname" . }}
+  annotations:
+    kubernetes.io/description: >-
+      Default-deny ingress for the CDR: only the API port (and the management port when enabled) is admitted. An empty ingressFrom admits every source — narrow it for a PHI workload.
   labels:
     {{- include "ferroehr.labels" . | nindent 4 }}
 spec:
