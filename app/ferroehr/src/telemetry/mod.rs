@@ -92,6 +92,7 @@ pub fn init(cfg: &TelemetryConfig, build: &BuildInfo) -> Result<TelemetryGuard, 
             opentelemetry::global::set_meter_provider(mp.clone());
             meter = Some(opentelemetry::global::meter(SCOPE));
             meter_provider = Some(mp);
+            warn_metrics_push_is_partial();
         }
 
         // W3C context propagation for ingress/egress correlation.
@@ -117,6 +118,30 @@ pub fn init(cfg: &TelemetryConfig, build: &BuildInfo) -> Result<TelemetryGuard, 
         sampler: None,
         shut: false,
     })
+}
+
+/// Announce, at the moment `metrics_push` is enabled, which families it does
+/// NOT carry.
+///
+/// The server keeps two metric systems: the `OpenTelemetry` SDK's own
+/// instruments, which the OTLP push exports, and the `metrics`-crate recorder
+/// behind `/management/prometheus`, which it does not (#2175). An operator who
+/// enables the push sees metrics appear in their collector and reasonably
+/// concludes the wiring is complete — while the build identity, the request
+/// latency histogram and the audit counters are silently absent. A partial
+/// export that looks complete is worse than one that fails, so it says so.
+///
+/// The list is derived from the catalogue rather than written out, so a metric
+/// added later cannot quietly fall out of this warning.
+fn warn_metrics_push_is_partial() {
+    let scrape_only: Vec<&str> = prometheus::catalog().iter().map(|spec| spec.name).collect();
+    tracing::warn!(
+        families = %scrape_only.join(", "),
+        "telemetry.metrics_push exports the OpenTelemetry SDK instruments ONLY. The families \
+         listed here are recorded through the metrics-crate recorder and reach /management/\
+         prometheus by scrape alone — they will NOT appear in your OTLP collector. Scrape \
+         /management/prometheus as well if you need them (see #2175)."
+    );
 }
 
 /// The `OTel` resource attributes (`service.name`/`service.version` + git sha,
