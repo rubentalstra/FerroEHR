@@ -1,0 +1,749 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "ferroehr chart values",
+  "description": "Draft-07 because that is what consumes it: helm 4 validates through santhosh-tekuri/jsonschema/v6 (multi-draft), but Artifact Hub's Values-schema renderer is typed against json-schema draft 4/6/7. Descriptions here state CONSTRAINTS the type cannot; the prose reference is the generated README table, and defaults are read from values.yaml, so neither is repeated.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "global": {
+      "description": "Injected by a parent chart when this one is used as a dependency. Nothing in this chart reads it, but refusing it would make the chart unusable as a subchart.",
+      "type": "object"
+    },
+    "replicaCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "strategy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["RollingUpdate", "Recreate"]
+        },
+        "rollingUpdate": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "maxSurge": {
+              "description": "A count or a percentage string (\"25%\").",
+              "type": ["integer", "string"]
+            },
+            "maxUnavailable": {
+              "description": "A count or a percentage string (\"25%\").",
+              "type": ["integer", "string"]
+            }
+          }
+        }
+      }
+    },
+    "image": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "repository": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pullPolicy": {
+          "type": "string",
+          "enum": ["Always", "IfNotPresent", "Never"]
+        },
+        "tag": {
+          "description": "Empty falls back to .Chart.appVersion.",
+          "type": "string"
+        },
+        "digest": {
+          "description": "Wins over `tag` entirely when set.",
+          "type": "string",
+          "pattern": "^(sha256:[0-9a-f]{64})?$"
+        }
+      }
+    },
+    "imagePullSecrets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "nameOverride": {
+      "type": "string"
+    },
+    "fullnameOverride": {
+      "type": "string"
+    },
+    "serviceAccount": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "create": {
+          "type": "boolean"
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "name": {
+          "type": "string"
+        },
+        "automountServiceAccountToken": {
+          "type": "boolean"
+        }
+      }
+    },
+    "database": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "existingSecret": {
+          "type": "string"
+        },
+        "existingSecretKey": {
+          "description": "A key name INSIDE existingSecret, not an environment variable name: the chart mounts that key as a file and passes only its path.",
+          "type": "string"
+        },
+        "url": {
+          "description": "Inline DSN (dev/test only). Ignored when existingSecret is set.",
+          "type": "string"
+        }
+      }
+    },
+    "migrations": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "runByMigratorRole": {
+          "type": "boolean"
+        },
+        "job": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "existingSecret": {
+              "description": "Required when enabled: the MIGRATOR DSN, a different credential from database.*.",
+              "type": "string"
+            },
+            "existingSecretKey": {
+              "type": "string"
+            },
+            "backoffLimit": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "ttlSecondsAfterFinished": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "activeDeadlineSeconds": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "resources": {
+              "$ref": "#/definitions/resourceRequirements"
+            },
+            "podAnnotations": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "nodeSelector": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "tolerations": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "secrets": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "authOidcHmacSecret": {
+          "type": "string"
+        },
+        "signingKeyPassphrase": {
+          "type": "string"
+        },
+        "eventsUrl": {
+          "type": "string"
+        },
+        "fhirOutboundUrl": {
+          "type": "string"
+        },
+        "basicUserPasswordHashes": {
+          "description": "Keyed by username; each username also needs an entry under config.auth.basic.users, or rendering fails.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "auditFhirFeedUrl": {
+          "type": "string"
+        },
+        "terminologyOauth2ClientSecrets": {
+          "description": "Keyed by client name; each name also needs an entry under config.terminology.external.oauth2_clients, or rendering fails.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "multimediaAccessKeyId": {
+          "type": "string"
+        },
+        "multimediaSecretAccessKey": {
+          "type": "string"
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "serviceMonitor": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "namespace": {
+              "type": "string"
+            },
+            "labels": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "interval": {
+              "$ref": "#/definitions/duration"
+            },
+            "scrapeTimeout": {
+              "$ref": "#/definitions/duration"
+            }
+          }
+        }
+      }
+    },
+    "config": {
+      "description": "Rendered into ferroehr.toml, so its vocabulary is the SERVER's config tree and this schema deliberately does not fork it: unknown keys are accepted here and adjudicated by the server at boot. Only the keys the chart's own templates branch on are typed, and each accepts null — setting a key to null is how an overlay deletes it when a pinned older image does not know it yet.",
+      "type": "object",
+      "properties": {
+        "server": {
+          "type": ["object", "null"],
+          "properties": {
+            "base_path": {
+              "type": ["string", "null"]
+            }
+          }
+        },
+        "db": {
+          "type": ["object", "null"],
+          "properties": {
+            "migrate": {
+              "type": ["string", "null"]
+            }
+          }
+        },
+        "auth": {
+          "type": ["object", "null"],
+          "properties": {
+            "enabled": {
+              "type": ["boolean", "null"]
+            }
+          }
+        },
+        "admin": {
+          "type": ["object", "null"],
+          "properties": {
+            "enabled": {
+              "type": ["boolean", "null"]
+            }
+          }
+        },
+        "tenancy": {
+          "type": ["object", "null"],
+          "properties": {
+            "enabled": {
+              "type": ["boolean", "null"]
+            }
+          }
+        },
+        "management": {
+          "type": ["object", "null"],
+          "properties": {
+            "enabled": {
+              "type": ["boolean", "null"]
+            },
+            "base_path": {
+              "type": ["string", "null"]
+            },
+            "port": {
+              "description": "Unset serves the management surface on the API port; set, it becomes a second container port.",
+              "type": ["integer", "null"],
+              "minimum": 1,
+              "maximum": 65535
+            }
+          }
+        },
+        "audit": {
+          "type": ["object", "null"],
+          "properties": {
+            "enabled": {
+              "type": ["boolean", "null"]
+            }
+          }
+        },
+        "events": {
+          "type": ["object", "null"],
+          "properties": {
+            "enabled": {
+              "type": ["boolean", "null"]
+            }
+          }
+        },
+        "fhir": {
+          "type": ["object", "null"],
+          "properties": {
+            "api_enabled": {
+              "type": ["boolean", "null"]
+            },
+            "outbound": {
+              "type": ["object", "null"],
+              "properties": {
+                "enabled": {
+                  "type": ["boolean", "null"]
+                },
+                "exchange": {
+                  "type": ["string", "null"]
+                }
+              }
+            }
+          }
+        },
+        "terminology": {
+          "type": ["object", "null"],
+          "properties": {
+            "external": {
+              "type": ["object", "null"],
+              "properties": {
+                "enabled": {
+                  "type": ["boolean", "null"]
+                }
+              }
+            }
+          }
+        },
+        "multimedia": {
+          "type": ["object", "null"],
+          "properties": {
+            "enabled": {
+              "type": ["boolean", "null"]
+            },
+            "allow_http": {
+              "type": ["boolean", "null"]
+            }
+          }
+        },
+        "files": {
+          "description": "NOT part of the TOML: each key becomes /etc/ferroehr/<key> from a chart Secret. Values are file contents, so they are strings.",
+          "type": ["object", "null"],
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "extraEnv": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "extraEnvFrom": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["ClusterIP", "NodePort", "LoadBalancer", "ExternalName"]
+        },
+        "port": {
+          "$ref": "#/definitions/port"
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "ingress": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "className": {
+          "type": "string"
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "hosts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "host": {
+                "type": "string",
+                "minLength": 1
+              },
+              "paths": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "pathType": {
+                      "type": "string",
+                      "enum": ["Exact", "Prefix", "ImplementationSpecific"]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "secretName": {
+                "type": "string"
+              },
+              "hosts": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "networkPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "ingressFrom": {
+          "description": "Raw NetworkPolicyPeer entries. EMPTY means the rule carries no `from` at all, which admits every source.",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "egress": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "database": {
+              "description": "Not optional when egress is enabled: rendering refuses an egress policy with no database destination.",
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "to": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "port": {
+                  "$ref": "#/definitions/port"
+                }
+              }
+            },
+            "rules": {
+              "description": "Raw NetworkPolicyEgressRule entries, one per enabled integration.",
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "podSecurityContext": {
+      "description": "Rendered verbatim as the pod's securityContext, so the whole Kubernetes PodSecurityContext surface is permitted.",
+      "type": "object"
+    },
+    "securityContext": {
+      "description": "Rendered verbatim as the container's securityContext, so the whole Kubernetes SecurityContext surface is permitted.",
+      "type": "object"
+    },
+    "resources": {
+      "$ref": "#/definitions/resourceRequirements"
+    },
+    "probes": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "exec": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            }
+          }
+        },
+        "liveness": {
+          "$ref": "#/definitions/probeTiming"
+        },
+        "readiness": {
+          "$ref": "#/definitions/probeTiming"
+        },
+        "startup": {
+          "description": "Unlike liveness/readiness, these four fields are read individually rather than rendered whole, so the set is closed.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "initialDelaySeconds": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "periodSeconds": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "timeoutSeconds": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "failureThreshold": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    },
+    "autoscaling": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "minReplicas": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "maxReplicas": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "targetCPUUtilizationPercentage": {
+          "description": "0 disables the metric.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "targetMemoryUtilizationPercentage": {
+          "description": "0 disables the metric.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "podDisruptionBudget": {
+      "description": "Set one of minAvailable / maxUnavailable, never both.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "minAvailable": {
+          "type": ["integer", "string"]
+        },
+        "maxUnavailable": {
+          "type": ["integer", "string"]
+        }
+      }
+    },
+    "podLabels": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "podAnnotations": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "nodeSelector": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "tolerations": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "affinity": {
+      "type": "object"
+    },
+    "topologySpreadConstraints": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "terminationGracePeriodSeconds": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "extraVolumes": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "extraVolumeMounts": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "definitions": {
+    "port": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "duration": {
+      "description": "A Prometheus duration: a digit run followed by ms, s, m, h, d, w or y.",
+      "type": "string",
+      "pattern": "^([0-9]+(ms|[smhdwy]))+$"
+    },
+    "quantity": {
+      "description": "A Kubernetes quantity — \"250m\", \"1Gi\", or a bare number.",
+      "type": ["string", "number"]
+    },
+    "resourceRequirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "limits": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/quantity"
+          }
+        },
+        "requests": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/quantity"
+          }
+        },
+        "claims": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "probeTiming": {
+      "description": "Rendered whole beside the chart's own httpGet/exec handler, so any Kubernetes probe field is permitted; these four are typed because they are the ones the chart ships.",
+      "type": ["object", "null"],
+      "properties": {
+        "initialDelaySeconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "periodSeconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "timeoutSeconds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "failureThreshold": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}
