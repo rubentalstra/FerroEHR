@@ -146,6 +146,21 @@ boot_one() {
     return 1
   fi
 
+  # The env replay below must see the CDR Deployment's environment and NOTHING
+  # else. The chart renders a second workload (the admin console, an OPTIONAL
+  # separate binary with its own config root and its own `FERROEHR_ADMIN__…`
+  # grammar — app/ferroehr-admin-ui/src/config.rs), and handing one workload's
+  # environment to another image is not a boot check of anything: the CDR's
+  # strict sweep refuses `FERROEHR_ADMIN__CDR__BASE_URL` as an unknown key and
+  # reports a crash-loop for a deployment that runs correctly.
+  local cdr="${work}/cdr-deployment.yaml"
+  if ! helm template "$RELEASE_NAME" "$CHART_DIR" -n "$NAMESPACE" -f "$values" \
+       ${SKEW_ARGS[@]+"${SKEW_ARGS[@]}"} --show-only templates/deployment.yaml \
+       > "$cdr" 2>/dev/null; then
+    red "  the chart rendered no templates/deployment.yaml — nothing to boot"
+    return 1
+  fi
+
   # /etc/ferroehr — the ConfigMap's ferroehr.toml, or the Secret's copy when the
   # configuration holds something the chart could not route out of it.
   split_data "$all" "$RELEASE_NAME" "$cfgdir"
@@ -171,7 +186,7 @@ boot_one() {
   # sweep refuses an unknown FERROEHR_ variable, so an unreplayed source is a
   # variable this check never presents — a silent hole of exactly the kind that
   # let #2159 through. Adding a source here means teaching this parser about it.
-  if grep -qE '^ +(envFrom:|.*(configMapKeyRef|fieldRef|resourceFieldRef):)' "$all"; then
+  if grep -qE '^ +(envFrom:|.*(configMapKeyRef|fieldRef|resourceFieldRef):)' "$cdr"; then
     red "  the Deployment declares an environment source this check cannot replay"
     red "  (envFrom / configMapKeyRef / fieldRef); teach boot-check.sh about it"
     return 1
@@ -188,7 +203,7 @@ boot_one() {
       print name "\tliteral\t" v; name = ""; next
     }
     /^                  key: / { if (name != "") { print name "\tsecret\t" $2; name = "" } }
-  ' "$all" > "$envlist"
+  ' "$cdr" > "$envlist"
 
   local -a docker_env=()
   local name kind value
