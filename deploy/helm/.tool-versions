@@ -1,6 +1,9 @@
 # The helm version the golden renders in deploy/helm/golden/ were produced with,
-# in asdf/mise `.tool-versions` format so ONE file feeds both the CI job
-# (azure/setup-helm `version-file:`) and deploy/helm/validate.sh.
+# in asdf/mise `.tool-versions` format so ONE file feeds both the CI jobs and
+# deploy/helm/validate.sh. The workflows READ the version out of this file and
+# pass it to `azure/setup-helm` as `version:` — that action has no `version-file`
+# input, and because an unknown input is only a warning, passing one silently
+# installs the latest helm and this pin stops meaning anything.
 #
 # The pin is load-bearing, not hygiene: `helm template` output is not byte-stable
 # across helm releases. Measured 2026-08-06 — helm 4.2.3 emits 6 blank lines the
