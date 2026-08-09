@@ -501,7 +501,44 @@ async fn disabled_by_default_stores_inline_verbatim() {
     );
     assert!(node.get("uri").is_none(), "no uri when the feature is off");
 
-    // expand_multimedia is a transparent no-op passthrough when disabled.
+    // expand_multimedia is a transparent no-op passthrough when there is
+    // nothing to expand: this record is inline, so the request has no work.
     let same = svc.expand_multimedia(stored.clone()).await.expect("no-op");
     assert_eq!(same, stored);
+}
+
+/// With NO store reachable, a record that references an externalized blob makes
+/// `expand_multimedia` fail rather than answer with the compact reference.
+///
+/// The silent version of this was the defect: the caller asked for the bytes,
+/// the server answered `200` with a `s3://` URI instead, and nothing said the
+/// request had not been honoured. Switching an integration off may stop new
+/// offloads; it may not quietly change what clinical content a read returns.
+#[tokio::test]
+async fn unreachable_store_refuses_expansion_instead_of_answering_silently() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = FerroEhrService::new(db.pool());
+
+    // A body shaped like a stored, already-externalized record. Built by hand
+    // because reaching this state through the service would require the very
+    // store this test asserts is absent.
+    let body = serde_json::json!({
+        "_type": "EHR_STATUS",
+        "data": {
+            "_type": "DV_MULTIMEDIA",
+            "uri": {"_type": "DV_URI", "value": "s3://openehr-multimedia/deadbeef"},
+            "size": 4096
+        }
+    });
+
+    let err = svc
+        .expand_multimedia(body)
+        .await
+        .expect_err("an unserviceable expansion must fail, not answer");
+    // The wire body stays the curated opaque 500 text; the actionable detail is
+    // on the trace record, never on the wire.
+    assert!(
+        format!("{err:?}").contains("Exception"),
+        "expected a server-fault status, got {err:?}"
+    );
 }

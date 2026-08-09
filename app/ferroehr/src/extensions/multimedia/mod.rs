@@ -11,12 +11,25 @@ pub mod config;
 
 use crate::extensions::multimedia::config::MultimediaConfig;
 
-/// Build the externalization engine from configuration: `None` when
-/// `multimedia.enabled` is `false`.
+/// Builds the externalization engine from configuration.
+///
+/// The engine is built whenever a store is REACHABLE — `multimedia.enabled`,
+/// or an explicit `endpoint` — and `enabled` then governs only whether NEW
+/// content is externalized. Switching the integration off therefore stops
+/// offloading without stranding the blobs already offloaded: a stored record
+/// referencing one is clinical content this server put there, and a read that
+/// asks for it back must not silently answer with the reference instead.
+///
+/// `None` means no store can be reached at all, which is the one case where an
+/// expansion request cannot be honoured; the read path refuses loudly there
+/// rather than quietly serving the compact form.
 ///
 /// # Errors
-/// Returns `MultimediaError::Config` when enabled but the object-store
-/// client cannot be built.
+/// Returns `MultimediaError::Config` when the integration is ENABLED and its
+/// object-store client cannot be built. A read-back-only store (disabled, but
+/// an endpoint left configured) never fails the boot: turning an integration
+/// off must not be able to stop the server starting, so an unbuildable client
+/// there degrades to `None` — and the read path is loud about it per request.
 #[cfg(feature = "multimedia")]
 pub fn engine_from_config(
     cfg: &MultimediaConfig,
@@ -24,7 +37,7 @@ pub fn engine_from_config(
     Option<ferroehr_ext::multimedia::MultimediaEngine>,
     ferroehr_ext::multimedia::MultimediaError,
 > {
-    if !cfg.enabled {
+    if !cfg.enabled && cfg.endpoint.is_none() {
         return Ok(None);
     }
     let params = ferroehr_ext::multimedia::store::BlobStoreParams {
@@ -38,7 +51,8 @@ pub fn engine_from_config(
             .map(|s| secrecy::SecretString::from(s.expose().to_owned())),
         allow_http: cfg.allow_http,
     };
-    ferroehr_ext::multimedia::MultimediaEngine::from_params(params, cfg.threshold_bytes).map(Some)
+    ferroehr_ext::multimedia::MultimediaEngine::from_params(params, cfg.threshold_bytes)
+        .map(|engine| Some(engine.with_offload_enabled(cfg.enabled)))
 }
 
 /// The loud slim-build refusal: a configuration that enables externalization

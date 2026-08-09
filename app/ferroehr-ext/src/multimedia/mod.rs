@@ -47,6 +47,7 @@ use serde_json::Value;
 mod offload;
 pub mod store;
 
+use crate::multimedia::offload::DV_MULTIMEDIA;
 use crate::multimedia::store::{BlobStore, BlobStoreParams};
 
 /// A failure in the multimedia externalization path.
@@ -73,12 +74,46 @@ pub enum MultimediaError {
     Config(String),
 }
 
-/// The runtime engine bundling the blob store with its offload threshold. Held
-/// by the service only when externalization is enabled.
+/// Whether the tree references ANY externalized blob (`s3://…`), regardless of
+/// bucket.
+///
+/// Deliberately bucket-blind, because its caller has no store to compare
+/// against: it answers "would an expansion request have had work to do here?"
+/// when no engine exists at all. A foreign `https://` reference is not
+/// included — that was never expandable, so its presence is not a failure.
+#[must_use]
+pub fn references_external_blob(root: &Value) -> bool {
+    match root {
+        Value::Object(map) => {
+            if map.get("_type").and_then(Value::as_str) == Some(DV_MULTIMEDIA)
+                && map
+                    .get("uri")
+                    .and_then(|u| u.get("value"))
+                    .and_then(Value::as_str)
+                    .is_some_and(|uri| uri.starts_with("s3://"))
+            {
+                return true;
+            }
+            map.values().any(references_external_blob)
+        }
+        Value::Array(items) => items.iter().any(references_external_blob),
+        _ => false,
+    }
+}
+
+/// The runtime engine bundling the blob store with its offload threshold.
+///
+/// Held by the service whenever a store is REACHABLE, which is not the same as
+/// "externalization is on": `offload_enabled` governs whether new blobs leave
+/// the database, while the expand path stays available either way. A record
+/// that already references a blob is clinical content this server put there,
+/// and refusing to serve it back because a switch was flipped is data loss
+/// dressed as a setting.
 #[derive(Debug, Clone)]
 pub struct MultimediaEngine {
     store: BlobStore,
     threshold: usize,
+    offload_enabled: bool,
 }
 
 impl MultimediaEngine {
@@ -92,13 +127,33 @@ impl MultimediaEngine {
         Ok(Self {
             store: BlobStore::from_params(params)?,
             threshold,
+            offload_enabled: true,
         })
+    }
+
+    /// Sets whether NEW content may be externalized. `false` leaves the expand
+    /// path fully functional, which is what keeps already-offloaded records
+    /// readable after the integration is switched off.
+    #[must_use]
+    pub const fn with_offload_enabled(mut self, enabled: bool) -> Self {
+        self.offload_enabled = enabled;
+        self
+    }
+
+    /// Whether new content may be externalized.
+    #[must_use]
+    pub const fn offload_enabled(&self) -> bool {
+        self.offload_enabled
     }
 
     /// Construct directly from a store + threshold (test seam).
     #[must_use]
     pub fn from_parts(store: BlobStore, threshold: usize) -> Self {
-        Self { store, threshold }
+        Self {
+            store,
+            threshold,
+            offload_enabled: true,
+        }
     }
 
     /// The underlying content-addressed blob store.
@@ -117,6 +172,9 @@ impl MultimediaEngine {
     /// failure (the caller aborts the commit, so nothing is persisted on
     /// error).
     pub async fn offload(&self, canonical: &mut Value) -> Result<(), MultimediaError> {
+        if !self.offload_enabled {
+            return Ok(());
+        }
         let pending = offload::plan_offload(canonical, self.threshold, &self.store)?;
         for (hex, bytes) in pending {
             self.store.put_if_absent(&hex, bytes).await?;
@@ -154,5 +212,50 @@ impl MultimediaEngine {
     #[must_use]
     pub fn referenced_keys(&self, canonical: &Value) -> Vec<String> {
         offload::referenced_keys(canonical, &self.store)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use crate::multimedia::references_external_blob;
+
+    /// The bucket-blind detector answers the question its one caller asks:
+    /// "would an expansion request have had work to do here?"
+    #[test]
+    fn detects_only_externalized_references() {
+        let inline = json!({
+            "_type": "DV_MULTIMEDIA",
+            "data": "AAEC",
+            "size": 3
+        });
+        assert!(
+            !references_external_blob(&inline),
+            "inline content needs no expansion"
+        );
+
+        // A foreign URI was never expandable, so its presence is not a failure.
+        let foreign = json!({
+            "_type": "DV_MULTIMEDIA",
+            "uri": {"_type": "DV_URI", "value": "https://example.test/scan.png"},
+            "size": 3
+        });
+        assert!(!references_external_blob(&foreign));
+
+        // Nested arbitrarily deep, because a composition is a tree.
+        let external = json!({
+            "_type": "COMPOSITION",
+            "content": [{"items": [{
+                "_type": "DV_MULTIMEDIA",
+                "uri": {"_type": "DV_URI", "value": "s3://openehr-multimedia/abc123"},
+                "size": 3
+            }]}]
+        });
+        assert!(references_external_blob(&external));
+
+        // A non-DV_MULTIMEDIA node carrying an s3 URI is not a blob reference.
+        let decoy = json!({"_type": "DV_URI", "value": "s3://openehr-multimedia/abc123"});
+        assert!(!references_external_blob(&decoy));
     }
 }

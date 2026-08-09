@@ -496,6 +496,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Turning multimedia externalization off no longer strands the blobs already
+  offloaded.** `?expand_multimedia=true` against an already-externalized record
+  was **silently ignored** once `multimedia.enabled` went back to `false`: the
+  read answered `200` with the compact `s3://` reference and no indication that
+  the expansion had not happened. `enabled` now governs **new offloads only** —
+  the fetch-and-verify path stays available as long as an `endpoint` is
+  configured, so content this server externalized stays readable. With no store
+  reachable at all, an expansion request now **fails** instead of quietly
+  answering with the reference.
 - **`FERROEHR__MULTIMEDIA__*` set in your shell now reaches the compose stack.**
   Every other tunable the quickstart documents is a pass-through; the multimedia
   keys were not, so the documented S3 recipe brought the stack up healthy with
