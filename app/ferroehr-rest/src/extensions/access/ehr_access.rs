@@ -52,6 +52,7 @@
 )]
 
 use axum::response::{IntoResponse, Response};
+use ferroehr::config::authz::EhrAccessDefault;
 use ferroehr::service::ehr::access_types::{AccessLevel, principal_matches};
 use ferroehr::service::ehr::access_types::{DefaultAccess, EhrAccessSettings};
 use openehr_its::rest::runtime::ApiError;
@@ -59,6 +60,7 @@ use uuid::Uuid;
 
 use crate::api::RequestParts;
 use crate::extensions::access::authn::{Principal, current_principal};
+use crate::extensions::access::authz::AuthzHandle;
 use crate::overview::error::RestError;
 use crate::state::AppState;
 
@@ -67,8 +69,9 @@ use crate::state::AppState;
 /// caller.
 ///
 /// `Ok(())` permits; `Err(reason)` is a denial with its reason. Absent
-/// settings (`None`) always permit — the default-open disposition that keeps
-/// every existing EHR working (`master07` "sensible defaults").
+/// settings (`None`) fall back to the server-wide `authz.rbac.ehr_access_default`
+/// — `open` by default, the disposition that keeps every existing EHR working
+/// (`master07` "sensible defaults").
 #[derive(Debug)]
 pub struct EhrAccessGate;
 
@@ -83,9 +86,25 @@ impl EhrAccessGate {
         settings: Option<&EhrAccessSettings>,
         subject: Option<&str>,
         roles: &[String],
+        server_default: EhrAccessDefault,
+        admin_role: &str,
     ) -> Result<(), String> {
         let Some(settings) = settings else {
-            return Ok(());
+            // A newly created EHR carries no settings, so this branch governs
+            // most records — which is why the disposition is configurable at
+            // all rather than hardcoded permit.
+            return match server_default {
+                EhrAccessDefault::Open => Ok(()),
+                EhrAccessDefault::Restricted => {
+                    if roles.iter().any(|r| r.eq_ignore_ascii_case(admin_role)) {
+                        Ok(())
+                    } else {
+                        Err(format!(
+                            "this EHR carries no ACCESS_CONTROL_SETTINGS and the server default                              is restricted; only the '{admin_role}' role may reach it"
+                        ))
+                    }
+                }
+            };
         };
         match settings.default_access {
             DefaultAccess::Open => Ok(()),
@@ -238,9 +257,19 @@ pub(crate) async fn enforce(
     };
     let settings = settings.as_ref();
 
-    // 1. The per-EHR gate (every EHR-scoped route).
-    EhrAccessGate::ehr_gate(settings, subject, roles)
-        .map_err(|reason| forbidden(principal.as_ref(), &reason))?;
+    // 1. The per-EHR gate (every EHR-scoped route). A setting-less EHR falls
+    // back to the server-wide disposition; with authz absent entirely there is
+    // no configured default to consult, so the historical permit stands.
+    let authz = state.authz();
+    let rbac = authz.as_deref().and_then(AuthzHandle::rbac_rules);
+    EhrAccessGate::ehr_gate(
+        settings,
+        subject,
+        roles,
+        rbac.map_or(EhrAccessDefault::Open, |r| r.ehr_access_default),
+        rbac.map_or("ADMIN", |r| r.admin_role.as_str()),
+    )
+    .map_err(|reason| forbidden(principal.as_ref(), &reason))?;
 
     // 2. The Composition privacy ceiling (Composition read routes).
     if is_composition_read(op)
@@ -296,17 +325,113 @@ mod tests {
 
     #[test]
     fn absent_settings_allow_everyone() {
-        assert!(EhrAccessGate::ehr_gate(None, None, &[]).is_ok());
+        assert!(EhrAccessGate::ehr_gate(None, None, &[], EhrAccessDefault::Open, "ADMIN").is_ok());
         assert!(EhrAccessGate::privacy_gate(None, None, &[], "vo").is_ok());
         assert!(EhrAccessGate::gate_keeper_gate(None, None, &[]).is_ok());
+    }
+
+    /// The server-wide default governs an EHR that carries no settings — which
+    /// is every newly created one, so this is the disposition most records
+    /// actually run under.
+    #[test]
+    fn server_default_governs_a_setting_less_ehr() {
+        // `open`: unchanged from the historical behaviour.
+        assert!(
+            EhrAccessGate::ehr_gate(None, None, &[], EhrAccessDefault::Open, "ADMIN").is_ok(),
+            "the default posture must keep every existing EHR reachable"
+        );
+
+        // `restricted`: a clinical caller is refused …
+        let denied = EhrAccessGate::ehr_gate(
+            None,
+            Some("bob"),
+            &["USER".to_owned()],
+            EhrAccessDefault::Restricted,
+            "ADMIN",
+        );
+        assert!(denied.is_err(), "default-deny must refuse a clinical role");
+
+        // … and so is a caller with no roles at all …
+        assert!(
+            EhrAccessGate::ehr_gate(None, None, &[], EhrAccessDefault::Restricted, "ADMIN")
+                .is_err()
+        );
+
+        // … while the admin role still reaches it, so the operator can author
+        // the settings that fix it. A default-deny nobody can climb out of is
+        // an outage, not a control.
+        assert!(
+            EhrAccessGate::ehr_gate(
+                None,
+                Some("root"),
+                &["ADMIN".to_owned()],
+                EhrAccessDefault::Restricted,
+                "ADMIN",
+            )
+            .is_ok()
+        );
+
+        // The admin role is the CONFIGURED one, matched case-insensitively like
+        // every other role comparison.
+        assert!(
+            EhrAccessGate::ehr_gate(
+                None,
+                None,
+                &["platform-admin".to_owned()],
+                EhrAccessDefault::Restricted,
+                "PLATFORM-ADMIN",
+            )
+            .is_ok()
+        );
+    }
+
+    /// Explicit per-EHR settings win over the server default, in both
+    /// directions — the server key is a fallback, never an override.
+    #[test]
+    fn explicit_settings_override_the_server_default() {
+        let open =
+            settings(&json!({ "_type": "FERROEHR_ACCESS_CONTROL_V1", "default_access": "open" }));
+        assert!(
+            EhrAccessGate::ehr_gate(
+                Some(&open),
+                Some("bob"),
+                &["USER".to_owned()],
+                EhrAccessDefault::Restricted,
+                "ADMIN",
+            )
+            .is_ok(),
+            "an EHR that says `open` stays open under a restricted server default"
+        );
+
+        let restricted = settings(&json!({
+            "_type": "FERROEHR_ACCESS_CONTROL_V1",
+            "default_access": "restricted",
+            "access_list": [{ "principal": "user:alice", "access": "full" }]
+        }));
+        assert!(
+            EhrAccessGate::ehr_gate(
+                Some(&restricted),
+                Some("bob"),
+                &["USER".to_owned()],
+                EhrAccessDefault::Open,
+                "ADMIN",
+            )
+            .is_err(),
+            "an EHR that says `restricted` stays restricted under an open server default"
+        );
     }
 
     #[test]
     fn open_ehr_admits_anonymous_and_named() {
         let s =
             settings(&json!({ "_type": "FERROEHR_ACCESS_CONTROL_V1", "default_access": "open" }));
-        assert!(EhrAccessGate::ehr_gate(Some(&s), None, &[]).is_ok());
-        assert!(EhrAccessGate::ehr_gate(Some(&s), Some("bob"), &[]).is_ok());
+        assert!(
+            EhrAccessGate::ehr_gate(Some(&s), None, &[], EhrAccessDefault::Open, "ADMIN").is_ok()
+        );
+        assert!(
+            EhrAccessGate::ehr_gate(Some(&s), Some("bob"), &[], EhrAccessDefault::Open, "ADMIN")
+                .is_ok()
+        );
     }
 
     #[test]
@@ -320,10 +445,33 @@ mod tests {
             ]
         }));
         // Listed user permitted; listed role permitted; nobody denied.
-        assert!(EhrAccessGate::ehr_gate(Some(&s), Some("bob"), &[]).is_ok());
-        assert!(EhrAccessGate::ehr_gate(Some(&s), Some("carol"), &["NURSE".to_owned()]).is_ok());
-        assert!(EhrAccessGate::ehr_gate(Some(&s), Some("carol"), &[]).is_err());
-        assert!(EhrAccessGate::ehr_gate(Some(&s), None, &[]).is_err());
+        assert!(
+            EhrAccessGate::ehr_gate(Some(&s), Some("bob"), &[], EhrAccessDefault::Open, "ADMIN")
+                .is_ok()
+        );
+        assert!(
+            EhrAccessGate::ehr_gate(
+                Some(&s),
+                Some("carol"),
+                &["NURSE".to_owned()],
+                EhrAccessDefault::Open,
+                "ADMIN"
+            )
+            .is_ok()
+        );
+        assert!(
+            EhrAccessGate::ehr_gate(
+                Some(&s),
+                Some("carol"),
+                &[],
+                EhrAccessDefault::Open,
+                "ADMIN"
+            )
+            .is_err()
+        );
+        assert!(
+            EhrAccessGate::ehr_gate(Some(&s), None, &[], EhrAccessDefault::Open, "ADMIN").is_err()
+        );
     }
 
     #[test]

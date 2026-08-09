@@ -213,6 +213,11 @@ admin_role = "ADMIN"
 user_role = "USER"
 readonly_role = "READONLY"   # carriers are refused on every write operation
 role_claims = ["roles", "groups", "entitlements", "realm_access.roles"]
+# What an EHR carrying no ACCESS_CONTROL_SETTINGS admits. A new EHR carries
+# none, so this governs most records. "restricted" is object-level default-deny:
+# only admin_role reaches a setting-less EHR, so an operator can still author
+# the settings that open it.
+ehr_access_default = "open"   # open | restricted
 # The management surface is NOT configured here — see [management.endpoints],
 # which owns it, one level per endpoint.
 

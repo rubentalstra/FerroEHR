@@ -131,10 +131,32 @@ enable a fourth, token-scope layer on top — see
 ### Per-EHR access control (`EHR_ACCESS`)
 
 Every EHR carries a versioned `EHR_ACCESS` object — the openEHR
-access-decision authority for that record. By default it has no settings and
-the EHR is open to any authenticated caller (all existing workflows keep
-working). Committing settings with the `ferroehr.access_control.v1` scheme
-switches that EHR to explicit policy:
+access-decision authority for that record. A new EHR has no settings, and what
+that admits is a **server-wide choice**:
+
+| `authz.rbac.ehr_access_default` | An EHR with no settings |
+|---|---|
+| `open` *(default)* | reachable by any caller the coarse layers already admitted |
+| `restricted` | reachable only by `authz.rbac.admin_role` |
+
+`open` is the default because it is what every existing deployment runs, and
+changing it changes who can read existing records. `restricted` is object-level
+**default-deny**, and it is the setting to reach for if your threat model
+includes a caller enumerating record ids: an `ehr_id` is a UUIDv7, and the OWASP
+[Insecure Direct Object Reference Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html)
+cheat sheet is explicit that an unpredictable identifier is not itself an access
+control.
+
+> [!NOTE]
+> Under `restricted`, the admin role still reaches a setting-less EHR. That is
+> deliberate: a plain deny would make such a record unreachable by everyone —
+> including the operator who would author the settings that fix it — which is an
+> outage rather than a control. Bind callers to patients with the ABAC layer
+> below; this key decides only the default disposition.
+
+Committing settings with the `ferroehr.access_control.v1` scheme
+switches that EHR to explicit policy, and those settings **always win over the
+server default**, in both directions:
 
 ```json
 {
