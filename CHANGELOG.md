@@ -247,30 +247,22 @@ workflow refuses a tag that has no matching section here.
   that were already the default are correct and are now the only path:
   `/health/liveness` for liveness and startup, `/health/readiness` for
   readiness.
-- **The chart's Kubernetes floor moves from `>=1.25.0-0` to `>=1.36.0-0`**
-  (breaking; chart `6.0.0`). 1.25 has been end-of-life since October 2023, and
-  the old floor was defended as "the chart works there" — which was false in a
-  way that mattered: below 1.27 the API server silently pruned
-  `PodDisruptionBudget.unhealthyPodEvictionPolicy`, and below 1.30 the `preStop`
-  sleep action did not exist, so those clusters installed the chart while two
-  drain-safety properties simply were not applied. 1.36 is a genuine
-  compatibility floor: it is the release where the newest field the chart renders
-  (`hostUsers`) became stable, which is what lets every field render
-  unconditionally with no version gates left. Note that 1.36 is the **top** of
-  the supported window, not its bottom — a patched 1.34 or 1.35 cluster is
-  refused, and `Chart.yaml` records why that cost is accepted.
+- **The chart now requires Kubernetes 1.36 or newer** (`kubeVersion:
+  ">=1.36.0-0"`, breaking; chart `6.0.0`). It is a compatibility floor: 1.36 is
+  the release where the newest field the chart renders (`hostUsers`) became
+  stable, which is what lets every field render unconditionally with no version
+  gates left. `Chart.yaml` carries the field-to-KEP table that is its evidence.
 - The PodDisruptionBudget sets `unhealthyPodEvictionPolicy: AlwaysAllow`, the
   documented recommendation. With the previous default a node drain waited for
   pods to become healthy that were unhealthy *because* of the drain, so it never
   completed. It and the `preStop` sleep action are now rendered unconditionally
   rather than version-gated, since both are stable below the new floor.
-- **The chart's render gate now covers the admin console.** `validate.sh`
-  rendered three overlays, none of which enabled `adminUi` — so the
-  per-container restricted-profile check, which exists precisely because a second
-  workload is where a posture gets lost, had never once seen the console. The
-  console overlay is now a fourth case with its own golden render. Two new
-  assertions ride along: pod isolation must be identical across every workload of
-  a release, and a multi-replica Deployment must carry a spread or affinity rule.
+- **The chart's render gate covers the admin console**, as a fourth overlay with
+  its own golden render — the per-container restricted-profile check exists
+  precisely because a second workload is where a posture gets lost, so it has to
+  see one. Two assertions ride along: pod isolation must be identical across
+  every workload of a release, and a multi-replica Deployment must carry a spread
+  or affinity rule.
 - The chart's pinned Helm version moves to 4.2.3 (current release), with the
   golden renders regenerated on it.
 
