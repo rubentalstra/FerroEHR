@@ -9,8 +9,17 @@
 # Adds a single-container LGTM stack (grafana/otel-lgtm = OTLP collector +
 # Prometheus + Tempo + Loki + Grafana) and points the app at it:
 #   - traces  → OTLP/gRPC to otel-lgtm:4317 (→ Tempo)
-#   - metrics → pulled by the bundled Prometheus from ferroehr:9464/management/prometheus
+#   - metrics → OTLP/gRPC to otel-lgtm:4317 (→ Prometheus, via its OTLP receiver)
 #   - logs    → stdout as JSON lines (12-factor; the platform collects them)
+#
+# Metrics are PUSHED, not scraped, because this image cannot scrape: it starts
+# Prometheus with `--config.file=./prometheus.yaml`, a file carrying `otlp:`,
+# `storage:` and `global:` and NO `scrape_configs` or `scrape_config_files`
+# (`/otel-lgtm/prometheus/prometheus.yml` looks like a scrape config and is a
+# sample the process never loads). Metrics reach it over OTLP from the bundled
+# collector. An earlier version of this overlay mounted a scrape job into
+# `/otel-lgtm/prometheus/scrape-configs/`, which nothing reads — so every metric
+# panel on the dashboard was empty with no error anywhere (#2173).
 #
 # The management surface is enabled on an INTERNAL port (9464) exposed only on
 # the compose network — never published to the host. Grafana (3000) is the only
@@ -23,17 +32,21 @@ services:
     # any other spelling — a single-`_` variable is a startup error, not a
     # silently ignored setting, so these names must stay in this form.
     environment:
-      # Traces to the LGTM collector ([telemetry]; metrics stay a Prometheus
-      # pull, see below). Unset otlp_endpoint would leave the OTel layer out.
+      # Traces AND metrics to the LGTM collector ([telemetry]). Unset
+      # otlp_endpoint would leave the OTel layer out entirely.
       FERROEHR__TELEMETRY__OTLP_ENDPOINT: http://otel-lgtm:4317
+      # The push carries every family the Prometheus surface exposes: one meter
+      # provider feeds both, so a metric cannot reach one and not the other.
+      FERROEHR__TELEMETRY__METRICS_PUSH: "true"
       FERROEHR__TELEMETRY__SERVICE_NAME: ferroehr
       FERROEHR__TELEMETRY__ENVIRONMENT: dev
       FERROEHR__TELEMETRY__TRACES_SAMPLE_RATIO: "1.0"
       # Structured stdout so the bundled log pipeline ingests fields, not text
       # (overrides the root stack's dev-friendly `pretty`).
       FERROEHR__LOG__FORMAT: json
-      # Ops-introspection surface on an internal-only port; public within the
-      # compose network so the bundled Prometheus can scrape without credentials.
+      # Ops-introspection surface on an internal-only port. Metrics do not
+      # depend on it — they arrive over OTLP — but /management/prometheus stays
+      # reachable on the compose network for a human comparing the two surfaces.
       # (The health probes need none of this — /health, /health/liveness and
       # /health/readiness are always served on the main API port.)
       FERROEHR__MANAGEMENT__ENABLED: "true"
@@ -63,8 +76,6 @@ services:
       # Inline provisioning so the downloaded overlay is self-sufficient
       # (docs.docker.com/reference/compose-file/configs — the `content`
       # attribute); the blocks live at the bottom of this file.
-      - source: prometheus-scrape
-        target: /otel-lgtm/prometheus/scrape-configs/ferroehr.yaml
       - source: grafana-dashboard
         target: /otel-lgtm/grafana/dashboards/ferroehr.json
     ports:
@@ -72,18 +83,6 @@ services:
       - "${FERROEHR_BIND_HOST:-127.0.0.1}:${GRAFANA_PORT:-3000}:3000"
 
 configs:
-  prometheus-scrape:
-    # Scrapes the app management Prometheus endpoint over the compose
-    # network; the management port (9464) is internal-only.
-    content: |
-      - job_name: ferroehr
-        metrics_path: /management/prometheus
-        scrape_interval: 15s
-        static_configs:
-          - targets:
-              - ferroehr:9464
-            labels:
-              service: ferroehr
   # The provisioned Grafana dashboard — this inline block is its single home
   # (the alert starter pack stays a separate file, docker/observability/alerts.yml).
   grafana-dashboard:

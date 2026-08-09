@@ -4,22 +4,44 @@ metadata:
   name: {{ include "ferroehr.fullname" . }}
   labels:
     {{- include "ferroehr.labels" . | nindent 4 }}
-  {{- with .Values.service.annotations }}
+  {{- /* ONE annotations mapping. A second `annotations:` key under the same
+         metadata is a duplicate YAML key: the later mapping wins and the
+         description disappears. Operator values take precedence on a
+         collision, which is what `merge`'s destination-wins rule gives. */}}
   annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- $description := dict "kubernetes.io/description" "Stable in-cluster address for the FerroEHR CDR's openEHR ITS-REST API. The management surface, when enabled on its own port, is deliberately NOT exposed here." }}
+    {{- toYaml (merge (deepCopy (default dict .Values.service.annotations)) $description) | nindent 4 }}
 spec:
+  {{- /* Rendered only when it differs from the API default, per
+         https://kubernetes.io/docs/concepts/configuration/overview/
+         "Don't specify default values unnecessarily". */}}
+  {{- if ne .Values.service.type "ClusterIP" }}
   type: {{ .Values.service.type }}
+  {{- end }}
+  {{- with .Values.service.trafficDistribution }}
+  {{- /* KEP-4444 (keps/sig-network/4444-service-traffic-distribution), stable
+         v1.33 — below this chart's kubeVersion floor, so ungated. Omitted
+         entirely when empty: the API default is cluster-wide spreading, and
+         locality is a trade against evenness that only the operator can make.
+         https://kubernetes.io/docs/reference/networking/virtual-ips/#traffic-distribution */}}
+  trafficDistribution: {{ . }}
+  {{- end }}
   ports:
+    {{- /* `appProtocol` is not a duplicate of the port NAME: the name is a
+           reference key for `targetPort`, while appProtocol declares the wire
+           protocol to Gateway API implementations and topology-aware proxies,
+           which is how they know to speak HTTP rather than treat the port as
+           opaque TCP
+           (https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol). */}}
     - name: http
       port: {{ .Values.service.port }}
       targetPort: http
-      protocol: TCP
+      appProtocol: http
     {{- if and .Values.config.management.enabled .Values.config.management.port }}
     - name: management
       port: {{ .Values.config.management.port }}
       targetPort: management
-      protocol: TCP
+      appProtocol: http
     {{- end }}
   selector:
     {{- include "ferroehr.selectorLabels" . | nindent 4 }}

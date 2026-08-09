@@ -952,8 +952,20 @@ impl FerroEhrService {
     /// reference (e.g. the external object store is unreachable).
     #[cfg(feature = "multimedia")]
     pub async fn expand_multimedia(&self, body: Value) -> Result<Value, SmError> {
-        // Off by default: no engine serves the stored form unchanged.
         let Some(engine) = &self.multimedia else {
+            // No store is reachable. Serving the stored form is correct only
+            // when there is nothing to expand; a record that DOES reference a
+            // blob is clinical content this server externalized, and answering
+            // 200 with the compact reference would drop the caller's request
+            // on the floor without saying so.
+            if ferroehr_ext::multimedia::references_external_blob(&body) {
+                return Err(internal_fault(
+                    "expand a multimedia reference",
+                    &"this record references externalized multimedia but no object store is \
+                      configured, so the content cannot be re-inlined (configure \
+                      multimedia.endpoint, or re-enable multimedia, to serve it)",
+                ));
+            }
             return Ok(body);
         };
         let mut body = body;

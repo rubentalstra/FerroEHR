@@ -3,9 +3,26 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: {{ include "ferroehr.fullname" . }}
+  annotations:
+    kubernetes.io/description: >-
+      Keeps the CDR available during voluntary disruption (node drains, cluster upgrades). AlwaysAllow lets a drain evict already-unhealthy pods rather than waiting for them to recover.
   labels:
     {{- include "ferroehr.labels" . | nindent 4 }}
 spec:
+  {{- /* The documented recommendation
+         (https://kubernetes.io/docs/concepts/workloads/pods/disruptions/):
+         "It is recommended to set AlwaysAllow Unhealthy Pod Eviction Policy to
+         your PodDisruptionBudgets to support eviction of misbehaving
+         applications during a node drain. The default behavior is to wait for
+         the application pods to become healthy before the drain can proceed."
+         With our maxUnavailable: 0 posture the default is worse than passive: a
+         drain waits for pods to become healthy that are unhealthy BECAUSE the
+         node is draining, so it never completes and reports nothing.
+
+         Rendered unconditionally: KEP-3017
+         (keps/sig-apps/3017-pod-healthy-policy-for-pdb) marks this stable in
+         v1.31, below this chart's kubeVersion floor. */}}
+  unhealthyPodEvictionPolicy: {{ .Values.podDisruptionBudget.unhealthyPodEvictionPolicy }}
   {{- if .Values.podDisruptionBudget.maxUnavailable }}
   maxUnavailable: {{ .Values.podDisruptionBudget.maxUnavailable }}
   {{- else }}

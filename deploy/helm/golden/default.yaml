@@ -11,8 +11,11 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: ferroehr
+  annotations:
+    kubernetes.io/description: >-
+      Default-deny ingress for the CDR: only the API port (and the management port when enabled) is admitted. An empty ingressFrom admits every source — narrow it for a PHI workload.
   labels:
-    helm.sh/chart: ferroehr-5.0.1
+    helm.sh/chart: ferroehr-6.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.3"
@@ -29,25 +32,31 @@ spec:
     - ports:
         - port: http
           protocol: TCP
+
 ---
 # Source: ferroehr/templates/poddisruptionbudget.yaml
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: ferroehr
+  annotations:
+    kubernetes.io/description: >-
+      Keeps the CDR available during voluntary disruption (node drains, cluster upgrades). AlwaysAllow lets a drain evict already-unhealthy pods rather than waiting for them to recover.
   labels:
-    helm.sh/chart: ferroehr-5.0.1
+    helm.sh/chart: ferroehr-6.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.3"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 spec:
+  unhealthyPodEvictionPolicy: AlwaysAllow
   minAvailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: ferroehr
       app.kubernetes.io/instance: ferroehr
+
 ---
 # Source: ferroehr/templates/serviceaccount.yaml
 apiVersion: v1
@@ -55,13 +64,14 @@ kind: ServiceAccount
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-5.0.1
+    helm.sh/chart: ferroehr-6.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.3"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
 automountServiceAccountToken: false
+
 ---
 # Source: ferroehr/templates/configmap.yaml
 apiVersion: v1
@@ -69,7 +79,7 @@ kind: ConfigMap
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-5.0.1
+    helm.sh/chart: ferroehr-6.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.3"
@@ -110,7 +120,6 @@ data:
       [authz.rbac]
         admin_role = "ADMIN"
         enabled = true
-        management_access = "admin_only"
         user_role = "USER"
     
     [db]
@@ -136,7 +145,6 @@ data:
       format = "json"
     
     [management]
-      access_default = "admin_only"
       base_path = "/management"
       enabled = true
       [management.endpoints]
@@ -187,6 +195,8 @@ data:
       [terminology.external]
         enabled = false
         fail_on_error = false
+    
+
 ---
 # Source: ferroehr/templates/service.yaml
 apiVersion: v1
@@ -194,30 +204,37 @@ kind: Service
 metadata:
   name: ferroehr
   labels:
-    helm.sh/chart: ferroehr-5.0.1
+    helm.sh/chart: ferroehr-6.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.3"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ferroehr
+  annotations:
+    kubernetes.io/description: Stable in-cluster address for the FerroEHR CDR's openEHR
+      ITS-REST API. The management surface, when enabled on its own port, is deliberately
+      NOT exposed here.
 spec:
-  type: ClusterIP
   ports:
     - name: http
       port: 8080
       targetPort: http
-      protocol: TCP
+      appProtocol: http
   selector:
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
+
 ---
 # Source: ferroehr/templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ferroehr
+  annotations:
+    kubernetes.io/description: >-
+      The FerroEHR CDR itself: a stateless openEHR ITS-REST API server against an EXTERNAL PostgreSQL 18. It stores nothing locally, so a pod is disposable; readiness reports the database and its schema, liveness does not.
   labels:
-    helm.sh/chart: ferroehr-5.0.1
+    helm.sh/chart: ferroehr-6.0.0
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
     app.kubernetes.io/version: "3.17.3"
@@ -242,7 +259,7 @@ spec:
         # secret values. Hashing the ConfigMap template alone missed the last two,
         # so a rotated passphrase or an edited Cedar policy propagated into the
         # volume while every pod kept running on the value it read at startup.
-        checksum/config: 9e0f0e003bae3028c5c76181b6ba5eacaa1a38897acdda085ee44b281e22a02f
+        checksum/config: bdf8127c9fca1fa72f3584043c96cc239403d54c51ee39b9782cdfcf944703c4
       labels:
         app.kubernetes.io/name: ferroehr
         app.kubernetes.io/instance: ferroehr
@@ -256,6 +273,7 @@ spec:
       # (https://kubernetes.io/docs/concepts/services-networking/service/#environment-variables).
       enableServiceLinks: false
       terminationGracePeriodSeconds: 30
+      hostUsers: false
       securityContext:
         fsGroup: 65532
         fsGroupChangePolicy: OnRootMismatch
@@ -264,6 +282,7 @@ spec:
         runAsUser: 65532
         seccompProfile:
           type: RuntimeDefault
+        supplementalGroupsPolicy: Strict
       containers:
         - name: ferroehr
           image: "ghcr.io/rubentalstra/ferroehr:3.17.3"
@@ -317,6 +336,10 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 30
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 5
           resources:
             limits:
               cpu: "2"
@@ -343,6 +366,17 @@ spec:
           emptyDir: {}
         - name: config
           projected:
+            # Same 0440 as the secrets volume, for the same reason: this volume
+            # is not only ferroehr.toml. Every `config.files` entry lands here,
+            # and that key's documented use includes the PGP signing PRIVATE key
+            # (signing.key_path), mutual-TLS PEMs and a JWKS blob; when the
+            # configuration holds a secret the chart cannot route out of it,
+            # ferroehr.toml itself arrives from a Secret too. Without a mode the
+            # projection defaults to 0644 — world-readable inside the container.
+            # Owner is root, group is fsGroup, so the group bit is what the
+            # non-root process reads through
+            # (https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod).
+            defaultMode: 0440
             sources:
               - configMap:
                   name: ferroehr
@@ -368,3 +402,13 @@ spec:
                   items:
                     - key: FERROEHR__DB__URL
                       path: db.url
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          matchLabelKeys:
+            - pod-template-hash
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: ferroehr
+              app.kubernetes.io/instance: ferroehr

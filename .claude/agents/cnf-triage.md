@@ -8,7 +8,8 @@ description: >
   artifacts (tools/cnf-runner/artifacts) — by deriving the required behaviour
   first-hand from the vendored openEHR spec text, which is ALWAYS right and
   never a suspect. Use after every red CNF run, before touching any code.
-tools: [Read, Grep, Glob, Bash]
+tools: Read, Grep, Glob, Bash
+disallowedTools: Write, Edit, MultiEdit, NotebookEdit
 model: opus
 memory: project
 color: orange

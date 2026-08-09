@@ -5,7 +5,17 @@ production-shaped Kubernetes workload: non-root, read-only root filesystem,
 default-deny ingress, connecting to an **external** PostgreSQL 18. This chapter
 covers installing the chart, the database role model it expects, the security
 posture it enforces, the health probes, and the optional integrations. It
-assumes a cluster at Kubernetes 1.25 or newer.
+assumes a cluster at Kubernetes 1.36 or newer.
+
+> [!IMPORTANT]
+> **The chart requires Kubernetes 1.36 or newer** (`kubeVersion: ">=1.36.0-0"`).
+> Every pod runs in its own user namespace (`hostUsers: false`), so a container
+> escape lands as an unprivileged host UID — that field is stable as of 1.36 and
+> the chart renders it unconditionally. Your nodes must be Linux with
+> containerd ≥ 2.0 or CRI-O ≥ 1.25; without that support the pod does not start,
+> which is the loud failure rather than a silent downgrade. Set `hostUsers: true`
+> to opt out. What it buys is in
+> [Kubernetes hardening](./kubernetes-hardening.md).
 
 > [!IMPORTANT]
 > There is **no in-chart PostgreSQL**. A CDR stores PHI, so its database must be
@@ -96,17 +106,10 @@ gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:<tag> -R rubentalstra/
 ```
 
 > [!IMPORTANT]
-> Signing was added to the publishing lanes over time, so the answer depends on
-> what you pinned. Image attestations exist from the first release published by
-> the signing lane onward — `3.17.3` and everything before it answer `HTTP 404:
-> Not Found`, which is the honest state rather than a verification failure (the
-> development images, `ghcr.io/rubentalstra/ferroehr:develop`, already verify).
-> For the chart, the **cosign signature exists from chart `5.0.1` onward**. Two
-> earlier versions are honest exceptions: `4.1.0` carries the attestation but no
-> signature, and `5.0.0` carries **neither** — its publishing run pushed the chart
-> and then failed at the signing step, and a published chart version is never
-> replaced, so it stands as it was published. Both install and run normally; they
-> simply cannot be verified. Pin `5.0.1` or newer if verification matters to you.
+> Both commands verify what the publishing lanes produce now. A published
+> artifact is never replaced, so if one you pinned answers `HTTP 404: Not Found`
+> it carries no attestation — that is the honest state rather than a verification
+> failure, and the fix is to pin a current version.
 
 > [!NOTE]
 > `helm install --verify` and `helm verify` do **not** apply: they check a PGP
@@ -342,9 +345,25 @@ Verified on a running pod rather than inferred from the rendered manifest: the
 container runs as uid/gid 65532 with an **empty** capability bounding set,
 `noNewPrivileges`, a read-only root filesystem, and a default-deny seccomp
 filter; the only writable path is the `emptyDir` at `/tmp`. The whole set
-satisfies the Pod Security **Restricted** profile, so the chart installs
-unchanged into a namespace labelled
-`pod-security.kubernetes.io/enforce=restricted`.
+satisfies the Pod Security **Restricted** profile.
+
+Satisfying it and **enforcing** it are different things, and only one of them is
+yours to do. Enforcement comes from a label on the namespace, which a chart
+cannot set for a namespace it does not own — so label it, or the posture above
+is a convention nothing checks and nothing fails when a future change regresses
+it:
+
+```shell
+kubectl label --overwrite namespace ferroehr \
+  pod-security.kubernetes.io/enforce=restricted \
+  pod-security.kubernetes.io/enforce-version=latest
+```
+
+With the label in place the API server refuses a non-compliant pod outright
+([Pod Security
+Admission](https://kubernetes.io/docs/concepts/security/pod-security-admission/)),
+which is a stronger guarantee than any check the chart can make about itself.
+The install prints this as a prerequisite for the same reason.
 
 `enableServiceLinks: false` is load-bearing, not hygiene. The kubelet injects a
 [set of Service link environment
@@ -449,7 +468,81 @@ objects instead, so set `metrics.serviceMonitor.enabled=true` there —
 `serviceMonitorSelector` matches on goes. It needs the `monitoring.coreos.com`
 CRDs installed first, or the install fails on an unknown kind.
 
+## Authentication is required, and the chart says so before it installs
+
+`config.auth.enabled` defaults to **true**, and the server requires at least one
+mechanism with it: a `401` challenge has to name a scheme the server actually
+implements ([RFC 9110 §11.6.1](https://www.rfc-editor.org/rfc/rfc9110#section-11.6.1)),
+so it exits rather than run as an openEHR API that can only refuse every request.
+
+The chart therefore **refuses to render** a values file that enables
+authentication without configuring one, so `helm install` stops with an
+actionable error instead of reporting success and crash-looping:
+
+```text
+Error: execution error at (ferroehr/templates/deployment.yaml:...):
+config.auth.enabled is true but no authentication mechanism is configured...
+```
+
+Pick one:
+
+```yaml
+config:
+  auth:
+    oidc:
+      issuer: https://keycloak.example.org/realms/ferroehr
+      audiences: [ferroehr]
+```
+
+or Basic auth, whose password hashes are secrets — see
+`deploy/helm/ci/basic-auth-values.yaml` for the full shape.
+
+> [!WARNING]
+> `config.auth.enabled: false` makes the chart render, and serves **every**
+> request unauthenticated. On a repository holding patient data that is a
+> development-only choice; the chart makes you state it explicitly rather than
+> reaching it by omission.
+
 ## Optional integrations
+
+### Any server setting is reachable, not only the ones listed here
+
+The chart renders its `config` tree **verbatim** into `ferroehr.toml`. So
+`config.<the.toml.path>` sets *any* key in the
+[configuration reference](configuration.md) — including keys this page and
+`values.yaml` never mention. There is no allow-list to extend and no chart
+release to wait for:
+
+```yaml
+# values.yaml — [query] plan_cache_capacity, which values.yaml never names
+config:
+  query:
+    plan_cache_capacity: 512
+```
+
+```shell
+helm upgrade ferroehr ferroehr/ferroehr --reuse-values \
+  --set config.query.plan_cache_capacity=512
+```
+
+Turning something off is the same edit in reverse: remove the key (or set the
+integration's `enabled` back to `false`) and upgrade. The tables below are a
+curated starting point for the switches most deployments want — they are not
+the boundary of what the chart supports.
+
+Two things make this safe to rely on:
+
+- **A typo is a boot refusal, not a silent default.** The server sweeps its
+  configuration strictly and rejects an unknown key with a did-you-mean, so a
+  misspelled path fails loudly at startup instead of quietly doing nothing.
+  Check before you deploy with the schema and boot gates described under
+  [Check your values before you deploy them](#check-your-values-before-you-deploy-them).
+- **Credentials do not belong in this tree.** `config` becomes a mounted
+  file; secrets have their own routes (`secrets.*`, `existingSecret`, and the
+  `*_file` key siblings) — see
+  [Secrets and mounted config](#secrets-and-mounted-config).
+
+### The common switches
 
 Every switch below lives in the chart's `config` tree, so its key *is* the
 TOML key from the [configuration reference](configuration.md). Most are **off
@@ -477,6 +570,47 @@ is an explicit, auditable decision:
 
 Full detail on each is in [Beyond the core](../beyond-core/index.md),
 [Security & multi-tenancy](../security.md), and [Operations](../operations.md).
+
+## Staying available while things move
+
+Four defaults keep the API serving through the events that routinely interrupt
+it. None needs configuring; each is listed because the reason matters when you
+tune it.
+
+**Replicas land on different nodes.** With nothing telling the scheduler
+otherwise, two replicas can share one node and one node failure is a total
+outage. The chart ships a soft spread constraint — `maxSkew: 1` over
+`kubernetes.io/hostname`, `whenUnsatisfiable: ScheduleAnyway` — so replicas
+prefer separate nodes but a single-node or full cluster still schedules them
+rather than leaving a pod `Pending`. Setting `topologySpreadConstraints`
+**replaces** it wholesale, so give the complete constraint including its own
+`labelSelector`; add a `topology.kubernetes.io/zone` entry if your cluster spans
+zones.
+
+**A terminating pod stops receiving requests before it shuts down.** Deleting a
+pod removes it from the EndpointSlice and sends `SIGTERM` *concurrently*, and
+the removal still has to propagate to every node. `preStopSleepSeconds` (default
+5) holds the container for that window first. It uses the native `sleep` hook
+action rather than an `exec` hook, because the image ships no shell to run one.
+
+**A node drain does not hang on unhealthy pods.** The PodDisruptionBudget sets
+`unhealthyPodEvictionPolicy: AlwaysAllow`, the
+[documented recommendation](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/).
+The API default, `IfHealthyBudget`, makes a drain wait for pods to become
+healthy — which never completes when they are unhealthy *because* of the drain.
+
+**A migration interrupted by a drain is not counted as a failure.** The
+migration Job carries a `podFailurePolicy` that ignores pod failures caused by
+disruption, so ordinary cluster maintenance during a release cannot exhaust
+`backoffLimit` and fail the upgrade with no migration error anywhere in the
+logs.
+
+Two more are available and off by default. `service.trafficDistribution:
+PreferSameZone` keeps traffic inside the caller's zone — lower latency and
+inter-zone cost, at the price of even load, so measure before setting it. And
+`autoscaling.behavior` passes scaling policies straight through; the defaults
+already scale up immediately and wait out a five-minute window before scaling
+down, so change it only to be *more* conservative.
 
 ## Upgrades
 

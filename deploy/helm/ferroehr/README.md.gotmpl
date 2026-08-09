@@ -131,6 +131,17 @@ your CNI enforces NetworkPolicy** — check yours; several do not.
 
 {{ template "chart.requirementsSection" . }}
 
+> [!NOTE]
+> Rows under `config.*` carry no description here on purpose. Those keys are the
+> **server's**, not the chart's — the chart renders the `config` tree verbatim
+> into `ferroehr.toml` — and they are documented once, in the configuration
+> reference. Restating them here would fork two copies that drift. The same
+> reasoning keeps `config.*` out of `values.schema.json`.
+>
+> That also means the table is not the boundary of what you can set: **any** key
+> in the configuration reference is reachable as `config.<the.toml.path>`,
+> whether or not it appears below.
+
 {{ template "chart.valuesSection" . }}
 
 ## More

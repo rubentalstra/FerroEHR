@@ -198,14 +198,7 @@ pub(super) async fn run(
             if body.is_null() {
                 return Ok(negotiate::empty(no_content));
             }
-            // `?expand_multimedia=true`: transparently re-inline any
-            // externalized DV_MULTIMEDIA blobs, verifying integrity. A no-op
-            // when externalization is off or the body has no external media.
-            // Not an openEHR spec parameter, so read off the raw query string
-            // (the `template_id` precedent), never a generated params struct.
-            if params::query_param(q, "expand_multimedia").as_deref() == Some("true") {
-                body = state.backend().expand_multimedia(body).await?;
-            }
+            body = super::expand_multimedia_if_requested(&state, q, body).await?;
             // Negotiate the representation across `Accept_LOCATABLE`: FLAT /
             // STRUCTURED via the adapter, else canonical JSON/XML through
             // `read_rm` (which answers 406 for an unfulfillable Accept).

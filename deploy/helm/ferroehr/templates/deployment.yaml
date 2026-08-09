@@ -1,7 +1,33 @@
+{{- /*
+Refuse at RENDER time what the server would otherwise refuse at boot.
+
+`config.auth.enabled` defaults to true and the server requires at least one
+mechanism with it, because a 401 challenge has to name a scheme the server
+actually implements (RFC 9110 §11.6.1,
+https://www.rfc-editor.org/rfc/rfc9110#section-11.6.1) — so it exits rather
+than start as an openEHR API that can only refuse every request.
+
+Correct, but as a chart default it meant `helm install` reported success and
+then crash-looped, with the reason only in a pod log. The fix is NOT to ship
+`enabled: false`: that would hand a fresh install an unauthenticated CDR
+serving PHI, which is a worse failure than a loud one. Instead the operator is
+told here, before a single object reaches the cluster, and disabling auth stays
+available as an explicit, visible choice.
+*/}}
+{{- if .Values.config.auth.enabled }}
+{{- $basic := (.Values.config.auth.basic).users }}
+{{- $issuer := (.Values.config.auth.oidc).issuer }}
+{{- if and (empty $basic) (empty $issuer) }}
+{{- fail "config.auth.enabled is true but no authentication mechanism is configured, so the server would refuse to start (RFC 9110 §11.6.1: a 401 challenge must name a scheme the server implements).\n\nConfigure one:\n  config.auth.basic.users  — see deploy/helm/ci/basic-auth-values.yaml\n  config.auth.oidc.issuer  — with config.auth.oidc.audiences\n\nOr, for a development install only, set config.auth.enabled=false to serve every request unauthenticated." }}
+{{- end }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "ferroehr.fullname" . }}
+  annotations:
+    kubernetes.io/description: >-
+      The FerroEHR CDR itself: a stateless openEHR ITS-REST API server against an EXTERNAL PostgreSQL 18. It stores nothing locally, so a pod is disposable; readiness reports the database and its schema, liveness does not.
   labels:
     {{- include "ferroehr.labels" . | nindent 4 }}
 spec:
@@ -54,6 +80,9 @@ spec:
       # (https://kubernetes.io/docs/concepts/services-networking/service/#environment-variables).
       enableServiceLinks: false
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- if not .Values.hostUsers }}
+      {{- include "ferroehr.hostUsers" . | nindent 6 }}
+      {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -132,29 +161,6 @@ spec:
           envFrom:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- if .Values.probes.exec.enabled }}
-          livenessProbe:
-            exec:
-              command: ["/usr/local/bin/ferroehr", "healthcheck"]
-            {{- with .Values.probes.liveness }}
-            {{- toYaml . | nindent 12 }}
-            {{- end }}
-          readinessProbe:
-            exec:
-              command: ["/usr/local/bin/ferroehr", "healthcheck"]
-            {{- with .Values.probes.readiness }}
-            {{- toYaml . | nindent 12 }}
-            {{- end }}
-          {{- if .Values.probes.startup.enabled }}
-          startupProbe:
-            exec:
-              command: ["/usr/local/bin/ferroehr", "healthcheck"]
-            initialDelaySeconds: {{ .Values.probes.startup.initialDelaySeconds }}
-            periodSeconds: {{ .Values.probes.startup.periodSeconds }}
-            timeoutSeconds: {{ .Values.probes.startup.timeoutSeconds }}
-            failureThreshold: {{ .Values.probes.startup.failureThreshold }}
-          {{- end }}
-          {{- else }}
           {{- /* The health family is always mounted on the main HTTP port and
                  never gated by config, so httpGet probes need no prerequisite. */}}
           livenessProbe:
@@ -181,6 +187,29 @@ spec:
             timeoutSeconds: {{ .Values.probes.startup.timeoutSeconds }}
             failureThreshold: {{ .Values.probes.startup.failureThreshold }}
           {{- end }}
+          {{- if gt (int .Values.preStopSleepSeconds) 0 }}
+          {{- /*
+          Lame-duck delay. Pod deletion removes the pod from its EndpointSlice
+          and sends SIGTERM CONCURRENTLY, and the endpoint removal has to reach
+          every kube-proxy before it takes effect — so without a pause a pod can
+          receive requests it has already begun shutting down on
+          (https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/,
+          https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination).
+          `strategy.maxUnavailable: 0` does not help: it keeps CAPACITY up, it
+          does not make endpoint propagation instant.
+
+          The native `sleep` action, not an exec hook: this image ships no shell
+          and no sleep binary (deliberately — it is what makes runtime intrusion
+          detection high-confidence), so `exec` could not run here at all.
+
+          KEP-3960 (keps/sig-node/3960-pod-lifecycle-sleep-action) marks the
+          sleep action stable in v1.34, below this chart's kubeVersion floor, so
+          it renders unconditionally.
+          */}}
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: {{ int .Values.preStopSleepSeconds }}
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
@@ -208,6 +237,17 @@ spec:
           emptyDir: {}
         - name: config
           projected:
+            # Same 0440 as the secrets volume, for the same reason: this volume
+            # is not only ferroehr.toml. Every `config.files` entry lands here,
+            # and that key's documented use includes the PGP signing PRIVATE key
+            # (signing.key_path), mutual-TLS PEMs and a JWKS blob; when the
+            # configuration holds a secret the chart cannot route out of it,
+            # ferroehr.toml itself arrives from a Secret too. Without a mode the
+            # projection defaults to 0644 — world-readable inside the container.
+            # Owner is root, group is fsGroup, so the group bit is what the
+            # non-root process reads through
+            # (https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod).
+            defaultMode: 0440
             sources:
               {{- if ne (include "ferroehr.configInSecret" .) "true" }}
               - configMap:
@@ -298,7 +338,5 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.topologySpreadConstraints }}
       topologySpreadConstraints:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- include "ferroehr.topologySpreadConstraints" . | nindent 8 }}

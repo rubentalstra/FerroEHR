@@ -55,19 +55,25 @@ still answers `200` — it never touches the store.
 
 ## Turning it back off
 
-Switching `enabled` back to `false` changes two things, and one of them is a
-trap worth knowing before you flip it:
+`enabled` governs **new offloads**, not access to old ones. Switching it back
+to `false`:
 
 - New commits keep large `DV_MULTIMEDIA` **inline**, byte-identical, with no
   dependency on the object store. Nothing else about the request or the record
   changes.
-- Records that were **already** offloaded keep their `s3://` reference, and
-  `?expand_multimedia=true` on them is **ignored**: the read answers `200` with
-  the compact reference and no error. The bytes are still in the bucket, but the
-  API will not return them until the integration is switched back on.
+- Records that were **already** offloaded keep their `s3://` reference and stay
+  fully readable: `?expand_multimedia=true` still fetches, verifies and
+  re-inlines them, as long as an `endpoint` is still configured. Content this
+  server externalized does not become unreachable because a switch was flipped.
 
-So disable the integration only after you have decided what happens to the blobs
-already in the bucket.
+**Removing the `endpoint` as well is the decision that matters.** With no store
+reachable at all, an expansion request against an already-offloaded record
+**fails** — it does not quietly answer `200` with the compact reference. The
+bytes are still in your bucket and still reachable with an S3 client; the API
+refuses rather than pretending the request was honoured.
+
+So decide what happens to the blobs already in the bucket before you remove the
+endpoint, not before you flip `enabled`.
 
 ## Enabling it
 
@@ -115,22 +121,53 @@ credentials. Set both to use signed requests against a real store.
 > it. See [Operations](../operations.md) for the deployment-side security
 > posture.
 
+### On Kubernetes
+
+Every key above is reachable as `config.multimedia.*`
+([Any server setting is reachable](../installation/kubernetes.md#any-server-setting-is-reachable-not-only-the-ones-listed-here));
+the S3 credentials go through `secrets.*`, which the chart mounts as files:
+
+```yaml
+# values.yaml
+config:
+  multimedia:
+    enabled: true
+    endpoint: https://s3.example.com
+    bucket: openehr-multimedia
+    threshold_bytes: 262144
+secrets:
+  multimediaAccessKeyId: "AKIA…"
+  multimediaSecretAccessKey: "…"
+```
+
+**Before you enable it:** the bucket must exist — nothing in the chart creates
+it, and an S3 write into a missing bucket answers `403 AccessDenied`, not
+`404`. **To turn it off**, set `config.multimedia.enabled: false`; leave the
+`endpoint` in place so already-externalized content stays readable (see
+[Turning it back off](#turning-it-back-off)).
+
 ## Quick setup with SeaweedFS
 
 Any S3-compatible store works (AWS S3, MinIO, SeaweedFS). SeaweedFS is a light
 option for development and testing — its S3 gateway needs no credentials.
 
 **Step 1 — create the bucket.** The gateway starts with no buckets at all, and
-nothing creates one for you. Against an unauthenticated development gateway a
-bare `PUT` on the bucket path is enough:
+nothing in it creates one. This matters more than it sounds: an S3 write into a
+bucket that does not exist answers `403 AccessDenied`, not `404 NoSuchBucket`,
+so a missing bucket presents as a credentials problem. Against an
+unauthenticated development gateway a bare `PUT` on the bucket path is enough:
 
 ```bash
 curl -X PUT http://127.0.0.1:8333/openehr-multimedia
 curl -s http://127.0.0.1:8333/            # the bucket now appears in ListAllMyBuckets
 ```
 
+The [Compose stack](../installation/compose.md) does this for you — its
+`seaweedfs-init` service performs exactly that `PUT` once the gateway is
+healthy — so this step is only for a gateway you run yourself.
+
 **Step 2 — point the server at the gateway** and allow plain HTTP for local
-use. For a server you start yourself (from source, or a binary on the host):
+use:
 
 ```bash
 export FERROEHR__MULTIMEDIA__ENABLED=true
@@ -139,19 +176,9 @@ export FERROEHR__MULTIMEDIA__BUCKET=openehr-multimedia
 export FERROEHR__MULTIMEDIA__ALLOW_HTTP=true
 ```
 
-For the [Compose stack](../installation/compose.md), exporting these in your
-shell does **nothing** — Compose passes only the variables the file names, and
-the multimedia keys are not among them. Add them to the `ferroehr` service's
-`environment:` block instead, using the in-network hostname:
-
-```yaml
-  ferroehr:
-    environment:
-      FERROEHR__MULTIMEDIA__ENABLED: "true"
-      FERROEHR__MULTIMEDIA__ENDPOINT: http://seaweedfs:8333
-      FERROEHR__MULTIMEDIA__BUCKET: openehr-multimedia
-      FERROEHR__MULTIMEDIA__ALLOW_HTTP: "true"
-```
+The same exports drive the Compose stack, which passes the whole
+`FERROEHR__MULTIMEDIA__*` set through from your shell — only the endpoint
+changes, to the in-network hostname `http://seaweedfs:8333`.
 
 **Step 3 — check what the server actually took.** `/management/env` reports the
 effective configuration, which is the quickest way to catch a variable that

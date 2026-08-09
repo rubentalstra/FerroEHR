@@ -70,7 +70,7 @@ use crate::extensions::access::authn::AuthMethod;
 use crate::overview::error::RestError;
 use crate::overview::params::{
     H_ITEM_TAG, H_VERSION_ITEM_TAG, ItemTagHeaderEntry, emit_item_tag_header,
-    item_tag_to_header_entry, parse_item_tag_header, validate_item_tag_entries,
+    item_tag_to_header_entry, parse_item_tag_header, query_param, validate_item_tag_entries,
 };
 use crate::state::AppState;
 
@@ -142,6 +142,33 @@ fn commit_instant(body: &Value) -> Option<jiff::Timestamp> {
 /// declares an `original_version` or `imported_version` document element, so
 /// no per-subtype root exists to serve.
 pub(super) const VERSION_ROOT_TAG: &str = "version";
+
+/// Re-inline externalized `DV_MULTIMEDIA` content when the caller asked for it
+/// with `?expand_multimedia=true`, verifying each blob's integrity.
+///
+/// Every read that can return externalized content routes through here, because
+/// externalization is applied on the way IN by the generic versioning path —
+/// so a `DV_MULTIMEDIA` can leave the database from a COMPOSITION, an
+/// `EHR_STATUS` or a FOLDER alike, and a read that could not restore it would
+/// leave clinical content in the object store with no API that returns it.
+///
+/// NOTE: no openEHR spec governs this — our own design/extension; the
+/// parameter is read off the raw query string (the `template_id` precedent)
+/// rather than a generated params struct, since it is not in the contract.
+///
+/// # Errors
+/// Propagates the service's failure when a referenced blob cannot be fetched or
+/// fails its integrity check — never a silent fall back to the stored form.
+pub(super) async fn expand_multimedia_if_requested(
+    state: &AppState,
+    query: Option<&str>,
+    body: Value,
+) -> Result<Value, RestError> {
+    if query_param(query, "expand_multimedia").as_deref() == Some("true") {
+        return Ok(state.backend().expand_multimedia(body).await?);
+    }
+    Ok(body)
+}
 
 /// Wrap a read body as a [`ServiceResponse`], attaching resource metadata drawn
 /// from the body's own `uid` (and, for a VERSION envelope, its commit instant)

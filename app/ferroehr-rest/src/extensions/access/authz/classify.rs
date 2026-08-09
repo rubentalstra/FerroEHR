@@ -9,12 +9,12 @@
 //!
 //! Among the generated routes only the two `admin_*` operations are
 //! [`OperationClass::Admin`]; everything else is [`OperationClass::Clinical`]
-//! (any authenticated principal with a role), matching v1's rule that only
-//! `/rest/admin/**` and the management endpoints require `ADMIN` while
-//! "everything else → any authenticated user". [`OperationClass::Public`]
-//! and [`OperationClass::Management`] are used by the REST layer to classify the
-//! *non-generated* surface (status/health/swagger/management), which never
-//! reaches [`class_of`].
+//! (any authenticated principal with a role) — only `/rest/admin/**` requires
+//! `ADMIN`, and everything else requires any authenticated user.
+//! [`OperationClass::Public`] is used by the REST layer to classify the
+//! *non-generated* surface (status/health/swagger), which never reaches
+//! [`class_of`]. The management surface is classified by its own per-endpoint
+//! guard against `[management.endpoints]`, not here.
 
 use crate::extensions::access::authz::request::{AccessMode, ResourceKind};
 
@@ -25,9 +25,10 @@ pub enum OperationClass {
     Public,
     /// Any authenticated principal with at least one role.
     Clinical,
-    /// The management surface — gated by the `rbac.management_access` tri-state.
-    Management,
-    /// Administrative operations — require `rbac.admin_role`.
+    /// Administrative operations — require `rbac.admin_role`. The management
+    /// surface reaches this class through its own per-endpoint guard, which
+    /// maps an `admin_only` endpoint level onto it; `[management]` owns that
+    /// decision, and there is no second RBAC key spelling it.
     Admin,
 }
 

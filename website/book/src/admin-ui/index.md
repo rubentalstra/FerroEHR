@@ -26,6 +26,41 @@ docker run -p 3000:3000 \
   ghcr.io/rubentalstra/ferroehr-admin-ui
 ```
 
+### On Kubernetes
+
+The Helm chart deploys the console as its own Deployment, Service and
+ServiceAccount, with an optional Ingress and a NetworkPolicy that confines its
+egress to the CDR and DNS — the console is a REST client of the CDR by mandate,
+so the chart enforces that rather than trusting it. Off by default, and off
+renders nothing:
+
+```yaml
+# values.yaml
+adminUi:
+  enabled: true
+  ingress:
+    enabled: true
+    hosts:
+      - host: console.example.org
+        paths:
+          - path: /
+            pathType: Prefix
+  auth:
+    oidc:
+      enabled: true
+      issuer: https://keycloak.example/realms/ferroehr
+      clientId: ferroehr-console
+      publicBaseUrl: https://console.example.org
+  # the OIDC client secret is MOUNTED from a Secret you create, never env-borne
+  existingSecret: console-oidc
+```
+
+It needs no database credential and never reaches the database. **Before you
+enable OIDC:** a registered client whose redirect URI matches `publicBaseUrl`,
+and a Secret holding its client secret. **To turn the console off**, set
+`adminUi.enabled: false` and upgrade — every console object is removed and the
+CDR is untouched.
+
 ## Signing in
 
 The sign-in page offers exactly the methods that can actually work: the

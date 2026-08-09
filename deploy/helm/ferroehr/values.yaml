@@ -48,6 +48,7 @@ replicaCount: 2
 # That is the safe direction for a clinical API, and it fails visibly.
 # ─────────────────────────────────────────────────────────────────────────────
 strategy:
+  # -- Rollout strategy. RollingUpdate with maxUnavailable 0 never drops capacity; Recreate takes the service down.
   type: RollingUpdate
   rollingUpdate:
     # -- Extra pods allowed above `replicaCount` while rolling.
@@ -260,6 +261,7 @@ metrics:
     labels: {}
     # -- Scrape interval / timeout.
     interval: 30s
+    # -- Per-scrape timeout. Must be shorter than the interval.
     scrapeTimeout: 10s
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -333,9 +335,13 @@ config:
     format: json
 
   # [auth] — authentication (Basic + OAuth2/OIDC bearer). Enabled by default.
-  # auth.enabled=true with NO mechanism REFUSES TO BOOT (RFC 9110 §11.6.1: a 401
-  # challenge must name a scheme the server implements) — add an [auth.oidc]
-  # issuer, an [[auth.basic.users]] entry, or set enabled=false (dev only).
+  # auth.enabled=true with NO mechanism is REFUSED BY THIS CHART AT RENDER TIME,
+  # because the server refuses to boot on it (RFC 9110 §11.6.1: a 401 challenge
+  # must name a scheme the server implements) and a crash-loop hides the reason
+  # in a pod log. So a stock `helm install` stops with an actionable error rather
+  # than appearing to succeed. Add an [auth.oidc] issuer, an [[auth.basic.users]]
+  # entry, or set enabled=false — the last serves EVERY request unauthenticated
+  # and is a development-only choice the chart makes you state explicitly.
   # An [auth.oidc] table additionally requires `audiences` (at least one) and an
   # https `issuer` with no query/fragment; every [[auth.basic.users]]
   # password_hash must be argon2id at m>=19456,t=2,p=1. All checked at boot.
@@ -348,8 +354,6 @@ config:
       enabled: true
       admin_role: ADMIN
       user_role: USER
-      # admin_only | private | public
-      management_access: admin_only
     abac:
       enabled: false
 
@@ -373,8 +377,6 @@ config:
   management:
     enabled: true
     base_path: /management
-    # off | admin_only | private | public
-    access_default: admin_only
     endpoints:
       # off | public | private | admin_only
       info: "off"
@@ -475,17 +477,30 @@ service:
   port: 8080
   # -- Extra annotations.
   annotations: {}
+  # -- Topology preference for how the Service picks an endpoint (KEP-4444,
+  # stable v1.33). Empty leaves the API default: spread across every ready
+  # endpoint cluster-wide. `PreferSameZone` (`PreferClose` is its older
+  # spelling) keeps traffic inside the client's zone while endpoints there are
+  # ready, which cuts cross-zone latency and inter-zone egress billing;
+  # `PreferSameNode` is stricter still. Both trade EVENNESS for locality — a
+  # zone with one replica and most of the callers will take most of the load —
+  # so it is off unless you have measured that you want it
+  # (https://kubernetes.io/docs/reference/networking/virtual-ips/#traffic-distribution).
+  trafficDistribution: ""
 
 ingress:
   # -- Create an Ingress. TLS termination belongs here (or at a gateway).
   enabled: false
+  # -- IngressClass name. Empty leaves the cluster default to apply.
   className: ""
+  # -- Ingress annotations (TLS issuer, body size, timeouts — controller-specific).
   annotations: {}
   hosts:
     - host: ferroehr.example.com
       paths:
         - path: /ferroehr
           pathType: Prefix
+  # -- TLS blocks, passed through verbatim.
   tls: []
 
 networkPolicy:
@@ -541,27 +556,78 @@ networkPolicy:
 # (https://kubernetes.io/docs/concepts/security/pod-security-standards/) —
 # plus a read-only root filesystem.
 # ─────────────────────────────────────────────────────────────────────────────
+# The fields below satisfy the Kubernetes "restricted" Pod Security Standard,
+# but satisfying it and ENFORCING it are different things: enforcement comes
+# from a namespace label the chart cannot set for you —
+#   pod-security.kubernetes.io/enforce=restricted
+# Without it these values are a convention nothing checks. See the NOTES printed
+# on install (https://kubernetes.io/docs/concepts/security/pod-security-admission/).
+# -- Run the pods in their own USER NAMESPACE, so container UIDs map to
+# unprivileged host UIDs and a container escape lands as nobody rather than as
+# the UID it ran under (KEP-127, stable v1.36 — the reason this chart's
+# kubeVersion floor is 1.36). `false` here is the Kubernetes field spelling and
+# means user namespaces are ON; set it to `true` to share the host's user
+# namespace, which is the API default.
+#
+# Set it to `true` if your nodes cannot support it. The requirement is a
+# node-level one the chart cannot check: a Linux node whose container runtime
+# implements it (containerd >= 2.0 or CRI-O >= 1.25) with idmap-mount support
+# in the kernel. On a node without it the pod does not start — a loud failure,
+# not a silent downgrade
+# (https://kubernetes.io/docs/tasks/configure-pod-container/user-namespaces/).
+hostUsers: false
+
 podSecurityContext:
+  # -- Refuse to start as root (pod level). Required by the restricted profile.
   runAsNonRoot: true
   # 65532 = the distroless `nonroot` uid/gid.
+  # -- UID to run as (pod level). 65532 is the distroless nonroot user.
   runAsUser: 65532
+  # -- GID to run as.
   runAsGroup: 65532
+  # -- Supplemental group owning mounted volumes, so a non-root process can read them.
   fsGroup: 65532
+  # -- Only chown volumes whose ownership differs, avoiding a full relabel on every mount.
   fsGroupChangePolicy: OnRootMismatch
+  # -- Whether the groups in the IMAGE's /etc/group are merged into the
+  # process's supplemental groups. `Strict` uses only the groups this manifest
+  # names, so a group baked into an image cannot silently widen file access
+  # (KEP-3619, stable v1.35;
+  # https://kubernetes.io/docs/tasks/configure-pod-container/security-context/).
+  supplementalGroupsPolicy: Strict
   seccompProfile:
+    # -- Seccomp profile. RuntimeDefault is required by the restricted profile.
     type: RuntimeDefault
 
 securityContext:
+  # -- Refuse to start as root (container level). Required by the restricted profile.
   runAsNonRoot: true
+  # -- UID to run as (container level). 65532 is the distroless nonroot user.
   runAsUser: 65532
+  # -- Block setuid/file-capability escalation. Required by the restricted profile.
   allowPrivilegeEscalation: false
+  # -- Never true. A privileged container is effectively root on the node.
   privileged: false
+  # -- Immutable root filesystem; writable paths are explicit emptyDir mounts.
   readOnlyRootFilesystem: true
   capabilities:
     drop:
       - ALL
   seccompProfile:
+    # -- Seccomp profile at container level. RuntimeDefault is required by the restricted profile.
     type: RuntimeDefault
+  # AppArmor (KEP-24, stable v1.31) is a further confinement layer, and it is
+  # deliberately NOT set here, because it is not a free win: a node without
+  # AppArmor REJECTS the pod outright rather than ignoring the field. Verified
+  # on a v1.36.1 node — the pod went to status `AppArmor` with
+  # "Cannot enforce AppArmor: AppArmor is not enabled on the host" and never
+  # started. Enable it once you know your nodes carry it (most Debian/Ubuntu
+  # nodes do; Docker Desktop and several minimal distributions do not):
+  #
+  #   appArmorProfile:
+  #     type: RuntimeDefault
+  #
+  # https://kubernetes.io/docs/tutorials/security/apparmor/
 
 # -- Resource requests/limits. Sized for a modest API replica; tune for load.
 resources:
@@ -573,64 +639,254 @@ resources:
     memory: 1Gi
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Probes. httpGet against the always-on public health family on the HTTP port
-# (/health/liveness + /health/readiness) — no configuration prerequisite. Set
-# exec.enabled to use the binary's `healthcheck` subcommand instead (e.g. when
-# the HTTP port is not reachable from the kubelet).
+# Probes — three roles, and the split is load-bearing
+# (https://kubernetes.io/docs/concepts/workloads/pods/probes/).
+#
+#   liveness  → /health/liveness, a CONSTANT the server answers by existing. It
+#               must never consult a dependency: "Incorrect implementation of
+#               liveness probes can lead to cascading failures", and a database
+#               blip that restarts every pod is exactly that.
+#   readiness → /health/readiness, which DOES consult dependencies (DB ping,
+#               migrations applied) and answers 503 when they are down. That is
+#               its job: "the readiness probe additionally checks that each
+#               required back-end service is available".
+#   startup   → the same constant as liveness, with a long failureThreshold, so
+#               a cold start (migrations, template cache) is never killed
+#               mid-boot by the liveness probe.
+#
+# A `probes.exec` option once ran `ferroehr healthcheck` for all three. It was
+# removed: it passed no --url, so it probed the openEHR status document rather
+# than a health endpoint, and READINESS therefore never touched the database —
+# a pod with a dead database reported Ready and took clinical traffic.
 # ─────────────────────────────────────────────────────────────────────────────
 probes:
-  # -- Use `ferroehr healthcheck` exec probes instead of httpGet.
-  exec:
-    enabled: false
   liveness:
+    # -- Liveness probe: delay before the first check.
     initialDelaySeconds: 10
+    # -- Liveness probe: seconds between checks.
     periodSeconds: 15
+    # -- Liveness probe: per-check timeout.
     timeoutSeconds: 3
+    # -- Liveness probe: consecutive failures before the pod is acted on.
     failureThreshold: 3
   readiness:
+    # -- Readiness probe: delay before the first check.
     initialDelaySeconds: 5
+    # -- Readiness probe: seconds between checks.
     periodSeconds: 10
+    # -- Readiness probe: per-check timeout.
     timeoutSeconds: 3
+    # -- Readiness probe: consecutive failures before the pod is acted on.
     failureThreshold: 3
   startup:
+    # -- Startup probe. Gives a slow first boot (migrations) room before liveness applies.
     enabled: true
+    # -- Startup probe: delay before the first check.
     initialDelaySeconds: 5
+    # -- Startup probe: seconds between checks.
     periodSeconds: 5
+    # -- Startup probe: per-check timeout.
     timeoutSeconds: 3
+    # -- Startup probe: consecutive failures before the pod is acted on.
     failureThreshold: 30
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Autoscaling.
 # ─────────────────────────────────────────────────────────────────────────────
 autoscaling:
+  # -- Horizontal pod autoscaling. When on, the chart omits replicas and the HPA owns the count.
   enabled: false
+  # -- Lower bound the HPA may scale to.
   minReplicas: 2
+  # -- Upper bound the HPA may scale to.
   maxReplicas: 6
+  # -- Target average CPU. 0 removes the metric; removing BOTH metrics is refused, since an HPA with none never scales.
   targetCPUUtilizationPercentage: 75
+  # -- Target average memory. 0 removes the metric. A CDR is usually CPU-bound, so this is off by default.
   targetMemoryUtilizationPercentage: 0
+  # -- Scaling behaviour, passed through verbatim to `spec.behavior`. Empty
+  # leaves the documented defaults, which are already asymmetric in the right
+  # direction for a clinical API: scale-up is immediate, scale-down waits out a
+  # 300-second stabilization window so a traffic trough cannot tear down
+  # capacity that is about to be needed. Set this only to make it MORE
+  # conservative — e.g. a `scaleDown.policies` entry capping how many pods may
+  # go per minute
+  # (https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/#configurable-scaling-behavior).
+  behavior: {}
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PodDisruptionBudget.
 # ─────────────────────────────────────────────────────────────────────────────
 podDisruptionBudget:
+  # -- Protect availability during voluntary disruption (drains, upgrades).
   enabled: true
+  # -- Pods that must stay available. Used only when maxUnavailable is unset.
   minAvailable: 1
   # maxUnavailable: ""   # set one of minAvailable / maxUnavailable
+  # -- Whether a node drain may evict pods that are already unhealthy.
+  # `AlwaysAllow` is the documented recommendation; the alternative,
+  # `IfHealthyBudget`, is the API default and makes a drain wait for pods to
+  # become healthy first — which never completes when they are unhealthy
+  # because of the drain itself.
+  unhealthyPodEvictionPolicy: AlwaysAllow
 
 # -- Extra pod labels / annotations.
 podLabels: {}
+# -- Extra annotations on the pod template. Note a change here rolls the Deployment.
 podAnnotations: {}
 
 # -- Scheduling.
 nodeSelector: {}
+# -- Tolerations for tainted nodes. Empty = none.
 tolerations: []
+# -- Pod affinity/anti-affinity rules. Empty = none.
 affinity: {}
-# -- Spread replicas across nodes/zones. Empty = none.
+# -- Spread replicas across nodes. Empty does NOT mean "no spreading": it means
+# the chart's own default constraint applies — one soft `maxSkew: 1` over
+# `kubernetes.io/hostname`, so two replicas prefer two nodes and a node failure
+# does not take the whole CDR with it. It is `ScheduleAnyway`, not
+# `DoNotSchedule`, so a single-node or capacity-constrained cluster still
+# schedules rather than leaving a pod Pending forever.
+#
+# A non-empty list REPLACES that default entirely — give the full constraint,
+# including its own `labelSelector`. Add a `topology.kubernetes.io/zone`
+# constraint here if your cluster spans zones; the chart does not assume one
+# (https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/).
 topologySpreadConstraints: []
 
 # -- Termination grace period (audit/outbox drain has a 5s window in-binary).
 terminationGracePeriodSeconds: 30
 
+# -- Lame-duck pause before SIGTERM, in seconds (0 disables). Endpoint removal
+# and SIGTERM happen concurrently on pod deletion, so without a pause a
+# terminating pod can still be sent requests. Uses the native `preStop.sleep`
+# action (this image has no shell, so an exec hook cannot run).
+# Must stay comfortably under terminationGracePeriodSeconds: the sleep runs
+# INSIDE that budget and the server still needs its own drain window after it.
+preStopSleepSeconds: 5
+
 # -- Extra volumes / volumeMounts (e.g. an external secret store for the PGP key).
 extraVolumes: []
+# -- Mounts for extraVolumes, in the server container.
 extraVolumeMounts: []
+
+# ── Admin console (optional companion workload) ──────────────────────────────
+# The Leptos admin console. OFF by default: it is a separate product surface
+# with its own OCI image and its own attack surface, and a CDR is complete
+# without it. Enabling it renders a second Deployment/Service (and optionally an
+# Ingress) alongside the server.
+#
+# It reaches the CDR STRICTLY over ITS-REST — that is the console's binding
+# mandate, not an implementation detail — so its egress is narrow and the
+# NetworkPolicy below enforces it rather than trusting it.
+adminUi:
+  # -- Deploy the admin console alongside the CDR.
+  enabled: false
+  # -- Replica count. The console holds session state in process, so more than
+  # one replica needs sticky sessions at the ingress or users get logged out on
+  # a reroute; left at 1 deliberately.
+  replicaCount: 1
+  image:
+    # -- Console image repository.
+    repository: ghcr.io/rubentalstra/ferroehr-admin-ui
+    # -- Pull policy.
+    pullPolicy: IfNotPresent
+    # -- Image tag. Empty falls back to .Chart.appVersion, so the console and
+    # the server move together by default.
+    tag: ""
+    # -- Image digest (`sha256:…`); wins over `tag` when set, exactly as the
+    # server's `image.digest` does.
+    digest: ""
+  service:
+    # -- Service type for the console.
+    type: ClusterIP
+    # -- Service port. The container always listens on 3000.
+    port: 3000
+  ingress:
+    # -- Publish the console through an Ingress. The console is a human-facing
+    # web UI, so unlike the API this is the normal way to reach it.
+    enabled: false
+    # -- IngressClass name.
+    className: ""
+    # -- Extra annotations for the console Ingress.
+    annotations: {}
+    # -- Hosts and paths.
+    hosts: []
+    # -- TLS blocks.
+    tls: []
+  auth:
+    oidc:
+      # -- Authenticate console users through OIDC. Off means the console's own
+      # session auth is whatever its defaults provide — acceptable for a private
+      # cluster, not for anything reachable by a person who should not see PHI.
+      enabled: false
+      # -- Issuer URL (must be https for anything but local development).
+      issuer: ""
+      # -- OAuth2 client id.
+      clientId: ""
+      # -- The console's own externally-reachable base URL, used to build the
+      # OIDC redirect. Must match what the identity provider has registered.
+      publicBaseUrl: ""
+  # -- Name of an existing Secret holding the console's OIDC client secret. The
+  # chart mounts that key as a FILE and passes only its path, so the credential
+  # never enters the pod's environment — the same discipline the server's DSN
+  # uses.
+  existingSecret: ""
+  # -- Key within `existingSecret` carrying the client secret.
+  existingSecretKey: FERROEHR_ADMIN__AUTH__OIDC__CLIENT_SECRET
+  networkPolicy:
+    # -- Install a NetworkPolicy for the console. Ingress admits `ingressFrom`;
+    # egress admits the CDR Service and DNS, and nothing else. The console is a
+    # REST client of the CDR by mandate, so this is enforceable rather than
+    # aspirational.
+    enabled: true
+    # -- Ingress `from` selectors admitted to the console port. Empty means the
+    # rule carries no `from`, which admits EVERY source — set this to your
+    # ingress-controller namespace/pods.
+    ingressFrom: []
+  # -- Pod-level security context. Mirrors the server's; a second workload is
+  # where a hardened posture is most easily lost. The user-namespace setting is
+  # NOT mirrored here — it is the release-wide `hostUsers` key, because a
+  # posture that differs between two workloads of one release is a posture
+  # nobody can state.
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    runAsGroup: 65532
+    fsGroup: 65532
+    fsGroupChangePolicy: OnRootMismatch
+    supplementalGroupsPolicy: Strict
+    seccompProfile:
+      type: RuntimeDefault
+  # -- Container-level security context. Mirrors the server's.
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    allowPrivilegeEscalation: false
+    privileged: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop: [ALL]
+    seccompProfile:
+      type: RuntimeDefault
+  # -- Termination grace period for the console. Shorter than the server's: it
+  # holds no write in flight and nothing to drain but in-flight page renders.
+  terminationGracePeriodSeconds: 20
+  # -- Lame-duck pause before SIGTERM, in seconds (0 disables) — the same
+  # endpoint-propagation race the server's `preStopSleepSeconds` covers.
+  preStopSleepSeconds: 5
+  # -- Resource requests/limits.
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+  # -- Node selector.
+  nodeSelector: {}
+  # -- Tolerations.
+  tolerations: []
+  # -- Affinity.
+  affinity: {}
+  # -- Extra environment for the console (escape hatch).
+  extraEnv: []

@@ -131,10 +131,32 @@ enable a fourth, token-scope layer on top — see
 ### Per-EHR access control (`EHR_ACCESS`)
 
 Every EHR carries a versioned `EHR_ACCESS` object — the openEHR
-access-decision authority for that record. By default it has no settings and
-the EHR is open to any authenticated caller (all existing workflows keep
-working). Committing settings with the `ferroehr.access_control.v1` scheme
-switches that EHR to explicit policy:
+access-decision authority for that record. A new EHR has no settings, and what
+that admits is a **server-wide choice**:
+
+| `authz.rbac.ehr_access_default` | An EHR with no settings |
+|---|---|
+| `open` *(default)* | reachable by any caller the coarse layers already admitted |
+| `restricted` | reachable only by `authz.rbac.admin_role` |
+
+`open` is the default because it is what every existing deployment runs, and
+changing it changes who can read existing records. `restricted` is object-level
+**default-deny**, and it is the setting to reach for if your threat model
+includes a caller enumerating record ids: an `ehr_id` is a UUIDv7, and the OWASP
+[Insecure Direct Object Reference Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html)
+cheat sheet is explicit that an unpredictable identifier is not itself an access
+control.
+
+> [!NOTE]
+> Under `restricted`, the admin role still reaches a setting-less EHR. That is
+> deliberate: a plain deny would make such a record unreachable by everyone —
+> including the operator who would author the settings that fix it — which is an
+> outage rather than a control. Bind callers to patients with the ABAC layer
+> below; this key decides only the default disposition.
+
+Committing settings with the `ferroehr.access_control.v1` scheme
+switches that EHR to explicit policy, and those settings **always win over the
+server default**, in both directions:
 
 ```json
 {
@@ -191,7 +213,6 @@ defaults are `USER` (the baseline clinical role) and `ADMIN`.
 | `FERROEHR__AUTHZ__RBAC__USER_ROLE` | `USER` | the baseline clinical role |
 | `FERROEHR__AUTHZ__RBAC__READONLY_ROLE` | `READONLY` | role marking a principal read-only: refused on every write |
 | `FERROEHR__AUTHZ__RBAC__ROLE_CLAIMS` | `["roles","groups","entitlements","realm_access.roles"]` | JWT claim paths mined for roles |
-| `FERROEHR__AUTHZ__RBAC__MANAGEMENT_ACCESS` | `admin_only` | management-surface access: `admin_only`, `private`, or `public` |
 
 Roles come from the JWT claims listed in `ROLE_CLAIMS` — by default the carriers
 [RFC 9068 §2.2.3.1](https://www.rfc-editor.org/rfc/rfc9068#section-2.2.3.1) names
@@ -200,9 +221,25 @@ for conveying authorization state (`roles`, `groups`, `entitlements`, of which
 attributes), followed by the widely deployed nested `realm_access.roles` — or from
 a Basic user's configured roles. A claim path may be dotted, so an issuer that
 nests them differently is configuration rather than a code change. A clinical
-operation needs at least one role; an admin operation needs the admin role; the
-management surface follows its tri-state setting. Disabling RBAC restores
-authentication-only behaviour.
+operation needs at least one role; an admin operation needs the admin role.
+Disabling RBAC restores authentication-only behaviour.
+
+> [!IMPORTANT]
+> **The management surface is not configured here.** `/management/*` is governed
+> entirely by `[management.endpoints]`, one level per endpoint, and nothing under
+> `[authz.rbac]` changes it. There is no global default beside it: an endpoint
+> you do not name is `off`.
+>
+> Each level means: `off` — not mounted, answers `404`; `private` — any
+> authenticated principal; `admin_only` — authenticated **and** holding
+> `authz.rbac.admin_role` (the one place RBAC is consulted); `public` — no check
+> at all, including no authentication.
+>
+> The consequence worth internalising: `prometheus = "public"` is reachable by
+> an anonymous caller **whatever** your RBAC settings say, because a `public`
+> endpoint is mounted outside the authentication layer. Lock the surface down by
+> raising the levels in `[management]`, and read the effective set back from
+> `/management/env` rather than assuming.
 
 > [!IMPORTANT]
 > **The OAuth2 `scope` claim does not grant roles.** A scope grants a *client*
@@ -445,11 +482,8 @@ require the image lane specifically, not merely some workflow in this repository
 On a release, substitute the `vX.Y.Z` tag for `develop`.
 
 **The Helm chart** carries a keyless cosign **signature** in addition to its
-attestation, from chart `5.0.1` onward — the attestation says what the chart was
-built from, the signature says who signed the artifact you pulled. (`4.1.0` has
-the attestation only; `5.0.0` has neither — its publishing run failed at the
-signing step after the chart was already pushed, and a published chart version is
-never replaced.)
+attestation — the attestation says what the chart was built from, the signature
+says who signed the artifact you pulled.
 
 ```bash
 cosign verify ghcr.io/rubentalstra/charts/ferroehr:<chart-version> \
@@ -558,6 +592,25 @@ rows.
 > unresolvable tenant runs unscoped against a reserved default rather than
 > guessing, and a cross-tenant access surfaces as an empty result set, never a
 > `403` that would leak the existence of another tenant's data.
+
+**On Kubernetes**, the same keys arrive through the chart's `config`
+passthrough:
+
+```yaml
+# values.yaml
+config:
+  tenancy:
+    enabled: true
+    claim: realm_access.tenant   # a dotted path is walked through nested claims
+```
+
+**Before you enable it:** your identity provider must actually put that claim
+in the token — with the claim absent, a request runs unscoped against the
+reserved default rather than guessing, so a misconfigured claim looks like
+"tenancy is doing nothing" rather than failing loudly. Do **not** set
+`config.tenancy.header` in production. **To turn it off**, set
+`enabled: false`; the server then behaves byte-for-byte as a single-tenant
+system.
 
 ## ATNA audit trail
 

@@ -10,26 +10,39 @@
 //! Two sections: the coarse RBAC keys (`rbac.*`, always evaluated when auth is
 //! enabled) and the opt-in ABAC keys (`abac.*`, master switch `abac.enabled`,
 //! default `false`). Every field has a default, so an all-defaults
-//! [`AuthzConfig`] is valid (RBAC on, `ADMIN`/`USER` roles, admin-only
-//! management access, ABAC off).
+//! [`AuthzConfig`] is valid (RBAC on, `ADMIN`/`USER` roles, ABAC off).
+//!
+//! NOTE: the management surface is NOT governed here — `[management]`
+//! (`[management.endpoints]`, one level per endpoint) is its single authority,
+//! enforced by the per-route guard in `ferroehr-rest`.
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
-/// Management-surface access level — the `rbac.management_access` tri-state.
-/// `admin_only` is the default.
+/// The server-wide disposition for an EHR that carries no
+/// `ACCESS_CONTROL_SETTINGS` of its own — the `ehr_access_default` tri-state's
+/// two states.
+///
+/// NOTE: no openEHR spec governs this — our own design/extension; the SM places
+/// authorization out of band (SM `openehr_platform/master02-overview.adoc`
+/// §General Assumptions), and RM `master07` only defines the per-EHR object.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
-pub enum ManagementAccess {
-    /// Requires `rbac.admin_role`.
+pub enum EhrAccessDefault {
+    /// Any caller the coarse layers already admitted reaches the EHR. The
+    /// default, because it is what every existing deployment runs.
     #[default]
-    AdminOnly,
-    /// Any authenticated principal with a role.
-    Private,
-    /// No authorization check.
-    Public,
+    Open,
+    /// A setting-less EHR is reachable only by a caller holding
+    /// `rbac.admin_role`.
+    ///
+    /// The admin carve-out is deliberate: a plain deny would make an EHR that
+    /// carries no settings unreachable by anyone, including the operator who
+    /// would author the settings that fix it — a default-deny posture nobody
+    /// can climb out of is an outage, not a control.
+    Restricted,
 }
 
 /// The coarse role-based access-control settings.
@@ -62,8 +75,17 @@ pub struct RbacConfig {
     /// subject's roles, so reading it as one makes the "at least one role" gate
     /// vacuous for every OIDC token.
     pub role_claims: Vec<String>,
-    /// Access level for the management surface (default `admin_only`).
-    pub management_access: ManagementAccess,
+    /// What an EHR carrying no `ACCESS_CONTROL_SETTINGS` admits (default
+    /// `open`).
+    ///
+    /// A newly created EHR carries none, so this is the disposition that
+    /// actually governs most records. `restricted` lets a deployment choose
+    /// object-level default-deny ONCE, instead of authoring a settings object
+    /// per EHR — which was the only way to reach that posture, and is the
+    /// asymmetry this key removes (OWASP Insecure Direct Object Reference
+    /// Prevention Cheat Sheet: an unpredictable id is not itself an access
+    /// control).
+    pub ehr_access_default: EhrAccessDefault,
 }
 
 impl Default for RbacConfig {
@@ -79,7 +101,7 @@ impl Default for RbacConfig {
                 "entitlements".to_owned(),
                 "realm_access.roles".to_owned(),
             ],
-            management_access: ManagementAccess::AdminOnly,
+            ehr_access_default: EhrAccessDefault::Open,
         }
     }
 }
@@ -402,7 +424,6 @@ mod tests {
         assert_eq!(c.rbac.admin_role, "ADMIN");
         assert_eq!(c.rbac.user_role, "USER");
         assert_eq!(c.rbac.readonly_role, "READONLY");
-        assert_eq!(c.rbac.management_access, ManagementAccess::AdminOnly);
         // The RFC 9068 §2.2.3.1 carriers, in order. `scope` is deliberately
         // absent: an OAuth2 scope grants a client delegated authority
         // (RFC 6749 §3.3) and asserts nothing about the subject's roles.
@@ -739,10 +760,6 @@ mod tests {
         assert_eq!(parsed.rbac.user_role, default.rbac.user_role);
         assert_eq!(parsed.rbac.readonly_role, default.rbac.readonly_role);
         assert_eq!(parsed.rbac.role_claims, default.rbac.role_claims);
-        assert_eq!(
-            parsed.rbac.management_access,
-            default.rbac.management_access
-        );
         assert_eq!(parsed.abac.engine, default.abac.engine);
         assert_eq!(
             parsed.abac.organization_claim,

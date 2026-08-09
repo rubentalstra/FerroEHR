@@ -179,6 +179,115 @@ async fn admin_only_401_403_200() {
     );
 }
 
+/// Build an app with FOUR endpoints at four different levels at once, so a
+/// leak between them is observable.
+async fn app_with_mixed_levels(roles: &[&str]) -> Router {
+    let config = AppConfig {
+        server: ServerConfig {
+            swagger_ui: false,
+            ..Default::default()
+        },
+        auth: auth_config(roles),
+        ..Default::default()
+    };
+    let resolvers = ferroehr_rest::extensions::access::authz::AuthzResolvers {
+        subject: std::sync::Arc::new(|_| Box::pin(async { Ok(None) })),
+        template_of_version: std::sync::Arc::new(|_, _| Box::pin(async { Ok(None) })),
+    };
+    let authz = ferroehr_rest::extensions::access::authz::AuthzHandle::build(
+        &ferroehr::config::authz::AuthzConfig::default(),
+        &config.server.base_path,
+        None,
+        resolvers,
+    )
+    .map(std::sync::Arc::new);
+    let observability = Observability {
+        management: ManagementConfig {
+            enabled: true,
+            endpoints: EndpointLevels {
+                prometheus: AccessLevel::Public,
+                info: AccessLevel::Private,
+                env: AccessLevel::AdminOnly,
+                metrics: AccessLevel::Off,
+                ..EndpointLevels::default()
+            },
+            ..ManagementConfig::default()
+        },
+        // The recorder is what MOUNTS prometheus/metrics at all; without it
+        // they answer 404 whatever their level says, which would make the
+        // `public` row below pass for the wrong reason and the `off` row
+        // vacuous.
+        prometheus: Some(recorder().clone()),
+        ..Observability::default()
+    };
+    let (_pg, service) = common::test_service().await;
+    ferroehr_rest::build_full(config, service, authz, observability).expect("build")
+}
+
+/// Each endpoint answers at ITS OWN level, and no endpoint's level leaks to a
+/// neighbour.
+///
+/// This is the property an operator actually relies on when locking the surface
+/// down, and it is not implied by the per-level tests above: those set one
+/// endpoint at a time, so a guard that accidentally applied the most permissive
+/// configured level to every route would pass all of them. There is no global
+/// default to fall back to either — an endpoint left `Off` is simply not
+/// mounted.
+#[tokio::test]
+async fn endpoint_levels_are_independent() {
+    // Anonymous: only the `public` endpoint answers. The `admin_only` and
+    // `private` ones challenge; the `off` one is not mounted at all, and says
+    // 404 rather than 401 — its absence is not a credential problem.
+    let app = app_with_mixed_levels(&["ADMIN"]).await;
+    assert_eq!(
+        status_of(app, get("/management/prometheus")).await,
+        StatusCode::OK
+    );
+    for (path, expected) in [
+        ("/management/info", StatusCode::UNAUTHORIZED),
+        ("/management/env", StatusCode::UNAUTHORIZED),
+        ("/management/metrics", StatusCode::NOT_FOUND),
+    ] {
+        let app = app_with_mixed_levels(&["ADMIN"]).await;
+        assert_eq!(
+            status_of(app, get(path)).await,
+            expected,
+            "anonymous {path}"
+        );
+    }
+
+    // A non-admin principal: `private` admits it, `admin_only` refuses it, and
+    // the refusal does not spill onto the endpoint next door.
+    for (path, expected) in [
+        ("/management/prometheus", StatusCode::OK),
+        ("/management/info", StatusCode::OK),
+        ("/management/env", StatusCode::FORBIDDEN),
+        ("/management/metrics", StatusCode::NOT_FOUND),
+    ] {
+        let app = app_with_mixed_levels(&["USER"]).await;
+        assert_eq!(
+            status_of(app, get_auth(path)).await,
+            expected,
+            "USER {path}"
+        );
+    }
+
+    // The admin principal clears every mounted level; `off` stays absent.
+    for (path, expected) in [
+        ("/management/prometheus", StatusCode::OK),
+        ("/management/info", StatusCode::OK),
+        ("/management/env", StatusCode::OK),
+        ("/management/metrics", StatusCode::NOT_FOUND),
+    ] {
+        let app = app_with_mixed_levels(&["ADMIN"]).await;
+        assert_eq!(
+            status_of(app, get_auth(path)).await,
+            expected,
+            "ADMIN {path}"
+        );
+    }
+}
+
 /// The management surface hosts NO health route any more: with the surface
 /// enabled and its one configurable endpoint public, every former
 /// `/management/health*` path is a plain `404`, while the public health family
