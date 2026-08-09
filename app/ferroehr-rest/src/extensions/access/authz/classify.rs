@@ -9,12 +9,12 @@
 //!
 //! Among the generated routes only the two `admin_*` operations are
 //! [`OperationClass::Admin`]; everything else is [`OperationClass::Clinical`]
-//! (any authenticated principal with a role), matching v1's rule that only
-//! `/rest/admin/**` and the management endpoints require `ADMIN` while
-//! "everything else → any authenticated user". [`OperationClass::Public`]
-//! and [`OperationClass::Management`] are used by the REST layer to classify the
-//! *non-generated* surface (status/health/swagger/management), which never
-//! reaches [`class_of`].
+//! (any authenticated principal with a role) — only `/rest/admin/**` requires
+//! `ADMIN`, and everything else requires any authenticated user.
+//! [`OperationClass::Public`] is used by the REST layer to classify the
+//! *non-generated* surface (status/health/swagger), which never reaches
+//! [`class_of`]. The management surface is classified by its own per-endpoint
+//! guard against `[management.endpoints]`, not here.
 
 use crate::extensions::access::authz::request::{AccessMode, ResourceKind};
 
