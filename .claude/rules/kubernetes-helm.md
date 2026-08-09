@@ -56,25 +56,18 @@ gets the API default silently. That residual gap is worth naming in the
 comment; it is much smaller than withholding the field from every cluster
 between beta and GA, where it demonstrably works.
 
-Worked example, and the reason this rule exists:
-`PodDisruptionBudget.unhealthyPodEvictionPolicy` (KEP-3017 — alpha 1.26, beta
-1.27, stable 1.31) shipped ungated under a `>=1.25.0-0` floor. It rendered,
-installed, and on 1.25 was pruned — the chart advertised drain-safety it did
-not have.
-
-The floor is now `>=1.36.0-0`, and the reasoning is worth stating precisely,
-because the loose version of it is wrong. 1.36 is **not** "the supported
-window" — upstream supports three minors, today 1.34/1.35/1.36, so this floor
-is the window's TOP and an operator on a supported 1.34 cannot install the
-chart. It is chosen because it is the release where the newest field the chart
-renders (`hostUsers`, KEP-127) went stable. That makes it a genuine
-COMPATIBILITY floor rather than a support opinion, and it makes every other
-field the chart renders unconditional.
+The floor is `>=1.36.0-0`, and the reasoning must be stated precisely, because
+the loose version of it is wrong. 1.36 is **not** "the supported window":
+upstream supports three minors, so this floor is the window's TOP and an
+operator one minor back cannot install the chart. It is chosen because it is the
+release where the newest field the chart renders (`hostUsers`, KEP-127) went
+stable. That makes it a genuine COMPATIBILITY floor rather than a support
+opinion, and it makes every other field the chart renders unconditional.
 
 Gating is the tool for a field genuinely newer than the floor; **raising the
 floor is usually the better answer**, because a gate is a silent absence and a
-floor is a loud refusal. Raising it costs the operators below the new floor,
-so the trade gets stated in `Chart.yaml` rather than implied.
+floor is a loud refusal. Raising it costs the operators below the new floor, so
+the trade gets stated in `Chart.yaml` rather than implied.
 
 Keep the field-to-KEP table in `Chart.yaml` current: it is the evidence for the
 floor, and the next person to add a field needs to see where the ceiling

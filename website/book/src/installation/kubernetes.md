@@ -8,14 +8,13 @@ posture it enforces, the health probes, and the optional integrations. It
 assumes a cluster at Kubernetes 1.36 or newer.
 
 > [!IMPORTANT]
-> **The `kubeVersion` floor is `>=1.36.0-0`, and 1.36 is the newest supported
-> release, not the oldest.** A patched 1.34 or 1.35 cluster is refused. The floor
-> buys one thing: user namespaces (`hostUsers: false`) went stable in 1.36, and
-> the chart runs every pod in one by default, so a container escape lands as an
-> unprivileged host UID. Your nodes must be Linux with containerd ≥ 2.0 or
-> CRI-O ≥ 1.25 — on a node without that support the pod does not start, which is
-> the loud failure rather than a silent downgrade. Set `hostUsers: true` to opt
-> out. The full reasoning, and what it is worth, is in
+> **The chart requires Kubernetes 1.36 or newer** (`kubeVersion: ">=1.36.0-0"`).
+> Every pod runs in its own user namespace (`hostUsers: false`), so a container
+> escape lands as an unprivileged host UID — that field is stable as of 1.36 and
+> the chart renders it unconditionally. Your nodes must be Linux with
+> containerd ≥ 2.0 or CRI-O ≥ 1.25; without that support the pod does not start,
+> which is the loud failure rather than a silent downgrade. Set `hostUsers: true`
+> to opt out. What it buys is in
 > [Kubernetes hardening](./kubernetes-hardening.md).
 
 > [!IMPORTANT]
@@ -107,17 +106,10 @@ gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:<tag> -R rubentalstra/
 ```
 
 > [!IMPORTANT]
-> Signing was added to the publishing lanes over time, so the answer depends on
-> what you pinned. Image attestations exist from the first release published by
-> the signing lane onward — `3.17.3` and everything before it answer `HTTP 404:
-> Not Found`, which is the honest state rather than a verification failure (the
-> development images, `ghcr.io/rubentalstra/ferroehr:develop`, already verify).
-> For the chart, the **cosign signature exists from chart `5.0.1` onward**. Two
-> earlier versions are honest exceptions: `4.1.0` carries the attestation but no
-> signature, and `5.0.0` carries **neither** — its publishing run pushed the chart
-> and then failed at the signing step, and a published chart version is never
-> replaced, so it stands as it was published. Both install and run normally; they
-> simply cannot be verified. Pin `5.0.1` or newer if verification matters to you.
+> Both commands verify what the publishing lanes produce now. A published
+> artifact is never replaced, so if one you pinned answers `HTTP 404: Not Found`
+> it carries no attestation — that is the honest state rather than a verification
+> failure, and the fix is to pin a current version.
 
 > [!NOTE]
 > `helm install --verify` and `helm verify` do **not** apply: they check a PGP

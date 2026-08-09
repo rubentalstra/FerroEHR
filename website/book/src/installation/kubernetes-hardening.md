@@ -75,27 +75,15 @@ that is **1.34, 1.35 and 1.36**. A cluster below that window receives **no
 security backports at all** — a published CVE in the API server or kubelet simply
 stays open on it.
 
-The chart's `kubeVersion: ">=1.36.0-0"` sits at the **top** of that window, not
-its bottom, and the difference is worth being exact about:
+The chart's `kubeVersion: ">=1.36.0-0"` is a **compatibility** floor: 1.36 is
+where the newest field it renders — `hostUsers`, user namespaces — became
+stable, which is what lets every field it renders apply unconditionally instead
+of being gated into silence on the clusters that most needed it. See *Beyond
+Restricted: the user namespace* below for what that buys.
 
-- **Will the chart work?** 1.36 and newer.
-- **Will your cluster receive security fixes?** Anywhere in 1.34–1.36, a moving
-  target you must track.
-
-So a supported 1.34 or 1.35 cluster is patched and still refused by this chart.
-That is a deliberate cost, paid for one thing: `hostUsers: false` — user
-namespaces — went stable in 1.36, and the floor is what lets the chart render it
-unconditionally rather than gate it into silence. See *Beyond Restricted: the
-user namespace* below for what it buys.
-
-The floor used to be `1.25`, argued as a *compatibility* floor — the chart's
-newest API was HPA `autoscaling/v2` (GA in 1.23), so refusing to install on 1.25
-looked like a false claim in the other direction. That argument does not
-survive contact with the fields the chart actually renders. Below 1.27 the API
-server prunes `PodDisruptionBudget.unhealthyPodEvictionPolicy`; below 1.30 the
-`preStop` sleep action does not exist. On those clusters the chart installed
-cleanly with two drain-safety properties **silently absent** — an install that
-half-works without saying so is worse than one that refuses.
+A version gate is a silent absence; a floor is a loud refusal. For a workload
+holding PHI the loud one is correct, so the chart declares the floor and refuses
+below it rather than installing with a safety property quietly inapplicable.
 
 If you run outside the supported window, you have accepted that the platform
 beneath this CDR is unpatched, and no setting in `values.yaml` changes that.
@@ -674,8 +662,7 @@ This is why the chart's `kubeVersion` floor is **1.36**: that is the release
 where user namespaces went stable
 ([KEP-127](https://kubernetes.io/docs/tasks/configure-pod-container/user-namespaces/)),
 and the floor is what lets the field render unconditionally instead of being
-gated and silently absent on the clusters that most needed it. It is a real
-cost — a supported 1.34 or 1.35 cluster is refused — and it is deliberate.
+gated and silently absent on the clusters that most needed it.
 
 **If your nodes cannot support it**, the pod does not start, which is the
 failure mode you want rather than a silent downgrade. The requirement is a Linux
