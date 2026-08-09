@@ -18,6 +18,16 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **`authz.rbac.ehr_access_default` — object-level default-deny, as one setting.**
+  An EHR that carries no `ACCESS_CONTROL_SETTINGS` was reachable by any caller
+  the coarse layers admitted, and the only way to change that was to author a
+  settings object *per EHR, through a CONTRIBUTION commit per record* — so the
+  safer posture was reachable only by the most laborious path. Setting this to
+  `restricted` makes a setting-less EHR reachable only by `authz.rbac.admin_role`.
+  The default stays `open`, because changing it changes who can read existing
+  records; explicit per-EHR settings win over it in both directions. The admin
+  carve-out is deliberate — a plain deny would leave such a record unreachable by
+  the operator who would author the settings that fix it.
 - **Every pod the Helm chart deploys now runs in its own user namespace**
   (`hostUsers: false`, chart `6.0.0`). Container UIDs are mapped onto an
   unprivileged host range, so a container escape arrives as a host user that owns

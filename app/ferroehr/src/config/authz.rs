@@ -21,6 +21,30 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
+/// The server-wide disposition for an EHR that carries no
+/// `ACCESS_CONTROL_SETTINGS` of its own — the `ehr_access_default` tri-state's
+/// two states.
+///
+/// NOTE: no openEHR spec governs this — our own design/extension; the SM places
+/// authorization out of band (SM `openehr_platform/master02-overview.adoc`
+/// §General Assumptions), and RM `master07` only defines the per-EHR object.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum EhrAccessDefault {
+    /// Any caller the coarse layers already admitted reaches the EHR. The
+    /// default, because it is what every existing deployment runs.
+    #[default]
+    Open,
+    /// A setting-less EHR is reachable only by a caller holding
+    /// `rbac.admin_role`.
+    ///
+    /// The admin carve-out is deliberate: a plain deny would make an EHR that
+    /// carries no settings unreachable by anyone, including the operator who
+    /// would author the settings that fix it — a default-deny posture nobody
+    /// can climb out of is an outage, not a control.
+    Restricted,
+}
+
 /// The coarse role-based access-control settings.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
@@ -51,6 +75,17 @@ pub struct RbacConfig {
     /// subject's roles, so reading it as one makes the "at least one role" gate
     /// vacuous for every OIDC token.
     pub role_claims: Vec<String>,
+    /// What an EHR carrying no `ACCESS_CONTROL_SETTINGS` admits (default
+    /// `open`).
+    ///
+    /// A newly created EHR carries none, so this is the disposition that
+    /// actually governs most records. `restricted` lets a deployment choose
+    /// object-level default-deny ONCE, instead of authoring a settings object
+    /// per EHR — which was the only way to reach that posture, and is the
+    /// asymmetry this key removes (OWASP Insecure Direct Object Reference
+    /// Prevention Cheat Sheet: an unpredictable id is not itself an access
+    /// control).
+    pub ehr_access_default: EhrAccessDefault,
 }
 
 impl Default for RbacConfig {
@@ -66,6 +101,7 @@ impl Default for RbacConfig {
                 "entitlements".to_owned(),
                 "realm_access.roles".to_owned(),
             ],
+            ehr_access_default: EhrAccessDefault::Open,
         }
     }
 }
