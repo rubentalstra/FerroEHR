@@ -237,19 +237,6 @@ workflow refuses a tag that has no matching section here.
 - Container scanning in CI: image vulnerability scanning, Dockerfile lint, and secret plus misconfiguration scanning over the tree. Adjudicated exceptions carry their reasoning — for an unreachable finding in an inherited upstream layer, as a published OpenVEX document under `security/vex/`.
 - Boot warnings for two deliberate weakenings that are easy to leave switched on: `cors_permissive`, and authentication enabled on a **plaintext** listener bound to a routable address.
 
-### Fixed
-
-- **The development Keycloak realm now mints tokens the server accepts.** The
-  realm declared no audience mapper, so Keycloak emitted no `ferroehr` audience,
-  while the same development configuration requires that audience — every bearer
-  token it issued was refused `401 InvalidAudience`, and no user of that realm
-  could ever produce an accepted one. The server was right in both halves (RFC
-  7519 §4.1.3); the realm was wrong. An `oidc-audience-mapper` on the `ferroehr`
-  client fixes it, verified live: the access token now carries `aud: ferroehr`.
-  The realm also carried identifiers from the deployment it was exported
-  from — a hardcoded tenant claim naming a foreign UUID, a foreign client scope,
-  and a default role named after another product — all removed.
-
 ### Changed
 
 - **`probes.exec` is removed** (breaking, for anyone who set it). It ran
@@ -449,6 +436,21 @@ workflow refuses a tag that has no matching section here.
 
 ### Removed
 
+- **`authz.rbac.management_access` and `management.access_default` are gone**
+  (breaking, for a configuration that set either). Both were inert: the
+  management surface is gated per endpoint, and neither key was ever consulted
+  by the code that gates it. That was the dangerous kind of dead setting —
+  someone setting `management_access = "admin_only"` to lock the surface down
+  had not locked anything down, and the security chapter presented it as the
+  gate. **`[management.endpoints]` is now the single authority**, one level per
+  endpoint, with no global default beside it: an endpoint you do not name is
+  `off` and is not mounted. A test pins that the levels are independent, so no
+  endpoint's level can leak onto its neighbour.
+
+  If you set either key, delete it — the server refuses unknown configuration
+  keys at boot, so this fails loudly rather than silently. The behaviour you had
+  is unchanged, because neither key did anything.
+
 - `openehr-rm`'s `ehr-extract` cargo feature, which gated nothing (the EHR Extract modules were always compiled), and `openehr-its`'s empty `bmm` placeholder module — a published module that promised future surface nobody could use.
 
 
@@ -456,6 +458,31 @@ workflow refuses a tag that has no matching section here.
 
 
 ### Security
+
+- The admin console's `Content-Security-Policy` no longer allows inline scripts.
+  `script-src` is now `'self' 'wasm-unsafe-eval' 'nonce-…'`, where the nonce is
+  freshly generated for every response and stamped on the only inline script the
+  console emits — Leptos's hydration bootstrap and its resource-serialization
+  chunks. An injected inline script no longer runs. `style-src` keeps
+  `'unsafe-inline'`, because the console's component library creates its
+  stylesheets in the browser through the DOM without a nonce attribute; adding a
+  nonce there would suppress the inline allowance under CSP Level 3 and leave the
+  console unstyled, so the allowance stays with its reason recorded rather than
+  being traded for a policy that looks stricter and works worse.
+
+- The error-body hygiene check now also covers Service Model faults
+  (`SmError::exception` and `exception`-coded call statuses), which are a
+  second route to a `500` response body it previously did not inspect. Three
+  boot-time terminology and subject-proxy failures were rewritten to keep the
+  underlying diagnostic out of the message and carry it as an error cause
+  instead, so it reaches the server log and never a client.
+
+- Every one of the 20 GitHub Actions referenced by the build, test, release and publish pipelines is now pinned to a full commit SHA instead of a mutable tag, so a retagged or compromised upstream release can no longer change what runs against the tokens that publish this project's releases, container images and crates. Each pin carries its human-readable version in a trailing comment and was verified to belong to the named repository.
+- 38 of the 40 repository checkouts in CI no longer leave the job's API token in `.git/config` for the rest of the job (`persist-credentials: false`), so a later step — a third-party action, a build script, an uploaded artifact — can no longer pick it up and push with it. The two exceptions are the documentation jobs that genuinely use git against the remote, and both are now annotated with the reason.
+- All nine workflows now start from `permissions: {}` and grant each job only what that job actually uses, so write access to releases, packages, issues or Pages exists in the four jobs that publish and nowhere else. Previously a single workflow-level grant applied to every job in the file — `contents: write` to all of `release.yml`, `packages: write` to all of `containers.yml` — and `codeql.yml` declared nothing at all and inherited the repository default.
+- The release tarballs and the crates.io uploads are now built with no compile cache at all, so a published artifact can only contain bytes produced from the tag being released. Both lanes were silently restoring one: the toolchain action they use enables caching by default, which the release job's own comment already assumed it did not.
+- The per-architecture release tarballs are now built from the exact commit the release notes were read from, resolved once and passed on as a SHA, instead of each job resolving the release tag separately. A tag that moved between the two jobs could previously publish assets that did not match the release they were attached to.
+- The build pipeline is now itself statically analysed on every pull request: a new `zizmor` gate audits the workflow definitions, and CodeQL analyses them as source alongside the Rust code. The properties above therefore cannot silently regress — an unpinned action, a checkout keeping its credential without a recorded reason, or a context value spliced into a shell command each fail the build.
 
 - **The PGP signing private key is no longer world-readable inside the pod.**
   The `secrets` volume was projected at `0440`, but the sibling `config` volume
@@ -468,6 +495,17 @@ workflow refuses a tag that has no matching section here.
   became Ready.
 
 ### Fixed
+
+- **The development Keycloak realm now mints tokens the server accepts.** The
+  realm declared no audience mapper, so Keycloak emitted no `ferroehr` audience,
+  while the same development configuration requires that audience — every bearer
+  token it issued was refused `401 InvalidAudience`, and no user of that realm
+  could ever produce an accepted one. The server was right in both halves (RFC
+  7519 §4.1.3); the realm was wrong. An `oidc-audience-mapper` on the `ferroehr`
+  client fixes it, verified live: the access token now carries `aud: ferroehr`.
+  The realm also carried identifiers from the deployment it was exported
+  from — a hardcoded tenant claim naming a foreign UUID, a foreign client scope,
+  and a default role named after another product — all removed.
 
 - **`migrations.runByMigratorRole` now does what its documentation says.** The
   key was described as "rendered into NOTES for the operator" and no template
@@ -679,33 +717,6 @@ workflow refuses a tag that has no matching section here.
 - Configuring both a symmetric secret (`auth.oidc.hmac_secret`/`_file`) and a static JWKS (`auth.oidc.jwks_json`/`_file`) is now a boot-time configuration error naming both keys. Previously the server silently used the symmetric secret and ignored the JWKS.
 - An unreachable or unresponsive OAuth2/OIDC issuer no longer stalls bearer-token requests or hammers the issuer with outbound connections. The client that fetches the issuer's discovery document and JWKS now carries explicit timeouts, and a failed fetch is remembered briefly, so bearer requests during an issuer outage are refused fast instead of each one opening a fresh connection and waiting for the operating system's TCP timeout. Three new `[auth.oidc]` keys tune this (they apply only when signing keys come from discovery — that is, when neither `hmac_secret` nor `jwks_json` is set): `connect_timeout_ms` (default `3000`), `request_timeout_ms` (default `5000`), and `negative_cache_ttl_seconds` (default `10`, `0` disables). Successfully fetched keys keep their existing five-minute lifetime, and recovery is automatic once the negative entry expires.
 
-
-### Security
-
-- The admin console's `Content-Security-Policy` no longer allows inline scripts.
-  `script-src` is now `'self' 'wasm-unsafe-eval' 'nonce-…'`, where the nonce is
-  freshly generated for every response and stamped on the only inline script the
-  console emits — Leptos's hydration bootstrap and its resource-serialization
-  chunks. An injected inline script no longer runs. `style-src` keeps
-  `'unsafe-inline'`, because the console's component library creates its
-  stylesheets in the browser through the DOM without a nonce attribute; adding a
-  nonce there would suppress the inline allowance under CSP Level 3 and leave the
-  console unstyled, so the allowance stays with its reason recorded rather than
-  being traded for a policy that looks stricter and works worse.
-
-- The error-body hygiene check now also covers Service Model faults
-  (`SmError::exception` and `exception`-coded call statuses), which are a
-  second route to a `500` response body it previously did not inspect. Three
-  boot-time terminology and subject-proxy failures were rewritten to keep the
-  underlying diagnostic out of the message and carry it as an error cause
-  instead, so it reaches the server log and never a client.
-
-- Every one of the 20 GitHub Actions referenced by the build, test, release and publish pipelines is now pinned to a full commit SHA instead of a mutable tag, so a retagged or compromised upstream release can no longer change what runs against the tokens that publish this project's releases, container images and crates. Each pin carries its human-readable version in a trailing comment and was verified to belong to the named repository.
-- 38 of the 40 repository checkouts in CI no longer leave the job's API token in `.git/config` for the rest of the job (`persist-credentials: false`), so a later step — a third-party action, a build script, an uploaded artifact — can no longer pick it up and push with it. The two exceptions are the documentation jobs that genuinely use git against the remote, and both are now annotated with the reason.
-- All nine workflows now start from `permissions: {}` and grant each job only what that job actually uses, so write access to releases, packages, issues or Pages exists in the four jobs that publish and nowhere else. Previously a single workflow-level grant applied to every job in the file — `contents: write` to all of `release.yml`, `packages: write` to all of `containers.yml` — and `codeql.yml` declared nothing at all and inherited the repository default.
-- The release tarballs and the crates.io uploads are now built with no compile cache at all, so a published artifact can only contain bytes produced from the tag being released. Both lanes were silently restoring one: the toolchain action they use enables caching by default, which the release job's own comment already assumed it did not.
-- The per-architecture release tarballs are now built from the exact commit the release notes were read from, resolved once and passed on as a SHA, instead of each job resolving the release tag separately. A tag that moved between the two jobs could previously publish assets that did not match the release they were attached to.
-- The build pipeline is now itself statically analysed on every pull request: a new `zizmor` gate audits the workflow definitions, and CodeQL analyses them as source alongside the Rust code. The properties above therefore cannot silently regress — an unpinned action, a checkout keeping its credential without a recorded reason, or a context value spliced into a shell command each fail the build.
 
 ## [3.17.3] - 2026-08-05
 

@@ -246,7 +246,6 @@ data:
       [authz.rbac]
         admin_role = "ADMIN"
         enabled = true
-        management_access = "admin_only"
         user_role = "USER"
     
     [db]
@@ -273,7 +272,6 @@ data:
       format = "json"
     
     [management]
-      access_default = "admin_only"
       base_path = "/management"
       enabled = true
       port = 9100.0
@@ -440,7 +438,7 @@ spec:
         # secret values. Hashing the ConfigMap template alone missed the last two,
         # so a rotated passphrase or an edited Cedar policy propagated into the
         # volume while every pod kept running on the value it read at startup.
-        checksum/config: 90f50521ae6482cacb9e62c525f405147839440a91e4f0b39e59e5cfe9d86b01
+        checksum/config: f18b54059cda549b283c3597ca0fc1262d7c4a081b9456bc0f5c92562a4958e1
         prometheus.io/scrape: "true"
         prometheus.io/port: "9100"
         prometheus.io/path: "/management/prometheus"

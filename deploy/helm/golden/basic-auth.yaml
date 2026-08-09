@@ -155,7 +155,6 @@ data:
       [authz.rbac]
         admin_role = "ADMIN"
         enabled = true
-        management_access = "admin_only"
         user_role = "USER"
     
     [db]
@@ -181,7 +180,6 @@ data:
       format = "json"
     
     [management]
-      access_default = "admin_only"
       base_path = "/management"
       enabled = true
       [management.endpoints]
@@ -296,7 +294,7 @@ spec:
         # secret values. Hashing the ConfigMap template alone missed the last two,
         # so a rotated passphrase or an edited Cedar policy propagated into the
         # volume while every pod kept running on the value it read at startup.
-        checksum/config: 6050744bc3cc2188305172b951c54e904764777ef0c9acddeb5d0f219734c93a
+        checksum/config: 9f7825f9e384ed704dfb70f4c080135ed3f0f1711849db0e0c8dae5644089559
       labels:
         app.kubernetes.io/name: ferroehr
         app.kubernetes.io/instance: ferroehr

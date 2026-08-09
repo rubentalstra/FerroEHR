@@ -191,7 +191,6 @@ defaults are `USER` (the baseline clinical role) and `ADMIN`.
 | `FERROEHR__AUTHZ__RBAC__USER_ROLE` | `USER` | the baseline clinical role |
 | `FERROEHR__AUTHZ__RBAC__READONLY_ROLE` | `READONLY` | role marking a principal read-only: refused on every write |
 | `FERROEHR__AUTHZ__RBAC__ROLE_CLAIMS` | `["roles","groups","entitlements","realm_access.roles"]` | JWT claim paths mined for roles |
-| `FERROEHR__AUTHZ__RBAC__MANAGEMENT_ACCESS` | `admin_only` | management-surface access: `admin_only`, `private`, or `public` |
 
 Roles come from the JWT claims listed in `ROLE_CLAIMS` — by default the carriers
 [RFC 9068 §2.2.3.1](https://www.rfc-editor.org/rfc/rfc9068#section-2.2.3.1) names
@@ -200,9 +199,25 @@ for conveying authorization state (`roles`, `groups`, `entitlements`, of which
 attributes), followed by the widely deployed nested `realm_access.roles` — or from
 a Basic user's configured roles. A claim path may be dotted, so an issuer that
 nests them differently is configuration rather than a code change. A clinical
-operation needs at least one role; an admin operation needs the admin role; the
-management surface follows its tri-state setting. Disabling RBAC restores
-authentication-only behaviour.
+operation needs at least one role; an admin operation needs the admin role.
+Disabling RBAC restores authentication-only behaviour.
+
+> [!IMPORTANT]
+> **The management surface is not configured here.** `/management/*` is governed
+> entirely by `[management.endpoints]`, one level per endpoint, and nothing under
+> `[authz.rbac]` changes it. There is no global default beside it: an endpoint
+> you do not name is `off`.
+>
+> Each level means: `off` — not mounted, answers `404`; `private` — any
+> authenticated principal; `admin_only` — authenticated **and** holding
+> `authz.rbac.admin_role` (the one place RBAC is consulted); `public` — no check
+> at all, including no authentication.
+>
+> The consequence worth internalising: `prometheus = "public"` is reachable by
+> an anonymous caller **whatever** your RBAC settings say, because a `public`
+> endpoint is mounted outside the authentication layer. Lock the surface down by
+> raising the levels in `[management]`, and read the effective set back from
+> `/management/env` rather than assuming.
 
 > [!IMPORTANT]
 > **The OAuth2 `scope` claim does not grant roles.** A scope grants a *client*

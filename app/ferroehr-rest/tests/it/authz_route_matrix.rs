@@ -77,8 +77,8 @@ enum Class {
     /// Coarse class `Clinical`, admin enforced inside the handler: the class
     /// gate refuses a roleless caller first, the handler refuses a non-admin.
     HandlerAdmin,
-    /// The management surface, gated by the `rbac.management_access` tri-state
-    /// in its own router rather than by `RbacGate::class_for`.
+    /// The management surface, gated by its own per-endpoint router
+    /// (`[management.endpoints].<name>`) rather than by `RbacGate::class_for`.
     Management,
 }
 
@@ -111,7 +111,7 @@ const PUBLIC: &[(&str, &str)] = &[
 ];
 
 /// The ops-introspection surface (absolute paths), gated by its own router
-/// (`extensions::management`) against `rbac.management_access`.
+/// (`extensions::management`) against the per-endpoint `[management]` levels.
 const MANAGEMENT: &[(&str, &str)] = &[
     ("GET", "/management/info"),
     ("GET", "/management/env"),
