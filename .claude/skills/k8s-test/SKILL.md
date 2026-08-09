@@ -102,7 +102,17 @@ Kubernetes* → Apply & restart. Nothing here needs a cloud account.
 The chart often needs server support that no published image has yet — the
 `*_file` configuration keys are the standing example. `appVersion` names the last
 release, so `helm install` with the default tag crash-loops on
-`unknown configuration key …`. Build the image from the branch and load it:
+`unknown configuration key …`.
+
+**As of 3.17.3 this is not a key or two — the published image cannot run the
+chart's default posture at all.** Measured 2026-08-09 by installing the chart
+with `image.tag=3.17.3` and reading each crash in turn: `migrate`, then
+`password_hash_file`, then `url_file`. That last one is the DSN mechanism
+itself, so nulling keys does not rescue the run — every path the chart uses to
+deliver a secret is newer than the image. Budget the build; do not start by
+adding nulls to `test-values.yaml`.
+
+Build the image from the branch and load it:
 
 ```bash
 docker build -t ghcr.io/rubentalstra/ferroehr:dev-local \
@@ -541,7 +551,7 @@ objects — the observability fixture and metrics-server both leave some behind.
 | Pods stay NotReady with `migrations` DOWN / `core schema tables missing (migrations not applied)` while `db: UP` | The database was replaced/wiped under a running pod; migrations run only at boot | `kubectl rollout restart deploy/ferroehr` (a running pod also recovers by itself once anything else migrates — step 6) |
 | A replacement pod crash-loops on `relation "vo_version" already exists`, `_sqlx_migrations` stuck at 6 | Only the `ehr` schema was dropped; `cold.vo_version` survived and migration 7 creates it unguarded | Recreate the whole database, not one schema (step 6) |
 | `ErrImagePull` (or `ErrImageNeverPull` with `pullPolicy: Never`) for an image `docker images` clearly lists | The cluster's containerd store is separate from the Docker daemon's — see fact 1 for which symptom appears when | `docker save … \| docker exec -i desktop-control-plane ctr -n k8s.io images import -` (step 0b) |
-| Pod exits with `unknown configuration key …` | the chart's values or its `*_FILE` env outrun the pinned image | build from the branch (step 0b), or pin a newer tag |
+| Pod exits with `unknown configuration key …` | the chart's values or its `*_FILE` env outrun the pinned image | build from the branch (step 0b), or pin a newer tag. Against 3.17.3 the skew reaches `url_file` — the DSN mechanism — so nulling keys never gets you to a running pod (step 0b) |
 | `kubectl get configmap <release>` returns NotFound | A Basic user (or any secret with no `*_file` route) moved the whole config into `<release>-config`, a Secret | Read the Secret; this is the mode `test-values.yaml` runs in (fact 4) |
 | `golden ...: SKIPPED — running helm X, goldens are pinned to Y` | Local helm differs from `deploy/helm/.tool-versions`; renders are not byte-stable across helm releases | Install the pinned helm, or bump the pin AND `validate.sh --update` together |
 | Readiness `503` with `db: DOWN, terminating connection due to administrator command` | The database went away | Expected and correct: readiness fails, liveness does not, the pod leaves the Service and is not restarted |
