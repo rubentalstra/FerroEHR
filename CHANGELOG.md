@@ -18,6 +18,16 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Every optional integration now documents how to enable it on Kubernetes.**
+  Nine chapters — change events, FHIR connectors, terminology servers, Subject
+  Proxy, S3 multimedia, the admin console, observability, version signing and
+  multi-tenancy — described only the environment-variable and Compose paths, so
+  an operator deploying with the chart had no documented way to switch any of
+  them on, even though the chart's `config` passthrough has always reached every
+  key. Each now carries a values snippet, the prerequisites stated **before** the
+  reader hits a boot failure (a bucket that must exist, a claim the identity
+  provider must issue, an egress rule an exporter needs), and how to turn it off
+  again.
 - **`authz.rbac.ehr_access_default` — object-level default-deny, as one setting.**
   An EHR that carries no `ACCESS_CONTROL_SETTINGS` was reachable by any caller
   the coarse layers admitted, and the only way to change that was to author a

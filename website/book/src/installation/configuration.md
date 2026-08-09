@@ -712,6 +712,30 @@ the server's own signatures **strict** by default.
 > `pgp` mode **fails closed at boot** if the key is missing or unusable — the
 > server will not start. Verify the key and passphrase before switching modes.
 
+**On Kubernetes**, `digest` mode needs nothing — it is the default. `pgp` mode
+needs the key as a file and its passphrase as a secret, both of which the chart
+mounts for you:
+
+```yaml
+# values.yaml
+config:
+  signing:
+    enabled: true
+    mode: pgp
+    key_path: /etc/ferroehr/signing-key.asc
+  files:
+    signing-key.asc: |
+      -----BEGIN PGP PRIVATE KEY BLOCK-----
+      …
+secrets:
+  signingKeyPassphrase: "…"
+```
+
+`config.files` entries are mounted from a Secret at `0440` — that volume holds
+the private key, so it is never world-readable inside the container. **To go
+back to `digest`**, set `mode: digest` and drop the key material; versions
+already signed keep their signatures and still verify.
+
 ## `[query]`
 
 AQL execution knobs.

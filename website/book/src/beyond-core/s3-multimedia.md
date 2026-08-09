@@ -121,6 +121,31 @@ credentials. Set both to use signed requests against a real store.
 > it. See [Operations](../operations.md) for the deployment-side security
 > posture.
 
+### On Kubernetes
+
+Every key above is reachable as `config.multimedia.*`
+([Any server setting is reachable](../installation/kubernetes.md#any-server-setting-is-reachable-not-only-the-ones-listed-here));
+the S3 credentials go through `secrets.*`, which the chart mounts as files:
+
+```yaml
+# values.yaml
+config:
+  multimedia:
+    enabled: true
+    endpoint: https://s3.example.com
+    bucket: openehr-multimedia
+    threshold_bytes: 262144
+secrets:
+  multimediaAccessKeyId: "AKIA…"
+  multimediaSecretAccessKey: "…"
+```
+
+**Before you enable it:** the bucket must exist — nothing in the chart creates
+it, and an S3 write into a missing bucket answers `403 AccessDenied`, not
+`404`. **To turn it off**, set `config.multimedia.enabled: false`; leave the
+`endpoint` in place so already-externalized content stays readable (see
+[Turning it back off](#turning-it-back-off)).
+
 ## Quick setup with SeaweedFS
 
 Any S3-compatible store works (AWS S3, MinIO, SeaweedFS). SeaweedFS is a light

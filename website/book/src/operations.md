@@ -297,6 +297,38 @@ The telemetry environment variables:
 > database pool, AQL latency, validation failures, audit health) and a starter
 > alert pack — point the server at it with the two OTLP variables above.
 
+**On Kubernetes**, the same keys arrive through the chart's `config`
+passthrough, and the metrics half has a second switch that is easy to miss:
+
+```yaml
+# values.yaml
+config:
+  telemetry:
+    otlp_endpoint: http://otel-collector.observability:4317
+    environment: production
+    traces_sample_ratio: 0.1
+    metrics_push: true
+  management:
+    enabled: true
+    endpoints:
+      prometheus: admin_only   # the scrape endpoint is off until you name it
+metrics:
+  enabled: true                # adds the prometheus.io/* pod annotations
+  serviceMonitor:
+    enabled: false             # or true, with the Prometheus Operator CRDs installed
+```
+
+`metrics.enabled` only adds the scrape **annotations**; the endpoint itself is
+opened by `config.management.endpoints.prometheus`. Both are needed for an
+annotation-discovering Prometheus, and neither is needed if you push over OTLP
+instead. **To turn telemetry off**, drop `otlp_endpoint` — the tracing layer is
+not installed at all when it is unset.
+
+> [!WARNING]
+> With the chart's default-deny egress policy on, add the collector to
+> `networkPolicy.egress.rules` (port 4317). An OTLP exporter that cannot reach
+> its collector fails **silently** — no traces, no error.
+
 ## The admin API: physical deletion
 
 Normal openEHR deletes are *logical* — history is retained. The admin API is
