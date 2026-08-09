@@ -25,9 +25,10 @@ pub enum OperationClass {
     Public,
     /// Any authenticated principal with at least one role.
     Clinical,
-    /// The management surface — gated by the `rbac.management_access` tri-state.
-    Management,
-    /// Administrative operations — require `rbac.admin_role`.
+    /// Administrative operations — require `rbac.admin_role`. The management
+    /// surface reaches this class through its own per-endpoint guard, which
+    /// maps an `admin_only` endpoint level onto it; `[management]` owns that
+    /// decision, and there is no second RBAC key spelling it.
     Admin,
 }
 

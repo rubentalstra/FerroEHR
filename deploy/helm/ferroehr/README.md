@@ -193,7 +193,6 @@ Kubernetes: `>=1.36.0-0`
 | config.authz.abac.enabled | bool | `false` |  |
 | config.authz.rbac.admin_role | string | `"ADMIN"` |  |
 | config.authz.rbac.enabled | bool | `true` |  |
-| config.authz.rbac.management_access | string | `"admin_only"` |  |
 | config.authz.rbac.user_role | string | `"USER"` |  |
 | config.db.acquire_timeout_secs | int | `30` |  |
 | config.db.max_connections | int | `10` |  |
@@ -209,7 +208,6 @@ Kubernetes: `>=1.36.0-0`
 | config.fhir.outbound.tls | bool | `false` |  |
 | config.files | object | `{}` |  |
 | config.log.format | string | `"json"` |  |
-| config.management.access_default | string | `"admin_only"` |  |
 | config.management.base_path | string | `"/management"` |  |
 | config.management.enabled | bool | `true` |  |
 | config.management.endpoints.env | string | `"off"` |  |

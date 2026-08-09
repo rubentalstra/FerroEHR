@@ -156,8 +156,8 @@ reasoning applies to two surfaces that _are_ ours**, and an operator hardening
   `metrics`, `env`, `loggers`, `flamegraph`). It is a privileged read onto the
   deployment: `env` renders the effective configuration and `flamegraph` profiles
   the live process. The chart ships the master switch on and **every endpoint
-  `off`**, so nothing is exposed until you opt in, and `access_default` is
-  `admin_only`. Set `config.management.port` to move the whole surface onto its own
+  `off`**, so nothing is exposed until you name an endpoint and a level. Set
+  `config.management.port` to move the whole surface onto its own
   listener so it is never reachable on the clinical API port.
 - **The admin console** — a separate image and deployment, not installed by this
   chart. It consumes the CDR strictly over ITS-REST and holds no database

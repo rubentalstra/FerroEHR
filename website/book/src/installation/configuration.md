@@ -537,7 +537,12 @@ RBAC + ABAC.
 | `user_role` | string | `USER` | Baseline clinical role. |
 | `readonly_role` | string | `READONLY` | Role marking a principal read-only: refused on every write operation (create/update/delete/upload), even alongside granting roles. Reads and AQL queries are still allowed. |
 | `role_claims` | list of string | `["roles","groups","entitlements","realm_access.roles"]` | JWT claim paths mined for roles, in order. Dotted paths walk nested claims. **`scope` is not a role source** — see [Security](../security.md#rbac-role-based-coarse). |
-| `management_access` | enum{admin_only,private,public} | `admin_only` | Access level for the management surface. |
+
+> [!NOTE]
+> The management surface is **not** configured under `[authz.rbac]`.
+> `[management.endpoints]` owns it, one level per endpoint, with no global
+> default beside it — an endpoint you do not name is `off` and is not mounted.
+> Only the `admin_only` level consults `authz.rbac.admin_role`.
 
 `[authz.abac]`:
 
@@ -641,7 +646,6 @@ authentication, whatever this section says (see
 [management]
 enabled = false
 base_path = "/management"
-access_default = "admin_only"
 
 [management.endpoints]
 info = "off"
@@ -661,7 +665,6 @@ max_frequency = 999
 | `enabled` | bool | `false` | Mount the management router. |
 | `base_path` | string | `/management` | Base path for the management endpoints. |
 | `port` | int | unset ⇒ share the main listener | Serve management on its own listener/port. Must differ from the `server.bind` port. |
-| `access_default` | enum{off,admin_only,private,public} | `admin_only` | Global default access level (a per-endpoint level wins). |
 
 `[management.endpoints]` — `info`, `metrics`, `prometheus`, `env`, `loggers`,
 `flamegraph`, each enum{off,admin_only,private,public}, default `off`.

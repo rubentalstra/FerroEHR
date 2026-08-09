@@ -14,7 +14,7 @@
 use serde_json::{Map, Value};
 
 use crate::extensions::access::authz::classify::OperationClass;
-use ferroehr::config::authz::{ManagementAccess, RbacConfig};
+use ferroehr::config::authz::RbacConfig;
 
 /// Extract roles from a validated JWT claim map given dotted claim paths.
 ///
@@ -117,11 +117,6 @@ pub fn authorize(class: OperationClass, roles: &[String], rbac: &RbacConfig) -> 
         OperationClass::Public => RbacDecision::Allow,
         OperationClass::Clinical => require_authenticated(),
         OperationClass::Admin => require_admin(),
-        OperationClass::Management => match rbac.management_access {
-            ManagementAccess::Public => RbacDecision::Allow,
-            ManagementAccess::Private => require_authenticated(),
-            ManagementAccess::AdminOnly => require_admin(),
-        },
     }
 }
 
@@ -329,42 +324,6 @@ mod tests {
         // The default READONLY name no longer restricts once reconfigured.
         assert_eq!(
             authorize_readonly(true, &["READONLY".to_owned()], &rbac),
-            RbacDecision::Allow
-        );
-    }
-
-    #[test]
-    fn management_tri_state() {
-        let admin_only = RbacConfig {
-            management_access: ManagementAccess::AdminOnly,
-            ..RbacConfig::default()
-        };
-        assert!(matches!(
-            authorize(
-                OperationClass::Management,
-                &["USER".to_owned()],
-                &admin_only
-            ),
-            RbacDecision::Deny(_)
-        ));
-        let private = RbacConfig {
-            management_access: ManagementAccess::Private,
-            ..RbacConfig::default()
-        };
-        assert_eq!(
-            authorize(OperationClass::Management, &["USER".to_owned()], &private),
-            RbacDecision::Allow
-        );
-        assert!(matches!(
-            authorize(OperationClass::Management, &[], &private),
-            RbacDecision::Deny(_)
-        ));
-        let public = RbacConfig {
-            management_access: ManagementAccess::Public,
-            ..RbacConfig::default()
-        };
-        assert_eq!(
-            authorize(OperationClass::Management, &[], &public),
             RbacDecision::Allow
         );
     }

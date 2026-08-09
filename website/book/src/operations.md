@@ -584,14 +584,18 @@ depend on it.
 | `FERROEHR__MANAGEMENT__ENABLED` | `false` | enable the management surface |
 | `FERROEHR__MANAGEMENT__BASE_PATH` | `/management` | base path for the surface |
 | `FERROEHR__MANAGEMENT__PORT` | unset (main listener) | serve management on its own port |
-| `FERROEHR__MANAGEMENT__ACCESS_DEFAULT` | `admin_only` | default access level |
+| `FERROEHR__MANAGEMENT__ENDPOINTS__<NAME>` | `off` | the access level for ONE endpoint — `off`, `private`, `admin_only` or `public`. There is no global default beside it: an endpoint you do not name is not mounted and answers `404`. |
 
 The ops endpoints:
 
-| Endpoint | Purpose | Default access |
+Every one of them ships `off` — nothing is mounted until you name the endpoint
+and the level it should answer at. The right-hand column is the level to choose,
+not a default you already have.
+
+| Endpoint | Purpose | Level to give it |
 |---|---|---|
 | `GET {base}/info` | build, version, the active `spec_profile`, and the openEHR specification versions that profile selects | `admin_only` |
-| `GET {base}/prometheus` | Prometheus text exposition | `admin_only` (re-expose to the scraper via network policy) |
+| `GET {base}/prometheus` | Prometheus text exposition | `admin_only`, or `public` only when the port is not reachable outside the cluster — a `public` endpoint is served OUTSIDE authentication |
 | `GET {base}/metrics` | JSON registry view | `admin_only` |
 | `GET {base}/env` | effective configuration, with secrets redacted | `admin_only` |
 | `GET`/`POST`/`DELETE` `{base}/loggers` | read and change the log level at runtime | `admin_only` |

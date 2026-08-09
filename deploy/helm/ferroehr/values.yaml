@@ -354,8 +354,6 @@ config:
       enabled: true
       admin_role: ADMIN
       user_role: USER
-      # admin_only | private | public
-      management_access: admin_only
     abac:
       enabled: false
 
@@ -379,8 +377,6 @@ config:
   management:
     enabled: true
     base_path: /management
-    # off | admin_only | private | public
-    access_default: admin_only
     endpoints:
       # off | public | private | admin_only
       info: "off"

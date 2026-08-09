@@ -213,7 +213,8 @@ admin_role = "ADMIN"
 user_role = "USER"
 readonly_role = "READONLY"   # carriers are refused on every write operation
 role_claims = ["roles", "groups", "entitlements", "realm_access.roles"]
-management_access = "admin_only"   # admin_only | private | public
+# The management surface is NOT configured here — see [management.endpoints],
+# which owns it, one level per endpoint.
 
 [authz.abac]
 enabled = false
@@ -297,8 +298,10 @@ capabilities = []   # extra (HL7 base) capabilities to advertise, e.g. ["launch-
 enabled = false
 base_path = "/management"
 #? port = 9100                # separate listener; must differ from server.bind port
-access_default = "admin_only" # off | admin_only | private | public
 
+# The single authority for this surface: one level per endpoint, and an
+# endpoint left "off" is not mounted at all (404). Levels: off | private |
+# admin_only | public. `public` is served OUTSIDE authentication.
 [management.endpoints]
 info = "off"
 metrics = "off"

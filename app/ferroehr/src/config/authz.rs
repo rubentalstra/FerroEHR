@@ -10,27 +10,16 @@
 //! Two sections: the coarse RBAC keys (`rbac.*`, always evaluated when auth is
 //! enabled) and the opt-in ABAC keys (`abac.*`, master switch `abac.enabled`,
 //! default `false`). Every field has a default, so an all-defaults
-//! [`AuthzConfig`] is valid (RBAC on, `ADMIN`/`USER` roles, admin-only
-//! management access, ABAC off).
+//! [`AuthzConfig`] is valid (RBAC on, `ADMIN`/`USER` roles, ABAC off).
+//!
+//! NOTE: the management surface is NOT governed here — `[management]`
+//! (`[management.endpoints]`, one level per endpoint) is its single authority,
+//! enforced by the per-route guard in `ferroehr-rest`.
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
-
-/// Management-surface access level — the `rbac.management_access` tri-state.
-/// `admin_only` is the default.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
-#[serde(rename_all = "snake_case")]
-pub enum ManagementAccess {
-    /// Requires `rbac.admin_role`.
-    #[default]
-    AdminOnly,
-    /// Any authenticated principal with a role.
-    Private,
-    /// No authorization check.
-    Public,
-}
 
 /// The coarse role-based access-control settings.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -62,8 +51,6 @@ pub struct RbacConfig {
     /// subject's roles, so reading it as one makes the "at least one role" gate
     /// vacuous for every OIDC token.
     pub role_claims: Vec<String>,
-    /// Access level for the management surface (default `admin_only`).
-    pub management_access: ManagementAccess,
 }
 
 impl Default for RbacConfig {
@@ -79,7 +66,6 @@ impl Default for RbacConfig {
                 "entitlements".to_owned(),
                 "realm_access.roles".to_owned(),
             ],
-            management_access: ManagementAccess::AdminOnly,
         }
     }
 }
@@ -402,7 +388,6 @@ mod tests {
         assert_eq!(c.rbac.admin_role, "ADMIN");
         assert_eq!(c.rbac.user_role, "USER");
         assert_eq!(c.rbac.readonly_role, "READONLY");
-        assert_eq!(c.rbac.management_access, ManagementAccess::AdminOnly);
         // The RFC 9068 §2.2.3.1 carriers, in order. `scope` is deliberately
         // absent: an OAuth2 scope grants a client delegated authority
         // (RFC 6749 §3.3) and asserts nothing about the subject's roles.
@@ -739,10 +724,6 @@ mod tests {
         assert_eq!(parsed.rbac.user_role, default.rbac.user_role);
         assert_eq!(parsed.rbac.readonly_role, default.rbac.readonly_role);
         assert_eq!(parsed.rbac.role_claims, default.rbac.role_claims);
-        assert_eq!(
-            parsed.rbac.management_access,
-            default.rbac.management_access
-        );
         assert_eq!(parsed.abac.engine, default.abac.engine);
         assert_eq!(
             parsed.abac.organization_claim,
