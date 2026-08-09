@@ -112,6 +112,13 @@ itself, so nulling keys does not rescue the run — every path the chart uses to
 deliver a secret is newer than the image. Budget the build; do not start by
 adding nulls to `test-values.yaml`.
 
+**And once you are on a branch build, DELETE the skew block from
+`test-values.yaml`.** A null omits the key, so against an image that understands
+it the run exercises the key's absence rather than the value the chart ships —
+the test still passes while quietly measuring "the chart's defaults minus six
+keys". That is the same shape as a gate that renders an overlay nobody enables:
+green, and about the wrong thing.
+
 Build the image from the branch and load it:
 
 ```bash

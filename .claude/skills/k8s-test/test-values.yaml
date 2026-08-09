@@ -33,6 +33,13 @@ config:
   # rejects a key it does not know. Confirm the current set against the image
   # itself with `ferroehr config default` (the command is in the skill), rather
   # than trusting this list.
+  #
+  # DELETE THEM WHEN TESTING A BRANCH-BUILT IMAGE, and not as tidying: a null
+  # OMITS the key, so against an image that understands it the run exercises the
+  # key's ABSENCE rather than the value the chart ships. Left in place, this
+  # block quietly turns "the chart's defaults work" into "the chart's defaults
+  # minus six keys work" — the test still passes, and stops testing what it
+  # claims. Keep them only while the image genuinely predates the keys.
   spec_profile: null
   db:
     statement_timeout_ms: null
