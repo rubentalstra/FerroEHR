@@ -280,22 +280,62 @@ services:
   # SeaweedFS S3 gateway for DV_MULTIMEDIA externalization — DEV/TEST ONLY,
   # behind the `s3` profile (off by default; externalization is OFF by default,
   # so the app does NOT depend on this). To try it — three steps, none skippable:
-  #   1. docker compose --profile s3 up -d --wait ferroehr seaweedfs
-  #   2. curl -X PUT http://localhost:8333/openehr-multimedia
-  #      The gateway starts with NO buckets and nothing creates one; S3 answers a
-  #      PUT into a missing bucket with 403 AccessDenied, so the first multimedia
-  #      commit would fail 500 with a message that looks like a credentials
-  #      problem and is not.
-  #   3. export these FOUR variables and re-up — the `ferroehr` service passes
+  #   1. export these FOUR variables — the `ferroehr` service passes
   #      the whole FERROEHR__MULTIMEDIA__* set through from your shell:
   #        export FERROEHR__MULTIMEDIA__ENABLED=true
   #        export FERROEHR__MULTIMEDIA__ENDPOINT=http://seaweedfs:8333
   #        export FERROEHR__MULTIMEDIA__BUCKET=openehr-multimedia
   #        export FERROEHR__MULTIMEDIA__ALLOW_HTTP=true   # dev only; prod S3 is HTTPS
+  #   2. docker compose --profile s3 up -d --wait ferroehr seaweedfs seaweedfs-init
+  #      `seaweedfs-init` creates the bucket; the gateway ships with none, and an
+  #      S3 PUT into a missing bucket answers 403 AccessDenied, which reads as a
+  #      credentials problem and is not one.
   #      Verify with `curl -s -u ferroehr:ferroehr localhost:8080/management/env`.
   # With no AWS keys the gateway runs in unauthenticated "allow-all" mode
   # (dev/test only). In production point FERROEHR__MULTIMEDIA__* at a real,
   # credentialed, HTTPS S3 endpoint (AWS S3 / MinIO / etc.) instead of this.
+  # Creates the bucket the gateway does not create for itself.
+  #
+  # SeaweedFS starts with NO buckets, and an S3 PUT of an object into a bucket
+  # that does not exist answers `403 AccessDenied` — not `404 NoSuchBucket` — so
+  # the first multimedia commit failed with what reads as a credentials problem
+  # and is not one. This service removes the manual step entirely.
+  #
+  # A plain S3 CreateBucket (`PUT /<bucket>`), which is idempotent: AWS defines a
+  # repeat CreateBucket by the bucket's own owner as a success in the default
+  # region rather than an error
+  # (https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateBucket.html), and
+  # the gateway runs unauthenticated here, so every re-`up` is a no-op.
+  #
+  # It reads the SAME bucket variable the server does, so the two cannot drift:
+  # override `FERROEHR__MULTIMEDIA__BUCKET` and this creates the bucket you
+  # actually configured.
+  seaweedfs-init:
+    profiles: [s3]
+    # Digest-pinned curlimages/curl:8.11.1 (docs.docker.com/build/building/best-practices).
+    image: curlimages/curl:8.11.1@sha256:c1fe1679c34d9784c1b0d1e5f62ac0a79fca01fb6377cdd33e90473c6f9f9a69
+    depends_on:
+      seaweedfs:
+        condition: service_healthy
+    # --fail-with-body: a non-2xx must fail the service loudly, with the
+    # gateway's own XML error, instead of exiting 0 on an error page.
+    command:
+      - "-sS"
+      - "--fail-with-body"
+      - "-X"
+      - "PUT"
+      - "http://seaweedfs:8333/${FERROEHR__MULTIMEDIA__BUCKET:-openehr-multimedia}"
+    restart: "no"
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 64M
+
   seaweedfs:
     profiles: [s3]
     # Digest-pinned chrislusf/seaweedfs:4.40 (current stable), resolved
