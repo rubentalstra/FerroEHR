@@ -237,6 +237,19 @@ workflow refuses a tag that has no matching section here.
 - Container scanning in CI: image vulnerability scanning, Dockerfile lint, and secret plus misconfiguration scanning over the tree. Adjudicated exceptions carry their reasoning — for an unreachable finding in an inherited upstream layer, as a published OpenVEX document under `security/vex/`.
 - Boot warnings for two deliberate weakenings that are easy to leave switched on: `cors_permissive`, and authentication enabled on a **plaintext** listener bound to a routable address.
 
+### Fixed
+
+- **The development Keycloak realm now mints tokens the server accepts.** The
+  realm declared no audience mapper, so Keycloak emitted no `ferroehr` audience,
+  while the same development configuration requires that audience — every bearer
+  token it issued was refused `401 InvalidAudience`, and no user of that realm
+  could ever produce an accepted one. The server was right in both halves (RFC
+  7519 §4.1.3); the realm was wrong. An `oidc-audience-mapper` on the `ferroehr`
+  client fixes it, verified live: the access token now carries `aud: ferroehr`.
+  The realm also carried identifiers from the deployment it was exported
+  from — a hardcoded tenant claim naming a foreign UUID, a foreign client scope,
+  and a default role named after another product — all removed.
+
 ### Changed
 
 - **`probes.exec` is removed** (breaking, for anyone who set it). It ran
