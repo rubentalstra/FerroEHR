@@ -169,27 +169,23 @@ you ask for them:
   ```
 
 - **`seaweedfs`** (`--profile s3`) — an S3 gateway for large `DV_MULTIMEDIA`
-  externalization (development/test only). Three steps, and none of them can be
-  skipped:
+  externalization (development/test only). Point the server at it and bring the
+  profile up:
 
   ```shell
-  # 1. start the gateway beside the server
-  docker compose --profile s3 up -d --wait ferroehr seaweedfs
-
-  # 2. create the bucket — the gateway starts empty and nothing creates it
-  curl -X PUT http://localhost:8333/openehr-multimedia
-  ```
-
-  ```shell
-  # 3. point the server at the gateway and re-up. The compose file passes the
-  #    whole FERROEHR__MULTIMEDIA__* set through from your shell, so these are
-  #    ordinary exports — no file to edit.
   export FERROEHR__MULTIMEDIA__ENABLED=true
   export FERROEHR__MULTIMEDIA__ENDPOINT=http://seaweedfs:8333
   export FERROEHR__MULTIMEDIA__BUCKET=openehr-multimedia
   export FERROEHR__MULTIMEDIA__ALLOW_HTTP=true    # dev only; production S3 is HTTPS
-  docker compose --profile s3 up -d --wait ferroehr seaweedfs
+
+  docker compose --profile s3 up -d --wait ferroehr seaweedfs seaweedfs-init
   ```
+
+  The compose file passes the whole `FERROEHR__MULTIMEDIA__*` set through from
+  your shell, so there is no file to edit, and `seaweedfs-init` creates the
+  bucket — the gateway ships with none, and an S3 write into a missing bucket
+  answers `403 AccessDenied`, which reads as a credentials problem and is not
+  one.
 
   To turn it off again, `unset` them (or just `export
   FERROEHR__MULTIMEDIA__ENABLED=false`) and re-up: an unset variable is removed
@@ -199,9 +195,7 @@ you ask for them:
   Confirm the server took them with
   `curl -s -u ferroehr:ferroehr http://localhost:8080/management/env | jq .multimedia`
   — `"enabled": true` and a non-empty `endpoint` mean the wiring is right.
-  Without the bucket, the first composition carrying a large `DV_MULTIMEDIA`
-  fails `500` and the log reports `Access Denied`, which looks like a
-  credentials problem and is not. In production, point the multimedia settings
+  In production, point the multimedia settings
   at a real, credentialed, HTTPS S3 endpoint instead; see
   [S3 multimedia](../beyond-core/s3-multimedia.md).
 
