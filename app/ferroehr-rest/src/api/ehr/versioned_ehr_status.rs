@@ -87,6 +87,10 @@ pub(super) async fn run(
             // never carries one (§Location: "It MUST NOT be used to indicate
             // an alternate representation of an existing resource"). Body is an
             // ORIGINAL_VERSION<EHR_STATUS> (JSON or canonical XML).
+
+            // The envelope carries the same externalized media the bare
+            // resource does, so it re-inlines on the same request.
+            let body = super::expand_multimedia_if_requested(&state, q, body).await?;
             let resp = super::read_resp(&p.ehr_id, body);
             Ok(negotiate::read_rm::<Version<EhrStatus>>(
                 h,
@@ -111,6 +115,9 @@ pub(super) async fn run(
             // commit_audit.time_committed (§"ETag and Last-Modified": both
             // SHOULD accompany a VERSION response, and Last-Modified is
             // "derived from VERSION.commit_audit.time_committed.value").
+            // The VERSION envelope carries the same externalized media the bare
+            // resource does, so it re-inlines on the same request.
+            let body = super::expand_multimedia_if_requested(&state, q, body).await?;
             let resp = super::read_resp(&p.ehr_id, body);
             Ok(negotiate::read_rm::<Version<EhrStatus>>(
                 h,

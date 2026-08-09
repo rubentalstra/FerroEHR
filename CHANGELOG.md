@@ -496,6 +496,17 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Multimedia committed inside an `EHR_STATUS` or a `FOLDER` can now be read
+  back.** Externalization is applied by the versioning path every versioned
+  object commits through, but re-inlining was wired to the COMPOSITION read
+  alone — so a large `DV_MULTIMEDIA` committed in an EHR status left the
+  database, sat in the object store, and **no API call returned it**;
+  `?expand_multimedia=true` on that read was an undeclared parameter and was
+  ignored. All nine reads that can serve externalized content now honour it (the
+  bare COMPOSITION / EHR_STATUS / FOLDER reads and the VERSION envelopes that
+  wrap them), and the OpenAPI document declares it on exactly those operations —
+  pinned by a test, so the declarations and the handlers cannot drift apart
+  again.
 - **Turning multimedia externalization off no longer strands the blobs already
   offloaded.** `?expand_multimedia=true` against an already-externalized record
   was **silently ignored** once `multimedia.enabled` went back to `false`: the

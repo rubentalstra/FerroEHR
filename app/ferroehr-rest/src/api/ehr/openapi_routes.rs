@@ -643,7 +643,17 @@ pub(crate) async fn ehr_create_with_id(
                         uid must name the served version's full three-part \
                         identity; a fabricated `creating_system_id` names no \
                         VERSION here and is `404`.",
-         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2")
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2"),
+        ("expand_multimedia" = Option<bool>, Query,
+         description = "OUR OWN EXTENSION — no openEHR spec governs this \
+                        parameter. `true` transparently re-inlines DV_MULTIMEDIA \
+                        content this deployment externalized to object storage, \
+                        verifying its integrity, so the served resource is \
+                        byte-identical to the committed one. A no-op when the \
+                        body holds no external media; an error when the content \
+                        cannot be restored, never a silent fall back to the \
+                        stored reference.",
+         example = json!(true))
     ),
     responses(
         (status = 200, description = "The bare EHR_STATUS at that version \
@@ -756,7 +766,17 @@ pub(crate) async fn ehr_status_get_by_version_id(
                         8601 format\" and \"Timezone SHOULD be only supplied \
                         when needed, otherwise the local timezone is \
                         assumed\").",
-         example = "2026-07-26T09:12:44.512Z")
+         example = "2026-07-26T09:12:44.512Z"),
+        ("expand_multimedia" = Option<bool>, Query,
+         description = "OUR OWN EXTENSION — no openEHR spec governs this \
+                        parameter. `true` transparently re-inlines DV_MULTIMEDIA \
+                        content this deployment externalized to object storage, \
+                        verifying its integrity, so the served resource is \
+                        byte-identical to the committed one. A no-op when the \
+                        body holds no external media; an error when the content \
+                        cannot be restored, never a silent fall back to the \
+                        stored reference.",
+         example = json!(true))
     ),
     responses(
         (status = 200, description = "The bare EHR_STATUS extant at that time \
@@ -1344,7 +1364,17 @@ pub(crate) async fn versioned_ehr_status_revision_history(
                         parameters \"MUST always use the _extended_ ISO 8601 \
                         format\" and \"Timezone SHOULD be only supplied when \
                         needed, otherwise the local timezone is assumed\").",
-         example = "2026-07-26T09:12:44.512Z")
+         example = "2026-07-26T09:12:44.512Z"),
+        ("expand_multimedia" = Option<bool>, Query,
+         description = "OUR OWN EXTENSION — no openEHR spec governs this \
+                        parameter. `true` transparently re-inlines DV_MULTIMEDIA \
+                        content this deployment externalized to object storage, \
+                        verifying its integrity, so the served resource is \
+                        byte-identical to the committed one. A no-op when the \
+                        body holds no external media; an error when the content \
+                        cannot be restored, never a silent fall back to the \
+                        stored reference.",
+         example = json!(true))
     ),
     responses(
         (status = 200, description = "The ORIGINAL_VERSION envelope of the \
@@ -1489,7 +1519,17 @@ pub(crate) async fn versioned_ehr_status_version_get_at_time(
                         uid must name the served version's full three-part \
                         identity; a fabricated `creating_system_id` names no \
                         VERSION here and is `404`.",
-         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2")
+         example = "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::2"),
+        ("expand_multimedia" = Option<bool>, Query,
+         description = "OUR OWN EXTENSION — no openEHR spec governs this \
+                        parameter. `true` transparently re-inlines DV_MULTIMEDIA \
+                        content this deployment externalized to object storage, \
+                        verifying its integrity, so the served resource is \
+                        byte-identical to the committed one. A no-op when the \
+                        body holds no external media; an error when the content \
+                        cannot be restored, never a silent fall back to the \
+                        stored reference.",
+         example = json!(true))
     ),
     responses(
         (status = 200, description = "The ORIGINAL_VERSION envelope of the \
@@ -2029,10 +2069,11 @@ pub(crate) async fn composition_create(
          description = "OUR OWN EXTENSION — no openEHR spec governs this \
                         parameter. `true` transparently re-inlines DV_MULTIMEDIA \
                         content this deployment externalized to object storage, \
-                        verifying its integrity, so the served COMPOSITION is \
-                        byte-identical to the committed one. A no-op when \
-                        externalization is off or the body holds no external \
-                        media.",
+                        verifying its integrity, so the served resource is \
+                        byte-identical to the committed one. A no-op when the \
+                        body holds no external media; an error when the content \
+                        cannot be restored, never a silent fall back to the \
+                        stored reference.",
          example = json!(true))
     ),
     responses(
@@ -3046,7 +3087,17 @@ pub(crate) async fn versioned_composition_revision_history(
                         parameters \"MUST always use the _extended_ ISO 8601 \
                         format\" and \"Timezone SHOULD be only supplied when \
                         needed, otherwise the local timezone is assumed\").",
-         example = "2026-07-26T09:12:44.512Z")
+         example = "2026-07-26T09:12:44.512Z"),
+        ("expand_multimedia" = Option<bool>, Query,
+         description = "OUR OWN EXTENSION — no openEHR spec governs this \
+                        parameter. `true` transparently re-inlines DV_MULTIMEDIA \
+                        content this deployment externalized to object storage, \
+                        verifying its integrity, so the served resource is \
+                        byte-identical to the committed one. A no-op when the \
+                        body holds no external media; an error when the content \
+                        cannot be restored, never a silent fall back to the \
+                        stored reference.",
+         example = json!(true))
     ),
     responses(
         (status = 200, description = "The ORIGINAL_VERSION envelope of the \
@@ -3238,7 +3289,17 @@ pub(crate) async fn versioned_composition_version_get_at_time(
                         must name the served version's FULL three-part identity; \
                         a fabricated `creating_system_id` names no VERSION here \
                         and is `404`.",
-         example = "df58b2ee-30bd-4b2c-9b7d-3a0f8e5c6d21::openEHRSys.example.com::2")
+         example = "df58b2ee-30bd-4b2c-9b7d-3a0f8e5c6d21::openEHRSys.example.com::2"),
+        ("expand_multimedia" = Option<bool>, Query,
+         description = "OUR OWN EXTENSION — no openEHR spec governs this \
+                        parameter. `true` transparently re-inlines DV_MULTIMEDIA \
+                        content this deployment externalized to object storage, \
+                        verifying its integrity, so the served resource is \
+                        byte-identical to the committed one. A no-op when the \
+                        body holds no external media; an error when the content \
+                        cannot be restored, never a silent fall back to the \
+                        stored reference.",
+         example = json!(true))
     ),
     responses(
         (status = 200, description = "The ORIGINAL_VERSION envelope of the \
@@ -3465,7 +3526,17 @@ pub(crate) async fn versioned_composition_version_get_by_id(
                         sibling names repeat, the first match wins. An empty \
                         `path` (or a bare `/`) addresses the root itself. A \
                         path that does not resolve is `404`.",
-         example = "episodes/a/b/c")
+         example = "episodes/a/b/c"),
+        ("expand_multimedia" = Option<bool>, Query,
+         description = "OUR OWN EXTENSION — no openEHR spec governs this \
+                        parameter. `true` transparently re-inlines DV_MULTIMEDIA \
+                        content this deployment externalized to object storage, \
+                        verifying its integrity, so the served resource is \
+                        byte-identical to the committed one. A no-op when the \
+                        body holds no external media; an error when the content \
+                        cannot be restored, never a silent fall back to the \
+                        stored reference.",
+         example = json!(true))
     ),
     responses(
         (status = 200, description = "The directory FOLDER extant at that time \
@@ -4491,7 +4562,17 @@ pub(crate) async fn directory_delete(
                         §Overview); and where sibling names repeat, the first \
                         match wins. An empty `path` (or a bare `/`) addresses \
                         the root itself. A path that does not resolve is `404`.",
-         example = "episodes/a/b/c")
+         example = "episodes/a/b/c"),
+        ("expand_multimedia" = Option<bool>, Query,
+         description = "OUR OWN EXTENSION — no openEHR spec governs this \
+                        parameter. `true` transparently re-inlines DV_MULTIMEDIA \
+                        content this deployment externalized to object storage, \
+                        verifying its integrity, so the served resource is \
+                        byte-identical to the committed one. A no-op when the \
+                        body holds no external media; an error when the content \
+                        cannot be restored, never a silent fall back to the \
+                        stored reference.",
+         example = json!(true))
     ),
     responses(
         (status = 200, description = "The directory FOLDER at that version — \

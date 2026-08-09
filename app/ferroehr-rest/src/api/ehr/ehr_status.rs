@@ -68,6 +68,11 @@ pub(super) async fn run(
                 .backend()
                 .ehr_status_at_version_response(ehr_id, ferroehr::ids::VoId(vo_id), &version)
                 .await?;
+            // The same expansion seam the COMPOSITION read carries: a
+            // DV_MULTIMEDIA committed in an EHR_STATUS is externalized by the
+            // generic versioning path, so this is where it comes back.
+            let mut resp = resp;
+            resp.body = super::expand_multimedia_if_requested(&state, q, resp.body).await?;
             // The addressed version_uid must equal the served version's full
             // three-part identity, case-insensitively (ITS-REST overview
             // Resources.md §Identifier types; BASE master05 §Composite
@@ -92,6 +97,11 @@ pub(super) async fn run(
                 .backend()
                 .ehr_status_at_time_response(ehr_id, p.version_at_time)
                 .await?;
+            // The same expansion seam the COMPOSITION read carries: a
+            // DV_MULTIMEDIA committed in an EHR_STATUS is externalized by the
+            // generic versioning path, so this is where it comes back.
+            let mut resp = resp;
+            resp.body = super::expand_multimedia_if_requested(&state, q, resp.body).await?;
             Ok(negotiate::read_rm::<EhrStatus>(
                 h,
                 &base,
