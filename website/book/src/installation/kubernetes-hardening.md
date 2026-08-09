@@ -75,18 +75,30 @@ that is **1.34, 1.35 and 1.36**. A cluster below that window receives **no
 security backports at all** — a published CVE in the API server or kubelet simply
 stays open on it.
 
-The chart's `kubeVersion: ">=1.25.0-0"` is **not** a statement that 1.25 is a
-supported platform. It is a *compatibility* floor: the newest API the chart uses
-is HPA `autoscaling/v2` (GA in 1.23), so it genuinely renders and runs on 1.25,
-and refusing to install there would be a false claim in the other direction. The
-two facts are separate, and this is the one place they are stated together:
+The chart's `kubeVersion: ">=1.36.0-0"` sits at the **top** of that window, not
+its bottom, and the difference is worth being exact about:
 
-- **Will the chart work?** Anything from 1.25.
-- **Will your cluster receive security fixes?** Only inside the three-release
-  window, which is a moving target you must track.
+- **Will the chart work?** 1.36 and newer.
+- **Will your cluster receive security fixes?** Anywhere in 1.34–1.36, a moving
+  target you must track.
 
-If you run outside that window, you have accepted that the platform beneath this
-CDR is unpatched, and no setting in `values.yaml` changes that.
+So a supported 1.34 or 1.35 cluster is patched and still refused by this chart.
+That is a deliberate cost, paid for one thing: `hostUsers: false` — user
+namespaces — went stable in 1.36, and the floor is what lets the chart render it
+unconditionally rather than gate it into silence. See *Beyond Restricted: the
+user namespace* below for what it buys.
+
+The floor used to be `1.25`, argued as a *compatibility* floor — the chart's
+newest API was HPA `autoscaling/v2` (GA in 1.23), so refusing to install on 1.25
+looked like a false claim in the other direction. That argument does not
+survive contact with the fields the chart actually renders. Below 1.27 the API
+server prunes `PodDisruptionBudget.unhealthyPodEvictionPolicy`; below 1.30 the
+`preStop` sleep action does not exist. On those clusters the chart installed
+cleanly with two drain-safety properties **silently absent** — an install that
+half-works without saying so is worse than one that refuses.
+
+If you run outside the supported window, you have accepted that the platform
+beneath this CDR is unpatched, and no setting in `values.yaml` changes that.
 
 ## Upgrades roll, they do not replace
 
@@ -634,6 +646,70 @@ of these fields on every render and the golden files pin the exact bytes, and bo
 run in CI on any change to the chart. A template edit that drops
 `readOnlyRootFilesystem` or `allowPrivilegeEscalation: false` fails a job, not a
 review.
+
+## Beyond Restricted: the user namespace
+
+The Restricted profile stops a container from *asking* for privilege. It does
+nothing about what a container's UID means **on the node** — and under the
+default posture, uid 65532 in the pod is uid 65532 on the host, so a container
+escape arrives as a real host user with whatever that user can reach.
+
+The chart closes that by default. Every pod it renders carries `hostUsers:
+false`, which puts the pod in its own user namespace and maps its UID range onto
+an unprivileged host range. Read off a running pod on a v1.36.1 node:
+
+```text
+$ cat /proc/self/uid_map
+         0     838860800      65536
+$ id
+uid=65532 gid=65532 groups=65532
+```
+
+The process still sees uid 65532. The kernel sees 838926332. Root *inside* the
+pod — which this workload never uses, but a compromised process might reach for
+— is host uid 838860800, which owns nothing. Capabilities granted inside the
+namespace do not apply outside it.
+
+This is why the chart's `kubeVersion` floor is **1.36**: that is the release
+where user namespaces went stable
+([KEP-127](https://kubernetes.io/docs/tasks/configure-pod-container/user-namespaces/)),
+and the floor is what lets the field render unconditionally instead of being
+gated and silently absent on the clusters that most needed it. It is a real
+cost — a supported 1.34 or 1.35 cluster is refused — and it is deliberate.
+
+**If your nodes cannot support it**, the pod does not start, which is the
+failure mode you want rather than a silent downgrade. The requirement is a Linux
+node whose runtime implements idmapped mounts (containerd ≥ 2.0, CRI-O ≥ 1.25).
+Set `hostUsers: true` to opt out and share the host user namespace, the
+Kubernetes default.
+
+The same posture is applied to `supplementalGroupsPolicy: Strict`, so the
+process gets only the groups the manifest names — a group baked into an image
+cannot widen file access. And a chart-level gate asserts the whole isolation set
+is **identical across every workload of a release**: a console that shared the
+host user namespace while the server did not would be a posture nobody could
+state in one sentence, and that is exactly the shape of drift a second workload
+introduces.
+
+### AppArmor, and why it is not on by default
+
+`securityContext.appArmorProfile` (stable since 1.31) is a further confinement
+layer, and it is left off deliberately, because it is not free: a node **without**
+AppArmor rejects the pod outright rather than ignoring the field. Measured on a
+v1.36.1 Docker Desktop node:
+
+```text
+STATUS: AppArmor
+Warning  AppArmor  pod/…  Cannot enforce AppArmor: AppArmor is not enabled on the host
+```
+
+Turn it on once you know your nodes carry it — most Debian and Ubuntu nodes do:
+
+```yaml
+securityContext:
+  appArmorProfile:
+    type: RuntimeDefault
+```
 
 ## Pod Security Admission: complying versus being refused
 

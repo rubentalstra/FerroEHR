@@ -5,7 +5,18 @@ production-shaped Kubernetes workload: non-root, read-only root filesystem,
 default-deny ingress, connecting to an **external** PostgreSQL 18. This chapter
 covers installing the chart, the database role model it expects, the security
 posture it enforces, the health probes, and the optional integrations. It
-assumes a cluster at Kubernetes 1.25 or newer.
+assumes a cluster at Kubernetes 1.36 or newer.
+
+> [!IMPORTANT]
+> **The `kubeVersion` floor is `>=1.36.0-0`, and 1.36 is the newest supported
+> release, not the oldest.** A patched 1.34 or 1.35 cluster is refused. The floor
+> buys one thing: user namespaces (`hostUsers: false`) went stable in 1.36, and
+> the chart runs every pod in one by default, so a container escape lands as an
+> unprivileged host UID. Your nodes must be Linux with containerd ≥ 2.0 or
+> CRI-O ≥ 1.25 — on a node without that support the pod does not start, which is
+> the loud failure rather than a silent downgrade. Set `hostUsers: true` to opt
+> out. The full reasoning, and what it is worth, is in
+> [Kubernetes hardening](./kubernetes-hardening.md).
 
 > [!IMPORTANT]
 > There is **no in-chart PostgreSQL**. A CDR stores PHI, so its database must be
@@ -567,6 +578,47 @@ is an explicit, auditable decision:
 
 Full detail on each is in [Beyond the core](../beyond-core/index.md),
 [Security & multi-tenancy](../security.md), and [Operations](../operations.md).
+
+## Staying available while things move
+
+Four defaults keep the API serving through the events that routinely interrupt
+it. None needs configuring; each is listed because the reason matters when you
+tune it.
+
+**Replicas land on different nodes.** With nothing telling the scheduler
+otherwise, two replicas can share one node and one node failure is a total
+outage. The chart ships a soft spread constraint — `maxSkew: 1` over
+`kubernetes.io/hostname`, `whenUnsatisfiable: ScheduleAnyway` — so replicas
+prefer separate nodes but a single-node or full cluster still schedules them
+rather than leaving a pod `Pending`. Setting `topologySpreadConstraints`
+**replaces** it wholesale, so give the complete constraint including its own
+`labelSelector`; add a `topology.kubernetes.io/zone` entry if your cluster spans
+zones.
+
+**A terminating pod stops receiving requests before it shuts down.** Deleting a
+pod removes it from the EndpointSlice and sends `SIGTERM` *concurrently*, and
+the removal still has to propagate to every node. `preStopSleepSeconds` (default
+5) holds the container for that window first. It uses the native `sleep` hook
+action rather than an `exec` hook, because the image ships no shell to run one.
+
+**A node drain does not hang on unhealthy pods.** The PodDisruptionBudget sets
+`unhealthyPodEvictionPolicy: AlwaysAllow`, the
+[documented recommendation](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/).
+The API default, `IfHealthyBudget`, makes a drain wait for pods to become
+healthy — which never completes when they are unhealthy *because* of the drain.
+
+**A migration interrupted by a drain is not counted as a failure.** The
+migration Job carries a `podFailurePolicy` that ignores pod failures caused by
+disruption, so ordinary cluster maintenance during a release cannot exhaust
+`backoffLimit` and fail the upgrade with no migration error anywhere in the
+logs.
+
+Two more are available and off by default. `service.trafficDistribution:
+PreferSameZone` keeps traffic inside the caller's zone — lower latency and
+inter-zone cost, at the price of even load, so measure before setting it. And
+`autoscaling.behavior` passes scaling policies straight through; the defaults
+already scale up immediately and wait out a five-minute window before scaling
+down, so change it only to be *more* conservative.
 
 ## Upgrades
 

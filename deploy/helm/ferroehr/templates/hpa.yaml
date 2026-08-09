@@ -20,6 +20,15 @@ spec:
     name: {{ include "ferroehr.fullname" . }}
   minReplicas: {{ .Values.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+  {{- with .Values.autoscaling.behavior }}
+  {{- /* Omitted when empty rather than restated: the documented defaults
+         already scale up immediately and hold a 300s stabilization window
+         before scaling down, which is the conservative direction for a
+         clinical API
+         (https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/#default-behavior). */}}
+  behavior:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   metrics:
     {{- if .Values.autoscaling.targetCPUUtilizationPercentage }}
     - type: Resource

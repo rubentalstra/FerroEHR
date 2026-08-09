@@ -23,15 +23,24 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "ferroehr.adminUiFullname" . }}
+  annotations:
+    kubernetes.io/description: >-
+      In-cluster address for the FerroEHR admin console. The console is a REST client of the CDR and holds no data of its own; it is the human-facing surface, so this is the Service an Ingress normally publishes.
   labels:
     {{- include "ferroehr.adminUiLabels" . | nindent 4 }}
 spec:
+  {{- /* Rendered only when it differs from the API default, per
+         https://kubernetes.io/docs/concepts/configuration/overview/
+         "Don't specify default values unnecessarily" — as on the CDR Service.
+         `protocol: TCP` is gone from the port for the same reason. */}}
+  {{- if ne .Values.adminUi.service.type "ClusterIP" }}
   type: {{ .Values.adminUi.service.type }}
+  {{- end }}
   ports:
-    - port: {{ .Values.adminUi.service.port }}
+    - name: http
+      port: {{ .Values.adminUi.service.port }}
       targetPort: http
-      protocol: TCP
-      name: http
+      appProtocol: http
   selector:
     {{- include "ferroehr.adminUiSelectorLabels" . | nindent 4 }}
 ---
@@ -39,6 +48,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "ferroehr.adminUiFullname" . }}
+  annotations:
+    kubernetes.io/description: >-
+      The FerroEHR admin console: a Leptos SSR web UI that consumes the CDR strictly over ITS-REST. It never reaches the database, which the console NetworkPolicy enforces rather than assumes.
   labels:
     {{- include "ferroehr.adminUiLabels" . | nindent 4 }}
 spec:
@@ -62,6 +74,10 @@ spec:
       # `ferroehr*`, and a strict boot-time sweep then refuses to start
       # (https://kubernetes.io/docs/concepts/services-networking/service/#environment-variables).
       enableServiceLinks: false
+      terminationGracePeriodSeconds: {{ .Values.adminUi.terminationGracePeriodSeconds }}
+      {{- if not .Values.hostUsers }}
+      {{- include "ferroehr.hostUsers" . | nindent 6 }}
+      {{- end }}
       securityContext:
         {{- toYaml .Values.adminUi.podSecurityContext | nindent 8 }}
       containers:
@@ -111,6 +127,25 @@ spec:
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10
+          {{- /* The console serves one page tree from one process, so `/` is
+                 both "the process answers" and "the process can serve" — the
+                 two probe roles genuinely coincide here, unlike the server's,
+                 where readiness owns the database. What it still needs is the
+                 third role: a startup probe, so a slow first render is not
+                 read as a wedged process and restarted mid-boot
+                 (https://kubernetes.io/docs/concepts/workloads/pods/probes/). */}}
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+            failureThreshold: 24
+          {{- if gt (int .Values.adminUi.preStopSleepSeconds) 0 }}
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: {{ int .Values.adminUi.preStopSleepSeconds }}
+          {{- end }}
           resources:
             {{- toYaml .Values.adminUi.resources | nindent 12 }}
           volumeMounts:
