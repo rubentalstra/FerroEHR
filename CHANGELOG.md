@@ -18,6 +18,31 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Every pod the Helm chart deploys now runs in its own user namespace**
+  (`hostUsers: false`, chart `6.0.0`). Container UIDs are mapped onto an
+  unprivileged host range, so a container escape arrives as a host user that owns
+  nothing — verified on a live v1.36.1 node, where the pod's `/proc/self/uid_map`
+  reads `0 838860800 65536` while the process still sees uid 65532. This is the
+  reason the chart's Kubernetes floor moves to 1.36 (see *Changed*). Set
+  `hostUsers: true` to opt out on nodes whose runtime cannot map UIDs; there, the
+  pod refuses to start rather than downgrading silently.
+- **The chart spreads replicas across nodes by default.** A soft `maxSkew: 1`
+  constraint over `kubernetes.io/hostname` means two replicas prefer two nodes,
+  so one node failure is no longer a total outage. It is `ScheduleAnyway`, so a
+  single-node cluster still schedules. Supplying `topologySpreadConstraints`
+  replaces it wholesale.
+- **`supplementalGroupsPolicy: Strict`** on every pod: the process gets only the
+  groups the manifest names, so a group baked into an image cannot widen file
+  access.
+- **The migration Job no longer counts a drain as a migration failure.** A
+  `podFailurePolicy` ignores pod failures caused by disruption, so ordinary
+  cluster maintenance during a release cannot exhaust `backoffLimit` and fail the
+  upgrade with no migration error in any log.
+- **New chart values:** `service.trafficDistribution` (zone-local routing, off by
+  default), `autoscaling.behavior` (scaling policies passed through),
+  `adminUi.terminationGracePeriodSeconds` and `adminUi.preStopSleepSeconds`. The
+  console also gains a startup probe, a `preStop` pause and the server's full
+  security posture.
 - **The Helm chart can deploy the admin console.** `adminUi.enabled` renders the
   console as its own Deployment/Service/ServiceAccount, with an optional Ingress
   and a NetworkPolicy that confines its egress to the CDR and DNS — the console
@@ -222,10 +247,30 @@ workflow refuses a tag that has no matching section here.
   that were already the default are correct and are now the only path:
   `/health/liveness` for liveness and startup, `/health/readiness` for
   readiness.
+- **The chart's Kubernetes floor moves from `>=1.25.0-0` to `>=1.36.0-0`**
+  (breaking; chart `6.0.0`). 1.25 has been end-of-life since October 2023, and
+  the old floor was defended as "the chart works there" — which was false in a
+  way that mattered: below 1.27 the API server silently pruned
+  `PodDisruptionBudget.unhealthyPodEvictionPolicy`, and below 1.30 the `preStop`
+  sleep action did not exist, so those clusters installed the chart while two
+  drain-safety properties simply were not applied. 1.36 is a genuine
+  compatibility floor: it is the release where the newest field the chart renders
+  (`hostUsers`) became stable, which is what lets every field render
+  unconditionally with no version gates left. Note that 1.36 is the **top** of
+  the supported window, not its bottom — a patched 1.34 or 1.35 cluster is
+  refused, and `Chart.yaml` records why that cost is accepted.
 - The PodDisruptionBudget sets `unhealthyPodEvictionPolicy: AlwaysAllow`, the
   documented recommendation. With the previous default a node drain waited for
   pods to become healthy that were unhealthy *because* of the drain, so it never
-  completed.
+  completed. It and the `preStop` sleep action are now rendered unconditionally
+  rather than version-gated, since both are stable below the new floor.
+- **The chart's render gate now covers the admin console.** `validate.sh`
+  rendered three overlays, none of which enabled `adminUi` — so the
+  per-container restricted-profile check, which exists precisely because a second
+  workload is where a posture gets lost, had never once seen the console. The
+  console overlay is now a fourth case with its own golden render. Two new
+  assertions ride along: pod isolation must be identical across every workload of
+  a release, and a multi-replica Deployment must carry a spread or affinity rule.
 - The chart's pinned Helm version moves to 4.2.3 (current release), with the
   golden renders regenerated on it.
 

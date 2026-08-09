@@ -18,7 +18,10 @@
 #      because the chart renders `config:` VERBATIM to ferroehr.toml (so
 #      `config.<any-toml-path>` is legitimate whether or not values.yaml
 #      enumerates it, and the one non-TOML child, `config.files`, resolves in
-#      values.yaml instead).
+#      values.yaml instead). The securityContext family and
+#      `autoscaling.behavior` are passthroughs of the same kind — the chart
+#      renders the whole Kubernetes type, so a documented child resolves on its
+#      root and the API reference is the authority for the leaf.
 #   3. Every committed generated chart under a `*-assets/` directory is embedded
 #      by some page. An unreferenced chart is either a page that lost its figure
 #      or a renderer emitting output nobody reads.
@@ -161,6 +164,16 @@ for f in $files; do
     case "$path" in
       config.*) grep -qxF "${path#config.}" "$work/toml" && continue ;;
     esac
+    # The other verbatim-passthrough subtrees. `config.*` is not the only one:
+    # values.schema.json declares these "rendered verbatim", so the whole
+    # Kubernetes type is legitimately settable under them and values.yaml
+    # enumerates only the members the chart has an opinion about. A documented
+    # child here resolves because its ROOT does — the Kubernetes API is the
+    # authority for the leaf, and no file in this repo can stand in for it.
+    case "$path" in
+      securityContext.*|podSecurityContext.*|autoscaling.behavior.*|\
+      adminUi.securityContext.*|adminUi.podSecurityContext.*) continue ;;
+    esac
     report "$f" "documents Helm value \`$path\`, which the chart does not define"
   done < <(grep -ohE '`[a-z][A-Za-z0-9]*(\.[A-Za-z0-9_]+)+`' "$f" | tr -d '`' | sort -u)
   # `--set` is unambiguous wherever it appears, so it is checked without the
@@ -170,6 +183,16 @@ for f in $files; do
     grep -qxF "$path" "$work/values" && continue
     case "$path" in
       config.*) grep -qxF "${path#config.}" "$work/toml" && continue ;;
+    esac
+    # The other verbatim-passthrough subtrees. `config.*` is not the only one:
+    # values.schema.json declares these "rendered verbatim", so the whole
+    # Kubernetes type is legitimately settable under them and values.yaml
+    # enumerates only the members the chart has an opinion about. A documented
+    # child here resolves because its ROOT does — the Kubernetes API is the
+    # authority for the leaf, and no file in this repo can stand in for it.
+    case "$path" in
+      securityContext.*|podSecurityContext.*|autoscaling.behavior.*|\
+      adminUi.securityContext.*|adminUi.podSecurityContext.*) continue ;;
     esac
     report "$f" "\`--set $path=\` names a value the chart does not define"
   done < <(grep -ohE '\-\-set +[a-z][A-Za-z0-9_.]*=' "$f" | sed -E 's/--set +//; s/=$//' | sort -u)

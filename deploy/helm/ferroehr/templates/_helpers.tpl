@@ -309,6 +309,68 @@ true
 {{- end }}
 
 {{/*
+The pod-level user-namespace field, rendered only when it asks for something
+other than the API default.
+
+`hostUsers: false` puts the pod in its own user namespace: container UID 0 maps
+to an unprivileged host UID, so capabilities held inside the container are not
+capabilities on the node (KEP-127 — keps/sig-node/127-user-namespaces — alpha
+v1.25, beta v1.35, stable v1.36, which is this chart's kubeVersion floor, so it
+renders ungated).
+
+`hostUsers: true` IS the API default, so it is omitted rather than stated
+("Don't specify default values unnecessarily",
+https://kubernetes.io/docs/concepts/configuration/overview/). The difference
+matters here beyond tidiness: an omitted field lets a future cluster-wide
+default apply, while an explicit `true` would pin the pod to the weaker posture
+forever.
+
+The `if` lives at each CALL SITE rather than in here, because a helper that
+renders nothing still leaves the `nindent` that invoked it — an indented blank
+line in every manifest.
+*/}}
+{{- define "ferroehr.hostUsers" -}}
+hostUsers: false
+{{- end }}
+
+{{/*
+The default topology spread: prefer one replica per node.
+
+Rendered only when the operator supplied no constraints of their own, and
+replaced wholesale when they did — a merge of two spreading policies is not a
+spreading policy, and the operator's `labelSelector` is the part that would
+silently disagree with ours.
+
+`ScheduleAnyway` rather than `DoNotSchedule`: this is an availability
+preference, not a placement requirement, and a hard constraint would leave a
+replica Pending forever on a single-node cluster instead of running it
+(https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/).
+
+`matchLabelKeys: [pod-template-hash]` scopes the skew calculation to the
+ReplicaSet being rolled. Without it a rolling update counts the OUTGOING pods
+too, so the scheduler sees a skew that the rollout is in the middle of
+resolving and places the new pods to correct it — the "respect topology spread
+after rolling upgrade" problem KEP-3243 exists for. That KEP is beta and
+enabled by default from v1.27 with stable targeted at v1.36; if a cluster has
+the gate off the field is ignored and the constraint still spreads, just with
+the older counting. A graceful degradation, so it is not version-gated.
+*/}}
+{{- define "ferroehr.topologySpreadConstraints" -}}
+{{- if .Values.topologySpreadConstraints -}}
+{{- toYaml .Values.topologySpreadConstraints -}}
+{{- else -}}
+- maxSkew: 1
+  topologyKey: kubernetes.io/hostname
+  whenUnsatisfiable: ScheduleAnyway
+  matchLabelKeys:
+    - pod-template-hash
+  labelSelector:
+    matchLabels:
+      {{- include "ferroehr.selectorLabels" . | nindent 6 }}
+{{- end }}
+{{- end }}
+
+{{/*
 The admin console's resource name: the release fullname plus a suffix, so the
 console's objects never collide with the server's and are obvious in `kubectl
 get`.

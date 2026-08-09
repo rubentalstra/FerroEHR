@@ -526,6 +526,16 @@
           "additionalProperties": {
             "type": "string"
           }
+        },
+        "trafficDistribution": {
+          "type": "string",
+          "enum": [
+            "",
+            "PreferClose",
+            "PreferSameZone",
+            "PreferSameNode"
+          ],
+          "description": "Service topology preference (KEP-4444, stable v1.33). Empty omits the field, leaving cluster-wide spreading."
         }
       }
     },
@@ -647,6 +657,10 @@
         }
       }
     },
+    "hostUsers": {
+      "type": "boolean",
+      "description": "Kubernetes PodSpec.hostUsers (KEP-127, stable v1.36). false = the pod runs in its own user namespace, which is the chart default and what the 1.36 kubeVersion floor buys. true = share the host user namespace (the API default), for nodes whose runtime cannot map UIDs."
+    },
     "podSecurityContext": {
       "description": "Rendered verbatim as the pod's securityContext, so the whole Kubernetes PodSecurityContext surface is permitted.",
       "type": "object"
@@ -722,6 +736,10 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 100
+        },
+        "behavior": {
+          "description": "Rendered verbatim as HorizontalPodAutoscaler.spec.behavior, so the whole scaling-policy surface is permitted. Empty omits it and keeps the documented defaults.",
+          "type": "object"
         }
       }
     },
@@ -791,6 +809,11 @@
     "terminationGracePeriodSeconds": {
       "type": "integer",
       "minimum": 0
+    },
+    "preStopSleepSeconds": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Lame-duck pause before SIGTERM, in seconds; 0 disables. Rendered only on Kubernetes >= 1.30, where the native preStop.sleep action takes effect."
     },
     "extraVolumes": {
       "type": "array",
@@ -953,6 +976,14 @@
         },
         "extraEnv": {
           "type": "array"
+        },
+        "terminationGracePeriodSeconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "preStopSleepSeconds": {
+          "type": "integer",
+          "minimum": 0
         }
       }
     }

@@ -80,6 +80,9 @@ spec:
       # (https://kubernetes.io/docs/concepts/services-networking/service/#environment-variables).
       enableServiceLinks: false
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- if not .Values.hostUsers }}
+      {{- include "ferroehr.hostUsers" . | nindent 6 }}
+      {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -183,6 +186,30 @@ spec:
             periodSeconds: {{ .Values.probes.startup.periodSeconds }}
             timeoutSeconds: {{ .Values.probes.startup.timeoutSeconds }}
             failureThreshold: {{ .Values.probes.startup.failureThreshold }}
+          {{- end }}
+          {{- if gt (int .Values.preStopSleepSeconds) 0 }}
+          {{- /*
+          Lame-duck delay. Pod deletion removes the pod from its EndpointSlice
+          and sends SIGTERM CONCURRENTLY, and the endpoint removal has to reach
+          every kube-proxy before it takes effect — so without a pause a pod can
+          receive requests it has already begun shutting down on
+          (https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/,
+          https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination).
+          `strategy.maxUnavailable: 0` does not help: it keeps CAPACITY up, it
+          does not make endpoint propagation instant.
+
+          The native `sleep` action, not an exec hook: this image ships no shell
+          and no sleep binary (deliberately — it is what makes runtime intrusion
+          detection high-confidence), so `exec` could not run here at all.
+
+          KEP-3960 (keps/sig-node/3960-pod-lifecycle-sleep-action) marks the
+          sleep action stable in v1.34, below this chart's kubeVersion floor, so
+          it renders unconditionally.
+          */}}
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: {{ int .Values.preStopSleepSeconds }}
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
@@ -311,7 +338,5 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.topologySpreadConstraints }}
       topologySpreadConstraints:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        {{- include "ferroehr.topologySpreadConstraints" . | nindent 8 }}

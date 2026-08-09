@@ -18,14 +18,30 @@ spec:
   {{- if ne .Values.service.type "ClusterIP" }}
   type: {{ .Values.service.type }}
   {{- end }}
+  {{- with .Values.service.trafficDistribution }}
+  {{- /* KEP-4444 (keps/sig-network/4444-service-traffic-distribution), stable
+         v1.33 — below this chart's kubeVersion floor, so ungated. Omitted
+         entirely when empty: the API default is cluster-wide spreading, and
+         locality is a trade against evenness that only the operator can make.
+         https://kubernetes.io/docs/reference/networking/virtual-ips/#traffic-distribution */}}
+  trafficDistribution: {{ . }}
+  {{- end }}
   ports:
+    {{- /* `appProtocol` is not a duplicate of the port NAME: the name is a
+           reference key for `targetPort`, while appProtocol declares the wire
+           protocol to Gateway API implementations and topology-aware proxies,
+           which is how they know to speak HTTP rather than treat the port as
+           opaque TCP
+           (https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol). */}}
     - name: http
       port: {{ .Values.service.port }}
       targetPort: http
+      appProtocol: http
     {{- if and .Values.config.management.enabled .Values.config.management.port }}
     - name: management
       port: {{ .Values.config.management.port }}
       targetPort: management
+      appProtocol: http
     {{- end }}
   selector:
     {{- include "ferroehr.selectorLabels" . | nindent 4 }}

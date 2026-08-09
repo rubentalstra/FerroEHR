@@ -2,7 +2,7 @@
 
 Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL 1.1). A single static binary deployed with a hardened-by-default security posture: runs as a non-root, read-only-rootfs, default-deny-ingress workload that connects to an EXTERNAL PostgreSQL 18 as an unprivileged app role (migrations are run out of band by a separate migrator role).
 
-![Version: 5.1.0](https://img.shields.io/badge/Version-5.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 3.17.3](https://img.shields.io/badge/AppVersion-3.17.3-informational?style=flat-square)
+![Version: 6.0.0](https://img.shields.io/badge/Version-6.0.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 3.17.3](https://img.shields.io/badge/AppVersion-3.17.3-informational?style=flat-square)
 
 FerroEHR is a pure-Rust openEHR Clinical Data Repository: ITS-REST 1.1.0 at the
 API, AQL 1.1 as the query language, PostgreSQL 18-native storage, shipped as a
@@ -33,7 +33,7 @@ add — `helm repo add` does not apply to this chart and never will:
 
 ```console
 helm install ferroehr oci://ghcr.io/rubentalstra/charts/ferroehr \
-  --version 5.1.0 \
+  --version 6.0.0 \
   --namespace ferroehr --create-namespace \
   --set database.existingSecret=ferroehr-db \
   --set image.tag=3.17.3
@@ -47,7 +47,7 @@ They are independent SemVer lines and they move independently:
 
 | What | Set with | This release |
 |---|---|---|
-| the **chart** (templates, defaults, this document) | `--version` | `5.1.0` |
+| the **chart** (templates, defaults, this document) | `--version` | `6.0.0` |
 | the **server image** | `image.tag` | `3.17.3` |
 
 `appVersion` is the image the chart defaults to; pinning `image.tag` explicitly
@@ -59,7 +59,7 @@ The chart carries two keyless Sigstore artifacts, and they answer different
 questions. A **cosign signature** — who signed this:
 
 ```console
-cosign verify ghcr.io/rubentalstra/charts/ferroehr:5.1.0 \
+cosign verify ghcr.io/rubentalstra/charts/ferroehr:6.0.0 \
   --certificate-identity-regexp '^https://github\.com/rubentalstra/FerroEHR/\.github/workflows/publish-chart\.yml@' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
@@ -67,7 +67,7 @@ cosign verify ghcr.io/rubentalstra/charts/ferroehr:5.1.0 \
 A **SLSA build provenance attestation** — what source it was built from, and how:
 
 ```console
-gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:5.1.0 \
+gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:6.0.0 \
   -R rubentalstra/FerroEHR
 gh attestation verify oci://ghcr.io/rubentalstra/ferroehr:3.17.3 \
   -R rubentalstra/FerroEHR
@@ -131,7 +131,18 @@ your CNI enforces NetworkPolicy** — check yours; several do not.
 
 ## Requirements
 
-Kubernetes: `>=1.25.0-0`
+Kubernetes: `>=1.36.0-0`
+
+> [!NOTE]
+> Rows under `config.*` carry no description here on purpose. Those keys are the
+> **server's**, not the chart's — the chart renders the `config` tree verbatim
+> into `ferroehr.toml` — and they are documented once, in the configuration
+> reference. Restating them here would fork two copies that drift. The same
+> reasoning keeps `config.*` out of `values.schema.json`.
+>
+> That also means the table is not the boundary of what you can set: **any** key
+> in the configuration reference is reachable as `config.<the.toml.path>`,
+> whether or not it appears below.
 
 ## Values
 
@@ -158,19 +169,22 @@ Kubernetes: `>=1.25.0-0`
 | adminUi.networkPolicy.enabled | bool | `true` | Install a NetworkPolicy for the console. Ingress admits `ingressFrom`; egress admits the CDR Service and DNS, and nothing else. The console is a REST client of the CDR by mandate, so this is enforceable rather than aspirational. |
 | adminUi.networkPolicy.ingressFrom | list | `[]` | Ingress `from` selectors admitted to the console port. Empty means the rule carries no `from`, which admits EVERY source — set this to your ingress-controller namespace/pods. |
 | adminUi.nodeSelector | object | `{}` | Node selector. |
-| adminUi.podSecurityContext | object | `{"fsGroup":65532,"runAsGroup":65532,"runAsNonRoot":true,"runAsUser":65532,"seccompProfile":{"type":"RuntimeDefault"}}` | Pod-level security context. Mirrors the server's; a second workload is where a hardened posture is most easily lost. |
+| adminUi.podSecurityContext | object | `{"fsGroup":65532,"fsGroupChangePolicy":"OnRootMismatch","runAsGroup":65532,"runAsNonRoot":true,"runAsUser":65532,"seccompProfile":{"type":"RuntimeDefault"},"supplementalGroupsPolicy":"Strict"}` | Pod-level security context. Mirrors the server's; a second workload is where a hardened posture is most easily lost. The user-namespace setting is NOT mirrored here — it is the release-wide `hostUsers` key, because a posture that differs between two workloads of one release is a posture nobody can state. |
+| adminUi.preStopSleepSeconds | int | `5` | Lame-duck pause before SIGTERM, in seconds (0 disables) — the same endpoint-propagation race the server's `preStopSleepSeconds` covers. |
 | adminUi.replicaCount | int | `1` | Replica count. The console holds session state in process, so more than one replica needs sticky sessions at the ingress or users get logged out on a reroute; left at 1 deliberately. |
 | adminUi.resources | object | `{"limits":{"memory":"512Mi"},"requests":{"cpu":"50m","memory":"128Mi"}}` | Resource requests/limits. |
-| adminUi.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true,"runAsNonRoot":true,"runAsUser":65532}` | Container-level security context. Mirrors the server's. |
+| adminUi.securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"privileged":false,"readOnlyRootFilesystem":true,"runAsNonRoot":true,"runAsUser":65532,"seccompProfile":{"type":"RuntimeDefault"}}` | Container-level security context. Mirrors the server's. |
 | adminUi.service.port | int | `3000` | Service port. The container always listens on 3000. |
 | adminUi.service.type | string | `"ClusterIP"` | Service type for the console. |
+| adminUi.terminationGracePeriodSeconds | int | `20` | Termination grace period for the console. Shorter than the server's: it holds no write in flight and nothing to drain but in-flight page renders. |
 | adminUi.tolerations | list | `[]` | Tolerations. |
-| affinity | object | `{}` |  |
-| autoscaling.enabled | bool | `false` |  |
-| autoscaling.maxReplicas | int | `6` |  |
-| autoscaling.minReplicas | int | `2` |  |
-| autoscaling.targetCPUUtilizationPercentage | int | `75` |  |
-| autoscaling.targetMemoryUtilizationPercentage | int | `0` |  |
+| affinity | object | `{}` | Pod affinity/anti-affinity rules. Empty = none. |
+| autoscaling.behavior | object | `{}` | Scaling behaviour, passed through verbatim to `spec.behavior`. Empty leaves the documented defaults, which are already asymmetric in the right direction for a clinical API: scale-up is immediate, scale-down waits out a 300-second stabilization window so a traffic trough cannot tear down capacity that is about to be needed. Set this only to make it MORE conservative — e.g. a `scaleDown.policies` entry capping how many pods may go per minute (https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/#configurable-scaling-behavior). |
+| autoscaling.enabled | bool | `false` | Horizontal pod autoscaling. When on, the chart omits replicas and the HPA owns the count. |
+| autoscaling.maxReplicas | int | `6` | Upper bound the HPA may scale to. |
+| autoscaling.minReplicas | int | `2` | Lower bound the HPA may scale to. |
+| autoscaling.targetCPUUtilizationPercentage | int | `75` | Target average CPU. 0 removes the metric; removing BOTH metrics is refused, since an HPA with none never scales. |
+| autoscaling.targetMemoryUtilizationPercentage | int | `0` | Target average memory. 0 removes the metric. A CDR is usually CPU-bound, so this is off by default. |
 | config.admin.enabled | bool | `false` |  |
 | config.audit.enabled | bool | `true` |  |
 | config.audit.store.enabled | bool | `true` |  |
@@ -237,27 +251,28 @@ Kubernetes: `>=1.25.0-0`
 | database.url | string | `""` | Inline DSN (DEV/TEST ONLY — lands in a chart-managed Secret). Leave empty and use existingSecret in production. Ignored when existingSecret is set. |
 | extraEnv | list | `[]` | Extra raw env vars (list of {name,value} or {name,valueFrom}). Escape hatch for anything not surfaced above (array-valued keys via comma-separated values, one-off FERROEHR_* overrides). |
 | extraEnvFrom | list | `[]` | Extra envFrom sources (configMapRef/secretRef). |
-| extraVolumeMounts | list | `[]` |  |
+| extraVolumeMounts | list | `[]` | Mounts for extraVolumes, in the server container. |
 | extraVolumes | list | `[]` | Extra volumes / volumeMounts (e.g. an external secret store for the PGP key). |
 | fullnameOverride | string | `""` | Override the full resource name. |
+| hostUsers | bool | `false` | Run the pods in their own USER NAMESPACE, so container UIDs map to unprivileged host UIDs and a container escape lands as nobody rather than as the UID it ran under (KEP-127, stable v1.36 — the reason this chart's kubeVersion floor is 1.36). `false` here is the Kubernetes field spelling and means user namespaces are ON; set it to `true` to share the host's user namespace, which is the API default.  Set it to `true` if your nodes cannot support it. The requirement is a node-level one the chart cannot check: a Linux node whose container runtime implements it (containerd >= 2.0 or CRI-O >= 1.25) with idmap-mount support in the kernel. On a node without it the pod does not start — a loud failure, not a silent downgrade (https://kubernetes.io/docs/tasks/configure-pod-container/user-namespaces/). |
 | image.digest | string | `""` | Image digest (`sha256:…`). Set it and the pod runs `repository@digest`, ignoring `tag` entirely: a digest is what the provenance attestation is made over, so deploying by digest is what makes verification bind to the running image. A tag can be moved afterwards; a digest cannot. |
 | image.pullPolicy | string | `"IfNotPresent"` | Pull policy. IfNotPresent + an immutable pinned tag/digest in production. |
 | image.repository | string | `"ghcr.io/rubentalstra/ferroehr"` | Image repository. Multi-arch distroless (gcr.io/distroless/cc-debian12:nonroot base). |
 | image.tag | string | `""` | Image tag. Empty string falls back to .Chart.appVersion. Pin a version in production, never `latest` — and prefer `digest` below, which a tag cannot be substituted for once it is set. |
 | imagePullSecrets | list | `[]` | imagePullSecrets for private registries. |
-| ingress.annotations | object | `{}` |  |
-| ingress.className | string | `""` |  |
+| ingress.annotations | object | `{}` | Ingress annotations (TLS issuer, body size, timeouts — controller-specific). |
+| ingress.className | string | `""` | IngressClass name. Empty leaves the cluster default to apply. |
 | ingress.enabled | bool | `false` | Create an Ingress. TLS termination belongs here (or at a gateway). |
 | ingress.hosts[0].host | string | `"ferroehr.example.com"` |  |
 | ingress.hosts[0].paths[0].path | string | `"/ferroehr"` |  |
 | ingress.hosts[0].paths[0].pathType | string | `"Prefix"` |  |
-| ingress.tls | list | `[]` |  |
+| ingress.tls | list | `[]` | TLS blocks, passed through verbatim. |
 | metrics.enabled | bool | `false` | Add prometheus.io scrape annotations to the pods. |
 | metrics.serviceMonitor.enabled | bool | `false` | Render a Prometheus Operator ServiceMonitor. Needs the monitoring.coreos.com CRDs installed, or the install fails on an unknown kind. |
 | metrics.serviceMonitor.interval | string | `"30s"` | Scrape interval / timeout. |
 | metrics.serviceMonitor.labels | object | `{}` | Extra labels, for the `serviceMonitorSelector` your Prometheus matches on. |
 | metrics.serviceMonitor.namespace | string | `""` | Namespace for the ServiceMonitor; empty = the release namespace. |
-| metrics.serviceMonitor.scrapeTimeout | string | `"10s"` |  |
+| metrics.serviceMonitor.scrapeTimeout | string | `"10s"` | Per-scrape timeout. Must be shorter than the interval. |
 | migrations.job.activeDeadlineSeconds | int | `600` | Hard ceiling on the migration step; a migration blocked behind live traffic must fail the release rather than hang it. |
 | migrations.job.backoffLimit | int | `3` | Retries before the Job (and therefore the release) is declared failed. |
 | migrations.job.enabled | bool | `false` | Run the migrations as a pre-install/pre-upgrade hook Job under the migrator DSN. Pair it with config.db.migrate=verify and an app-role-only runtime DSN for the least-privilege posture. |
@@ -276,30 +291,32 @@ Kubernetes: `>=1.25.0-0`
 | networkPolicy.enabled | bool | `true` | Install a default-deny-ingress NetworkPolicy that only admits traffic to the API (and management) port. Strongly recommended for a PHI workload. |
 | networkPolicy.ingressFrom | list | `[]` | Ingress `from` selectors admitted to the API port. Empty means the rule carries no `from` at all, and a NetworkPolicy ingress rule without `from` admits EVERY source — other namespaces and off-cluster clients included, not just this namespace (https://kubernetes.io/docs/concepts/services-networking/network-policies/). Only the port list is narrowed in that state, so SET this to your ingress-controller namespace/pods for a PHI workload. |
 | nodeSelector | object | `{}` | Scheduling. |
-| podAnnotations | object | `{}` |  |
-| podDisruptionBudget.enabled | bool | `true` |  |
-| podDisruptionBudget.minAvailable | int | `1` |  |
+| podAnnotations | object | `{}` | Extra annotations on the pod template. Note a change here rolls the Deployment. |
+| podDisruptionBudget.enabled | bool | `true` | Protect availability during voluntary disruption (drains, upgrades). |
+| podDisruptionBudget.minAvailable | int | `1` | Pods that must stay available. Used only when maxUnavailable is unset. |
 | podDisruptionBudget.unhealthyPodEvictionPolicy | string | `"AlwaysAllow"` | Whether a node drain may evict pods that are already unhealthy. `AlwaysAllow` is the documented recommendation; the alternative, `IfHealthyBudget`, is the API default and makes a drain wait for pods to become healthy first — which never completes when they are unhealthy because of the drain itself. |
 | podLabels | object | `{}` | Extra pod labels / annotations. |
-| podSecurityContext.fsGroup | int | `65532` |  |
-| podSecurityContext.fsGroupChangePolicy | string | `"OnRootMismatch"` |  |
-| podSecurityContext.runAsGroup | int | `65532` |  |
-| podSecurityContext.runAsNonRoot | bool | `true` |  |
-| podSecurityContext.runAsUser | int | `65532` |  |
-| podSecurityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
-| probes.liveness.failureThreshold | int | `3` |  |
-| probes.liveness.initialDelaySeconds | int | `10` |  |
-| probes.liveness.periodSeconds | int | `15` |  |
-| probes.liveness.timeoutSeconds | int | `3` |  |
-| probes.readiness.failureThreshold | int | `3` |  |
-| probes.readiness.initialDelaySeconds | int | `5` |  |
-| probes.readiness.periodSeconds | int | `10` |  |
-| probes.readiness.timeoutSeconds | int | `3` |  |
-| probes.startup.enabled | bool | `true` |  |
-| probes.startup.failureThreshold | int | `30` |  |
-| probes.startup.initialDelaySeconds | int | `5` |  |
-| probes.startup.periodSeconds | int | `5` |  |
-| probes.startup.timeoutSeconds | int | `3` |  |
+| podSecurityContext.fsGroup | int | `65532` | Supplemental group owning mounted volumes, so a non-root process can read them. |
+| podSecurityContext.fsGroupChangePolicy | string | `"OnRootMismatch"` | Only chown volumes whose ownership differs, avoiding a full relabel on every mount. |
+| podSecurityContext.runAsGroup | int | `65532` | GID to run as. |
+| podSecurityContext.runAsNonRoot | bool | `true` | Refuse to start as root (pod level). Required by the restricted profile. |
+| podSecurityContext.runAsUser | int | `65532` | UID to run as (pod level). 65532 is the distroless nonroot user. |
+| podSecurityContext.seccompProfile.type | string | `"RuntimeDefault"` | Seccomp profile. RuntimeDefault is required by the restricted profile. |
+| podSecurityContext.supplementalGroupsPolicy | string | `"Strict"` | Whether the groups in the IMAGE's /etc/group are merged into the process's supplemental groups. `Strict` uses only the groups this manifest names, so a group baked into an image cannot silently widen file access (KEP-3619, stable v1.35; https://kubernetes.io/docs/tasks/configure-pod-container/security-context/). |
+| preStopSleepSeconds | int | `5` | Lame-duck pause before SIGTERM, in seconds (0 disables). Endpoint removal and SIGTERM happen concurrently on pod deletion, so without a pause a terminating pod can still be sent requests. Uses the native `preStop.sleep` action (this image has no shell, so an exec hook cannot run). Must stay comfortably under terminationGracePeriodSeconds: the sleep runs INSIDE that budget and the server still needs its own drain window after it. |
+| probes.liveness.failureThreshold | int | `3` | Liveness probe: consecutive failures before the pod is acted on. |
+| probes.liveness.initialDelaySeconds | int | `10` | Liveness probe: delay before the first check. |
+| probes.liveness.periodSeconds | int | `15` | Liveness probe: seconds between checks. |
+| probes.liveness.timeoutSeconds | int | `3` | Liveness probe: per-check timeout. |
+| probes.readiness.failureThreshold | int | `3` | Readiness probe: consecutive failures before the pod is acted on. |
+| probes.readiness.initialDelaySeconds | int | `5` | Readiness probe: delay before the first check. |
+| probes.readiness.periodSeconds | int | `10` | Readiness probe: seconds between checks. |
+| probes.readiness.timeoutSeconds | int | `3` | Readiness probe: per-check timeout. |
+| probes.startup.enabled | bool | `true` | Startup probe. Gives a slow first boot (migrations) room before liveness applies. |
+| probes.startup.failureThreshold | int | `30` | Startup probe: consecutive failures before the pod is acted on. |
+| probes.startup.initialDelaySeconds | int | `5` | Startup probe: delay before the first check. |
+| probes.startup.periodSeconds | int | `5` | Startup probe: seconds between checks. |
+| probes.startup.timeoutSeconds | int | `3` | Startup probe: per-check timeout. |
 | replicaCount | int | `2` | Number of replicas (ignored when autoscaling.enabled is true). |
 | resources | object | `{"limits":{"cpu":"2","memory":"1Gi"},"requests":{"cpu":"250m","memory":"256Mi"}}` | Resource requests/limits. Sized for a modest API replica; tune for load. |
 | secrets.auditFhirFeedUrl | string | `""` | FHIR base URL of the external Audit Record Repository for [audit.fhir_feed] (may carry basic-auth credentials in its userinfo) → FERROEHR__AUDIT__FHIR_FEED__URL env: audit.fhir_feed.url has no `*_file` sibling either. |
@@ -311,15 +328,16 @@ Kubernetes: `>=1.25.0-0`
 | secrets.multimediaSecretAccessKey | string | `""` | S3 secret access key for [multimedia]. MOUNTED as /etc/ferroehr-secrets/multimedia.secret_access_key (multimedia.secret_access_key_file). |
 | secrets.signingKeyPassphrase | string | `""` | PGP key passphrase (config.signing.mode=pgp). MOUNTED as /etc/ferroehr-secrets/signing.key_passphrase (signing.key_passphrase_file). |
 | secrets.terminologyOauth2ClientSecrets | object | `{}` | OAuth2 client secrets for [terminology.external.oauth2_clients.<name>], keyed by client name. Each is MOUNTED as /etc/ferroehr-secrets/terminology.external.oauth2_clients.<name>.client_secret and the chart injects the matching `client_secret_file` into the rendered TOML (a path is not sensitive). Declare the client itself — token_url, client_id, scopes — under config.terminology.external.oauth2_clients.<name>; a name with no such declaration is a render error. |
-| securityContext.allowPrivilegeEscalation | bool | `false` |  |
+| securityContext.allowPrivilegeEscalation | bool | `false` | Block setuid/file-capability escalation. Required by the restricted profile. |
 | securityContext.capabilities.drop[0] | string | `"ALL"` |  |
-| securityContext.privileged | bool | `false` |  |
-| securityContext.readOnlyRootFilesystem | bool | `true` |  |
-| securityContext.runAsNonRoot | bool | `true` |  |
-| securityContext.runAsUser | int | `65532` |  |
-| securityContext.seccompProfile.type | string | `"RuntimeDefault"` |  |
+| securityContext.privileged | bool | `false` | Never true. A privileged container is effectively root on the node. |
+| securityContext.readOnlyRootFilesystem | bool | `true` | Immutable root filesystem; writable paths are explicit emptyDir mounts. |
+| securityContext.runAsNonRoot | bool | `true` | Refuse to start as root (container level). Required by the restricted profile. |
+| securityContext.runAsUser | int | `65532` | UID to run as (container level). 65532 is the distroless nonroot user. |
+| securityContext.seccompProfile.type | string | `"RuntimeDefault"` | Seccomp profile at container level. RuntimeDefault is required by the restricted profile. |
 | service.annotations | object | `{}` | Extra annotations. |
 | service.port | int | `8080` | Public API port. |
+| service.trafficDistribution | string | `""` | Topology preference for how the Service picks an endpoint (KEP-4444, stable v1.33). Empty leaves the API default: spread across every ready endpoint cluster-wide. `PreferSameZone` (`PreferClose` is its older spelling) keeps traffic inside the client's zone while endpoints there are ready, which cuts cross-zone latency and inter-zone egress billing; `PreferSameNode` is stricter still. Both trade EVENNESS for locality — a zone with one replica and most of the callers will take most of the load — so it is off unless you have measured that you want it (https://kubernetes.io/docs/reference/networking/virtual-ips/#traffic-distribution). |
 | service.type | string | `"ClusterIP"` | Service type. ClusterIP + an Ingress/gateway in front is the norm. |
 | serviceAccount.annotations | object | `{}` | Extra annotations (e.g. IRSA/Workload-Identity role bindings for S3). |
 | serviceAccount.automountServiceAccountToken | bool | `false` | The workload never calls the K8s API, so no token is mounted. |
@@ -327,10 +345,10 @@ Kubernetes: `>=1.25.0-0`
 | serviceAccount.name | string | `""` | Name to use; generated when empty. |
 | strategy.rollingUpdate.maxSurge | int | `1` | Extra pods allowed above `replicaCount` while rolling. |
 | strategy.rollingUpdate.maxUnavailable | int | `0` | Pods allowed to be unavailable while rolling. 0 = capacity never drops. |
-| strategy.type | string | `"RollingUpdate"` |  |
+| strategy.type | string | `"RollingUpdate"` | Rollout strategy. RollingUpdate with maxUnavailable 0 never drops capacity; Recreate takes the service down. |
 | terminationGracePeriodSeconds | int | `30` | Termination grace period (audit/outbox drain has a 5s window in-binary). |
-| tolerations | list | `[]` |  |
-| topologySpreadConstraints | list | `[]` | Spread replicas across nodes/zones. Empty = none. |
+| tolerations | list | `[]` | Tolerations for tainted nodes. Empty = none. |
+| topologySpreadConstraints | list | `[]` | Spread replicas across nodes. Empty does NOT mean "no spreading": it means the chart's own default constraint applies — one soft `maxSkew: 1` over `kubernetes.io/hostname`, so two replicas prefer two nodes and a node failure does not take the whole CDR with it. It is `ScheduleAnyway`, not `DoNotSchedule`, so a single-node or capacity-constrained cluster still schedules rather than leaving a pod Pending forever.  A non-empty list REPLACES that default entirely — give the full constraint, including its own `labelSelector`. Add a `topology.kubernetes.io/zone` constraint here if your cluster spans zones; the chart does not assume one (https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/). |
 
 ## More
 

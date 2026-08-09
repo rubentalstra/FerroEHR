@@ -25,7 +25,7 @@ type: application
 # attestation. A published OCI version is immutable here by refusal rather than
 # by the registry — `helm push` over an existing tag replaces it silently — so
 # the signed artifact ships as a new version and 5.0.0 stays as it is.
-version: 5.1.0
+version: 6.0.0
 # The default container image tag (overridable via image.tag), and the released
 # application version — kept equal to the workspace version by the
 # `chart-appversion` CI guard, so a release cannot ship a chart pointing at the
@@ -34,24 +34,39 @@ version: 5.1.0
 # lane re-checks the pairing against the image itself.
 appVersion: "3.17.3"
 
-# A COMPATIBILITY floor, not a support statement — the two are different facts and
-# conflating them is how a chart ends up claiming to endorse an EOL cluster.
+# A COMPATIBILITY floor, and it is a real one: 1.36 is the release where the
+# newest field this chart renders became stable.
 #
-# Compatibility: the newest API this chart uses is HPA `autoscaling/v2` (GA 1.23);
-# PDB `policy/v1` is GA 1.21, NetworkPolicy and Ingress `networking.k8s.io/v1` GA
-# 1.19, and the `seccompProfile` pod field is stable since **1.19**
-# (https://kubernetes.io/docs/tutorials/security/seccomp/ — "FEATURE STATE:
-# Kubernetes v1.19 [stable]"; an earlier version of this comment said 1.27, which
-# was the kubelet's separate SeccompDefault feature, not this field). So 1.25 is a
-# true floor and is deliberately not raised: the chart does work there.
+# The previous floor was 1.25 — EOL since October 2023 — defended as "the chart
+# does work there". That premise was false, and measurably so: below 1.27 the
+# API server prunes PodDisruptionBudget.unhealthyPodEvictionPolicy, and below
+# 1.30 the preStop sleep action does not exist. The chart did not work there; it
+# installed there, with two drain-safety properties silently absent. An install
+# that half-works without saying so is worse than one that refuses.
 #
-# Support: upstream maintains only the THREE most recent minor releases
-# (https://kubernetes.io/releases/), so a cluster below that window receives no
-# security backports whatever this constraint permits. The supported window is
-# stated in the book (installation/kubernetes-hardening.md) rather than encoded
-# here, because it moves three times a year and a chart that hard-failed on it
-# would refuse to install on a cluster it runs on perfectly well.
-kubeVersion: ">=1.25.0-0"
+# Every field this chart renders, with the KEP that states its stable
+# milestone (keps/<sig>/<kep>/kep.yaml is the authority — a docs page drops the
+# version note once a feature goes GA, so it cannot answer this question):
+#
+#   hostUsers: false            KEP-127   stable v1.36  ← sets this floor
+#   supplementalGroupsPolicy    KEP-3619  stable v1.35
+#   preStop.sleep               KEP-3960  stable v1.34
+#   Service.trafficDistribution KEP-4444  stable v1.33
+#   PDB.unhealthyPodEvictionPolicy KEP-3017 stable v1.31
+#   Job.podFailurePolicy        KEP-3329  stable v1.31
+#   HPA autoscaling/v2                    GA     v1.23
+#
+# So nothing here needs a version gate, which is the point: a gate is a silent
+# absence and a floor is a loud refusal, and for a PHI workload the loud one is
+# correct. Lowering this floor means re-gating the rows above it.
+#
+# It is also inside the supported window — upstream maintains the three most
+# recent minors (https://kubernetes.io/releases/), today 1.34/1.35/1.36 — but it
+# is the TOP of that window, not its bottom, and that is a deliberate cost: an
+# operator on a supported 1.34 or 1.35 cannot install this chart. The trade is
+# user namespaces, which map container UIDs to unprivileged host UIDs and are
+# the strongest per-pod isolation Kubernetes offers a workload holding PHI.
+kubeVersion: ">=1.36.0-0"
 
 keywords:
   - openehr

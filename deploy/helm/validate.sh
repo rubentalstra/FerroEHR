@@ -68,10 +68,15 @@ if [[ "$ACTUAL_HELM" != "$PINNED_HELM" ]]; then
 fi
 
 # The value sets to validate: <label>:<values-file>
+# The admin-ui overlay is here because its ABSENCE was a hole, not a saving:
+# the console is the second pod-bearing workload, the restricted-profile gate is
+# per-container, and until this line the gate never saw a render containing it.
+# The chart's own docs claimed the gate checked both workloads; it could not.
 declare -a CASES=(
   "default:${CI_DIR}/default-values.yaml"
   "all-features:${CI_DIR}/all-features-values.yaml"
   "basic-auth:${CI_DIR}/basic-auth-values.yaml"
+  "admin-ui:${CI_DIR}/admin-ui-values.yaml"
 )
 
 # ── Rendered-manifest structure check (awk; there is no Python in this repo) ───
@@ -196,9 +201,21 @@ ALLOWED_VOLUMES = {
     "persistentVolumeClaim", "projected", "secret",
 }
 bad = []
+# Pod-level ISOLATION, recorded per workload rather than asserted per workload.
+# These are not restricted-profile controls — the profile says nothing about
+# user namespaces — so the property that matters is not "every pod sets X", it
+# is that every pod of one release agrees. A release whose console shares the
+# host user namespace while its server does not has a posture nobody can state,
+# and that is the exact shape of the defect this chart already shipped once,
+# where a second workload quietly lost a hardening the first one had.
+isolation = {}
 
 def check_pod(kind, name, spec):
     pod = spec.get("securityContext") or {}
+    isolation[f"{kind}/{name}"] = (
+        spec.get("hostUsers", True),
+        pod.get("supplementalGroupsPolicy"),
+    )
     if pod.get("runAsNonRoot") is not True:
         bad.append(f"{kind}/{name}: pod runAsNonRoot must be true")
     if (pod.get("seccompProfile") or {}).get("type") not in ("RuntimeDefault", "Localhost"):
@@ -231,6 +248,7 @@ def check_pod(kind, name, spec):
 
 pods = 0
 netpol = False
+spread = []
 for doc in yaml.safe_load_all(open(sys.argv[1])):
     if not doc:
         continue
@@ -241,16 +259,37 @@ for doc in yaml.safe_load_all(open(sys.argv[1])):
     if kind in ("Deployment", "StatefulSet", "DaemonSet", "Job") and tmpl:
         pods += 1
         check_pod(kind, (doc.get("metadata") or {}).get("name"), tmpl.get("spec") or {})
+    # Availability, not security: a Deployment asking for more than one replica
+    # with nothing telling the scheduler to spread them can put every replica on
+    # one node, so one node failure is a total outage. A Job is exempt (it runs
+    # once) and so is a single-replica Deployment (there is nothing to spread).
+    #
+    # An ABSENT `replicas` counts as multi-replica, and that is the whole
+    # subtlety: the chart omits the field when autoscaling is on, so reading it
+    # as the API default of 1 exempted precisely the elastic workload that most
+    # needs spreading. Written the naive way first, and caught by mutation.
+    replicas = (doc.get("spec") or {}).get("replicas")
+    if kind == "Deployment" and tmpl and (replicas is None or replicas > 1):
+        if not ((tmpl.get("spec") or {}).get("topologySpreadConstraints") or
+                (tmpl.get("spec") or {}).get("affinity")):
+            spread.append((doc.get("metadata") or {}).get("name"))
 
 if pods == 0:
     bad.append("no pod-bearing workload found — the gate would pass vacuously")
 if not netpol:
     bad.append("no NetworkPolicy in the render")
+for name in spread:
+    bad.append(f"Deployment/{name}: multi-replica with neither topologySpreadConstraints nor affinity — every replica may land on one node")
+if len(set(isolation.values())) > 1:
+    bad.append("pod isolation differs across workloads of one release: "
+               + ", ".join(f"{k} hostUsers={v[0]} supplementalGroupsPolicy={v[1]}"
+                           for k, v in sorted(isolation.items())))
 for b in bad:
     print(f"  {b}")
 sys.exit(1 if bad else 0)
 PYGATE
   echo "  restricted profile satisfied by every pod in the render (per container)"
+  echo "  pod isolation agrees across workloads, and every multi-replica workload spreads"
 }
 
 mkdir -p "$GOLDEN_DIR"

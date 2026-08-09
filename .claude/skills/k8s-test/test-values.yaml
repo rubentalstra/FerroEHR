@@ -36,6 +36,7 @@ config:
   spec_profile: null
   db:
     statement_timeout_ms: null
+    migrate: null
   server:
     limits: null
     rate_limit: null
