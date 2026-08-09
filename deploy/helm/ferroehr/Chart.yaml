@@ -9,22 +9,15 @@ description: >-
 type: application
 
 # Chart versioning is independent of the application version, and is SemVer 2
-# over the CHART's own contract — its values schema and rendered output
-# (https://helm.sh/docs/topics/charts/#charts-and-versioning). 4.0.0 was a major
-# bump because a values file that set a secret-bearing key under `config:` used
-# to render (into a ConfigMap) and is now refused. 5.0.0 is one for the same
-# reason in a wider form: the chart now ships `values.schema.json`, which helm
-# enforces on install/upgrade/lint/template, so a values file carrying a
-# misspelled or wrong-typed key of the CHART's own vocabulary is refused where it
-# previously rendered with the key silently ignored. The server's `config:` tree
-# stays open — that vocabulary belongs to the binary, not to this schema.
+# over the CHART's own contract — its values schema and its rendered output
+# (https://helm.sh/docs/topics/charts/#charts-and-versioning). A major bump means
+# a values file that used to install may now be refused, or the objects it
+# renders changed shape; the release narrative for each version is in
+# CHANGELOG.md, not here.
 #
-# 5.0.1 carries the SAME chart content as 5.0.0 and exists because 5.0.0 is
-# already published: its run pushed the chart and then failed at the signing
-# step, so 5.0.0 is installable but carries neither a cosign signature nor an
-# attestation. A published OCI version is immutable here by refusal rather than
-# by the registry — `helm push` over an existing tag replaces it silently — so
-# the signed artifact ships as a new version and 5.0.0 stays as it is.
+# A published OCI version is immutable by refusal rather than by the registry —
+# `helm push` over an existing tag replaces it silently — so a correction always
+# ships as a NEW version and the published one stands as it was.
 version: 6.0.0
 # The default container image tag (overridable via image.tag), and the released
 # application version — kept equal to the workspace version by the
@@ -34,15 +27,8 @@ version: 6.0.0
 # lane re-checks the pairing against the image itself.
 appVersion: "3.17.3"
 
-# A COMPATIBILITY floor, and it is a real one: 1.36 is the release where the
-# newest field this chart renders became stable.
-#
-# The previous floor was 1.25 — EOL since October 2023 — defended as "the chart
-# does work there". That premise was false, and measurably so: below 1.27 the
-# API server prunes PodDisruptionBudget.unhealthyPodEvictionPolicy, and below
-# 1.30 the preStop sleep action does not exist. The chart did not work there; it
-# installed there, with two drain-safety properties silently absent. An install
-# that half-works without saying so is worse than one that refuses.
+# A COMPATIBILITY floor, and a real one: 1.36 is the release where the newest
+# field this chart renders became stable.
 #
 # Every field this chart renders, with the KEP that states its stable
 # milestone (keps/<sig>/<kep>/kep.yaml is the authority — a docs page drops the
@@ -58,14 +44,13 @@ appVersion: "3.17.3"
 #
 # So nothing here needs a version gate, which is the point: a gate is a silent
 # absence and a floor is a loud refusal, and for a PHI workload the loud one is
-# correct. Lowering this floor means re-gating the rows above it.
+# correct. Adding a field newer than this floor means raising the floor or
+# gating that field; lowering the floor means gating the rows above.
 #
-# It is also inside the supported window — upstream maintains the three most
-# recent minors (https://kubernetes.io/releases/), today 1.34/1.35/1.36 — but it
-# is the TOP of that window, not its bottom, and that is a deliberate cost: an
-# operator on a supported 1.34 or 1.35 cannot install this chart. The trade is
-# user namespaces, which map container UIDs to unprivileged host UIDs and are
-# the strongest per-pod isolation Kubernetes offers a workload holding PHI.
+# The floor sits inside the supported window — upstream maintains the three most
+# recent minors (https://kubernetes.io/releases/) — at its newest release, which
+# is what user namespaces cost: they are the strongest per-pod isolation
+# Kubernetes offers a workload holding PHI, and they are stable only here.
 kubeVersion: ">=1.36.0-0"
 
 keywords:

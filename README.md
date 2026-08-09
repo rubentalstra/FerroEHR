@@ -514,8 +514,7 @@ lines: `--version` pins the chart, `--set image.tag=` pins the server. Your valu
 file is checked against the chart's `values.schema.json` before anything is
 applied. The chart and the images are published with signed keyless provenance
 (`gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:<chart-version> -R rubentalstra/FerroEHR`),
-and the chart additionally carries a keyless `cosign` signature from chart `5.0.1`
-onward; signing landed in the 3.17.4 cycle, so tags built before it carry none.
+and the chart additionally carries a keyless `cosign` signature.
 
 See the [Kubernetes chapter](https://ferroehr.eu/docs/latest/installation/kubernetes.html)
 and the [documentation website](https://ferroehr.eu/)
