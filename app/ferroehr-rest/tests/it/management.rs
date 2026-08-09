@@ -213,6 +213,11 @@ async fn app_with_mixed_levels(roles: &[&str]) -> Router {
             },
             ..ManagementConfig::default()
         },
+        // The recorder is what MOUNTS prometheus/metrics at all; without it
+        // they answer 404 whatever their level says, which would make the
+        // `public` row below pass for the wrong reason and the `off` row
+        // vacuous.
+        prometheus: Some(recorder().clone()),
         ..Observability::default()
     };
     let (_pg, service) = common::test_service().await;
