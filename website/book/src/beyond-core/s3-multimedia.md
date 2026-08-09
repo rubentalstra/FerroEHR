@@ -55,19 +55,25 @@ still answers `200` — it never touches the store.
 
 ## Turning it back off
 
-Switching `enabled` back to `false` changes two things, and one of them is a
-trap worth knowing before you flip it:
+`enabled` governs **new offloads**, not access to old ones. Switching it back
+to `false`:
 
 - New commits keep large `DV_MULTIMEDIA` **inline**, byte-identical, with no
   dependency on the object store. Nothing else about the request or the record
   changes.
-- Records that were **already** offloaded keep their `s3://` reference, and
-  `?expand_multimedia=true` on them is **ignored**: the read answers `200` with
-  the compact reference and no error. The bytes are still in the bucket, but the
-  API will not return them until the integration is switched back on.
+- Records that were **already** offloaded keep their `s3://` reference and stay
+  fully readable: `?expand_multimedia=true` still fetches, verifies and
+  re-inlines them, as long as an `endpoint` is still configured. Content this
+  server externalized does not become unreachable because a switch was flipped.
 
-So disable the integration only after you have decided what happens to the blobs
-already in the bucket.
+**Removing the `endpoint` as well is the decision that matters.** With no store
+reachable at all, an expansion request against an already-offloaded record
+**fails** — it does not quietly answer `200` with the compact reference. The
+bytes are still in your bucket and still reachable with an S3 client; the API
+refuses rather than pretending the request was honoured.
+
+So decide what happens to the blobs already in the bucket before you remove the
+endpoint, not before you flip `enabled`.
 
 ## Enabling it
 

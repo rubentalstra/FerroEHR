@@ -41,7 +41,7 @@ use super::MultimediaError;
 use super::store::BlobStore;
 
 /// The `_type` of the node we externalize.
-const DV_MULTIMEDIA: &str = "DV_MULTIMEDIA";
+pub(super) const DV_MULTIMEDIA: &str = "DV_MULTIMEDIA";
 /// openEHR `Integrity check algorithms` code-set id (TERM 3.1.0).
 const INTEGRITY_ALGORITHM_TERMINOLOGY_ID: &str = "openehr_integrity_check_algorithms";
 /// The integrity-check algorithm we compute (openEHR code-set entry).

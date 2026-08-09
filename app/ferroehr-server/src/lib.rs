@@ -452,16 +452,46 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
 
     // Opt-in DV_MULTIMEDIA externalization (the `multimedia` cargo feature; a
     // slim build refuses an enabled config loudly).
+    // A store that is only there to READ BACK already-offloaded blobs (the
+    // integration is off but an endpoint remains) must never stop the server
+    // starting: turning a feature off cannot be a way to break boot. So the
+    // failure is fatal only when the integration is enabled.
     #[cfg(feature = "multimedia")]
-    if let Some(engine) = ferroehr::extensions::multimedia::engine_from_config(&config.multimedia)
-        .context("initialising the multimedia object store")?
     {
-        tracing::info!(
-            bucket = %config.multimedia.bucket,
-            threshold_bytes = config.multimedia.threshold_bytes,
-            "DV_MULTIMEDIA externalization enabled"
-        );
-        service = service.with_multimedia(Arc::new(engine));
+        let engine = match ferroehr::extensions::multimedia::engine_from_config(&config.multimedia)
+        {
+            Ok(engine) => engine,
+            Err(e) if !config.multimedia.enabled => {
+                tracing::warn!(
+                    error = %e,
+                    "multimedia is disabled and its object store could not be built: \
+                     already-externalized content cannot be re-inlined, and a read that \
+                     asks for it will be refused rather than answered with the reference"
+                );
+                None
+            }
+            Err(e) => {
+                return Err(
+                    anyhow::Error::new(e).context("initialising the multimedia object store")
+                );
+            }
+        };
+        if let Some(engine) = engine {
+            if engine.offload_enabled() {
+                tracing::info!(
+                    bucket = %config.multimedia.bucket,
+                    threshold_bytes = config.multimedia.threshold_bytes,
+                    "DV_MULTIMEDIA externalization enabled"
+                );
+            } else {
+                tracing::info!(
+                    bucket = %config.multimedia.bucket,
+                    "DV_MULTIMEDIA externalization disabled; the configured store stays \
+                     readable so already-externalized content can still be served"
+                );
+            }
+            service = service.with_multimedia(Arc::new(engine));
+        }
     }
     #[cfg(not(feature = "multimedia"))]
     ferroehr::extensions::multimedia::require_disabled(&config.multimedia)
