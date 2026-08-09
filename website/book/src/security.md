@@ -593,6 +593,25 @@ rows.
 > guessing, and a cross-tenant access surfaces as an empty result set, never a
 > `403` that would leak the existence of another tenant's data.
 
+**On Kubernetes**, the same keys arrive through the chart's `config`
+passthrough:
+
+```yaml
+# values.yaml
+config:
+  tenancy:
+    enabled: true
+    claim: realm_access.tenant   # a dotted path is walked through nested claims
+```
+
+**Before you enable it:** your identity provider must actually put that claim
+in the token — with the claim absent, a request runs unscoped against the
+reserved default rather than guessing, so a misconfigured claim looks like
+"tenancy is doing nothing" rather than failing loudly. Do **not** set
+`config.tenancy.header` in production. **To turn it off**, set
+`enabled: false`; the server then behaves byte-for-byte as a single-tenant
+system.
+
 ## ATNA audit trail
 
 Separately from openEHR's own provenance, FerroEHR keeps an IHE ATNA

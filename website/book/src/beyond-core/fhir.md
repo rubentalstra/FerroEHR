@@ -111,3 +111,28 @@ off, no emitter task runs.
 > configured FHIR terminology provider, or a FHIR `AuditEvent` audit sink) asks
 > for it — see
 > [From source → Build features](../installation/from-source.md#build-features).
+
+### On Kubernetes
+
+Both switches are reachable through the chart's `config` passthrough
+([Any server setting is reachable](../installation/kubernetes.md#any-server-setting-is-reachable-not-only-the-ones-listed-here)).
+The outbound broker URL carries credentials, so it goes through
+`secrets.fhirOutboundUrl`, which the chart mounts as a file:
+
+```yaml
+# values.yaml
+config:
+  fhir:
+    api_enabled: true          # the read façade + mapping API
+    outbound:
+      enabled: true            # the emitter — carries PHI
+      exchange: ferroehr.fhir
+      tls: true
+secrets:
+  fhirOutboundUrl: "amqps://user:pass@broker.example:5671/%2f"
+```
+
+**Before you enable outbound:** a reachable broker, and a deliberate decision —
+it carries PHI off this system. **To turn either off**, set its switch to
+`false` and upgrade: the inbound routes go back to answering `404` and no
+emitter task runs.
