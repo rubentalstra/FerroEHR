@@ -180,15 +180,21 @@ you ask for them:
   curl -X PUT http://localhost:8333/openehr-multimedia
   ```
 
-  ```yaml
-  # 3. add these to the `ferroehr` service's environment: block, then re-up.
-  #    Exporting them in your shell has no effect — Compose passes through only
-  #    the variables this file names, and the multimedia keys are not among them.
-      FERROEHR__MULTIMEDIA__ENABLED: "true"
-      FERROEHR__MULTIMEDIA__ENDPOINT: http://seaweedfs:8333
-      FERROEHR__MULTIMEDIA__BUCKET: openehr-multimedia
-      FERROEHR__MULTIMEDIA__ALLOW_HTTP: "true"
+  ```shell
+  # 3. point the server at the gateway and re-up. The compose file passes the
+  #    whole FERROEHR__MULTIMEDIA__* set through from your shell, so these are
+  #    ordinary exports — no file to edit.
+  export FERROEHR__MULTIMEDIA__ENABLED=true
+  export FERROEHR__MULTIMEDIA__ENDPOINT=http://seaweedfs:8333
+  export FERROEHR__MULTIMEDIA__BUCKET=openehr-multimedia
+  export FERROEHR__MULTIMEDIA__ALLOW_HTTP=true    # dev only; production S3 is HTTPS
+  docker compose --profile s3 up -d --wait ferroehr seaweedfs
   ```
+
+  To turn it off again, `unset` them (or just `export
+  FERROEHR__MULTIMEDIA__ENABLED=false`) and re-up: an unset variable is removed
+  from the container's environment rather than passed as empty, so the server
+  falls back to its own default of `enabled = false`.
 
   Confirm the server took them with
   `curl -s -u ferroehr:ferroehr http://localhost:8080/management/env | jq .multimedia`
