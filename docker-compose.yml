@@ -176,6 +176,22 @@ services:
       # Measurement parity (logging equal and minimal on both SUTs):
       # measured comparison runs set warn on BOTH SUTs; default stays info.
       FERROEHR__LOG__FILTER: ${FERROEHR__LOG__FILTER:-info}
+      # Multimedia (the `s3` profile), passed through from YOUR shell. These are
+      # declared with no value on purpose: "If the value is not resolved, the
+      # variable is unset and is removed from the service container environment"
+      # (https://docs.docker.com/reference/compose-file/services/#environment).
+      # So an unset key reaches the server as ABSENT rather than as an empty
+      # string — which matters here, because an empty `endpoint` is a boot
+      # refusal, not a synonym for "unset". A `${VAR:-}` default would inject
+      # exactly that empty string into every quickstart.
+      FERROEHR__MULTIMEDIA__ENABLED:
+      FERROEHR__MULTIMEDIA__ENDPOINT:
+      FERROEHR__MULTIMEDIA__BUCKET:
+      FERROEHR__MULTIMEDIA__REGION:
+      FERROEHR__MULTIMEDIA__ALLOW_HTTP:
+      FERROEHR__MULTIMEDIA__THRESHOLD_BYTES:
+      FERROEHR__MULTIMEDIA__ACCESS_KEY_ID:
+      FERROEHR__MULTIMEDIA__SECRET_ACCESS_KEY:
     configs:
       # Auto-discovered at config search-order position 4 (no pointer needed).
       # The inline quickstart posture — see the `configs:` block at the bottom.
@@ -270,13 +286,12 @@ services:
   #      PUT into a missing bucket with 403 AccessDenied, so the first multimedia
   #      commit would fail 500 with a message that looks like a credentials
   #      problem and is not.
-  #   3. add these FOUR keys to the `ferroehr` service's environment: block above
-  #      and re-up. Exporting them in your shell does NOTHING — Compose passes
-  #      through only the variables this file names.
-  #        FERROEHR__MULTIMEDIA__ENABLED: "true"
-  #        FERROEHR__MULTIMEDIA__ENDPOINT: http://seaweedfs:8333
-  #        FERROEHR__MULTIMEDIA__BUCKET: openehr-multimedia
-  #        FERROEHR__MULTIMEDIA__ALLOW_HTTP: "true"   # dev only; prod S3 is HTTPS
+  #   3. export these FOUR variables and re-up — the `ferroehr` service passes
+  #      the whole FERROEHR__MULTIMEDIA__* set through from your shell:
+  #        export FERROEHR__MULTIMEDIA__ENABLED=true
+  #        export FERROEHR__MULTIMEDIA__ENDPOINT=http://seaweedfs:8333
+  #        export FERROEHR__MULTIMEDIA__BUCKET=openehr-multimedia
+  #        export FERROEHR__MULTIMEDIA__ALLOW_HTTP=true   # dev only; prod S3 is HTTPS
   #      Verify with `curl -s -u ferroehr:ferroehr localhost:8080/management/env`.
   # With no AWS keys the gateway runs in unauthenticated "allow-all" mode
   # (dev/test only). In production point FERROEHR__MULTIMEDIA__* at a real,

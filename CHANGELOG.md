@@ -496,6 +496,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **`FERROEHR__MULTIMEDIA__*` set in your shell now reaches the compose stack.**
+  Every other tunable the quickstart documents is a pass-through; the multimedia
+  keys were not, so the documented S3 recipe brought the stack up healthy with
+  multimedia silently off. The whole `FERROEHR__MULTIMEDIA__*` set is now
+  declared on the `ferroehr` service with no value, which is the Compose form
+  that forwards a variable when it is set and **removes it entirely when it is
+  not** — so an unset key stays absent rather than arriving as an empty string,
+  which for `endpoint` is the difference between "use the default" and a boot
+  refusal.
 - **The development Keycloak realm now mints tokens the server accepts.** The
   realm declared no audience mapper, so Keycloak emitted no `ferroehr` audience,
   while the same development configuration requires that audience — every bearer
