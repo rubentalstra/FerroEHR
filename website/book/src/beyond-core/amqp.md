@@ -123,6 +123,30 @@ environment variable, with `__` separating nested keys:
 > on the broker — if it is down, events buffer in the outbox and drain when it
 > recovers.
 
+### On Kubernetes
+
+The chart renders its `config` tree verbatim into `ferroehr.toml`, so every key
+above is reachable as `config.events.*` — there is no chart release to wait for
+(see [Any server setting is reachable](../installation/kubernetes.md#any-server-setting-is-reachable-not-only-the-ones-listed-here)).
+The broker URL carries credentials, so it goes through `secrets.eventsUrl`,
+which the chart mounts as a file and passes by path:
+
+```yaml
+# values.yaml
+config:
+  events:
+    enabled: true
+    exchange: ferroehr.events
+    tls: true
+secrets:
+  eventsUrl: "amqps://user:pass@broker.example:5671/%2f"
+```
+
+**Before you enable it:** a reachable broker, and — if you set `tls: true` — a
+broker certificate the pod trusts. **To turn it off**, set
+`config.events.enabled: false` and upgrade; the outbox stops draining and
+nothing else changes.
+
 ## Consuming events
 
 A minimal consumer declares nothing new — it binds a queue to the exchange and

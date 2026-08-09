@@ -1,3 +1,17 @@
+
+PREREQUISITE — the namespace must enforce Pod Security Admission.
+
+  This chart renders pods that satisfy the Kubernetes "restricted" profile, but
+  a profile is enforced by the NAMESPACE, not by the chart, and a chart cannot
+  label a namespace it does not own. Without the label the pods are compliant by
+  luck: nothing checks them and nothing fails if a future change regresses.
+
+    kubectl label --overwrite namespace {{ .Release.Namespace }} \
+      pod-security.kubernetes.io/enforce=restricted \
+      pod-security.kubernetes.io/enforce-version=latest
+
+  https://kubernetes.io/docs/concepts/security/pod-security-admission/
+
 ferroehr {{ .Chart.AppVersion }} has been deployed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
 
 A pure-Rust openEHR CDR (ITS-REST 1.1.0 + AQL 1.1).
@@ -23,7 +37,15 @@ Reach it locally:
 
 Health probes (public, always on):  /health | /health/liveness | /health/readiness
 {{ if and .Values.config.management.enabled .Values.metrics.enabled -}}
-Prometheus (public):     {{ .Values.config.management.base_path }}/prometheus  (scrape annotations added)
+{{ $prometheus := dig "endpoints" "prometheus" "off" .Values.config.management -}}
+{{ if eq $prometheus "off" -}}
+⚠  metrics.enabled=true added the scrape annotations, but
+   config.management.endpoints.prometheus is "off" — the endpoint is not mounted,
+   so every scrape 404s. Set it to public (or private/admin_only, with matching
+   scrape credentials).
+{{ else -}}
+Prometheus ({{ $prometheus }}):  {{ .Values.config.management.base_path }}/prometheus  (scrape annotations added)
+{{ end -}}
 {{ end -}}
 {{ if not .Values.config.management.enabled -}}
 NOTE: config.management.enabled=false — the ops-introspection surface (info,
@@ -46,6 +68,12 @@ as the unprivileged app role.
 {{ end }}
 Migrations are append-only DDL and MUST be applied by the `ferroehr_migrator`
 role, NOT the runtime app role.
+{{ if not .Values.migrations.runByMigratorRole -}}
+  ⚠  migrations.runByMigratorRole is false. That is your own marker that this
+     deployment does NOT separate the migrator and app roles — the chart cannot
+     verify it, and nothing above changes because of it. It is recorded here so
+     the posture is visible at install time rather than assumed.
+{{ end -}}
 {{ if .Values.migrations.job.enabled -}}
   Migration step: pre-install/pre-upgrade Job, DSN from Secret
   "{{ .Values.migrations.job.existingSecret }}" key "{{ .Values.migrations.job.existingSecretKey }}"  [OK]

@@ -9,6 +9,7 @@ description: >
   admin-UI subsystem, mirroring how spec-conformance-reviewer gates the
   CDR.
 tools: Read, Grep, Glob, Bash
+disallowedTools: Write, Edit, MultiEdit, NotebookEdit
 model: opus
 memory: project
 color: orange

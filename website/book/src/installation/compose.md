@@ -169,33 +169,33 @@ you ask for them:
   ```
 
 - **`seaweedfs`** (`--profile s3`) — an S3 gateway for large `DV_MULTIMEDIA`
-  externalization (development/test only). Three steps, and none of them can be
-  skipped:
+  externalization (development/test only). Point the server at it and bring the
+  profile up:
 
   ```shell
-  # 1. start the gateway beside the server
-  docker compose --profile s3 up -d --wait ferroehr seaweedfs
+  export FERROEHR__MULTIMEDIA__ENABLED=true
+  export FERROEHR__MULTIMEDIA__ENDPOINT=http://seaweedfs:8333
+  export FERROEHR__MULTIMEDIA__BUCKET=openehr-multimedia
+  export FERROEHR__MULTIMEDIA__ALLOW_HTTP=true    # dev only; production S3 is HTTPS
 
-  # 2. create the bucket — the gateway starts empty and nothing creates it
-  curl -X PUT http://localhost:8333/openehr-multimedia
+  docker compose --profile s3 up -d --wait ferroehr seaweedfs seaweedfs-init
   ```
 
-  ```yaml
-  # 3. add these to the `ferroehr` service's environment: block, then re-up.
-  #    Exporting them in your shell has no effect — Compose passes through only
-  #    the variables this file names, and the multimedia keys are not among them.
-      FERROEHR__MULTIMEDIA__ENABLED: "true"
-      FERROEHR__MULTIMEDIA__ENDPOINT: http://seaweedfs:8333
-      FERROEHR__MULTIMEDIA__BUCKET: openehr-multimedia
-      FERROEHR__MULTIMEDIA__ALLOW_HTTP: "true"
-  ```
+  The compose file passes the whole `FERROEHR__MULTIMEDIA__*` set through from
+  your shell, so there is no file to edit, and `seaweedfs-init` creates the
+  bucket — the gateway ships with none, and an S3 write into a missing bucket
+  answers `403 AccessDenied`, which reads as a credentials problem and is not
+  one.
+
+  To turn it off again, `unset` them (or just `export
+  FERROEHR__MULTIMEDIA__ENABLED=false`) and re-up: an unset variable is removed
+  from the container's environment rather than passed as empty, so the server
+  falls back to its own default of `enabled = false`.
 
   Confirm the server took them with
   `curl -s -u ferroehr:ferroehr http://localhost:8080/management/env | jq .multimedia`
   — `"enabled": true` and a non-empty `endpoint` mean the wiring is right.
-  Without the bucket, the first composition carrying a large `DV_MULTIMEDIA`
-  fails `500` and the log reports `Access Denied`, which looks like a
-  credentials problem and is not. In production, point the multimedia settings
+  In production, point the multimedia settings
   at a real, credentialed, HTTPS S3 endpoint instead; see
   [S3 multimedia](../beyond-core/s3-multimedia.md).
 
@@ -287,23 +287,30 @@ no value is supplied the identity falls back to the workspace version with an
 
 A further Compose file adds a full local telemetry stack — an OTLP collector,
 Prometheus, Tempo, Loki, and Grafana with a provisioned service-overview
-dashboard. Like the Keycloak overlay it is standalone: the dashboard and
-scrape configuration travel inline in the file, so downloading it beside
-`docker-compose.yml` is enough:
+dashboard. Like the Keycloak overlay it is standalone: the dashboard travels
+inline in the file, so downloading it beside `docker-compose.yml` is enough:
 
 ```shell
 docker compose -f docker-compose.yml -f docker-compose.observability.yml up
 # Grafana → http://localhost:3000
 ```
 
-The overlay reconfigures the server for that stack: it exports traces over
-OTLP/gRPC (`FERROEHR__TELEMETRY__OTLP_ENDPOINT`), switches stdout to JSON lines
+The overlay reconfigures the server for that stack: it exports **traces and
+metrics** over OTLP/gRPC (`FERROEHR__TELEMETRY__OTLP_ENDPOINT` plus
+`FERROEHR__TELEMETRY__METRICS_PUSH=true`), switches stdout to JSON lines
 (`FERROEHR__LOG__FORMAT=json`), and enables the management surface on its own
-internal port 9464 (`FERROEHR__MANAGEMENT__ENABLED`, `FERROEHR__MANAGEMENT__PORT`)
-with `info`, `metrics`, and `prometheus` set to `public` so the bundled
-Prometheus can scrape `/management/prometheus` without credentials. That port is
-only reachable on the Compose network — Grafana's 3000 is the sole published
-port. Every variable uses the same `FERROEHR__…` grammar as the rest of the
+internal port 9464 (`FERROEHR__MANAGEMENT__ENABLED`, `FERROEHR__MANAGEMENT__PORT`).
+That port is only reachable on the Compose network — Grafana's 3000 is the sole
+published port.
+
+Metrics are **pushed, not scraped**, and that is a property of the bundled
+image rather than a preference: `grafana/otel-lgtm` runs Prometheus with a
+config file carrying no `scrape_configs` at all, and receives metrics over OTLP
+from its own collector. A scrape job dropped into that image is read by nothing,
+which is what an earlier version of this overlay did — every metric panel was
+empty with no error anywhere. The server pushes every metric family it has, so
+`/management/prometheus` and the collector always agree; the endpoint stays
+reachable on the Compose network for anyone who wants to compare the two. Every variable uses the same `FERROEHR__…` grammar as the rest of the
 [configuration reference](configuration.md); a single-underscore spelling is
 rejected at startup, not ignored.
 

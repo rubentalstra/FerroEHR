@@ -68,7 +68,7 @@
       },
       {
         "id": "78453e11-8080-4e37-9cda-d92b83f22512",
-        "name": "default-roles-cdr-core-sanity-check",
+        "name": "default-roles-ferroehr",
         "description": "${role_default-roles}",
         "composite": true,
         "composites": {
@@ -436,7 +436,7 @@
   "groups": [],
   "defaultRole": {
     "id": "78453e11-8080-4e37-9cda-d92b83f22512",
-    "name": "default-roles-cdr-core-sanity-check",
+    "name": "default-roles-ferroehr",
     "description": "${role_default-roles}",
     "composite": true,
     "clientRole": false,
@@ -559,7 +559,7 @@
         "UPDATE_PROFILE"
       ],
       "realmRoles": [
-        "default-roles-cdr-core-sanity-check"
+        "default-roles-ferroehr"
       ],
       "clientRoles": {
         "ferroehr": [
@@ -812,18 +812,14 @@
           }
         },
         {
-          "id": "fed7572e-0aac-4c54-a866-3299db0f5844",
-          "name": "tenant_id",
+          "name": "ferroehr-audience",
           "protocol": "openid-connect",
-          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "protocolMapper": "oidc-audience-mapper",
           "consentRequired": false,
           "config": {
-            "claim.value": "ca3e0ff6-5282-4d18-b860-8d28d7ac1b86",
-            "userinfo.token.claim": "true",
-            "id.token.claim": "true",
+            "included.client.audience": "ferroehr",
             "access.token.claim": "true",
-            "claim.name": "tnt",
-            "access.tokenResponse.claim": "false"
+            "id.token.claim": "false"
           }
         }
       ],
@@ -832,8 +828,7 @@
         "acr",
         "profile",
         "roles",
-        "email",
-        "hip-scope-ca3e0ff6-5282-4d18-b"
+        "email"
       ],
       "optionalClientScopes": [
         "address",
@@ -1441,61 +1436,6 @@
           }
         }
       ]
-    },
-    {
-      "id": "hip-scope-ca3e0ff6-5282-4d18-b",
-      "name": "hip-scope-ca3e0ff6-5282-4d18-b",
-      "protocol": "openid-connect",
-      "attributes": {
-        "include.in.token.scope": "true"
-      },
-      "protocolMappers": [
-        {
-          "id": "42bdcf9a-e3a8-4933-8e28-e7874818427d",
-          "name": "selected-tenant-uuid-mapper",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-usermodel-attribute-mapper",
-          "consentRequired": false,
-          "config": {
-            "userinfo.token.claim": "true",
-            "user.attribute": "selected_tenant_uuid",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
-            "claim.name": "set",
-            "jsonType.label": "String"
-          }
-        },
-        {
-          "id": "a3cf1113-7d2e-4224-866c-e3fdba34436b",
-          "name": "tenant-uuid-mapper",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-usermodel-attribute-mapper",
-          "consentRequired": false,
-          "config": {
-            "userinfo.token.claim": "true",
-            "user.attribute": "tenant_uuid",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
-            "claim.name": "tnt",
-            "jsonType.label": "String"
-          }
-        },
-        {
-          "id": "98f2e3b0-76d1-4c72-bf44-f0de4706a877",
-          "name": "organization-uuid-mapper",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-usermodel-attribute-mapper",
-          "consentRequired": false,
-          "config": {
-            "userinfo.token.claim": "true",
-            "user.attribute": "organization_uuid",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
-            "claim.name": "org",
-            "jsonType.label": "String"
-          }
-        }
-      ]
     }
   ],
   "defaultDefaultClientScopes": [
@@ -1504,8 +1444,7 @@
     "email",
     "roles",
     "web-origins",
-    "acr",
-    "hip-scope-ca3e0ff6-5282-4d18-b"
+    "acr"
   ],
   "defaultOptionalClientScopes": [
     "offline_access",

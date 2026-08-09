@@ -173,6 +173,35 @@ A code that *is* resolved and turns out not to be a member of the bound value
 set is a different matter: that is a real constraint violation and the
 composition is rejected under either setting.
 
+### On Kubernetes
+
+Providers and routes are maps, so they are supplied as chart values rather than
+env — which the `config` passthrough renders verbatim into `ferroehr.toml`
+([Any server setting is reachable](../installation/kubernetes.md#any-server-setting-is-reachable-not-only-the-ones-listed-here)):
+
+```yaml
+# values.yaml
+config:
+  terminology:
+    api_enabled: true
+    external:
+      enabled: true
+      fail_on_error: true      # fail-closed: a server error rejects the commit
+      providers:
+        default:
+          type: fhir
+          url: https://tx.example.org/fhir
+secrets:
+  # only when a provider uses OAuth2; keyed by client name
+  terminologyOauth2ClientSecrets: {}
+```
+
+**Before you enable it:** a reachable FHIR R4B terminology server, and a
+decision on `fail_on_error` — fail-closed rejects commits while the server is
+unreachable, fail-open accepts them unvalidated. **To turn it off**, set
+`config.terminology.external.enabled: false`; validation falls back to the
+in-process bundle and no external call is made.
+
 ## Terminology in AQL
 
 Query authors can use the AQL `TERMINOLOGY()` function to constrain a match to a

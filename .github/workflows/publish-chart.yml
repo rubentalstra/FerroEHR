@@ -279,65 +279,33 @@ jobs:
       # the rendered defaults carry `server.limits` and `db.statement_timeout_ms`,
       # and that image's own `config check` refuses the file. A chart that cannot
       # deploy the image it selects is not published.
-      - name: The selected image must accept the chart's rendered defaults
+      # The last gate before a chart is published: the image it selects must
+      # actually boot on what the chart renders. `deploy/helm/ci/boot-check.sh`
+      # is the single implementation (the `chart-boot` CI lane runs the same
+      # script against the tree-built image). This step used to carry a second,
+      # hand-rolled copy of that replay, and the two drifted: the copy wrote a
+      # placeholder into every file-borne secret, so a value-shaped boot rule —
+      # the RFC 8725 32-byte HMAC floor, an Argon2id PHC password hash — was
+      # judged against `x` rather than the configured secret, it skipped
+      # `valueFrom.secretKeyRef` environment entirely, and it rendered only
+      # `default-values.yaml` while the chart publishes three overlays. The
+      # script mounts each secret at its REAL rendered value, resolves
+      # secretKeyRef, and enumerates every committed overlay.
+      - name: The selected image must accept every committed values overlay
         env:
-          IMAGE: ${{ steps.judge.outputs.image }}
+          FERROEHR_IMAGE: ${{ steps.judge.outputs.image }}
           WHY: ${{ steps.judge.outputs.why }}
         run: |
           set -euo pipefail
-          image="$IMAGE"
-          echo "judging against ${image} — ${WHY}"
-          if ! docker pull -q "$image" >/dev/null; then
-            echo "::error::${image} could not be pulled, so the chart could not be judged against anything. It was selected as ${WHY}."
+          echo "judging against ${FERROEHR_IMAGE} — ${WHY}"
+          if ! docker pull -q "$FERROEHR_IMAGE" >/dev/null; then
+            echo "::error::${FERROEHR_IMAGE} could not be pulled, so the chart could not be judged against anything. It was selected as ${WHY}."
             exit 1
           fi
-          helm template ferroehr "$CHART_DIR" -f deploy/helm/ci/default-values.yaml \
-            --show-only templates/configmap.yaml \
-            | sed -n '/ferroehr.toml: |/,$p' | sed '1d;s/^    //' > rendered.toml
-          test -s rendered.toml
-
-          # The TOML is only half of what the chart hands the server: it also sets
-          # FERROEHR__* environment, and the strict boot-time sweep REFUSES an
-          # unknown one. Checking the file alone missed exactly that — measured on
-          # a live cluster, the chart's `FERROEHR__DB__URL_FILE` (added when the
-          # server gained `db.url_file`) crash-loops a 3.17.3 pod with
-          # `unknown configuration key url_file` while the rendered TOML checks out
-          # clean. So the env the Deployment declares is replayed here too, with a
-          # real file behind every `*_FILE` path.
-          mkdir -p envfiles
-          : > envargs
-          helm template ferroehr "$CHART_DIR" -f deploy/helm/ci/default-values.yaml \
-            --show-only templates/deployment.yaml \
-            | awk '/^            - name: FERROEHR__/ {n=$3} /^              value: / && n {v=$2; gsub(/"/,"",v); print n"="v; n=""}' \
-            > declared-env
-          cat declared-env
-          while IFS='=' read -r name value; do
-            [ -n "$name" ] || continue
-            case "$name" in
-              *_FILE)
-                f="envfiles/$(basename "$value")"
-                # A DSN-shaped file for the DSN, a token for everything else; the
-                # point is that the KEY is understood, not the value's content.
-                case "$name" in
-                  *DB__URL_FILE) printf 'postgres://u:p@db:5432/ferroehr' > "$f" ;;
-                  *) printf 'x' > "$f" ;;
-                esac
-                printf -- '-e\n%s=/etc/ferroehr-secrets/%s\n' "$name" "$(basename "$value")" >> envargs ;;
-              *) printf -- '-e\n%s=%s\n' "$name" "$value" >> envargs ;;
-            esac
-          done < declared-env
-          # No FERROEHR__DB__URL fallback when the chart supplies a file route.
-          grep -q 'DB__URL_FILE' declared-env || printf -- '-e\nFERROEHR__DB__URL=postgres://u:p@db:5432/ferroehr\n' >> envargs
-          # shellcheck disable=SC2046
-          if ! docker run --rm -v "$PWD/rendered.toml:/etc/ferroehr/ferroehr.toml:ro" \
-               -v "$PWD/envfiles:/etc/ferroehr-secrets:ro" \
-               $(tr '\n' ' ' < envargs) \
-               --entrypoint /usr/local/bin/ferroehr "$image" config check > check.log 2>&1; then
-            echo "::error::the chart's default configuration is not accepted by ${image} (${WHY}) — a plain 'helm install' would crash-loop."
-            cat check.log
+          if ! bash deploy/helm/ci/boot-check.sh; then
+            echo "::error::${FERROEHR_IMAGE} (${WHY}) does not accept a committed values overlay — that install would crash-loop."
             exit 1
           fi
-          echo "${image} accepts the chart's rendered default configuration and declared environment."
 
       # The per-release Artifact Hub annotations, derived from CHANGELOG.md so
       # there is one changelog rather than two (#2107). Injected at package time

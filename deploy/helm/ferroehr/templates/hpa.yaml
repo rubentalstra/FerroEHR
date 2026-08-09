@@ -1,4 +1,12 @@
 {{- if .Values.autoscaling.enabled }}
+{{- /* Both targets at 0 renders `metrics:` empty. The API accepts that, the
+       controller can compute nothing from it, and the Deployment omits
+       `replicas` whenever autoscaling is on — so the workload silently drops to
+       the API default of one replica and never scales back. Refused here rather
+       than discovered as a capacity incident. */}}
+{{- if not (or .Values.autoscaling.targetCPUUtilizationPercentage .Values.autoscaling.targetMemoryUtilizationPercentage) }}
+{{- fail "autoscaling.enabled=true with every target utilisation at 0: the HorizontalPodAutoscaler would carry no metric at all. It installs, scales nothing, and because the Deployment omits `replicas` under autoscaling the workload falls to the API default of 1. Set autoscaling.targetCPUUtilizationPercentage and/or autoscaling.targetMemoryUtilizationPercentage." }}
+{{- end }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -12,6 +20,15 @@ spec:
     name: {{ include "ferroehr.fullname" . }}
   minReplicas: {{ .Values.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+  {{- with .Values.autoscaling.behavior }}
+  {{- /* Omitted when empty rather than restated: the documented defaults
+         already scale up immediately and hold a 300s stabilization window
+         before scaling down, which is the conservative direction for a
+         clinical API
+         (https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/#default-behavior). */}}
+  behavior:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   metrics:
     {{- if .Values.autoscaling.targetCPUUtilizationPercentage }}
     - type: Resource

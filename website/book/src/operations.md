@@ -297,6 +297,38 @@ The telemetry environment variables:
 > database pool, AQL latency, validation failures, audit health) and a starter
 > alert pack — point the server at it with the two OTLP variables above.
 
+**On Kubernetes**, the same keys arrive through the chart's `config`
+passthrough, and the metrics half has a second switch that is easy to miss:
+
+```yaml
+# values.yaml
+config:
+  telemetry:
+    otlp_endpoint: http://otel-collector.observability:4317
+    environment: production
+    traces_sample_ratio: 0.1
+    metrics_push: true
+  management:
+    enabled: true
+    endpoints:
+      prometheus: admin_only   # the scrape endpoint is off until you name it
+metrics:
+  enabled: true                # adds the prometheus.io/* pod annotations
+  serviceMonitor:
+    enabled: false             # or true, with the Prometheus Operator CRDs installed
+```
+
+`metrics.enabled` only adds the scrape **annotations**; the endpoint itself is
+opened by `config.management.endpoints.prometheus`. Both are needed for an
+annotation-discovering Prometheus, and neither is needed if you push over OTLP
+instead. **To turn telemetry off**, drop `otlp_endpoint` — the tracing layer is
+not installed at all when it is unset.
+
+> [!WARNING]
+> With the chart's default-deny egress policy on, add the collector to
+> `networkPolicy.egress.rules` (port 4317). An OTLP exporter that cannot reach
+> its collector fails **silently** — no traces, no error.
+
 ## The admin API: physical deletion
 
 Normal openEHR deletes are *logical* — history is retained. The admin API is
@@ -584,14 +616,18 @@ depend on it.
 | `FERROEHR__MANAGEMENT__ENABLED` | `false` | enable the management surface |
 | `FERROEHR__MANAGEMENT__BASE_PATH` | `/management` | base path for the surface |
 | `FERROEHR__MANAGEMENT__PORT` | unset (main listener) | serve management on its own port |
-| `FERROEHR__MANAGEMENT__ACCESS_DEFAULT` | `admin_only` | default access level |
+| `FERROEHR__MANAGEMENT__ENDPOINTS__<NAME>` | `off` | the access level for ONE endpoint — `off`, `private`, `admin_only` or `public`. There is no global default beside it: an endpoint you do not name is not mounted and answers `404`. |
 
 The ops endpoints:
 
-| Endpoint | Purpose | Default access |
+Every one of them ships `off` — nothing is mounted until you name the endpoint
+and the level it should answer at. The right-hand column is the level to choose,
+not a default you already have.
+
+| Endpoint | Purpose | Level to give it |
 |---|---|---|
 | `GET {base}/info` | build, version, the active `spec_profile`, and the openEHR specification versions that profile selects | `admin_only` |
-| `GET {base}/prometheus` | Prometheus text exposition | `admin_only` (re-expose to the scraper via network policy) |
+| `GET {base}/prometheus` | Prometheus text exposition | `admin_only`, or `public` only when the port is not reachable outside the cluster — a `public` endpoint is served OUTSIDE authentication |
 | `GET {base}/metrics` | JSON registry view | `admin_only` |
 | `GET {base}/env` | effective configuration, with secrets redacted | `admin_only` |
 | `GET`/`POST`/`DELETE` `{base}/loggers` | read and change the log level at runtime | `admin_only` |

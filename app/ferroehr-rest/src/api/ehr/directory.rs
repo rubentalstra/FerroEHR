@@ -66,6 +66,10 @@ pub(super) async fn run(
             // ETag + Last-Modified on the read too (overview §"ETag and
             // Last-Modified": both SHOULD accompany versioned resources);
             // no Location on GET (overview §Location).
+            // A FOLDER's DV_MULTIMEDIA is externalized by the same generic
+            // versioning path as a COMPOSITION's, so it re-inlines here.
+            let mut resp = resp;
+            resp.body = super::expand_multimedia_if_requested(&state, q, resp.body).await?;
             let mut out = negotiate::respond_rm::<Folder>(h, ok, &resp.body, "folder");
             if let Some(meta) = &resp.meta {
                 negotiate::set_versioning_headers(&mut out, meta);
@@ -240,6 +244,10 @@ pub(super) async fn run(
             }
             // ETag + Last-Modified on the version read (overview §"ETag and
             // Last-Modified"); no Location on GET (overview §Location).
+            // A FOLDER's DV_MULTIMEDIA is externalized by the same generic
+            // versioning path as a COMPOSITION's, so it re-inlines here.
+            let mut resp = resp;
+            resp.body = super::expand_multimedia_if_requested(&state, q, resp.body).await?;
             let mut out = negotiate::respond_rm::<Folder>(h, ok, &resp.body, "folder");
             if let Some(meta) = &resp.meta {
                 negotiate::set_versioning_headers(&mut out, meta);

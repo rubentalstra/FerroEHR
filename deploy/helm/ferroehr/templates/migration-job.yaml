@@ -22,6 +22,8 @@ metadata:
     {{- include "ferroehr.labels" . | nindent 4 }}
     app.kubernetes.io/component: migration
   annotations:
+    kubernetes.io/description: >-
+      Applies the schema migrations as ferroehr_migrator — a DIFFERENT credential from the runtime DSN — before the server rolls. A Helm pre-install/pre-upgrade hook, so a failed migration fails the release.
     helm.sh/hook: pre-install,pre-upgrade
     helm.sh/hook-weight: "-5"
     helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
@@ -29,6 +31,28 @@ spec:
   backoffLimit: {{ .Values.migrations.job.backoffLimit }}
   ttlSecondsAfterFinished: {{ .Values.migrations.job.ttlSecondsAfterFinished }}
   activeDeadlineSeconds: {{ .Values.migrations.job.activeDeadlineSeconds }}
+  {{- /* A pod killed by a DRAIN or a preemption did not fail the migration —
+         it never got to run it. Without this rule that eviction spends one of
+         `backoffLimit` retries, so a cluster doing ordinary maintenance during
+         a release can exhaust the budget and fail the whole upgrade with no
+         migration error anywhere in the logs.
+
+         `Ignore` is the action documented for exactly this case, and it is
+         safe here for the reason the docs give: the pod is recreated, so the
+         migration still runs — only the retry COUNTER is left alone
+         (https://kubernetes.io/docs/tasks/job/pod-failure-policy/).
+         KEP-3329 (keps/sig-apps/3329-retriable-and-non-retriable-failures)
+         marks this stable in v1.31, below the kubeVersion floor.
+
+         Deliberately no `onExitCodes` rule: `db migrate` exits non-zero for a
+         wrong DSN and for a database that is merely not up yet, and those want
+         opposite answers. Retrying the second is the whole point of
+         `backoffLimit`, and the first is bounded by `activeDeadlineSeconds`. */}}
+  podFailurePolicy:
+    rules:
+      - action: Ignore
+        onPodConditions:
+          - type: DisruptionTarget
   template:
     metadata:
       labels:
@@ -50,6 +74,9 @@ spec:
       # land inside the server's reserved FERROEHR_ namespace and the strict
       # boot-time env sweep then refuses to start.
       enableServiceLinks: false
+      {{- if not .Values.hostUsers }}
+      {{- include "ferroehr.hostUsers" . | nindent 6 }}
+      {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:

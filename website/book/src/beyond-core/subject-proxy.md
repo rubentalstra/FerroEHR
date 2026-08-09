@@ -129,6 +129,28 @@ Requests are sent with `Accept: application/fhir+json`; a timeout, error
 status, or malformed body becomes an unavailable sample, which is what
 triggers the frame's fallback.
 
+### On Kubernetes
+
+Systems are a map, so they are supplied as chart values and rendered verbatim
+into `ferroehr.toml`
+([Any server setting is reachable](../installation/kubernetes.md#any-server-setting-is-reachable-not-only-the-ones-listed-here)):
+
+```yaml
+# values.yaml
+config:
+  subject_proxy:
+    systems:
+      pas:
+        base_url: https://fhir.example.org/r4
+        request_timeout_ms: 10000
+```
+
+**Before you enable it:** a reachable FHIR R4B server per system, and — if the
+chart's default-deny egress policy is on — a `networkPolicy.egress.rules` entry
+that admits it, or the calls fail as timeouts. **To turn it off**, remove the
+systems: with none configured every FHIR frame is rejected, which is the
+fail-closed default.
+
 ## Manual variables
 
 A variable with `is_manual: true` has no frame: its values are **pushed** in

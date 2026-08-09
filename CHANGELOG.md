@@ -18,6 +18,57 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Every optional integration now documents how to enable it on Kubernetes.**
+  Nine chapters — change events, FHIR connectors, terminology servers, Subject
+  Proxy, S3 multimedia, the admin console, observability, version signing and
+  multi-tenancy — described only the environment-variable and Compose paths, so
+  an operator deploying with the chart had no documented way to switch any of
+  them on, even though the chart's `config` passthrough has always reached every
+  key. Each now carries a values snippet, the prerequisites stated **before** the
+  reader hits a boot failure (a bucket that must exist, a claim the identity
+  provider must issue, an egress rule an exporter needs), and how to turn it off
+  again.
+- **`authz.rbac.ehr_access_default` — object-level default-deny, as one setting.**
+  An EHR that carries no `ACCESS_CONTROL_SETTINGS` was reachable by any caller
+  the coarse layers admitted, and the only way to change that was to author a
+  settings object *per EHR, through a CONTRIBUTION commit per record* — so the
+  safer posture was reachable only by the most laborious path. Setting this to
+  `restricted` makes a setting-less EHR reachable only by `authz.rbac.admin_role`.
+  The default stays `open`, because changing it changes who can read existing
+  records; explicit per-EHR settings win over it in both directions. The admin
+  carve-out is deliberate — a plain deny would leave such a record unreachable by
+  the operator who would author the settings that fix it.
+- **Every pod the Helm chart deploys now runs in its own user namespace**
+  (`hostUsers: false`, chart `6.0.0`). Container UIDs are mapped onto an
+  unprivileged host range, so a container escape arrives as a host user that owns
+  nothing — verified on a live v1.36.1 node, where the pod's `/proc/self/uid_map`
+  reads `0 838860800 65536` while the process still sees uid 65532. This is the
+  reason the chart's Kubernetes floor moves to 1.36 (see *Changed*). Set
+  `hostUsers: true` to opt out on nodes whose runtime cannot map UIDs; there, the
+  pod refuses to start rather than downgrading silently.
+- **The chart spreads replicas across nodes by default.** A soft `maxSkew: 1`
+  constraint over `kubernetes.io/hostname` means two replicas prefer two nodes,
+  so one node failure is no longer a total outage. It is `ScheduleAnyway`, so a
+  single-node cluster still schedules. Supplying `topologySpreadConstraints`
+  replaces it wholesale.
+- **`supplementalGroupsPolicy: Strict`** on every pod: the process gets only the
+  groups the manifest names, so a group baked into an image cannot widen file
+  access.
+- **The migration Job no longer counts a drain as a migration failure.** A
+  `podFailurePolicy` ignores pod failures caused by disruption, so ordinary
+  cluster maintenance during a release cannot exhaust `backoffLimit` and fail the
+  upgrade with no migration error in any log.
+- **New chart values:** `service.trafficDistribution` (zone-local routing, off by
+  default), `autoscaling.behavior` (scaling policies passed through),
+  `adminUi.terminationGracePeriodSeconds` and `adminUi.preStopSleepSeconds`. The
+  console also gains a startup probe, a `preStop` pause and the server's full
+  security posture.
+- **The Helm chart can deploy the admin console.** `adminUi.enabled` renders the
+  console as its own Deployment/Service/ServiceAccount, with an optional Ingress
+  and a NetworkPolicy that confines its egress to the CDR and DNS — the console
+  is a REST client of the CDR by mandate, so that is now enforced rather than
+  documented. Off by default, and off renders nothing.
+
 - **The Helm chart validates your values file** (`values.schema.json`, chart
   `5.0.0`, unchanged in `5.0.1`). `helm install`, `upgrade`, `lint` and
   `template` now refuse a values
@@ -208,6 +259,33 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **`probes.exec` is removed** (breaking, for anyone who set it). It ran
+  `ferroehr healthcheck` for liveness, readiness *and* startup, passed no
+  `--url`, and that flag defaults to the openEHR status document rather than a
+  health endpoint — so readiness never touched the database and a pod with a
+  dead database reported Ready and took clinical traffic. The httpGet probes
+  that were already the default are correct and are now the only path:
+  `/health/liveness` for liveness and startup, `/health/readiness` for
+  readiness.
+- **The chart now requires Kubernetes 1.36 or newer** (`kubeVersion:
+  ">=1.36.0-0"`, breaking; chart `6.0.0`). It is a compatibility floor: 1.36 is
+  the release where the newest field the chart renders (`hostUsers`) became
+  stable, which is what lets every field render unconditionally with no version
+  gates left. `Chart.yaml` carries the field-to-KEP table that is its evidence.
+- The PodDisruptionBudget sets `unhealthyPodEvictionPolicy: AlwaysAllow`, the
+  documented recommendation. With the previous default a node drain waited for
+  pods to become healthy that were unhealthy *because* of the drain, so it never
+  completed. It and the `preStop` sleep action are now rendered unconditionally
+  rather than version-gated, since both are stable below the new floor.
+- **The chart's render gate covers the admin console**, as a fourth overlay with
+  its own golden render — the per-container restricted-profile check exists
+  precisely because a second workload is where a posture gets lost, so it has to
+  see one. Two assertions ride along: pod isolation must be identical across
+  every workload of a release, and a multi-replica Deployment must carry a spread
+  or affinity rule.
+- The chart's pinned Helm version moves to 4.2.3 (current release), with the
+  golden renders regenerated on it.
+
 - **Metric names change: `/management/prometheus` now derives its suffixes.**
   The server had two metrics systems and now has one — OpenTelemetry, feeding
   both the Prometheus pull surface and the OTLP push from a single meter
@@ -378,13 +456,176 @@ workflow refuses a tag that has no matching section here.
 
 ### Removed
 
+- **`authz.rbac.management_access` and `management.access_default` are gone**
+  (breaking, for a configuration that set either). Both were inert: the
+  management surface is gated per endpoint, and neither key was ever consulted
+  by the code that gates it. That was the dangerous kind of dead setting —
+  someone setting `management_access = "admin_only"` to lock the surface down
+  had not locked anything down, and the security chapter presented it as the
+  gate. **`[management.endpoints]` is now the single authority**, one level per
+  endpoint, with no global default beside it: an endpoint you do not name is
+  `off` and is not mounted. A test pins that the levels are independent, so no
+  endpoint's level can leak onto its neighbour.
+
+  If you set either key, delete it — the server refuses unknown configuration
+  keys at boot, so this fails loudly rather than silently. The behaviour you had
+  is unchanged, because neither key did anything.
+
 - `openehr-rm`'s `ehr-extract` cargo feature, which gated nothing (the EHR Extract modules were always compiled), and `openehr-its`'s empty `bmm` placeholder module — a published module that promised future surface nobody could use.
 
 
 - The generated `openehr-*` spec crates no longer carry a crate-level `SPEC_VERSION` constant: a multi-generation crate has no single implemented spec version, and a fixed crate-root pin would contradict a configured non-current generation. The ONLY pin authority is the emitted `Generation` enum (per-variant `const fn spec_version()`; the derived `Default` variant is the current generation) — the generation modules carry no version constant either; the hand-written single-spec crates (`openehr-its`, `openehr-query`, `openehr-adl`) keep their literal constant.
 
 
+### Security
+
+- The admin console's `Content-Security-Policy` no longer allows inline scripts.
+  `script-src` is now `'self' 'wasm-unsafe-eval' 'nonce-…'`, where the nonce is
+  freshly generated for every response and stamped on the only inline script the
+  console emits — Leptos's hydration bootstrap and its resource-serialization
+  chunks. An injected inline script no longer runs. `style-src` keeps
+  `'unsafe-inline'`, because the console's component library creates its
+  stylesheets in the browser through the DOM without a nonce attribute; adding a
+  nonce there would suppress the inline allowance under CSP Level 3 and leave the
+  console unstyled, so the allowance stays with its reason recorded rather than
+  being traded for a policy that looks stricter and works worse.
+
+- The error-body hygiene check now also covers Service Model faults
+  (`SmError::exception` and `exception`-coded call statuses), which are a
+  second route to a `500` response body it previously did not inspect. Three
+  boot-time terminology and subject-proxy failures were rewritten to keep the
+  underlying diagnostic out of the message and carry it as an error cause
+  instead, so it reaches the server log and never a client.
+
+- Every one of the 20 GitHub Actions referenced by the build, test, release and publish pipelines is now pinned to a full commit SHA instead of a mutable tag, so a retagged or compromised upstream release can no longer change what runs against the tokens that publish this project's releases, container images and crates. Each pin carries its human-readable version in a trailing comment and was verified to belong to the named repository.
+- 38 of the 40 repository checkouts in CI no longer leave the job's API token in `.git/config` for the rest of the job (`persist-credentials: false`), so a later step — a third-party action, a build script, an uploaded artifact — can no longer pick it up and push with it. The two exceptions are the documentation jobs that genuinely use git against the remote, and both are now annotated with the reason.
+- All nine workflows now start from `permissions: {}` and grant each job only what that job actually uses, so write access to releases, packages, issues or Pages exists in the four jobs that publish and nowhere else. Previously a single workflow-level grant applied to every job in the file — `contents: write` to all of `release.yml`, `packages: write` to all of `containers.yml` — and `codeql.yml` declared nothing at all and inherited the repository default.
+- The release tarballs and the crates.io uploads are now built with no compile cache at all, so a published artifact can only contain bytes produced from the tag being released. Both lanes were silently restoring one: the toolchain action they use enables caching by default, which the release job's own comment already assumed it did not.
+- The per-architecture release tarballs are now built from the exact commit the release notes were read from, resolved once and passed on as a SHA, instead of each job resolving the release tag separately. A tag that moved between the two jobs could previously publish assets that did not match the release they were attached to.
+- The build pipeline is now itself statically analysed on every pull request: a new `zizmor` gate audits the workflow definitions, and CodeQL analyses them as source alongside the Rust code. The properties above therefore cannot silently regress — an unpinned action, a checkout keeping its credential without a recorded reason, or a context value spliced into a shell command each fail the build.
+
+- **The PGP signing private key is no longer world-readable inside the pod.**
+  The `secrets` volume was projected at `0440`, but the sibling `config` volume
+  carried no mode and so defaulted to `0644` — and that volume holds every
+  `config.files` entry, whose documented use includes the PGP signing private
+  key (`signing.key_path`), mutual-TLS PEMs and a JWKS blob, plus `ferroehr.toml`
+  itself when the configuration holds a secret the chart cannot route out. Now
+  `0440`, matching the secrets volume. Verified on a live cluster: the applied
+  `defaultMode` is 288 (0440) and both server pods read their configuration and
+  became Ready.
+
 ### Fixed
+
+- **Multimedia committed inside an `EHR_STATUS` or a `FOLDER` can now be read
+  back.** Externalization is applied by the versioning path every versioned
+  object commits through, but re-inlining was wired to the COMPOSITION read
+  alone — so a large `DV_MULTIMEDIA` committed in an EHR status left the
+  database, sat in the object store, and **no API call returned it**;
+  `?expand_multimedia=true` on that read was an undeclared parameter and was
+  ignored. All nine reads that can serve externalized content now honour it (the
+  bare COMPOSITION / EHR_STATUS / FOLDER reads and the VERSION envelopes that
+  wrap them), and the OpenAPI document declares it on exactly those operations —
+  pinned by a test, so the declarations and the handlers cannot drift apart
+  again.
+- **Turning multimedia externalization off no longer strands the blobs already
+  offloaded.** `?expand_multimedia=true` against an already-externalized record
+  was **silently ignored** once `multimedia.enabled` went back to `false`: the
+  read answered `200` with the compact `s3://` reference and no indication that
+  the expansion had not happened. `enabled` now governs **new offloads only** —
+  the fetch-and-verify path stays available as long as an `endpoint` is
+  configured, so content this server externalized stays readable. With no store
+  reachable at all, an expansion request now **fails** instead of quietly
+  answering with the reference.
+- **`FERROEHR__MULTIMEDIA__*` set in your shell now reaches the compose stack.**
+  Every other tunable the quickstart documents is a pass-through; the multimedia
+  keys were not, so the documented S3 recipe brought the stack up healthy with
+  multimedia silently off. The whole `FERROEHR__MULTIMEDIA__*` set is now
+  declared on the `ferroehr` service with no value, which is the Compose form
+  that forwards a variable when it is set and **removes it entirely when it is
+  not** — so an unset key stays absent rather than arriving as an empty string,
+  which for `endpoint` is the difference between "use the default" and a boot
+  refusal.
+- **The development Keycloak realm now mints tokens the server accepts.** The
+  realm declared no audience mapper, so Keycloak emitted no `ferroehr` audience,
+  while the same development configuration requires that audience — every bearer
+  token it issued was refused `401 InvalidAudience`, and no user of that realm
+  could ever produce an accepted one. The server was right in both halves (RFC
+  7519 §4.1.3); the realm was wrong. An `oidc-audience-mapper` on the `ferroehr`
+  client fixes it, verified live: the access token now carries `aud: ferroehr`.
+  The realm also carried identifiers from the deployment it was exported
+  from — a hardcoded tenant claim naming a foreign UUID, a foreign client scope,
+  and a default role named after another product — all removed.
+
+- **`migrations.runByMigratorRole` now does what its documentation says.** The
+  key was described as "rendered into NOTES for the operator" and no template
+  read it, so the chart, its generated README and the book all described a
+  marker that did nothing. It now surfaces at install time when set to false,
+  stating plainly that the chart cannot verify the claim.
+
+- **A stock `helm install` no longer appears to succeed and then crash-loops.**
+  `config.auth.enabled` defaults to true and the server requires a mechanism with
+  it (RFC 9110 §11.6.1 — a 401 challenge must name a scheme the server
+  implements), so the default values produced a pod that exited at boot with the
+  reason visible only in its log. The chart now refuses to **render** that
+  combination, naming both ways to configure authentication and the explicit
+  development-only opt-out. The default was deliberately *not* changed to
+  disable authentication: that would hand a fresh install an unauthenticated CDR
+  serving patient data, which is a worse outcome than a loud failure.
+
+- **The CDR Service no longer load-balances openEHR traffic into the admin
+  console.** A Service selector is a subset match, and the console's pods carried
+  the server's `app.kubernetes.io/name` plus a `component` label — so they matched
+  the server's own Service, whose `targetPort: http` then resolved to the
+  console's port 3000. With the console enabled, a share of API requests were
+  answered by a web UI. The same overlap inflated the PodDisruptionBudget's
+  `disruptionsAllowed` from 1 to 2, enough for a node drain to evict both server
+  replicas at once. The console now carries its own `app.kubernetes.io/name`.
+  Verified on a live cluster: the CDR Service's endpoints are exactly the two
+  server pods and the PDB reports `expectedPods=2`.
+
+- **An Ingress with a path but no `pathType` is no longer rejected by the API
+  server.** `pathType` is required on `networking.k8s.io/v1` but optional in the
+  chart's schema; it now defaults to `Prefix`.
+
+- **A Service with custom `annotations` no longer loses its description.** The
+  template emitted two `annotations` mappings under one `metadata`, so the later
+  one won and `kubernetes.io/description` silently disappeared.
+
+- **An autoscaler with every metric disabled is refused instead of installed
+  inert.** Setting both HPA targets to 0 rendered an HPA with no metrics, which
+  the API accepts and the controller can never act on — while the Deployment
+  omits `replicas` under autoscaling, so a fresh install silently ran a single
+  replica.
+
+- **The install notes no longer advertise a Prometheus endpoint that is off.**
+  The endpoint was reported as public whenever metrics were enabled, ignoring
+  `config.management.endpoints.prometheus`, which defaults to `off`.
+
+- **The chart no longer promises drain-safety it cannot deliver on older
+  clusters.** `PodDisruptionBudget.unhealthyPodEvictionPolicy` was rendered
+  unconditionally under a `kubeVersion` floor of `>=1.25.0-0`, but the field is
+  alpha in 1.26, beta in 1.27 and stable only in 1.31 (KEP-3017). Below 1.27 the
+  API server prunes it or leaves it behind a disabled gate, so the install
+  succeeded while the policy silently did not apply. It is now version-gated and
+  rendered only where it takes effect; clusters below 1.27 get the documented API
+  default (`IfHealthyBudget`) visibly rather than an ignored setting.
+
+- **The chart-publish gate now judges every values overlay, at real secret
+  values.** The tag lane carried its own copy of the boot replay, which wrote a
+  placeholder into every file-borne secret (so the 32-byte HMAC floor and the
+  Argon2id password-hash parse were checked against the placeholder, not the
+  configured secret), rendered only `default-values.yaml`, and skipped
+  `valueFrom.secretKeyRef` environment entirely. It now calls
+  `deploy/helm/ci/boot-check.sh`, which mounts each secret at its rendered value,
+  resolves `secretKeyRef`, and boots every committed overlay — and the replay
+  logic exists in exactly one place.
+
+- **`boot-check.sh` no longer hands one workload's environment to another
+  image.** With the admin console added, the script collected `env:` from every
+  rendered Deployment, so the console's `FERROEHR_ADMIN__*` variables (a separate
+  binary with its own config root) reached the CDR image, whose strict sweep
+  correctly refused them and reported a crash-loop for a deployment that runs
+  fine. Environment collection is scoped to the CDR Deployment.
 
 - **The Helm chart's shipped values overlays now produce configurations the
   server accepts.** All three rendered, linted and matched their goldens while
@@ -525,33 +766,6 @@ workflow refuses a tag that has no matching section here.
 - Configuring both a symmetric secret (`auth.oidc.hmac_secret`/`_file`) and a static JWKS (`auth.oidc.jwks_json`/`_file`) is now a boot-time configuration error naming both keys. Previously the server silently used the symmetric secret and ignored the JWKS.
 - An unreachable or unresponsive OAuth2/OIDC issuer no longer stalls bearer-token requests or hammers the issuer with outbound connections. The client that fetches the issuer's discovery document and JWKS now carries explicit timeouts, and a failed fetch is remembered briefly, so bearer requests during an issuer outage are refused fast instead of each one opening a fresh connection and waiting for the operating system's TCP timeout. Three new `[auth.oidc]` keys tune this (they apply only when signing keys come from discovery — that is, when neither `hmac_secret` nor `jwks_json` is set): `connect_timeout_ms` (default `3000`), `request_timeout_ms` (default `5000`), and `negative_cache_ttl_seconds` (default `10`, `0` disables). Successfully fetched keys keep their existing five-minute lifetime, and recovery is automatic once the negative entry expires.
 
-
-### Security
-
-- The admin console's `Content-Security-Policy` no longer allows inline scripts.
-  `script-src` is now `'self' 'wasm-unsafe-eval' 'nonce-…'`, where the nonce is
-  freshly generated for every response and stamped on the only inline script the
-  console emits — Leptos's hydration bootstrap and its resource-serialization
-  chunks. An injected inline script no longer runs. `style-src` keeps
-  `'unsafe-inline'`, because the console's component library creates its
-  stylesheets in the browser through the DOM without a nonce attribute; adding a
-  nonce there would suppress the inline allowance under CSP Level 3 and leave the
-  console unstyled, so the allowance stays with its reason recorded rather than
-  being traded for a policy that looks stricter and works worse.
-
-- The error-body hygiene check now also covers Service Model faults
-  (`SmError::exception` and `exception`-coded call statuses), which are a
-  second route to a `500` response body it previously did not inspect. Three
-  boot-time terminology and subject-proxy failures were rewritten to keep the
-  underlying diagnostic out of the message and carry it as an error cause
-  instead, so it reaches the server log and never a client.
-
-- Every one of the 20 GitHub Actions referenced by the build, test, release and publish pipelines is now pinned to a full commit SHA instead of a mutable tag, so a retagged or compromised upstream release can no longer change what runs against the tokens that publish this project's releases, container images and crates. Each pin carries its human-readable version in a trailing comment and was verified to belong to the named repository.
-- 38 of the 40 repository checkouts in CI no longer leave the job's API token in `.git/config` for the rest of the job (`persist-credentials: false`), so a later step — a third-party action, a build script, an uploaded artifact — can no longer pick it up and push with it. The two exceptions are the documentation jobs that genuinely use git against the remote, and both are now annotated with the reason.
-- All nine workflows now start from `permissions: {}` and grant each job only what that job actually uses, so write access to releases, packages, issues or Pages exists in the four jobs that publish and nowhere else. Previously a single workflow-level grant applied to every job in the file — `contents: write` to all of `release.yml`, `packages: write` to all of `containers.yml` — and `codeql.yml` declared nothing at all and inherited the repository default.
-- The release tarballs and the crates.io uploads are now built with no compile cache at all, so a published artifact can only contain bytes produced from the tag being released. Both lanes were silently restoring one: the toolchain action they use enables caching by default, which the release job's own comment already assumed it did not.
-- The per-architecture release tarballs are now built from the exact commit the release notes were read from, resolved once and passed on as a SHA, instead of each job resolving the release tag separately. A tag that moved between the two jobs could previously publish assets that did not match the release they were attached to.
-- The build pipeline is now itself statically analysed on every pull request: a new `zizmor` gate audits the workflow definitions, and CodeQL analyses them as source alongside the Rust code. The properties above therefore cannot silently regress — an unpinned action, a checkout keeping its credential without a recorded reason, or a context value spliced into a shell command each fail the build.
 
 ## [3.17.3] - 2026-08-05
 

@@ -122,10 +122,11 @@ pub struct ManagementConfig {
     /// API listener — so production can keep it off the public listener entirely.
     #[serde(default)]
     pub port: Option<u16>,
-    /// The global default access level (documented fallback; the concrete
-    /// per-endpoint level in [`Self::endpoints`] wins).
-    pub access_default: AccessLevel,
-    /// Per-endpoint access levels.
+    /// Per-endpoint access levels — the SINGLE authority for this surface.
+    ///
+    /// NOTE: there is deliberately no global default beside this. An endpoint
+    /// that names no level is `off`, so it is never mounted and answers 404;
+    /// a surface this privileged opens one endpoint at a time, by name.
     #[serde(default)]
     pub endpoints: EndpointLevels,
     /// Limits for the on-demand CPU profiler (`endpoints.flamegraph`).
@@ -139,7 +140,6 @@ impl Default for ManagementConfig {
             enabled: false,
             base_path: "/management".to_owned(),
             port: None,
-            access_default: AccessLevel::AdminOnly,
             endpoints: EndpointLevels::default(),
             profiling: ProfilingConfig::default(),
         }
@@ -156,7 +156,6 @@ mod tests {
         assert!(!c.enabled);
         assert_eq!(c.base_path, "/management");
         assert!(c.port.is_none());
-        assert_eq!(c.access_default, AccessLevel::AdminOnly);
         assert_eq!(c.endpoints.prometheus, AccessLevel::Off);
         assert_eq!(c.endpoints.info, AccessLevel::Off);
         assert_eq!(c.endpoints.flamegraph, AccessLevel::Off);

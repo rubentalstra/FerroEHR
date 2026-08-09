@@ -325,8 +325,12 @@ impl FerroEhrService {
     }
 
     /// The distinct externalized-blob keys referenced by a SET of EHRs' nodes
-    /// (empty when externalization is disabled) — one read for the whole
+    /// (empty when no object store is reachable) — one read for the whole
     /// chunk. Our own extension — no openEHR spec governs multimedia offload.
+    ///
+    /// NOTE: reachability, not `multimedia.enabled` — a deployment that stopped
+    /// externalizing still has blobs to collect, and skipping them here would
+    /// orphan every one of them in the bucket.
     #[cfg(feature = "multimedia")]
     async fn collect_blob_keys_for(&self, ehr_ids: &[EhrId]) -> Result<Vec<String>, ServiceError> {
         let Some(engine) = &self.multimedia else {

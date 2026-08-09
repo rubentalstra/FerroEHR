@@ -13,7 +13,6 @@ ITS-REST 1.1.0 &nbsp;·&nbsp; AQL 1.1 &nbsp;·&nbsp; RM 1.2.0 **+ 1.1.0** &nbsp;
 [![Containers](https://github.com/rubentalstra/FerroEHR/actions/workflows/containers.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/FerroEHR/actions/workflows/containers.yml)
 [![CodeQL](https://github.com/rubentalstra/FerroEHR/actions/workflows/codeql.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/FerroEHR/actions/workflows/codeql.yml)
 [![GitHub Release](https://img.shields.io/github/release/rubentalstra/FerroEHR.svg?logo=github)](https://github.com/rubentalstra/FerroEHR/releases/latest)
-[![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/rubentalstra/FerroEHR?utm_source=oss&utm_medium=github&utm_campaign=rubentalstra%2FFerroEHR&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)](https://coderabbit.ai)
 
 [![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fferroehr%2Fbadges%2Fcoverage.json)](https://github.com/rubentalstra/FerroEHR/actions/workflows/ci.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/rubentalstra/FerroEHR/badge)](https://scorecard.dev/viewer/?uri=github.com/rubentalstra/FerroEHR)
@@ -515,8 +514,7 @@ lines: `--version` pins the chart, `--set image.tag=` pins the server. Your valu
 file is checked against the chart's `values.schema.json` before anything is
 applied. The chart and the images are published with signed keyless provenance
 (`gh attestation verify oci://ghcr.io/rubentalstra/charts/ferroehr:<chart-version> -R rubentalstra/FerroEHR`),
-and the chart additionally carries a keyless `cosign` signature from chart `5.0.1`
-onward; signing landed in the 3.17.4 cycle, so tags built before it carry none.
+and the chart additionally carries a keyless `cosign` signature.
 
 See the [Kubernetes chapter](https://ferroehr.eu/docs/latest/installation/kubernetes.html)
 and the [documentation website](https://ferroehr.eu/)

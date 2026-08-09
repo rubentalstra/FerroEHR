@@ -1,4 +1,58 @@
 ---
+# Source: ferroehr/templates/admin-ui.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ferroehr-admin-ui
+  labels:
+    helm.sh/chart: ferroehr-6.0.0
+    app.kubernetes.io/name: ferroehr-admin-ui
+    app.kubernetes.io/instance: ferroehr
+    app.kubernetes.io/version: "3.17.3"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: ferroehr
+    app.kubernetes.io/component: admin-ui
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ferroehr-admin-ui
+      app.kubernetes.io/instance: ferroehr
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    -
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    # The CDR, by pod selector — the console's ONLY application destination.
+    #
+    # This selects the server's pods exactly: the console carries its own
+    # `app.kubernetes.io/name`, so the two label sets no longer overlap and
+    # this rule cannot admit console→console traffic.
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ferroehr
+              app.kubernetes.io/instance: ferroehr
+      ports:
+        - protocol: TCP
+          port: 8080
+    # DNS. Without this the Service name above does not resolve and the console
+    # fails in a way that looks like the CDR being down.
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+---
 # Source: ferroehr/templates/networkpolicy.yaml
 # Default-deny ingress for the ferroehr pods, admitting traffic ONLY to the
 # API port (and the management port when it runs on its own listener). Every
@@ -57,6 +111,21 @@ spec:
       app.kubernetes.io/name: ferroehr
       app.kubernetes.io/instance: ferroehr
 
+---
+# Source: ferroehr/templates/admin-ui.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ferroehr-admin-ui
+  labels:
+    helm.sh/chart: ferroehr-6.0.0
+    app.kubernetes.io/name: ferroehr-admin-ui
+    app.kubernetes.io/instance: ferroehr
+    app.kubernetes.io/version: "3.17.3"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: ferroehr
+    app.kubernetes.io/component: admin-ui
+automountServiceAccountToken: false
 ---
 # Source: ferroehr/templates/serviceaccount.yaml
 apiVersion: v1
@@ -146,7 +215,7 @@ data:
     
         [[auth.basic.users]]
           password_hash_file = "/etc/ferroehr-secrets/auth.basic.users.clinician.password_hash"
-          roles = ["USER"]
+          roles = ["ADMIN"]
           username = "clinician"
     
     [authz]
@@ -233,6 +302,32 @@ data:
     
 
 ---
+# Source: ferroehr/templates/admin-ui.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: ferroehr-admin-ui
+  annotations:
+    kubernetes.io/description: >-
+      In-cluster address for the FerroEHR admin console. The console is a REST client of the CDR and holds no data of its own; it is the human-facing surface, so this is the Service an Ingress normally publishes.
+  labels:
+    helm.sh/chart: ferroehr-6.0.0
+    app.kubernetes.io/name: ferroehr-admin-ui
+    app.kubernetes.io/instance: ferroehr
+    app.kubernetes.io/version: "3.17.3"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: ferroehr
+    app.kubernetes.io/component: admin-ui
+spec:
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
+      appProtocol: http
+  selector:
+    app.kubernetes.io/name: ferroehr-admin-ui
+    app.kubernetes.io/instance: ferroehr
+---
 # Source: ferroehr/templates/service.yaml
 apiVersion: v1
 kind: Service
@@ -259,6 +354,113 @@ spec:
     app.kubernetes.io/name: ferroehr
     app.kubernetes.io/instance: ferroehr
 
+---
+# Source: ferroehr/templates/admin-ui.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ferroehr-admin-ui
+  annotations:
+    kubernetes.io/description: >-
+      The FerroEHR admin console: a Leptos SSR web UI that consumes the CDR strictly over ITS-REST. It never reaches the database, which the console NetworkPolicy enforces rather than assumes.
+  labels:
+    helm.sh/chart: ferroehr-6.0.0
+    app.kubernetes.io/name: ferroehr-admin-ui
+    app.kubernetes.io/instance: ferroehr
+    app.kubernetes.io/version: "3.17.3"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: ferroehr
+    app.kubernetes.io/component: admin-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ferroehr-admin-ui
+      app.kubernetes.io/instance: ferroehr
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ferroehr-admin-ui
+        app.kubernetes.io/instance: ferroehr
+    spec:
+      serviceAccountName: ferroehr-admin-ui
+      automountServiceAccountToken: false
+      # Same reason as the server's: the kubelet's per-Service link variables
+      # land in the reserved `FERROEHR_` namespace for any Service named
+      # `ferroehr*`, and a strict boot-time sweep then refuses to start
+      # (https://kubernetes.io/docs/concepts/services-networking/service/#environment-variables).
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 20
+      hostUsers: false
+      securityContext:
+        fsGroup: 65532
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 65532
+        runAsNonRoot: true
+        runAsUser: 65532
+        seccompProfile:
+          type: RuntimeDefault
+        supplementalGroupsPolicy: Strict
+      containers:
+        - name: admin-ui
+          image: "ghcr.io/rubentalstra/ferroehr-admin-ui:3.17.3"
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65532
+            seccompProfile:
+              type: RuntimeDefault
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            # The CDR is addressed by its in-cluster Service — the console never
+            # talks to the database, and the egress policy below enforces that.
+            - name: FERROEHR_ADMIN__CDR__BASE_URL
+              value: "http://ferroehr:8080"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+            failureThreshold: 24
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 5
+          resources:
+            limits:
+              memory: 512Mi
+            requests:
+              cpu: 50m
+              memory: 128Mi
+          volumeMounts:
+            # `readOnlyRootFilesystem: true` leaves nowhere to write, so the
+            # writable scratch the runtime needs is an explicit emptyDir.
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
 ---
 # Source: ferroehr/templates/deployment.yaml
 apiVersion: apps/v1
@@ -294,7 +496,7 @@ spec:
         # secret values. Hashing the ConfigMap template alone missed the last two,
         # so a rotated passphrase or an edited Cedar policy propagated into the
         # volume while every pod kept running on the value it read at startup.
-        checksum/config: 9f7825f9e384ed704dfb70f4c080135ed3f0f1711849db0e0c8dae5644089559
+        checksum/config: 3ed2ca67998d454ccfab2d584d9977ec667edf296007f95eb35106ec324b59e4
       labels:
         app.kubernetes.io/name: ferroehr
         app.kubernetes.io/instance: ferroehr
