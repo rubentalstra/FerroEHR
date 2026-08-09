@@ -1636,3 +1636,61 @@ async fn the_document_declares_its_own_identity() {
         undeclared.join("\n")
     );
 }
+
+/// `expand_multimedia` is declared on exactly the reads whose handlers honour
+/// it — no more, no less.
+///
+/// The defect this pins was live: externalization is applied by the generic
+/// versioning path, so a `DV_MULTIMEDIA` leaves the database from a
+/// COMPOSITION, an `EHR_STATUS` or a FOLDER alike, while re-inlining was wired to
+/// the COMPOSITION read alone. Content committed inside an `EHR_STATUS` therefore
+/// sat in the object store with no API that returned it, and the parameter that
+/// should have fetched it was silently ignored as undeclared.
+///
+/// A declaration list is the only half a document can check. It catches the
+/// direction that actually bit — a handler honouring a parameter nobody
+/// documented, or a document promising one no handler reads.
+#[tokio::test]
+async fn expand_multimedia_is_declared_on_every_read_that_can_serve_externalized_media() {
+    // Every read that can return externalized content: the bare resources and
+    // the VERSION envelopes that wrap them.
+    let expected: Vec<&str> = vec![
+        "/ehr/{ehr_id}/composition/{uid_based_id}",
+        "/ehr/{ehr_id}/directory",
+        "/ehr/{ehr_id}/directory/{version_uid}",
+        "/ehr/{ehr_id}/ehr_status",
+        "/ehr/{ehr_id}/ehr_status/{version_uid}",
+        "/ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version",
+        "/ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version/{version_uid}",
+        "/ehr/{ehr_id}/versioned_ehr_status/version",
+        "/ehr/{ehr_id}/versioned_ehr_status/version/{version_uid}",
+    ];
+
+    let doc = served_document().await;
+    let mut declared: Vec<String> = operations(&doc)
+        .into_iter()
+        .filter(|(_, method, op)| {
+            method == "get"
+                && documented_params(op, "query")
+                    .iter()
+                    .any(|p| p == "expand_multimedia")
+        })
+        .map(|(path, _, _)| path)
+        .collect();
+    declared.sort();
+    declared.dedup();
+
+    // The served document carries the deployment's base path on every route.
+    let expected: Vec<String> = {
+        let mut e: Vec<String> = expected
+            .into_iter()
+            .map(|p| format!("/ferroehr/rest/openehr/v1{p}"))
+            .collect();
+        e.sort();
+        e
+    };
+    assert_eq!(
+        declared, expected,
+        "the reads declaring `expand_multimedia` drifted from the reads that honour it"
+    );
+}
