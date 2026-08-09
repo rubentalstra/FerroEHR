@@ -167,7 +167,11 @@ impl FerroEhrService {
         // Keep the served bytes for the in-memory representation, unless media
         // externalization is on (then the fresh read reflects the offloaded form).
         #[cfg(feature = "multimedia")]
-        let repr_body = self.multimedia.is_none().then(|| body.clone());
+        let repr_body = self
+            .multimedia
+            .as_ref()
+            .is_none_or(|e| !e.offload_enabled())
+            .then(|| body.clone());
         #[cfg(not(feature = "multimedia"))]
         let repr_body = Some(body.clone());
         let mut tx = self.pool.begin().await?;
@@ -294,7 +298,11 @@ impl FerroEhrService {
         )?;
         let ctx = CommitEnv::signing_ctx(self);
         #[cfg(feature = "multimedia")]
-        let repr_body = self.multimedia.is_none().then(|| body.clone());
+        let repr_body = self
+            .multimedia
+            .as_ref()
+            .is_none_or(|e| !e.offload_enabled())
+            .then(|| body.clone());
         #[cfg(not(feature = "multimedia"))]
         let repr_body = Some(body.clone());
         let mut tx = self.pool.begin().await?;
