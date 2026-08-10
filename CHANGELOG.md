@@ -18,6 +18,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Releases are archived on Zenodo with a citable DOI.** `.zenodo.json` is
+  generated from `CITATION.cff` so the two cannot disagree — necessary because
+  Zenodo ignores `CITATION.cff` entirely whenever a `.zenodo.json` is present,
+  and a deposit's metadata is immutable once its DOI exists. It adds what the
+  citation file cannot express: which openEHR specifications a release is
+  derived from, and where the published crates live.
+
 - **A fuzz target for the identifier readers.** `OBJECT_VERSION_ID` and its
   siblings are parsed straight from the `{version_uid}` URL path parameter —
   before any body is read, any content type negotiated, or any authorization

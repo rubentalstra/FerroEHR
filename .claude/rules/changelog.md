@@ -24,6 +24,10 @@ optional:
   `cargo check`, + Helm `appVersion`, golden renders via
   `deploy/helm/validate.sh --update`, + `CITATION.cff` `version` and
   `date-released` (the `citation-guard` CI job enforces the version match),
+  then re-render `.zenodo.json` (`bash scripts/render/zenodo-json.sh`, checked
+  by the same job) — it is GENERATED, never hand-edited, because Zenodo ignores
+  `CITATION.cff` completely whenever a `.zenodo.json` exists
+  (<https://help.zenodo.org/docs/github/describe-software/zenodo-json/>),
   + the default image tags in `docker-compose.yml` — the `ghcr.io/…:X.Y.Z`
   fallbacks the standalone quickstart pulls, guarded by
   `scripts/checks/compose-image-tags.sh` / the `compose-version-guard` CI
@@ -50,6 +54,12 @@ optional:
   re-publish a chart version — bump it:** an OCI tag is MUTABLE, so `helm push`
   would silently replace it with a different digest, and the immutability the
   guards assume exists only because the lane enforces it.
+- **The tag also produces an archived artifact.** Zenodo is connected to this
+  repository, so publishing a release makes Zenodo take the zipball and mint a
+  DOI from `.zenodo.json`. That deposit is immutable — whatever the metadata
+  says at publish time is what the DOI carries — so the metadata is verified
+  BEFORE the cut, never after. A badge cites the CONCEPT DOI; a version DOI
+  freezes on whichever release was current the day it was added.
 - **After the tag:** close the `vX.Y.Z` milestone (`gh api … milestones/N
   -f state=closed`) and make sure the NEXT milestone exists so triage always
   has a target. The milestone's closed-issue list + the changelog section
