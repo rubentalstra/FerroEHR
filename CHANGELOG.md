@@ -538,6 +538,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The release lane would have shipped a release with no binaries.** GitHub
+  release immutability is now enabled, which freezes a release's assets the
+  moment it is published — and the binaries, SBOMs and Sigstore bundles are
+  attached by a job that runs *after* the release is created. The release is now
+  created as a draft, its assets are attached, the expected set is verified, and
+  only then is it published, so nothing can be locked out.
+
 - **Three list-typed configuration settings could not be set from the
   environment at all.** `signing.retired_key_paths`,
   `smart.endpoints.capabilities` and every `authz.abac.policy.<kind>.parameters`

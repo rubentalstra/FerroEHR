@@ -54,6 +54,19 @@ optional:
   re-publish a chart version — bump it:** an OCI tag is MUTABLE, so `helm push`
   would silently replace it with a different digest, and the immutability the
   guards assume exists only because the lane enforces it.
+- **A published release is IMMUTABLE.** GitHub release immutability is enabled:
+  once a release is published, its assets and its tag cannot be modified. The
+  release lane therefore creates the release as a **draft**, attaches the
+  binaries, SBOMs and Sigstore bundles from the per-arch matrix, checks the
+  expected asset set is complete, and only then publishes it — the freeze
+  happens last, on purpose. The recovery path for a bad cut is **a new patch
+  version**, never a retag.
+
+  Do not confuse this with the chart lane one section above: a **GHCR OCI tag
+  is still mutable**, which is exactly why `publish-chart.yml` refuses to
+  overwrite a published chart version. GitHub releases are immutable by the
+  platform; container tags are immutable only because our lane enforces it.
+
 - **The tag also produces an archived artifact.** Zenodo is connected to this
   repository, so publishing a release makes Zenodo take the zipball and mint a
   DOI from `.zenodo.json`. That deposit is immutable — whatever the metadata
