@@ -102,7 +102,7 @@ probes_observability
 # Everything #2178 asks for that this run does NOT do. Each entry is a probe
 # somebody still has to write; none of them is silently absent.
 uncovered "kubernetes platform" \
-  "this harness drives compose only; the chart is exercised by the k8s-test skill by hand"
+  "a separate harness covers it — scripts/deploy-probe-k8s.sh, recorded in kubernetes.json"
 uncovered "admin console journeys (#2164)" \
   "scripts/ui-e2e.sh already drives these with a real browser; folding it in is the next step"
 uncovered "FHIR, events, tenancy, terminology" \
