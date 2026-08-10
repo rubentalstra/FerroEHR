@@ -82,6 +82,7 @@ compose_up ferroehr seaweedfs seaweedfs-init
 probes_shipped_config_boots
 probes_multimedia
 probes_management
+probes_multimedia_restart
 probes_multimedia_off
 probes_multimedia_broken
 probes_health_broken
