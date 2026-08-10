@@ -24,9 +24,14 @@ name: Fuzz
 
 on:
   pull_request:
+    # This list IS the harnesses' dependency set — every `path =` entry in
+    # fuzz/Cargo.toml — so adding a dependency there means adding a line here.
+    # An omission does not fail; it silently stops guarding, which is the shape
+    # of failure this whole lane exists to stop repeating.
     paths:
       - "fuzz/**"
       - "crates/openehr-adl/**"
+      - "crates/openehr-base/**"
       - "crates/openehr-its/**"
       - "crates/openehr-query/**"
       - "crates/openehr-rm/**"
@@ -80,6 +85,23 @@ jobs:
         with:
           workspaces: fuzz
           key: build
+
+      # The trigger list above claims to be the harnesses' dependency set. A
+      # claim with no check is a wish, and this particular wish going stale is
+      # invisible: the job simply stops running on the crate that broke it.
+      - name: The trigger paths still cover every harness dependency
+        run: |
+          deps=$(grep -oE '^openehr-[a-z0-9-]+ = \{ path' fuzz/Cargo.toml \
+                 | cut -d' ' -f1 | sort)
+          paths=$(grep -oE 'crates/openehr-[a-z0-9-]+/\*\*' .github/workflows/fuzz.yml \
+                 | sed -E 's|crates/([^/]*)/\*\*|\1|' | sort -u)
+          if [ "$deps" != "$paths" ]; then
+            echo "the pull_request paths filter and fuzz/Cargo.toml disagree:"
+            diff <(echo "$deps") <(echo "$paths") || true
+            echo "add the missing crate to the paths filter in this workflow"
+            exit 1
+          fi
+          echo "trigger paths cover every harness dependency"
 
       # Same explicit `--target` as the campaign, and for the same reason:
       # cargo-fuzz otherwise builds for the triple IT was built for (musl),
