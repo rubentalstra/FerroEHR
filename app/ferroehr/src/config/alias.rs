@@ -97,6 +97,17 @@ pub(super) const LIST_KEYS: &[&str] = &[
     "smart.endpoints.scopes_supported",
     "smart.endpoints.capabilities",
     "signing.retired_key_paths",
+    // `authz.abac.policy` is a MAP, so the env grammar reaches into it the way
+    // it reaches `subject_proxy.systems.<name>`. The resource kinds are the
+    // closed set the enforcement point consults (`ResourceKind`), so each is
+    // named rather than pattern-matched — `with_list_parse_key` takes exact
+    // paths, and a wildcard here would be a second grammar to keep true.
+    "authz.abac.policy.ehr.parameters",
+    "authz.abac.policy.ehr_status.parameters",
+    "authz.abac.policy.composition.parameters",
+    "authz.abac.policy.contribution.parameters",
+    "authz.abac.policy.query.parameters",
+    "authz.abac.policy.directory.parameters",
 ];
 
 /// The `FERROEHR__<SECTION>__<TAIL>` env name for a dotted config key path —

@@ -495,6 +495,7 @@ mod tests {
     use assert_fs::prelude::*;
 
     use super::*;
+    use crate::config::authz::AbacParam;
 
     /// Build an injected env map from `(key, value)` pairs.
     fn env(pairs: &[(&str, &str)]) -> HashMap<String, String> {
@@ -644,6 +645,32 @@ mod tests {
         assert_eq!(
             c.smart.endpoints.capabilities,
             vec!["launch-ehr".to_owned()]
+        );
+    }
+
+    /// A list nested under a MAP key is addressable from the environment too,
+    /// so it needs registration like any other — `authz.abac.policy.<kind>` is
+    /// a map, not an array of tables, and `subject_proxy.systems.<name>` above
+    /// already proves the env grammar reaches into one.
+    #[test]
+    fn a_list_under_a_map_key_parses_from_env() {
+        let c = assemble_ok(
+            None,
+            &env(&[
+                ("FERROEHR__AUTHZ__ABAC__POLICY__EHR__NAME", "ehr-policy"),
+                (
+                    "FERROEHR__AUTHZ__ABAC__POLICY__EHR__PARAMETERS",
+                    "patient,template",
+                ),
+            ]),
+            &[],
+        );
+        let rule = c.authz.abac.policy.get("ehr").expect("the ehr policy rule");
+        assert_eq!(rule.name, "ehr-policy");
+        assert_eq!(
+            rule.parameters,
+            vec![AbacParam::Patient, AbacParam::Template],
+            "a policy's parameter list must be reachable from the environment"
         );
     }
 
