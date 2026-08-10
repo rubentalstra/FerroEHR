@@ -53,6 +53,8 @@ PROBE_OUT="${PROBE_OUT:-docs/conformance/deployment/compose.json}"
 . scripts/deploy-probes/signing.sh
 # shellcheck source=scripts/deploy-probes/observability.sh
 . scripts/deploy-probes/observability.sh
+# shellcheck source=scripts/deploy-probes/signing_pgp.sh
+. scripts/deploy-probes/signing_pgp.sh
 
 cleanup() {
   if [ "$KEEP_UP" -eq 0 ]; then
@@ -87,6 +89,7 @@ probes_shipped_config_boots
 probes_multimedia
 probes_management
 probes_signing
+probes_signing_pgp
 probes_multimedia_restart
 probes_multimedia_off
 probes_multimedia_broken
@@ -99,8 +102,6 @@ probes_observability
 # somebody still has to write; none of them is silently absent.
 uncovered "kubernetes platform" \
   "this harness drives compose only; the chart is exercised by the k8s-test skill by hand"
-uncovered "signing in PGP mode (#2163)" \
-  "digest mode and tamper detection are probed; the PGP path needs key material mounted as the docs instruct"
 uncovered "admin console journeys (#2164)" \
   "scripts/ui-e2e.sh already drives these with a real browser; folding it in is the next step"
 uncovered "FHIR, events, tenancy, terminology" \
