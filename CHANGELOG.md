@@ -516,6 +516,22 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Three list-typed configuration settings could not be set from the
+  environment at all.** `signing.retired_key_paths`,
+  `smart.endpoints.capabilities` and every `authz.abac.policy.<kind>.parameters`
+  are list-typed but were missing from the loader's list registry, so an env
+  value was not merely mis-split — it was **refused at boot**: `invalid type:
+  string "…", expected a sequence`. All are now registered, and tests assert
+  that every env-settable list key parses from one value, splits on several, and
+  that a list nested under a map key works too.
+
+  `signing.retired_key_paths` is the key that carries PGP key rotation: it holds
+  the retired PUBLIC keys that keep versions signed before a rotation
+  verifiable. Until now it was reachable only from a TOML file, so any
+  environment-driven deployment — Compose, plain Docker, a chart's `extraEnv` —
+  could not configure key rotation at all, and found out only when the server
+  refused to start.
+
 - **Multimedia committed inside an `EHR_STATUS` or a `FOLDER` can now be read
   back.** Externalization is applied by the versioning path every versioned
   object commits through, but re-inlining was wired to the COMPOSITION read

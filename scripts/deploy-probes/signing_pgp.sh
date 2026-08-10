@@ -15,27 +15,34 @@
 
 PGP_PASS="probe-passphrase-not-a-secret"
 
-# Generate an armored secret key + its passphrase file, echoing the directory
-# that holds them. Empty output means gpg was unavailable or refused.
+# Generate an armored secret key, its PUBLIC half and its passphrase file into a
+# named directory, echoing that directory. Empty output means gpg was
+# unavailable or refused.
+#
+# The public half is exported because key ROTATION needs it: `retired_key_paths`
+# takes public keys, so a retired key can verify history and can never sign
+# again.
 pgp_material() {
-  local dir="$PROBE_TMP/pgp"
+  local name="${1:-pgp}"
+  local dir="$PROBE_TMP/$name"
   mkdir -p "$dir" "$dir/gnupg"
   chmod 700 "$dir/gnupg"
   local fpr
   GNUPGHOME="$dir/gnupg" gpg --batch --pinentry-mode loopback \
     --passphrase "$PGP_PASS" --quick-generate-key \
-    "FerroEHR Probe <probe@example.test>" default default never >/dev/null 2>&1 || return 1
+    "FerroEHR Probe $name <probe-$name@example.test>" default default never >/dev/null 2>&1 || return 1
   fpr="$(GNUPGHOME="$dir/gnupg" gpg --batch --list-secret-keys --with-colons 2>/dev/null \
     | awk -F: '/^fpr:/ {print $10; exit}')"
   [ -n "$fpr" ] || return 1
   GNUPGHOME="$dir/gnupg" gpg --batch --pinentry-mode loopback \
     --passphrase "$PGP_PASS" --armor --export-secret-keys "$fpr" > "$dir/signing.asc" 2>/dev/null || return 1
-  [ -s "$dir/signing.asc" ] || return 1
+  GNUPGHOME="$dir/gnupg" gpg --batch --armor --export "$fpr" > "$dir/public.asc" 2>/dev/null || return 1
+  [ -s "$dir/signing.asc" ] && [ -s "$dir/public.asc" ] || return 1
   printf '%s' "$PGP_PASS" > "$dir/passphrase"
   # The container runs as the distroless nonroot uid; these are throwaway probe
   # credentials, so world-readable is the simplest way to guarantee the mount is
   # readable regardless of host uid mapping.
-  chmod 644 "$dir/signing.asc" "$dir/passphrase"
+  chmod 644 "$dir/signing.asc" "$dir/public.asc" "$dir/passphrase"
   printf '%s' "$dir"
 }
 
@@ -132,6 +139,115 @@ probes_signing_pgp() {
   probe_done
 
   # Put the stack back on the shipped posture for anything that follows.
+  dc -f docker-compose.yml up -d ferroehr >/dev/null 2>&1
+  wait_http "$CDR/health/readiness" 120 || true
+}
+
+# The rotation overlay: sign with `signer`, and keep `retired` public keys for
+# verification only.
+pgp_rotation_overlay() {
+  local signer="$1" retired="$2" out="$PROBE_TMP/pgp-rotate-overlay.yml"
+  cat > "$out" <<YAML
+services:
+  ferroehr:
+    volumes:
+      - $signer/signing.asc:/etc/ferroehr/signing.asc:ro
+      - $signer/passphrase:/run/secrets/pgp-pass:ro
+      - $retired/public.asc:/etc/ferroehr/retired.pub.asc:ro
+    environment:
+      FERROEHR__SIGNING__ENABLED: "true"
+      FERROEHR__SIGNING__MODE: pgp
+      FERROEHR__SIGNING__KEY_PATH: /etc/ferroehr/signing.asc
+      FERROEHR__SIGNING__KEY_PASSPHRASE_FILE: /run/secrets/pgp-pass
+      FERROEHR__SIGNING__RETIRED_KEY_PATHS: /etc/ferroehr/retired.pub.asc
+YAML
+  printf '%s' "$out"
+}
+
+# Key rotation: #2122's acceptance criteria, driven live.
+#
+# #2122 recorded that rotating a PGP key made every previously-signed version
+# fail verification — a 5xx while reading intact historical clinical data — and
+# was closed by adding a verification keyring (`retired_key_paths`). These
+# probes check the SHIPPED FIX rather than the original defect, and they check
+# both halves of it: history keeps verifying, AND verification did not simply
+# become permissive.
+probes_signing_rotation() {
+  bold "VERSION signing — key rotation (the #2122 keyring)"
+
+  if ! command -v gpg >/dev/null 2>&1; then
+    uncovered "PGP key rotation (#2122)" "gpg is not available on this host"
+    return 0
+  fi
+  local key_a key_b overlay ehr_a
+  if ! key_a="$(pgp_material rotate-a)" || [ -z "$key_a" ] \
+     || ! key_b="$(pgp_material rotate-b)" || [ -z "$key_b" ]; then
+    uncovered "PGP key rotation (#2122)" "this host's gpg would not generate the two probe keys"
+    return 0
+  fi
+
+  # Sign a version with key A.
+  dc -f docker-compose.yml -f "$(pgp_overlay "$key_a")" up -d ferroehr >/dev/null 2>&1
+  if ! wait_http "$CDR/health/readiness" 120; then
+    probe "P-ROT-SETUP" "working" "server" "#2122" "a version is signed under key A"
+    probe_fail "a serving CDR under key A" "readiness never returned"
+    probe_done
+    return 0
+  fi
+  ehr_a="$(curl -s -u "$BASIC" -X POST -D - -o /dev/null "$API/ehr" \
+    | grep -i '^location' | tr -d '\r' | awk -F/ '{print $NF}')"
+
+  # Rotate: sign with B, keep A's PUBLIC key for verification only.
+  overlay="$(pgp_rotation_overlay "$key_b" "$key_a")"
+  dc -f docker-compose.yml -f "$overlay" up -d ferroehr >/dev/null 2>&1
+
+  probe "P-ROT-BOOT" "working" "server" "#2122" \
+    "the server boots after a rotation with the retired key kept for verification"
+  if ! wait_http "$CDR/health/readiness" 120; then
+    probe_fail "a serving CDR after rotation" "$(dc logs --tail 5 ferroehr 2>&1 | tail -3)" \
+      "retired_key_paths takes PUBLIC keys; a rejected one fails closed at boot"
+    probe_done
+    return 0
+  fi
+  probe_done
+
+  # #2122's third criterion, verbatim: sign with A, rotate to B, read the
+  # key-A version back under strict verification without an integrity failure.
+  probe "P-ROT-HISTORY" "working" "server" "#2122" \
+    "a version signed by the RETIRED key still verifies after rotation"
+  if [ -z "$ehr_a" ]; then
+    probe_fail "a version signed under key A" "no EHR was committed before the rotation"
+  else
+    assert_eq "200" "$(http_code -u "$BASIC" "$API/ehr/$ehr_a/versioned_ehr_status/version")" \
+      "reading intact history after a rotation must not be an integrity failure"
+  fi
+  probe_done
+
+  # The other half of #2122's second criterion: keeping history verifiable must
+  # not make verification permissive. A keyring that accepts anything would pass
+  # the probe above and be worthless.
+  probe "P-ROT-STILL-STRICT" "broken" "server" "#2122" \
+    "a tampered version still fails after rotation — the keyring is not permissive"
+  local matched after
+  probe_psql "UPDATE ehr.node
+                 SET data = jsonb_set(data, '{name,value}', '\"tampered\"')
+               WHERE ehr_id = '$ehr_a'::uuid AND rm_type = 'EHR_STATUS';" >/dev/null
+  matched="$(probe_psql "SELECT count(*) FROM ehr.node
+                          WHERE ehr_id = '$ehr_a'::uuid
+                            AND data #>> '{name,value}' = 'tampered';")"
+  if [ "${matched:-0}" = "0" ]; then
+    probe_fail "a tampered stored row" "the UPDATE matched nothing" \
+      "permissiveness was never tested — the probe could not reach the stored content"
+  else
+    after="$(http_code -u "$BASIC" "$API/ehr/$ehr_a/versioned_ehr_status/version")"
+    case "$after" in
+      5*) : ;;
+      *)  probe_fail "a 5xx integrity refusal" "$after" \
+            "a signature matching NO key in the ring must still fail; the point is verifiable history, not permissive reads" ;;
+    esac
+  fi
+  probe_done
+
   dc -f docker-compose.yml up -d ferroehr >/dev/null 2>&1
   wait_http "$CDR/health/readiness" 120 || true
 }

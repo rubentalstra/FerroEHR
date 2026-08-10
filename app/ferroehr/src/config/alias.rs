@@ -79,6 +79,13 @@ pub(super) const CONVENTIONAL: &[(&str, &str)] = &[
 /// List-typed key paths — env values for these are comma-separated
 /// (`config`'s `with_list_parse_key`), so a scalar value containing a comma is
 /// never mis-split.
+///
+/// NOTE: every `Vec`-typed key an operator can set through the environment must
+/// be listed here, or its env form is not merely mis-split but REFUSED —
+/// `invalid type: string …, expected a sequence`. Two shipped keys were missing
+/// and unreachable from the environment until a live probe hit the refusal.
+/// Keys inside arrays-of-tables (a Basic user's `roles`) are file-only by the
+/// env grammar and are deliberately absent.
 pub(super) const LIST_KEYS: &[&str] = &[
     "auth.oidc.audiences",
     "auth.oidc.algorithms",
@@ -88,6 +95,19 @@ pub(super) const LIST_KEYS: &[&str] = &[
     "smart.endpoints.response_types_supported",
     "smart.endpoints.code_challenge_methods_supported",
     "smart.endpoints.scopes_supported",
+    "smart.endpoints.capabilities",
+    "signing.retired_key_paths",
+    // `authz.abac.policy` is a MAP, so the env grammar reaches into it the way
+    // it reaches `subject_proxy.systems.<name>`. The resource kinds are the
+    // closed set the enforcement point consults (`ResourceKind`), so each is
+    // named rather than pattern-matched — `with_list_parse_key` takes exact
+    // paths, and a wildcard here would be a second grammar to keep true.
+    "authz.abac.policy.ehr.parameters",
+    "authz.abac.policy.ehr_status.parameters",
+    "authz.abac.policy.composition.parameters",
+    "authz.abac.policy.contribution.parameters",
+    "authz.abac.policy.query.parameters",
+    "authz.abac.policy.directory.parameters",
 ];
 
 /// The `FERROEHR__<SECTION>__<TAIL>` env name for a dotted config key path —
