@@ -8,8 +8,8 @@
 //! *is* an Operational Template. [`build_web_template_v2_4`] walks the `v2_4`
 //! constraint tree into the **same** [`WebTemplate`] model the OPT-1.4 front end
 //! ([`super::builder`]) produces, then hands it to the shared dialect-neutral
-//! passes ([`super::shape`]: level removal, in-context synthesis, post-process)
-//! and [`super::id`] (node-id generation). The whole downstream — example
+//! passes (`shape`: level removal, in-context synthesis, post-process)
+//! and `id` (node-id generation). The whole downstream — example
 //! generation, FLAT/STRUCTURED, validation — then works unchanged; there is no
 //! parallel pipeline.
 //!
@@ -26,7 +26,7 @@
 //! generator and FLAT/STRUCTURED codecs consume **and** the validation-only
 //! constraint fields (`existence`/`card_all`/`closed_attributes`/
 //! `structural_stubs`; the hoisted-wrapper `slots` are added by the shared
-//! [`super::shape`] compaction) the archetype-conformance walk
+//! `shape` compaction) the archetype-conformance walk
 //! ([`crate::flat::validation::validate_archetype_conformance`]) reads — from the
 //! AOM2 constraint model (`C_ATTRIBUTE.existence`/`.cardinality`, node-identified
 //! `C_OBJECT` alternatives, `ARCHETYPE_SLOT`; AOM2

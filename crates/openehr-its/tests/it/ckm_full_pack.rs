@@ -7,7 +7,7 @@
 //! Breadth gate over the FULL vendored openEHR CKM template library
 //! (`tools/cnf-runner/artifacts/corpus/templates/ckm/full/`, vendored by
 //! `scripts/vendor/ckm-templates.sh`): every OPT the public CKM publishes
-//! must parse into the generated `opt14::OperationalTemplate`, build a
+//! must parse into the generated `opt14::types::OperationalTemplate`, build a
 //! WebTemplate, and generate RM-shape-valid examples at every detail level.
 //!
 //! Why the whole library and not a curated handful: real-world OPTs carry
@@ -26,7 +26,7 @@ use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
 use openehr_its::flat::example::{DetailLevel, example_composition};
-use openehr_its::flat::webtemplate::build_web_template;
+use openehr_its::flat::webtemplate::builder::build_web_template;
 use openehr_its::opt14;
 use serde_json::Value;
 

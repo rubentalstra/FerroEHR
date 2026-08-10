@@ -31,7 +31,8 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use indexmap::IndexMap;
-use openehr_its::flat::webtemplate::{WebTemplate, WebTemplateNode, build_web_template};
+use openehr_its::flat::webtemplate::builder::build_web_template;
+use openehr_its::flat::webtemplate::model::{WebTemplate, WebTemplateNode};
 use openehr_its::opt14;
 use openehr_its::rm_instance::{
     ValidationKind, ValidationMessage, validate_composition, validate_rm_and_terminology,

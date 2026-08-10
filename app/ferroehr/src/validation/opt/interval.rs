@@ -19,7 +19,7 @@
 //! numeric bounds the AOM invariants compare, not a membership decision).
 
 use openehr_base::prelude::{MultiplicityInterval, ProperIntervalData};
-use openehr_its::opt14::{Intervalofinteger, Intervalofreal};
+use openehr_its::opt14::types::{Intervalofinteger, Intervalofreal};
 
 /// The effective lower bound of an `opt14` integer interval: an unbounded or
 /// absent lower limit reads as `0` (the AOM occurrence/existence floor).

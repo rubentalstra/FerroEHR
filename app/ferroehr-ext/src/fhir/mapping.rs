@@ -400,7 +400,8 @@ mod tests {
     use std::path::PathBuf;
 
     use openehr_its::flat::convert::composition_from_flat;
-    use openehr_its::flat::webtemplate::{WebTemplate, build_web_template};
+    use openehr_its::flat::webtemplate::builder::build_web_template;
+    use openehr_its::flat::webtemplate::model::WebTemplate;
     use openehr_its::opt14;
     use serde_json::json;
 

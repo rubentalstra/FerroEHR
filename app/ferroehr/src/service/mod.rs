@@ -78,7 +78,7 @@ use crate::system_log::sender::AuditSender;
 use crate::versioning::SigningCtx;
 use crate::versioning::signature::signer::Signer;
 use openehr_its::flat::cache::WebTemplateCache;
-use openehr_its::flat::webtemplate::WebTemplate;
+use openehr_its::flat::webtemplate::model::WebTemplate;
 use status::SmError;
 
 /// In-process cache of resolved tenants, keyed by the claim/header value (a

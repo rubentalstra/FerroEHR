@@ -24,7 +24,7 @@
 //! design/extension, consumed by validation and by interop consumers, and
 //! schema-legal because those schemas set no `additionalProperties: false`. The
 //! one place the schema is *stricter* than a naive render is its `Tree.required`
-//! list — satisfied by [`serialize_root`].
+//! list — satisfied by `serialize_root`.
 
 #![expect(
     clippy::disallowed_types,
@@ -341,7 +341,7 @@ pub struct WebTemplateNode {
 
     /// Pre-parsed archetype-conformance walk plan: the constraint
     /// paths and sibling groups this node's validation walk needs, parsed ONCE at
-    /// build time ([`crate::flat::webtemplate::build_web_template`] calls `prepare_walk`) instead of
+    /// build time ([`crate::flat::webtemplate::builder::build_web_template`] calls `prepare_walk`) instead of
     /// re-parsing every constraint path on every instance-node visit. A hand-built
     /// node with no plan is handled by the walk building the plan on the fly.
     /// Validation-only (`#[serde(skip)]`) — no openEHR spec governs the

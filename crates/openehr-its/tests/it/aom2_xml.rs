@@ -25,7 +25,7 @@
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
-use openehr_its::aom2::PAuthoredArchetype;
+use openehr_its::aom2::types::PAuthoredArchetype;
 
 /// Example documents the codec cannot read, with the reason. A refusal is a
 /// NEGATIVE test — the gate fails if the document starts reading, so the entry

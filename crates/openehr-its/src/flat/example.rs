@@ -59,7 +59,7 @@ use std::collections::HashSet;
 use serde_json::{Map, Value, json};
 
 use crate::flat::convert::composition_from_flat;
-use crate::flat::webtemplate::{
+use crate::flat::webtemplate::model::{
     WebTemplate, WebTemplateInput, WebTemplateInputType, WebTemplateNode, WebTemplateRange,
 };
 
@@ -1200,7 +1200,7 @@ fn fnv1a64(data: &[u8], basis: u64) -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::flat::webtemplate::build_web_template;
+    use crate::flat::webtemplate::builder::build_web_template;
 
     fn web_template(opt_rel: &str) -> WebTemplate {
         let path = format!("{}/{opt_rel}", env!("CARGO_MANIFEST_DIR"));

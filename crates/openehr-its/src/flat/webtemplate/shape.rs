@@ -7,8 +7,8 @@
 //! passes, so the level-removal + in-context + post-process semantics are
 //! written once and never forked.
 //!
-//! The three passes, in the order [`super::build_web_template`] /
-//! [`super::build_web_template_v2_4`] run them:
+//! The three passes, in the order [`super::builder::build_web_template`] /
+//! [`super::builder_v2_4::build_web_template_v2_4`] run them:
 //!
 //! 1. [`compact`] — master04 §"Level Removal": elide container attribute names,
 //!    collapse the always-collapsed wrapper types (`ITEM_*`/`ITEM_STRUCTURE`/

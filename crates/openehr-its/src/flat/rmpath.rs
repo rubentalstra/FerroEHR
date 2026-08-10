@@ -5,7 +5,7 @@
 //! [`openehr_rm::v1_2::paths`] (the BASE `master11-paths` parser + `PATHABLE`
 //! navigation over canonical-JSON RM trees). It adds only the two conveniences
 //! the SDT pipeline needs and the RM primitive does not carry: taking the
-//! *relative* path between a parent and child [`WebTemplateNode`](crate::flat::webtemplate::WebTemplateNode)
+//! *relative* path between a parent and child [`WebTemplateNode`](crate::flat::webtemplate::model::WebTemplateNode)
 //! `aqlPath`, and multi-root navigation over a slice of parsed segments.
 //!
 //! A `WebTemplateNode`'s `aqlPath` is the full RM path from the versioned-object

@@ -71,7 +71,7 @@ use bytes::Bytes;
 use http::{HeaderMap, HeaderValue, StatusCode, header};
 
 use openehr_its::rest::runtime::ApiError;
-use openehr_its::xml::{FromXml, Namespace, ToXml};
+use openehr_its::xml::runtime::{FromXml, Namespace, ToXml};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 

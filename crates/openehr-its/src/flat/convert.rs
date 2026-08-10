@@ -27,7 +27,7 @@ use crate::flat::error::FlatError;
 use crate::flat::flatten;
 use crate::flat::sim::flat;
 use crate::flat::sim::structured;
-use crate::flat::webtemplate::WebTemplate;
+use crate::flat::webtemplate::model::WebTemplate;
 
 /// FLAT document → canonical-JSON COMPOSITION.
 ///

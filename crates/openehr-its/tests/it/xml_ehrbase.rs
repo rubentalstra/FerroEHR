@@ -23,7 +23,8 @@
 //! / the live parity harness (Stage-1 acceptance). Round-trip stability of our
 //! own canonical output is the invariant this gate enforces.
 
-use openehr_its::xml::{FromXml, ToXml, from_xml, to_canonical_xml};
+use openehr_its::xml::runtime::{FromXml, ToXml, from_xml};
+use openehr_its::xml::to_canonical_xml;
 use openehr_rm::prelude::{Composition, ItemTree};
 
 const DIR: &str = concat!(

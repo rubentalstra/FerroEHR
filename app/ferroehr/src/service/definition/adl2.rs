@@ -34,7 +34,8 @@ use openehr_am::v2_4::aom2::archetype::authored_archetype::AuthoredArchetype;
 use openehr_am::v2_4::aom2::archetype::operational_template::OperationalTemplate;
 use openehr_base::validate::InvariantViolation;
 use openehr_its::flat::example::{DetailLevel, ExampleType, apply_output_uid, example_composition};
-use openehr_its::flat::webtemplate::{WebTemplate, build_web_template_v2_4};
+use openehr_its::flat::webtemplate::builder_v2_4::build_web_template_v2_4;
+use openehr_its::flat::webtemplate::model::WebTemplate;
 use serde_json::Value;
 use sqlx::Row;
 
@@ -558,7 +559,7 @@ impl FerroEhrService {
     /// The stored source is resolved (`template_id` → HRID), parsed, compiled to
     /// its operational template (`create_opt`), turned into a `WebTemplate` by
     /// the `v2_4` front end
-    /// ([`openehr_its::flat::webtemplate::build_web_template_v2_4`]),
+    /// ([`openehr_its::flat::webtemplate::builder_v2_4::build_web_template_v2_4`]),
     /// and walked into a canonical example COMPOSITION at the requested
     /// [`DetailLevel`] — the same shared generator the ADL 1.4 example endpoint
     /// uses (`ITS-REST simplified_formats master04 §"Web Template Metadata"` is

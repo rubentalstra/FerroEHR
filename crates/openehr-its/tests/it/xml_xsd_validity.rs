@@ -51,7 +51,8 @@
 //! tests below enumerate exactly which, and prove each at the wire.
 
 use openehr_its::json::from_canonical_value;
-use openehr_its::xml::{Namespace, to_canonical_xml_ns};
+use openehr_its::xml::runtime::Namespace;
+use openehr_its::xml::to_canonical_xml_ns;
 use openehr_rm::prelude::{Composition, Folder};
 use openehr_rm::v1_2::model;
 use serde_json::{Value, json};

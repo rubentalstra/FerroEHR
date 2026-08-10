@@ -62,7 +62,7 @@ pub async fn fetch_template_opt(
 /// The OPT XML is parsed with
 /// [`openehr_its::opt14::from_xml`](openehr_its::opt14::from_xml) — the OPT 1.4
 /// canonical-XML parse entry (root `<template>` = `OPERATIONAL_TEMPLATE`) —
-/// then [`openehr_its::flat::webtemplate::build_web_template`] produces the Web
+/// then [`openehr_its::flat::webtemplate::builder::build_web_template`] produces the Web
 /// Template, and [`crate::builder::catalog::from_web_template`] the slim
 /// serializable tree.
 ///
@@ -88,7 +88,7 @@ pub async fn fetch_template_catalog(
     let xml = crate::cdr::CdrClient::expect_success(response)?.body;
     let opt = openehr_its::opt14::from_xml(&xml)
         .map_err(|e| AdminUiError::Internal(format!("OPT 1.4 parse: {e}")))?;
-    let web_template = openehr_its::flat::webtemplate::build_web_template(&opt)
+    let web_template = openehr_its::flat::webtemplate::builder::build_web_template(&opt)
         .map_err(|e| AdminUiError::Internal(format!("WebTemplate build: {e}")))?;
     Ok(crate::builder::catalog::from_web_template(&web_template))
 }
@@ -137,7 +137,7 @@ pub async fn fetch_template_meta(
     let xml = crate::cdr::CdrClient::expect_success(response)?.body;
     let opt = openehr_its::opt14::from_xml(&xml)
         .map_err(|e| AdminUiError::Internal(format!("OPT 1.4 parse: {e}")))?;
-    let web_template = openehr_its::flat::webtemplate::build_web_template(&opt)
+    let web_template = openehr_its::flat::webtemplate::builder::build_web_template(&opt)
         .map_err(|e| AdminUiError::Internal(format!("WebTemplate build: {e}")))?;
     Ok(TemplateMeta {
         template_id: opt.template_id.value.clone(),

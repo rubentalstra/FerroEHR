@@ -13,7 +13,7 @@ use indexmap::IndexMap;
 use serde_json::{Value, json};
 
 use openehr_its::flat::validation::*;
-use openehr_its::flat::webtemplate::{
+use openehr_its::flat::webtemplate::model::{
     WebTemplate, WebTemplateCardinality, WebTemplateCodedValue, WebTemplateExistence,
     WebTemplateInput, WebTemplateInputType, WebTemplateNode, WebTemplateRange,
     WebTemplateValidation,
@@ -806,7 +806,7 @@ fn segment_parsing_respects_brackets() {
 
 // ── CNF-hardening additions (master15/16/17 truth tables) ────────────────────
 
-use openehr_its::flat::webtemplate::{WebTemplateCodeList, WebTemplateSlot};
+use openehr_its::flat::webtemplate::model::{WebTemplateCodeList, WebTemplateSlot};
 
 /// `1..*` container cardinality with zero members → Cardinality (master15
 /// CONT-COMP-content_card_1plus; AOM 1.4 §cardinality).
@@ -1049,7 +1049,7 @@ fn media_type_code_list() {
 
 // ── closed-archetype walk ─────────────────────────────────────────
 
-use openehr_its::flat::webtemplate::{WebTemplateArchetypeSlot, WebTemplateClosedAttribute};
+use openehr_its::flat::webtemplate::model::{WebTemplateArchetypeSlot, WebTemplateClosedAttribute};
 
 /// A COMPOSITION whose `content` is closed to `openEHR-EHR-SECTION.x.v1`: the
 /// defined section is accepted, a foreign OBSERVATION is rejected as unexpected
@@ -1642,8 +1642,8 @@ fn measure_ips_validation_full_cost() {
     let opt_xml = std::fs::read_to_string(format!("{dir}/international-patient-summary.opt"))
         .expect("read IPS OPT");
     let opt = openehr_its::opt14::from_xml(&opt_xml).expect("parse IPS OPT");
-    let wt =
-        openehr_its::flat::webtemplate::build_web_template(&opt).expect("build IPS WebTemplate");
+    let wt = openehr_its::flat::webtemplate::builder::build_web_template(&opt)
+        .expect("build IPS WebTemplate");
     let comp: Value = serde_json::from_str(
         &std::fs::read_to_string(format!("{dir}/international-patient-summary.example.json"))
             .expect("read IPS example"),

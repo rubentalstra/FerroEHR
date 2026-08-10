@@ -32,7 +32,7 @@ use crate::flat::error::FlatError;
 use crate::flat::map;
 use crate::flat::rmpath;
 use crate::flat::sim::{SimDocument, SimNode};
-use crate::flat::webtemplate::{CodedName, WebTemplate, WebTemplateNode};
+use crate::flat::webtemplate::model::{CodedName, WebTemplate, WebTemplateNode};
 
 /// openEHR reference-model release stamped into a rebuilt
 /// `ARCHETYPED.rm_version` (RM common `archetyped.adoc`: the "version of

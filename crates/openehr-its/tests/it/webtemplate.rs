@@ -21,7 +21,8 @@
 
 use std::path::{Path, PathBuf};
 
-use openehr_its::flat::webtemplate::{WebTemplateInputType, WebTemplateNode, build_web_template};
+use openehr_its::flat::webtemplate::builder::build_web_template;
+use openehr_its::flat::webtemplate::model::{WebTemplateInputType, WebTemplateNode};
 use openehr_its::opt14;
 
 fn manifest_dir() -> PathBuf {
@@ -55,7 +56,9 @@ fn opt_files(dir: &Path) -> Vec<PathBuf> {
 }
 
 /// Parse an `OPT` and build a `WebTemplate`, returning any error as a string.
-fn build_from_file(path: &Path) -> Result<openehr_its::flat::webtemplate::WebTemplate, String> {
+fn build_from_file(
+    path: &Path,
+) -> Result<openehr_its::flat::webtemplate::model::WebTemplate, String> {
     let xml = std::fs::read_to_string(path).map_err(|e| format!("read: {e}"))?;
     let opt = opt14::from_xml(&xml).map_err(|e| format!("opt14 parse: {e}"))?;
     build_web_template(&opt).map_err(|e| format!("build: {e}"))
@@ -396,8 +399,9 @@ fn ontology_term_bindings_populate_node_and_coded_value_bindings() {
         .expect("build Across - Visual Acuity Report");
 
     // Node-level: a node bound to SNOMED-CT 422673001.
-    let mut node_binding: Option<openehr_its::flat::webtemplate::WebTemplateBindingCodedValue> =
-        None;
+    let mut node_binding: Option<
+        openehr_its::flat::webtemplate::model::WebTemplateBindingCodedValue,
+    > = None;
     for_each_node(&wt.tree, &mut |n| {
         if let Some(b) = n.term_bindings.get("SNOMED-CT")
             && b.value == "422673001"
@@ -414,7 +418,9 @@ fn ontology_term_bindings_populate_node_and_coded_value_bindings() {
     );
 
     // Coded-value-level: a coded option bound to SNOMED-CT 362503005.
-    let mut cv_binding: Option<openehr_its::flat::webtemplate::WebTemplateBindingCodedValue> = None;
+    let mut cv_binding: Option<
+        openehr_its::flat::webtemplate::model::WebTemplateBindingCodedValue,
+    > = None;
     for_each_node(&wt.tree, &mut |n| {
         for input in &n.inputs {
             for cv in &input.list {

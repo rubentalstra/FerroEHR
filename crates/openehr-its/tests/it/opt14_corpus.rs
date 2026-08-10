@@ -6,7 +6,7 @@
     reason = "test assertions/diagnostics/fixtures"
 )]
 //! OPT 1.4 corpus gate: every vendored `.opt` operational template
-//! must parse into the generated `opt14::OperationalTemplate` model without
+//! must parse into the generated `opt14::types::OperationalTemplate` model without
 //! error. The corpus lives with the `ferroehr` app tests; this crate reads it by
 //! a workspace-relative path.
 
@@ -203,7 +203,7 @@ fn every_opt_template_round_trips() {
 /// `description`), which an alphabetically-sorted container would invert.
 #[test]
 fn string_dictionary_order_preserved() {
-    use openehr_its::opt14::{ArchetypeTerm, CAttribute, CObject};
+    use openehr_its::opt14::types::{ArchetypeTerm, CAttribute, CObject};
 
     /// Collect every inline `C_ARCHETYPE_ROOT` term definition in the tree.
     fn collect_terms<'a>(obj: &'a CObject, out: &mut Vec<&'a ArchetypeTerm>) {
@@ -228,7 +228,7 @@ fn string_dictionary_order_preserved() {
     }
 
     fn text_first_orders(
-        opt: &openehr_its::opt14::OperationalTemplate,
+        opt: &openehr_its::opt14::types::OperationalTemplate,
     ) -> Vec<(String, Vec<String>)> {
         let mut terms: Vec<&ArchetypeTerm> = opt.definition.term_definitions.iter().collect();
         for a in &opt.definition.attributes {
@@ -379,10 +379,12 @@ fn opt_revision_history_item_without_audits_is_refused_at_parse() {
 
 /// Every `ARCHETYPE_SLOT` reachable from an OPT definition tree, in document
 /// order.
-fn slots(root: &openehr_its::opt14::CArchetypeRoot) -> Vec<&openehr_its::opt14::ArchetypeSlot> {
-    use openehr_its::opt14::{CAttribute, CObject};
+fn slots(
+    root: &openehr_its::opt14::types::CArchetypeRoot,
+) -> Vec<&openehr_its::opt14::types::ArchetypeSlot> {
+    use openehr_its::opt14::types::{CAttribute, CObject};
 
-    fn walk<'a>(objs: &'a [CObject], out: &mut Vec<&'a openehr_its::opt14::ArchetypeSlot>) {
+    fn walk<'a>(objs: &'a [CObject], out: &mut Vec<&'a openehr_its::opt14::types::ArchetypeSlot>) {
         for o in objs {
             let attrs: &[CAttribute] = match o {
                 CObject::ArchetypeSlot(s) => {
@@ -414,9 +416,12 @@ fn slots(root: &openehr_its::opt14::CArchetypeRoot) -> Vec<&openehr_its::opt14::
 
 /// The two `EXPR_LEAF`s of an `archetype_id/value matches {…}` assertion.
 fn matches_operands(
-    a: &openehr_its::opt14::Assertion,
-) -> (&openehr_its::opt14::ExprLeaf, &openehr_its::opt14::ExprLeaf) {
-    use openehr_its::opt14::ExprItem;
+    a: &openehr_its::opt14::types::Assertion,
+) -> (
+    &openehr_its::opt14::types::ExprLeaf,
+    &openehr_its::opt14::types::ExprLeaf,
+) {
+    use openehr_its::opt14::types::ExprItem;
 
     let ExprItem::ExprBinaryOperator(op) = a.expression.as_ref() else {
         panic!("a slot assertion is a binary `matches` expression");
@@ -462,7 +467,7 @@ fn expr_leaf_any_type_items_carry_their_payload() {
         right
             .item
             .child("pattern")
-            .map(openehr_its::xml::XmlAny::text),
+            .map(openehr_its::xml::runtime::XmlAny::text),
         Some(r"openEHR-EHR-EVALUATION\.problem_diagnosis(-[a-zA-Z0-9_]+)*\.v1".to_owned()),
     );
 

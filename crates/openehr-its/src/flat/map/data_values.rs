@@ -22,7 +22,7 @@ use serde_json::{Map, Value, json};
 
 use super::{base_type, code_phrase_obj, family, parties, wt_coded_value, wt_terminology};
 use crate::flat::sim::SimNode;
-use crate::flat::webtemplate::WebTemplateNode;
+use crate::flat::webtemplate::model::WebTemplateNode;
 
 /// The `DV_ORDERED` concrete leaf types that carry `_normal_range` /
 /// `_other_reference_ranges` (master05 per-type tables).
@@ -932,11 +932,11 @@ mod tests {
     // template list when omitted.
     #[test]
     fn coded_text_defaults_value_from_template() {
-        use crate::flat::webtemplate::{WebTemplateInput, WebTemplateInputType};
+        use crate::flat::webtemplate::model::{WebTemplateInput, WebTemplateInputType};
         let mut input = WebTemplateInput::new(WebTemplateInputType::CodedText, Some("code"));
         input
             .list
-            .push(crate::flat::webtemplate::WebTemplateCodedValue::new(
+            .push(crate::flat::webtemplate::model::WebTemplateCodedValue::new(
                 "at0006",
                 Some("Term One".to_owned()),
             ));
@@ -956,8 +956,8 @@ mod tests {
     // master05 §DV_ORDINAL: `|ordinal`/`|value` default from the template symbol.
     #[test]
     fn ordinal_defaults_from_template() {
-        use crate::flat::webtemplate::{WebTemplateInput, WebTemplateInputType};
-        let mut cv = crate::flat::webtemplate::WebTemplateCodedValue::new(
+        use crate::flat::webtemplate::model::{WebTemplateInput, WebTemplateInputType};
+        let mut cv = crate::flat::webtemplate::model::WebTemplateCodedValue::new(
             "at0015",
             Some("value1".to_owned()),
         );

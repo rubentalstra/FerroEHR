@@ -17,5 +17,5 @@ fuzz_target!(|data: &[u8]| {
     let Ok(template) = openehr_its::opt14::from_xml(text) else {
         return;
     };
-    let _ = openehr_its::flat::webtemplate::build_web_template(&template);
+    let _ = openehr_its::flat::webtemplate::builder::build_web_template(&template);
 });

@@ -19,8 +19,9 @@
 use std::path::{Path, PathBuf};
 
 use openehr_base::prelude::{CodePhrase, TerminologyId};
-use openehr_its::opt14::{
-    self, ArchetypeTerm, CAttribute, CObject, Codedefinitionset, ConstraintBindingItem,
+use openehr_its::opt14;
+use openehr_its::opt14::types::{
+    ArchetypeTerm, CAttribute, CObject, Codedefinitionset, ConstraintBindingItem,
     Constraintbindingset, FlatArchetypeOntology, Intervalofinteger, OperationalTemplate,
     TermBindingItem, Termbindingset,
 };
@@ -442,7 +443,7 @@ fn vardt_root_type_mismatch() {
 
 #[test]
 fn c_boolean_unsatisfiable() {
-    use openehr_its::opt14::{CAttribute, CBoolean, CObject, CPrimitive, CPrimitiveObject};
+    use openehr_its::opt14::types::{CAttribute, CBoolean, CObject, CPrimitive, CPrimitiveObject};
     let mut opt = parse(&minimal_xml());
     let occ = opt.definition.occurrences.clone();
     let boolean_node = CObject::CPrimitiveObject(CPrimitiveObject {
@@ -455,9 +456,8 @@ fn c_boolean_unsatisfiable() {
             assumed_value: None,
         }))),
     });
-    opt.definition
-        .attributes
-        .push(CAttribute::CSingleAttribute(opt14::CSingleAttribute {
+    opt.definition.attributes.push(CAttribute::CSingleAttribute(
+        opt14::types::CSingleAttribute {
             rm_attribute_name: "name".to_owned(),
             existence: Intervalofinteger {
                 lower_unbounded: false,
@@ -468,13 +468,14 @@ fn c_boolean_unsatisfiable() {
                 upper: Some(1),
             },
             children: vec![boolean_node],
-        }));
+        },
+    ));
     expect_code(&opt, "C_BOOLEAN_validity");
 }
 
 #[test]
 fn assumed_value_outside_closed_list() {
-    use openehr_its::opt14::{CAttribute, CObject, CPrimitive, CPrimitiveObject, CString};
+    use openehr_its::opt14::types::{CAttribute, CObject, CPrimitive, CPrimitiveObject, CString};
     let mut opt = parse(&minimal_xml());
     let occ = opt.definition.occurrences.clone();
     // A C_STRING with a closed value list and an assumed value outside it.
@@ -489,9 +490,8 @@ fn assumed_value_outside_closed_list() {
             assumed_value: Some("blue".to_owned()),
         }))),
     });
-    opt.definition
-        .attributes
-        .push(CAttribute::CSingleAttribute(opt14::CSingleAttribute {
+    opt.definition.attributes.push(CAttribute::CSingleAttribute(
+        opt14::types::CSingleAttribute {
             rm_attribute_name: "name".to_owned(),
             existence: Intervalofinteger {
                 lower_unbounded: false,
@@ -502,13 +502,14 @@ fn assumed_value_outside_closed_list() {
                 upper: Some(1),
             },
             children: vec![string_node],
-        }));
+        },
+    ));
     expect_code(&opt, "Assumed_value_valid");
 }
 
 #[test]
 fn pattern_validity_rejects_nonmonotonic_temporal_pattern() {
-    use openehr_its::opt14::{CAttribute, CDate, CObject, CPrimitive, CPrimitiveObject};
+    use openehr_its::opt14::types::{CAttribute, CDate, CObject, CPrimitive, CPrimitiveObject};
     let mut opt = parse(&minimal_xml());
     let occ = opt.definition.occurrences.clone();
     // `yyyy-XX-dd`: disallowed month followed by a mandatory day violates the
@@ -524,9 +525,8 @@ fn pattern_validity_rejects_nonmonotonic_temporal_pattern() {
             assumed_value: None,
         }))),
     });
-    opt.definition
-        .attributes
-        .push(CAttribute::CSingleAttribute(opt14::CSingleAttribute {
+    opt.definition.attributes.push(CAttribute::CSingleAttribute(
+        opt14::types::CSingleAttribute {
             rm_attribute_name: "name".to_owned(),
             existence: Intervalofinteger {
                 lower_unbounded: false,
@@ -537,7 +537,8 @@ fn pattern_validity_rejects_nonmonotonic_temporal_pattern() {
                 upper: Some(1),
             },
             children: vec![date_node],
-        }));
+        },
+    ));
     expect_code(&opt, "Pattern_validity");
 }
 

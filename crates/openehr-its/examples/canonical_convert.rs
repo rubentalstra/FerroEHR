@@ -35,7 +35,7 @@ use openehr_rm::v1_2::demographic::person::Person;
 use openehr_rm::v1_2::demographic::role::Role;
 use openehr_rm::v1_2::ehr::ehr_status::EhrStatus;
 
-use openehr_its::xml::{Namespace, ToXml};
+use openehr_its::xml::runtime::{Namespace, ToXml};
 
 /// The serialization the run emits, with the XML root the RM class documents
 /// itself under.

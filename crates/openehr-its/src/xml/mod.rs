@@ -21,11 +21,6 @@ pub mod runtime;
 // Trait impls for the spec types — compiled for their effect; nothing to export.
 mod generated;
 
-pub use runtime::{
-    FromXml, Namespace, StartTag, ToXml, XmlAny, XmlAnyNode, XmlError, XmlEvent, XmlReader,
-    XmlWriter, from_xml, to_xml, to_xml_declared,
-};
-
 /// One published ITS-XML **document element** (a global `xs:element` of the
 /// vendored bundles) that this codec serves as a canonical-XML root.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -108,8 +103,11 @@ pub fn declared_abstract_root_type(element: &str) -> Option<&'static str> {
 ///
 /// # Errors
 /// Propagates serialization errors.
-pub fn to_canonical_xml<T: ToXml + ?Sized>(value: &T, root_tag: &str) -> Result<String, XmlError> {
-    to_canonical_xml_ns(value, root_tag, Namespace::V1)
+pub fn to_canonical_xml<T: runtime::ToXml + ?Sized>(
+    value: &T,
+    root_tag: &str,
+) -> Result<String, runtime::XmlError> {
+    to_canonical_xml_ns(value, root_tag, runtime::Namespace::V1)
 }
 
 /// Serialize an RM value to canonical openEHR XML in an explicitly chosen wire
@@ -130,12 +128,12 @@ pub fn to_canonical_xml<T: ToXml + ?Sized>(value: &T, root_tag: &str) -> Result<
 ///
 /// # Errors
 /// Propagates serialization errors.
-pub fn to_canonical_xml_ns<T: ToXml + ?Sized>(
+pub fn to_canonical_xml_ns<T: runtime::ToXml + ?Sized>(
     value: &T,
     root_tag: &str,
-    ns: Namespace,
-) -> Result<String, XmlError> {
-    to_xml(value, root_tag, ns)
+    ns: runtime::Namespace,
+) -> Result<String, runtime::XmlError> {
+    runtime::to_xml(value, root_tag, ns)
 }
 
 /// Serialize an RM value under a root element whose **XSD-declared type is
@@ -158,13 +156,13 @@ pub fn to_canonical_xml_ns<T: ToXml + ?Sized>(
 ///
 /// # Errors
 /// Propagates serialization errors.
-pub fn to_canonical_xml_declared<T: ToXml + ?Sized>(
+pub fn to_canonical_xml_declared<T: runtime::ToXml + ?Sized>(
     value: &T,
     root_tag: &str,
     declared_type: &str,
-    ns: Namespace,
-) -> Result<String, XmlError> {
-    to_xml_declared(value, root_tag, declared_type, ns)
+    ns: runtime::Namespace,
+) -> Result<String, runtime::XmlError> {
+    runtime::to_xml_declared(value, root_tag, declared_type, ns)
 }
 
 /// Deserialize an RM value from a canonical openEHR XML document.
@@ -179,13 +177,13 @@ pub fn to_canonical_xml_declared<T: ToXml + ?Sized>(
 /// interchangeable: the flat `Release-1.0.2v2` bundle is frozen at an older RM
 /// generation and declares neither `FOLDER.details` nor 22 other RM 1.2.0
 /// attributes, nor 50 RM 1.2.0 classes at all
-/// (`schemas/xml/PROVENANCE.md` §"Two lineages"). Namespace-agnostic READING
+/// (`schemas/xml/PROVENANCE.md` §"Two lineages"). runtime::Namespace-agnostic READING
 /// stays sound regardless, because every element name and `xsi:type` the
 /// reader dispatches on is spelled identically in both lineages; only what the
 /// two schemas ACCEPT differs.
 ///
 /// # Errors
 /// Propagates parse errors.
-pub fn from_canonical_xml<T: FromXml>(xml: &str) -> Result<T, XmlError> {
-    from_xml(xml)
+pub fn from_canonical_xml<T: runtime::FromXml>(xml: &str) -> Result<T, runtime::XmlError> {
+    runtime::from_xml(xml)
 }

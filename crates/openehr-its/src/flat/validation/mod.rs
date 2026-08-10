@@ -61,7 +61,7 @@ use crate::rm_instance::{ValidationKind, ValidationMessage};
 use crate::flat::path;
 use crate::flat::rmpath;
 use crate::flat::sim::{SimDocument, SimNode, is_present};
-use crate::flat::webtemplate::{WebTemplate, WebTemplateArchetypeSlot, WebTemplateNode};
+use crate::flat::webtemplate::model::{WebTemplate, WebTemplateArchetypeSlot, WebTemplateNode};
 
 /// Validate only the archetype-conformance pass against a resolved
 /// [`WebTemplate`] (type conformance, occurrences, cardinality, and leaf
@@ -560,7 +560,7 @@ fn sibling_index_from_segments<'a>(
 }
 
 /// Populate the archetype-conformance walk plan on `node` and, recursively, every
-/// descendant — called once by [`crate::flat::webtemplate::build_web_template`] on the
+/// descendant — called once by [`crate::flat::webtemplate::builder::build_web_template`] on the
 /// finalized tree so the validation walk never re-parses a template-static
 /// constraint path.
 pub(crate) fn prepare_walk(node: &mut WebTemplateNode) {
@@ -653,7 +653,7 @@ pub struct UnenforceableConstraint {
 ///
 /// ```no_run
 /// # use openehr_its::flat::validation::unenforceable_existence_constraints;
-/// # fn demo(wt: &openehr_its::flat::webtemplate::WebTemplate) {
+/// # fn demo(wt: &openehr_its::flat::webtemplate::model::WebTemplate) {
 /// for skipped in unenforceable_existence_constraints(wt) {
 ///     eprintln!("unenforceable at {}: {}", skipped.path, skipped.attribute);
 /// }
@@ -1303,7 +1303,7 @@ mod tests {
     use serde_json::{Value, json};
 
     use super::*;
-    use crate::flat::webtemplate::{
+    use crate::flat::webtemplate::model::{
         WebTemplateCardinality, WebTemplateClosedAttribute, WebTemplateCodeList,
         WebTemplateCodedValue, WebTemplateExistence, WebTemplateInput, WebTemplateInputType,
         WebTemplateRange, WebTemplateSlot, WebTemplateValidation,

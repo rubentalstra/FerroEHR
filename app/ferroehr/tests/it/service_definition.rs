@@ -1280,15 +1280,19 @@ async fn adl2_template_resolves_on_the_commit_path_and_validates() {
 #[tokio::test]
 async fn adl2_template_with_filler_projects_the_filled_web_template() {
     fn find<'a>(
-        n: &'a openehr_its::flat::webtemplate::WebTemplateNode,
+        n: &'a openehr_its::flat::webtemplate::model::WebTemplateNode,
         id: &str,
-    ) -> Option<&'a openehr_its::flat::webtemplate::WebTemplateNode> {
+    ) -> Option<&'a openehr_its::flat::webtemplate::model::WebTemplateNode> {
         if n.id == id {
             return Some(n);
         }
         n.children.iter().find_map(|c| find(c, id))
     }
-    fn dump(n: &openehr_its::flat::webtemplate::WebTemplateNode, d: usize, out: &mut String) {
+    fn dump(
+        n: &openehr_its::flat::webtemplate::model::WebTemplateNode,
+        d: usize,
+        out: &mut String,
+    ) {
         use std::fmt::Write;
         let _ = writeln!(out, "{}{} [{}]", "  ".repeat(d), n.id, n.rm_type);
         for c in &n.children {
