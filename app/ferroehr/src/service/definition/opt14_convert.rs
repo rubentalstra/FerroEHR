@@ -132,7 +132,7 @@ pub(crate) struct OptConversion {
 /// - [`OptConvertError::Print`] if a converted source carries a node the ADL2
 ///   serializer has no syntax for.
 pub(crate) fn convert_opt_to_adl2(
-    opt: &opt14::OperationalTemplate,
+    opt: &opt14::types::OperationalTemplate,
 ) -> Result<OptConversion, OptConvertError> {
     let (archetypes, structure) = convert_opt_to_archetypes(opt)?;
     let roots = archetypes
@@ -183,7 +183,7 @@ fn minimal_description(conversion_details: BTreeMap<String, String>) -> Resource
 }
 
 pub(crate) fn convert_opt_to_archetypes(
-    opt: &opt14::OperationalTemplate,
+    opt: &opt14::types::OperationalTemplate,
 ) -> Result<(ConvertedRoots, Vec<FillEdge>), OptConvertError> {
     let mut dx = Decomposer {
         language: opt.language.code_string.clone(),
@@ -292,8 +292,8 @@ impl RootCx {
 
 struct Decomposer<'a> {
     language: String,
-    root_ontology: Option<&'a opt14::FlatArchetypeOntology>,
-    component_ontologies: &'a [opt14::FlatArchetypeOntology],
+    root_ontology: Option<&'a opt14::types::FlatArchetypeOntology>,
+    component_ontologies: &'a [opt14::types::FlatArchetypeOntology],
     units: Vec<RawUnit>,
     edges: Vec<FillEdge>,
 }
@@ -303,7 +303,7 @@ impl Decomposer<'_> {
     /// (pushed onto `units`), recursing into any embedded child roots. `is_top`
     /// selects the OPT's top-level `ontology` vs a `component_ontologies` entry
     /// for the archetype's flattened terminology.
-    fn process_root(&mut self, root: &opt14::CArchetypeRoot, path: &str, is_top: bool) {
+    fn process_root(&mut self, root: &opt14::types::CArchetypeRoot, path: &str, is_top: bool) {
         let archetype_id = root.archetype_id.value.clone();
         // Slot at-codes are allocated strictly above every at-code node id used
         // by THIS root's own retained subtree (child roots are excluded — their
@@ -363,7 +363,7 @@ impl Decomposer<'_> {
         &self,
         archetype_id: &str,
         is_top: bool,
-    ) -> Option<&'_ opt14::FlatArchetypeOntology> {
+    ) -> Option<&'_ opt14::types::FlatArchetypeOntology> {
         if is_top {
             self.root_ontology
         } else {
@@ -375,7 +375,7 @@ impl Decomposer<'_> {
 
     fn map_attributes(
         &mut self,
-        attrs: &[opt14::CAttribute],
+        attrs: &[opt14::types::CAttribute],
         archetype_id: &str,
         path: &str,
         cx: &mut RootCx,
@@ -389,20 +389,20 @@ impl Decomposer<'_> {
 
     fn map_attribute(
         &mut self,
-        attr: &opt14::CAttribute,
+        attr: &opt14::types::CAttribute,
         archetype_id: &str,
         path: &str,
         cx: &mut RootCx,
     ) -> CAttribute {
         let (rm_attribute_name, existence, children, cardinality, is_multiple) = match attr {
-            opt14::CAttribute::CSingleAttribute(a) => (
+            opt14::types::CAttribute::CSingleAttribute(a) => (
                 a.rm_attribute_name.clone(),
                 &a.existence,
                 &a.children,
                 None,
                 false,
             ),
-            opt14::CAttribute::CMultipleAttribute(a) => (
+            opt14::types::CAttribute::CMultipleAttribute(a) => (
                 a.rm_attribute_name.clone(),
                 &a.existence,
                 &a.children,
@@ -429,7 +429,7 @@ impl Decomposer<'_> {
 
     fn map_object(
         &mut self,
-        obj: &opt14::CObject,
+        obj: &opt14::types::CObject,
         archetype_id: &str,
         path: &str,
         cx: &mut RootCx,
@@ -443,7 +443,7 @@ impl Decomposer<'_> {
             // the form EXPR_ARCHETYPE_REF matches EXPR_ARCHETYPE_ID_CONSTRAINT").
             // The fill edge is additionally recorded in the conversion
             // structure.
-            opt14::CObject::CArchetypeRoot(child) => {
+            opt14::types::CObject::CArchetypeRoot(child) => {
                 let slot_node_id = format!("at{}", cx.slot_num);
                 cx.slot_num += 1;
                 let child_id = child.archetype_id.value.clone();
@@ -470,7 +470,7 @@ impl Decomposer<'_> {
                 self.process_root(child, path, false);
                 slot
             }
-            opt14::CObject::CComplexObject(c) => {
+            opt14::types::CObject::CComplexObject(c) => {
                 let attributes = self.map_attributes(&c.attributes, archetype_id, path, cx);
                 complex(&c.rm_type_name, &c.node_id, &c.occurrences, attributes)
             }
@@ -480,7 +480,7 @@ impl Decomposer<'_> {
             // archetype and serialized by the printer as the `_default`
             // pseudo-attribute (`master06-default_values.adoc` §Syntax; the
             // intermediate is the canonical-JSON encoding).
-            opt14::CObject::TComplexObject(c) => {
+            opt14::types::CObject::TComplexObject(c) => {
                 let attributes = self.map_attributes(&c.attributes, archetype_id, path, cx);
                 let mut obj = complex(&c.rm_type_name, &c.node_id, &c.occurrences, attributes);
                 if let Some(dv) = &c.default_value
@@ -490,10 +490,10 @@ impl Decomposer<'_> {
                 }
                 obj
             }
-            opt14::CObject::CDefinedObject(c) => {
+            opt14::types::CObject::CDefinedObject(c) => {
                 complex(&c.rm_type_name, &c.node_id, &c.occurrences, Vec::new())
             }
-            opt14::CObject::ArchetypeInternalRef(r) => {
+            opt14::types::CObject::ArchetypeInternalRef(r) => {
                 CObject::CComplexObjectProxy(CComplexObjectProxy {
                     parent: None,
                     soc_parent: None,
@@ -513,7 +513,7 @@ impl Decomposer<'_> {
             // `archetype_id/value matches {/…/}` shape both models share. An
             // assertion that cannot be rendered/parsed falls back to an open
             // slot, reported in `conversion_details`.
-            opt14::CObject::ArchetypeSlot(s) => {
+            opt14::types::CObject::ArchetypeSlot(s) => {
                 let includes = map_slot_assertions(&s.includes, &s.node_id, "include", cx);
                 let excludes = map_slot_assertions(&s.excludes, &s.node_id, "exclude", cx);
                 CObject::ArchetypeSlot(ArchetypeSlot {
@@ -532,7 +532,7 @@ impl Decomposer<'_> {
             }
             // A coded-value constraint → the 1.4-shaped `C_TERMINOLOGY_CODE` the
             // converter rewrites (`terminology::code[,code…][;assumed]`).
-            opt14::CObject::CCodePhrase(c) => terminology_code(
+            opt14::types::CObject::CCodePhrase(c) => terminology_code(
                 &c.rm_type_name,
                 &c.node_id,
                 &c.occurrences,
@@ -550,7 +550,7 @@ impl Decomposer<'_> {
             // list is ALSO present the list constraint wins and the URI is
             // carried in `conversion_details` (no openEHR spec governs 1.4→2
             // conversion — our own design).
-            opt14::CObject::CCodeReference(c) => map_code_reference(c, cx),
+            opt14::types::CObject::CCodeReference(c) => map_code_reference(c, cx),
             // A `CONSTRAINT_REF` names an ac-code whose definition lives in the
             // flattened ontology's `constraint_definitions` (AOM 1.4
             // `constraint_ref.adoc`); ADL2 folds those into
@@ -558,12 +558,12 @@ impl Decomposer<'_> {
             // section), so the ac-code constraint resolves (VACDF/VTCBK). An
             // ac-code the ontology does NOT define would dangle — it stays an
             // unconstrained node, reported in `conversion_details`.
-            opt14::CObject::ConstraintRef(r) => map_constraint_ref(r, cx),
+            opt14::types::CObject::ConstraintRef(r) => map_constraint_ref(r, cx),
             // DV_ORDINAL: the 1.4 domain constrainer becomes the AOM2
             // `[value, symbol]` attribute tuple (`master04.4-cadl_second_order.adoc`
             // §Tuple Constraints — "the tuple constraint type replaces all
             // domain-specific constraint types defined in ADL/AOM 1.4").
-            opt14::CObject::CDvOrdinal(c) => ordinal_tuple(c, cx),
+            opt14::types::CObject::CDvOrdinal(c) => ordinal_tuple(c, cx),
             // DV_QUANTITY: property → a `property` terminology-code attribute;
             // the per-unit magnitude (and, where present, precision) lists →
             // the `[units, magnitude(, precision)]` attribute tuple (the
@@ -571,15 +571,15 @@ impl Decomposer<'_> {
             // vendored `C_QUANTITY_ITEM` carries no precision — including it
             // as a third tuple member uses the generic tuple mechanism, no
             // vendored spec section shows it: our own design).
-            opt14::CObject::CDvQuantity(c) => quantity_tuple(c, cx),
+            opt14::types::CObject::CDvQuantity(c) => quantity_tuple(c, cx),
             // DV_STATE: the 1.4 constrainer carries a state machine; the
             // vendored AM defines no ADL2/AOM2 constraint form for it (the
             // tuple mechanism covers co-varying attribute values, not state
             // machines) — a loose domain-typed complex object is the honest
             // valid constraint. No vendored openEHR spec governs DV_STATE
             // conversion — our own design; recorded in `conversion_details`.
-            opt14::CObject::CDvState(c) => dv_state_loose(c, cx),
-            opt14::CObject::CPrimitiveObject(c) => map_primitive_object(c, cx),
+            opt14::types::CObject::CDvState(c) => dv_state_loose(c, cx),
+            opt14::types::CObject::CPrimitiveObject(c) => map_primitive_object(c, cx),
         }
     }
 
@@ -592,7 +592,7 @@ impl Decomposer<'_> {
     fn build_terminology(
         &self,
         archetype_id: &str,
-        root: &opt14::CArchetypeRoot,
+        root: &opt14::types::CArchetypeRoot,
         is_top: bool,
         cx: &mut RootCx,
     ) -> ArchetypeTerminology {
@@ -719,12 +719,12 @@ impl Decomposer<'_> {
 
 /// The maximum at-code number among a root's own node ids (not descending into
 /// embedded child roots — their codes belong to the child's space).
-fn max_at_num(attrs: &[opt14::CAttribute]) -> i64 {
+fn max_at_num(attrs: &[opt14::types::CAttribute]) -> i64 {
     let mut max = 0;
     for attr in attrs {
         let children = match attr {
-            opt14::CAttribute::CSingleAttribute(a) => &a.children,
-            opt14::CAttribute::CMultipleAttribute(a) => &a.children,
+            opt14::types::CAttribute::CSingleAttribute(a) => &a.children,
+            opt14::types::CAttribute::CMultipleAttribute(a) => &a.children,
         };
         for child in children {
             max = max.max(max_at_num_obj(child));
@@ -733,22 +733,26 @@ fn max_at_num(attrs: &[opt14::CAttribute]) -> i64 {
     max
 }
 
-fn max_at_num_obj(obj: &opt14::CObject) -> i64 {
+fn max_at_num_obj(obj: &opt14::types::CObject) -> i64 {
     match obj {
         // Do NOT descend into an embedded root: its at-codes are its own space.
-        opt14::CObject::CArchetypeRoot(_) => 0,
-        opt14::CObject::CComplexObject(c) => at_num(&c.node_id).max(max_at_num(&c.attributes)),
-        opt14::CObject::TComplexObject(c) => at_num(&c.node_id).max(max_at_num(&c.attributes)),
-        opt14::CObject::CDefinedObject(c) => at_num(&c.node_id),
-        opt14::CObject::ArchetypeInternalRef(r) => at_num(&r.node_id),
-        opt14::CObject::ArchetypeSlot(s) => at_num(&s.node_id),
-        opt14::CObject::ConstraintRef(r) => at_num(&r.node_id),
-        opt14::CObject::CCodePhrase(c) => at_num(&c.node_id),
-        opt14::CObject::CCodeReference(c) => at_num(&c.node_id),
-        opt14::CObject::CDvOrdinal(c) => at_num(&c.node_id),
-        opt14::CObject::CDvQuantity(c) => at_num(&c.node_id),
-        opt14::CObject::CDvState(c) => at_num(&c.node_id),
-        opt14::CObject::CPrimitiveObject(c) => at_num(&c.node_id),
+        opt14::types::CObject::CArchetypeRoot(_) => 0,
+        opt14::types::CObject::CComplexObject(c) => {
+            at_num(&c.node_id).max(max_at_num(&c.attributes))
+        }
+        opt14::types::CObject::TComplexObject(c) => {
+            at_num(&c.node_id).max(max_at_num(&c.attributes))
+        }
+        opt14::types::CObject::CDefinedObject(c) => at_num(&c.node_id),
+        opt14::types::CObject::ArchetypeInternalRef(r) => at_num(&r.node_id),
+        opt14::types::CObject::ArchetypeSlot(s) => at_num(&s.node_id),
+        opt14::types::CObject::ConstraintRef(r) => at_num(&r.node_id),
+        opt14::types::CObject::CCodePhrase(c) => at_num(&c.node_id),
+        opt14::types::CObject::CCodeReference(c) => at_num(&c.node_id),
+        opt14::types::CObject::CDvOrdinal(c) => at_num(&c.node_id),
+        opt14::types::CObject::CDvQuantity(c) => at_num(&c.node_id),
+        opt14::types::CObject::CDvState(c) => at_num(&c.node_id),
+        opt14::types::CObject::CPrimitiveObject(c) => at_num(&c.node_id),
     }
 }
 
@@ -776,7 +780,7 @@ fn at_num(node_id: &str) -> i64 {
 fn complex(
     rm_type_name: &str,
     node_id: &str,
-    occurrences: &opt14::Intervalofinteger,
+    occurrences: &opt14::types::Intervalofinteger,
     attributes: Vec<CAttribute>,
 ) -> CObject {
     CObject::CComplexObject(CComplexObject::CComplexObject(CComplexObjectData {
@@ -797,7 +801,7 @@ fn complex(
 fn terminology_code(
     rm_type_name: &str,
     node_id: &str,
-    occurrences: &opt14::Intervalofinteger,
+    occurrences: &opt14::types::Intervalofinteger,
     constraint: String,
 ) -> CObject {
     CObject::CTerminologyCode(CTerminologyCode {
@@ -825,7 +829,7 @@ fn terminology_code(
     clippy::too_many_lines,
     reason = "one arm per primitive C_* struct literal — a flat mapping table"
 )]
-fn map_primitive_object(c: &opt14::CPrimitiveObject, cx: &mut RootCx) -> CObject {
+fn map_primitive_object(c: &opt14::types::CPrimitiveObject, cx: &mut RootCx) -> CObject {
     let rm = c.rm_type_name.as_str();
     let node_id = c.node_id.as_str();
     let occ = &c.occurrences;
@@ -834,7 +838,7 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject, cx: &mut RootCx) -> CObject
         return c_string(rm, node_id, occ, Vec::new(), None);
     };
     match item {
-        opt14::CPrimitive::CBoolean(p) => {
+        opt14::types::CPrimitive::CBoolean(p) => {
             let mut constraint = Vec::new();
             if p.true_valid {
                 constraint.push(true);
@@ -857,7 +861,7 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject, cx: &mut RootCx) -> CObject
                 constraint: openehr_base::containers::present(constraint),
             })
         }
-        opt14::CPrimitive::CString(p) => {
+        opt14::types::CPrimitive::CString(p) => {
             let constraint = if !p.list.is_empty() {
                 p.list.clone()
             } else if let Some(pat) = &p.pattern {
@@ -867,7 +871,7 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject, cx: &mut RootCx) -> CObject
             };
             c_string(rm, node_id, occ, constraint, p.assumed_value.clone())
         }
-        opt14::CPrimitive::CInteger(p) => {
+        opt14::types::CPrimitive::CInteger(p) => {
             let constraint = openehr_base::containers::present(
                 p.range.as_ref().map(int_interval).into_iter().collect(),
             );
@@ -886,7 +890,7 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject, cx: &mut RootCx) -> CObject
                 constraint,
             })
         }
-        opt14::CPrimitive::CReal(p) => {
+        opt14::types::CPrimitive::CReal(p) => {
             let constraint = openehr_base::containers::present(
                 p.range.as_ref().map(real_interval).into_iter().collect(),
             );
@@ -912,7 +916,7 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject, cx: &mut RootCx) -> CObject
         // ADL2 surface defines pattern XOR range (`master04.5` §Mixed Pattern
         // and Interval is duration-only), so a 1.4 node carrying both keeps
         // the range and reports the dropped pattern.
-        opt14::CPrimitive::CDate(p) => CObject::CDate(CDate {
+        opt14::types::CPrimitive::CDate(p) => CObject::CDate(CDate {
             parent: None,
             soc_parent: None,
             rm_type_name: rm.to_owned(),
@@ -945,7 +949,7 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject, cx: &mut RootCx) -> CObject
                 cx,
             ),
         }),
-        opt14::CPrimitive::CDateTime(p) => CObject::CDateTime(CDateTime {
+        opt14::types::CPrimitive::CDateTime(p) => CObject::CDateTime(CDateTime {
             parent: None,
             soc_parent: None,
             rm_type_name: rm.to_owned(),
@@ -981,7 +985,7 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject, cx: &mut RootCx) -> CObject
                 cx,
             ),
         }),
-        opt14::CPrimitive::CDuration(p) => CObject::CDuration(CDuration {
+        opt14::types::CPrimitive::CDuration(p) => CObject::CDuration(CDuration {
             parent: None,
             soc_parent: None,
             rm_type_name: rm.to_owned(),
@@ -1011,7 +1015,7 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject, cx: &mut RootCx) -> CObject
             )),
             pattern_constraint: p.pattern.clone(),
         }),
-        opt14::CPrimitive::CTime(p) => CObject::CTime(CTime {
+        opt14::types::CPrimitive::CTime(p) => CObject::CTime(CTime {
             parent: None,
             soc_parent: None,
             rm_type_name: rm.to_owned(),
@@ -1125,7 +1129,7 @@ fn temporal_interval<T>(
 fn c_string(
     rm_type_name: &str,
     node_id: &str,
-    occurrences: &opt14::Intervalofinteger,
+    occurrences: &opt14::types::Intervalofinteger,
     constraint: Vec<String>,
     assumed_value: Option<String>,
 ) -> CObject {
@@ -1156,7 +1160,7 @@ fn c_string(
 /// the (more concrete) list constraint wins and the URI is carried in
 /// `conversion_details` — a dual-constrained node has no single ADL2 form (no
 /// openEHR spec governs 1.4→2 conversion — our own design).
-fn map_code_reference(c: &opt14::CCodeReference, cx: &mut RootCx) -> CObject {
+fn map_code_reference(c: &opt14::types::CCodeReference, cx: &mut RootCx) -> CObject {
     if c.referenceSetUri.is_empty() || !c.code_list.is_empty() {
         if !c.referenceSetUri.is_empty() {
             cx.note(
@@ -1244,7 +1248,7 @@ fn regex_escape(id: &str) -> String {
 /// parser. An assertion that cannot be rendered or parsed is dropped —
 /// reported in `conversion_details` so the slot's weakening is visible.
 fn map_slot_assertions(
-    assertions: &[opt14::Assertion],
+    assertions: &[opt14::types::Assertion],
     node_id: &str,
     kind: &str,
     cx: &mut RootCx,
@@ -1278,24 +1282,24 @@ fn map_slot_assertions(
 /// Render a 1.4 `EXPR_ITEM` tree to the ADL slot-assertion surface syntax.
 /// Returns `None` for a shape outside the supported forms (binary/unary
 /// operators over attribute paths, constants and constraint leaves).
-fn render_expr(e: &opt14::ExprItem) -> Option<String> {
+fn render_expr(e: &opt14::types::ExprItem) -> Option<String> {
     match e {
-        opt14::ExprItem::ExprBinaryOperator(b) => {
+        opt14::types::ExprItem::ExprBinaryOperator(b) => {
             let l = render_expr(&b.left_operand)?;
             let r = render_expr(&b.right_operand)?;
             Some(format!("{l} {} {r}", b.operator))
         }
-        opt14::ExprItem::ExprUnaryOperator(u) => {
+        opt14::types::ExprItem::ExprUnaryOperator(u) => {
             let inner = render_expr(&u.operand)?;
             Some(format!("{} ({inner})", u.operator))
         }
-        opt14::ExprItem::ExprLeaf(leaf) => render_leaf(leaf),
+        opt14::types::ExprItem::ExprLeaf(leaf) => render_leaf(leaf),
     }
 }
 
 /// Render a 1.4 `EXPR_LEAF`: an attribute path verbatim, a constant literal,
 /// or a constraint (`C_STRING` pattern/list) as the `{/…/}`/`{"…"}` block.
-fn render_leaf(leaf: &opt14::ExprLeaf) -> Option<String> {
+fn render_leaf(leaf: &opt14::types::ExprLeaf) -> Option<String> {
     let item = &leaf.item;
     let text = item.text();
     match leaf.reference_type.to_lowercase().as_str() {
@@ -1440,7 +1444,7 @@ fn tuple_code(terminology: Option<&str>, code: &str) -> CPrimitiveObject {
 /// complex object is the honest valid constraint. No vendored openEHR spec
 /// governs `DV_STATE` conversion — our own design; recorded in
 /// `conversion_details`.
-fn dv_state_loose(c: &opt14::CDvState, cx: &mut RootCx) -> CObject {
+fn dv_state_loose(c: &opt14::types::CDvState, cx: &mut RootCx) -> CObject {
     cx.note(
         format!("dv_state.{}", c.node_id),
         format!(
@@ -1459,7 +1463,7 @@ fn dv_state_loose(c: &opt14::CDvState, cx: &mut RootCx) -> CObject {
 /// so the ac-code constraint resolves (VACDF/VTCBK). An ac-code the ontology
 /// does NOT define would dangle — it stays an unconstrained node, reported in
 /// `conversion_details`.
-fn map_constraint_ref(r: &opt14::ConstraintRef, cx: &mut RootCx) -> CObject {
+fn map_constraint_ref(r: &opt14::types::ConstraintRef, cx: &mut RootCx) -> CObject {
     if cx.defined_acs.contains(&r.reference) {
         terminology_code(
             &r.rm_type_name,
@@ -1484,7 +1488,7 @@ fn map_constraint_ref(r: &opt14::ConstraintRef, cx: &mut RootCx) -> CObject {
 /// (`master04.4-cadl_second_order.adoc` §Tuple Constraints). A 1.4
 /// `assumed_value` has no per-tuple AOM2 slot — recorded in
 /// `conversion_details`.
-fn ordinal_tuple(c: &opt14::CDvOrdinal, cx: &mut RootCx) -> CObject {
+fn ordinal_tuple(c: &opt14::types::CDvOrdinal, cx: &mut RootCx) -> CObject {
     if let Some(a) = &c.assumed_value {
         cx.note(
             format!("assumed_value.{}", c.node_id),
@@ -1541,7 +1545,7 @@ fn ordinal_tuple(c: &opt14::CDvOrdinal, cx: &mut RootCx) -> CObject {
 /// constrains it (uniform tuple arity; rows without one carry an
 /// unconstrained `C_INTEGER`). A 1.4 `assumed_value` has no per-tuple AOM2
 /// slot — recorded in `conversion_details`.
-fn quantity_tuple(c: &opt14::CDvQuantity, cx: &mut RootCx) -> CObject {
+fn quantity_tuple(c: &opt14::types::CDvQuantity, cx: &mut RootCx) -> CObject {
     if c.assumed_value.is_some() {
         cx.note(
             format!("assumed_value.{}", c.node_id),
@@ -1647,7 +1651,7 @@ fn quantity_tuple(c: &opt14::CDvQuantity, cx: &mut RootCx) -> CObject {
 /// widens to — the reference-corpus form for units-only constraints; a mixed
 /// set's dropped per-unit ranges are reported.
 fn widened_units_attribute(
-    c: &opt14::CDvQuantity,
+    c: &opt14::types::CDvQuantity,
     some_dropped: bool,
     cx: &mut RootCx,
 ) -> CAttribute {
@@ -1682,8 +1686,8 @@ fn widened_units_attribute(
 
 /// The `0..*` occurrences a synthesized single-child attribute carries (the
 /// converter core elides RM-default multiplicities).
-fn unbounded_occurrences() -> opt14::Intervalofinteger {
-    opt14::Intervalofinteger {
+fn unbounded_occurrences() -> opt14::types::Intervalofinteger {
+    opt14::types::Intervalofinteger {
         lower_included: Some(true),
         upper_included: None,
         lower_unbounded: false,
@@ -1735,7 +1739,7 @@ fn code_constraint(terminology: Option<&str>, codes: &[String], assumed: Option<
     out
 }
 
-fn map_term(t: &opt14::ArchetypeTerm) -> ArchetypeTerm {
+fn map_term(t: &opt14::types::ArchetypeTerm) -> ArchetypeTerm {
     let text = t.items.get("text").cloned().unwrap_or_default();
     let description = t.items.get("description").cloned().unwrap_or_default();
     let other_items: BTreeMap<String, String> = t
@@ -1754,7 +1758,7 @@ fn map_term(t: &opt14::ArchetypeTerm) -> ArchetypeTerm {
     }
 }
 
-fn map_mult(iv: &opt14::Intervalofinteger) -> MultiplicityInterval {
+fn map_mult(iv: &opt14::types::Intervalofinteger) -> MultiplicityInterval {
     MultiplicityInterval {
         lower: iv.lower,
         upper: iv.upper,
@@ -1765,7 +1769,7 @@ fn map_mult(iv: &opt14::Intervalofinteger) -> MultiplicityInterval {
     }
 }
 
-fn map_cardinality(c: &opt14::Cardinality) -> Cardinality {
+fn map_cardinality(c: &opt14::types::Cardinality) -> Cardinality {
     Cardinality {
         interval: map_mult(&c.interval),
         is_ordered: c.is_ordered,
@@ -1773,7 +1777,7 @@ fn map_cardinality(c: &opt14::Cardinality) -> Cardinality {
     }
 }
 
-fn int_interval(iv: &opt14::Intervalofinteger) -> Interval<i32> {
+fn int_interval(iv: &opt14::types::Intervalofinteger) -> Interval<i32> {
     if iv.lower == iv.upper && iv.lower.is_some() {
         let v = iv.lower.unwrap_or_default();
         return Interval::PointInterval(PointInterval {
@@ -1795,7 +1799,7 @@ fn int_interval(iv: &opt14::Intervalofinteger) -> Interval<i32> {
     }))
 }
 
-fn real_interval(iv: &opt14::Intervalofreal) -> Interval<f64> {
+fn real_interval(iv: &opt14::types::Intervalofreal) -> Interval<f64> {
     if iv.lower == iv.upper && iv.lower.is_some() {
         let v = iv.lower.unwrap_or_default();
         return Interval::PointInterval(PointInterval {
@@ -1845,7 +1849,7 @@ mod tests {
     const VITAL_SIGNS: &str =
         "tests/resources/service/knowledge/opt/Vital Signs Encounter (Composition).opt";
 
-    fn parse_opt(rel: &str) -> opt14::OperationalTemplate {
+    fn parse_opt(rel: &str) -> opt14::types::OperationalTemplate {
         let path = format!("{}/{rel}", env!("CARGO_MANIFEST_DIR"));
         let xml = std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {path}: {e}"));
         opt14::from_xml(&xml).unwrap_or_else(|e| panic!("parse OPT {rel}: {e:?}"))
@@ -2059,8 +2063,8 @@ mod tests {
     /// attribute (the reference-corpus form for units-only constraints).
     #[test]
     fn quantity_tuple_emitted_when_magnitudes_present() {
-        let item = |units: &str, magnitude: Option<(f64, f64)>| opt14::CQuantityItem {
-            magnitude: magnitude.map(|(lo, hi)| opt14::Intervalofreal {
+        let item = |units: &str, magnitude: Option<(f64, f64)>| opt14::types::CQuantityItem {
+            magnitude: magnitude.map(|(lo, hi)| opt14::types::Intervalofreal {
                 lower_included: Some(true),
                 upper_included: Some(true),
                 lower_unbounded: false,
@@ -2071,7 +2075,7 @@ mod tests {
             precision: None,
             units: units.to_owned(),
         };
-        let quantity = |list: Vec<opt14::CQuantityItem>| opt14::CDvQuantity {
+        let quantity = |list: Vec<opt14::types::CQuantityItem>| opt14::types::CDvQuantity {
             rm_type_name: "DV_QUANTITY".to_owned(),
             occurrences: unbounded_occurrences(),
             node_id: "at0004".to_owned(),
@@ -2129,7 +2133,7 @@ mod tests {
     #[test]
     fn reference_set_uri_becomes_ac_binding() {
         let mut cx = test_cx();
-        let node = opt14::CCodeReference {
+        let node = opt14::types::CCodeReference {
             rm_type_name: "CODE_PHRASE".to_owned(),
             occurrences: unbounded_occurrences(),
             node_id: "at0005".to_owned(),
@@ -2165,7 +2169,7 @@ mod tests {
     fn constraint_ref_resolves_or_reports() {
         let mut cx = test_cx();
         cx.defined_acs.insert("ac0002".to_owned());
-        let defined = opt14::ConstraintRef {
+        let defined = opt14::types::ConstraintRef {
             rm_type_name: "CODE_PHRASE".to_owned(),
             occurrences: unbounded_occurrences(),
             node_id: "at0007".to_owned(),
@@ -2177,7 +2181,7 @@ mod tests {
         assert_eq!(tc.constraint, "ac0002");
         assert!(cx.notes.is_empty(), "a resolved ref reports nothing");
 
-        let dangling = opt14::ConstraintRef {
+        let dangling = opt14::types::ConstraintRef {
             reference: "ac0099".to_owned(),
             ..defined
         };
@@ -2200,22 +2204,24 @@ mod tests {
     /// form), plus the assumed value.
     #[test]
     fn temporal_range_and_pattern_both_carried() {
-        let node = opt14::CPrimitiveObject {
+        let node = opt14::types::CPrimitiveObject {
             rm_type_name: "DV_DURATION".to_owned(),
             occurrences: unbounded_occurrences(),
             node_id: String::new(),
-            item: Some(Box::new(opt14::CPrimitive::CDuration(opt14::CDuration {
-                pattern: Some("PTH".to_owned()),
-                range: Some(opt14::Intervalofduration {
-                    lower_included: Some(true),
-                    upper_included: Some(true),
-                    lower_unbounded: false,
-                    upper_unbounded: false,
-                    lower: Some("PT0H".to_owned()),
-                    upper: Some("PT12H".to_owned()),
-                }),
-                assumed_value: Some("PT1H".to_owned()),
-            }))),
+            item: Some(Box::new(opt14::types::CPrimitive::CDuration(
+                opt14::types::CDuration {
+                    pattern: Some("PTH".to_owned()),
+                    range: Some(opt14::types::Intervalofduration {
+                        lower_included: Some(true),
+                        upper_included: Some(true),
+                        lower_unbounded: false,
+                        upper_unbounded: false,
+                        lower: Some("PT0H".to_owned()),
+                        upper: Some("PT12H".to_owned()),
+                    }),
+                    assumed_value: Some("PT1H".to_owned()),
+                },
+            ))),
         };
         let mut cx = test_cx();
         let CObject::CDuration(d) = map_primitive_object(&node, &mut cx) else {
@@ -2237,23 +2243,25 @@ mod tests {
     /// it for a date would not re-parse.
     #[test]
     fn date_pattern_plus_range_keeps_range_and_reports() {
-        let node = opt14::CPrimitiveObject {
+        let node = opt14::types::CPrimitiveObject {
             rm_type_name: "DV_DATE".to_owned(),
             occurrences: unbounded_occurrences(),
             node_id: String::new(),
-            item: Some(Box::new(opt14::CPrimitive::CDate(opt14::CDate {
-                pattern: Some("yyyy-??-??".to_owned()),
-                timezone_validity: None,
-                range: Some(opt14::Intervalofdate {
-                    lower_included: Some(true),
-                    upper_included: Some(true),
-                    lower_unbounded: false,
-                    upper_unbounded: false,
-                    lower: Some("2004-01-01".to_owned()),
-                    upper: Some("2004-12-31".to_owned()),
-                }),
-                assumed_value: None,
-            }))),
+            item: Some(Box::new(opt14::types::CPrimitive::CDate(
+                opt14::types::CDate {
+                    pattern: Some("yyyy-??-??".to_owned()),
+                    timezone_validity: None,
+                    range: Some(opt14::types::Intervalofdate {
+                        lower_included: Some(true),
+                        upper_included: Some(true),
+                        lower_unbounded: false,
+                        upper_unbounded: false,
+                        lower: Some("2004-01-01".to_owned()),
+                        upper: Some("2004-12-31".to_owned()),
+                    }),
+                    assumed_value: None,
+                },
+            ))),
         };
         let mut cx = test_cx();
         let CObject::CDate(d) = map_primitive_object(&node, &mut cx) else {
@@ -2271,13 +2279,15 @@ mod tests {
             cx.notes
         );
         // A pattern-only date keeps its pattern unreported.
-        let pattern_only = opt14::CPrimitiveObject {
-            item: Some(Box::new(opt14::CPrimitive::CDate(opt14::CDate {
-                pattern: Some("yyyy-??-??".to_owned()),
-                timezone_validity: None,
-                range: None,
-                assumed_value: None,
-            }))),
+        let pattern_only = opt14::types::CPrimitiveObject {
+            item: Some(Box::new(opt14::types::CPrimitive::CDate(
+                opt14::types::CDate {
+                    pattern: Some("yyyy-??-??".to_owned()),
+                    timezone_validity: None,
+                    range: None,
+                    assumed_value: None,
+                },
+            ))),
             ..node
         };
         let mut cx = test_cx();

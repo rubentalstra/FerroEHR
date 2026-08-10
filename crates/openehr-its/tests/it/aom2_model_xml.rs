@@ -34,7 +34,7 @@
     reason = "the Book ch11 test shape: `?` propagates the codec plumbing while the assertions ARE the test — an assertion panic is how these tests fail"
 )]
 
-use openehr_its::aom2_model::{
+use openehr_its::aom2_model::types::{
     ArchetypeHrid, ArchetypeTerm, ArchetypeTerminology, AuthoredArchetype, CAttribute,
     CComplexObject, CObject, CString, Cardinality, Codedefinitionset, Multiplicityinterval,
     TerminologyCode,

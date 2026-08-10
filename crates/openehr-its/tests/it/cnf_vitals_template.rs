@@ -24,7 +24,8 @@
 
 use std::path::PathBuf;
 
-use openehr_its::flat::webtemplate::{WebTemplateNode, build_web_template};
+use openehr_its::flat::webtemplate::builder::build_web_template;
+use openehr_its::flat::webtemplate::model::WebTemplateNode;
 use openehr_its::opt14;
 
 fn vitals_opt() -> PathBuf {

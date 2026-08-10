@@ -12,7 +12,7 @@
 //! (UML `c_quantity`/`c_ordinal`/`c_coded_text`; ADL1.4 master09).
 
 use openehr_base::prelude::CodePhrase;
-use openehr_its::opt14::{CDvOrdinal, CDvQuantity, CPrimitive};
+use openehr_its::opt14::types::{CDvOrdinal, CDvQuantity, CPrimitive};
 
 use super::RuleViolation;
 use super::interval::{int_in_range, real_in_range};

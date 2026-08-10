@@ -23,7 +23,7 @@
 use std::collections::BTreeSet;
 use std::sync::LazyLock;
 
-use openehr_its::opt14::{CAttribute, CObject, Cardinality, Intervalofinteger};
+use openehr_its::opt14::types::{CAttribute, CObject, Cardinality, Intervalofinteger};
 use openehr_rm::v1_2::model;
 
 use super::interval::{iv_lower, iv_upper};

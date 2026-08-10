@@ -14,7 +14,7 @@
 )]
 use crate::xml::runtime::{FromXml, ToXml, XmlError, XmlEvent};
 
-impl crate::xml::runtime::ToXml for crate::opt14::Annotation {
+impl crate::xml::runtime::ToXml for crate::opt14::types::Annotation {
     fn xml_type_name(&self) -> &'static str {
         "ANNOTATION"
     }
@@ -31,7 +31,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Annotation {
             }
         }
         __attrs.push(("path", self.path.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -44,7 +44,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Annotation {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::Annotation {
+impl crate::xml::runtime::FromXml for crate::opt14::types::Annotation {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -69,7 +69,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Annotation {
                 }
             }
         }
-        Ok(crate::opt14::Annotation {
+        Ok(crate::opt14::types::Annotation {
             path: start
                 .attr("path")
                 .ok_or_else(|| {
@@ -81,7 +81,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Annotation {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::Archetype {
+impl crate::xml::runtime::ToXml for crate::opt14::types::Archetype {
     fn xml_type_name(&self) -> &'static str {
         "ARCHETYPE"
     }
@@ -97,7 +97,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Archetype {
                 __attrs.push(("xsi:type", "ARCHETYPE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -140,7 +140,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Archetype {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::Archetype {
+impl crate::xml::runtime::FromXml for crate::opt14::types::Archetype {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -216,7 +216,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Archetype {
                 }
             }
         }
-        Ok(crate::opt14::Archetype {
+        Ok(crate::opt14::types::Archetype {
             original_language: __original_language.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element original_language".into())
             })?,
@@ -244,24 +244,24 @@ impl crate::xml::runtime::FromXml for crate::opt14::Archetype {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::ArchetypeConstraint {
+impl crate::xml::runtime::ToXml for crate::opt14::types::ArchetypeConstraint {
     fn xml_type_name(&self) -> &'static str {
         match self {
-            crate::opt14::ArchetypeConstraint::ArchetypeInternalRef(x) => x.xml_type_name(),
-            crate::opt14::ArchetypeConstraint::ArchetypeSlot(x) => x.xml_type_name(),
-            crate::opt14::ArchetypeConstraint::ConstraintRef(x) => x.xml_type_name(),
-            crate::opt14::ArchetypeConstraint::CArchetypeRoot(x) => x.xml_type_name(),
-            crate::opt14::ArchetypeConstraint::CCodePhrase(x) => x.xml_type_name(),
-            crate::opt14::ArchetypeConstraint::CCodeReference(x) => x.xml_type_name(),
-            crate::opt14::ArchetypeConstraint::CComplexObject(x) => x.xml_type_name(),
-            crate::opt14::ArchetypeConstraint::CDefinedObject(x) => x.xml_type_name(),
-            crate::opt14::ArchetypeConstraint::CDvOrdinal(x) => x.xml_type_name(),
-            crate::opt14::ArchetypeConstraint::CDvQuantity(x) => x.xml_type_name(),
-            crate::opt14::ArchetypeConstraint::CDvState(x) => x.xml_type_name(),
-            crate::opt14::ArchetypeConstraint::CMultipleAttribute(x) => x.xml_type_name(),
-            crate::opt14::ArchetypeConstraint::CPrimitiveObject(x) => x.xml_type_name(),
-            crate::opt14::ArchetypeConstraint::CSingleAttribute(x) => x.xml_type_name(),
-            crate::opt14::ArchetypeConstraint::TComplexObject(x) => x.xml_type_name(),
+            crate::opt14::types::ArchetypeConstraint::ArchetypeInternalRef(x) => x.xml_type_name(),
+            crate::opt14::types::ArchetypeConstraint::ArchetypeSlot(x) => x.xml_type_name(),
+            crate::opt14::types::ArchetypeConstraint::ConstraintRef(x) => x.xml_type_name(),
+            crate::opt14::types::ArchetypeConstraint::CArchetypeRoot(x) => x.xml_type_name(),
+            crate::opt14::types::ArchetypeConstraint::CCodePhrase(x) => x.xml_type_name(),
+            crate::opt14::types::ArchetypeConstraint::CCodeReference(x) => x.xml_type_name(),
+            crate::opt14::types::ArchetypeConstraint::CComplexObject(x) => x.xml_type_name(),
+            crate::opt14::types::ArchetypeConstraint::CDefinedObject(x) => x.xml_type_name(),
+            crate::opt14::types::ArchetypeConstraint::CDvOrdinal(x) => x.xml_type_name(),
+            crate::opt14::types::ArchetypeConstraint::CDvQuantity(x) => x.xml_type_name(),
+            crate::opt14::types::ArchetypeConstraint::CDvState(x) => x.xml_type_name(),
+            crate::opt14::types::ArchetypeConstraint::CMultipleAttribute(x) => x.xml_type_name(),
+            crate::opt14::types::ArchetypeConstraint::CPrimitiveObject(x) => x.xml_type_name(),
+            crate::opt14::types::ArchetypeConstraint::CSingleAttribute(x) => x.xml_type_name(),
+            crate::opt14::types::ArchetypeConstraint::TComplexObject(x) => x.xml_type_name(),
         }
     }
     fn write_xml(
@@ -271,84 +271,122 @@ impl crate::xml::runtime::ToXml for crate::opt14::ArchetypeConstraint {
         declared: Option<&str>,
     ) -> Result<(), crate::xml::runtime::XmlError> {
         match self {
-            crate::opt14::ArchetypeConstraint::ArchetypeInternalRef(x) => {
+            crate::opt14::types::ArchetypeConstraint::ArchetypeInternalRef(x) => {
                 x.write_xml(w, tag, declared)
             }
-            crate::opt14::ArchetypeConstraint::ArchetypeSlot(x) => x.write_xml(w, tag, declared),
-            crate::opt14::ArchetypeConstraint::ConstraintRef(x) => x.write_xml(w, tag, declared),
-            crate::opt14::ArchetypeConstraint::CArchetypeRoot(x) => x.write_xml(w, tag, declared),
-            crate::opt14::ArchetypeConstraint::CCodePhrase(x) => x.write_xml(w, tag, declared),
-            crate::opt14::ArchetypeConstraint::CCodeReference(x) => x.write_xml(w, tag, declared),
-            crate::opt14::ArchetypeConstraint::CComplexObject(x) => x.write_xml(w, tag, declared),
-            crate::opt14::ArchetypeConstraint::CDefinedObject(x) => x.write_xml(w, tag, declared),
-            crate::opt14::ArchetypeConstraint::CDvOrdinal(x) => x.write_xml(w, tag, declared),
-            crate::opt14::ArchetypeConstraint::CDvQuantity(x) => x.write_xml(w, tag, declared),
-            crate::opt14::ArchetypeConstraint::CDvState(x) => x.write_xml(w, tag, declared),
-            crate::opt14::ArchetypeConstraint::CMultipleAttribute(x) => {
+            crate::opt14::types::ArchetypeConstraint::ArchetypeSlot(x) => {
                 x.write_xml(w, tag, declared)
             }
-            crate::opt14::ArchetypeConstraint::CPrimitiveObject(x) => x.write_xml(w, tag, declared),
-            crate::opt14::ArchetypeConstraint::CSingleAttribute(x) => x.write_xml(w, tag, declared),
-            crate::opt14::ArchetypeConstraint::TComplexObject(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::ArchetypeConstraint::ConstraintRef(x) => {
+                x.write_xml(w, tag, declared)
+            }
+            crate::opt14::types::ArchetypeConstraint::CArchetypeRoot(x) => {
+                x.write_xml(w, tag, declared)
+            }
+            crate::opt14::types::ArchetypeConstraint::CCodePhrase(x) => {
+                x.write_xml(w, tag, declared)
+            }
+            crate::opt14::types::ArchetypeConstraint::CCodeReference(x) => {
+                x.write_xml(w, tag, declared)
+            }
+            crate::opt14::types::ArchetypeConstraint::CComplexObject(x) => {
+                x.write_xml(w, tag, declared)
+            }
+            crate::opt14::types::ArchetypeConstraint::CDefinedObject(x) => {
+                x.write_xml(w, tag, declared)
+            }
+            crate::opt14::types::ArchetypeConstraint::CDvOrdinal(x) => {
+                x.write_xml(w, tag, declared)
+            }
+            crate::opt14::types::ArchetypeConstraint::CDvQuantity(x) => {
+                x.write_xml(w, tag, declared)
+            }
+            crate::opt14::types::ArchetypeConstraint::CDvState(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::ArchetypeConstraint::CMultipleAttribute(x) => {
+                x.write_xml(w, tag, declared)
+            }
+            crate::opt14::types::ArchetypeConstraint::CPrimitiveObject(x) => {
+                x.write_xml(w, tag, declared)
+            }
+            crate::opt14::types::ArchetypeConstraint::CSingleAttribute(x) => {
+                x.write_xml(w, tag, declared)
+            }
+            crate::opt14::types::ArchetypeConstraint::TComplexObject(x) => {
+                x.write_xml(w, tag, declared)
+            }
         }
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::ArchetypeConstraint {
+impl crate::xml::runtime::FromXml for crate::opt14::types::ArchetypeConstraint {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         match start.xsi_type() {
-            Some("ARCHETYPE_INTERNAL_REF") => {
-                Ok(crate::opt14::ArchetypeConstraint::ArchetypeInternalRef(
+            Some("ARCHETYPE_INTERNAL_REF") => Ok(
+                crate::opt14::types::ArchetypeConstraint::ArchetypeInternalRef(
+                    crate::xml::runtime::FromXml::from_xml(reader, start)?,
+                ),
+            ),
+            Some("ARCHETYPE_SLOT") => Ok(crate::opt14::types::ArchetypeConstraint::ArchetypeSlot(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some("CONSTRAINT_REF") => Ok(crate::opt14::types::ArchetypeConstraint::ConstraintRef(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some("C_ARCHETYPE_ROOT") => {
+                Ok(crate::opt14::types::ArchetypeConstraint::CArchetypeRoot(
                     crate::xml::runtime::FromXml::from_xml(reader, start)?,
                 ))
             }
-            Some("ARCHETYPE_SLOT") => Ok(crate::opt14::ArchetypeConstraint::ArchetypeSlot(
+            Some("C_CODE_PHRASE") => Ok(crate::opt14::types::ArchetypeConstraint::CCodePhrase(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("CONSTRAINT_REF") => Ok(crate::opt14::ArchetypeConstraint::ConstraintRef(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("C_ARCHETYPE_ROOT") => Ok(crate::opt14::ArchetypeConstraint::CArchetypeRoot(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("C_CODE_PHRASE") => Ok(crate::opt14::ArchetypeConstraint::CCodePhrase(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("C_CODE_REFERENCE") => Ok(crate::opt14::ArchetypeConstraint::CCodeReference(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("C_COMPLEX_OBJECT") => Ok(crate::opt14::ArchetypeConstraint::CComplexObject(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("C_DEFINED_OBJECT") => Ok(crate::opt14::ArchetypeConstraint::CDefinedObject(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("C_DV_ORDINAL") => Ok(crate::opt14::ArchetypeConstraint::CDvOrdinal(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("C_DV_QUANTITY") => Ok(crate::opt14::ArchetypeConstraint::CDvQuantity(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("C_DV_STATE") => Ok(crate::opt14::ArchetypeConstraint::CDvState(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("C_MULTIPLE_ATTRIBUTE") => {
-                Ok(crate::opt14::ArchetypeConstraint::CMultipleAttribute(
+            Some("C_CODE_REFERENCE") => {
+                Ok(crate::opt14::types::ArchetypeConstraint::CCodeReference(
                     crate::xml::runtime::FromXml::from_xml(reader, start)?,
                 ))
             }
-            Some("C_PRIMITIVE_OBJECT") => Ok(crate::opt14::ArchetypeConstraint::CPrimitiveObject(
+            Some("C_COMPLEX_OBJECT") => {
+                Ok(crate::opt14::types::ArchetypeConstraint::CComplexObject(
+                    crate::xml::runtime::FromXml::from_xml(reader, start)?,
+                ))
+            }
+            Some("C_DEFINED_OBJECT") => {
+                Ok(crate::opt14::types::ArchetypeConstraint::CDefinedObject(
+                    crate::xml::runtime::FromXml::from_xml(reader, start)?,
+                ))
+            }
+            Some("C_DV_ORDINAL") => Ok(crate::opt14::types::ArchetypeConstraint::CDvOrdinal(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_SINGLE_ATTRIBUTE") => Ok(crate::opt14::ArchetypeConstraint::CSingleAttribute(
+            Some("C_DV_QUANTITY") => Ok(crate::opt14::types::ArchetypeConstraint::CDvQuantity(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("T_COMPLEX_OBJECT") => Ok(crate::opt14::ArchetypeConstraint::TComplexObject(
+            Some("C_DV_STATE") => Ok(crate::opt14::types::ArchetypeConstraint::CDvState(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
+            Some("C_MULTIPLE_ATTRIBUTE") => Ok(
+                crate::opt14::types::ArchetypeConstraint::CMultipleAttribute(
+                    crate::xml::runtime::FromXml::from_xml(reader, start)?,
+                ),
+            ),
+            Some("C_PRIMITIVE_OBJECT") => {
+                Ok(crate::opt14::types::ArchetypeConstraint::CPrimitiveObject(
+                    crate::xml::runtime::FromXml::from_xml(reader, start)?,
+                ))
+            }
+            Some("C_SINGLE_ATTRIBUTE") => {
+                Ok(crate::opt14::types::ArchetypeConstraint::CSingleAttribute(
+                    crate::xml::runtime::FromXml::from_xml(reader, start)?,
+                ))
+            }
+            Some("T_COMPLEX_OBJECT") => {
+                Ok(crate::opt14::types::ArchetypeConstraint::TComplexObject(
+                    crate::xml::runtime::FromXml::from_xml(reader, start)?,
+                ))
+            }
             None => Err(crate::xml::runtime::XmlError::Parse(
                 "ArchetypeConstraint: missing xsi:type".into(),
             )),
@@ -359,7 +397,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::ArchetypeConstraint {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::ArchetypeInternalRef {
+impl crate::xml::runtime::ToXml for crate::opt14::types::ArchetypeInternalRef {
     fn xml_type_name(&self) -> &'static str {
         "ARCHETYPE_INTERNAL_REF"
     }
@@ -375,7 +413,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::ArchetypeInternalRef {
                 __attrs.push(("xsi:type", "ARCHETYPE_INTERNAL_REF".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -390,7 +428,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::ArchetypeInternalRef {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::ArchetypeInternalRef {
+impl crate::xml::runtime::FromXml for crate::opt14::types::ArchetypeInternalRef {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -426,9 +464,9 @@ impl crate::xml::runtime::FromXml for crate::opt14::ArchetypeInternalRef {
                 }
             }
         }
-        Ok(crate::opt14::ArchetypeInternalRef {
+        Ok(crate::opt14::types::ArchetypeInternalRef {
             rm_type_name: __rm_type_name.unwrap_or(String::new()),
-            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+            occurrences: __occurrences.unwrap_or(crate::opt14::types::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
                 lower_unbounded: false,
@@ -444,7 +482,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::ArchetypeInternalRef {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::ArchetypeOntology {
+impl crate::xml::runtime::ToXml for crate::opt14::types::ArchetypeOntology {
     fn xml_type_name(&self) -> &'static str {
         "ARCHETYPE_ONTOLOGY"
     }
@@ -460,7 +498,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::ArchetypeOntology {
                 __attrs.push(("xsi:type", "ARCHETYPE_ONTOLOGY".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -482,7 +520,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::ArchetypeOntology {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::ArchetypeOntology {
+impl crate::xml::runtime::FromXml for crate::opt14::types::ArchetypeOntology {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -520,7 +558,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::ArchetypeOntology {
                 }
             }
         }
-        Ok(crate::opt14::ArchetypeOntology {
+        Ok(crate::opt14::types::ArchetypeOntology {
             term_definitions: __term_definitions,
             constraint_definitions: __constraint_definitions,
             term_bindings: __term_bindings,
@@ -529,7 +567,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::ArchetypeOntology {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::ArchetypeSlot {
+impl crate::xml::runtime::ToXml for crate::opt14::types::ArchetypeSlot {
     fn xml_type_name(&self) -> &'static str {
         "ARCHETYPE_SLOT"
     }
@@ -545,7 +583,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::ArchetypeSlot {
                 __attrs.push(("xsi:type", "ARCHETYPE_SLOT".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -565,7 +603,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::ArchetypeSlot {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::ArchetypeSlot {
+impl crate::xml::runtime::FromXml for crate::opt14::types::ArchetypeSlot {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -605,9 +643,9 @@ impl crate::xml::runtime::FromXml for crate::opt14::ArchetypeSlot {
                 }
             }
         }
-        Ok(crate::opt14::ArchetypeSlot {
+        Ok(crate::opt14::types::ArchetypeSlot {
             rm_type_name: __rm_type_name.unwrap_or(String::new()),
-            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+            occurrences: __occurrences.unwrap_or(crate::opt14::types::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
                 lower_unbounded: false,
@@ -622,7 +660,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::ArchetypeSlot {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::ArchetypeTerm {
+impl crate::xml::runtime::ToXml for crate::opt14::types::ArchetypeTerm {
     fn xml_type_name(&self) -> &'static str {
         "ARCHETYPE_TERM"
     }
@@ -639,7 +677,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::ArchetypeTerm {
             }
         }
         __attrs.push(("code", self.code.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -652,7 +690,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::ArchetypeTerm {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::ArchetypeTerm {
+impl crate::xml::runtime::FromXml for crate::opt14::types::ArchetypeTerm {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -677,7 +715,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::ArchetypeTerm {
                 }
             }
         }
-        Ok(crate::opt14::ArchetypeTerm {
+        Ok(crate::opt14::types::ArchetypeTerm {
             code: start
                 .attr("code")
                 .ok_or_else(|| {
@@ -689,7 +727,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::ArchetypeTerm {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::Assertion {
+impl crate::xml::runtime::ToXml for crate::opt14::types::Assertion {
     fn xml_type_name(&self) -> &'static str {
         "ASSERTION"
     }
@@ -705,7 +743,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Assertion {
                 __attrs.push(("xsi:type", "ASSERTION".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -726,7 +764,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Assertion {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::Assertion {
+impl crate::xml::runtime::FromXml for crate::opt14::types::Assertion {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -762,7 +800,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Assertion {
                 }
             }
         }
-        Ok(crate::opt14::Assertion {
+        Ok(crate::opt14::types::Assertion {
             tag: __tag,
             string_expression: __string_expression,
             expression: __expression.ok_or_else(|| {
@@ -773,7 +811,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Assertion {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::AssertionVariable {
+impl crate::xml::runtime::ToXml for crate::opt14::types::AssertionVariable {
     fn xml_type_name(&self) -> &'static str {
         "ASSERTION_VARIABLE"
     }
@@ -789,7 +827,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::AssertionVariable {
                 __attrs.push(("xsi:type", "ASSERTION_VARIABLE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -801,7 +839,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::AssertionVariable {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::AssertionVariable {
+impl crate::xml::runtime::FromXml for crate::opt14::types::AssertionVariable {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -828,7 +866,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::AssertionVariable {
                 }
             }
         }
-        Ok(crate::opt14::AssertionVariable {
+        Ok(crate::opt14::types::AssertionVariable {
             name: __name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element name".into())
             })?,
@@ -839,10 +877,10 @@ impl crate::xml::runtime::FromXml for crate::opt14::AssertionVariable {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::AuthoredResource {
+impl crate::xml::runtime::ToXml for crate::opt14::types::AuthoredResource {
     fn xml_type_name(&self) -> &'static str {
         match self {
-            crate::opt14::AuthoredResource::Archetype(x) => x.xml_type_name(),
+            crate::opt14::types::AuthoredResource::Archetype(x) => x.xml_type_name(),
         }
     }
     fn write_xml(
@@ -852,18 +890,18 @@ impl crate::xml::runtime::ToXml for crate::opt14::AuthoredResource {
         declared: Option<&str>,
     ) -> Result<(), crate::xml::runtime::XmlError> {
         match self {
-            crate::opt14::AuthoredResource::Archetype(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::AuthoredResource::Archetype(x) => x.write_xml(w, tag, declared),
         }
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::AuthoredResource {
+impl crate::xml::runtime::FromXml for crate::opt14::types::AuthoredResource {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         match start.xsi_type() {
-            Some("ARCHETYPE") => Ok(crate::opt14::AuthoredResource::Archetype(
+            Some("ARCHETYPE") => Ok(crate::opt14::types::AuthoredResource::Archetype(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
             None => Err(crate::xml::runtime::XmlError::Parse(
@@ -876,7 +914,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::AuthoredResource {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::Cardinality {
+impl crate::xml::runtime::ToXml for crate::opt14::types::Cardinality {
     fn xml_type_name(&self) -> &'static str {
         "CARDINALITY"
     }
@@ -892,7 +930,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Cardinality {
                 __attrs.push(("xsi:type", "CARDINALITY".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -906,7 +944,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Cardinality {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::Cardinality {
+impl crate::xml::runtime::FromXml for crate::opt14::types::Cardinality {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -937,7 +975,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Cardinality {
                 }
             }
         }
-        Ok(crate::opt14::Cardinality {
+        Ok(crate::opt14::types::Cardinality {
             is_ordered: __is_ordered.unwrap_or(false),
             is_unique: __is_unique.unwrap_or(false),
             interval: __interval.ok_or_else(|| {
@@ -947,7 +985,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Cardinality {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::ConstraintBindingItem {
+impl crate::xml::runtime::ToXml for crate::opt14::types::ConstraintBindingItem {
     fn xml_type_name(&self) -> &'static str {
         "CONSTRAINT_BINDING_ITEM"
     }
@@ -964,7 +1002,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::ConstraintBindingItem {
             }
         }
         __attrs.push(("code", self.code.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -975,7 +1013,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::ConstraintBindingItem {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::ConstraintBindingItem {
+impl crate::xml::runtime::FromXml for crate::opt14::types::ConstraintBindingItem {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -998,7 +1036,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::ConstraintBindingItem {
                 }
             }
         }
-        Ok(crate::opt14::ConstraintBindingItem {
+        Ok(crate::opt14::types::ConstraintBindingItem {
             code: start
                 .attr("code")
                 .ok_or_else(|| {
@@ -1012,7 +1050,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::ConstraintBindingItem {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::ConstraintRef {
+impl crate::xml::runtime::ToXml for crate::opt14::types::ConstraintRef {
     fn xml_type_name(&self) -> &'static str {
         "CONSTRAINT_REF"
     }
@@ -1028,7 +1066,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::ConstraintRef {
                 __attrs.push(("xsi:type", "CONSTRAINT_REF".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1043,7 +1081,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::ConstraintRef {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::ConstraintRef {
+impl crate::xml::runtime::FromXml for crate::opt14::types::ConstraintRef {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -1079,9 +1117,9 @@ impl crate::xml::runtime::FromXml for crate::opt14::ConstraintRef {
                 }
             }
         }
-        Ok(crate::opt14::ConstraintRef {
+        Ok(crate::opt14::types::ConstraintRef {
             rm_type_name: __rm_type_name.unwrap_or(String::new()),
-            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+            occurrences: __occurrences.unwrap_or(crate::opt14::types::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
                 lower_unbounded: false,
@@ -1097,7 +1135,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::ConstraintRef {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::CArchetypeRoot {
+impl crate::xml::runtime::ToXml for crate::opt14::types::CArchetypeRoot {
     fn xml_type_name(&self) -> &'static str {
         "C_ARCHETYPE_ROOT"
     }
@@ -1113,7 +1151,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CArchetypeRoot {
                 __attrs.push(("xsi:type", "C_ARCHETYPE_ROOT".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1141,7 +1179,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CArchetypeRoot {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::CArchetypeRoot {
+impl crate::xml::runtime::FromXml for crate::opt14::types::CArchetypeRoot {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -1195,9 +1233,9 @@ impl crate::xml::runtime::FromXml for crate::opt14::CArchetypeRoot {
                 }
             }
         }
-        Ok(crate::opt14::CArchetypeRoot {
+        Ok(crate::opt14::types::CArchetypeRoot {
             rm_type_name: __rm_type_name.unwrap_or(String::new()),
-            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+            occurrences: __occurrences.unwrap_or(crate::opt14::types::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
                 lower_unbounded: false,
@@ -1217,11 +1255,11 @@ impl crate::xml::runtime::FromXml for crate::opt14::CArchetypeRoot {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::CAttribute {
+impl crate::xml::runtime::ToXml for crate::opt14::types::CAttribute {
     fn xml_type_name(&self) -> &'static str {
         match self {
-            crate::opt14::CAttribute::CMultipleAttribute(x) => x.xml_type_name(),
-            crate::opt14::CAttribute::CSingleAttribute(x) => x.xml_type_name(),
+            crate::opt14::types::CAttribute::CMultipleAttribute(x) => x.xml_type_name(),
+            crate::opt14::types::CAttribute::CSingleAttribute(x) => x.xml_type_name(),
         }
     }
     fn write_xml(
@@ -1231,22 +1269,24 @@ impl crate::xml::runtime::ToXml for crate::opt14::CAttribute {
         declared: Option<&str>,
     ) -> Result<(), crate::xml::runtime::XmlError> {
         match self {
-            crate::opt14::CAttribute::CMultipleAttribute(x) => x.write_xml(w, tag, declared),
-            crate::opt14::CAttribute::CSingleAttribute(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CAttribute::CMultipleAttribute(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CAttribute::CSingleAttribute(x) => x.write_xml(w, tag, declared),
         }
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::CAttribute {
+impl crate::xml::runtime::FromXml for crate::opt14::types::CAttribute {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         match start.xsi_type() {
-            Some("C_MULTIPLE_ATTRIBUTE") => Ok(crate::opt14::CAttribute::CMultipleAttribute(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("C_SINGLE_ATTRIBUTE") => Ok(crate::opt14::CAttribute::CSingleAttribute(
+            Some("C_MULTIPLE_ATTRIBUTE") => {
+                Ok(crate::opt14::types::CAttribute::CMultipleAttribute(
+                    crate::xml::runtime::FromXml::from_xml(reader, start)?,
+                ))
+            }
+            Some("C_SINGLE_ATTRIBUTE") => Ok(crate::opt14::types::CAttribute::CSingleAttribute(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
             None => Err(crate::xml::runtime::XmlError::Parse(
@@ -1259,7 +1299,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CAttribute {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::CBoolean {
+impl crate::xml::runtime::ToXml for crate::opt14::types::CBoolean {
     fn xml_type_name(&self) -> &'static str {
         "C_BOOLEAN"
     }
@@ -1275,7 +1315,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CBoolean {
                 __attrs.push(("xsi:type", "C_BOOLEAN".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1290,7 +1330,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CBoolean {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::CBoolean {
+impl crate::xml::runtime::FromXml for crate::opt14::types::CBoolean {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -1322,7 +1362,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CBoolean {
                 }
             }
         }
-        Ok(crate::opt14::CBoolean {
+        Ok(crate::opt14::types::CBoolean {
             true_valid: __true_valid.unwrap_or(false),
             false_valid: __false_valid.unwrap_or(false),
             assumed_value: __assumed_value,
@@ -1330,7 +1370,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CBoolean {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::CCodePhrase {
+impl crate::xml::runtime::ToXml for crate::opt14::types::CCodePhrase {
     fn xml_type_name(&self) -> &'static str {
         "C_CODE_PHRASE"
     }
@@ -1346,7 +1386,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CCodePhrase {
                 __attrs.push(("xsi:type", "C_CODE_PHRASE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1369,7 +1409,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CCodePhrase {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::CCodePhrase {
+impl crate::xml::runtime::FromXml for crate::opt14::types::CCodePhrase {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -1415,9 +1455,9 @@ impl crate::xml::runtime::FromXml for crate::opt14::CCodePhrase {
                 }
             }
         }
-        Ok(crate::opt14::CCodePhrase {
+        Ok(crate::opt14::types::CCodePhrase {
             rm_type_name: __rm_type_name.unwrap_or(String::new()),
-            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+            occurrences: __occurrences.unwrap_or(crate::opt14::types::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
                 lower_unbounded: false,
@@ -1433,7 +1473,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CCodePhrase {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::CCodeReference {
+impl crate::xml::runtime::ToXml for crate::opt14::types::CCodeReference {
     fn xml_type_name(&self) -> &'static str {
         "C_CODE_REFERENCE"
     }
@@ -1449,7 +1489,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CCodeReference {
                 __attrs.push(("xsi:type", "C_CODE_REFERENCE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1474,7 +1514,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CCodeReference {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::CCodeReference {
+impl crate::xml::runtime::FromXml for crate::opt14::types::CCodeReference {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -1525,9 +1565,9 @@ impl crate::xml::runtime::FromXml for crate::opt14::CCodeReference {
                 }
             }
         }
-        Ok(crate::opt14::CCodeReference {
+        Ok(crate::opt14::types::CCodeReference {
             rm_type_name: __rm_type_name.unwrap_or(String::new()),
-            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+            occurrences: __occurrences.unwrap_or(crate::opt14::types::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
                 lower_unbounded: false,
@@ -1546,7 +1586,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CCodeReference {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::CComplexObject {
+impl crate::xml::runtime::ToXml for crate::opt14::types::CComplexObject {
     fn xml_type_name(&self) -> &'static str {
         "C_COMPLEX_OBJECT"
     }
@@ -1562,7 +1602,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CComplexObject {
                 __attrs.push(("xsi:type", "C_COMPLEX_OBJECT".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1579,7 +1619,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CComplexObject {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::CComplexObject {
+impl crate::xml::runtime::FromXml for crate::opt14::types::CComplexObject {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -1615,9 +1655,9 @@ impl crate::xml::runtime::FromXml for crate::opt14::CComplexObject {
                 }
             }
         }
-        Ok(crate::opt14::CComplexObject {
+        Ok(crate::opt14::types::CComplexObject {
             rm_type_name: __rm_type_name.unwrap_or(String::new()),
-            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+            occurrences: __occurrences.unwrap_or(crate::opt14::types::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
                 lower_unbounded: false,
@@ -1631,7 +1671,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CComplexObject {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::CDate {
+impl crate::xml::runtime::ToXml for crate::opt14::types::CDate {
     fn xml_type_name(&self) -> &'static str {
         "C_DATE"
     }
@@ -1647,7 +1687,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CDate {
                 __attrs.push(("xsi:type", "C_DATE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1669,7 +1709,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CDate {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::CDate {
+impl crate::xml::runtime::FromXml for crate::opt14::types::CDate {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -1706,7 +1746,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CDate {
                 }
             }
         }
-        Ok(crate::opt14::CDate {
+        Ok(crate::opt14::types::CDate {
             pattern: __pattern,
             timezone_validity: __timezone_validity,
             range: __range,
@@ -1715,7 +1755,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CDate {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::CDateTime {
+impl crate::xml::runtime::ToXml for crate::opt14::types::CDateTime {
     fn xml_type_name(&self) -> &'static str {
         "C_DATE_TIME"
     }
@@ -1731,7 +1771,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CDateTime {
                 __attrs.push(("xsi:type", "C_DATE_TIME".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1753,7 +1793,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CDateTime {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::CDateTime {
+impl crate::xml::runtime::FromXml for crate::opt14::types::CDateTime {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -1790,7 +1830,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CDateTime {
                 }
             }
         }
-        Ok(crate::opt14::CDateTime {
+        Ok(crate::opt14::types::CDateTime {
             pattern: __pattern,
             timezone_validity: __timezone_validity,
             range: __range,
@@ -1799,7 +1839,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CDateTime {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::CDefinedObject {
+impl crate::xml::runtime::ToXml for crate::opt14::types::CDefinedObject {
     fn xml_type_name(&self) -> &'static str {
         "C_DEFINED_OBJECT"
     }
@@ -1815,7 +1855,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CDefinedObject {
                 __attrs.push(("xsi:type", "C_DEFINED_OBJECT".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1829,7 +1869,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CDefinedObject {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::CDefinedObject {
+impl crate::xml::runtime::FromXml for crate::opt14::types::CDefinedObject {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -1861,9 +1901,9 @@ impl crate::xml::runtime::FromXml for crate::opt14::CDefinedObject {
                 }
             }
         }
-        Ok(crate::opt14::CDefinedObject {
+        Ok(crate::opt14::types::CDefinedObject {
             rm_type_name: __rm_type_name.unwrap_or(String::new()),
-            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+            occurrences: __occurrences.unwrap_or(crate::opt14::types::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
                 lower_unbounded: false,
@@ -1876,14 +1916,14 @@ impl crate::xml::runtime::FromXml for crate::opt14::CDefinedObject {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::CDomainType {
+impl crate::xml::runtime::ToXml for crate::opt14::types::CDomainType {
     fn xml_type_name(&self) -> &'static str {
         match self {
-            crate::opt14::CDomainType::CCodePhrase(x) => x.xml_type_name(),
-            crate::opt14::CDomainType::CCodeReference(x) => x.xml_type_name(),
-            crate::opt14::CDomainType::CDvOrdinal(x) => x.xml_type_name(),
-            crate::opt14::CDomainType::CDvQuantity(x) => x.xml_type_name(),
-            crate::opt14::CDomainType::CDvState(x) => x.xml_type_name(),
+            crate::opt14::types::CDomainType::CCodePhrase(x) => x.xml_type_name(),
+            crate::opt14::types::CDomainType::CCodeReference(x) => x.xml_type_name(),
+            crate::opt14::types::CDomainType::CDvOrdinal(x) => x.xml_type_name(),
+            crate::opt14::types::CDomainType::CDvQuantity(x) => x.xml_type_name(),
+            crate::opt14::types::CDomainType::CDvState(x) => x.xml_type_name(),
         }
     }
     fn write_xml(
@@ -1893,34 +1933,34 @@ impl crate::xml::runtime::ToXml for crate::opt14::CDomainType {
         declared: Option<&str>,
     ) -> Result<(), crate::xml::runtime::XmlError> {
         match self {
-            crate::opt14::CDomainType::CCodePhrase(x) => x.write_xml(w, tag, declared),
-            crate::opt14::CDomainType::CCodeReference(x) => x.write_xml(w, tag, declared),
-            crate::opt14::CDomainType::CDvOrdinal(x) => x.write_xml(w, tag, declared),
-            crate::opt14::CDomainType::CDvQuantity(x) => x.write_xml(w, tag, declared),
-            crate::opt14::CDomainType::CDvState(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CDomainType::CCodePhrase(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CDomainType::CCodeReference(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CDomainType::CDvOrdinal(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CDomainType::CDvQuantity(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CDomainType::CDvState(x) => x.write_xml(w, tag, declared),
         }
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::CDomainType {
+impl crate::xml::runtime::FromXml for crate::opt14::types::CDomainType {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         match start.xsi_type() {
-            Some("C_CODE_PHRASE") => Ok(crate::opt14::CDomainType::CCodePhrase(
+            Some("C_CODE_PHRASE") => Ok(crate::opt14::types::CDomainType::CCodePhrase(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_CODE_REFERENCE") => Ok(crate::opt14::CDomainType::CCodeReference(
+            Some("C_CODE_REFERENCE") => Ok(crate::opt14::types::CDomainType::CCodeReference(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_DV_ORDINAL") => Ok(crate::opt14::CDomainType::CDvOrdinal(
+            Some("C_DV_ORDINAL") => Ok(crate::opt14::types::CDomainType::CDvOrdinal(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_DV_QUANTITY") => Ok(crate::opt14::CDomainType::CDvQuantity(
+            Some("C_DV_QUANTITY") => Ok(crate::opt14::types::CDomainType::CDvQuantity(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_DV_STATE") => Ok(crate::opt14::CDomainType::CDvState(
+            Some("C_DV_STATE") => Ok(crate::opt14::types::CDomainType::CDvState(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
             None => Err(crate::xml::runtime::XmlError::Parse(
@@ -1933,7 +1973,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CDomainType {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::CDuration {
+impl crate::xml::runtime::ToXml for crate::opt14::types::CDuration {
     fn xml_type_name(&self) -> &'static str {
         "C_DURATION"
     }
@@ -1949,7 +1989,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CDuration {
                 __attrs.push(("xsi:type", "C_DURATION".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1968,7 +2008,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CDuration {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::CDuration {
+impl crate::xml::runtime::FromXml for crate::opt14::types::CDuration {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -2000,7 +2040,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CDuration {
                 }
             }
         }
-        Ok(crate::opt14::CDuration {
+        Ok(crate::opt14::types::CDuration {
             pattern: __pattern,
             range: __range,
             assumed_value: __assumed_value,
@@ -2008,7 +2048,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CDuration {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::CDvOrdinal {
+impl crate::xml::runtime::ToXml for crate::opt14::types::CDvOrdinal {
     fn xml_type_name(&self) -> &'static str {
         "C_DV_ORDINAL"
     }
@@ -2024,7 +2064,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CDvOrdinal {
                 __attrs.push(("xsi:type", "C_DV_ORDINAL".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2044,7 +2084,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CDvOrdinal {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::CDvOrdinal {
+impl crate::xml::runtime::FromXml for crate::opt14::types::CDvOrdinal {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -2085,9 +2125,9 @@ impl crate::xml::runtime::FromXml for crate::opt14::CDvOrdinal {
                 }
             }
         }
-        Ok(crate::opt14::CDvOrdinal {
+        Ok(crate::opt14::types::CDvOrdinal {
             rm_type_name: __rm_type_name.unwrap_or(String::new()),
-            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+            occurrences: __occurrences.unwrap_or(crate::opt14::types::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
                 lower_unbounded: false,
@@ -2102,7 +2142,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CDvOrdinal {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::CDvQuantity {
+impl crate::xml::runtime::ToXml for crate::opt14::types::CDvQuantity {
     fn xml_type_name(&self) -> &'static str {
         "C_DV_QUANTITY"
     }
@@ -2118,7 +2158,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CDvQuantity {
                 __attrs.push(("xsi:type", "C_DV_QUANTITY".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2141,7 +2181,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CDvQuantity {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::CDvQuantity {
+impl crate::xml::runtime::FromXml for crate::opt14::types::CDvQuantity {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -2186,9 +2226,9 @@ impl crate::xml::runtime::FromXml for crate::opt14::CDvQuantity {
                 }
             }
         }
-        Ok(crate::opt14::CDvQuantity {
+        Ok(crate::opt14::types::CDvQuantity {
             rm_type_name: __rm_type_name.unwrap_or(String::new()),
-            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+            occurrences: __occurrences.unwrap_or(crate::opt14::types::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
                 lower_unbounded: false,
@@ -2204,7 +2244,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CDvQuantity {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::CDvState {
+impl crate::xml::runtime::ToXml for crate::opt14::types::CDvState {
     fn xml_type_name(&self) -> &'static str {
         "C_DV_STATE"
     }
@@ -2220,7 +2260,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CDvState {
                 __attrs.push(("xsi:type", "C_DV_STATE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2238,7 +2278,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CDvState {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::CDvState {
+impl crate::xml::runtime::FromXml for crate::opt14::types::CDvState {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -2279,9 +2319,9 @@ impl crate::xml::runtime::FromXml for crate::opt14::CDvState {
                 }
             }
         }
-        Ok(crate::opt14::CDvState {
+        Ok(crate::opt14::types::CDvState {
             rm_type_name: __rm_type_name.unwrap_or(String::new()),
-            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+            occurrences: __occurrences.unwrap_or(crate::opt14::types::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
                 lower_unbounded: false,
@@ -2298,7 +2338,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CDvState {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::CInteger {
+impl crate::xml::runtime::ToXml for crate::opt14::types::CInteger {
     fn xml_type_name(&self) -> &'static str {
         "C_INTEGER"
     }
@@ -2314,7 +2354,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CInteger {
                 __attrs.push(("xsi:type", "C_INTEGER".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2333,7 +2373,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CInteger {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::CInteger {
+impl crate::xml::runtime::FromXml for crate::opt14::types::CInteger {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -2365,7 +2405,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CInteger {
                 }
             }
         }
-        Ok(crate::opt14::CInteger {
+        Ok(crate::opt14::types::CInteger {
             list: __list,
             range: __range,
             assumed_value: __assumed_value,
@@ -2373,7 +2413,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CInteger {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::CMultipleAttribute {
+impl crate::xml::runtime::ToXml for crate::opt14::types::CMultipleAttribute {
     fn xml_type_name(&self) -> &'static str {
         "C_MULTIPLE_ATTRIBUTE"
     }
@@ -2389,7 +2429,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CMultipleAttribute {
                 __attrs.push(("xsi:type", "C_MULTIPLE_ATTRIBUTE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2408,7 +2448,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CMultipleAttribute {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::CMultipleAttribute {
+impl crate::xml::runtime::FromXml for crate::opt14::types::CMultipleAttribute {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -2444,11 +2484,11 @@ impl crate::xml::runtime::FromXml for crate::opt14::CMultipleAttribute {
                 }
             }
         }
-        Ok(crate::opt14::CMultipleAttribute {
+        Ok(crate::opt14::types::CMultipleAttribute {
             rm_attribute_name: __rm_attribute_name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element rm_attribute_name".into())
             })?,
-            existence: __existence.unwrap_or(crate::opt14::Intervalofinteger {
+            existence: __existence.unwrap_or(crate::opt14::types::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
                 lower_unbounded: false,
@@ -2464,22 +2504,22 @@ impl crate::xml::runtime::FromXml for crate::opt14::CMultipleAttribute {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::CObject {
+impl crate::xml::runtime::ToXml for crate::opt14::types::CObject {
     fn xml_type_name(&self) -> &'static str {
         match self {
-            crate::opt14::CObject::ArchetypeInternalRef(x) => x.xml_type_name(),
-            crate::opt14::CObject::ArchetypeSlot(x) => x.xml_type_name(),
-            crate::opt14::CObject::ConstraintRef(x) => x.xml_type_name(),
-            crate::opt14::CObject::CArchetypeRoot(x) => x.xml_type_name(),
-            crate::opt14::CObject::CCodePhrase(x) => x.xml_type_name(),
-            crate::opt14::CObject::CCodeReference(x) => x.xml_type_name(),
-            crate::opt14::CObject::CComplexObject(x) => x.xml_type_name(),
-            crate::opt14::CObject::CDefinedObject(x) => x.xml_type_name(),
-            crate::opt14::CObject::CDvOrdinal(x) => x.xml_type_name(),
-            crate::opt14::CObject::CDvQuantity(x) => x.xml_type_name(),
-            crate::opt14::CObject::CDvState(x) => x.xml_type_name(),
-            crate::opt14::CObject::CPrimitiveObject(x) => x.xml_type_name(),
-            crate::opt14::CObject::TComplexObject(x) => x.xml_type_name(),
+            crate::opt14::types::CObject::ArchetypeInternalRef(x) => x.xml_type_name(),
+            crate::opt14::types::CObject::ArchetypeSlot(x) => x.xml_type_name(),
+            crate::opt14::types::CObject::ConstraintRef(x) => x.xml_type_name(),
+            crate::opt14::types::CObject::CArchetypeRoot(x) => x.xml_type_name(),
+            crate::opt14::types::CObject::CCodePhrase(x) => x.xml_type_name(),
+            crate::opt14::types::CObject::CCodeReference(x) => x.xml_type_name(),
+            crate::opt14::types::CObject::CComplexObject(x) => x.xml_type_name(),
+            crate::opt14::types::CObject::CDefinedObject(x) => x.xml_type_name(),
+            crate::opt14::types::CObject::CDvOrdinal(x) => x.xml_type_name(),
+            crate::opt14::types::CObject::CDvQuantity(x) => x.xml_type_name(),
+            crate::opt14::types::CObject::CDvState(x) => x.xml_type_name(),
+            crate::opt14::types::CObject::CPrimitiveObject(x) => x.xml_type_name(),
+            crate::opt14::types::CObject::TComplexObject(x) => x.xml_type_name(),
         }
     }
     fn write_xml(
@@ -2489,66 +2529,68 @@ impl crate::xml::runtime::ToXml for crate::opt14::CObject {
         declared: Option<&str>,
     ) -> Result<(), crate::xml::runtime::XmlError> {
         match self {
-            crate::opt14::CObject::ArchetypeInternalRef(x) => x.write_xml(w, tag, declared),
-            crate::opt14::CObject::ArchetypeSlot(x) => x.write_xml(w, tag, declared),
-            crate::opt14::CObject::ConstraintRef(x) => x.write_xml(w, tag, declared),
-            crate::opt14::CObject::CArchetypeRoot(x) => x.write_xml(w, tag, declared),
-            crate::opt14::CObject::CCodePhrase(x) => x.write_xml(w, tag, declared),
-            crate::opt14::CObject::CCodeReference(x) => x.write_xml(w, tag, declared),
-            crate::opt14::CObject::CComplexObject(x) => x.write_xml(w, tag, declared),
-            crate::opt14::CObject::CDefinedObject(x) => x.write_xml(w, tag, declared),
-            crate::opt14::CObject::CDvOrdinal(x) => x.write_xml(w, tag, declared),
-            crate::opt14::CObject::CDvQuantity(x) => x.write_xml(w, tag, declared),
-            crate::opt14::CObject::CDvState(x) => x.write_xml(w, tag, declared),
-            crate::opt14::CObject::CPrimitiveObject(x) => x.write_xml(w, tag, declared),
-            crate::opt14::CObject::TComplexObject(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CObject::ArchetypeInternalRef(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CObject::ArchetypeSlot(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CObject::ConstraintRef(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CObject::CArchetypeRoot(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CObject::CCodePhrase(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CObject::CCodeReference(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CObject::CComplexObject(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CObject::CDefinedObject(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CObject::CDvOrdinal(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CObject::CDvQuantity(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CObject::CDvState(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CObject::CPrimitiveObject(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CObject::TComplexObject(x) => x.write_xml(w, tag, declared),
         }
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::CObject {
+impl crate::xml::runtime::FromXml for crate::opt14::types::CObject {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         match start.xsi_type() {
-            Some("ARCHETYPE_INTERNAL_REF") => Ok(crate::opt14::CObject::ArchetypeInternalRef(
+            Some("ARCHETYPE_INTERNAL_REF") => {
+                Ok(crate::opt14::types::CObject::ArchetypeInternalRef(
+                    crate::xml::runtime::FromXml::from_xml(reader, start)?,
+                ))
+            }
+            Some("ARCHETYPE_SLOT") => Ok(crate::opt14::types::CObject::ArchetypeSlot(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("ARCHETYPE_SLOT") => Ok(crate::opt14::CObject::ArchetypeSlot(
+            Some("CONSTRAINT_REF") => Ok(crate::opt14::types::CObject::ConstraintRef(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("CONSTRAINT_REF") => Ok(crate::opt14::CObject::ConstraintRef(
+            Some("C_ARCHETYPE_ROOT") => Ok(crate::opt14::types::CObject::CArchetypeRoot(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_ARCHETYPE_ROOT") => Ok(crate::opt14::CObject::CArchetypeRoot(
+            Some("C_CODE_PHRASE") => Ok(crate::opt14::types::CObject::CCodePhrase(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_CODE_PHRASE") => Ok(crate::opt14::CObject::CCodePhrase(
+            Some("C_CODE_REFERENCE") => Ok(crate::opt14::types::CObject::CCodeReference(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_CODE_REFERENCE") => Ok(crate::opt14::CObject::CCodeReference(
+            Some("C_COMPLEX_OBJECT") => Ok(crate::opt14::types::CObject::CComplexObject(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_COMPLEX_OBJECT") => Ok(crate::opt14::CObject::CComplexObject(
+            Some("C_DEFINED_OBJECT") => Ok(crate::opt14::types::CObject::CDefinedObject(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_DEFINED_OBJECT") => Ok(crate::opt14::CObject::CDefinedObject(
+            Some("C_DV_ORDINAL") => Ok(crate::opt14::types::CObject::CDvOrdinal(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_DV_ORDINAL") => Ok(crate::opt14::CObject::CDvOrdinal(
+            Some("C_DV_QUANTITY") => Ok(crate::opt14::types::CObject::CDvQuantity(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_DV_QUANTITY") => Ok(crate::opt14::CObject::CDvQuantity(
+            Some("C_DV_STATE") => Ok(crate::opt14::types::CObject::CDvState(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_DV_STATE") => Ok(crate::opt14::CObject::CDvState(
+            Some("C_PRIMITIVE_OBJECT") => Ok(crate::opt14::types::CObject::CPrimitiveObject(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_PRIMITIVE_OBJECT") => Ok(crate::opt14::CObject::CPrimitiveObject(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("T_COMPLEX_OBJECT") => Ok(crate::opt14::CObject::TComplexObject(
+            Some("T_COMPLEX_OBJECT") => Ok(crate::opt14::types::CObject::TComplexObject(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
             None => Err(crate::xml::runtime::XmlError::Parse(
@@ -2561,17 +2603,17 @@ impl crate::xml::runtime::FromXml for crate::opt14::CObject {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::CPrimitive {
+impl crate::xml::runtime::ToXml for crate::opt14::types::CPrimitive {
     fn xml_type_name(&self) -> &'static str {
         match self {
-            crate::opt14::CPrimitive::CBoolean(x) => x.xml_type_name(),
-            crate::opt14::CPrimitive::CDate(x) => x.xml_type_name(),
-            crate::opt14::CPrimitive::CDateTime(x) => x.xml_type_name(),
-            crate::opt14::CPrimitive::CDuration(x) => x.xml_type_name(),
-            crate::opt14::CPrimitive::CInteger(x) => x.xml_type_name(),
-            crate::opt14::CPrimitive::CReal(x) => x.xml_type_name(),
-            crate::opt14::CPrimitive::CString(x) => x.xml_type_name(),
-            crate::opt14::CPrimitive::CTime(x) => x.xml_type_name(),
+            crate::opt14::types::CPrimitive::CBoolean(x) => x.xml_type_name(),
+            crate::opt14::types::CPrimitive::CDate(x) => x.xml_type_name(),
+            crate::opt14::types::CPrimitive::CDateTime(x) => x.xml_type_name(),
+            crate::opt14::types::CPrimitive::CDuration(x) => x.xml_type_name(),
+            crate::opt14::types::CPrimitive::CInteger(x) => x.xml_type_name(),
+            crate::opt14::types::CPrimitive::CReal(x) => x.xml_type_name(),
+            crate::opt14::types::CPrimitive::CString(x) => x.xml_type_name(),
+            crate::opt14::types::CPrimitive::CTime(x) => x.xml_type_name(),
         }
     }
     fn write_xml(
@@ -2581,46 +2623,46 @@ impl crate::xml::runtime::ToXml for crate::opt14::CPrimitive {
         declared: Option<&str>,
     ) -> Result<(), crate::xml::runtime::XmlError> {
         match self {
-            crate::opt14::CPrimitive::CBoolean(x) => x.write_xml(w, tag, declared),
-            crate::opt14::CPrimitive::CDate(x) => x.write_xml(w, tag, declared),
-            crate::opt14::CPrimitive::CDateTime(x) => x.write_xml(w, tag, declared),
-            crate::opt14::CPrimitive::CDuration(x) => x.write_xml(w, tag, declared),
-            crate::opt14::CPrimitive::CInteger(x) => x.write_xml(w, tag, declared),
-            crate::opt14::CPrimitive::CReal(x) => x.write_xml(w, tag, declared),
-            crate::opt14::CPrimitive::CString(x) => x.write_xml(w, tag, declared),
-            crate::opt14::CPrimitive::CTime(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CPrimitive::CBoolean(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CPrimitive::CDate(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CPrimitive::CDateTime(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CPrimitive::CDuration(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CPrimitive::CInteger(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CPrimitive::CReal(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CPrimitive::CString(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::CPrimitive::CTime(x) => x.write_xml(w, tag, declared),
         }
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::CPrimitive {
+impl crate::xml::runtime::FromXml for crate::opt14::types::CPrimitive {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         match start.xsi_type() {
-            Some("C_BOOLEAN") => Ok(crate::opt14::CPrimitive::CBoolean(
+            Some("C_BOOLEAN") => Ok(crate::opt14::types::CPrimitive::CBoolean(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_DATE") => Ok(crate::opt14::CPrimitive::CDate(
+            Some("C_DATE") => Ok(crate::opt14::types::CPrimitive::CDate(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_DATE_TIME") => Ok(crate::opt14::CPrimitive::CDateTime(
+            Some("C_DATE_TIME") => Ok(crate::opt14::types::CPrimitive::CDateTime(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_DURATION") => Ok(crate::opt14::CPrimitive::CDuration(
+            Some("C_DURATION") => Ok(crate::opt14::types::CPrimitive::CDuration(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_INTEGER") => Ok(crate::opt14::CPrimitive::CInteger(
+            Some("C_INTEGER") => Ok(crate::opt14::types::CPrimitive::CInteger(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_REAL") => Ok(crate::opt14::CPrimitive::CReal(
+            Some("C_REAL") => Ok(crate::opt14::types::CPrimitive::CReal(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_STRING") => Ok(crate::opt14::CPrimitive::CString(
+            Some("C_STRING") => Ok(crate::opt14::types::CPrimitive::CString(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_TIME") => Ok(crate::opt14::CPrimitive::CTime(
+            Some("C_TIME") => Ok(crate::opt14::types::CPrimitive::CTime(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
             None => Err(crate::xml::runtime::XmlError::Parse(
@@ -2633,7 +2675,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CPrimitive {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::CPrimitiveObject {
+impl crate::xml::runtime::ToXml for crate::opt14::types::CPrimitiveObject {
     fn xml_type_name(&self) -> &'static str {
         "C_PRIMITIVE_OBJECT"
     }
@@ -2649,7 +2691,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CPrimitiveObject {
                 __attrs.push(("xsi:type", "C_PRIMITIVE_OBJECT".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2666,7 +2708,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CPrimitiveObject {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::CPrimitiveObject {
+impl crate::xml::runtime::FromXml for crate::opt14::types::CPrimitiveObject {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -2702,9 +2744,9 @@ impl crate::xml::runtime::FromXml for crate::opt14::CPrimitiveObject {
                 }
             }
         }
-        Ok(crate::opt14::CPrimitiveObject {
+        Ok(crate::opt14::types::CPrimitiveObject {
             rm_type_name: __rm_type_name.unwrap_or(String::new()),
-            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+            occurrences: __occurrences.unwrap_or(crate::opt14::types::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
                 lower_unbounded: false,
@@ -2718,7 +2760,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CPrimitiveObject {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::CQuantityItem {
+impl crate::xml::runtime::ToXml for crate::opt14::types::CQuantityItem {
     fn xml_type_name(&self) -> &'static str {
         "C_QUANTITY_ITEM"
     }
@@ -2734,7 +2776,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CQuantityItem {
                 __attrs.push(("xsi:type", "C_QUANTITY_ITEM".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2751,7 +2793,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CQuantityItem {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::CQuantityItem {
+impl crate::xml::runtime::FromXml for crate::opt14::types::CQuantityItem {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -2782,7 +2824,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CQuantityItem {
                 }
             }
         }
-        Ok(crate::opt14::CQuantityItem {
+        Ok(crate::opt14::types::CQuantityItem {
             magnitude: __magnitude,
             precision: __precision,
             units: __units.ok_or_else(|| {
@@ -2792,7 +2834,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CQuantityItem {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::CReal {
+impl crate::xml::runtime::ToXml for crate::opt14::types::CReal {
     fn xml_type_name(&self) -> &'static str {
         "C_REAL"
     }
@@ -2808,7 +2850,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CReal {
                 __attrs.push(("xsi:type", "C_REAL".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2827,7 +2869,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CReal {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::CReal {
+impl crate::xml::runtime::FromXml for crate::opt14::types::CReal {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -2859,7 +2901,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CReal {
                 }
             }
         }
-        Ok(crate::opt14::CReal {
+        Ok(crate::opt14::types::CReal {
             list: __list,
             range: __range,
             assumed_value: __assumed_value,
@@ -2867,7 +2909,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CReal {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::CSingleAttribute {
+impl crate::xml::runtime::ToXml for crate::opt14::types::CSingleAttribute {
     fn xml_type_name(&self) -> &'static str {
         "C_SINGLE_ATTRIBUTE"
     }
@@ -2883,7 +2925,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CSingleAttribute {
                 __attrs.push(("xsi:type", "C_SINGLE_ATTRIBUTE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2900,7 +2942,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CSingleAttribute {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::CSingleAttribute {
+impl crate::xml::runtime::FromXml for crate::opt14::types::CSingleAttribute {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -2932,11 +2974,11 @@ impl crate::xml::runtime::FromXml for crate::opt14::CSingleAttribute {
                 }
             }
         }
-        Ok(crate::opt14::CSingleAttribute {
+        Ok(crate::opt14::types::CSingleAttribute {
             rm_attribute_name: __rm_attribute_name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element rm_attribute_name".into())
             })?,
-            existence: __existence.unwrap_or(crate::opt14::Intervalofinteger {
+            existence: __existence.unwrap_or(crate::opt14::types::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
                 lower_unbounded: false,
@@ -2949,7 +2991,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CSingleAttribute {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::CString {
+impl crate::xml::runtime::ToXml for crate::opt14::types::CString {
     fn xml_type_name(&self) -> &'static str {
         "C_STRING"
     }
@@ -2965,7 +3007,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CString {
                 __attrs.push(("xsi:type", "C_STRING".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2987,7 +3029,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CString {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::CString {
+impl crate::xml::runtime::FromXml for crate::opt14::types::CString {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -3023,7 +3065,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CString {
                 }
             }
         }
-        Ok(crate::opt14::CString {
+        Ok(crate::opt14::types::CString {
             pattern: __pattern,
             list: __list,
             list_open: __list_open,
@@ -3032,7 +3074,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CString {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::CTime {
+impl crate::xml::runtime::ToXml for crate::opt14::types::CTime {
     fn xml_type_name(&self) -> &'static str {
         "C_TIME"
     }
@@ -3048,7 +3090,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CTime {
                 __attrs.push(("xsi:type", "C_TIME".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3070,7 +3112,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::CTime {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::CTime {
+impl crate::xml::runtime::FromXml for crate::opt14::types::CTime {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -3107,7 +3149,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CTime {
                 }
             }
         }
-        Ok(crate::opt14::CTime {
+        Ok(crate::opt14::types::CTime {
             pattern: __pattern,
             timezone_validity: __timezone_validity,
             range: __range,
@@ -3116,7 +3158,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::CTime {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::Codedefinitionset {
+impl crate::xml::runtime::ToXml for crate::opt14::types::Codedefinitionset {
     fn xml_type_name(&self) -> &'static str {
         "CodeDefinitionSet"
     }
@@ -3133,7 +3175,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Codedefinitionset {
             }
         }
         __attrs.push(("language", self.language.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3146,7 +3188,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Codedefinitionset {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::Codedefinitionset {
+impl crate::xml::runtime::FromXml for crate::opt14::types::Codedefinitionset {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -3169,7 +3211,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Codedefinitionset {
                 }
             }
         }
-        Ok(crate::opt14::Codedefinitionset {
+        Ok(crate::opt14::types::Codedefinitionset {
             language: start
                 .attr("language")
                 .ok_or_else(|| {
@@ -3181,7 +3223,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Codedefinitionset {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::Constraintbindingset {
+impl crate::xml::runtime::ToXml for crate::opt14::types::Constraintbindingset {
     fn xml_type_name(&self) -> &'static str {
         "ConstraintBindingSet"
     }
@@ -3198,7 +3240,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Constraintbindingset {
             }
         }
         __attrs.push(("terminology", self.terminology.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3211,7 +3253,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Constraintbindingset {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::Constraintbindingset {
+impl crate::xml::runtime::FromXml for crate::opt14::types::Constraintbindingset {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -3234,7 +3276,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Constraintbindingset {
                 }
             }
         }
-        Ok(crate::opt14::Constraintbindingset {
+        Ok(crate::opt14::types::Constraintbindingset {
             terminology: start
                 .attr("terminology")
                 .ok_or_else(|| {
@@ -3246,7 +3288,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Constraintbindingset {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::ExprBinaryOperator {
+impl crate::xml::runtime::ToXml for crate::opt14::types::ExprBinaryOperator {
     fn xml_type_name(&self) -> &'static str {
         "EXPR_BINARY_OPERATOR"
     }
@@ -3262,7 +3304,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::ExprBinaryOperator {
                 __attrs.push(("xsi:type", "EXPR_BINARY_OPERATOR".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3280,7 +3322,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::ExprBinaryOperator {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::ExprBinaryOperator {
+impl crate::xml::runtime::FromXml for crate::opt14::types::ExprBinaryOperator {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -3322,7 +3364,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::ExprBinaryOperator {
                 }
             }
         }
-        Ok(crate::opt14::ExprBinaryOperator {
+        Ok(crate::opt14::types::ExprBinaryOperator {
             r#type: __type.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element type".into())
             })?,
@@ -3340,12 +3382,12 @@ impl crate::xml::runtime::FromXml for crate::opt14::ExprBinaryOperator {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::ExprItem {
+impl crate::xml::runtime::ToXml for crate::opt14::types::ExprItem {
     fn xml_type_name(&self) -> &'static str {
         match self {
-            crate::opt14::ExprItem::ExprBinaryOperator(x) => x.xml_type_name(),
-            crate::opt14::ExprItem::ExprLeaf(x) => x.xml_type_name(),
-            crate::opt14::ExprItem::ExprUnaryOperator(x) => x.xml_type_name(),
+            crate::opt14::types::ExprItem::ExprBinaryOperator(x) => x.xml_type_name(),
+            crate::opt14::types::ExprItem::ExprLeaf(x) => x.xml_type_name(),
+            crate::opt14::types::ExprItem::ExprUnaryOperator(x) => x.xml_type_name(),
         }
     }
     fn write_xml(
@@ -3355,26 +3397,26 @@ impl crate::xml::runtime::ToXml for crate::opt14::ExprItem {
         declared: Option<&str>,
     ) -> Result<(), crate::xml::runtime::XmlError> {
         match self {
-            crate::opt14::ExprItem::ExprBinaryOperator(x) => x.write_xml(w, tag, declared),
-            crate::opt14::ExprItem::ExprLeaf(x) => x.write_xml(w, tag, declared),
-            crate::opt14::ExprItem::ExprUnaryOperator(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::ExprItem::ExprBinaryOperator(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::ExprItem::ExprLeaf(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::ExprItem::ExprUnaryOperator(x) => x.write_xml(w, tag, declared),
         }
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::ExprItem {
+impl crate::xml::runtime::FromXml for crate::opt14::types::ExprItem {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         match start.xsi_type() {
-            Some("EXPR_BINARY_OPERATOR") => Ok(crate::opt14::ExprItem::ExprBinaryOperator(
+            Some("EXPR_BINARY_OPERATOR") => Ok(crate::opt14::types::ExprItem::ExprBinaryOperator(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("EXPR_LEAF") => Ok(crate::opt14::ExprItem::ExprLeaf(
+            Some("EXPR_LEAF") => Ok(crate::opt14::types::ExprItem::ExprLeaf(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("EXPR_UNARY_OPERATOR") => Ok(crate::opt14::ExprItem::ExprUnaryOperator(
+            Some("EXPR_UNARY_OPERATOR") => Ok(crate::opt14::types::ExprItem::ExprUnaryOperator(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
             None => Err(crate::xml::runtime::XmlError::Parse(
@@ -3387,7 +3429,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::ExprItem {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::ExprLeaf {
+impl crate::xml::runtime::ToXml for crate::opt14::types::ExprLeaf {
     fn xml_type_name(&self) -> &'static str {
         "EXPR_LEAF"
     }
@@ -3403,7 +3445,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::ExprLeaf {
                 __attrs.push(("xsi:type", "EXPR_LEAF".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3417,7 +3459,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::ExprLeaf {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::ExprLeaf {
+impl crate::xml::runtime::FromXml for crate::opt14::types::ExprLeaf {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -3449,7 +3491,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::ExprLeaf {
                 }
             }
         }
-        Ok(crate::opt14::ExprLeaf {
+        Ok(crate::opt14::types::ExprLeaf {
             r#type: __type.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element type".into())
             })?,
@@ -3463,11 +3505,11 @@ impl crate::xml::runtime::FromXml for crate::opt14::ExprLeaf {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::ExprOperator {
+impl crate::xml::runtime::ToXml for crate::opt14::types::ExprOperator {
     fn xml_type_name(&self) -> &'static str {
         match self {
-            crate::opt14::ExprOperator::ExprBinaryOperator(x) => x.xml_type_name(),
-            crate::opt14::ExprOperator::ExprUnaryOperator(x) => x.xml_type_name(),
+            crate::opt14::types::ExprOperator::ExprBinaryOperator(x) => x.xml_type_name(),
+            crate::opt14::types::ExprOperator::ExprUnaryOperator(x) => x.xml_type_name(),
         }
     }
     fn write_xml(
@@ -3477,24 +3519,32 @@ impl crate::xml::runtime::ToXml for crate::opt14::ExprOperator {
         declared: Option<&str>,
     ) -> Result<(), crate::xml::runtime::XmlError> {
         match self {
-            crate::opt14::ExprOperator::ExprBinaryOperator(x) => x.write_xml(w, tag, declared),
-            crate::opt14::ExprOperator::ExprUnaryOperator(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::ExprOperator::ExprBinaryOperator(x) => {
+                x.write_xml(w, tag, declared)
+            }
+            crate::opt14::types::ExprOperator::ExprUnaryOperator(x) => {
+                x.write_xml(w, tag, declared)
+            }
         }
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::ExprOperator {
+impl crate::xml::runtime::FromXml for crate::opt14::types::ExprOperator {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         match start.xsi_type() {
-            Some("EXPR_BINARY_OPERATOR") => Ok(crate::opt14::ExprOperator::ExprBinaryOperator(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("EXPR_UNARY_OPERATOR") => Ok(crate::opt14::ExprOperator::ExprUnaryOperator(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
+            Some("EXPR_BINARY_OPERATOR") => {
+                Ok(crate::opt14::types::ExprOperator::ExprBinaryOperator(
+                    crate::xml::runtime::FromXml::from_xml(reader, start)?,
+                ))
+            }
+            Some("EXPR_UNARY_OPERATOR") => {
+                Ok(crate::opt14::types::ExprOperator::ExprUnaryOperator(
+                    crate::xml::runtime::FromXml::from_xml(reader, start)?,
+                ))
+            }
             None => Err(crate::xml::runtime::XmlError::Parse(
                 "ExprOperator: missing xsi:type".into(),
             )),
@@ -3505,7 +3555,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::ExprOperator {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::ExprUnaryOperator {
+impl crate::xml::runtime::ToXml for crate::opt14::types::ExprUnaryOperator {
     fn xml_type_name(&self) -> &'static str {
         "EXPR_UNARY_OPERATOR"
     }
@@ -3521,7 +3571,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::ExprUnaryOperator {
                 __attrs.push(("xsi:type", "EXPR_UNARY_OPERATOR".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3536,7 +3586,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::ExprUnaryOperator {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::ExprUnaryOperator {
+impl crate::xml::runtime::FromXml for crate::opt14::types::ExprUnaryOperator {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -3572,7 +3622,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::ExprUnaryOperator {
                 }
             }
         }
-        Ok(crate::opt14::ExprUnaryOperator {
+        Ok(crate::opt14::types::ExprUnaryOperator {
             r#type: __type.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element type".into())
             })?,
@@ -3587,7 +3637,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::ExprUnaryOperator {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::FlatArchetypeOntology {
+impl crate::xml::runtime::ToXml for crate::opt14::types::FlatArchetypeOntology {
     fn xml_type_name(&self) -> &'static str {
         "FLAT_ARCHETYPE_ONTOLOGY"
     }
@@ -3604,7 +3654,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::FlatArchetypeOntology {
             }
         }
         __attrs.push(("archetype_id", self.archetype_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3626,7 +3676,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::FlatArchetypeOntology {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::FlatArchetypeOntology {
+impl crate::xml::runtime::FromXml for crate::opt14::types::FlatArchetypeOntology {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -3664,7 +3714,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::FlatArchetypeOntology {
                 }
             }
         }
-        Ok(crate::opt14::FlatArchetypeOntology {
+        Ok(crate::opt14::types::FlatArchetypeOntology {
             archetype_id: start
                 .attr("archetype_id")
                 .ok_or_else(|| {
@@ -3679,7 +3729,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::FlatArchetypeOntology {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::Intervalofdate {
+impl crate::xml::runtime::ToXml for crate::opt14::types::Intervalofdate {
     fn xml_type_name(&self) -> &'static str {
         "IntervalOfDate"
     }
@@ -3695,7 +3745,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Intervalofdate {
                 __attrs.push(("xsi:type", "IntervalOfDate".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3721,7 +3771,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Intervalofdate {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::Intervalofdate {
+impl crate::xml::runtime::FromXml for crate::opt14::types::Intervalofdate {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -3768,7 +3818,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Intervalofdate {
                 }
             }
         }
-        Ok(crate::opt14::Intervalofdate {
+        Ok(crate::opt14::types::Intervalofdate {
             lower_included: __lower_included,
             upper_included: __upper_included,
             lower_unbounded: __lower_unbounded.unwrap_or(false),
@@ -3779,7 +3829,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Intervalofdate {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::Intervalofdatetime {
+impl crate::xml::runtime::ToXml for crate::opt14::types::Intervalofdatetime {
     fn xml_type_name(&self) -> &'static str {
         "IntervalOfDateTime"
     }
@@ -3795,7 +3845,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Intervalofdatetime {
                 __attrs.push(("xsi:type", "IntervalOfDateTime".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3821,7 +3871,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Intervalofdatetime {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::Intervalofdatetime {
+impl crate::xml::runtime::FromXml for crate::opt14::types::Intervalofdatetime {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -3868,7 +3918,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Intervalofdatetime {
                 }
             }
         }
-        Ok(crate::opt14::Intervalofdatetime {
+        Ok(crate::opt14::types::Intervalofdatetime {
             lower_included: __lower_included,
             upper_included: __upper_included,
             lower_unbounded: __lower_unbounded.unwrap_or(false),
@@ -3879,7 +3929,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Intervalofdatetime {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::Intervalofduration {
+impl crate::xml::runtime::ToXml for crate::opt14::types::Intervalofduration {
     fn xml_type_name(&self) -> &'static str {
         "IntervalOfDuration"
     }
@@ -3895,7 +3945,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Intervalofduration {
                 __attrs.push(("xsi:type", "IntervalOfDuration".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3921,7 +3971,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Intervalofduration {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::Intervalofduration {
+impl crate::xml::runtime::FromXml for crate::opt14::types::Intervalofduration {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -3968,7 +4018,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Intervalofduration {
                 }
             }
         }
-        Ok(crate::opt14::Intervalofduration {
+        Ok(crate::opt14::types::Intervalofduration {
             lower_included: __lower_included,
             upper_included: __upper_included,
             lower_unbounded: __lower_unbounded.unwrap_or(false),
@@ -3979,7 +4029,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Intervalofduration {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::Intervalofinteger {
+impl crate::xml::runtime::ToXml for crate::opt14::types::Intervalofinteger {
     fn xml_type_name(&self) -> &'static str {
         "IntervalOfInteger"
     }
@@ -3995,7 +4045,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Intervalofinteger {
                 __attrs.push(("xsi:type", "IntervalOfInteger".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -4021,7 +4071,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Intervalofinteger {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::Intervalofinteger {
+impl crate::xml::runtime::FromXml for crate::opt14::types::Intervalofinteger {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -4068,7 +4118,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Intervalofinteger {
                 }
             }
         }
-        Ok(crate::opt14::Intervalofinteger {
+        Ok(crate::opt14::types::Intervalofinteger {
             lower_included: __lower_included,
             upper_included: __upper_included,
             lower_unbounded: __lower_unbounded.unwrap_or(false),
@@ -4079,7 +4129,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Intervalofinteger {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::Intervalofreal {
+impl crate::xml::runtime::ToXml for crate::opt14::types::Intervalofreal {
     fn xml_type_name(&self) -> &'static str {
         "IntervalOfReal"
     }
@@ -4095,7 +4145,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Intervalofreal {
                 __attrs.push(("xsi:type", "IntervalOfReal".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -4121,7 +4171,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Intervalofreal {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::Intervalofreal {
+impl crate::xml::runtime::FromXml for crate::opt14::types::Intervalofreal {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -4168,7 +4218,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Intervalofreal {
                 }
             }
         }
-        Ok(crate::opt14::Intervalofreal {
+        Ok(crate::opt14::types::Intervalofreal {
             lower_included: __lower_included,
             upper_included: __upper_included,
             lower_unbounded: __lower_unbounded.unwrap_or(false),
@@ -4179,7 +4229,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Intervalofreal {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::Intervaloftime {
+impl crate::xml::runtime::ToXml for crate::opt14::types::Intervaloftime {
     fn xml_type_name(&self) -> &'static str {
         "IntervalOfTime"
     }
@@ -4195,7 +4245,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Intervaloftime {
                 __attrs.push(("xsi:type", "IntervalOfTime".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -4221,7 +4271,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Intervaloftime {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::Intervaloftime {
+impl crate::xml::runtime::FromXml for crate::opt14::types::Intervaloftime {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -4268,7 +4318,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Intervaloftime {
                 }
             }
         }
-        Ok(crate::opt14::Intervaloftime {
+        Ok(crate::opt14::types::Intervaloftime {
             lower_included: __lower_included,
             upper_included: __upper_included,
             lower_unbounded: __lower_unbounded.unwrap_or(false),
@@ -4279,7 +4329,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Intervaloftime {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::NonTerminalState {
+impl crate::xml::runtime::ToXml for crate::opt14::types::NonTerminalState {
     fn xml_type_name(&self) -> &'static str {
         "NON_TERMINAL_STATE"
     }
@@ -4295,7 +4345,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::NonTerminalState {
                 __attrs.push(("xsi:type", "NON_TERMINAL_STATE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -4309,7 +4359,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::NonTerminalState {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::NonTerminalState {
+impl crate::xml::runtime::FromXml for crate::opt14::types::NonTerminalState {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -4336,7 +4386,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::NonTerminalState {
                 }
             }
         }
-        Ok(crate::opt14::NonTerminalState {
+        Ok(crate::opt14::types::NonTerminalState {
             name: __name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element name".into())
             })?,
@@ -4345,7 +4395,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::NonTerminalState {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::OperationalTemplate {
+impl crate::xml::runtime::ToXml for crate::opt14::types::OperationalTemplate {
     fn xml_type_name(&self) -> &'static str {
         "OPERATIONAL_TEMPLATE"
     }
@@ -4361,7 +4411,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::OperationalTemplate {
                 __attrs.push(("xsi:type", "OPERATIONAL_TEMPLATE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -4405,7 +4455,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::OperationalTemplate {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::OperationalTemplate {
+impl crate::xml::runtime::FromXml for crate::opt14::types::OperationalTemplate {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -4479,7 +4529,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::OperationalTemplate {
                 }
             }
         }
-        Ok(crate::opt14::OperationalTemplate {
+        Ok(crate::opt14::types::OperationalTemplate {
             language: __language.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element language".into())
             })?,
@@ -4505,7 +4555,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::OperationalTemplate {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::ResourceDescription {
+impl crate::xml::runtime::ToXml for crate::opt14::types::ResourceDescription {
     fn xml_type_name(&self) -> &'static str {
         "RESOURCE_DESCRIPTION"
     }
@@ -4521,7 +4571,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::ResourceDescription {
                 __attrs.push(("xsi:type", "RESOURCE_DESCRIPTION".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -4553,7 +4603,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::ResourceDescription {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::ResourceDescription {
+impl crate::xml::runtime::FromXml for crate::opt14::types::ResourceDescription {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -4608,7 +4658,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::ResourceDescription {
                 }
             }
         }
-        Ok(crate::opt14::ResourceDescription {
+        Ok(crate::opt14::types::ResourceDescription {
             original_author: __original_author,
             other_contributors: __other_contributors,
             lifecycle_state: __lifecycle_state.ok_or_else(|| {
@@ -4626,7 +4676,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::ResourceDescription {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::ResourceDescriptionItem {
+impl crate::xml::runtime::ToXml for crate::opt14::types::ResourceDescriptionItem {
     fn xml_type_name(&self) -> &'static str {
         "RESOURCE_DESCRIPTION_ITEM"
     }
@@ -4642,7 +4692,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::ResourceDescriptionItem {
                 __attrs.push(("xsi:type", "RESOURCE_DESCRIPTION_ITEM".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -4677,7 +4727,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::ResourceDescriptionItem {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::ResourceDescriptionItem {
+impl crate::xml::runtime::FromXml for crate::opt14::types::ResourceDescriptionItem {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -4732,7 +4782,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::ResourceDescriptionItem {
                 }
             }
         }
-        Ok(crate::opt14::ResourceDescriptionItem {
+        Ok(crate::opt14::types::ResourceDescriptionItem {
             language: __language.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element language".into())
             })?,
@@ -4755,11 +4805,11 @@ impl crate::xml::runtime::FromXml for crate::opt14::ResourceDescriptionItem {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::State {
+impl crate::xml::runtime::ToXml for crate::opt14::types::State {
     fn xml_type_name(&self) -> &'static str {
         match self {
-            crate::opt14::State::NonTerminalState(x) => x.xml_type_name(),
-            crate::opt14::State::TerminalState(x) => x.xml_type_name(),
+            crate::opt14::types::State::NonTerminalState(x) => x.xml_type_name(),
+            crate::opt14::types::State::TerminalState(x) => x.xml_type_name(),
         }
     }
     fn write_xml(
@@ -4769,22 +4819,22 @@ impl crate::xml::runtime::ToXml for crate::opt14::State {
         declared: Option<&str>,
     ) -> Result<(), crate::xml::runtime::XmlError> {
         match self {
-            crate::opt14::State::NonTerminalState(x) => x.write_xml(w, tag, declared),
-            crate::opt14::State::TerminalState(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::State::NonTerminalState(x) => x.write_xml(w, tag, declared),
+            crate::opt14::types::State::TerminalState(x) => x.write_xml(w, tag, declared),
         }
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::State {
+impl crate::xml::runtime::FromXml for crate::opt14::types::State {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         match start.xsi_type() {
-            Some("NON_TERMINAL_STATE") => Ok(crate::opt14::State::NonTerminalState(
+            Some("NON_TERMINAL_STATE") => Ok(crate::opt14::types::State::NonTerminalState(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("TERMINAL_STATE") => Ok(crate::opt14::State::TerminalState(
+            Some("TERMINAL_STATE") => Ok(crate::opt14::types::State::TerminalState(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
             None => Err(crate::xml::runtime::XmlError::Parse(
@@ -4797,7 +4847,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::State {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::StateMachine {
+impl crate::xml::runtime::ToXml for crate::opt14::types::StateMachine {
     fn xml_type_name(&self) -> &'static str {
         "STATE_MACHINE"
     }
@@ -4813,7 +4863,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::StateMachine {
                 __attrs.push(("xsi:type", "STATE_MACHINE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -4826,7 +4876,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::StateMachine {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::StateMachine {
+impl crate::xml::runtime::FromXml for crate::opt14::types::StateMachine {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -4849,11 +4899,11 @@ impl crate::xml::runtime::FromXml for crate::opt14::StateMachine {
                 }
             }
         }
-        Ok(crate::opt14::StateMachine { states: __states })
+        Ok(crate::opt14::types::StateMachine { states: __states })
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::TerminalState {
+impl crate::xml::runtime::ToXml for crate::opt14::types::TerminalState {
     fn xml_type_name(&self) -> &'static str {
         "TERMINAL_STATE"
     }
@@ -4869,7 +4919,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::TerminalState {
                 __attrs.push(("xsi:type", "TERMINAL_STATE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -4880,7 +4930,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::TerminalState {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::TerminalState {
+impl crate::xml::runtime::FromXml for crate::opt14::types::TerminalState {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -4903,7 +4953,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::TerminalState {
                 }
             }
         }
-        Ok(crate::opt14::TerminalState {
+        Ok(crate::opt14::types::TerminalState {
             name: __name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element name".into())
             })?,
@@ -4911,7 +4961,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::TerminalState {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::TermBindingItem {
+impl crate::xml::runtime::ToXml for crate::opt14::types::TermBindingItem {
     fn xml_type_name(&self) -> &'static str {
         "TERM_BINDING_ITEM"
     }
@@ -4928,7 +4978,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::TermBindingItem {
             }
         }
         __attrs.push(("code", self.code.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -4939,7 +4989,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::TermBindingItem {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::TermBindingItem {
+impl crate::xml::runtime::FromXml for crate::opt14::types::TermBindingItem {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -4962,7 +5012,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::TermBindingItem {
                 }
             }
         }
-        Ok(crate::opt14::TermBindingItem {
+        Ok(crate::opt14::types::TermBindingItem {
             code: start
                 .attr("code")
                 .ok_or_else(|| {
@@ -4976,7 +5026,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::TermBindingItem {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::Transition {
+impl crate::xml::runtime::ToXml for crate::opt14::types::Transition {
     fn xml_type_name(&self) -> &'static str {
         "TRANSITION"
     }
@@ -4992,7 +5042,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Transition {
                 __attrs.push(("xsi:type", "TRANSITION".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -5012,7 +5062,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Transition {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::Transition {
+impl crate::xml::runtime::FromXml for crate::opt14::types::Transition {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -5047,7 +5097,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Transition {
                 }
             }
         }
-        Ok(crate::opt14::Transition {
+        Ok(crate::opt14::types::Transition {
             event: __event.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element event".into())
             })?,
@@ -5058,7 +5108,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Transition {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::TranslationDetails {
+impl crate::xml::runtime::ToXml for crate::opt14::types::TranslationDetails {
     fn xml_type_name(&self) -> &'static str {
         "TRANSLATION_DETAILS"
     }
@@ -5074,7 +5124,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::TranslationDetails {
                 __attrs.push(("xsi:type", "TRANSLATION_DETAILS".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -5097,7 +5147,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::TranslationDetails {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::TranslationDetails {
+impl crate::xml::runtime::FromXml for crate::opt14::types::TranslationDetails {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -5137,7 +5187,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::TranslationDetails {
                 }
             }
         }
-        Ok(crate::opt14::TranslationDetails {
+        Ok(crate::opt14::types::TranslationDetails {
             language: __language.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element language".into())
             })?,
@@ -5152,7 +5202,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::TranslationDetails {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::TAttribute {
+impl crate::xml::runtime::ToXml for crate::opt14::types::TAttribute {
     fn xml_type_name(&self) -> &'static str {
         "T_ATTRIBUTE"
     }
@@ -5168,7 +5218,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::TAttribute {
                 __attrs.push(("xsi:type", "T_ATTRIBUTE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -5185,7 +5235,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::TAttribute {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::TAttribute {
+impl crate::xml::runtime::FromXml for crate::opt14::types::TAttribute {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -5218,7 +5268,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::TAttribute {
                 }
             }
         }
-        Ok(crate::opt14::TAttribute {
+        Ok(crate::opt14::types::TAttribute {
             rm_attribute_name: __rm_attribute_name.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element rm_attribute_name".into())
             })?,
@@ -5230,7 +5280,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::TAttribute {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::TComplexObject {
+impl crate::xml::runtime::ToXml for crate::opt14::types::TComplexObject {
     fn xml_type_name(&self) -> &'static str {
         "T_COMPLEX_OBJECT"
     }
@@ -5246,7 +5296,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::TComplexObject {
                 __attrs.push(("xsi:type", "T_COMPLEX_OBJECT".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -5266,7 +5316,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::TComplexObject {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::TComplexObject {
+impl crate::xml::runtime::FromXml for crate::opt14::types::TComplexObject {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -5307,9 +5357,9 @@ impl crate::xml::runtime::FromXml for crate::opt14::TComplexObject {
                 }
             }
         }
-        Ok(crate::opt14::TComplexObject {
+        Ok(crate::opt14::types::TComplexObject {
             rm_type_name: __rm_type_name.unwrap_or(String::new()),
-            occurrences: __occurrences.unwrap_or(crate::opt14::Intervalofinteger {
+            occurrences: __occurrences.unwrap_or(crate::opt14::types::Intervalofinteger {
                 lower_included: Some(true),
                 upper_included: Some(true),
                 lower_unbounded: false,
@@ -5324,7 +5374,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::TComplexObject {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::TConstraint {
+impl crate::xml::runtime::ToXml for crate::opt14::types::TConstraint {
     fn xml_type_name(&self) -> &'static str {
         "T_CONSTRAINT"
     }
@@ -5340,7 +5390,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::TConstraint {
                 __attrs.push(("xsi:type", "T_CONSTRAINT".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -5353,7 +5403,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::TConstraint {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::TConstraint {
+impl crate::xml::runtime::FromXml for crate::opt14::types::TConstraint {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -5376,13 +5426,13 @@ impl crate::xml::runtime::FromXml for crate::opt14::TConstraint {
                 }
             }
         }
-        Ok(crate::opt14::TConstraint {
+        Ok(crate::opt14::types::TConstraint {
             attributes: __attributes,
         })
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::opt14::Termbindingset {
+impl crate::xml::runtime::ToXml for crate::opt14::types::Termbindingset {
     fn xml_type_name(&self) -> &'static str {
         "TermBindingSet"
     }
@@ -5399,7 +5449,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Termbindingset {
             }
         }
         __attrs.push(("terminology", self.terminology.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -5412,7 +5462,7 @@ impl crate::xml::runtime::ToXml for crate::opt14::Termbindingset {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::opt14::Termbindingset {
+impl crate::xml::runtime::FromXml for crate::opt14::types::Termbindingset {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -5435,7 +5485,7 @@ impl crate::xml::runtime::FromXml for crate::opt14::Termbindingset {
                 }
             }
         }
-        Ok(crate::opt14::Termbindingset {
+        Ok(crate::opt14::types::Termbindingset {
             terminology: start
                 .attr("terminology")
                 .ok_or_else(|| {

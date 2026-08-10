@@ -27,7 +27,8 @@
 )]
 
 use openehr_its::flat::tdd::from_tdd;
-use openehr_its::flat::webtemplate::{WebTemplate, build_web_template};
+use openehr_its::flat::webtemplate::builder::build_web_template;
+use openehr_its::flat::webtemplate::model::WebTemplate;
 use openehr_its::opt14;
 use openehr_its::rm_instance::validate_composition;
 use openehr_rm::prelude::Composition;

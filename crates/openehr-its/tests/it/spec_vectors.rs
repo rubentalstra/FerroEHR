@@ -59,7 +59,7 @@ use openehr_its::flat::error::FlatError;
 use openehr_its::flat::path::FlatKey;
 use openehr_its::flat::sim::flat::{emit_flat, parse_flat};
 use openehr_its::flat::validation::{validate_context, validate_flat_other};
-use openehr_its::flat::webtemplate::{
+use openehr_its::flat::webtemplate::model::{
     WebTemplate, WebTemplateCodedValue, WebTemplateInput, WebTemplateInputType, WebTemplateNode,
 };
 use openehr_its::rm_instance::ValidationKind;

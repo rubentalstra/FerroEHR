@@ -24,7 +24,8 @@
 use std::path::PathBuf;
 
 use openehr_its::flat::validation::validate_archetype_conformance;
-use openehr_its::flat::webtemplate::{WebTemplate, build_web_template};
+use openehr_its::flat::webtemplate::builder::build_web_template;
+use openehr_its::flat::webtemplate::model::WebTemplate;
 use openehr_its::opt14;
 use openehr_its::rm_instance::ValidationKind;
 use serde_json::{Value, json};

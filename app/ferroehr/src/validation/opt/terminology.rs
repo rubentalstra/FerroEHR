@@ -17,7 +17,7 @@
 
 use std::collections::HashSet;
 
-use openehr_its::opt14::{
+use openehr_its::opt14::types::{
     CArchetypeRoot, CAttribute, CObject, Codedefinitionset, FlatArchetypeOntology,
     OperationalTemplate,
 };

@@ -18,6 +18,3 @@ pub mod generated;
 #[cfg(feature = "full")]
 pub mod runtime;
 pub mod smart_scopes;
-
-#[cfg(feature = "full")]
-pub use runtime::ApiError;

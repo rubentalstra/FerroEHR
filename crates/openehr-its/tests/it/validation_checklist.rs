@@ -31,9 +31,10 @@ use openehr_its::flat::convert::{composition_from_flat, composition_to_flat};
 use openehr_its::flat::error::FlatError;
 use openehr_its::flat::sim::flat::parse_flat;
 use openehr_its::flat::validation::validate_context;
-use openehr_its::flat::webtemplate::{
+use openehr_its::flat::webtemplate::builder::build_web_template;
+use openehr_its::flat::webtemplate::model::{
     WebTemplate, WebTemplateCardinality, WebTemplateClosedAttribute, WebTemplateCodedValue,
-    WebTemplateInput, WebTemplateInputType, WebTemplateNode, build_web_template,
+    WebTemplateInput, WebTemplateInputType, WebTemplateNode,
 };
 use openehr_its::opt14;
 use openehr_its::rm_instance::{ValidationKind, ValidationMessage, validate_composition};

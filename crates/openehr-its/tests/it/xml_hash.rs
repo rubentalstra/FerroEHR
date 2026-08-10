@@ -7,7 +7,8 @@
 )]
 //! Verify `Hash<String,String>` (`StringDictionaryItem`) XML round-trips.
 use openehr_base::prelude::TranslationDetails;
-use openehr_its::xml::{from_xml, to_canonical_xml};
+use openehr_its::xml::runtime::from_xml;
+use openehr_its::xml::to_canonical_xml;
 
 #[test]
 fn string_hash_round_trips() {

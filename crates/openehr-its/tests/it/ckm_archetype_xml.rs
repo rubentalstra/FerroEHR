@@ -24,7 +24,7 @@
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
-use openehr_its::opt14::Archetype;
+use openehr_its::opt14::types::Archetype;
 
 /// Archetype XML documents the codec cannot read, with the reason. A refusal
 /// here is a NEGATIVE test: the gate asserts the read still fails, so a

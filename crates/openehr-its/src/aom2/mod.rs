@@ -10,22 +10,21 @@
 //! serialization — the AOM model form — is [`crate::aom2_model`].
 
 mod impls;
-mod types;
-pub use types::*;
+pub mod types;
 
-/// Parse a persistent-form AOM2 archetype XML document into a [`PAuthoredArchetype`].
+/// Parse a persistent-form AOM2 archetype XML document into a [`types::PAuthoredArchetype`].
 ///
 /// # Errors
 /// Propagates canonical-XML parse errors.
-pub fn from_xml(xml: &str) -> Result<PAuthoredArchetype, crate::xml::runtime::XmlError> {
+pub fn from_xml(xml: &str) -> Result<types::PAuthoredArchetype, crate::xml::runtime::XmlError> {
     crate::xml::runtime::from_xml(xml)
 }
 
-/// Serialize a [`PAuthoredArchetype`] back to AOM2 persistent-form archetype XML (root `<archetype>`,
+/// Serialize a [`types::PAuthoredArchetype`] back to AOM2 persistent-form archetype XML (root `<archetype>`,
 /// `http://schemas.openehr.org/v1`).
 ///
 /// # Errors
 /// Propagates canonical-XML serialization errors.
-pub fn to_xml(value: &PAuthoredArchetype) -> Result<String, crate::xml::runtime::XmlError> {
+pub fn to_xml(value: &types::PAuthoredArchetype) -> Result<String, crate::xml::runtime::XmlError> {
     crate::xml::runtime::to_xml(value, "archetype", crate::xml::runtime::Namespace::V1)
 }

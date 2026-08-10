@@ -7,7 +7,7 @@
 //! commit surface).
 
 use openehr_its::flat::example::{DetailLevel, example_composition};
-use openehr_its::flat::webtemplate::build_web_template;
+use openehr_its::flat::webtemplate::builder::build_web_template;
 use openehr_its::opt14;
 use serde_json::Value;
 

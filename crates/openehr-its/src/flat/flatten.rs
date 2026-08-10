@@ -32,7 +32,7 @@ use crate::flat::error::FlatError;
 use crate::flat::map;
 use crate::flat::rmpath;
 use crate::flat::sim::{SimDocument, SimNode};
-use crate::flat::webtemplate::{WebTemplate, WebTemplateNode};
+use crate::flat::webtemplate::model::{WebTemplate, WebTemplateNode};
 
 /// Flatten a canonical-JSON composition into the simplified tree, driven by
 /// `wt`. The result serializes to either wire variant via [`crate::flat::sim`].

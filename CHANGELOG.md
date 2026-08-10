@@ -274,6 +274,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **Every import from `openehr-its` now names the module that defines it.** The
+  crate's nine convenience re-exports are gone, so consumers write
+  `opt14::types::CObject` and `xml::runtime::ToXml` rather than borrowing those
+  names from a parent module. Longer at the use site, and it says where a type
+  comes from. Affects anyone depending on the published `openehr-its` crate; no
+  behaviour, wire format or serialization changes with it.
+
 - **`probes.exec` is removed** (breaking, for anyone who set it). It ran
   `ferroehr healthcheck` for liveness, readiness *and* startup, passed no
   `--url`, and that flag defaults to the openEHR status document rather than a

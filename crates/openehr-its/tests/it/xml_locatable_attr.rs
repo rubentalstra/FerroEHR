@@ -18,7 +18,8 @@
 //! these types, so they fell back to attribute-less BMM field order and emitted
 //! `<archetype_node_id>…</archetype_node_id>` — invalid canonical XML.
 
-use openehr_its::xml::{from_xml, to_canonical_xml};
+use openehr_its::xml::runtime::from_xml;
+use openehr_its::xml::to_canonical_xml;
 use openehr_rm::prelude::{EhrAccess, EhrStatus, GenericContentItem, Person};
 
 /// Assert a serialized LOCATABLE subtype carries `archetype_node_id` as an XML

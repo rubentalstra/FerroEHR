@@ -60,7 +60,7 @@
 )]
 
 use openehr_its::flat::validation::ConstraintBindingCheck;
-use openehr_its::flat::webtemplate::WebTemplate;
+use openehr_its::flat::webtemplate::model::WebTemplate;
 use openehr_its::rm_instance::{ValidationKind, ValidationMessage};
 use serde_json::Value;
 
@@ -171,7 +171,7 @@ mod tests {
     use std::collections::BTreeMap;
     use std::sync::Arc;
 
-    use openehr_its::flat::webtemplate::{
+    use openehr_its::flat::webtemplate::model::{
         WebTemplate, WebTemplateConstraintBinding, WebTemplateNode,
     };
     use serde_json::json;

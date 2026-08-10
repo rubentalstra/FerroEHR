@@ -19,8 +19,6 @@ use quick_xml::Reader;
 use quick_xml::Writer;
 use quick_xml::events::{BytesEnd, BytesStart, BytesText, Event};
 
-pub use quick_xml::events::BytesStart as XmlStart;
-
 /// The `xsi` namespace, declared on every serialized root element.
 pub const XSI_NS: &str = "http://www.w3.org/2001/XMLSchema-instance";
 

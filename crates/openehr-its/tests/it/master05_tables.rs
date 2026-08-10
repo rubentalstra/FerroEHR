@@ -73,7 +73,7 @@ use serde_json::{Map, Value, json};
 
 use openehr_its::flat::convert::{composition_from_flat, composition_to_flat};
 use openehr_its::flat::error::FlatError;
-use openehr_its::flat::webtemplate::{
+use openehr_its::flat::webtemplate::model::{
     WebTemplate, WebTemplateInput, WebTemplateInputType, WebTemplateNode,
 };
 
