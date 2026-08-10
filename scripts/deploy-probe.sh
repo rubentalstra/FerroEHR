@@ -49,6 +49,8 @@ PROBE_OUT="${PROBE_OUT:-docs/conformance/deployment/compose.json}"
 . scripts/deploy-probes/compose.sh
 # shellcheck source=scripts/deploy-probes/oidc.sh
 . scripts/deploy-probes/oidc.sh
+# shellcheck source=scripts/deploy-probes/signing.sh
+. scripts/deploy-probes/signing.sh
 
 cleanup() {
   if [ "$KEEP_UP" -eq 0 ]; then
@@ -82,6 +84,7 @@ compose_up ferroehr seaweedfs seaweedfs-init
 probes_shipped_config_boots
 probes_multimedia
 probes_management
+probes_signing
 probes_multimedia_restart
 probes_multimedia_off
 probes_multimedia_broken
@@ -95,8 +98,8 @@ uncovered "kubernetes platform" \
   "this harness drives compose only; the chart is exercised by the k8s-test skill by hand"
 uncovered "observability: traces reaching a collector, metrics on a scrape (#2173, #2175)" \
   "needs the observability overlay and a collector to observe at the far end"
-uncovered "signing in pgp mode (#2163)" \
-  "needs key material provisioned into the stack"
+uncovered "signing in PGP mode (#2163)" \
+  "digest mode and tamper detection are probed; the PGP path needs key material mounted as the docs instruct"
 uncovered "admin console journeys (#2164)" \
   "scripts/ui-e2e.sh already drives these with a real browser; folding it in is the next step"
 uncovered "FHIR, events, tenancy, terminology" \
