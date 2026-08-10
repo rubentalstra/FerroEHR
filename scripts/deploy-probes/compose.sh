@@ -156,12 +156,27 @@ probes_multimedia() {
   probe "P-MM-EXPAND" "working" "server" "#2197" \
     "?expand_multimedia=true returns the bytes on an EHR_STATUS read"
   if [ -n "${ehr:-}" ]; then
-    local expanded
+    local expanded data digest
     expanded="$(curl -s -u "$BASIC" "$API/ehr/$ehr/ehr_status?expand_multimedia=true")"
-    assert_contains "$expanded" '"data"' \
-      "the read must re-inline the blob, not answer with the compact reference"
-    assert_not_contains "$expanded" 's3://openehr-multimedia' \
-      "an expanded read must not still carry the external reference"
+    data="$(printf '%s' "$expanded" \
+      | jq -r '.other_details.items[0].value.data // empty' 2>/dev/null)"
+    if [ -z "$data" ]; then
+      probe_fail "a re-inlined DV_MULTIMEDIA.data" "no data member in the served value" \
+        "the read must re-inline the blob, not answer with the compact reference"
+    else
+      # The strongest far-end check available: the bytes that came back must
+      # hash to the content-addressed key the record references. That closes the
+      # whole loop — committed, externalized under its SHA-256, fetched, and
+      # re-inlined byte-identical — rather than trusting that a `data` member
+      # appeared.
+      digest="$(printf '%s' "$data" | base64 -d 2>/dev/null | shasum -a 256 | cut -d' ' -f1)"
+      assert_eq "$key" "$digest" \
+        "the re-inlined bytes must hash to the key the record references"
+    fi
+    # The `uri` deliberately SURVIVES expansion: RM DV_MULTIMEDIA's invariant is
+    # `is_inline or is_external`, an OR, so carrying both is valid and keeps the
+    # provenance reference. Asserting its absence would test a rule the spec
+    # does not have.
   else
     probe_fail "an expandable record" "no EHR was committed"
   fi

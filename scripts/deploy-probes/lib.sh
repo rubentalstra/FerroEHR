@@ -87,13 +87,13 @@ assert_contains() {
   case "$1" in
     *"$2"*) return 0 ;;
   esac
-  probe_fail "output containing '$2'" "$(printf '%s' "$1" | head -c 300)" "${3:-}"
+  probe_fail "output containing '$2'" "${1:0:300}" "${3:-}"
 }
 
 # assert_not_contains <haystack> <needle> [note]
 assert_not_contains() {
   case "$1" in
-    *"$2"*) probe_fail "output WITHOUT '$2'" "$(printf '%s' "$1" | head -c 300)" "${3:-}" ;;
+    *"$2"*) probe_fail "output WITHOUT '$2'" "${1:0:300}" "${3:-}" ;;
     *) return 0 ;;
   esac
 }
