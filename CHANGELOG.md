@@ -281,6 +281,14 @@ workflow refuses a tag that has no matching section here.
   comes from. Affects anyone depending on the published `openehr-its` crate; no
   behaviour, wire format or serialization changes with it.
 
+- **The Keycloak quickstart now demonstrates the authorization it documents.**
+  It shipped one user holding every role with RBAC switched off, so every
+  authenticated caller could use every surface and no refusal was possible. The
+  demo realm now carries four identities — an admin, a clinician, a read-only
+  auditor and a user with no roles at all — and the overlay enables RBAC, so a
+  reader can watch a valid credential be refused `403` instead of taking it on
+  trust. The existing `ferroehr`/`ferroehr` login is unchanged.
+
 - **`probes.exec` is removed** (breaking, for anyone who set it). It ran
   `ferroehr healthcheck` for liveness, readiness *and* startup, passed no
   `--url`, and that flag defaults to the openEHR status document rather than a

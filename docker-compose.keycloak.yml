@@ -16,6 +16,20 @@
 #   curl -H "Authorization: Bearer $TOKEN" -X POST -i \
 #     http://localhost:8080/ferroehr/rest/openehr/v1/ehr
 #
+# FOUR demo identities, because role separation cannot be shown with one user.
+# RBAC is ENABLED in this overlay (the base quickstart leaves it off), so these
+# roles decide real outcomes:
+#
+#   ferroehr  / ferroehr    ADMIN + USER   — the clinical API and the admin surface
+#   clinician / clinician   USER           — the clinical API; admin refused 403
+#   auditor   / auditor     USER+READONLY  — reads; every write refused 403,
+#                                            because READONLY overrides a grant
+#   nobody    / nobody      (no roles)     — authenticates, then 403 everywhere
+#
+# Swap `username=`/`password=` in the token call above to try each one. The
+# refusals are the point: a 401 means the credential was not accepted, a 403
+# means it was and the caller still may not do this.
+#
 # QUICKSTART DEFAULTS — do NOT use in production: demo realm, demo secret,
 # demo password, HTTP (not TLS), Keycloak in start-dev mode. For a real
 # deployment configure your own issuer via FERROEHR__AUTH__OIDC__* (or the
@@ -42,6 +56,13 @@ services:
       FERROEHR__AUTH__OIDC__ALLOW_INSECURE_ISSUER: "true"
       FERROEHR__AUTH__OIDC__AUDIENCES: ferroehr
       FERROEHR__AUTH__OIDC__ALGORITHMS: RS256
+      # RBAC ON, because an identity provider whose roles decide nothing is a
+      # login screen, not authorization. The base quickstart leaves it off so a
+      # first run needs no role setup; this overlay exists to show real
+      # identities, so the roles have to be load-bearing here — otherwise every
+      # authenticated caller may use every surface and the four users below are
+      # decoration.
+      FERROEHR__AUTHZ__RBAC__ENABLED: "true"
 
   keycloak:
     cap_drop: [ALL]
@@ -118,7 +139,8 @@ configs:
         "roles": {
           "realm": [
             { "name": "ADMIN", "description": "FerroEHR admin-surface role" },
-            { "name": "USER", "description": "FerroEHR clinical-API role" }
+            { "name": "USER", "description": "FerroEHR clinical-API role" },
+            { "name": "READONLY", "description": "FerroEHR read-only role, which overrides any grant" }
           ]
         },
         "users": [
@@ -133,6 +155,42 @@ configs:
               { "type": "password", "value": "ferroehr", "temporary": false }
             ],
             "realmRoles": [ "ADMIN", "USER" ]
+          },
+          {
+            "username": "clinician",
+            "enabled": true,
+            "email": "clinician@example.test",
+            "emailVerified": true,
+            "firstName": "Clara",
+            "lastName": "Clinician",
+            "credentials": [
+              { "type": "password", "value": "clinician", "temporary": false }
+            ],
+            "realmRoles": [ "USER" ]
+          },
+          {
+            "username": "auditor",
+            "enabled": true,
+            "email": "auditor@example.test",
+            "emailVerified": true,
+            "firstName": "Ada",
+            "lastName": "Auditor",
+            "credentials": [
+              { "type": "password", "value": "auditor", "temporary": false }
+            ],
+            "realmRoles": [ "USER", "READONLY" ]
+          },
+          {
+            "username": "nobody",
+            "enabled": true,
+            "email": "nobody@example.test",
+            "emailVerified": true,
+            "firstName": "Noa",
+            "lastName": "Nobody",
+            "credentials": [
+              { "type": "password", "value": "nobody", "temporary": false }
+            ],
+            "realmRoles": []
           }
         ],
         "clients": [
