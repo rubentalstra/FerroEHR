@@ -134,52 +134,25 @@ yaml_ok() {
 # Pinned as an explicit expectation rather than left to the golden diff: a
 # golden churns for a dozen innocent reasons and this field must never move
 # quietly among them.
+# Run one gate program over a rendered manifest.
+#
+# `yq -o=json` turns the multi-document YAML into one JSON document per line
+# and `jq -s` slurps them into an array, which is the shape every gate program
+# expects. A gate prints one line per violation and nothing when clean, so the
+# exit status is decided here rather than repeated in each program.
+#
+# yq and jq rather than a YAML parser in another language: this repository ships
+# no Python (.claude/rules/rust-style.md §No Python).
+gate_jq() {
+  local file="$1" program="$2" out
+  out="$(yq -o=json -I0 '.' "$file" | jq -s -r -f "$(dirname "$0")/gates/$program")" || return 1
+  [ -z "$out" ] || { printf '%s\n' "$out" | sed 's/^/  /'; return 1; }
+  return 0
+}
+
 assert_selector_stable() {
   local file="$1"
-  python3 - "$file" <<'PYSEL' || { red "  selector immutability gate FAILED for ${file}"; exit 1; }
-import sys, yaml
-EXPECTED = {"ferroehr": {"app.kubernetes.io/name", "app.kubernetes.io/instance"},
-            "admin-ui": {"app.kubernetes.io/name", "app.kubernetes.io/instance"}}
-bad = []
-docs = [d for d in yaml.safe_load_all(open(sys.argv[1])) if d]
-
-pod_labels = {}
-for d in docs:
-    if d.get("kind") != "Deployment":
-        continue
-    name = d["metadata"]["name"]
-    pod_labels[name] = d["spec"]["template"]["metadata"]["labels"] or {}
-    keys = set((d["spec"]["selector"]["matchLabels"] or {}).keys())
-    which = "admin-ui" if name.endswith("-admin-ui") else "ferroehr"
-    if keys != EXPECTED[which]:
-        bad.append(f"  {name}: selector.matchLabels is {sorted(keys)}, expected {sorted(EXPECTED[which])}"
-                   f" — this field is IMMUTABLE; changing it breaks helm upgrade on every existing release")
-
-# Disjointness. A Service/PDB selector is a SUBSET match, so a selector naming
-# only the labels two workloads share silently selects both. That is not a
-# cosmetic overlap: the CDR Service and the admin console both expose a port
-# named `http`, so `targetPort: http` resolved to the console's 3000 and a share
-# of openEHR API requests were answered by the console; the PDB counted the
-# console toward the server's budget and would have let a drain evict every
-# server replica at once. Key sets alone cannot catch this — after the fix both
-# Deployments have the SAME selector keys and differ only in the name's value.
-for d in docs:
-    if d.get("kind") not in ("Service", "PodDisruptionBudget"):
-        continue
-    sel = d["spec"].get("selector") or {}
-    sel = sel.get("matchLabels", sel)
-    if not sel:
-        continue
-    hit = [n for n, lbl in pod_labels.items()
-           if all(lbl.get(k) == v for k, v in sel.items())]
-    if len(hit) > 1:
-        bad.append(f"  {d['kind']}/{d['metadata']['name']}: selector {sel} matches {sorted(hit)}"
-                   f" — a subset match selects BOTH workloads; give each its own"
-                   f" app.kubernetes.io/name rather than a shared name plus a component")
-for b in bad:
-    print(b)
-sys.exit(1 if bad else 0)
-PYSEL
+  gate_jq "$file" selector.jq || { red "  selector immutability gate FAILED for ${file}"; exit 1; }
   echo "  selector.matchLabels unchanged, and no selector matches two workloads"
 }
 
@@ -193,101 +166,7 @@ PYSEL
 # place it can be caught before a cluster refuses the pod.
 assert_security() {
   local file="$1"
-  python3 - "$file" <<'PYGATE' || { red "  restricted-profile gate FAILED for ${file}"; exit 1; }
-import sys, yaml
-
-ALLOWED_VOLUMES = {
-    "configMap", "csi", "downwardAPI", "emptyDir", "ephemeral",
-    "persistentVolumeClaim", "projected", "secret",
-}
-bad = []
-# Pod-level ISOLATION, recorded per workload rather than asserted per workload.
-# These are not restricted-profile controls — the profile says nothing about
-# user namespaces — so the property that matters is not "every pod sets X", it
-# is that every pod of one release agrees. A release whose console shares the
-# host user namespace while its server does not has a posture nobody can state,
-# and that is the exact shape of the defect this chart already shipped once,
-# where a second workload quietly lost a hardening the first one had.
-isolation = {}
-
-def check_pod(kind, name, spec):
-    pod = spec.get("securityContext") or {}
-    isolation[f"{kind}/{name}"] = (
-        spec.get("hostUsers", True),
-        pod.get("supplementalGroupsPolicy"),
-    )
-    if pod.get("runAsNonRoot") is not True:
-        bad.append(f"{kind}/{name}: pod runAsNonRoot must be true")
-    if (pod.get("seccompProfile") or {}).get("type") not in ("RuntimeDefault", "Localhost"):
-        bad.append(f"{kind}/{name}: pod seccompProfile.type must be RuntimeDefault or Localhost")
-    # The kubelet's per-Service link variables land in the reserved FERROEHR_
-    # namespace and the strict env sweep then refuses to boot, so losing this
-    # makes every install crash-loop. Not a profile control; checked here
-    # because this is where pod specs are inspected.
-    if spec.get("enableServiceLinks") is not False:
-        bad.append(f"{kind}/{name}: enableServiceLinks must be false")
-    for v in spec.get("volumes") or []:
-        used = [k for k in v if k != "name"]
-        for t in used:
-            if t not in ALLOWED_VOLUMES:
-                bad.append(f"{kind}/{name}: volume {v.get('name')} type {t} is outside the restricted set")
-    for c in (spec.get("containers") or []) + (spec.get("initContainers") or []):
-        sc = c.get("securityContext") or {}
-        cn = c.get("name")
-        if sc.get("allowPrivilegeEscalation") is not False:
-            bad.append(f"{kind}/{name}/{cn}: allowPrivilegeEscalation must be false")
-        if sc.get("runAsNonRoot") is not True and pod.get("runAsNonRoot") is not True:
-            bad.append(f"{kind}/{name}/{cn}: runAsNonRoot must be true")
-        if sc.get("readOnlyRootFilesystem") is not True:
-            bad.append(f"{kind}/{name}/{cn}: readOnlyRootFilesystem must be true")
-        caps = sc.get("capabilities") or {}
-        if "ALL" not in (caps.get("drop") or []):
-            bad.append(f"{kind}/{name}/{cn}: capabilities.drop must include ALL")
-        if caps.get("add"):
-            bad.append(f"{kind}/{name}/{cn}: capabilities.add must be empty, got {caps['add']}")
-
-pods = 0
-netpol = False
-spread = []
-for doc in yaml.safe_load_all(open(sys.argv[1])):
-    if not doc:
-        continue
-    kind = doc.get("kind")
-    if kind == "NetworkPolicy":
-        netpol = True
-    tmpl = (doc.get("spec") or {}).get("template")
-    if kind in ("Deployment", "StatefulSet", "DaemonSet", "Job") and tmpl:
-        pods += 1
-        check_pod(kind, (doc.get("metadata") or {}).get("name"), tmpl.get("spec") or {})
-    # Availability, not security: a Deployment asking for more than one replica
-    # with nothing telling the scheduler to spread them can put every replica on
-    # one node, so one node failure is a total outage. A Job is exempt (it runs
-    # once) and so is a single-replica Deployment (there is nothing to spread).
-    #
-    # An ABSENT `replicas` counts as multi-replica, and that is the whole
-    # subtlety: the chart omits the field when autoscaling is on, so reading it
-    # as the API default of 1 exempted precisely the elastic workload that most
-    # needs spreading. Written the naive way first, and caught by mutation.
-    replicas = (doc.get("spec") or {}).get("replicas")
-    if kind == "Deployment" and tmpl and (replicas is None or replicas > 1):
-        if not ((tmpl.get("spec") or {}).get("topologySpreadConstraints") or
-                (tmpl.get("spec") or {}).get("affinity")):
-            spread.append((doc.get("metadata") or {}).get("name"))
-
-if pods == 0:
-    bad.append("no pod-bearing workload found — the gate would pass vacuously")
-if not netpol:
-    bad.append("no NetworkPolicy in the render")
-for name in spread:
-    bad.append(f"Deployment/{name}: multi-replica with neither topologySpreadConstraints nor affinity — every replica may land on one node")
-if len(set(isolation.values())) > 1:
-    bad.append("pod isolation differs across workloads of one release: "
-               + ", ".join(f"{k} hostUsers={v[0]} supplementalGroupsPolicy={v[1]}"
-                           for k, v in sorted(isolation.items())))
-for b in bad:
-    print(f"  {b}")
-sys.exit(1 if bad else 0)
-PYGATE
+  gate_jq "$file" restricted.jq || { red "  restricted-profile gate FAILED for ${file}"; exit 1; }
   echo "  restricted profile satisfied by every pod in the render (per container)"
   echo "  pod isolation agrees across workloads, and every multi-replica workload spreads"
 }

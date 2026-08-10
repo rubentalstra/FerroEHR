@@ -139,6 +139,21 @@ jobs:
             exit 1
           fi
 
+      # The chart gates read the rendered YAML structurally (yq -o=json | jq),
+      # because a grep over a manifest passes as soon as ONE container carries a
+      # field. Pinned by version and verified by checksum: this step runs before
+      # the security gates, so a substituted binary would decide whether they
+      # pass.
+      - name: Install yq
+        env:
+          YQ_VERSION: v4.53.3
+          YQ_SHA256: fa52a4e758c63d38299163fbdd1edfb4c4963247918bf9c1c5d31d84789eded4
+        run: |
+          set -euo pipefail
+          curl -fsSL -o /tmp/yq             "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"
+          echo "${YQ_SHA256}  /tmp/yq" | sha256sum -c -
+          sudo install -m 0755 /tmp/yq /usr/local/bin/yq
+          yq --version
       - name: Chart validation + golden renders
         run: bash deploy/helm/validate.sh
 
