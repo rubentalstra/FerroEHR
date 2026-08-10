@@ -24,7 +24,7 @@
 //! design/extension, consumed by validation and by interop consumers, and
 //! schema-legal because those schemas set no `additionalProperties: false`. The
 //! one place the schema is *stricter* than a naive render is its `Tree.required`
-//! list — satisfied by [`serialize_root`].
+//! list — satisfied by `serialize_root`.
 
 #![expect(
     clippy::disallowed_types,

@@ -11,7 +11,7 @@
 //!    attribute names, collapse the always-collapsed wrapper types
 //!    (`ITEM_*`/`ITEM_STRUCTURE`/`HISTORY`) and a conditionally-collapsed single
 //!    `EVENT`, promote an `ELEMENT`/`DATA_VALUE` single child, and drop empties;
-//! 3. **assign ids** (see [`super::id`], master04 §"Node ID Generation Rules").
+//! 3. **assign ids** (see `id`, master04 §"Node ID Generation Rules").
 //!
 //! Deliberate shape boundaries of the builder (design decisions, not omissions).
 //! The `web-template` mirrors the *constraint* tree of the OPT; RM structure that

@@ -4,8 +4,8 @@
 //! simplified node identifiers, AQL paths, input type definitions, localized
 //! labels, and multiplicity constraints — defined by `ITS-REST
 //! simplified_formats master04-basic_concepts.adoc` §"Web Template Metadata".
-//! [`build_web_template`] turns a parsed
-//! [`crate::opt14::types::OperationalTemplate`] into a [`WebTemplate`]. See
+//! [`builder::build_web_template`] turns a parsed
+//! [`crate::opt14::types::OperationalTemplate`] into a [`model::WebTemplate`]. See
 //! `builder` for the walk and the recorded scope boundaries, `id` for the
 //! master04 §"Node ID Generation Rules" algorithm, and `inputs` for the
 //! per-RM-type input mapping.
