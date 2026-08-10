@@ -76,3 +76,13 @@ docs/conformance/*/perf-corpus-*.json
 # as an attested asset, never committed — a checked-in SBOM describes whatever
 # graph happened to be resolved the day someone ran it.
 *.cdx.json
+
+# SNOMED CT release packages, dropped in the repository root so the terminology
+# probe can find them (scripts/deploy-probes/terminology.sh).
+#
+# These are LICENSED content under a SNOMED International Affiliate agreement —
+# they may not be committed, published, or redistributed. This entry is the
+# guard: the archives are ~1 GB and would otherwise be one `git add -A` away
+# from the history, where removing them means rewriting it.
+SnomedCT_*.zip
+doc_SnomedCT*.pdf
