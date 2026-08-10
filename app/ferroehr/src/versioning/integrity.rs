@@ -141,7 +141,7 @@ pub(crate) fn sign_imported_version(
 fn sign_canonical(ctx: &SigningCtx<'_>, value: &Value) -> Result<Option<String>, ServiceError> {
     let canonical =
         openehr_rm::v1_2::common::change_control::version_impl::canonical_form_of_json(value)
-            .map_err(|e| ServiceError::Signing(e.to_string()))?;
+            .map_err(|e| ServiceError::SigningCanonical(e.to_string(), e))?;
     let signature = ctx
         .signer
         .sign(&canonical)
@@ -179,7 +179,7 @@ pub(crate) fn verify_on_read(
     };
     let canonical =
         openehr_rm::v1_2::common::change_control::version_impl::canonical_form_of_json(ov)
-            .map_err(|e| ServiceError::Signing(e.to_string()))?;
+            .map_err(|e| ServiceError::SigningCanonical(e.to_string(), e))?;
     let verdict = signer.verify(&canonical, signature);
     if verdict.is_failure() {
         crate::telemetry::metrics::metrics()

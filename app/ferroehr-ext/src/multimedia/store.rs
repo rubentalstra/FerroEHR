@@ -117,7 +117,7 @@ impl BlobStore {
         }
         let store = builder
             .build()
-            .map_err(|e| MultimediaError::Config(e.to_string()))?;
+            .map_err(|e| MultimediaError::ConfigFailed(e.to_string(), e))?;
         Ok(Self {
             inner: Arc::new(store),
             bucket: params.bucket,
