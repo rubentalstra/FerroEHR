@@ -59,6 +59,8 @@ PROBE_OUT="${PROBE_OUT:-docs/conformance/deployment/compose.json}"
 . scripts/deploy-probes/events.sh
 # shellcheck source=scripts/deploy-probes/fhir.sh
 . scripts/deploy-probes/fhir.sh
+# shellcheck source=scripts/deploy-probes/terminology.sh
+. scripts/deploy-probes/terminology.sh
 # shellcheck source=scripts/deploy-probes/signing_pgp.sh
 . scripts/deploy-probes/signing_pgp.sh
 
@@ -91,23 +93,31 @@ compose_down
 bold "bringing the stack up (postgres + CDR + seaweedfs + init)"
 compose_up ferroehr seaweedfs seaweedfs-init
 
-probes_shipped_config_boots
-probes_multimedia
-probes_management
-probes_management_separate_listener
-probes_signing
-probes_signing_pgp
-probes_signing_rotation
-probes_multimedia_restart
-probes_multimedia_off
-probes_multimedia_broken
-probes_health_broken
-probes_oidc
-probes_oidc_roles
-probes_observability
-probes_tenancy
-probes_events
-probes_fhir
+# One family, or all of them. The terminology family needs a licensed release
+# and ~8 GB, so its CI lane runs it alone rather than paying for every other
+# family to prove something already proven on every pull request.
+run_family() {
+  [ -z "${PROBE_ONLY:-}" ] || [ "${PROBE_ONLY}" = "$1" ]
+}
+
+run_family shipped_config && probes_shipped_config_boots
+run_family multimedia && probes_multimedia
+run_family management && probes_management
+run_family management_separate_listener && probes_management_separate_listener
+run_family signing && probes_signing
+run_family signing_pgp && probes_signing_pgp
+run_family signing_rotation && probes_signing_rotation
+run_family multimedia_restart && probes_multimedia_restart
+run_family multimedia_off && probes_multimedia_off
+run_family multimedia_broken && probes_multimedia_broken
+run_family health_broken && probes_health_broken
+run_family oidc && probes_oidc
+run_family oidc_roles && probes_oidc_roles
+run_family observability && probes_observability
+run_family tenancy && probes_tenancy
+run_family events && probes_events
+run_family fhir && probes_fhir
+run_family terminology && probes_terminology
 
 # ── The honest half ───────────────────────────────────────────────────────────
 # Everything #2178 asks for that this run does NOT do. Each entry is a probe
@@ -116,7 +126,6 @@ uncovered "kubernetes platform" \
   "a separate harness covers it — scripts/deploy-probe-k8s.sh, recorded in kubernetes.json"
 uncovered "admin console journeys (#2164)" \
   "scripts/ui-e2e.sh already drives these with a real browser; folding it in is the next step"
-uncovered "terminology" \
-  "no probes yet — it needs a FHIR terminology server composed"
+
 
 probe_report "$PROBE_OUT" "compose"
