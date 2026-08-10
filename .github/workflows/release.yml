@@ -105,9 +105,19 @@ jobs:
           fi
         env:
           TAG: ${{ steps.tag.outputs.tag }}
-      - name: Publish (or update) the GitHub release
+      # Created as a DRAFT, and finalized only after every asset is attached.
+      #
+      # Release immutability is enabled on this repository: once a release is
+      # PUBLISHED, its assets and tag can no longer be modified. The binaries,
+      # SBOMs and Sigstore bundles are produced by the build-binaries matrix
+      # that runs after this job, so publishing here would freeze the release
+      # before its most important assets exist — a release carrying the compose
+      # files and nothing to verify. A draft is still mutable, which is exactly
+      # the window those uploads need.
+      - name: Create the GitHub release as a draft
         uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
+          draft: true
           tag_name: ${{ steps.tag.outputs.tag }}
           name: ${{ steps.tag.outputs.tag }}
           body_path: release-notes.md
@@ -163,3 +173,47 @@ jobs:
       sha: ${{ needs.publish-release.outputs.sha }}
       target: ${{ matrix.target }}
       runner: ${{ matrix.runner }}
+
+  # The moment the release becomes immutable, so it happens LAST and only when
+  # every asset is in place. `needs` both jobs rather than just the matrix: a
+  # draft with no binaries must never be flipped to published, and a failed
+  # matrix leaves the draft visible for inspection instead of shipping a
+  # release nobody can add to afterwards.
+  finalize-release:
+    needs: [publish-release, build-binaries]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Refuse to publish a release whose assets are missing. After this step
+      # the set is frozen for good, so this is the last moment the check is
+      # worth anything.
+      - name: Every expected asset is attached before the release is frozen
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.publish-release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          assets="$(gh release view "$TAG" --json assets --jq '.assets[].name')"
+          echo "$assets"
+          missing=""
+          for arch in x86_64 aarch64; do
+            for suffix in ".tar.gz" ".tar.gz.sigstore.json" ".tar.gz.intoto.jsonl"; do
+              printf '%s\n' "$assets" \
+                | grep -q "ferroehr-${TAG}-${arch}-unknown-linux-gnu${suffix}" \
+                || missing="$missing ferroehr-${TAG}-${arch}-unknown-linux-gnu${suffix}"
+            done
+          done
+          [ -z "$missing" ] || {
+            echo "::error::the draft is missing assets, so it will not be published:$missing"
+            exit 1
+          }
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.publish-release.outputs.tag }}
+        run: gh release edit "$TAG" --draft=false

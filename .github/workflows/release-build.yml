@@ -185,6 +185,11 @@ jobs:
       - name: Upload to release
         uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
+          # The release is still a DRAFT at this point and must stay one: it is
+          # finalized by the caller's finalize-release job once every arch has
+          # attached its assets. Release immutability freezes a PUBLISHED
+          # release, so flipping it here would lock the other architecture out.
+          draft: true
           tag_name: ${{ inputs.tag }}
           files: |
             ${{ env.ASSET }}
