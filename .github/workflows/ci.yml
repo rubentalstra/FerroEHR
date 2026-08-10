@@ -1486,6 +1486,14 @@ jobs:
             exit 1
           fi
           echo "CITATION.cff version $cff_ver matches the workspace version."
+      # `.zenodo.json` is GENERATED from CITATION.cff, because Zenodo ignores
+      # CITATION.cff entirely whenever a .zenodo.json is present
+      # (https://help.zenodo.org/docs/github/describe-software/zenodo-json/).
+      # A hand-edited copy would therefore silently override the file this job
+      # guards, and the disagreement would be archived under a DOI that cannot
+      # be edited afterwards.
+      - name: .zenodo.json is in sync with CITATION.cff
+        run: bash scripts/render/zenodo-json.sh --check
 
   # Compose version guard: the standalone quickstart docker-compose.yml pins
   # the published images by tag, so a release cut that forgets those defaults
