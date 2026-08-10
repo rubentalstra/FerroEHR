@@ -72,6 +72,11 @@ pub enum MultimediaError {
     /// The object-store client could not be constructed from configuration.
     #[error("multimedia store configuration: {0}")]
     Config(String),
+    /// The same failure with its cause intact (RFC 0201). A store that will not
+    /// build is a credential problem, an endpoint problem or a TLS problem, and
+    /// a caller that cannot tell them apart has to read prose.
+    #[error("multimedia store configuration: {0}")]
+    ConfigFailed(String, #[source] object_store::Error),
 }
 
 /// Whether the tree references ANY externalized blob (`s3://…`), regardless of

@@ -31,8 +31,8 @@ cd "$(dirname "$0")/../.." || exit 1
 # the sweep is judgement-per-site (#2034), so this pins progress rather than
 # demanding a big-bang change.
 declare -a BUDGETS=(
-  "app/ferroehr:13"
-  "app/ferroehr-ext:3"
+  "app/ferroehr:11"
+  "app/ferroehr-ext:1"
   "app/ferroehr-admin-ui:6"
   "tools/cnf-runner:40"
   "tools/openehr-codegen:11"

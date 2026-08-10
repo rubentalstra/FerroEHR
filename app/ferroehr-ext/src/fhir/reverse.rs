@@ -53,7 +53,7 @@ pub fn to_fhir(
     subject_id: Option<&str>,
 ) -> Result<Value, FhirMapError> {
     let flat = openehr_its::flat::convert::composition_to_flat(composition, wt)
-        .map_err(|e| FhirMapError::Reverse(e.to_string()))?;
+        .map_err(|e| FhirMapError::ReverseFailed(e.to_string(), e))?;
     let mut resource = json!({ "resourceType": resource_type });
     if let Some(sid) = subject_id {
         let reference = match &def.subject.strip_prefix {
