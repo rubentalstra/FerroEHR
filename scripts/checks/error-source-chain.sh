@@ -30,12 +30,25 @@ cd "$(dirname "$0")/../.." || exit 1
 # Trees still being swept. Each is a COUNT, and a count may only go DOWN:
 # the sweep is judgement-per-site (#2034), so this pins progress rather than
 # demanding a big-bang change.
+#
+# `tools/*` is NOT swept, and that is an adjudication rather than an omission —
+# both trees fall under the shapes #2034 itself names as legitimate:
+#
+#   tools/cnf-runner        its `Result<_, String>` IS the recorded observation.
+#                           A driver error is surfaced as an inconclusive row in
+#                           results.json naming what went wrong; the runner never
+#                           branches on the error TYPE, it reports the message.
+#                           Typing them would redesign the result model to say
+#                           the same thing.
+#   tools/openehr-codegen   every site is in testsupport.rs — test code, which
+#                           #2034 exempts outright.
+#
+# Both stay out of the budget list so the gate measures the request path, where
+# a status code is chosen BY TYPE and a flattened cause actually costs something.
 declare -a BUDGETS=(
-  "app/ferroehr:11"
+  "app/ferroehr:9"
   "app/ferroehr-ext:1"
   "app/ferroehr-admin-ui:6"
-  "tools/cnf-runner:40"
-  "tools/openehr-codegen:11"
 )
 
 fail=0

@@ -549,7 +549,7 @@ async fn apply_change(
                 engine
                     .offload(&mut canonical)
                     .await
-                    .map_err(|e| ServiceError::exception(e.to_string()))?;
+                    .map_err(|e| ServiceError::internal("externalize multimedia", e))?;
             }
             let lifecycle = resolve_lifecycle(lifecycle_state)?;
             // This arm commits CONTENT, so the deleted state is refused here
@@ -600,7 +600,7 @@ async fn apply_change(
                 engine
                     .offload(&mut canonical)
                     .await
-                    .map_err(|e| ServiceError::exception(e.to_string()))?;
+                    .map_err(|e| ServiceError::internal("externalize multimedia", e))?;
             }
             let lifecycle = resolve_lifecycle(lifecycle_state)?;
             // Same coupling as the create arm: a modification carries content,
