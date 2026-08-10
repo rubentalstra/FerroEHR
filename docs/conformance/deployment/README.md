@@ -15,6 +15,19 @@ them can decline. So the Kubernetes probes read their answers from the runtime
 spec, from admission, and from the EndpointSlice — never from the manifest we
 wrote.
 
+## In CI
+
+The compose harness runs as the `deploy-probe` job on any change to the code,
+the compose files, the server image or the harness itself. It reuses the binary
+the `ui-e2e` lane already builds — packaged COPY-only in seconds, because
+building the image again would double a long lane to prove the same bytes — and
+uploads its record on every run, passing or failing. A failed run is exactly
+when the per-probe layer attribution and the not-exercised ledger are worth
+reading.
+
+The **terminology** family does not run there. It needs a licensed SNOMED
+release that may not be fetched onto a shared runner, and it is opt-in locally.
+
 A record is a measurement of **one SUT**, so it is only meaningful with the
 image it was taken against. The harness names that image in its output, and
 the record carries the per-probe outcome plus the layer each failure indicts.
