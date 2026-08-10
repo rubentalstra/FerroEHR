@@ -57,44 +57,54 @@ because a code system we seeded ourselves would only prove our client can talk
 to our own fixture — `$subsumes` in particular means nothing without a
 published hierarchy behind it.
 
-**The RF2 package is licensed content and is never in this repository.** It
-cannot be committed, fetched by a vendoring script, or baked into an image; the
-operator supplies it, and without it the family declares itself not exercised
-rather than substituting a fixture.
+**Local only, and the package is never in this repository.** The RF2 archive is
+licensed content under a SNOMED International Affiliate agreement: it is not
+committed, not fetched by CI, and not baked into an image. There is deliberately
+no CI lane — a workflow that downloaded it onto a shared runner would be moving
+licensed content somewhere this project does not control. Without a package the
+family declares itself not exercised rather than substituting a fixture.
 
-Locally, against a copy already downloaded from MLDS:
+**The setup is: drop the archive in the repository root.** `SnomedCT_*.zip` is
+gitignored precisely so it can live there, and the probe finds it — no
+configuration:
 
 ```bash
-FERROEHR_SNOMED_RF2=~/Downloads/SnomedCT_InternationalRF2_PRODUCTION_20260801T120000Z.zip \
-FERROEHR_SNOMED_RF2_MD5=878e480163d35bdf6ff3c1f5f9391d47 \
-PROBE_ONLY=terminology \
-  bash scripts/deploy-probe.sh
+PROBE_ONLY=terminology bash scripts/deploy-probe.sh
 ```
 
-The MD5 is the one SNOMED International publishes beside the release. It is
-optional and it is worth setting: a probe that silently ran against a truncated
-or substituted archive would report conformance about content nobody chose. It
-is pinned per release, so moving to a new edition is a deliberate edit.
+With both editions present the NATIONAL one is used, because that is the
+deployment reality being probed, and the International is loaded first so the
+extension can resolve against it. `FERROEHR_SNOMED_RF2` still overrides if the
+archive lives elsewhere.
 
-In CI, the `Terminology probe (SNOMED)` workflow (manual dispatch) fetches the
-release from wherever the affiliate keeps it:
+Setting the published checksum is worth the extra line:
 
-| Secret / variable | Purpose |
-|---|---|
-| `SNOMED_RF2_URL` (secret) | where the archive is fetched from |
-| `SNOMED_RF2_USER` / `SNOMED_RF2_PASSWORD` (secrets) | basic auth, if that source needs it |
-| `SNOMED_RF2_MD5` (variable) | the published checksum for the pinned release |
+```bash
+FERROEHR_SNOMED_RF2_MD5=876355868299a8c4d1534e53de6e75a5 \
+PROBE_ONLY=terminology bash scripts/deploy-probe.sh
+```
 
-The archive lives on the runner's disk for the life of the job and nothing
-republishes it — no cache, no artifact upload. Only the probe RECORD is
-uploaded.
+The MD5 is the one SNOMED International publishes beside the release, and it is
+worth setting: a probe that silently ran against a truncated or substituted
+archive would report conformance about content nobody chose. It is pinned per
+release, so moving edition is a deliberate edit.
+
+**Whether the national package needs the International Edition alongside it is
+not something Snowstorm documents**, so the family does not assume — put both
+zips in the root and the International is imported to `MAIN` first.
+
+With only the national package, it is loaded on its own and the run reports what
+was actually served — the subsumption probe checks that the concepts it names
+are present before asserting anything about them, and declares a gap rather than
+a defect if they are not.
 
 **Two resource facts, stated because discovering them mid-import wastes an
-hour.** Elasticsearch and Snowstorm want ~8 GB of memory between them, and a
-full International Edition import needs well more disk than a standard
-GitHub-hosted runner's 14 GB — which is why the workflow takes a runner label
-as an input and defaults to a larger one. Elasticsearch also refuses to start
-unless the HOST sets `vm.max_map_count=262144`, a sysctl no container can apply
-to itself; the workflow sets it, and locally you may need
-`sudo sysctl -w vm.max_map_count=262144` (on Docker Desktop,
-`wsl -d docker-desktop sysctl -w vm.max_map_count=262144`).
+hour.** Elasticsearch and Snowstorm want ~8 GB of memory between them. And
+Elasticsearch refuses to start unless the HOST sets `vm.max_map_count=262144`, a
+sysctl no container can apply to itself:
+
+```bash
+sudo sysctl -w vm.max_map_count=262144
+# Docker Desktop:
+wsl -d docker-desktop sysctl -w vm.max_map_count=262144
+```
