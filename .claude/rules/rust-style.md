@@ -223,6 +223,39 @@ checked. New code carries the source; the sweep is tracked.
   `static_mut_refs` is compiler-enforced and the `LazyLock` convention
   already complies. Do not re-litigate them.
 
+## No Python, anywhere (owner hard rule, 2026-08-10)
+
+The tooling languages are **bash and Rust**. Python is banned across the
+repository — standalone scripts, and especially embedded in shell.
+
+Embedded is worse than either language alone, and not as a matter of taste: a
+heredoc nested inside a command substitution makes bash scan the *Python* for
+quote pairs, so a single apostrophe in a Python comment breaks the whole
+script with an error pointing at the wrong line. That is not hypothetical — it
+happened while writing `scripts/render/zenodo-json.sh`, which is now bash and
+`jq` only.
+
+What to reach for instead:
+
+| Job | Tool |
+|---|---|
+| JSON read/build | `jq` |
+| Line scans, field extraction | `awk`, `sed`, `grep` |
+| Anything with real data structures | Rust, in `tools/` |
+
+Enforcement (tier 4): `scripts/checks/no-python.sh`, per-PR via the
+`no-python` CI job. It fails on any `python`/`python3` invocation and on any
+`.py` file under `scripts/`, `.github/workflows/`, `.claude/hooks/`, `deploy/`
+and `docker/`; prose *about* not using Python is allowed, since several
+scripts carry exactly that comment. Mutation-proven in both directions.
+
+**Two exemptions remain**, both in `deploy/helm/validate.sh` and both tracked
+by issue #2220: the selector-immutability and restricted-profile gates parse
+multi-document YAML, which bash has no native answer for. They are security
+gates and they are mutation-proven, so they are being converted deliberately —
+a replacement that silently checks fewer containers would be worse than the
+violation it fixes.
+
 ## What not to do
 
 - Do not port JVM plumbing (classloaders, Spring context internals, PF4J) —

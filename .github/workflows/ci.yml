@@ -295,6 +295,24 @@ jobs:
       - name: Comment style on changed Rust files
         run: bash scripts/checks/comment-style.sh --all
 
+  # No Python anywhere (.claude/rules/rust-style.md §No Python): the tooling
+  # languages are bash and Rust. Embedded Python is the worst case — a heredoc
+  # inside a command substitution makes bash scan the Python for quote pairs,
+  # so one apostrophe in a comment breaks the script.
+  no-python:
+    name: no-python
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: No Python invocations or sources
+        run: bash scripts/checks/no-python.sh
+
   # Default-value style (.claude/rules/rust-style.md §Default values): a field's
   # default lives inline in its struct's `Default` impl — the RFC 3681 shape,
   # hand-written because that syntax is nightly-only.
