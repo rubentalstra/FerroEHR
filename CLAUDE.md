@@ -141,6 +141,10 @@ bash scripts/conformance.sh   # compose up --build (fresh volumes) → the CNF c
 # CPU profiling / hotspot hunting (exploration only, never a conformance record): the /flamegraph skill — GET /management/flamegraph on a running server (opt-in), `cargo bench -p ferroehr --bench aql -- --profile-time 10` for a code path, cargo-flamegraph locally
 # admin-console gates: /ui-gates (both-target clippy, nextest, leptosfmt, cargo-leptos build)
 bash scripts/ui-e2e.sh        # the browser journey battery against the composed stack (merge gate in CI)
+bash scripts/deploy-probe.sh  # the DEPLOYMENT-conformance harness: brings a real stack up and probes observable
+                              # behaviour at the FAR END (a blob in the bucket, the server's own effective config),
+                              # each integration off / working / dependency-broken. Its report ends with what it did
+                              # NOT exercise — silence is never read as coverage. Record: docs/conformance/deployment/
 ```
 
 ### Target-dir & warm-build discipline (owner rules 2026-07-12, tightened 2026-07-16)
