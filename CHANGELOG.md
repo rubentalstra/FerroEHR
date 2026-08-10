@@ -516,12 +516,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
-- **Two list-typed configuration keys could not be set from the environment at
-  all.** `signing.retired_key_paths` and `smart.endpoints.capabilities` are
-  list-typed but were missing from the loader's list registry, so an env value
-  was not merely mis-split — it was **refused at boot**: `invalid type: string
-  "…", expected a sequence`. Both are now registered, and a test asserts every
-  env-settable list key parses from one value and splits on several.
+- **Three list-typed configuration settings could not be set from the
+  environment at all.** `signing.retired_key_paths`,
+  `smart.endpoints.capabilities` and every `authz.abac.policy.<kind>.parameters`
+  are list-typed but were missing from the loader's list registry, so an env
+  value was not merely mis-split — it was **refused at boot**: `invalid type:
+  string "…", expected a sequence`. All are now registered, and tests assert
+  that every env-settable list key parses from one value, splits on several, and
+  that a list nested under a map key works too.
 
   `signing.retired_key_paths` is the key that carries PGP key rotation: it holds
   the retired PUBLIC keys that keep versions signed before a rotation
