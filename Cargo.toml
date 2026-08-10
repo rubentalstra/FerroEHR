@@ -17,6 +17,12 @@ edition = "2024"
 rust-version = "1.96"
 license = "MIT"
 repository = "https://github.com/rubentalstra/FerroEHR"
+# No `authors`, deliberately. The cargo manifest reference opens that section
+# with "Warning: This field is deprecated"
+# (https://doc.rust-lang.org/cargo/reference/manifest.html#the-authors-field),
+# and it cannot be corrected after publication. Attribution for the published
+# `openehr-*` crates is the repository link above plus CITATION.cff, which IS
+# editable and is what GitHub's citation box and the Zenodo deposit both read.
 # C-METADATA (https://rust-lang.github.io/api-guidelines/documentation.html#c-metadata):
 # members inherit via `<key>.workspace = true`; `readme` resolves from this root.
 documentation = "https://ferroehr.eu/"
@@ -25,6 +31,13 @@ keywords = ["openehr", "cdr", "healthcare", "ehr", "aql"]
 categories = ["database-implementations", "science", "web-programming::http-server"]
 
 [workspace.lints.clippy]
+# Zero re-exports (owner hard rule 2026-07-16: every import names its defining
+# module) becomes a compile error rather than a review note. It costs nothing
+# where it matters — `app/*` and `tools/*` carry no re-exports at all. The only
+# exception is the generated spec crates, where the generation preludes ARE the
+# public surface; that exception is stamped by the emitter into their `lib.rs`
+# as an `#![expect(...)]`, so it self-reports if a crate ever stops re-exporting.
+pub_use = "deny"
 # The reliability hard-rule set (.claude/rules/reliability.md, owner
 # 2026-07-17; hardened per issue #1311, owner 2026-07-30): deny-tier = fails
 # every local clippy; warn-tier still fails CI (-D warnings). Tests keep the

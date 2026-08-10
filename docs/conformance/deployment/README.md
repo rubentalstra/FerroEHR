@@ -64,6 +64,12 @@ no CI lane — a workflow that downloaded it onto a shared runner would be movin
 licensed content somewhere this project does not control. Without a package the
 family declares itself not exercised rather than substituting a fixture.
 
+**It never runs by default.** Snowstorm plus a real SNOMED import takes longer
+than every other family combined, so a plain `bash scripts/deploy-probe.sh`
+skips it and says so — even with the archive sitting in the repository root.
+It runs only when asked for, with `PROBE_ONLY=terminology` or an explicit
+`FERROEHR_SNOMED_RF2`.
+
 **The setup is: drop the archive in the repository root.** `SnomedCT_*.zip` is
 gitignored precisely so it can live there, and the probe finds it — no
 configuration:

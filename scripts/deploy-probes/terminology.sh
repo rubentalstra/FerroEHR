@@ -170,6 +170,21 @@ terminology_verify() {
 probes_terminology() {
   bold "terminology — a real FHIR terminology server with real content"
 
+  # NEVER in a default run. Snowstorm plus a real SNOMED import takes longer
+  # than every other family combined, and the archive now sits in the repository
+  # root where the discovery below would find it — so a plain
+  # `bash scripts/deploy-probe.sh` would silently turn a fifteen-minute harness
+  # into an hour. This family runs only when it is ASKED for:
+  #
+  #   PROBE_ONLY=terminology bash scripts/deploy-probe.sh
+  #
+  # or when FERROEHR_SNOMED_RF2 is set explicitly, which is itself an ask.
+  if [ "${PROBE_ONLY:-}" != "terminology" ] && [ -z "${FERROEHR_SNOMED_RF2:-}" ]; then
+    uncovered "terminology against a real server (#2178)" \
+      "opt-in: run PROBE_ONLY=terminology, because a real SNOMED import takes longer than every other family combined"
+    return 0
+  fi
+
   local zip
   if ! zip="$(terminology_release)"; then
     uncovered "terminology against a real server (#2178)" \
