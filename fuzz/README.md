@@ -24,6 +24,7 @@ to catch.
 | `simplified_formats` | FLAT / STRUCTURED composition bodies | `openehr_its::flat::sim`, `openehr_its::flat::convert` |
 | `adl2_source` | archetype uploads, both dialects | `openehr_adl::source::parse_source` |
 | `opt14_template` | operational-template uploads | `openehr_its::opt14::from_xml`, then `build_web_template` |
+| `identifiers` | the `{version_uid}` PATH parameter, reached before any body, negotiation or authorization | `ObjectVersionId`/`HierObjectId`/`ArchetypeId`/`VersionTreeId` `from_str`, plus the composite's recomposition contract |
 
 ## Seeds
 

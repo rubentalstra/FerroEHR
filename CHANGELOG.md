@@ -18,6 +18,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **A fuzz target for the identifier readers.** `OBJECT_VERSION_ID` and its
+  siblings are parsed straight from the `{version_uid}` URL path parameter —
+  before any body is read, any content type negotiated, or any authorization
+  runs — and were previously unfuzzed. The harness also checks the composite's
+  own contract: an identifier recomposed from the three parts its reader just
+  produced must equal itself, which catches a mis-sliced separator that still
+  returns `Ok`.
+
 - **Every optional integration now documents how to enable it on Kubernetes.**
   Nine chapters — change events, FHIR connectors, terminology servers, Subject
   Proxy, S3 multimedia, the admin console, observability, version signing and
@@ -531,6 +539,14 @@ workflow refuses a tag that has no matching section here.
   environment-driven deployment — Compose, plain Docker, a chart's `extraEnv` —
   could not configure key rotation at all, and found out only when the server
   refused to start.
+
+- **The fuzzing lane had not run at all.** Every one of the six libFuzzer
+  harnesses failed to *build* on every scheduled run: `cargo-fuzz` defaults the
+  build target to the triple it was itself built for, CI installs its musl
+  asset, and musl's static libc cannot carry a sanitizer — so the campaign died
+  before executing a single input. The target triple is now named explicitly,
+  and the harnesses are compiled on the pull-request path whenever they or a
+  fuzzed crate change, so a scheduled-only lane can no longer rot unnoticed.
 
 - **Multimedia committed inside an `EHR_STATUS` or a `FOLDER` can now be read
   back.** Externalization is applied by the versioning path every versioned
