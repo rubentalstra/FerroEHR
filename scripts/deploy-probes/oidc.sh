@@ -112,3 +112,108 @@ probes_oidc() {
     "acceptance means nothing if an invalid token is also accepted"
   probe_done
 }
+
+# A token for one of the demo identities, or empty if the grant is refused.
+oidc_token_for() {
+  curl -s -d client_id=ferroehr -d client_secret=ferroehr-quickstart-secret \
+    -d "username=$1" -d "password=$2" -d grant_type=password \
+    "$KC_REALM/protocol/openid-connect/token" \
+    | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p'
+}
+
+# Role separation, which is the half #2160 asks for and the half a single-user
+# realm cannot show.
+#
+# The distinction being measured is the ONE spec-grounded rule in the access
+# layer: 401 means the credential was not accepted, 403 means it was and the
+# caller still may not do this. A deployment where every authenticated caller
+# may do everything can never produce the second, so the demo realm carries
+# four identities and this overlay turns RBAC on.
+probes_oidc_roles() {
+  bold "OIDC role separation (four identities, RBAC on)"
+
+  local admin clinician auditor nobody
+  admin="$(oidc_token_for ferroehr ferroehr)"
+  clinician="$(oidc_token_for clinician clinician)"
+  auditor="$(oidc_token_for auditor auditor)"
+  nobody="$(oidc_token_for nobody nobody)"
+
+  probe "P-OIDC-IDENTITIES" "working" "compose" "#2160" \
+    "the demo realm mints a token for each of the four identities"
+  local missing=""
+  [ -n "$admin" ]     || missing="$missing ferroehr"
+  [ -n "$clinician" ] || missing="$missing clinician"
+  [ -n "$auditor" ]   || missing="$missing auditor"
+  [ -n "$nobody" ]    || missing="$missing nobody"
+  if [ -n "$missing" ]; then
+    probe_fail "a token for every demo user" "no token for:$missing" \
+      "the realm import must create all four, or the separation below is untestable"
+    probe_done
+    return 0
+  fi
+  probe_done
+
+  # A clinical role may write clinical data.
+  probe "P-OIDC-CLINICAL" "working" "server" "#2160" \
+    "USER may create an EHR"
+  assert_eq "201" "$(http_code -X POST -H "Authorization: Bearer $clinician" "$API/ehr")" \
+    "the clinical role must reach the clinical API, or the roles are simply wrong"
+  probe_done
+
+  # ...and may NOT reach the admin surface. This is the 403 that a
+  # single-user, RBAC-off quickstart could never produce.
+  probe "P-OIDC-CLINICAL-DENIED" "broken" "server" "#2160" \
+    "USER is REFUSED the admin surface with 403, not 401"
+  local code
+  # The admin group is nested UNDER the API base path, not beside it. An
+  # earlier version of this probe used /ferroehr/rest/admin/... and got a 404
+  # from the router — which looks like a refusal and proves nothing about
+  # authorization.
+  code="$(http_code -X DELETE -H "Authorization: Bearer $clinician" \
+          "$API/admin/ehr/00000000-0000-0000-0000-000000000000")"
+  case "$code" in
+    403) : ;;
+    401) probe_fail "403" "$code" \
+           "401 says the credential was rejected; this credential is valid and merely unauthorized" ;;
+    404) probe_fail "403" "$code" \
+           "a 404 here means the router or the lookup answered before authorization did; an unauthorized caller must not learn whether the object exists" ;;
+    *)   probe_fail "403" "$code" \
+           "an authenticated caller without the admin role must be refused, not served" ;;
+  esac
+  probe_done
+
+  # READONLY overrides a grant it otherwise holds. The auditor carries USER,
+  # so without the override this write would succeed.
+  probe "P-OIDC-READONLY" "broken" "server" "#2160" \
+    "READONLY overrides the USER grant: the write is refused 403"
+  code="$(http_code -X POST -H "Authorization: Bearer $auditor" "$API/ehr")"
+  assert_eq "403" "$code" \
+    "READONLY is documented to override any grant, and this user holds USER"
+  probe_done
+
+  probe "P-OIDC-READONLY-READS" "working" "server" "#2160" \
+    "the same READONLY identity may still read"
+  assert_eq "200" "$(http_code -H "Authorization: Bearer $auditor" "$CDR/ferroehr/rest/status")" \
+    "read-only must mean read-only, not no access at all"
+  probe_done
+
+  # Authenticated with no roles at all: still 403, never 401.
+  probe "P-OIDC-NOROLES" "broken" "server" "#2160" \
+    "a valid token carrying no roles is refused 403, not 401"
+  code="$(http_code -X POST -H "Authorization: Bearer $nobody" "$API/ehr")"
+  case "$code" in
+    403) : ;;
+    401) probe_fail "403" "$code" \
+           "the token is valid, so the refusal is authorization and must not masquerade as authentication" ;;
+    *)   probe_fail "403" "$code" "a role-less caller must be refused" ;;
+  esac
+  probe_done
+
+  # A malformed Authorization header is a 400, not a 401: the server never read
+  # a credential, so there is nothing to challenge.
+  probe "P-OIDC-MALFORMED" "broken" "server" "-" \
+    "a malformed Authorization header is 400, not 401"
+  assert_eq "400" "$(http_code -X POST -H 'Authorization: NotAScheme' "$API/ehr")" \
+    "a 401 here would claim the credential was rejected when none was ever parsed"
+  probe_done
+}

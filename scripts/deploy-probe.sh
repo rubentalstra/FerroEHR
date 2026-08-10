@@ -96,6 +96,7 @@ probes_multimedia_off
 probes_multimedia_broken
 probes_health_broken
 probes_oidc
+probes_oidc_roles
 probes_observability
 
 # ── The honest half ───────────────────────────────────────────────────────────
