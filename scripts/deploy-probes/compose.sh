@@ -346,3 +346,64 @@ probes_management() {
     "an unnamed endpoint must answer 404 rather than fall back to a server default"
   probe_done
 }
+
+# The management surface on its OWN listener — the second of the two
+# configurations #2162 asks for, and the one a production deployment actually
+# uses, because it is what keeps ops introspection off the public port.
+#
+# The property is not "the port answers" but that the surface MOVED: served on
+# the management port and NO LONGER on the API port. A probe that only checked
+# the new port would pass just as happily on a server that exposed the surface
+# on both, which is the exact misconfiguration this option exists to prevent.
+probes_management_separate_listener() {
+  bold "management surface — its own listener"
+
+  local overlay="$PROBE_TMP/mgmt-port.yml"
+  local mport="${PROBE_MGMT_PORT:-19090}"
+  cat > "$overlay" <<YAML
+services:
+  ferroehr:
+    ports:
+      - "127.0.0.1:${mport}:9090"
+    environment:
+      FERROEHR__MANAGEMENT__PORT: "9090"
+YAML
+
+  probe "P-MGMT-PORT" "working" "server" "#2162" \
+    "with management.port set, the surface is served from its own listener"
+  dc -f docker-compose.yml -f "$overlay" up -d ferroehr >/dev/null 2>&1
+  if ! wait_http "$CDR/health/readiness" 120; then
+    probe_fail "a serving CDR with a separate management listener" \
+      "$(dc logs --tail 5 ferroehr 2>&1 | tail -3)" \
+      "a second listener that fails to bind takes the whole process down at boot"
+    probe_done
+    dc -f docker-compose.yml up -d ferroehr >/dev/null 2>&1
+    wait_http "$CDR/health/readiness" 120 || true
+    return 0
+  fi
+  local mgmt="http://localhost:${mport}"
+  if ! wait_http "$mgmt/management/prometheus" 30; then
+    probe_fail "the management surface answering on its own port" \
+      "$(http_code "$mgmt/management/prometheus")" \
+      "management.port is documented to move the surface to a separate listener"
+  fi
+  probe_done
+
+  # The half that makes the option worth having.
+  probe "P-MGMT-PORT-MOVED" "broken" "server" "#2162" \
+    "the surface is NO LONGER on the API listener once it has its own port"
+  local on_api
+  on_api="$(http_code "$CDR/management/prometheus")"
+  case "$on_api" in
+    404|403|401) : ;;
+    200) probe_fail "the API port to stop serving /management" "$on_api" \
+           "serving it on both ports defeats the point: the surface is still reachable from the public listener" ;;
+    *)   probe_fail "404 from the API port" "$on_api" \
+           "the API listener must not serve a surface that has moved" ;;
+  esac
+  probe_done
+
+  # Back to the shipped posture for anything that follows.
+  dc -f docker-compose.yml up -d ferroehr >/dev/null 2>&1
+  wait_http "$CDR/health/readiness" 120 || true
+}

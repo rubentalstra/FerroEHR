@@ -88,6 +88,7 @@ compose_up ferroehr seaweedfs seaweedfs-init
 probes_shipped_config_boots
 probes_multimedia
 probes_management
+probes_management_separate_listener
 probes_signing
 probes_signing_pgp
 probes_signing_rotation
