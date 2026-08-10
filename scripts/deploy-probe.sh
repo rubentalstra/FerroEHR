@@ -53,6 +53,8 @@ PROBE_OUT="${PROBE_OUT:-docs/conformance/deployment/compose.json}"
 . scripts/deploy-probes/signing.sh
 # shellcheck source=scripts/deploy-probes/observability.sh
 . scripts/deploy-probes/observability.sh
+# shellcheck source=scripts/deploy-probes/tenancy.sh
+. scripts/deploy-probes/tenancy.sh
 # shellcheck source=scripts/deploy-probes/signing_pgp.sh
 . scripts/deploy-probes/signing_pgp.sh
 
@@ -99,6 +101,7 @@ probes_health_broken
 probes_oidc
 probes_oidc_roles
 probes_observability
+probes_tenancy
 
 # ── The honest half ───────────────────────────────────────────────────────────
 # Everything #2178 asks for that this run does NOT do. Each entry is a probe
@@ -107,7 +110,7 @@ uncovered "kubernetes platform" \
   "a separate harness covers it — scripts/deploy-probe-k8s.sh, recorded in kubernetes.json"
 uncovered "admin console journeys (#2164)" \
   "scripts/ui-e2e.sh already drives these with a real browser; folding it in is the next step"
-uncovered "FHIR, events, tenancy, terminology" \
-  "no probes yet — each needs its dependency composed"
+uncovered "FHIR, events, terminology" \
+  "no probes yet — each needs its dependency composed (a receiver, a broker, a terminology server)"
 
 probe_report "$PROBE_OUT" "compose"
