@@ -47,6 +47,8 @@ PROBE_OUT="${PROBE_OUT:-docs/conformance/deployment/compose.json}"
 . scripts/deploy-probes/lib.sh
 # shellcheck source=scripts/deploy-probes/compose.sh
 . scripts/deploy-probes/compose.sh
+# shellcheck source=scripts/deploy-probes/oidc.sh
+. scripts/deploy-probes/oidc.sh
 
 cleanup() {
   if [ "$KEEP_UP" -eq 0 ]; then
@@ -83,14 +85,13 @@ probes_management
 probes_multimedia_off
 probes_multimedia_broken
 probes_health_broken
+probes_oidc
 
 # ── The honest half ───────────────────────────────────────────────────────────
 # Everything #2178 asks for that this run does NOT do. Each entry is a probe
 # somebody still has to write; none of them is silently absent.
 uncovered "kubernetes platform" \
   "this harness drives compose only; the chart is exercised by the k8s-test skill by hand"
-uncovered "OIDC / Keycloak (#2176)" \
-  "needs the keycloak overlay composed alongside; the realm fix is covered by a unit-level token assertion only"
 uncovered "observability: traces reaching a collector, metrics on a scrape (#2173, #2175)" \
   "needs the observability overlay and a collector to observe at the far end"
 uncovered "signing in pgp mode (#2163)" \
