@@ -68,6 +68,7 @@ jobs:
       server_dockerfile: ${{ steps.filter.outputs.server_dockerfile }}
       helm: ${{ steps.filter.outputs.helm }}
       chart_boot: ${{ steps.filter.outputs.chart_boot }}
+      deploy: ${{ steps.filter.outputs.deploy }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -100,6 +101,7 @@ jobs:
               echo "server_dockerfile=true"
               echo "helm=true"
               echo "chart_boot=true"
+              echo "deploy=true"
             } >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -116,6 +118,7 @@ jobs:
               echo "server_dockerfile=false"
               echo "helm=false"
               echo "chart_boot=false"
+              echo "deploy=false"
             } >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -123,6 +126,14 @@ jobs:
           # execute repo scripts, so a new watcher/site/release script must
           # not cost a Rust run. Allowlist the ONLY scripts a code-gated CI
           # job actually executes (the drift check and the e2e harness).
+          # The deployment harness drives the composed stack, so it is relevant
+          # to its own scripts, the compose files, and the server image — and to
+          # the code, since what it probes IS the server.
+          if echo "$changed" | grep -qE '^(scripts/deploy-probe|docker-compose|docker/)'; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          fi
           code_relevant=$(echo "$changed" | grep -vE '^scripts/' || true)
           if echo "$changed" | grep -qE '^scripts/(checks/codegen-drift|ui-e2e)\.sh$'; then
             echo "code=true" >> "$GITHUB_OUTPUT"
@@ -883,6 +894,57 @@ jobs:
           FERROEHR_IMAGE: ferroehr:chart-boot
         run: bash deploy/helm/ci/boot-check.sh
 
+  # ── The deployment harness, on a real composed stack (#2178) ─────────────────
+  # The instrument that found ten defects a green 4447-test suite did not: every
+  # one lived between "the code is correct" and "the thing an operator runs
+  # works". It is worth nothing if it only runs when someone remembers.
+  #
+  # It reuses the binary the ui-e2e lane already builds, packaged COPY-only in
+  # seconds — building the image again here would double a long lane to prove
+  # the same bytes.
+  #
+  # Families needing a dependency the harness composes itself (Keycloak, the
+  # broker, the collector) run here; terminology does NOT — it needs a licensed
+  # SNOMED release that may not be fetched onto a shared runner, and its own
+  # opt-in local lane covers it.
+  deploy-probe:
+    name: deploy-probe
+    needs: [changes, ui-e2e-binary]
+    if: needs.changes.outputs.code == 'true' || needs.changes.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ui-e2e-server-binary
+          path: bin/amd64
+      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+      - name: Package the app image (COPY-only, seconds)
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: docker/Dockerfile
+          target: runtime-prebuilt
+          load: true
+          tags: ferroehr:deploy-probe
+      - name: Probe the deployment
+        env:
+          FERROEHR_IMAGE: ferroehr:deploy-probe
+        run: bash scripts/deploy-probe.sh
+      # The RECORD, always — a failed run is exactly when the per-probe layer
+      # attribution and the not-exercised ledger are worth reading.
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: deploy-probe-record
+          path: docs/conformance/deployment/compose.json
+          if-no-files-found: warn
+
   # ── Unused dependencies ──────────────────────────────────────────────────────
   unused-deps:
     name: cargo-machete
@@ -1592,6 +1654,7 @@ jobs:
       - ui-e2e-binary
       - ui-e2e-console
       - ui-e2e
+      - deploy-probe
       - server-image-from-source
       - ui-screenshot-guard
       - changelog
