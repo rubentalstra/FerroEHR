@@ -1,7 +1,19 @@
 # Deployment-conformance records
 
-`scripts/deploy-probe.sh` writes its machine-readable record here — the
+The two deployment harnesses write their machine-readable records here — the
 deployment analogue of what `docs/conformance/<sut>/` holds for the wire.
+
+| Harness | Record | Asks |
+|---|---|---|
+| `scripts/deploy-probe.sh` | `compose.json` | does the software work when it is deployed? |
+| `scripts/deploy-probe-k8s.sh` | `kubernetes.json` | does the cluster apply what the chart asked for? |
+
+Those are different questions, and only the second is what an operator running
+the chart actually gets. `helm template` proves the YAML; the API server, the
+kubelet and the container runtime each get a say afterwards, and every one of
+them can decline. So the Kubernetes probes read their answers from the runtime
+spec, from admission, and from the EndpointSlice — never from the manifest we
+wrote.
 
 A record is a measurement of **one SUT**, so it is only meaningful with the
 image it was taken against. The harness names that image in its output, and

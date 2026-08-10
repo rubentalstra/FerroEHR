@@ -1,0 +1,489 @@
+#!/usr/bin/env bash
+# The Kubernetes probe family (#2178's second platform).
+#
+# The compose family answers "does the software work when it is deployed". This
+# one answers a question compose cannot reach at all: **does the cluster apply
+# what the chart asked for?** Those are different claims, and only the second is
+# what an operator running the chart actually gets. `helm template` proves the
+# YAML we generate; the API server, the kubelet and the container runtime each
+# get a say afterwards, and every one of them can decline.
+#
+# So every probe here observes at the far end of THAT chain:
+#
+#   - the security posture is read out of the container runtime's own spec, not
+#     out of the pod manifest — an empty capability bounding set is a fact about
+#     the kernel, whereas `drop: [ALL]` is a request;
+#   - Pod Security admission is judged by the API server refusing or admitting,
+#     not by us re-reading the profile;
+#   - a mounted secret is proven READ by breaking its path and watching the boot
+#     refuse, because a secret that is mounted and never read looks identical in
+#     `kubectl describe`;
+#   - readiness is proven to GATE by removing the database and watching the
+#     EndpointSlice drop the pod, not by a probe that has only ever returned UP.
+#
+# The database runs in docker compose on the host and the chart is pointed at it
+# (owner ruling): the chart provisions no database and takes an external DSN, so
+# a host database is the faithful shape rather than a convenience — and an
+# in-cluster `kubectl create deployment pg` has no volume, which turns any
+# restart into an empty database and a diagnosis cycle.
+#
+# Sourced by scripts/deploy-probe-k8s.sh; never run directly.
+
+K8S_NS="${PROBE_K8S_NS:-ferroehr-probe}"
+K8S_RELEASE="ferroehr"
+K8S_PORT="${PROBE_K8S_PORT:-18081}"
+K8S_CDR="http://127.0.0.1:${K8S_PORT}"
+K8S_API="$K8S_CDR/ferroehr/rest/openehr/v1"
+# The identity the documented Basic-auth overlay ships. The chart REFUSES to
+# render with authentication on and no mechanism configured, so every install
+# below carries deploy/helm/ci/basic-auth-values.yaml — which is the file the
+# chart's own error message points an operator at.
+K8S_BASIC="clinician:ferroehr"
+K8S_AUTH_VALUES="deploy/helm/ci/basic-auth-values.yaml"
+K8S_PF_PID=""
+
+# The compose database this cluster is pointed at. It binds 0.0.0.0 because a
+# pod reaches the host through the Docker Desktop gateway, which a loopback bind
+# would refuse; the stack is thrown away at the end of the run.
+K8S_DB_PORT="${PROBE_DB_PORT:-15432}"
+K8S_DB_HOST=""
+
+kc() { kubectl -n "$K8S_NS" "$@"; }
+
+# The node as a local CONTAINER, when it is one — which is what makes the
+# runtime posture readable at all.
+#
+# Derived from the cluster's own node names and confirmed with `docker exec`,
+# never from `docker ps`: Docker Desktop keeps its Kubernetes node out of the
+# user's container list while `docker exec` into it works perfectly. Detecting
+# by `docker ps` therefore reports "no local node" on the single most common
+# development cluster, and the strongest probe in this file would quietly
+# downgrade itself to "not exercised" — a false gap, which is worse than a red
+# row because it reads as honesty.
+k8s_node_container() {
+  local n
+  for n in $(kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null); do
+    if docker exec "$n" true >/dev/null 2>&1; then printf '%s' "$n"; return 0; fi
+  done
+  return 1
+}
+
+# ── Bring-up ──────────────────────────────────────────────────────────────────
+
+# The host address a POD can reach, measured rather than assumed: Docker
+# Desktop publishes `host.docker.internal` and a kind-style node also routes its
+# default gateway, but which one answers is a property of the cluster, not
+# something a script may declare. Echoes the winner; empty means neither works,
+# which is a harness problem and not a finding about the chart.
+k8s_resolve_db_host() {
+  # Retried, because the far end is EVENTUALLY reachable: `pg_isready` answers
+  # from inside the container before Docker has necessarily finished publishing
+  # the port to the host, and a single attempt then reports "no address works"
+  # about a database that is simply not published yet. Asking once cost a run.
+  local _try host
+  for _try in 1 2 3 4 5; do
+    host="$(k8s_try_db_hosts)"
+    [ -n "$host" ] && { printf '%s' "$host"; return 0; }
+    sleep 4
+  done
+  return 1
+}
+
+k8s_try_db_hosts() {
+  local out
+  out="$(kubectl run "probe-hostcheck-$$-$RANDOM" --image=busybox:1.37 --restart=Never --rm \
+    --attach --quiet --command -- sh -c '
+      for h in host.docker.internal gateway.docker.internal $(ip route | awk "/default/ {print \$3}"); do
+        nc -w3 -z "$h" '"$K8S_DB_PORT"' && { echo "HOST=$h"; break; }
+      done' 2>/dev/null)"
+  printf '%s' "$out" | sed -n 's/.*HOST=\([^ ]*\).*/\1/p' | tr -d '\r' | head -1
+}
+
+k8s_db_up() {
+  FERROEHR_BIND_HOST=0.0.0.0 FERROEHR_DB_PORT="$K8S_DB_PORT" \
+    docker compose -p "$COMPOSE_PROJECT" up -d ferroehr-postgres >/dev/null 2>&1
+  local _i
+  for _i in $(seq 1 40); do
+    docker compose -p "$COMPOSE_PROJECT" exec -T ferroehr-postgres \
+      pg_isready -U "${PG_INIT_USER:-ferroehr}" >/dev/null 2>&1 && return 0
+    sleep 2
+  done
+  return 1
+}
+
+k8s_db_stop()  { docker compose -p "$COMPOSE_PROJECT" stop ferroehr-postgres >/dev/null 2>&1; }
+k8s_db_start() { docker compose -p "$COMPOSE_PROJECT" start ferroehr-postgres >/dev/null 2>&1; }
+
+k8s_namespace() {
+  kubectl create namespace "$K8S_NS" >/dev/null 2>&1 || true
+  kc delete secret ferroehr-db >/dev/null 2>&1 || true
+  kc create secret generic ferroehr-db \
+    --from-literal=FERROEHR__DB__URL="postgres://${PG_INIT_USER:-ferroehr}:${PG_INIT_PASSWORD:-ferroehr}@${K8S_DB_HOST}:${K8S_DB_PORT}/${PG_INIT_DB:-ferroehr}" \
+    >/dev/null 2>&1
+}
+
+# Install with the chart's OWN defaults plus the two things no default can carry
+# — where the database is and which image is under probe. Deliberately nothing
+# else: an overlay tuned until it works is exactly what this instrument exists
+# to stop being the only evidence.
+k8s_install() {
+  helm upgrade --install "$K8S_RELEASE" deploy/helm/ferroehr -n "$K8S_NS" \
+    -f "$K8S_AUTH_VALUES" \
+    --set database.existingSecret=ferroehr-db \
+    --set image.repository="$PROBE_K8S_IMAGE_REPO" \
+    --set image.tag="$PROBE_K8S_IMAGE_TAG" \
+    --set image.pullPolicy=IfNotPresent \
+    "$@" >/dev/null 2>&1
+}
+
+k8s_rollout() { kc rollout status "deploy/$K8S_RELEASE" --timeout="${1:-180s}" >/dev/null 2>&1; }
+
+# A READY pod, preferred over merely the first one.
+#
+# `.items[0]` is whichever pod the API server lists first, which after a probe
+# that deliberately breaks the boot is the crash-looping one still terminating.
+# Port-forwarding to that pod waits for a container that will never serve, and
+# reports it as a finding about readiness. Falls back to any pod so a genuine
+# "nothing is ready" still surfaces rather than returning empty.
+k8s_pod() {
+  local ready
+  ready="$(kc get pod -l app.kubernetes.io/name=ferroehr \
+    -o jsonpath='{range .items[?(@.status.containerStatuses[0].ready==true)]}{.metadata.name}{"\n"}{end}' \
+    2>/dev/null | head -1)"
+  [ -n "$ready" ] && { printf '%s' "$ready"; return 0; }
+  kc get pod -l app.kubernetes.io/name=ferroehr -o jsonpath='{.items[0].metadata.name}' 2>/dev/null
+}
+
+k8s_pf_start() {
+  kc port-forward "svc/$K8S_RELEASE" "${K8S_PORT}:8080" >/dev/null 2>&1 &
+  K8S_PF_PID=$!
+  wait_http "$K8S_CDR/health/liveness" 45
+}
+
+# A forward bound to ONE POD rather than the Service.
+#
+# Needed for exactly one probe, for a reason worth stating: `port-forward
+# svc/…` resolves the Service to a READY endpoint, so the moment the pods go
+# unready it has nothing to forward to and every request fails to connect. That
+# is the precise state the readiness probe exists to observe, so measuring it
+# through a Service forward reports a connection failure and calls it a finding
+# about the server.
+k8s_pf_pod_start() {
+  k8s_pf_stop
+  kc port-forward "pod/$1" "${K8S_PORT}:8080" >/dev/null 2>&1 &
+  K8S_PF_PID=$!
+  wait_http "$K8S_CDR/health/liveness" 30
+}
+
+k8s_pf_stop() {
+  # `disown` first: killing a backgrounded job otherwise makes the shell print
+  # a "Terminated" notice into the report, which reads like a failure in an
+  # instrument whose whole value is that its output means something.
+  if [ -n "$K8S_PF_PID" ]; then
+    disown "$K8S_PF_PID" 2>/dev/null || true
+    kill "$K8S_PF_PID" >/dev/null 2>&1 || true
+    wait "$K8S_PF_PID" 2>/dev/null || true
+  fi
+  K8S_PF_PID=""
+}
+
+k8s_teardown() {
+  k8s_pf_stop
+  helm uninstall "$K8S_RELEASE" -n "$K8S_NS" >/dev/null 2>&1 || true
+  kubectl delete namespace "$K8S_NS" --wait=false >/dev/null 2>&1 || true
+  docker compose -p "$COMPOSE_PROJECT" down -v --remove-orphans >/dev/null 2>&1 || true
+}
+
+# ── The probes ────────────────────────────────────────────────────────────────
+
+probes_k8s_boot() {
+  bold "the chart on a real cluster"
+
+  # A stock install must fail where an operator can read it. Authentication is
+  # on by default and no mechanism is configured by default, and the failure
+  # mode that costs an afternoon is a pod that starts, crash-loops, and explains
+  # itself only in a log nobody has tailed yet. So the chart refuses at RENDER —
+  # and the refusal has to name the ways out, or it is just a different wall.
+  probe "P-K8S-AUTH-GUARD" "broken" "chart" "-" \
+    "a stock install is refused at render, naming every configured way forward"
+  local guard
+  guard="$(helm template "$K8S_RELEASE" deploy/helm/ferroehr -n "$K8S_NS" \
+             --set database.existingSecret=ferroehr-db 2>&1)"
+  assert_contains "$guard" "no authentication mechanism is configured" \
+    "without this the stock install boots into a crash loop and explains itself in a log"
+  assert_contains "$guard" "config.auth.basic.users" \
+    "a refusal that does not name the Basic route leaves an operator guessing"
+  assert_contains "$guard" "config.auth.oidc.issuer" \
+    "the OIDC route is the other real answer and must be named too"
+  assert_contains "$guard" "config.auth.enabled=false" \
+    "the development escape must be stated as such, not discovered"
+  probe_done
+
+  # #2159's class on this platform: our own values files rendered and linted for
+  # a whole release cycle while none of them produced a bootable configuration.
+  # Rendering is not installing, and only one of the two is what an operator does.
+  probe "P-K8S-BOOT" "working" "chart" "#2159" \
+    "the chart's default values install and the Deployment rolls out"
+  if ! k8s_install; then
+    probe_fail "a successful helm upgrade --install" "helm refused the release" \
+      "the render itself failed; re-run the helm command without -q to see it"
+    probe_done
+    return 1
+  fi
+  if ! k8s_rollout; then
+    probe_fail "a rolled-out Deployment" \
+      "$(kc logs -l app.kubernetes.io/name=ferroehr --tail=6 --all-containers 2>&1 | tail -6)" \
+      "a config key the chart renders that this image does not accept lands here"
+    probe_done
+    return 1
+  fi
+  probe_done
+
+  # The proof an operator cares about: not that pods are Running, but that the
+  # deployment answers openEHR. Everything below this needs the port-forward.
+  probe "P-K8S-SERVE" "working" "server" "-" \
+    "the deployed CDR serves a real openEHR write and read"
+  if ! k8s_pf_start; then
+    probe_fail "a reachable Service" "port-forward never answered /health/liveness"
+    probe_done
+    return 1
+  fi
+  local headers ehr
+  headers="$(curl -s -u "$K8S_BASIC" -X POST -D - -o /dev/null "$K8S_API/ehr")"
+  ehr="$(printf '%s' "$headers" | grep -i '^location' | tr -d '\r' | awk -F/ '{print $NF}')"
+  if [ -z "$ehr" ]; then
+    probe_fail "a Location header naming the new EHR" "$(printf '%s' "$headers" | head -3)"
+  else
+    assert_contains "$(curl -s -u "$K8S_BASIC" "$K8S_API/ehr/$ehr")" "\"$ehr\"" \
+      "the EHR just created must read back from the deployed server"
+  fi
+  probe_done
+  return 0
+}
+
+# What the kernel actually got, read from the container runtime rather than from
+# the manifest. This is the whole reason to run on a cluster: `securityContext`
+# is a REQUEST, and a request that a runtime quietly declines looks identical in
+# `kubectl get pod -o yaml`.
+probes_k8s_runtime_posture() {
+  bold "the security posture, read out of the container runtime"
+
+  local node
+  node="$(k8s_node_container)"
+  if [ -z "$node" ]; then
+    uncovered "the applied runtime posture (uid, capabilities, seccomp, read-only root)" \
+      "this cluster's node is not a local container, so its runtime spec is not readable from here"
+    return 0
+  fi
+
+  probe "P-K8S-RUNTIME" "working" "chart" "-" \
+    "the runtime applied non-root, no-new-privileges, no capabilities, read-only root, seccomp"
+  local cid spec
+  cid="$(docker exec "$node" crictl ps --name ferroehr -q 2>/dev/null | head -1)"
+  if [ -z "$cid" ]; then
+    probe_fail "a running ferroehr container on the node" "crictl listed none"
+    probe_done
+    return 0
+  fi
+  spec="$(docker exec "$node" crictl inspect "$cid" 2>/dev/null | jq -c '.info.runtimeSpec')"
+
+  assert_eq "65532" "$(printf '%s' "$spec" | jq -r '.process.user.uid')" \
+    "the image's nonroot uid must be what the process actually runs as"
+  assert_eq "true" "$(printf '%s' "$spec" | jq -r '.process.noNewPrivileges')" \
+    "without this a setuid binary inside the image could still escalate"
+  # An EMPTY bounding set, not "the default fourteen minus the ones we dropped":
+  # drop: [ALL] is only honoured if the runtime clears the bounding set, and
+  # nothing short of reading it proves that.
+  assert_eq "0" "$(printf '%s' "$spec" | jq -r '.process.capabilities.bounding | length')" \
+    "a non-empty bounding set means drop: [ALL] did not take effect"
+  assert_eq "true" "$(printf '%s' "$spec" | jq -r '.root.readonly')" \
+    "a writable root filesystem makes the container's own binaries replaceable"
+  assert_eq "SCMP_ACT_ERRNO" "$(printf '%s' "$spec" | jq -r '.linux.seccomp.defaultAction')" \
+    "RuntimeDefault must resolve to a deny-by-default filter, not to no filter at all"
+  probe_done
+
+  # The mounts, from the same source. `/etc/ferroehr` holding the configuration
+  # and `/etc/ferroehr-secrets` holding key material must both be read-only:
+  # a writable configuration mount is a way to change the server's behaviour
+  # from inside a compromised container.
+  probe "P-K8S-MOUNTS" "working" "chart" "-" \
+    "configuration and secret mounts are read-only in the runtime spec"
+  local writable
+  writable="$(printf '%s' "$spec" | jq -r '
+    .mounts[] | select(.destination | test("^/etc/ferroehr"))
+    | select((.options // []) | index("ro") | not) | .destination' | tr '\n' ' ')"
+  if [ -n "${writable// /}" ]; then
+    probe_fail "every /etc/ferroehr* mount carrying 'ro'" "writable: $writable" \
+      "configuration and key material must not be rewritable from inside the container"
+  fi
+  probe_done
+}
+
+# The API server as the judge. Labelling the namespace and rolling the workload
+# is the only way to learn whether the chart's pods are admissible under the
+# Restricted profile — reading the profile ourselves and grading our own
+# manifest is the check that cannot fail honestly.
+probes_k8s_psa() {
+  bold "Pod Security admission (the API server judges, not us)"
+
+  probe "P-K8S-PSA" "working" "chart" "-" \
+    "the chart's pods are admitted under the Restricted profile"
+  kubectl label namespace "$K8S_NS" \
+    pod-security.kubernetes.io/enforce=restricted --overwrite >/dev/null 2>&1
+  kc rollout restart "deploy/$K8S_RELEASE" >/dev/null 2>&1
+  if ! k8s_rollout 180s; then
+    probe_fail "an admitted rollout under enforce=restricted" \
+      "$(kc get events --sort-by=.lastTimestamp 2>/dev/null | grep -i 'violate\|forbidden' | tail -3)" \
+      "the chart claims Restricted compliance; admission is what settles it"
+  fi
+  probe_done
+
+  # Acceptance must not be able to pass vacuously: if the label were silently
+  # ignored, the probe above would pass on a cluster enforcing nothing. So a pod
+  # that MUST be refused is offered, and its refusal is what proves the judge
+  # was awake.
+  probe "P-K8S-PSA-ARMED" "broken" "compose" "-" \
+    "a privileged pod is REFUSED, proving enforcement is really on"
+  local out
+  out="$(kc run probe-privileged --image=busybox:1.37 --restart=Never \
+      --overrides='{"spec":{"containers":[{"name":"bad","image":"busybox:1.37","command":["sleep","5"],"securityContext":{"privileged":true}}]}}' \
+      2>&1)"
+  assert_contains "$out" "violates PodSecurity" \
+    "without a refusal here the admission probe above proves nothing about this cluster"
+  kc delete pod probe-privileged --ignore-not-found >/dev/null 2>&1
+  probe_done
+
+  kubectl label namespace "$K8S_NS" pod-security.kubernetes.io/enforce- >/dev/null 2>&1
+}
+
+# Service links are a real trap on this platform: the kubelet injects
+# <SVC>_SERVICE_HOST and friends for every Service in the namespace, and for a
+# Service named `ferroehr*` those land inside the server's reserved FERROEHR_
+# namespace, where its strict environment sweep refuses to boot. The chart pins
+# enableServiceLinks: false; this proves the pin still holds where it matters.
+probes_k8s_service_links() {
+  bold "service-link injection (the trap that stops this server booting)"
+
+  probe "P-K8S-SVCLINKS" "working" "chart" "-" \
+    "a new ferroehr-named Service does not poison the pod's environment"
+  kc create service clusterip ferroehr-probe-link --tcp=8080:8080 >/dev/null 2>&1 || true
+  kc rollout restart "deploy/$K8S_RELEASE" >/dev/null 2>&1
+  if ! k8s_rollout 180s; then
+    probe_fail "a pod that boots with another ferroehr-named Service present" \
+      "$(kc logs -l app.kubernetes.io/name=ferroehr --tail=5 --all-containers 2>&1 | tail -5)" \
+      "this is what enableServiceLinks: false prevents; a boot refusal here means the pin is gone"
+  fi
+  kc delete service ferroehr-probe-link --ignore-not-found >/dev/null 2>&1
+  probe_done
+}
+
+probes_k8s_secrets() {
+  bold "secrets: where they are, and whether they are actually read"
+
+  # A DSN is a credential. It must reach the process as a PATH, never as a value
+  # in the pod spec — `kubectl describe pod` and every controller that logs a
+  # spec would otherwise carry it.
+  probe "P-K8S-SECRET-ENV" "working" "chart" "-" \
+    "no credential value appears in the pod environment or the ConfigMap"
+  local env_dump cm_dump
+  env_dump="$(kc get pod "$(k8s_pod)" \
+    -o jsonpath='{range .spec.containers[0].env[*]}{.name}={.value}{"\n"}{end}' 2>/dev/null)"
+  assert_contains "$env_dump" "FERROEHR__DB__URL_FILE=" \
+    "the DSN must arrive as a file path the server reads, not as an environment value"
+  assert_not_contains "$env_dump" "postgres://" \
+    "a DSN in the pod spec is readable by anyone who can describe the pod"
+  cm_dump="$(kc get configmap -o yaml 2>/dev/null)"
+  assert_not_contains "$cm_dump" "argon2id" \
+    "a password hash in a ConfigMap is a secret stored where secrets are not"
+  assert_not_contains "$cm_dump" "postgres://" \
+    "the ConfigMap is not a place for a DSN"
+  probe_done
+
+  # Mounted and READ are different claims, and only one of them is worth
+  # anything. Breaking the path is the only way to tell them apart: a secret
+  # that is projected and never opened looks identical from outside.
+  probe "P-K8S-SECRET-READ" "broken" "chart" "-" \
+    "a *_file key pointing at a missing path makes the boot REFUSE, naming the file"
+  k8s_install --set config.signing.enabled=true \
+              --set config.signing.mode=pgp \
+              --set config.signing.key_passphrase_file=/etc/ferroehr-secrets/absent
+  # The rollout is EXPECTED to fail here; what matters is the reason it gives.
+  k8s_rollout 90s
+  local bad_logs
+  bad_logs="$(kc logs -l app.kubernetes.io/name=ferroehr --tail=25 --all-containers 2>&1 \
+              | grep -i 'absent\|secret file' | tail -3)"
+  assert_contains "$bad_logs" "/etc/ferroehr-secrets/absent" \
+    "the refusal must name the unreadable path, or an operator cannot act on it"
+  probe_done
+
+  # Back to the shipped posture for everything that follows.
+  k8s_install
+  k8s_rollout 180s
+}
+
+# Readiness that has only ever returned UP is not a health check, it is a
+# decoration. The far end here is the EndpointSlice: a pod that reports itself
+# unready must actually leave the Service, and liveness must NOT restart it —
+# restarting a healthy process because its database is down turns an outage
+# into a crash loop.
+probes_k8s_readiness() {
+  bold "readiness under a broken dependency (the state least often tested)"
+
+  probe "P-K8S-READY-GATES" "broken" "server" "-" \
+    "with the database gone, readiness fails, the pod leaves the Service, and liveness does not restart it"
+  local pod restarts_before
+  pod="$(k8s_pod)"
+  restarts_before="$(kc get pod "$pod" -o jsonpath='{.status.containerStatuses[0].restartCount}' 2>/dev/null)"
+  if ! k8s_pf_pod_start "$pod"; then
+    probe_fail "a forward to the pod under test" "it never answered /health/liveness"
+    probe_done
+    return 0
+  fi
+
+  k8s_db_stop
+  if ! wait_status "$K8S_CDR/health/readiness" "503" 40; then
+    probe_fail "readiness answering 503 once the database is unreachable" \
+      "$(curl -s -o /dev/null -w '%{http_code}' "$K8S_CDR/health/readiness")" \
+      "a readiness probe that stays UP through a dead database gates nothing"
+    k8s_db_start
+    probe_done
+    return 0
+  fi
+  assert_contains "$(curl -s "$K8S_CDR/health/readiness")" '"db"' \
+    "the readiness body must name the component that failed, not just report DOWN"
+  assert_eq "200" "$(http_code "$K8S_CDR/health/liveness")" \
+    "liveness must stay green: the process is healthy, its dependency is not"
+
+  # The two far ends, in order of authority. The KUBELET's verdict comes from
+  # its own probe rather than ours, and the EndpointSlice is what actually
+  # stops kube-proxy sending traffic here — a pod that reports itself unready
+  # and stays in the Service is still serving production requests. Both are
+  # eventually consistent, so each is waited for rather than sampled once.
+  local _i ready="unknown" kubelet="unknown"
+  for _i in $(seq 1 20); do
+    kubelet="$(kc get pod "$pod" -o jsonpath='{.status.containerStatuses[0].ready}' 2>/dev/null)"
+    [ "$kubelet" = "false" ] && break
+    sleep 3
+  done
+  assert_eq "false" "$kubelet" \
+    "the kubelet's own readiness probe must agree; ours answering 503 is only half the claim"
+  for _i in $(seq 1 20); do
+    ready="$(kc get endpointslice -l "kubernetes.io/service-name=$K8S_RELEASE" \
+             -o jsonpath='{.items[0].endpoints[0].conditions.ready}' 2>/dev/null)"
+    [ "$ready" = "false" ] && break
+    sleep 3
+  done
+  assert_eq "false" "$ready" \
+    "an unready pod that stays in the EndpointSlice still receives production traffic"
+
+  k8s_db_start
+  if ! wait_status "$K8S_CDR/health/readiness" "200" 60; then
+    probe_fail "readiness recovering once the database returns" "still not 200 after 120s" \
+      "recovery without a restart is the point; a probe that latches DOWN needs a rollout to clear"
+  fi
+  local restarts_after
+  restarts_after="$(kc get pod "$pod" -o jsonpath='{.status.containerStatuses[0].restartCount}' 2>/dev/null)"
+  assert_eq "${restarts_before:-0}" "${restarts_after:-x}" \
+    "liveness restarted a process whose only problem was its dependency"
+  probe_done
+}
