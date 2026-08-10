@@ -18,7 +18,7 @@ type: application
 # A published OCI version is immutable by refusal rather than by the registry —
 # `helm push` over an existing tag replaces it silently — so a correction always
 # ships as a NEW version and the published one stands as it was.
-version: 6.0.0
+version: 6.0.1
 # The default container image tag (overridable via image.tag), and the released
 # application version — kept equal to the workspace version by the
 # `chart-appversion` CI guard, so a release cannot ship a chart pointing at the
@@ -66,6 +66,21 @@ sources:
 maintainers:
   - name: FerroEHR maintainers
     url: https://github.com/rubentalstra/FerroEHR
+
+# The listing logo. Artifact Hub reads `icon` from Chart.yaml, not from an
+# annotation, and a chart without one is rendered with a generic placeholder
+# beside charts that have theirs.
+#
+# Served from our own site rather than raw.githubusercontent.com: a raw URL
+# carries a branch name in the path, is rate-limited, and is not meant to be a
+# CDN. It reuses the existing published mark instead of copying a second brand
+# file into the tree — the mark is already square (64x64), which is the shape a
+# listing avatar wants.
+#
+# The IRON variant, which is the dark tile (#21262B) rather than the rust one —
+# the brand's own note is that iron is for surfaces where the rust tile is too
+# loud, and a package listing sitting in a grid of other charts is one of them.
+icon: https://ferroehr.eu/assets/logo-mark-dark.svg
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Artifact Hub display metadata (https://artifacthub.io/docs/topics/annotations/helm/).
