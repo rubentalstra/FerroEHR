@@ -135,8 +135,9 @@ probes_multimedia() {
   # under its content hash, and the stored record references it.
   probe "P-MM-OFFLOAD" "working" "server" "-" \
     "a large DV_MULTIMEDIA is externalized and the blob lands in the bucket"
-  local ehr uri key
-  ehr="$(probe_commit_media_status)"
+  local uri
+  PROBE_MEDIA_EHR="$(probe_commit_media_status)"
+  local ehr="$PROBE_MEDIA_EHR" key=""
   if [ -z "$ehr" ]; then
     probe_fail "an EHR carrying a 400 KiB DV_MULTIMEDIA" "the commit did not return an id"
   else
@@ -144,6 +145,7 @@ probes_multimedia() {
       | tr ',' '\n' | grep -o 's3://openehr-multimedia/[0-9a-f]*' | head -1)"
     assert_contains "$uri" "s3://openehr-multimedia/" "the stored record must reference the blob"
     key="${uri##*/}"
+    PROBE_MEDIA_KEY="$key"
     if [ -n "$key" ]; then
       assert_eq "200" "$(http_code "$S3/openehr-multimedia/$key")" \
         "the blob must be retrievable from the bucket by its content hash"
@@ -179,6 +181,52 @@ probes_multimedia() {
     # does not have.
   else
     probe_fail "an expandable record" "no EHR was committed"
+  fi
+  probe_done
+}
+
+probes_multimedia_restart() {
+  bold "multimedia — persistence across a restart"
+
+  # The case that separates a real object store from a temp directory: the
+  # server process goes away and comes back, and the clinical content it
+  # externalized is still retrievable byte-for-byte.
+  #
+  # It re-reads the record committed by P-MM-OFFLOAD rather than committing a
+  # fresh one, because the property under test is that THAT content survived —
+  # a new commit after the restart would prove only that the feature still
+  # works, which is a different and weaker claim.
+  probe "P-MM-RESTART" "working" "server" "-" \
+    "externalized content survives a server restart, byte-for-byte"
+  if [ -z "${PROBE_MEDIA_EHR:-}" ] || [ -z "${PROBE_MEDIA_KEY:-}" ]; then
+    probe_fail "a record committed earlier in this run" "none was recorded" \
+      "P-MM-OFFLOAD must run first — this probe deliberately re-reads its record"
+    probe_done
+    return 0
+  fi
+
+  dc restart ferroehr >/dev/null 2>&1
+  if ! wait_http "$CDR/health/readiness" 120; then
+    probe_fail "the CDR serving again after a restart" "readiness never returned"
+    probe_done
+    return 0
+  fi
+
+  # The blob is still in the store …
+  assert_eq "200" "$(http_code "$S3/openehr-multimedia/$PROBE_MEDIA_KEY")" \
+    "the object store outlives the server process"
+
+  # … and the API still returns the bytes, verified against the same key.
+  local data digest
+  data="$(curl -s -u "$BASIC" "$API/ehr/$PROBE_MEDIA_EHR/ehr_status?expand_multimedia=true" \
+    | jq -r '.other_details.items[0].value.data // empty' 2>/dev/null)"
+  if [ -z "$data" ]; then
+    probe_fail "the re-inlined bytes after a restart" "no data member in the served value" \
+      "content committed before the restart must still be retrievable"
+  else
+    digest="$(printf '%s' "$data" | base64 -d 2>/dev/null | shasum -a 256 | cut -d' ' -f1)"
+    assert_eq "$PROBE_MEDIA_KEY" "$digest" \
+      "the bytes returned after the restart must hash to the original key"
   fi
   probe_done
 }
