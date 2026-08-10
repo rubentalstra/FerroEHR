@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="FerroEHR icon">
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 64 64" role="img" aria-label="FerroEHR icon">
   <!-- FerroEHR icon, iron-tile variant: for contexts where the rust tile is too loud.
      Text is outlined Inter SemiBold (SIL OFL 1.1). -->
   <rect x="2" y="2" width="60" height="60" rx="12" fill="#21262B"/>

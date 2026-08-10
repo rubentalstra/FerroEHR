@@ -19,6 +19,20 @@ tick in the atomic-number corner — with the **"Oxide & Iron"** palette.
 | `favicon-32.png` / `favicon-16.png` / `favicon.ico` | The raster favicon set, rendered from `favicon.svg` (48/32/16 in the `.ico`). |
 | `tokens.css` | The palette as CSS custom properties — the single source for brand colours. |
 
+## Intrinsic size
+
+Every icon declares `width`/`height` of **512** beside its `viewBox="0 0 64 64"`.
+The viewBox is what the artwork is drawn in; the attributes are what a consumer
+that RASTERIZES the file uses as its natural size.
+
+That distinction is not academic: with `width="64" height="64"` a package
+registry stores a 64-pixel bitmap and a listing header wanting several hundred
+renders it blurry or small. The artwork is vector and loses nothing at any size,
+so the cap was purely those two attributes.
+
+`favicon.svg` is deliberately excluded — a favicon genuinely wants a small
+intrinsic size.
+
 ## Palette — "Oxide & Iron"
 
 | Token | Hex | Role |
