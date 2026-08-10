@@ -609,6 +609,75 @@ mod tests {
         );
     }
 
+    /// EVERY `Vec`-typed key an operator can set through the environment parses
+    /// as a list.
+    ///
+    /// A list-typed key missing from `alias::LIST_KEYS` is not mis-split — it is
+    /// REFUSED, `invalid type: string …, expected a sequence`, so its documented
+    /// env spelling is dead on arrival. Two shipped keys were in exactly that
+    /// state (`signing.retired_key_paths`, `smart.endpoints.capabilities`) and
+    /// neither was noticed until a live deployment probe hit the boot refusal:
+    /// the value that carries a whole feature is only reachable from a TOML
+    /// file, which no test asserted and no reader could tell.
+    ///
+    /// Single-element values matter as much as multi-element ones: the refusal
+    /// fires on the TYPE, so even one path fails.
+    #[test]
+    fn every_list_typed_key_parses_from_a_single_env_value() {
+        let c = assemble_ok(
+            None,
+            &env(&[
+                // The key #2122's rotation keyring depends on.
+                (
+                    "FERROEHR__SIGNING__RETIRED_KEY_PATHS",
+                    "/etc/ferroehr/retired-2025.pub.asc",
+                ),
+                ("FERROEHR__SMART__ENDPOINTS__CAPABILITIES", "launch-ehr"),
+            ]),
+            &[],
+        );
+        assert_eq!(
+            c.signing.retired_key_paths,
+            vec![PathBuf::from("/etc/ferroehr/retired-2025.pub.asc")],
+            "a single retired key path must parse as a one-element list"
+        );
+        assert_eq!(
+            c.smart.endpoints.capabilities,
+            vec!["launch-ehr".to_owned()]
+        );
+    }
+
+    /// The same keys with SEVERAL values, since comma-splitting is the other
+    /// half of what registration buys.
+    #[test]
+    fn every_list_typed_key_splits_several_env_values() {
+        let c = assemble_ok(
+            None,
+            &env(&[
+                (
+                    "FERROEHR__SIGNING__RETIRED_KEY_PATHS",
+                    "/keys/a.pub.asc,/keys/b.pub.asc",
+                ),
+                (
+                    "FERROEHR__SMART__ENDPOINTS__CAPABILITIES",
+                    "launch-ehr,sso-openid-connect",
+                ),
+            ]),
+            &[],
+        );
+        assert_eq!(
+            c.signing.retired_key_paths,
+            vec![
+                PathBuf::from("/keys/a.pub.asc"),
+                PathBuf::from("/keys/b.pub.asc")
+            ]
+        );
+        assert_eq!(
+            c.smart.endpoints.capabilities,
+            vec!["launch-ehr".to_owned(), "sso-openid-connect".to_owned()]
+        );
+    }
+
     /// The `[auth.oidc]` RFC-posture keys and the ABAC directory switch are
     /// reachable through the one env grammar — a documented env spelling that
     /// binds nothing would ship dead.
