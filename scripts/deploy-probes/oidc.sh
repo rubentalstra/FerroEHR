@@ -88,6 +88,22 @@ probes_oidc() {
   fi
   probe_done
 
+  # The one spec-grounded rule in the whole access layer, observed on the wire
+  # rather than inferred: a request with NO credential is 401 and the response
+  # must carry a challenge naming a scheme the server implements (RFC 9110
+  # §11.6.1 — a challenge naming nothing is what makes a 401 unactionable).
+  probe "P-OIDC-CHALLENGE" "working" "server" "-" \
+    "no credential: 401 with a WWW-Authenticate challenge naming Bearer"
+  local hdrs
+  hdrs="$(curl -s -o /dev/null -D - -X POST "$API/ehr")"
+  assert_contains "$hdrs" "401" "an unauthenticated write must be refused"
+  # Header names are case-insensitive on the wire, so fold before matching.
+  assert_contains "$(printf '%s' "$hdrs" | tr 'A-Z' 'a-z')" "www-authenticate" \
+    "a 401 without a challenge tells the client nothing about how to authenticate"
+  assert_contains "$(printf '%s' "$hdrs" | tr 'A-Z' 'a-z')" "bearer" \
+    "with an issuer configured the challenge must advertise Bearer"
+  probe_done
+
   # A garbage bearer is refused — the negative twin, so the probe above cannot
   # pass because authentication is off altogether.
   probe "P-OIDC-REFUSE" "working" "server" "-" \
