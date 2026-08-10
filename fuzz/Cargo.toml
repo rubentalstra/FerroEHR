@@ -20,6 +20,7 @@ cargo-fuzz = true
 libfuzzer-sys = "0.4.13"
 serde_json = { version = "1", features = ["preserve_order"] }
 openehr-adl = { path = "../crates/openehr-adl" }
+openehr-base = { path = "../crates/openehr-base" }
 openehr-its = { path = "../crates/openehr-its" }
 openehr-query = { path = "../crates/openehr-query" }
 openehr-rm = { path = "../crates/openehr-rm" }
@@ -64,6 +65,13 @@ bench = false
 [[bin]]
 name = "adl2_source"
 path = "fuzz_targets/adl2_source.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "identifiers"
+path = "fuzz_targets/identifiers.rs"
 test = false
 doc = false
 bench = false

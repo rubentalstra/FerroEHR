@@ -1,10 +1,16 @@
 # Scheduled libFuzzer campaigns over the parsers that read attacker-controlled
 # bytes off the REST wire (the harnesses live in `fuzz/`).
 #
-# Deliberately NOT on the pull-request path: a fuzz job that makes every PR slow
-# gets disabled within a month, and a bounded run finds regressions just as well
-# on a nightly cadence. Long campaigns are a local activity — `fuzz/README.md`
-# carries the command.
+# The CAMPAIGN is deliberately not on the pull-request path: a fuzz job that
+# makes every PR slow gets disabled within a month, and a bounded run finds
+# regressions just as well on a nightly cadence. Long campaigns are a local
+# activity — `fuzz/README.md` carries the command.
+#
+# The BUILD is, though, and that gap is why this lane sat broken for nights
+# without anyone noticing: nothing on the PR path ever compiled the harnesses,
+# so neither a build break nor a renamed API in a fuzzed crate could surface
+# until the campaign tried to run. `build` below is seconds, not minutes, and
+# only fires when the harnesses or the crates they read are touched.
 #
 # Each target keeps its corpus in the Actions cache between runs, so coverage
 # accumulates instead of restarting from the seed set every night. A crash is
@@ -17,6 +23,19 @@
 name: Fuzz
 
 on:
+  pull_request:
+    # This list IS the harnesses' dependency set — every `path =` entry in
+    # fuzz/Cargo.toml — so adding a dependency there means adding a line here.
+    # An omission does not fail; it silently stops guarding, which is the shape
+    # of failure this whole lane exists to stop repeating.
+    paths:
+      - "fuzz/**"
+      - "crates/openehr-adl/**"
+      - "crates/openehr-base/**"
+      - "crates/openehr-its/**"
+      - "crates/openehr-query/**"
+      - "crates/openehr-rm/**"
+      - ".github/workflows/fuzz.yml"
   schedule:
     - cron: "41 2 * * *" # daily 02:41 UTC (off-the-hour to dodge load spikes)
   workflow_dispatch:
@@ -36,8 +55,65 @@ concurrency:
 permissions: {}
 
 jobs:
+  # Do the harnesses still COMPILE? That is the whole question on a PR, and it
+  # is the one the campaign schedule cannot answer in time to be useful.
+  build:
+    name: harnesses build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install nightly Rust
+        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        with:
+          toolchain: nightly
+          cache: false
+
+      - name: Install cargo-fuzz
+        uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2.85.9
+        with:
+          tool: cargo-fuzz@0.13.2
+
+      - name: Cache the fuzz build tree
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: fuzz
+          key: build
+
+      # The trigger list above claims to be the harnesses' dependency set. A
+      # claim with no check is a wish, and this particular wish going stale is
+      # invisible: the job simply stops running on the crate that broke it.
+      - name: The trigger paths still cover every harness dependency
+        run: |
+          deps=$(grep -oE '^openehr-[a-z0-9-]+ = \{ path' fuzz/Cargo.toml \
+                 | cut -d' ' -f1 | sort)
+          paths=$(grep -oE 'crates/openehr-[a-z0-9-]+/\*\*' .github/workflows/fuzz.yml \
+                 | sed -E 's|crates/([^/]*)/\*\*|\1|' | sort -u)
+          if [ "$deps" != "$paths" ]; then
+            echo "the pull_request paths filter and fuzz/Cargo.toml disagree:"
+            diff <(echo "$deps") <(echo "$paths") || true
+            echo "add the missing crate to the paths filter in this workflow"
+            exit 1
+          fi
+          echo "trigger paths cover every harness dependency"
+
+      # Same explicit `--target` as the campaign, and for the same reason:
+      # cargo-fuzz otherwise builds for the triple IT was built for (musl),
+      # whose static libc cannot carry a sanitizer.
+      - name: Build every harness
+        run: cargo fuzz build --target x86_64-unknown-linux-gnu
+
   fuzz:
     name: ${{ matrix.target }}
+    # A campaign on a pull request would be the slow job the header refuses to
+    # ship; the build above is the PR-path guard.
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
@@ -63,6 +139,11 @@ jobs:
             max_len: 16384
           - target: opt14_template
             max_len: 65536
+          # Identifiers are short by construction — an OBJECT_VERSION_ID is
+          # three parts and a handful of separators — so a large max_len would
+          # spend the budget on inputs no reader will ever see off a URL.
+          - target: identifiers
+            max_len: 256
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -113,8 +194,22 @@ jobs:
           SECONDS_PER_TARGET: ${{ inputs.seconds || '300' }}
         # The seed directory is passed as a SECOND corpus: libFuzzer writes only
         # to the first one, so the committed corpora stay read-only inputs.
+        #
+        # `--target` is MANDATORY here and is the reason this lane was dead.
+        # cargo-fuzz defaults the build target to the triple IT was built for,
+        # not the runner's — and install-action resolves cargo-fuzz through its
+        # binstall fallback to the musl asset. So every build went to
+        # x86_64-unknown-linux-musl, musl links libc statically, and a static
+        # libc cannot carry a sanitizer:
+        #
+        #   error: sanitizer is incompatible with statically linked libc,
+        #          disable it using `-C target-feature=-crt-static`
+        #   error[E0463]: can't find crate for `core`
+        #
+        # Naming the gnu triple is the documented way out and keeps the choice
+        # visible, rather than depending on which asset the installer picked.
         run: |
-          cargo fuzz run "$TARGET" \
+          cargo fuzz run --target x86_64-unknown-linux-gnu "$TARGET" \
             "fuzz/corpus/$TARGET" "fuzz/seeds/$TARGET" \
             -- \
             -max_total_time="$SECONDS_PER_TARGET" \
