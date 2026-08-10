@@ -19,9 +19,8 @@
 //! `to_canonical_xml` entry point (declared type `None` at the root) cannot
 //! emit.
 
-use openehr_its::xml::{
-    Namespace, from_canonical_xml, to_canonical_xml, to_canonical_xml_declared,
-};
+use openehr_its::xml::runtime::Namespace;
+use openehr_its::xml::{from_canonical_xml, to_canonical_xml, to_canonical_xml_declared};
 use openehr_rm::prelude::{Composition, OriginalVersion};
 use serde_json::json;
 

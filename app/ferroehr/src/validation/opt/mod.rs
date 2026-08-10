@@ -8,7 +8,7 @@
 //! `AM/docs/AOM2/master07-terminology_package.adoc`). OPT 1.4 has no normative
 //! prose chapter, so the only formalized catalogue of standalone-artefact
 //! checks is AOM2/08; those rules are the oracle here, applied to the
-//! *flattened* OPT 1.4 tree (`openehr_its::opt14::OperationalTemplate`).
+//! *flattened* OPT 1.4 tree (`openehr_its::opt14::types::OperationalTemplate`).
 //!
 //! This module owns the tree walk (T1: the `C_COMPLEX_OBJECT`/`C_ATTRIBUTE`
 //! alternation) and the shared context; the per-*kind of check* rules live in
@@ -46,7 +46,7 @@ mod terminology;
 
 use std::collections::HashSet;
 
-use openehr_its::opt14::{CAttribute, CObject, Intervalofinteger, OperationalTemplate};
+use openehr_its::opt14::types::{CAttribute, CObject, Intervalofinteger, OperationalTemplate};
 
 use crate::service::error::ServiceError;
 

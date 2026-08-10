@@ -25,7 +25,7 @@
 //! # The matching rule (derived from the vendored corpus + `WebTemplate`)
 //!
 //! The [`WebTemplate`] tree
-//! ([`build_web_template`](crate::flat::webtemplate::build_web_template)) is the
+//! ([`build_web_template`](crate::flat::webtemplate::builder::build_web_template)) is the
 //! identity oracle. Each web-template node's `aqlPath` is the full RM path
 //! from the versioned-object root **with the compacted wrapper node-ids kept**
 //! (e.g. `…/data[at0001]/events[at0002]/data[at0003]/items[at0004]/value`), so it
@@ -48,7 +48,7 @@
 //!   nodes (`COMPOSITION` `name`/`language`/`territory`/`composer`/`context`/
 //!   `links`; `ENTRY` `language`/`encoding`/`subject`/`other_participations`/
 //!   `narrative`/…) is read **directly** from the TDD elements and parsed through
-//!   the canonical-XML [`FromXml`](crate::xml::FromXml) codec (fully typed:
+//!   the canonical-XML [`FromXml`](crate::xml::runtime::FromXml) codec (fully typed:
 //!   nested `_type`s, `xsi:type` dispatch, numeric coercion) — faithful to the
 //!   instance.
 //! * A **leaf** node's `DATA_VALUE` is the leaf element's `<value>` fragment,
@@ -93,7 +93,7 @@ use serde_json::{Map, Value, json};
 
 use crate::flat::error::FlatError;
 use crate::flat::rmpath;
-use crate::flat::webtemplate::{WebTemplate, WebTemplateNode};
+use crate::flat::webtemplate::model::{WebTemplate, WebTemplateNode};
 
 /// The Ocean/Marand template-data XML namespace (the default `xmlns` on a TDD
 /// root). Kept here for callers that only need the constant.
@@ -215,7 +215,7 @@ fn parse_tree(xml: &str) -> Result<El, FlatError> {
 }
 
 /// Re-serialise an [`El`] subtree to a standalone canonical-XML document so the
-/// `openehr-its` [`FromXml`](crate::xml::FromXml) codec can parse it into a
+/// `openehr-its` [`FromXml`](crate::xml::runtime::FromXml) codec can parse it into a
 /// typed RM value. The root carries the openEHR v1 namespace and, when a
 /// `type_hint` is given and the element lacks its own `xsi:type`, an injected
 /// `xsi:type` (the polymorphic slot's concrete type from the `WebTemplate`).

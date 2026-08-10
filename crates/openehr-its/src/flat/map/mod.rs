@@ -48,7 +48,7 @@ use serde_json::{Value, json};
 
 use crate::flat::error::FlatError;
 use crate::flat::sim::{SimChild, SimNode};
-use crate::flat::webtemplate::{WebTemplateCodedValue, WebTemplateNode};
+use crate::flat::webtemplate::model::{WebTemplateCodedValue, WebTemplateNode};
 
 /// RM leaf value (canonical JSON) → datum parts on `out` (attrs only; the
 /// `|suffix` keys of master05, plus the bare `""` value where the type has one).

@@ -75,9 +75,9 @@ fn canonical_composition() -> Value {
 }
 
 /// The IPS `WebTemplate` (built from the vendored OPT).
-fn web_template() -> openehr_its::flat::webtemplate::WebTemplate {
+fn web_template() -> openehr_its::flat::webtemplate::model::WebTemplate {
     let opt = openehr_its::opt14::from_xml(&opt_xml()).expect("parse OPT");
-    openehr_its::flat::webtemplate::build_web_template(&opt).expect("build web template")
+    openehr_its::flat::webtemplate::builder::build_web_template(&opt).expect("build web template")
 }
 
 fn config() -> AppConfig {

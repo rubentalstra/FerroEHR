@@ -48,7 +48,8 @@
 //! byte. `xsi:type` *dispatch* correctness is independently covered by
 //! `xml_ehrbase`/`xml_roundtrip`.
 
-use openehr_its::xml::{from_xml, to_canonical_xml};
+use openehr_its::xml::runtime::from_xml;
+use openehr_its::xml::to_canonical_xml;
 use openehr_rm::prelude::Composition;
 use std::path::{Path, PathBuf};
 use std::process::Command;

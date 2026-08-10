@@ -601,7 +601,7 @@ pub struct ExprLeaf {
     /// The `type` attribute/element of the OPT `EXPR_LEAF` XSD type.
     pub r#type: String,
     /// The `item` attribute/element of the OPT `EXPR_LEAF` XSD type.
-    pub item: crate::xml::XmlAny,
+    pub item: crate::xml::runtime::XmlAny,
     /// The `reference_type` attribute/element of the OPT `EXPR_LEAF` XSD type.
     pub reference_type: String,
 }
@@ -783,7 +783,7 @@ pub struct OperationalTemplate {
     /// The `constraints` attribute/element of the OPT `OPERATIONAL_TEMPLATE` XSD type.
     pub constraints: Option<TConstraint>,
     /// The `view` attribute/element of the OPT `OPERATIONAL_TEMPLATE` XSD type.
-    pub view: Option<crate::xml::XmlAny>,
+    pub view: Option<crate::xml::runtime::XmlAny>,
 }
 
 /// openEHR AOM/OPT `RESOURCE_DESCRIPTION`.

@@ -8,7 +8,7 @@
 //!   constraint catalogue applied to an *uploaded* artefact, before it becomes
 //!   an operational template:
 //! - `opt` — OPT 1.4 artefact validity, the AOM2/08 catalogue on a
-//   !     flattened `openehr_its::opt14::OperationalTemplate`;
+//   !     flattened `openehr_its::opt14::types::OperationalTemplate`;
 //!   - `structure` (A3) — OPT XML well-formedness (a CNF ingestion guard,
 //!     not an AOM constraint kind).
 //!
@@ -74,7 +74,7 @@
 mod opt;
 mod structure;
 
-use openehr_its::opt14::OperationalTemplate;
+use openehr_its::opt14::types::OperationalTemplate;
 
 use crate::service::error::ServiceError;
 

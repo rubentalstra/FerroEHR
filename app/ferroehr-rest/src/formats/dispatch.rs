@@ -197,7 +197,7 @@ pub(crate) async fn composition_flat_response(
 pub(crate) fn composition_flat_response_with(
     status: StatusCode,
     comp: &Value,
-    wt: &openehr_its::flat::webtemplate::WebTemplate,
+    wt: &openehr_its::flat::webtemplate::model::WebTemplate,
 ) -> Result<Response, RestError> {
     let flat = openehr_its::flat::convert::composition_to_flat(comp, wt)
         .map_err(|e| flat_output_err(&e))?;
@@ -226,7 +226,7 @@ pub(crate) async fn composition_structured_response(
 pub(crate) fn composition_structured_response_with(
     status: StatusCode,
     comp: &Value,
-    wt: &openehr_its::flat::webtemplate::WebTemplate,
+    wt: &openehr_its::flat::webtemplate::model::WebTemplate,
 ) -> Result<Response, RestError> {
     let structured = openehr_its::flat::convert::composition_to_structured(comp, wt)
         .map_err(|e| flat_output_err(&e))?;

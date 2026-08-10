@@ -32,7 +32,8 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use openehr_its::flat::convert::{composition_from_flat, composition_to_flat};
-use openehr_its::flat::webtemplate::{WebTemplate, build_web_template};
+use openehr_its::flat::webtemplate::builder::build_web_template;
+use openehr_its::flat::webtemplate::model::WebTemplate;
 use openehr_its::opt14;
 use serde_json::Value;
 
@@ -769,9 +770,9 @@ fn action_ism_transition_from_flat_builds_supplied_state() {
 
 /// Collect every node of `rm_type` at or below `n`, in web-template pre-order.
 fn collect_by_rm_type<'a>(
-    n: &'a openehr_its::flat::webtemplate::WebTemplateNode,
+    n: &'a openehr_its::flat::webtemplate::model::WebTemplateNode,
     rm_type: &str,
-    out: &mut Vec<&'a openehr_its::flat::webtemplate::WebTemplateNode>,
+    out: &mut Vec<&'a openehr_its::flat::webtemplate::model::WebTemplateNode>,
 ) {
     if n.rm_type == rm_type {
         out.push(n);
@@ -785,8 +786,8 @@ fn collect_by_rm_type<'a>(
 /// one (master05 §ISM_TRANSITION: one `/ism_transition` node per ACTION, not one
 /// per careflow state).
 fn wt_transition(
-    action: &openehr_its::flat::webtemplate::WebTemplateNode,
-) -> Option<&openehr_its::flat::webtemplate::WebTemplateNode> {
+    action: &openehr_its::flat::webtemplate::model::WebTemplateNode,
+) -> Option<&openehr_its::flat::webtemplate::model::WebTemplateNode> {
     action
         .children
         .iter()
@@ -801,7 +802,7 @@ fn wt_transition(
 /// ACTION archetype in several slots (ips.v0 uses `medication.v1` for both
 /// medication and immunization) with per-slot careflow specialization.
 fn wt_action_careflows(
-    n: &openehr_its::flat::webtemplate::WebTemplateNode,
+    n: &openehr_its::flat::webtemplate::model::WebTemplateNode,
     out: &mut Vec<Option<(String, String)>>,
 ) {
     if n.rm_type == "ACTION" {

@@ -14,7 +14,7 @@
 )]
 use crate::xml::runtime::{FromXml, ToXml, XmlError, XmlEvent};
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::Archetype {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::Archetype {
     fn xml_type_name(&self) -> &'static str {
         "ARCHETYPE"
     }
@@ -30,7 +30,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Archetype {
                 __attrs.push(("xsi:type", "ARCHETYPE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -55,7 +55,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Archetype {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::Archetype {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::Archetype {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -101,7 +101,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Archetype {
                 }
             }
         }
-        Ok(crate::aom2_model::Archetype {
+        Ok(crate::aom2_model::types::Archetype {
             archetype_id: __archetype_id.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element archetype_id".into())
             })?,
@@ -118,25 +118,27 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Archetype {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::ArchetypeConstraint {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::ArchetypeConstraint {
     fn xml_type_name(&self) -> &'static str {
         match self {
-            crate::aom2_model::ArchetypeConstraint::ArchetypeSlot(x) => x.xml_type_name(),
-            crate::aom2_model::ArchetypeConstraint::CArchetypeRoot(x) => x.xml_type_name(),
-            crate::aom2_model::ArchetypeConstraint::CBoolean(x) => x.xml_type_name(),
-            crate::aom2_model::ArchetypeConstraint::CComplexObject(x) => x.xml_type_name(),
-            crate::aom2_model::ArchetypeConstraint::CComplexObjectProxy(x) => x.xml_type_name(),
-            crate::aom2_model::ArchetypeConstraint::CDate(x) => x.xml_type_name(),
-            crate::aom2_model::ArchetypeConstraint::CDateTime(x) => x.xml_type_name(),
-            crate::aom2_model::ArchetypeConstraint::CDefinedObject(x) => x.xml_type_name(),
-            crate::aom2_model::ArchetypeConstraint::CDuration(x) => x.xml_type_name(),
-            crate::aom2_model::ArchetypeConstraint::CInteger(x) => x.xml_type_name(),
-            crate::aom2_model::ArchetypeConstraint::CPrimitiveObject(x) => x.xml_type_name(),
-            crate::aom2_model::ArchetypeConstraint::CReal(x) => x.xml_type_name(),
-            crate::aom2_model::ArchetypeConstraint::CString(x) => x.xml_type_name(),
-            crate::aom2_model::ArchetypeConstraint::CTemporal(x) => x.xml_type_name(),
-            crate::aom2_model::ArchetypeConstraint::CTerminologyCode(x) => x.xml_type_name(),
-            crate::aom2_model::ArchetypeConstraint::CTime(x) => x.xml_type_name(),
+            crate::aom2_model::types::ArchetypeConstraint::ArchetypeSlot(x) => x.xml_type_name(),
+            crate::aom2_model::types::ArchetypeConstraint::CArchetypeRoot(x) => x.xml_type_name(),
+            crate::aom2_model::types::ArchetypeConstraint::CBoolean(x) => x.xml_type_name(),
+            crate::aom2_model::types::ArchetypeConstraint::CComplexObject(x) => x.xml_type_name(),
+            crate::aom2_model::types::ArchetypeConstraint::CComplexObjectProxy(x) => {
+                x.xml_type_name()
+            }
+            crate::aom2_model::types::ArchetypeConstraint::CDate(x) => x.xml_type_name(),
+            crate::aom2_model::types::ArchetypeConstraint::CDateTime(x) => x.xml_type_name(),
+            crate::aom2_model::types::ArchetypeConstraint::CDefinedObject(x) => x.xml_type_name(),
+            crate::aom2_model::types::ArchetypeConstraint::CDuration(x) => x.xml_type_name(),
+            crate::aom2_model::types::ArchetypeConstraint::CInteger(x) => x.xml_type_name(),
+            crate::aom2_model::types::ArchetypeConstraint::CPrimitiveObject(x) => x.xml_type_name(),
+            crate::aom2_model::types::ArchetypeConstraint::CReal(x) => x.xml_type_name(),
+            crate::aom2_model::types::ArchetypeConstraint::CString(x) => x.xml_type_name(),
+            crate::aom2_model::types::ArchetypeConstraint::CTemporal(x) => x.xml_type_name(),
+            crate::aom2_model::types::ArchetypeConstraint::CTerminologyCode(x) => x.xml_type_name(),
+            crate::aom2_model::types::ArchetypeConstraint::CTime(x) => x.xml_type_name(),
         }
     }
     fn write_xml(
@@ -146,98 +148,124 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::ArchetypeConstraint {
         declared: Option<&str>,
     ) -> Result<(), crate::xml::runtime::XmlError> {
         match self {
-            crate::aom2_model::ArchetypeConstraint::ArchetypeSlot(x) => {
+            crate::aom2_model::types::ArchetypeConstraint::ArchetypeSlot(x) => {
                 x.write_xml(w, tag, declared)
             }
-            crate::aom2_model::ArchetypeConstraint::CArchetypeRoot(x) => {
+            crate::aom2_model::types::ArchetypeConstraint::CArchetypeRoot(x) => {
                 x.write_xml(w, tag, declared)
             }
-            crate::aom2_model::ArchetypeConstraint::CBoolean(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::ArchetypeConstraint::CComplexObject(x) => {
+            crate::aom2_model::types::ArchetypeConstraint::CBoolean(x) => {
                 x.write_xml(w, tag, declared)
             }
-            crate::aom2_model::ArchetypeConstraint::CComplexObjectProxy(x) => {
+            crate::aom2_model::types::ArchetypeConstraint::CComplexObject(x) => {
                 x.write_xml(w, tag, declared)
             }
-            crate::aom2_model::ArchetypeConstraint::CDate(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::ArchetypeConstraint::CDateTime(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::ArchetypeConstraint::CDefinedObject(x) => {
+            crate::aom2_model::types::ArchetypeConstraint::CComplexObjectProxy(x) => {
                 x.write_xml(w, tag, declared)
             }
-            crate::aom2_model::ArchetypeConstraint::CDuration(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::ArchetypeConstraint::CInteger(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::ArchetypeConstraint::CPrimitiveObject(x) => {
+            crate::aom2_model::types::ArchetypeConstraint::CDate(x) => {
                 x.write_xml(w, tag, declared)
             }
-            crate::aom2_model::ArchetypeConstraint::CReal(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::ArchetypeConstraint::CString(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::ArchetypeConstraint::CTemporal(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::ArchetypeConstraint::CTerminologyCode(x) => {
+            crate::aom2_model::types::ArchetypeConstraint::CDateTime(x) => {
                 x.write_xml(w, tag, declared)
             }
-            crate::aom2_model::ArchetypeConstraint::CTime(x) => x.write_xml(w, tag, declared),
+            crate::aom2_model::types::ArchetypeConstraint::CDefinedObject(x) => {
+                x.write_xml(w, tag, declared)
+            }
+            crate::aom2_model::types::ArchetypeConstraint::CDuration(x) => {
+                x.write_xml(w, tag, declared)
+            }
+            crate::aom2_model::types::ArchetypeConstraint::CInteger(x) => {
+                x.write_xml(w, tag, declared)
+            }
+            crate::aom2_model::types::ArchetypeConstraint::CPrimitiveObject(x) => {
+                x.write_xml(w, tag, declared)
+            }
+            crate::aom2_model::types::ArchetypeConstraint::CReal(x) => {
+                x.write_xml(w, tag, declared)
+            }
+            crate::aom2_model::types::ArchetypeConstraint::CString(x) => {
+                x.write_xml(w, tag, declared)
+            }
+            crate::aom2_model::types::ArchetypeConstraint::CTemporal(x) => {
+                x.write_xml(w, tag, declared)
+            }
+            crate::aom2_model::types::ArchetypeConstraint::CTerminologyCode(x) => {
+                x.write_xml(w, tag, declared)
+            }
+            crate::aom2_model::types::ArchetypeConstraint::CTime(x) => {
+                x.write_xml(w, tag, declared)
+            }
         }
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::ArchetypeConstraint {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::ArchetypeConstraint {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         match start.xsi_type() {
-            Some("ARCHETYPE_SLOT") => Ok(crate::aom2_model::ArchetypeConstraint::ArchetypeSlot(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("C_ARCHETYPE_ROOT") => Ok(crate::aom2_model::ArchetypeConstraint::CArchetypeRoot(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("C_BOOLEAN") => Ok(crate::aom2_model::ArchetypeConstraint::CBoolean(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("C_COMPLEX_OBJECT") => Ok(crate::aom2_model::ArchetypeConstraint::CComplexObject(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("C_COMPLEX_OBJECT_PROXY") => {
-                Ok(crate::aom2_model::ArchetypeConstraint::CComplexObjectProxy(
+            Some("ARCHETYPE_SLOT") => Ok(
+                crate::aom2_model::types::ArchetypeConstraint::ArchetypeSlot(
                     crate::xml::runtime::FromXml::from_xml(reader, start)?,
-                ))
-            }
-            Some("C_DATE") => Ok(crate::aom2_model::ArchetypeConstraint::CDate(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("C_DATE_TIME") => Ok(crate::aom2_model::ArchetypeConstraint::CDateTime(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("C_DEFINED_OBJECT") => Ok(crate::aom2_model::ArchetypeConstraint::CDefinedObject(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("C_DURATION") => Ok(crate::aom2_model::ArchetypeConstraint::CDuration(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("C_INTEGER") => Ok(crate::aom2_model::ArchetypeConstraint::CInteger(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("C_PRIMITIVE_OBJECT") => {
-                Ok(crate::aom2_model::ArchetypeConstraint::CPrimitiveObject(
+                ),
+            ),
+            Some("C_ARCHETYPE_ROOT") => Ok(
+                crate::aom2_model::types::ArchetypeConstraint::CArchetypeRoot(
                     crate::xml::runtime::FromXml::from_xml(reader, start)?,
-                ))
-            }
-            Some("C_REAL") => Ok(crate::aom2_model::ArchetypeConstraint::CReal(
+                ),
+            ),
+            Some("C_BOOLEAN") => Ok(crate::aom2_model::types::ArchetypeConstraint::CBoolean(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_STRING") => Ok(crate::aom2_model::ArchetypeConstraint::CString(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("C_TEMPORAL") => Ok(crate::aom2_model::ArchetypeConstraint::CTemporal(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("C_TERMINOLOGY_CODE") => {
-                Ok(crate::aom2_model::ArchetypeConstraint::CTerminologyCode(
+            Some("C_COMPLEX_OBJECT") => Ok(
+                crate::aom2_model::types::ArchetypeConstraint::CComplexObject(
                     crate::xml::runtime::FromXml::from_xml(reader, start)?,
-                ))
-            }
-            Some("C_TIME") => Ok(crate::aom2_model::ArchetypeConstraint::CTime(
+                ),
+            ),
+            Some("C_COMPLEX_OBJECT_PROXY") => Ok(
+                crate::aom2_model::types::ArchetypeConstraint::CComplexObjectProxy(
+                    crate::xml::runtime::FromXml::from_xml(reader, start)?,
+                ),
+            ),
+            Some("C_DATE") => Ok(crate::aom2_model::types::ArchetypeConstraint::CDate(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some("C_DATE_TIME") => Ok(crate::aom2_model::types::ArchetypeConstraint::CDateTime(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some("C_DEFINED_OBJECT") => Ok(
+                crate::aom2_model::types::ArchetypeConstraint::CDefinedObject(
+                    crate::xml::runtime::FromXml::from_xml(reader, start)?,
+                ),
+            ),
+            Some("C_DURATION") => Ok(crate::aom2_model::types::ArchetypeConstraint::CDuration(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some("C_INTEGER") => Ok(crate::aom2_model::types::ArchetypeConstraint::CInteger(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some("C_PRIMITIVE_OBJECT") => Ok(
+                crate::aom2_model::types::ArchetypeConstraint::CPrimitiveObject(
+                    crate::xml::runtime::FromXml::from_xml(reader, start)?,
+                ),
+            ),
+            Some("C_REAL") => Ok(crate::aom2_model::types::ArchetypeConstraint::CReal(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some("C_STRING") => Ok(crate::aom2_model::types::ArchetypeConstraint::CString(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some("C_TEMPORAL") => Ok(crate::aom2_model::types::ArchetypeConstraint::CTemporal(
+                crate::xml::runtime::FromXml::from_xml(reader, start)?,
+            )),
+            Some("C_TERMINOLOGY_CODE") => Ok(
+                crate::aom2_model::types::ArchetypeConstraint::CTerminologyCode(
+                    crate::xml::runtime::FromXml::from_xml(reader, start)?,
+                ),
+            ),
+            Some("C_TIME") => Ok(crate::aom2_model::types::ArchetypeConstraint::CTime(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
             None => Err(crate::xml::runtime::XmlError::Parse(
@@ -250,7 +278,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::ArchetypeConstraint {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::ArchetypeHrid {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::ArchetypeHrid {
     fn xml_type_name(&self) -> &'static str {
         "ARCHETYPE_HRID"
     }
@@ -287,7 +315,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::ArchetypeHrid {
         if let Some(v) = &self.build_count {
             __attrs.push(("build_count", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -300,7 +328,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::ArchetypeHrid {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::ArchetypeHrid {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::ArchetypeHrid {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -323,7 +351,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::ArchetypeHrid {
                 }
             }
         }
-        Ok(crate::aom2_model::ArchetypeHrid {
+        Ok(crate::aom2_model::types::ArchetypeHrid {
             namespace: start.attr("namespace").map(|s| s.to_string()),
             rm_publisher: start.attr("rm_publisher").map(|s| s.to_string()),
             rm_package: start.attr("rm_package").map(|s| s.to_string()),
@@ -336,7 +364,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::ArchetypeHrid {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::ArchetypeSlot {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::ArchetypeSlot {
     fn xml_type_name(&self) -> &'static str {
         "ARCHETYPE_SLOT"
     }
@@ -361,7 +389,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::ArchetypeSlot {
         if let Some(v) = &self.rm_type_name {
             __attrs.push(("rm_type_name", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -384,7 +412,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::ArchetypeSlot {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::ArchetypeSlot {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::ArchetypeSlot {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -423,7 +451,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::ArchetypeSlot {
                 }
             }
         }
-        Ok(crate::aom2_model::ArchetypeSlot {
+        Ok(crate::aom2_model::types::ArchetypeSlot {
             is_deprecated: start.attr("is_deprecated").map(|s| s.to_string()),
             node_id: start.attr("node_id").map(|s| s.to_string()),
             rm_type_name: start.attr("rm_type_name").map(|s| s.to_string()),
@@ -436,7 +464,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::ArchetypeSlot {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::ArchetypeTerm {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::ArchetypeTerm {
     fn xml_type_name(&self) -> &'static str {
         "ARCHETYPE_TERM"
     }
@@ -453,7 +481,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::ArchetypeTerm {
             }
         }
         __attrs.push(("id", self.id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -467,7 +495,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::ArchetypeTerm {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::ArchetypeTerm {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::ArchetypeTerm {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -494,7 +522,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::ArchetypeTerm {
                 }
             }
         }
-        Ok(crate::aom2_model::ArchetypeTerm {
+        Ok(crate::aom2_model::types::ArchetypeTerm {
             id: start
                 .attr("id")
                 .ok_or_else(|| crate::xml::runtime::XmlError::Parse("missing attribute id".into()))?
@@ -507,7 +535,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::ArchetypeTerm {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::ArchetypeTerminology {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::ArchetypeTerminology {
     fn xml_type_name(&self) -> &'static str {
         "ARCHETYPE_TERMINOLOGY"
     }
@@ -523,7 +551,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::ArchetypeTerminology {
                 __attrs.push(("xsi:type", "ARCHETYPE_TERMINOLOGY".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -542,7 +570,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::ArchetypeTerminology {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::ArchetypeTerminology {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::ArchetypeTerminology {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -574,7 +602,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::ArchetypeTerminology {
                 }
             }
         }
-        Ok(crate::aom2_model::ArchetypeTerminology {
+        Ok(crate::aom2_model::types::ArchetypeTerminology {
             term_definitions: __term_definitions,
             term_bindings: __term_bindings,
             value_sets: __value_sets,
@@ -582,7 +610,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::ArchetypeTerminology {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::Assertion {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::Assertion {
     fn xml_type_name(&self) -> &'static str {
         "ASSERTION"
     }
@@ -604,7 +632,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Assertion {
         if let Some(v) = &self.tag {
             __attrs.push(("tag", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -616,7 +644,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Assertion {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::Assertion {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::Assertion {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -639,7 +667,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Assertion {
                 }
             }
         }
-        Ok(crate::aom2_model::Assertion {
+        Ok(crate::aom2_model::types::Assertion {
             r#type: start.attr("type").map(|s| s.to_string()),
             tag: start.attr("tag").map(|s| s.to_string()),
             expression: __expression.ok_or_else(|| {
@@ -649,7 +677,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Assertion {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::AssertionVariable {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::AssertionVariable {
     fn xml_type_name(&self) -> &'static str {
         "ASSERTION_VARIABLE"
     }
@@ -668,7 +696,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::AssertionVariable {
         if let Some(v) = &self.name {
             __attrs.push(("name", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -679,7 +707,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::AssertionVariable {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::AssertionVariable {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::AssertionVariable {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -702,7 +730,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::AssertionVariable {
                 }
             }
         }
-        Ok(crate::aom2_model::AssertionVariable {
+        Ok(crate::aom2_model::types::AssertionVariable {
             name: start.attr("name").map(|s| s.to_string()),
             definition: __definition.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element definition".into())
@@ -711,7 +739,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::AssertionVariable {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::AuthoredArchetype {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::AuthoredArchetype {
     fn xml_type_name(&self) -> &'static str {
         "AUTHORED_ARCHETYPE"
     }
@@ -727,7 +755,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::AuthoredArchetype {
                 __attrs.push(("xsi:type", "AUTHORED_ARCHETYPE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -783,7 +811,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::AuthoredArchetype {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::AuthoredArchetype {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::AuthoredArchetype {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -874,7 +902,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::AuthoredArchetype {
                 }
             }
         }
-        Ok(crate::aom2_model::AuthoredArchetype {
+        Ok(crate::aom2_model::types::AuthoredArchetype {
             original_language: __original_language.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element original_language".into())
             })?,
@@ -907,10 +935,10 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::AuthoredArchetype {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::AuthoredResource {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::AuthoredResource {
     fn xml_type_name(&self) -> &'static str {
         match self {
-            crate::aom2_model::AuthoredResource::AuthoredArchetype(x) => x.xml_type_name(),
+            crate::aom2_model::types::AuthoredResource::AuthoredArchetype(x) => x.xml_type_name(),
         }
     }
     fn write_xml(
@@ -920,24 +948,24 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::AuthoredResource {
         declared: Option<&str>,
     ) -> Result<(), crate::xml::runtime::XmlError> {
         match self {
-            crate::aom2_model::AuthoredResource::AuthoredArchetype(x) => {
+            crate::aom2_model::types::AuthoredResource::AuthoredArchetype(x) => {
                 x.write_xml(w, tag, declared)
             }
         }
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::AuthoredResource {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::AuthoredResource {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         match start.xsi_type() {
-            Some("AUTHORED_ARCHETYPE") => {
-                Ok(crate::aom2_model::AuthoredResource::AuthoredArchetype(
+            Some("AUTHORED_ARCHETYPE") => Ok(
+                crate::aom2_model::types::AuthoredResource::AuthoredArchetype(
                     crate::xml::runtime::FromXml::from_xml(reader, start)?,
-                ))
-            }
+                ),
+            ),
             None => Err(crate::xml::runtime::XmlError::Parse(
                 "AuthoredResource: missing xsi:type".into(),
             )),
@@ -948,7 +976,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::AuthoredResource {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::Annotationlangset {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::Annotationlangset {
     fn xml_type_name(&self) -> &'static str {
         "AnnotationLangSet"
     }
@@ -965,7 +993,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Annotationlangset {
             }
         }
         __attrs.push(("id", self.id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -978,7 +1006,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Annotationlangset {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::Annotationlangset {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::Annotationlangset {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -1001,7 +1029,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Annotationlangset {
                 }
             }
         }
-        Ok(crate::aom2_model::Annotationlangset {
+        Ok(crate::aom2_model::types::Annotationlangset {
             id: start
                 .attr("id")
                 .ok_or_else(|| crate::xml::runtime::XmlError::Parse("missing attribute id".into()))?
@@ -1011,7 +1039,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Annotationlangset {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::Annotationpathset {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::Annotationpathset {
     fn xml_type_name(&self) -> &'static str {
         "AnnotationPathSet"
     }
@@ -1028,7 +1056,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Annotationpathset {
             }
         }
         __attrs.push(("id", self.id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1043,7 +1071,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Annotationpathset {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::Annotationpathset {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::Annotationpathset {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -1068,7 +1096,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Annotationpathset {
                 }
             }
         }
-        Ok(crate::aom2_model::Annotationpathset {
+        Ok(crate::aom2_model::types::Annotationpathset {
             id: start
                 .attr("id")
                 .ok_or_else(|| crate::xml::runtime::XmlError::Parse("missing attribute id".into()))?
@@ -1082,7 +1110,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Annotationpathset {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::Cardinality {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::Cardinality {
     fn xml_type_name(&self) -> &'static str {
         "CARDINALITY"
     }
@@ -1098,7 +1126,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Cardinality {
                 __attrs.push(("xsi:type", "CARDINALITY".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1112,7 +1140,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Cardinality {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::Cardinality {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::Cardinality {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -1143,7 +1171,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Cardinality {
                 }
             }
         }
-        Ok(crate::aom2_model::Cardinality {
+        Ok(crate::aom2_model::types::Cardinality {
             is_ordered: __is_ordered.unwrap_or(false),
             is_unique: __is_unique.unwrap_or(false),
             interval: __interval.ok_or_else(|| {
@@ -1153,7 +1181,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Cardinality {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::CArchetypeRoot {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::CArchetypeRoot {
     fn xml_type_name(&self) -> &'static str {
         "C_ARCHETYPE_ROOT"
     }
@@ -1178,7 +1206,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CArchetypeRoot {
         if let Some(v) = &self.rm_type_name {
             __attrs.push(("rm_type_name", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1203,7 +1231,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CArchetypeRoot {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::CArchetypeRoot {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::CArchetypeRoot {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -1243,7 +1271,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CArchetypeRoot {
                 }
             }
         }
-        Ok(crate::aom2_model::CArchetypeRoot {
+        Ok(crate::aom2_model::types::CArchetypeRoot {
             is_deprecated: start.attr("is_deprecated").map(|s| s.to_string()),
             node_id: start.attr("node_id").map(|s| s.to_string()),
             rm_type_name: start.attr("rm_type_name").map(|s| s.to_string()),
@@ -1256,7 +1284,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CArchetypeRoot {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::CAttribute {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::CAttribute {
     fn xml_type_name(&self) -> &'static str {
         "C_ATTRIBUTE"
     }
@@ -1273,7 +1301,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CAttribute {
             }
         }
         __attrs.push(("rm_attribute_name", self.rm_attribute_name.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1294,7 +1322,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CAttribute {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::CAttribute {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::CAttribute {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -1334,7 +1362,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CAttribute {
                 }
             }
         }
-        Ok(crate::aom2_model::CAttribute {
+        Ok(crate::aom2_model::types::CAttribute {
             rm_attribute_name: start
                 .attr("rm_attribute_name")
                 .ok_or_else(|| {
@@ -1356,7 +1384,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CAttribute {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::CBoolean {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::CBoolean {
     fn xml_type_name(&self) -> &'static str {
         "C_BOOLEAN"
     }
@@ -1381,7 +1409,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CBoolean {
         if let Some(v) = &self.rm_type_name {
             __attrs.push(("rm_type_name", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1407,7 +1435,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CBoolean {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::CBoolean {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::CBoolean {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -1452,7 +1480,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CBoolean {
                 }
             }
         }
-        Ok(crate::aom2_model::CBoolean {
+        Ok(crate::aom2_model::types::CBoolean {
             is_deprecated: start.attr("is_deprecated").map(|s| s.to_string()),
             node_id: start.attr("node_id").map(|s| s.to_string()),
             rm_type_name: start.attr("rm_type_name").map(|s| s.to_string()),
@@ -1466,7 +1494,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CBoolean {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::CComplexObject {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::CComplexObject {
     fn xml_type_name(&self) -> &'static str {
         "C_COMPLEX_OBJECT"
     }
@@ -1491,7 +1519,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CComplexObject {
         if let Some(v) = &self.rm_type_name {
             __attrs.push(("rm_type_name", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1513,7 +1541,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CComplexObject {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::CComplexObject {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::CComplexObject {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -1548,7 +1576,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CComplexObject {
                 }
             }
         }
-        Ok(crate::aom2_model::CComplexObject {
+        Ok(crate::aom2_model::types::CComplexObject {
             is_deprecated: start.attr("is_deprecated").map(|s| s.to_string()),
             node_id: start.attr("node_id").map(|s| s.to_string()),
             rm_type_name: start.attr("rm_type_name").map(|s| s.to_string()),
@@ -1560,7 +1588,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CComplexObject {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::CComplexObjectProxy {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::CComplexObjectProxy {
     fn xml_type_name(&self) -> &'static str {
         "C_COMPLEX_OBJECT_PROXY"
     }
@@ -1585,7 +1613,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CComplexObjectProxy {
         if let Some(v) = &self.rm_type_name {
             __attrs.push(("rm_type_name", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1602,7 +1630,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CComplexObjectProxy {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::CComplexObjectProxy {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::CComplexObjectProxy {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -1633,7 +1661,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CComplexObjectProxy {
                 }
             }
         }
-        Ok(crate::aom2_model::CComplexObjectProxy {
+        Ok(crate::aom2_model::types::CComplexObjectProxy {
             is_deprecated: start.attr("is_deprecated").map(|s| s.to_string()),
             node_id: start.attr("node_id").map(|s| s.to_string()),
             rm_type_name: start.attr("rm_type_name").map(|s| s.to_string()),
@@ -1646,7 +1674,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CComplexObjectProxy {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::CDate {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::CDate {
     fn xml_type_name(&self) -> &'static str {
         "C_DATE"
     }
@@ -1671,7 +1699,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CDate {
         if let Some(v) = &self.rm_type_name {
             __attrs.push(("rm_type_name", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1690,7 +1718,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CDate {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::CDate {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::CDate {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -1721,7 +1749,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CDate {
                 }
             }
         }
-        Ok(crate::aom2_model::CDate {
+        Ok(crate::aom2_model::types::CDate {
             is_deprecated: start.attr("is_deprecated").map(|s| s.to_string()),
             node_id: start.attr("node_id").map(|s| s.to_string()),
             rm_type_name: start.attr("rm_type_name").map(|s| s.to_string()),
@@ -1732,7 +1760,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CDate {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::CDateTime {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::CDateTime {
     fn xml_type_name(&self) -> &'static str {
         "C_DATE_TIME"
     }
@@ -1757,7 +1785,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CDateTime {
         if let Some(v) = &self.rm_type_name {
             __attrs.push(("rm_type_name", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1779,7 +1807,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CDateTime {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::CDateTime {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::CDateTime {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -1815,7 +1843,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CDateTime {
                 }
             }
         }
-        Ok(crate::aom2_model::CDateTime {
+        Ok(crate::aom2_model::types::CDateTime {
             is_deprecated: start.attr("is_deprecated").map(|s| s.to_string()),
             node_id: start.attr("node_id").map(|s| s.to_string()),
             rm_type_name: start.attr("rm_type_name").map(|s| s.to_string()),
@@ -1827,7 +1855,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CDateTime {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::CDefinedObject {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::CDefinedObject {
     fn xml_type_name(&self) -> &'static str {
         "C_DEFINED_OBJECT"
     }
@@ -1852,7 +1880,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CDefinedObject {
         if let Some(v) = &self.rm_type_name {
             __attrs.push(("rm_type_name", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1871,7 +1899,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CDefinedObject {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::CDefinedObject {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::CDefinedObject {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -1902,7 +1930,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CDefinedObject {
                 }
             }
         }
-        Ok(crate::aom2_model::CDefinedObject {
+        Ok(crate::aom2_model::types::CDefinedObject {
             is_deprecated: start.attr("is_deprecated").map(|s| s.to_string()),
             node_id: start.attr("node_id").map(|s| s.to_string()),
             rm_type_name: start.attr("rm_type_name").map(|s| s.to_string()),
@@ -1913,7 +1941,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CDefinedObject {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::CDuration {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::CDuration {
     fn xml_type_name(&self) -> &'static str {
         "C_DURATION"
     }
@@ -1938,7 +1966,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CDuration {
         if let Some(v) = &self.rm_type_name {
             __attrs.push(("rm_type_name", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1960,7 +1988,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CDuration {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::CDuration {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::CDuration {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -1996,7 +2024,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CDuration {
                 }
             }
         }
-        Ok(crate::aom2_model::CDuration {
+        Ok(crate::aom2_model::types::CDuration {
             is_deprecated: start.attr("is_deprecated").map(|s| s.to_string()),
             node_id: start.attr("node_id").map(|s| s.to_string()),
             rm_type_name: start.attr("rm_type_name").map(|s| s.to_string()),
@@ -2008,7 +2036,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CDuration {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::CInteger {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::CInteger {
     fn xml_type_name(&self) -> &'static str {
         "C_INTEGER"
     }
@@ -2033,7 +2061,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CInteger {
         if let Some(v) = &self.rm_type_name {
             __attrs.push(("rm_type_name", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2060,7 +2088,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CInteger {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::CInteger {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::CInteger {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -2105,7 +2133,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CInteger {
                 }
             }
         }
-        Ok(crate::aom2_model::CInteger {
+        Ok(crate::aom2_model::types::CInteger {
             is_deprecated: start.attr("is_deprecated").map(|s| s.to_string()),
             node_id: start.attr("node_id").map(|s| s.to_string()),
             rm_type_name: start.attr("rm_type_name").map(|s| s.to_string()),
@@ -2121,25 +2149,25 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CInteger {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::CObject {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::CObject {
     fn xml_type_name(&self) -> &'static str {
         match self {
-            crate::aom2_model::CObject::ArchetypeSlot(x) => x.xml_type_name(),
-            crate::aom2_model::CObject::CArchetypeRoot(x) => x.xml_type_name(),
-            crate::aom2_model::CObject::CBoolean(x) => x.xml_type_name(),
-            crate::aom2_model::CObject::CComplexObject(x) => x.xml_type_name(),
-            crate::aom2_model::CObject::CComplexObjectProxy(x) => x.xml_type_name(),
-            crate::aom2_model::CObject::CDate(x) => x.xml_type_name(),
-            crate::aom2_model::CObject::CDateTime(x) => x.xml_type_name(),
-            crate::aom2_model::CObject::CDefinedObject(x) => x.xml_type_name(),
-            crate::aom2_model::CObject::CDuration(x) => x.xml_type_name(),
-            crate::aom2_model::CObject::CInteger(x) => x.xml_type_name(),
-            crate::aom2_model::CObject::CPrimitiveObject(x) => x.xml_type_name(),
-            crate::aom2_model::CObject::CReal(x) => x.xml_type_name(),
-            crate::aom2_model::CObject::CString(x) => x.xml_type_name(),
-            crate::aom2_model::CObject::CTemporal(x) => x.xml_type_name(),
-            crate::aom2_model::CObject::CTerminologyCode(x) => x.xml_type_name(),
-            crate::aom2_model::CObject::CTime(x) => x.xml_type_name(),
+            crate::aom2_model::types::CObject::ArchetypeSlot(x) => x.xml_type_name(),
+            crate::aom2_model::types::CObject::CArchetypeRoot(x) => x.xml_type_name(),
+            crate::aom2_model::types::CObject::CBoolean(x) => x.xml_type_name(),
+            crate::aom2_model::types::CObject::CComplexObject(x) => x.xml_type_name(),
+            crate::aom2_model::types::CObject::CComplexObjectProxy(x) => x.xml_type_name(),
+            crate::aom2_model::types::CObject::CDate(x) => x.xml_type_name(),
+            crate::aom2_model::types::CObject::CDateTime(x) => x.xml_type_name(),
+            crate::aom2_model::types::CObject::CDefinedObject(x) => x.xml_type_name(),
+            crate::aom2_model::types::CObject::CDuration(x) => x.xml_type_name(),
+            crate::aom2_model::types::CObject::CInteger(x) => x.xml_type_name(),
+            crate::aom2_model::types::CObject::CPrimitiveObject(x) => x.xml_type_name(),
+            crate::aom2_model::types::CObject::CReal(x) => x.xml_type_name(),
+            crate::aom2_model::types::CObject::CString(x) => x.xml_type_name(),
+            crate::aom2_model::types::CObject::CTemporal(x) => x.xml_type_name(),
+            crate::aom2_model::types::CObject::CTerminologyCode(x) => x.xml_type_name(),
+            crate::aom2_model::types::CObject::CTime(x) => x.xml_type_name(),
         }
     }
     fn write_xml(
@@ -2149,78 +2177,82 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CObject {
         declared: Option<&str>,
     ) -> Result<(), crate::xml::runtime::XmlError> {
         match self {
-            crate::aom2_model::CObject::ArchetypeSlot(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::CObject::CArchetypeRoot(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::CObject::CBoolean(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::CObject::CComplexObject(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::CObject::CComplexObjectProxy(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::CObject::CDate(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::CObject::CDateTime(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::CObject::CDefinedObject(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::CObject::CDuration(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::CObject::CInteger(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::CObject::CPrimitiveObject(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::CObject::CReal(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::CObject::CString(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::CObject::CTemporal(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::CObject::CTerminologyCode(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::CObject::CTime(x) => x.write_xml(w, tag, declared),
+            crate::aom2_model::types::CObject::ArchetypeSlot(x) => x.write_xml(w, tag, declared),
+            crate::aom2_model::types::CObject::CArchetypeRoot(x) => x.write_xml(w, tag, declared),
+            crate::aom2_model::types::CObject::CBoolean(x) => x.write_xml(w, tag, declared),
+            crate::aom2_model::types::CObject::CComplexObject(x) => x.write_xml(w, tag, declared),
+            crate::aom2_model::types::CObject::CComplexObjectProxy(x) => {
+                x.write_xml(w, tag, declared)
+            }
+            crate::aom2_model::types::CObject::CDate(x) => x.write_xml(w, tag, declared),
+            crate::aom2_model::types::CObject::CDateTime(x) => x.write_xml(w, tag, declared),
+            crate::aom2_model::types::CObject::CDefinedObject(x) => x.write_xml(w, tag, declared),
+            crate::aom2_model::types::CObject::CDuration(x) => x.write_xml(w, tag, declared),
+            crate::aom2_model::types::CObject::CInteger(x) => x.write_xml(w, tag, declared),
+            crate::aom2_model::types::CObject::CPrimitiveObject(x) => x.write_xml(w, tag, declared),
+            crate::aom2_model::types::CObject::CReal(x) => x.write_xml(w, tag, declared),
+            crate::aom2_model::types::CObject::CString(x) => x.write_xml(w, tag, declared),
+            crate::aom2_model::types::CObject::CTemporal(x) => x.write_xml(w, tag, declared),
+            crate::aom2_model::types::CObject::CTerminologyCode(x) => x.write_xml(w, tag, declared),
+            crate::aom2_model::types::CObject::CTime(x) => x.write_xml(w, tag, declared),
         }
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::CObject {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::CObject {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         match start.xsi_type() {
-            Some("ARCHETYPE_SLOT") => Ok(crate::aom2_model::CObject::ArchetypeSlot(
+            Some("ARCHETYPE_SLOT") => Ok(crate::aom2_model::types::CObject::ArchetypeSlot(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_ARCHETYPE_ROOT") => Ok(crate::aom2_model::CObject::CArchetypeRoot(
+            Some("C_ARCHETYPE_ROOT") => Ok(crate::aom2_model::types::CObject::CArchetypeRoot(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_BOOLEAN") => Ok(crate::aom2_model::CObject::CBoolean(
+            Some("C_BOOLEAN") => Ok(crate::aom2_model::types::CObject::CBoolean(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_COMPLEX_OBJECT") => Ok(crate::aom2_model::CObject::CComplexObject(
+            Some("C_COMPLEX_OBJECT") => Ok(crate::aom2_model::types::CObject::CComplexObject(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_COMPLEX_OBJECT_PROXY") => Ok(crate::aom2_model::CObject::CComplexObjectProxy(
+            Some("C_COMPLEX_OBJECT_PROXY") => {
+                Ok(crate::aom2_model::types::CObject::CComplexObjectProxy(
+                    crate::xml::runtime::FromXml::from_xml(reader, start)?,
+                ))
+            }
+            Some("C_DATE") => Ok(crate::aom2_model::types::CObject::CDate(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_DATE") => Ok(crate::aom2_model::CObject::CDate(
+            Some("C_DATE_TIME") => Ok(crate::aom2_model::types::CObject::CDateTime(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_DATE_TIME") => Ok(crate::aom2_model::CObject::CDateTime(
+            Some("C_DEFINED_OBJECT") => Ok(crate::aom2_model::types::CObject::CDefinedObject(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_DEFINED_OBJECT") => Ok(crate::aom2_model::CObject::CDefinedObject(
+            Some("C_DURATION") => Ok(crate::aom2_model::types::CObject::CDuration(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_DURATION") => Ok(crate::aom2_model::CObject::CDuration(
+            Some("C_INTEGER") => Ok(crate::aom2_model::types::CObject::CInteger(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_INTEGER") => Ok(crate::aom2_model::CObject::CInteger(
+            Some("C_PRIMITIVE_OBJECT") => Ok(crate::aom2_model::types::CObject::CPrimitiveObject(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_PRIMITIVE_OBJECT") => Ok(crate::aom2_model::CObject::CPrimitiveObject(
+            Some("C_REAL") => Ok(crate::aom2_model::types::CObject::CReal(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_REAL") => Ok(crate::aom2_model::CObject::CReal(
+            Some("C_STRING") => Ok(crate::aom2_model::types::CObject::CString(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_STRING") => Ok(crate::aom2_model::CObject::CString(
+            Some("C_TEMPORAL") => Ok(crate::aom2_model::types::CObject::CTemporal(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_TEMPORAL") => Ok(crate::aom2_model::CObject::CTemporal(
+            Some("C_TERMINOLOGY_CODE") => Ok(crate::aom2_model::types::CObject::CTerminologyCode(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("C_TERMINOLOGY_CODE") => Ok(crate::aom2_model::CObject::CTerminologyCode(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("C_TIME") => Ok(crate::aom2_model::CObject::CTime(
+            Some("C_TIME") => Ok(crate::aom2_model::types::CObject::CTime(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
             None => Err(crate::xml::runtime::XmlError::Parse(
@@ -2233,7 +2265,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CObject {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::CPrimitiveObject {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::CPrimitiveObject {
     fn xml_type_name(&self) -> &'static str {
         "C_PRIMITIVE_OBJECT"
     }
@@ -2258,7 +2290,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CPrimitiveObject {
         if let Some(v) = &self.rm_type_name {
             __attrs.push(("rm_type_name", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2277,7 +2309,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CPrimitiveObject {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::CPrimitiveObject {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::CPrimitiveObject {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -2308,7 +2340,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CPrimitiveObject {
                 }
             }
         }
-        Ok(crate::aom2_model::CPrimitiveObject {
+        Ok(crate::aom2_model::types::CPrimitiveObject {
             is_deprecated: start.attr("is_deprecated").map(|s| s.to_string()),
             node_id: start.attr("node_id").map(|s| s.to_string()),
             rm_type_name: start.attr("rm_type_name").map(|s| s.to_string()),
@@ -2319,7 +2351,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CPrimitiveObject {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::CReal {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::CReal {
     fn xml_type_name(&self) -> &'static str {
         "C_REAL"
     }
@@ -2344,7 +2376,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CReal {
         if let Some(v) = &self.rm_type_name {
             __attrs.push(("rm_type_name", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2371,7 +2403,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CReal {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::CReal {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::CReal {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -2416,7 +2448,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CReal {
                 }
             }
         }
-        Ok(crate::aom2_model::CReal {
+        Ok(crate::aom2_model::types::CReal {
             is_deprecated: start.attr("is_deprecated").map(|s| s.to_string()),
             node_id: start.attr("node_id").map(|s| s.to_string()),
             rm_type_name: start.attr("rm_type_name").map(|s| s.to_string()),
@@ -2432,7 +2464,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CReal {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::CString {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::CString {
     fn xml_type_name(&self) -> &'static str {
         "C_STRING"
     }
@@ -2457,7 +2489,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CString {
         if let Some(v) = &self.rm_type_name {
             __attrs.push(("rm_type_name", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2483,7 +2515,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CString {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::CString {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::CString {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -2528,7 +2560,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CString {
                 }
             }
         }
-        Ok(crate::aom2_model::CString {
+        Ok(crate::aom2_model::types::CString {
             is_deprecated: start.attr("is_deprecated").map(|s| s.to_string()),
             node_id: start.attr("node_id").map(|s| s.to_string()),
             rm_type_name: start.attr("rm_type_name").map(|s| s.to_string()),
@@ -2544,7 +2576,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CString {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::CTemporal {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::CTemporal {
     fn xml_type_name(&self) -> &'static str {
         "C_TEMPORAL"
     }
@@ -2569,7 +2601,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CTemporal {
         if let Some(v) = &self.rm_type_name {
             __attrs.push(("rm_type_name", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2588,7 +2620,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CTemporal {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::CTemporal {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::CTemporal {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -2619,7 +2651,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CTemporal {
                 }
             }
         }
-        Ok(crate::aom2_model::CTemporal {
+        Ok(crate::aom2_model::types::CTemporal {
             is_deprecated: start.attr("is_deprecated").map(|s| s.to_string()),
             node_id: start.attr("node_id").map(|s| s.to_string()),
             rm_type_name: start.attr("rm_type_name").map(|s| s.to_string()),
@@ -2630,7 +2662,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CTemporal {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::CTerminologyCode {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::CTerminologyCode {
     fn xml_type_name(&self) -> &'static str {
         "C_TERMINOLOGY_CODE"
     }
@@ -2655,7 +2687,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CTerminologyCode {
         if let Some(v) = &self.rm_type_name {
             __attrs.push(("rm_type_name", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2681,7 +2713,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CTerminologyCode {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::CTerminologyCode {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::CTerminologyCode {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -2726,7 +2758,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CTerminologyCode {
                 }
             }
         }
-        Ok(crate::aom2_model::CTerminologyCode {
+        Ok(crate::aom2_model::types::CTerminologyCode {
             is_deprecated: start.attr("is_deprecated").map(|s| s.to_string()),
             node_id: start.attr("node_id").map(|s| s.to_string()),
             rm_type_name: start.attr("rm_type_name").map(|s| s.to_string()),
@@ -2742,7 +2774,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CTerminologyCode {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::CTime {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::CTime {
     fn xml_type_name(&self) -> &'static str {
         "C_TIME"
     }
@@ -2767,7 +2799,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CTime {
         if let Some(v) = &self.rm_type_name {
             __attrs.push(("rm_type_name", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2789,7 +2821,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::CTime {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::CTime {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::CTime {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -2825,7 +2857,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CTime {
                 }
             }
         }
-        Ok(crate::aom2_model::CTime {
+        Ok(crate::aom2_model::types::CTime {
             is_deprecated: start.attr("is_deprecated").map(|s| s.to_string()),
             node_id: start.attr("node_id").map(|s| s.to_string()),
             rm_type_name: start.attr("rm_type_name").map(|s| s.to_string()),
@@ -2837,7 +2869,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::CTime {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::Codedefinitionset {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::Codedefinitionset {
     fn xml_type_name(&self) -> &'static str {
         "CodeDefinitionSet"
     }
@@ -2854,7 +2886,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Codedefinitionset {
             }
         }
         __attrs.push(("id", self.id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2867,7 +2899,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Codedefinitionset {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::Codedefinitionset {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::Codedefinitionset {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -2890,7 +2922,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Codedefinitionset {
                 }
             }
         }
-        Ok(crate::aom2_model::Codedefinitionset {
+        Ok(crate::aom2_model::types::Codedefinitionset {
             id: start
                 .attr("id")
                 .ok_or_else(|| crate::xml::runtime::XmlError::Parse("missing attribute id".into()))?
@@ -2900,7 +2932,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Codedefinitionset {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::ExprBinaryOperator {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::ExprBinaryOperator {
     fn xml_type_name(&self) -> &'static str {
         "EXPR_BINARY_OPERATOR"
     }
@@ -2922,7 +2954,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::ExprBinaryOperator {
         if let Some(v) = &self.precedence_overridden {
             __attrs.push(("precedence_overridden", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2938,7 +2970,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::ExprBinaryOperator {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::ExprBinaryOperator {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::ExprBinaryOperator {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -2971,7 +3003,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::ExprBinaryOperator {
                 }
             }
         }
-        Ok(crate::aom2_model::ExprBinaryOperator {
+        Ok(crate::aom2_model::types::ExprBinaryOperator {
             r#type: start.attr("type").map(|s| s.to_string()),
             precedence_overridden: start.attr("precedence_overridden").map(|s| s.to_string()),
             operator: __operator.ok_or_else(|| {
@@ -2987,12 +3019,12 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::ExprBinaryOperator {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::ExprItem {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::ExprItem {
     fn xml_type_name(&self) -> &'static str {
         match self {
-            crate::aom2_model::ExprItem::ExprBinaryOperator(x) => x.xml_type_name(),
-            crate::aom2_model::ExprItem::ExprLeaf(x) => x.xml_type_name(),
-            crate::aom2_model::ExprItem::ExprUnaryOperator(x) => x.xml_type_name(),
+            crate::aom2_model::types::ExprItem::ExprBinaryOperator(x) => x.xml_type_name(),
+            crate::aom2_model::types::ExprItem::ExprLeaf(x) => x.xml_type_name(),
+            crate::aom2_model::types::ExprItem::ExprUnaryOperator(x) => x.xml_type_name(),
         }
     }
     fn write_xml(
@@ -3002,28 +3034,36 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::ExprItem {
         declared: Option<&str>,
     ) -> Result<(), crate::xml::runtime::XmlError> {
         match self {
-            crate::aom2_model::ExprItem::ExprBinaryOperator(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::ExprItem::ExprLeaf(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::ExprItem::ExprUnaryOperator(x) => x.write_xml(w, tag, declared),
+            crate::aom2_model::types::ExprItem::ExprBinaryOperator(x) => {
+                x.write_xml(w, tag, declared)
+            }
+            crate::aom2_model::types::ExprItem::ExprLeaf(x) => x.write_xml(w, tag, declared),
+            crate::aom2_model::types::ExprItem::ExprUnaryOperator(x) => {
+                x.write_xml(w, tag, declared)
+            }
         }
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::ExprItem {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::ExprItem {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         match start.xsi_type() {
-            Some("EXPR_BINARY_OPERATOR") => Ok(crate::aom2_model::ExprItem::ExprBinaryOperator(
+            Some("EXPR_BINARY_OPERATOR") => {
+                Ok(crate::aom2_model::types::ExprItem::ExprBinaryOperator(
+                    crate::xml::runtime::FromXml::from_xml(reader, start)?,
+                ))
+            }
+            Some("EXPR_LEAF") => Ok(crate::aom2_model::types::ExprItem::ExprLeaf(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("EXPR_LEAF") => Ok(crate::aom2_model::ExprItem::ExprLeaf(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("EXPR_UNARY_OPERATOR") => Ok(crate::aom2_model::ExprItem::ExprUnaryOperator(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
+            Some("EXPR_UNARY_OPERATOR") => {
+                Ok(crate::aom2_model::types::ExprItem::ExprUnaryOperator(
+                    crate::xml::runtime::FromXml::from_xml(reader, start)?,
+                ))
+            }
             None => Err(crate::xml::runtime::XmlError::Parse(
                 "ExprItem: missing xsi:type".into(),
             )),
@@ -3034,7 +3074,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::ExprItem {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::ExprLeaf {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::ExprLeaf {
     fn xml_type_name(&self) -> &'static str {
         "EXPR_LEAF"
     }
@@ -3056,7 +3096,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::ExprLeaf {
         if let Some(v) = &self.reference_type {
             __attrs.push(("reference_type", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3067,7 +3107,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::ExprLeaf {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::ExprLeaf {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::ExprLeaf {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -3090,7 +3130,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::ExprLeaf {
                 }
             }
         }
-        Ok(crate::aom2_model::ExprLeaf {
+        Ok(crate::aom2_model::types::ExprLeaf {
             r#type: start.attr("type").map(|s| s.to_string()),
             reference_type: start.attr("reference_type").map(|s| s.to_string()),
             item: __item.ok_or_else(|| {
@@ -3100,11 +3140,11 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::ExprLeaf {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::ExprOperator {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::ExprOperator {
     fn xml_type_name(&self) -> &'static str {
         match self {
-            crate::aom2_model::ExprOperator::ExprBinaryOperator(x) => x.xml_type_name(),
-            crate::aom2_model::ExprOperator::ExprUnaryOperator(x) => x.xml_type_name(),
+            crate::aom2_model::types::ExprOperator::ExprBinaryOperator(x) => x.xml_type_name(),
+            crate::aom2_model::types::ExprOperator::ExprUnaryOperator(x) => x.xml_type_name(),
         }
     }
     fn write_xml(
@@ -3114,26 +3154,32 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::ExprOperator {
         declared: Option<&str>,
     ) -> Result<(), crate::xml::runtime::XmlError> {
         match self {
-            crate::aom2_model::ExprOperator::ExprBinaryOperator(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::ExprOperator::ExprUnaryOperator(x) => x.write_xml(w, tag, declared),
+            crate::aom2_model::types::ExprOperator::ExprBinaryOperator(x) => {
+                x.write_xml(w, tag, declared)
+            }
+            crate::aom2_model::types::ExprOperator::ExprUnaryOperator(x) => {
+                x.write_xml(w, tag, declared)
+            }
         }
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::ExprOperator {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::ExprOperator {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         match start.xsi_type() {
             Some("EXPR_BINARY_OPERATOR") => {
-                Ok(crate::aom2_model::ExprOperator::ExprBinaryOperator(
+                Ok(crate::aom2_model::types::ExprOperator::ExprBinaryOperator(
                     crate::xml::runtime::FromXml::from_xml(reader, start)?,
                 ))
             }
-            Some("EXPR_UNARY_OPERATOR") => Ok(crate::aom2_model::ExprOperator::ExprUnaryOperator(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
+            Some("EXPR_UNARY_OPERATOR") => {
+                Ok(crate::aom2_model::types::ExprOperator::ExprUnaryOperator(
+                    crate::xml::runtime::FromXml::from_xml(reader, start)?,
+                ))
+            }
             None => Err(crate::xml::runtime::XmlError::Parse(
                 "ExprOperator: missing xsi:type".into(),
             )),
@@ -3144,7 +3190,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::ExprOperator {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::ExprUnaryOperator {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::ExprUnaryOperator {
     fn xml_type_name(&self) -> &'static str {
         "EXPR_UNARY_OPERATOR"
     }
@@ -3166,7 +3212,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::ExprUnaryOperator {
         if let Some(v) = &self.precedence_overridden {
             __attrs.push(("precedence_overridden", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3179,7 +3225,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::ExprUnaryOperator {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::ExprUnaryOperator {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::ExprUnaryOperator {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -3206,7 +3252,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::ExprUnaryOperator {
                 }
             }
         }
-        Ok(crate::aom2_model::ExprUnaryOperator {
+        Ok(crate::aom2_model::types::ExprUnaryOperator {
             r#type: start.attr("type").map(|s| s.to_string()),
             precedence_overridden: start.attr("precedence_overridden").map(|s| s.to_string()),
             operator: __operator.ok_or_else(|| {
@@ -3219,7 +3265,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::ExprUnaryOperator {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::Intervalofdate {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::Intervalofdate {
     fn xml_type_name(&self) -> &'static str {
         "IntervalOfDate"
     }
@@ -3247,7 +3293,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Intervalofdate {
         if let Some(v) = &self.upper_unbounded {
             __attrs.push(("upper_unbounded", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3263,7 +3309,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Intervalofdate {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::Intervalofdate {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::Intervalofdate {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -3290,7 +3336,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Intervalofdate {
                 }
             }
         }
-        Ok(crate::aom2_model::Intervalofdate {
+        Ok(crate::aom2_model::types::Intervalofdate {
             lower_included: start.attr("lower_included").map(|s| s.to_string()),
             upper_included: start.attr("upper_included").map(|s| s.to_string()),
             lower_unbounded: start.attr("lower_unbounded").map(|s| s.to_string()),
@@ -3301,7 +3347,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Intervalofdate {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::Intervalofdatetime {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::Intervalofdatetime {
     fn xml_type_name(&self) -> &'static str {
         "IntervalOfDateTime"
     }
@@ -3329,7 +3375,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Intervalofdatetime {
         if let Some(v) = &self.upper_unbounded {
             __attrs.push(("upper_unbounded", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3345,7 +3391,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Intervalofdatetime {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::Intervalofdatetime {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::Intervalofdatetime {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -3372,7 +3418,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Intervalofdatetime {
                 }
             }
         }
-        Ok(crate::aom2_model::Intervalofdatetime {
+        Ok(crate::aom2_model::types::Intervalofdatetime {
             lower_included: start.attr("lower_included").map(|s| s.to_string()),
             upper_included: start.attr("upper_included").map(|s| s.to_string()),
             lower_unbounded: start.attr("lower_unbounded").map(|s| s.to_string()),
@@ -3383,7 +3429,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Intervalofdatetime {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::Intervalofduration {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::Intervalofduration {
     fn xml_type_name(&self) -> &'static str {
         "IntervalOfDuration"
     }
@@ -3411,7 +3457,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Intervalofduration {
         if let Some(v) = &self.upper_unbounded {
             __attrs.push(("upper_unbounded", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3427,7 +3473,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Intervalofduration {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::Intervalofduration {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::Intervalofduration {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -3454,7 +3500,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Intervalofduration {
                 }
             }
         }
-        Ok(crate::aom2_model::Intervalofduration {
+        Ok(crate::aom2_model::types::Intervalofduration {
             lower_included: start.attr("lower_included").map(|s| s.to_string()),
             upper_included: start.attr("upper_included").map(|s| s.to_string()),
             lower_unbounded: start.attr("lower_unbounded").map(|s| s.to_string()),
@@ -3465,7 +3511,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Intervalofduration {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::Intervalofinteger {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::Intervalofinteger {
     fn xml_type_name(&self) -> &'static str {
         "IntervalOfInteger"
     }
@@ -3493,7 +3539,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Intervalofinteger {
         if let Some(v) = &self.upper_unbounded {
             __attrs.push(("upper_unbounded", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3509,7 +3555,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Intervalofinteger {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::Intervalofinteger {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::Intervalofinteger {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -3536,7 +3582,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Intervalofinteger {
                 }
             }
         }
-        Ok(crate::aom2_model::Intervalofinteger {
+        Ok(crate::aom2_model::types::Intervalofinteger {
             lower_included: start.attr("lower_included").map(|s| s.to_string()),
             upper_included: start.attr("upper_included").map(|s| s.to_string()),
             lower_unbounded: start.attr("lower_unbounded").map(|s| s.to_string()),
@@ -3547,7 +3593,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Intervalofinteger {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::Intervalofreal {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::Intervalofreal {
     fn xml_type_name(&self) -> &'static str {
         "IntervalOfReal"
     }
@@ -3575,7 +3621,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Intervalofreal {
         if let Some(v) = &self.upper_unbounded {
             __attrs.push(("upper_unbounded", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3591,7 +3637,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Intervalofreal {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::Intervalofreal {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::Intervalofreal {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -3618,7 +3664,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Intervalofreal {
                 }
             }
         }
-        Ok(crate::aom2_model::Intervalofreal {
+        Ok(crate::aom2_model::types::Intervalofreal {
             lower_included: start.attr("lower_included").map(|s| s.to_string()),
             upper_included: start.attr("upper_included").map(|s| s.to_string()),
             lower_unbounded: start.attr("lower_unbounded").map(|s| s.to_string()),
@@ -3629,7 +3675,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Intervalofreal {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::Intervaloftime {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::Intervaloftime {
     fn xml_type_name(&self) -> &'static str {
         "IntervalOfTime"
     }
@@ -3657,7 +3703,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Intervaloftime {
         if let Some(v) = &self.upper_unbounded {
             __attrs.push(("upper_unbounded", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3673,7 +3719,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Intervaloftime {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::Intervaloftime {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::Intervaloftime {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -3700,7 +3746,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Intervaloftime {
                 }
             }
         }
-        Ok(crate::aom2_model::Intervaloftime {
+        Ok(crate::aom2_model::types::Intervaloftime {
             lower_included: start.attr("lower_included").map(|s| s.to_string()),
             upper_included: start.attr("upper_included").map(|s| s.to_string()),
             lower_unbounded: start.attr("lower_unbounded").map(|s| s.to_string()),
@@ -3711,7 +3757,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Intervaloftime {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::Multiplicityinterval {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::Multiplicityinterval {
     fn xml_type_name(&self) -> &'static str {
         "MultiplicityInterval"
     }
@@ -3739,7 +3785,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Multiplicityinterval {
         if let Some(v) = &self.upper_unbounded {
             __attrs.push(("upper_unbounded", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3755,7 +3801,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Multiplicityinterval {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::Multiplicityinterval {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::Multiplicityinterval {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -3782,7 +3828,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Multiplicityinterval {
                 }
             }
         }
-        Ok(crate::aom2_model::Multiplicityinterval {
+        Ok(crate::aom2_model::types::Multiplicityinterval {
             lower_included: start.attr("lower_included").map(|s| s.to_string()),
             upper_included: start.attr("upper_included").map(|s| s.to_string()),
             lower_unbounded: start.attr("lower_unbounded").map(|s| s.to_string()),
@@ -3793,7 +3839,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Multiplicityinterval {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::OperatorKind {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::OperatorKind {
     fn xml_type_name(&self) -> &'static str {
         "OPERATOR_KIND"
     }
@@ -3810,7 +3856,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::OperatorKind {
             }
         }
         __attrs.push(("value", self.value.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3820,7 +3866,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::OperatorKind {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::OperatorKind {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::OperatorKind {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -3839,7 +3885,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::OperatorKind {
                 }
             }
         }
-        Ok(crate::aom2_model::OperatorKind {
+        Ok(crate::aom2_model::types::OperatorKind {
             value: start
                 .attr("value")
                 .ok_or_else(|| {
@@ -3850,7 +3896,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::OperatorKind {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::ResourceDescription {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::ResourceDescription {
     fn xml_type_name(&self) -> &'static str {
         "RESOURCE_DESCRIPTION"
     }
@@ -3866,7 +3912,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::ResourceDescription {
                 __attrs.push(("xsi:type", "RESOURCE_DESCRIPTION".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3923,7 +3969,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::ResourceDescription {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::ResourceDescription {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::ResourceDescription {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -4013,7 +4059,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::ResourceDescription {
                 }
             }
         }
-        Ok(crate::aom2_model::ResourceDescription {
+        Ok(crate::aom2_model::types::ResourceDescription {
             lifecycle_state: __lifecycle_state.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element lifecycle_state".into())
             })?,
@@ -4046,7 +4092,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::ResourceDescription {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::ResourceDescriptionItem {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::ResourceDescriptionItem {
     fn xml_type_name(&self) -> &'static str {
         "RESOURCE_DESCRIPTION_ITEM"
     }
@@ -4065,7 +4111,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::ResourceDescriptionItem {
         if let Some(v) = &self.id {
             __attrs.push(("id", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -4096,7 +4142,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::ResourceDescriptionItem {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::ResourceDescriptionItem {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::ResourceDescriptionItem {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -4147,7 +4193,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::ResourceDescriptionItem
                 }
             }
         }
-        Ok(crate::aom2_model::ResourceDescriptionItem {
+        Ok(crate::aom2_model::types::ResourceDescriptionItem {
             id: start.attr("id").map(|s| s.to_string()),
             language: __language.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element language".into())
@@ -4170,14 +4216,14 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::ResourceDescriptionItem
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::RuleElement {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::RuleElement {
     fn xml_type_name(&self) -> &'static str {
         match self {
-            crate::aom2_model::RuleElement::Assertion(x) => x.xml_type_name(),
-            crate::aom2_model::RuleElement::ExprBinaryOperator(x) => x.xml_type_name(),
-            crate::aom2_model::RuleElement::ExprLeaf(x) => x.xml_type_name(),
-            crate::aom2_model::RuleElement::ExprUnaryOperator(x) => x.xml_type_name(),
-            crate::aom2_model::RuleElement::RuleStatement(x) => x.xml_type_name(),
+            crate::aom2_model::types::RuleElement::Assertion(x) => x.xml_type_name(),
+            crate::aom2_model::types::RuleElement::ExprBinaryOperator(x) => x.xml_type_name(),
+            crate::aom2_model::types::RuleElement::ExprLeaf(x) => x.xml_type_name(),
+            crate::aom2_model::types::RuleElement::ExprUnaryOperator(x) => x.xml_type_name(),
+            crate::aom2_model::types::RuleElement::RuleStatement(x) => x.xml_type_name(),
         }
     }
     fn write_xml(
@@ -4187,34 +4233,44 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::RuleElement {
         declared: Option<&str>,
     ) -> Result<(), crate::xml::runtime::XmlError> {
         match self {
-            crate::aom2_model::RuleElement::Assertion(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::RuleElement::ExprBinaryOperator(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::RuleElement::ExprLeaf(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::RuleElement::ExprUnaryOperator(x) => x.write_xml(w, tag, declared),
-            crate::aom2_model::RuleElement::RuleStatement(x) => x.write_xml(w, tag, declared),
+            crate::aom2_model::types::RuleElement::Assertion(x) => x.write_xml(w, tag, declared),
+            crate::aom2_model::types::RuleElement::ExprBinaryOperator(x) => {
+                x.write_xml(w, tag, declared)
+            }
+            crate::aom2_model::types::RuleElement::ExprLeaf(x) => x.write_xml(w, tag, declared),
+            crate::aom2_model::types::RuleElement::ExprUnaryOperator(x) => {
+                x.write_xml(w, tag, declared)
+            }
+            crate::aom2_model::types::RuleElement::RuleStatement(x) => {
+                x.write_xml(w, tag, declared)
+            }
         }
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::RuleElement {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::RuleElement {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
         match start.xsi_type() {
-            Some("ASSERTION") => Ok(crate::aom2_model::RuleElement::Assertion(
+            Some("ASSERTION") => Ok(crate::aom2_model::types::RuleElement::Assertion(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("EXPR_BINARY_OPERATOR") => Ok(crate::aom2_model::RuleElement::ExprBinaryOperator(
+            Some("EXPR_BINARY_OPERATOR") => {
+                Ok(crate::aom2_model::types::RuleElement::ExprBinaryOperator(
+                    crate::xml::runtime::FromXml::from_xml(reader, start)?,
+                ))
+            }
+            Some("EXPR_LEAF") => Ok(crate::aom2_model::types::RuleElement::ExprLeaf(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
-            Some("EXPR_LEAF") => Ok(crate::aom2_model::RuleElement::ExprLeaf(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("EXPR_UNARY_OPERATOR") => Ok(crate::aom2_model::RuleElement::ExprUnaryOperator(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("RULE_STATEMENT") => Ok(crate::aom2_model::RuleElement::RuleStatement(
+            Some("EXPR_UNARY_OPERATOR") => {
+                Ok(crate::aom2_model::types::RuleElement::ExprUnaryOperator(
+                    crate::xml::runtime::FromXml::from_xml(reader, start)?,
+                ))
+            }
+            Some("RULE_STATEMENT") => Ok(crate::aom2_model::types::RuleElement::RuleStatement(
                 crate::xml::runtime::FromXml::from_xml(reader, start)?,
             )),
             None => Err(crate::xml::runtime::XmlError::Parse(
@@ -4227,7 +4283,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::RuleElement {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::RuleStatement {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::RuleStatement {
     fn xml_type_name(&self) -> &'static str {
         "RULE_STATEMENT"
     }
@@ -4246,7 +4302,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::RuleStatement {
         if let Some(v) = &self.r#type {
             __attrs.push(("type", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -4256,7 +4312,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::RuleStatement {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::RuleStatement {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::RuleStatement {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -4275,13 +4331,13 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::RuleStatement {
                 }
             }
         }
-        Ok(crate::aom2_model::RuleStatement {
+        Ok(crate::aom2_model::types::RuleStatement {
             r#type: start.attr("type").map(|s| s.to_string()),
         })
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::SiblingOrder {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::SiblingOrder {
     fn xml_type_name(&self) -> &'static str {
         "SIBLING_ORDER"
     }
@@ -4300,7 +4356,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::SiblingOrder {
         if let Some(v) = &self.is_before {
             __attrs.push(("is_before", v.to_string()));
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -4312,7 +4368,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::SiblingOrder {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::SiblingOrder {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::SiblingOrder {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -4336,7 +4392,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::SiblingOrder {
                 }
             }
         }
-        Ok(crate::aom2_model::SiblingOrder {
+        Ok(crate::aom2_model::types::SiblingOrder {
             is_before: start.attr("is_before").map(|s| s.to_string()),
             sibling_node_id: __sibling_node_id.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element sibling_node_id".into())
@@ -4345,7 +4401,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::SiblingOrder {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::TerminologyCode {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::TerminologyCode {
     fn xml_type_name(&self) -> &'static str {
         "TERMINOLOGY_CODE"
     }
@@ -4361,7 +4417,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::TerminologyCode {
                 __attrs.push(("xsi:type", "TERMINOLOGY_CODE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -4374,7 +4430,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::TerminologyCode {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::TerminologyCode {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::TerminologyCode {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -4402,7 +4458,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::TerminologyCode {
                 }
             }
         }
-        Ok(crate::aom2_model::TerminologyCode {
+        Ok(crate::aom2_model::types::TerminologyCode {
             terminology_id: __terminology_id.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element terminology_id".into())
             })?,
@@ -4413,7 +4469,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::TerminologyCode {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::TranslationDetails {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::TranslationDetails {
     fn xml_type_name(&self) -> &'static str {
         "TRANSLATION_DETAILS"
     }
@@ -4430,7 +4486,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::TranslationDetails {
             }
         }
         __attrs.push(("id", self.id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -4455,7 +4511,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::TranslationDetails {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::TranslationDetails {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::TranslationDetails {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -4500,7 +4556,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::TranslationDetails {
                 }
             }
         }
-        Ok(crate::aom2_model::TranslationDetails {
+        Ok(crate::aom2_model::types::TranslationDetails {
             id: start
                 .attr("id")
                 .ok_or_else(|| crate::xml::runtime::XmlError::Parse("missing attribute id".into()))?
@@ -4520,7 +4576,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::TranslationDetails {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::Termbindingset {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::Termbindingset {
     fn xml_type_name(&self) -> &'static str {
         "TermBindingSet"
     }
@@ -4537,7 +4593,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Termbindingset {
             }
         }
         __attrs.push(("id", self.id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -4552,7 +4608,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::Termbindingset {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::Termbindingset {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::Termbindingset {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -4577,7 +4633,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Termbindingset {
                 }
             }
         }
-        Ok(crate::aom2_model::Termbindingset {
+        Ok(crate::aom2_model::types::Termbindingset {
             id: start
                 .attr("id")
                 .ok_or_else(|| crate::xml::runtime::XmlError::Parse("missing attribute id".into()))?
@@ -4591,7 +4647,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::Termbindingset {
     }
 }
 
-impl crate::xml::runtime::ToXml for crate::aom2_model::ValueSet {
+impl crate::xml::runtime::ToXml for crate::aom2_model::types::ValueSet {
     fn xml_type_name(&self) -> &'static str {
         "VALUE_SET"
     }
@@ -4608,7 +4664,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::ValueSet {
             }
         }
         __attrs.push(("id", self.id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -4621,7 +4677,7 @@ impl crate::xml::runtime::ToXml for crate::aom2_model::ValueSet {
     }
 }
 
-impl crate::xml::runtime::FromXml for crate::aom2_model::ValueSet {
+impl crate::xml::runtime::FromXml for crate::aom2_model::types::ValueSet {
     fn from_xml(
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
@@ -4644,7 +4700,7 @@ impl crate::xml::runtime::FromXml for crate::aom2_model::ValueSet {
                 }
             }
         }
-        Ok(crate::aom2_model::ValueSet {
+        Ok(crate::aom2_model::types::ValueSet {
             id: start
                 .attr("id")
                 .ok_or_else(|| crate::xml::runtime::XmlError::Parse("missing attribute id".into()))?

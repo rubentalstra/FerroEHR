@@ -8,7 +8,8 @@
 //! XML round-trip fidelity gate: for every composition in the openEHR
 //! corpus, RM → XML → RM → XML must be stable, proving the generated `ToXml` and
 //! `FromXml` impls are mutually consistent on real data.
-use openehr_its::xml::{from_xml, to_canonical_xml};
+use openehr_its::xml::runtime::from_xml;
+use openehr_its::xml::to_canonical_xml;
 use openehr_rm::prelude::{Composition, FeederAuditDetails};
 use std::path::Path;
 

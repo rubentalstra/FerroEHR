@@ -409,7 +409,7 @@ fn rm_party<Stable, Current>(
 ) -> Result<Current, ApiError>
 where
     Stable: serde::de::DeserializeOwned + serde::Serialize,
-    Current: openehr_its::xml::FromXml + serde::de::DeserializeOwned,
+    Current: openehr_its::xml::runtime::FromXml + serde::de::DeserializeOwned,
 {
     let stable_json = profile == ferroehr::config::profile::SpecProfile::Stable
         && matches!(

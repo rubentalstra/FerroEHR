@@ -34,7 +34,8 @@ use openehr_its::flat::convert::{
     composition_from_structured, composition_to_flat, composition_to_structured,
     flat_to_structured, structured_to_flat,
 };
-use openehr_its::flat::webtemplate::{WebTemplate, build_web_template};
+use openehr_its::flat::webtemplate::builder::build_web_template;
+use openehr_its::flat::webtemplate::model::WebTemplate;
 use openehr_its::opt14;
 use serde_json::Value;
 

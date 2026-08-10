@@ -106,7 +106,7 @@ use serde_json::Value;
 use sqlx::{PgConnection, Row};
 use uuid::Uuid;
 
-use openehr_its::xml::{FromXml, Namespace, ToXml};
+use openehr_its::xml::runtime::{FromXml, Namespace, ToXml};
 use openehr_rm::prelude::{Composition, EhrAccess, EhrStatus, Folder, OriginalVersion};
 use serde::de::DeserializeOwned;
 

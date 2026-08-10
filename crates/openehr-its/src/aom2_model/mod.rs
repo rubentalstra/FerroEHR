@@ -27,22 +27,21 @@
 //! ceiling is stated rather than implied.
 
 mod impls;
-mod types;
-pub use types::*;
+pub mod types;
 
-/// Parse a model-form AOM2 archetype XML document into a [`AuthoredArchetype`].
+/// Parse a model-form AOM2 archetype XML document into a [`types::AuthoredArchetype`].
 ///
 /// # Errors
 /// Propagates canonical-XML parse errors.
-pub fn from_xml(xml: &str) -> Result<AuthoredArchetype, crate::xml::runtime::XmlError> {
+pub fn from_xml(xml: &str) -> Result<types::AuthoredArchetype, crate::xml::runtime::XmlError> {
     crate::xml::runtime::from_xml(xml)
 }
 
-/// Serialize a [`AuthoredArchetype`] back to AOM2 model-form archetype XML (root `<archetype>`,
+/// Serialize a [`types::AuthoredArchetype`] back to AOM2 model-form archetype XML (root `<archetype>`,
 /// `http://schemas.openehr.org/v1`).
 ///
 /// # Errors
 /// Propagates canonical-XML serialization errors.
-pub fn to_xml(value: &AuthoredArchetype) -> Result<String, crate::xml::runtime::XmlError> {
+pub fn to_xml(value: &types::AuthoredArchetype) -> Result<String, crate::xml::runtime::XmlError> {
     crate::xml::runtime::to_xml(value, "archetype", crate::xml::runtime::Namespace::V1)
 }

@@ -31,7 +31,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "ACCESS_GROUP_REF".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -111,7 +111,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "ARCHETYPE_ID".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -175,7 +175,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "AUTHORED_RESOURCE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -276,7 +276,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "CODE_PHRASE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -360,7 +360,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "Cardinality".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -442,7 +442,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "GENERIC_ID".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -514,7 +514,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "HIER_OBJECT_ID".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -577,7 +577,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "INTERNET_ID".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -639,7 +639,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "ISO_OID".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -764,7 +764,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "Iso8601_date".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -828,7 +828,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "Iso8601_date_time".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -892,7 +892,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "Iso8601_duration".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -956,7 +956,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "Iso8601_time".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1020,7 +1020,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "Iso8601_timezone".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1131,7 +1131,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "LOCATABLE_REF".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1219,7 +1219,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "Multiplicity_interval".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1371,7 +1371,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "OBJECT_REF".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1495,7 +1495,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "OBJECT_VERSION_ID".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1560,7 +1560,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "PARTY_REF".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1640,7 +1640,7 @@ impl<T: crate::xml::runtime::ToXml> crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "Point_interval".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1744,7 +1744,7 @@ impl<T: crate::xml::runtime::ToXml> crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "Proper_interval".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1886,7 +1886,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "RESOURCE_ANNOTATIONS".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -1944,7 +1944,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "RESOURCE_DESCRIPTION".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2170,7 +2170,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "RESOURCE_DESCRIPTION_ITEM".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2305,7 +2305,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "TEMPLATE_ID".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2369,7 +2369,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "TERMINOLOGY_ID".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2433,7 +2433,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "TRANSLATION_DETAILS".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2557,7 +2557,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "Terminology_code".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2649,7 +2649,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "Terminology_term".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2821,7 +2821,7 @@ impl crate::xml::runtime::ToXml for openehr_base::v1_3::base_types::identificati
                 __attrs.push(("xsi:type", "UUID".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -2937,7 +2937,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "VERSION_TREE_ID".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3001,7 +3001,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::composition::content::entr
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3237,7 +3237,7 @@ impl crate::xml::runtime::ToXml
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3437,7 +3437,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::demographic::address::Addr
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3560,7 +3560,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "ADDRESSED_MESSAGE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3665,7 +3665,7 @@ impl crate::xml::runtime::ToXml
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -3854,7 +3854,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::demographic::agent::Agent 
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -4062,7 +4062,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::common::archetyped::archet
                 __attrs.push(("xsi:type", "ARCHETYPED".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -4140,7 +4140,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::common::generic::attestati
                 __attrs.push(("xsi:type", "ATTESTATION".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -4292,7 +4292,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "AUDIT_DETAILS".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -4450,7 +4450,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "AUTHORED_RESOURCE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -4543,7 +4543,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::demographic::capability::C
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -4756,7 +4756,7 @@ impl crate::xml::runtime::ToXml
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -4884,7 +4884,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::data_types::text::code_phr
                 __attrs.push(("xsi:type", "CODE_PHRASE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -4966,7 +4966,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "CODE_SET_ACCESS".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -5018,7 +5018,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::composition::composition::
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -5195,7 +5195,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::demographic::contact::Cont
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -5443,7 +5443,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "CONTRIBUTION".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -5825,7 +5825,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::data_types::basic::dv_bool
                 __attrs.push(("xsi:type", "DV_BOOLEAN".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -5883,7 +5883,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::data_types::text::dv_coded
                 __attrs.push(("xsi:type", "DV_CODED_TEXT".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -6007,7 +6007,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::data_types::quantity::dv_c
                 __attrs.push(("xsi:type", "DV_COUNT".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -6135,7 +6135,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "DV_DATE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -6256,7 +6256,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "DV_DATE_TIME".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -6377,7 +6377,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "DV_DURATION".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -6505,7 +6505,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::data_types::uri::dv_ehr_ur
                 __attrs.push(("xsi:type", "DV_EHR_URI".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -6590,7 +6590,7 @@ fn xml_type_name(&self) -> &'static str { "DV_GENERAL_TIME_SPECIFICATION" }
 fn write_xml(&self, w: &mut crate::xml::runtime::XmlWriter, tag: &str, declared: Option<&str>) -> Result<(), crate::xml::runtime::XmlError> {
 let mut __attrs: Vec<(&str, String)> = Vec::new();
 if let Some(d) = declared { if d != "DV_GENERAL_TIME_SPECIFICATION" { __attrs.push(("xsi:type", "DV_GENERAL_TIME_SPECIFICATION".to_string())); } }
-let mut __e = crate::xml::runtime::XmlStart::new(tag);
+let mut __e = quick_xml::events::BytesStart::new(tag);
 for (k, v) in &__attrs { __e.push_attribute((*k, v.as_str())); }
 w.write_start(__e)?;
 self.value.write_xml(w, "value", Some("DV_PARSABLE"))?;
@@ -6635,7 +6635,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "DV_IDENTIFIER".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -6723,7 +6723,7 @@ impl<T: crate::xml::runtime::ToXml> crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "DV_INTERVAL".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -6827,7 +6827,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "DV_MULTIMEDIA".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -7107,7 +7107,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::data_types::quantity::dv_o
                 __attrs.push(("xsi:type", "DV_ORDINAL".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -7217,7 +7217,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::data_types::text::dv_parag
                 __attrs.push(("xsi:type", "DV_PARAGRAPH".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -7285,7 +7285,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "DV_PARSABLE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -7360,7 +7360,7 @@ fn xml_type_name(&self) -> &'static str { "DV_PERIODIC_TIME_SPECIFICATION" }
 fn write_xml(&self, w: &mut crate::xml::runtime::XmlWriter, tag: &str, declared: Option<&str>) -> Result<(), crate::xml::runtime::XmlError> {
 let mut __attrs: Vec<(&str, String)> = Vec::new();
 if let Some(d) = declared { if d != "DV_PERIODIC_TIME_SPECIFICATION" { __attrs.push(("xsi:type", "DV_PERIODIC_TIME_SPECIFICATION".to_string())); } }
-let mut __e = crate::xml::runtime::XmlStart::new(tag);
+let mut __e = quick_xml::events::BytesStart::new(tag);
 for (k, v) in &__attrs { __e.push_attribute((*k, v.as_str())); }
 w.write_start(__e)?;
 self.value.write_xml(w, "value", Some("DV_PARSABLE"))?;
@@ -7405,7 +7405,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "DV_PROPORTION".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -7672,7 +7672,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "DV_QUANTITY".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -7834,7 +7834,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::data_types::quantity::dv_s
                 __attrs.push(("xsi:type", "DV_SCALE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -7941,7 +7941,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::data_types::basic::dv_stat
                 __attrs.push(("xsi:type", "DV_STATE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -8049,7 +8049,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::data_types::text::dv_text:
                 __attrs.push(("xsi:type", "DV_TEXT".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -8211,7 +8211,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "DV_TIME".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -8368,7 +8368,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::data_types::uri::dv_uri::D
                 __attrs.push(("xsi:type", "DV_URI".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -8472,7 +8472,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::ehr::ehr::Ehr {
                 __attrs.push(("xsi:type", "EHR".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -8632,7 +8632,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::ehr::ehr_access::EhrAccess
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -8753,7 +8753,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::ehr::ehr_status::EhrStatus
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -8905,7 +8905,7 @@ impl crate::xml::runtime::ToXml
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -9136,7 +9136,7 @@ impl crate::xml::runtime::ToXml
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -9399,7 +9399,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::composition::event_context
                 __attrs.push(("xsi:type", "EVENT_CONTEXT".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -9525,7 +9525,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::ehr_extract::common::extra
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -9714,7 +9714,7 @@ impl crate::xml::runtime::ToXml
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -9850,7 +9850,7 @@ impl crate::xml::runtime::ToXml
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -10059,7 +10059,7 @@ impl crate::xml::runtime::ToXml
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -10201,7 +10201,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "EXTRACT_ENTITY_MANIFEST".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -10311,7 +10311,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "EXTRACT_ERROR".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -10384,7 +10384,7 @@ impl crate::xml::runtime::ToXml
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -10557,7 +10557,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "EXTRACT_MANIFEST".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -10627,7 +10627,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "EXTRACT_PARTICIPATION".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -10716,7 +10716,7 @@ impl crate::xml::runtime::ToXml
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -10852,7 +10852,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "EXTRACT_SPEC".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -10988,7 +10988,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "EXTRACT_UPDATE_SPEC".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -11096,7 +11096,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "EXTRACT_VERSION_SPEC".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -11195,7 +11195,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "FEEDER_AUDIT".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -11314,7 +11314,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "FEEDER_AUDIT_DETAILS".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -11426,7 +11426,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::common::directory::folder:
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -11577,7 +11577,7 @@ impl crate::xml::runtime::ToXml
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -11800,7 +11800,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::integration::generic_entry
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -11921,7 +11921,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::demographic::group::Group 
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -12132,7 +12132,7 @@ impl<T: crate::xml::runtime::ToXml> crate::xml::runtime::ToXml
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -12296,7 +12296,7 @@ impl<T: crate::xml::runtime::ToXml> crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "IMPORTED_VERSION".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -12389,7 +12389,7 @@ impl crate::xml::runtime::ToXml
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -12635,7 +12635,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "INSTRUCTION_DETAILS".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -12713,7 +12713,7 @@ impl<T: crate::xml::runtime::ToXml> crate::xml::runtime::ToXml
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -12882,7 +12882,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "ISM_TRANSITION".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -13036,7 +13036,7 @@ impl crate::xml::runtime::ToXml
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -13169,7 +13169,7 @@ impl crate::xml::runtime::ToXml
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -13340,7 +13340,7 @@ impl crate::xml::runtime::ToXml
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -13470,7 +13470,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::common::tags::item_tag::It
                 __attrs.push(("xsi:type", "ITEM_TAG".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -13567,7 +13567,7 @@ impl crate::xml::runtime::ToXml
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -13773,7 +13773,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "Iso8601_date".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -13897,7 +13897,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "Iso8601_date_time".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -13999,7 +13999,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "Iso8601_duration".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -14101,7 +14101,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "Iso8601_time".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -14274,7 +14274,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::common::archetyped::link::
                 __attrs.push(("xsi:type", "LINK".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -14805,7 +14805,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "MEASUREMENT_SERVICE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -14856,7 +14856,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::ehr_extract::message::mess
                 __attrs.push(("xsi:type", "MESSAGE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -14980,7 +14980,7 @@ impl crate::xml::runtime::ToXml
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -15182,7 +15182,7 @@ fn xml_type_name(&self) -> &'static str { "OPENEHR_CODE_SET_IDENTIFIERS" }
 fn write_xml(&self, w: &mut crate::xml::runtime::XmlWriter, tag: &str, declared: Option<&str>) -> Result<(), crate::xml::runtime::XmlError> {
 let mut __attrs: Vec<(&str, String)> = Vec::new();
 if let Some(d) = declared { if d != "OPENEHR_CODE_SET_IDENTIFIERS" { __attrs.push(("xsi:type", "OPENEHR_CODE_SET_IDENTIFIERS".to_string())); } }
-let mut __e = crate::xml::runtime::XmlStart::new(tag);
+let mut __e = quick_xml::events::BytesStart::new(tag);
 for (k, v) in &__attrs { __e.push_attribute((*k, v.as_str())); }
 w.write_start(__e)?;
 w.write_end(tag)?;
@@ -15246,7 +15246,7 @@ impl crate::xml::runtime::ToXml
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -15361,7 +15361,7 @@ fn xml_type_name(&self) -> &'static str { "OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS
 fn write_xml(&self, w: &mut crate::xml::runtime::XmlWriter, tag: &str, declared: Option<&str>) -> Result<(), crate::xml::runtime::XmlError> {
 let mut __attrs: Vec<(&str, String)> = Vec::new();
 if let Some(d) = declared { if d != "OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS" { __attrs.push(("xsi:type", "OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS".to_string())); } }
-let mut __e = crate::xml::runtime::XmlStart::new(tag);
+let mut __e = quick_xml::events::BytesStart::new(tag);
 for (k, v) in &__attrs { __e.push_attribute((*k, v.as_str())); }
 w.write_start(__e)?;
 w.write_end(tag)?;
@@ -15423,7 +15423,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::demographic::organisation:
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -15633,7 +15633,7 @@ impl<T: crate::xml::runtime::ToXml> crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "ORIGINAL_VERSION".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -15797,7 +15797,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "PARTICIPATION".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -15945,7 +15945,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "PARTY_IDENTIFIED".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -16077,7 +16077,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::demographic::party_identit
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -16259,7 +16259,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::common::generic::party_rel
                 __attrs.push(("xsi:type", "PARTY_RELATED".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -16365,7 +16365,7 @@ impl crate::xml::runtime::ToXml
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -16514,7 +16514,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::common::generic::party_sel
                 __attrs.push(("xsi:type", "PARTY_SELF".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -17056,7 +17056,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::demographic::person::Perso
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -17267,7 +17267,7 @@ impl<T: crate::xml::runtime::ToXml> crate::xml::runtime::ToXml
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -17438,7 +17438,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "REFERENCE_RANGE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -17510,7 +17510,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "RESOURCE_DESCRIPTION".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -17628,7 +17628,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "RESOURCE_DESCRIPTION_ITEM".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -17753,7 +17753,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "REVISION_HISTORY".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -17821,7 +17821,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "REVISION_HISTORY_ITEM".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -17897,7 +17897,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::demographic::role::Role {
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -18112,7 +18112,7 @@ impl crate::xml::runtime::ToXml
             }
         }
         __attrs.push(("archetype_node_id", self.archetype_node_id.to_string()));
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -18250,7 +18250,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "SYNC_EXTRACT".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -18330,7 +18330,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "SYNC_EXTRACT_REQUEST".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -18396,7 +18396,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "SYNC_EXTRACT_SPEC".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -18495,7 +18495,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "TERMINOLOGY_ACCESS".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -18548,7 +18548,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "TERMINOLOGY_SERVICE".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -18599,7 +18599,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::data_types::text::term_map
                 __attrs.push(("xsi:type", "TERM_MAPPING".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -18679,7 +18679,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "TRANSLATION_DETAILS".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -18837,7 +18837,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "VERSIONED_COMPOSITION".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -18919,7 +18919,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "VERSIONED_EHR_ACCESS".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -19001,7 +19001,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "VERSIONED_EHR_STATUS".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -19083,7 +19083,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "VERSIONED_FOLDER".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -19165,7 +19165,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "VERSIONED_OBJECT".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -19295,7 +19295,7 @@ impl crate::xml::runtime::ToXml for openehr_rm::v1_2::demographic::versioned_par
                 __attrs.push(("xsi:type", "VERSIONED_PARTY".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -19377,7 +19377,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "X_CONTRIBUTION".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -19450,7 +19450,7 @@ fn xml_type_name(&self) -> &'static str { "X_VERSIONED_COMPOSITION" }
 fn write_xml(&self, w: &mut crate::xml::runtime::XmlWriter, tag: &str, declared: Option<&str>) -> Result<(), crate::xml::runtime::XmlError> {
 let mut __attrs: Vec<(&str, String)> = Vec::new();
 if let Some(d) = declared { if d != "X_VERSIONED_COMPOSITION" { __attrs.push(("xsi:type", "X_VERSIONED_COMPOSITION".to_string())); } }
-let mut __e = crate::xml::runtime::XmlStart::new(tag);
+let mut __e = quick_xml::events::BytesStart::new(tag);
 for (k, v) in &__attrs { __e.push_attribute((*k, v.as_str())); }
 w.write_start(__e)?;
 self.uid.write_xml(w, "uid", Some("HIER_OBJECT_ID"))?;
@@ -19519,7 +19519,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "X_VERSIONED_EHR_ACCESS".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -19628,7 +19628,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "X_VERSIONED_EHR_STATUS".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -19737,7 +19737,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "X_VERSIONED_FOLDER".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -19866,7 +19866,7 @@ impl<T: crate::xml::runtime::ToXml> crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "X_VERSIONED_OBJECT".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }
@@ -20025,7 +20025,7 @@ impl crate::xml::runtime::ToXml
                 __attrs.push(("xsi:type", "X_VERSIONED_PARTY".to_string()));
             }
         }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
+        let mut __e = quick_xml::events::BytesStart::new(tag);
         for (k, v) in &__attrs {
             __e.push_attribute((*k, v.as_str()));
         }

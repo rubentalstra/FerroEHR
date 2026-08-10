@@ -31,53 +31,53 @@
     reason = "the inventory fns exist for their exhaustive wildcard-free matches, which are the compile-time drift guard; nothing calls them"
 )]
 mod opt14_inventory {
-    use openehr_its::opt14 as opt;
+    use openehr_its::opt14::types;
 
-    fn c_object_variants(v: &opt::CObject) -> &'static str {
+    fn c_object_variants(v: &types::CObject) -> &'static str {
         match v {
-            opt::CObject::ArchetypeInternalRef(_) => "ARCHETYPE_INTERNAL_REF",
-            opt::CObject::ArchetypeSlot(_) => "ARCHETYPE_SLOT",
-            opt::CObject::ConstraintRef(_) => "CONSTRAINT_REF",
-            opt::CObject::CArchetypeRoot(_) => "C_ARCHETYPE_ROOT",
-            opt::CObject::CCodePhrase(_) => "C_CODE_PHRASE",
-            opt::CObject::CCodeReference(_) => "C_CODE_REFERENCE",
-            opt::CObject::CComplexObject(_) => "C_COMPLEX_OBJECT",
-            opt::CObject::CDefinedObject(_) => "C_DEFINED_OBJECT",
-            opt::CObject::CDvOrdinal(_) => "C_DV_ORDINAL",
-            opt::CObject::CDvQuantity(_) => "C_DV_QUANTITY",
-            opt::CObject::CDvState(_) => "C_DV_STATE",
-            opt::CObject::CPrimitiveObject(_) => "C_PRIMITIVE_OBJECT",
-            opt::CObject::TComplexObject(_) => "T_COMPLEX_OBJECT",
+            types::CObject::ArchetypeInternalRef(_) => "ARCHETYPE_INTERNAL_REF",
+            types::CObject::ArchetypeSlot(_) => "ARCHETYPE_SLOT",
+            types::CObject::ConstraintRef(_) => "CONSTRAINT_REF",
+            types::CObject::CArchetypeRoot(_) => "C_ARCHETYPE_ROOT",
+            types::CObject::CCodePhrase(_) => "C_CODE_PHRASE",
+            types::CObject::CCodeReference(_) => "C_CODE_REFERENCE",
+            types::CObject::CComplexObject(_) => "C_COMPLEX_OBJECT",
+            types::CObject::CDefinedObject(_) => "C_DEFINED_OBJECT",
+            types::CObject::CDvOrdinal(_) => "C_DV_ORDINAL",
+            types::CObject::CDvQuantity(_) => "C_DV_QUANTITY",
+            types::CObject::CDvState(_) => "C_DV_STATE",
+            types::CObject::CPrimitiveObject(_) => "C_PRIMITIVE_OBJECT",
+            types::CObject::TComplexObject(_) => "T_COMPLEX_OBJECT",
         }
     }
 
-    fn c_attribute_variants(v: &opt::CAttribute) -> &'static str {
+    fn c_attribute_variants(v: &types::CAttribute) -> &'static str {
         match v {
-            opt::CAttribute::CMultipleAttribute(_) => "C_MULTIPLE_ATTRIBUTE",
-            opt::CAttribute::CSingleAttribute(_) => "C_SINGLE_ATTRIBUTE",
+            types::CAttribute::CMultipleAttribute(_) => "C_MULTIPLE_ATTRIBUTE",
+            types::CAttribute::CSingleAttribute(_) => "C_SINGLE_ATTRIBUTE",
         }
     }
 
-    fn c_primitive_variants(v: &opt::CPrimitive) -> &'static str {
+    fn c_primitive_variants(v: &types::CPrimitive) -> &'static str {
         match v {
-            opt::CPrimitive::CBoolean(_) => "C_BOOLEAN",
-            opt::CPrimitive::CDate(_) => "C_DATE",
-            opt::CPrimitive::CDateTime(_) => "C_DATE_TIME",
-            opt::CPrimitive::CDuration(_) => "C_DURATION",
-            opt::CPrimitive::CInteger(_) => "C_INTEGER",
-            opt::CPrimitive::CReal(_) => "C_REAL",
-            opt::CPrimitive::CString(_) => "C_STRING",
-            opt::CPrimitive::CTime(_) => "C_TIME",
+            types::CPrimitive::CBoolean(_) => "C_BOOLEAN",
+            types::CPrimitive::CDate(_) => "C_DATE",
+            types::CPrimitive::CDateTime(_) => "C_DATE_TIME",
+            types::CPrimitive::CDuration(_) => "C_DURATION",
+            types::CPrimitive::CInteger(_) => "C_INTEGER",
+            types::CPrimitive::CReal(_) => "C_REAL",
+            types::CPrimitive::CString(_) => "C_STRING",
+            types::CPrimitive::CTime(_) => "C_TIME",
         }
     }
 
-    fn c_domain_type_variants(v: &opt::CDomainType) -> &'static str {
+    fn c_domain_type_variants(v: &types::CDomainType) -> &'static str {
         match v {
-            opt::CDomainType::CCodePhrase(_) => "C_CODE_PHRASE",
-            opt::CDomainType::CCodeReference(_) => "C_CODE_REFERENCE",
-            opt::CDomainType::CDvOrdinal(_) => "C_DV_ORDINAL",
-            opt::CDomainType::CDvQuantity(_) => "C_DV_QUANTITY",
-            opt::CDomainType::CDvState(_) => "C_DV_STATE",
+            types::CDomainType::CCodePhrase(_) => "C_CODE_PHRASE",
+            types::CDomainType::CCodeReference(_) => "C_CODE_REFERENCE",
+            types::CDomainType::CDvOrdinal(_) => "C_DV_ORDINAL",
+            types::CDomainType::CDvQuantity(_) => "C_DV_QUANTITY",
+            types::CDomainType::CDvState(_) => "C_DV_STATE",
         }
     }
 }

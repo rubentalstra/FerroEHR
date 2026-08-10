@@ -52,7 +52,7 @@ use openehr_rm::v1_2::validate::{
     check_mandatory_containers, nonempty_list_violations,
 };
 
-use crate::flat::webtemplate::WebTemplate;
+use crate::flat::webtemplate::model::WebTemplate;
 use crate::wire_validate::validate_rm_invariants_as;
 
 /// A single validation violation, keyed by the RM path of the offending node
@@ -724,7 +724,8 @@ mod tests {
         let opt_xml = std::fs::read_to_string(format!("{dir}/international-patient-summary.opt"))
             .expect("read IPS OPT");
         let opt = crate::opt14::from_xml(&opt_xml).expect("parse IPS OPT");
-        let wt = crate::flat::webtemplate::build_web_template(&opt).expect("build IPS WebTemplate");
+        let wt = crate::flat::webtemplate::builder::build_web_template(&opt)
+            .expect("build IPS WebTemplate");
         let comp: Value = serde_json::from_str(
             &std::fs::read_to_string(format!("{dir}/international-patient-summary.example.json"))
                 .expect("read IPS example"),

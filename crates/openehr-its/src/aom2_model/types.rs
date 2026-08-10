@@ -620,7 +620,7 @@ pub struct ExprLeaf {
     /// The `reference_type` attribute/element of the AOM2 model-form `EXPR_LEAF` XSD type.
     pub reference_type: Option<String>,
     /// The `item` attribute/element of the AOM2 model-form `EXPR_LEAF` XSD type.
-    pub item: crate::xml::XmlAny,
+    pub item: crate::xml::runtime::XmlAny,
 }
 
 /// openEHR AOM2 model-form `EXPR_OPERATOR`.

@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 use moka::future::Cache;
 
-use crate::flat::webtemplate::WebTemplate;
+use crate::flat::webtemplate::model::WebTemplate;
 
 /// A shared, cloneable `WebTemplate` cache.
 #[derive(Debug, Clone)]
@@ -70,11 +70,13 @@ impl Default for WebTemplateCache {
 mod tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
 
-    use crate::flat::webtemplate::WebTemplate;
+    use crate::flat::webtemplate::model::WebTemplate;
 
     fn stub_template(id: &str) -> WebTemplate {
-        let mut tree =
-            crate::flat::webtemplate::WebTemplateNode::new("COMPOSITION".to_owned(), String::new());
+        let mut tree = crate::flat::webtemplate::model::WebTemplateNode::new(
+            "COMPOSITION".to_owned(),
+            String::new(),
+        );
         tree.id = "root".to_owned();
         tree.min = Some(1);
         tree.max = 1;

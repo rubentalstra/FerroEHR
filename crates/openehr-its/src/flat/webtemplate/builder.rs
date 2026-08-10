@@ -47,7 +47,7 @@
 
 use std::collections::HashMap;
 
-use crate::opt14::{
+use crate::opt14::types::{
     ArchetypeTerm, Assertion, CArchetypeRoot, CObject, CPrimitive, Cardinality,
     Constraintbindingset, ExprItem, Intervalofinteger, OperationalTemplate, TermBindingItem,
     Termbindingset,
@@ -324,7 +324,7 @@ pub fn build_web_template(
 
 fn build_node(
     ctx: &Ctx,
-    owner: Option<&crate::opt14::CAttribute>,
+    owner: Option<&crate::opt14::types::CAttribute>,
     co: &CObject,
     parent_path: &str,
     parent_arch_id: &str,
@@ -343,7 +343,7 @@ fn build_node(
 
 fn create_node(
     ctx: &Ctx,
-    owner: Option<&crate::opt14::CAttribute>,
+    owner: Option<&crate::opt14::types::CAttribute>,
     co: &CObject,
     parent_path: &str,
     arch_id: &str,
@@ -558,7 +558,7 @@ fn is_party(rm_type: &str) -> bool {
 fn cardinalities(co: &CObject, node_path: &str) -> Vec<WebTemplateCardinality> {
     let mut out = Vec::new();
     for attr in inputs::attributes(co) {
-        if let crate::opt14::CAttribute::CMultipleAttribute(m) = attr
+        if let crate::opt14::types::CAttribute::CMultipleAttribute(m) = attr
             && requires_cardinality(&m.cardinality, m.children.len())
         {
             let (min, max) = occurrences(&m.cardinality.interval);
@@ -583,7 +583,7 @@ fn cardinalities(co: &CObject, node_path: &str) -> Vec<WebTemplateCardinality> {
 fn all_cardinalities(co: &CObject, node_path: &str) -> Vec<WebTemplateCardinality> {
     let mut out = Vec::new();
     for attr in inputs::attributes(co) {
-        if let crate::opt14::CAttribute::CMultipleAttribute(m) = attr {
+        if let crate::opt14::types::CAttribute::CMultipleAttribute(m) = attr {
             let (min, max) = occurrences(&m.cardinality.interval);
             if min.unwrap_or(0) >= 1 || max != -1 {
                 out.push(WebTemplateCardinality {
@@ -781,7 +781,7 @@ fn capture_size_range(co: &CObject, node: &mut WebTemplateNode) {
 /// real template's optional-in-intent identifier field is not over-rejected.
 fn capture_leaf_existence(co: &CObject, node: &mut WebTemplateNode) {
     for attr in inputs::attributes(co) {
-        let crate::opt14::CAttribute::CSingleAttribute(s) = attr else {
+        let crate::opt14::types::CAttribute::CSingleAttribute(s) = attr else {
             continue;
         };
         if s.rm_attribute_name == "name" {
@@ -840,7 +840,7 @@ fn existence_constraints(co: &CObject, node_path: &str) -> Vec<WebTemplateExiste
         // attribute's presence regardless of member cardinality (AOM 1.4
         // c_attribute `Existence_set`; cardinality then governs membership of
         // the present container — the two constraints are orthogonal).
-        if let crate::opt14::CAttribute::CMultipleAttribute(m) = attr {
+        if let crate::opt14::types::CAttribute::CMultipleAttribute(m) = attr {
             let (min, max) = occurrences(&m.existence);
             if min.unwrap_or(0) >= 1 {
                 out.push(WebTemplateExistence {
@@ -851,7 +851,7 @@ fn existence_constraints(co: &CObject, node_path: &str) -> Vec<WebTemplateExiste
             }
             continue;
         }
-        let crate::opt14::CAttribute::CSingleAttribute(s) = attr else {
+        let crate::opt14::types::CAttribute::CSingleAttribute(s) = attr else {
             continue;
         };
         let (min, max) = occurrences(&s.existence);
@@ -995,7 +995,7 @@ fn structural_stubs(ctx: &Ctx, co: &CObject, arch_id: &str) -> Vec<WebTemplateSt
 /// Build the validation-only slot record from an OPT `ARCHETYPE_SLOT`: its
 /// constrained RM type, occurrences bounds, and the archetype-id regexes lifted
 /// from the `includes`/`excludes` assertions (AOM 1.4 `ARCHETYPE_SLOT`).
-fn archetype_slot(s: &crate::opt14::ArchetypeSlot) -> WebTemplateArchetypeSlot {
+fn archetype_slot(s: &crate::opt14::types::ArchetypeSlot) -> WebTemplateArchetypeSlot {
     let (min, max) = occurrences(&s.occurrences);
     WebTemplateArchetypeSlot {
         rm_type: s.rm_type_name.clone(),
@@ -1087,7 +1087,7 @@ fn is_archetype_id_reference(operand: &str) -> bool {
 /// `C_PRIMITIVE_OBJECT.item` is the `C_PRIMITIVE` "actually defining the
 /// constraint" (`…aom14.c_primitive_object.adoc` §C_PRIMITIVE_OBJECT Class), so
 /// both the direct and the wrapped spelling resolve here.
-fn c_string_constraint(item: &crate::xml::XmlAny) -> Option<&crate::xml::XmlAny> {
+fn c_string_constraint(item: &crate::xml::runtime::XmlAny) -> Option<&crate::xml::runtime::XmlAny> {
     match item.xsi_type()? {
         "C_STRING" => Some(item),
         "C_PRIMITIVE_OBJECT" => item
@@ -1120,7 +1120,7 @@ fn requires_cardinality(card: &Cardinality, children_count: usize) -> bool {
 
 fn collect_languages(opt: &OperationalTemplate, default_language: &str) -> Vec<String> {
     let mut langs = vec![default_language.to_owned()];
-    let mut push = |flat: &crate::opt14::FlatArchetypeOntology| {
+    let mut push = |flat: &crate::opt14::types::FlatArchetypeOntology| {
         for set in &flat.term_definitions {
             if !langs.contains(&set.language) {
                 langs.push(set.language.clone());
@@ -1139,7 +1139,7 @@ fn collect_languages(opt: &OperationalTemplate, default_language: &str) -> Vec<S
 fn collect_ontology(opt: &OperationalTemplate, default_language: &str) -> Ontology {
     let mut ontology: Ontology = HashMap::new();
 
-    let mut register_flat = |flat: &crate::opt14::FlatArchetypeOntology| {
+    let mut register_flat = |flat: &crate::opt14::types::FlatArchetypeOntology| {
         let arch = ontology.entry(flat.archetype_id.clone()).or_default();
         for set in &flat.term_definitions {
             let lang = arch.entry(set.language.clone()).or_default();
@@ -1329,10 +1329,10 @@ fn object_occurrences(co: &CObject) -> &Intervalofinteger {
 
 /// The `C_ATTRIBUTE.existence` interval of `attr` (AOM 1.4
 /// `master04-constraint_model_package.adoc` §existence).
-fn attribute_existence(attr: &crate::opt14::CAttribute) -> &Intervalofinteger {
+fn attribute_existence(attr: &crate::opt14::types::CAttribute) -> &Intervalofinteger {
     match attr {
-        crate::opt14::CAttribute::CSingleAttribute(s) => &s.existence,
-        crate::opt14::CAttribute::CMultipleAttribute(m) => &m.existence,
+        crate::opt14::types::CAttribute::CSingleAttribute(s) => &s.existence,
+        crate::opt14::types::CAttribute::CMultipleAttribute(m) => &m.existence,
     }
 }
 
@@ -1357,9 +1357,9 @@ fn attribute_existence(attr: &crate::opt14::CAttribute) -> &Intervalofinteger {
 /// [`existence_constraints`].
 fn meet_single_existence(
     occurrences_min: Option<i32>,
-    owner: Option<&crate::opt14::CAttribute>,
+    owner: Option<&crate::opt14::types::CAttribute>,
 ) -> Option<i32> {
-    let Some(crate::opt14::CAttribute::CSingleAttribute(s)) = owner else {
+    let Some(crate::opt14::types::CAttribute::CSingleAttribute(s)) = owner else {
         return occurrences_min;
     };
     let existence_min = occurrences(&s.existence).0.unwrap_or(0);

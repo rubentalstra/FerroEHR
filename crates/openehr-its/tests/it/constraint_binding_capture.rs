@@ -15,7 +15,7 @@
 //! structured) value set from that terminology". The query "is defined within a
 //! 'terminology query server'", so this crate cannot resolve it — it captures
 //! the binding
-//! ([`WebTemplateConstraintBinding`](openehr_its::flat::webtemplate::WebTemplateConstraintBinding))
+//! ([`WebTemplateConstraintBinding`](openehr_its::flat::webtemplate::model::WebTemplateConstraintBinding))
 //! and surfaces the questions
 //! ([`collect_constraint_binding_checks`](openehr_its::flat::validation::collect_constraint_binding_checks))
 //! for a caller that owns one.
@@ -30,7 +30,8 @@
 use std::path::PathBuf;
 
 use openehr_its::flat::validation::collect_constraint_binding_checks;
-use openehr_its::flat::webtemplate::{WebTemplate, WebTemplateNode, build_web_template};
+use openehr_its::flat::webtemplate::builder::build_web_template;
+use openehr_its::flat::webtemplate::model::{WebTemplate, WebTemplateNode};
 use openehr_its::opt14;
 use serde_json::json;
 

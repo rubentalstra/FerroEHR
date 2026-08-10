@@ -338,7 +338,7 @@ pub(crate) fn emit_to_xml(
                     unmatched.push((spec.clone(), aname.clone()));
                 }
             }
-            b.push_str("let mut __e = crate::xml::runtime::XmlStart::new(tag);\n");
+            b.push_str("let mut __e = quick_xml::events::BytesStart::new(tag);\n");
             b.push_str("for (k, v) in &__attrs { __e.push_attribute((*k, v.as_str())); }\n");
             b.push_str("w.write_start(__e)?;\n");
             for ename in &elems {

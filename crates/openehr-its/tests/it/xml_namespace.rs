@@ -28,7 +28,8 @@
 //! `xml_xsd_validity`; the assertions below deliberately
 //! stay scoped to the serializer, which is all they ever proved.
 
-use openehr_its::xml::{Namespace, from_canonical_xml, to_canonical_xml, to_canonical_xml_ns};
+use openehr_its::xml::runtime::Namespace;
+use openehr_its::xml::{from_canonical_xml, to_canonical_xml, to_canonical_xml_ns};
 use openehr_rm::prelude::Composition;
 
 const V1_NS: &str = "xmlns=\"http://schemas.openehr.org/v1\"";

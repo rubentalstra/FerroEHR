@@ -173,9 +173,9 @@ const EXAMPLE_TEMPLATES: &[&str] = &[
 ];
 
 /// The (cached) `WebTemplate` built from an OPT file, as the service builds it.
-fn web_template_of(rel: &str) -> openehr_its::flat::webtemplate::WebTemplate {
+fn web_template_of(rel: &str) -> openehr_its::flat::webtemplate::model::WebTemplate {
     let opt = openehr_its::opt14::from_xml(&corpus_opt(rel)).expect("parse OPT");
-    openehr_its::flat::webtemplate::build_web_template(&opt).expect("build web template")
+    openehr_its::flat::webtemplate::builder::build_web_template(&opt).expect("build web template")
 }
 
 /// The generated `required` example is committable (passes the validator)

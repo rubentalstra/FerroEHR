@@ -76,13 +76,17 @@ use std::fmt::Write as _;
 /// `aom2_model`), and every generated impl and defaulted literal must name the
 /// module it is being emitted INTO. A hardcoded path here silently emits `aom2`
 /// impls that reference `crate::opt14` types.
-pub(crate) const OPT_PRELUDE: &str = "crate::opt14";
+///
+/// Each path ends at the defining `types` module rather than at the parent: the
+/// parent re-exported these names with a glob until the zero-re-exports rule
+/// removed it, and a generated impl must name where a type is DEFINED.
+pub(crate) const OPT_PRELUDE: &str = "crate::opt14::types";
 
 /// The Rust module path the AOM2 persistent-form model's generated types live at.
-pub(crate) const AOM2_PRELUDE: &str = "crate::aom2";
+pub(crate) const AOM2_PRELUDE: &str = "crate::aom2::types";
 
 /// The Rust module path the AOM2 model-form model's generated types live at.
-pub(crate) const AOM2_MODEL_PRELUDE: &str = "crate::aom2_model";
+pub(crate) const AOM2_MODEL_PRELUDE: &str = "crate::aom2_model::types";
 
 /// The `opt14` emission target (OPT 1.4 operational templates).
 pub(crate) static OPT_TARGET: ModelTarget = ModelTarget {
@@ -142,7 +146,7 @@ const FORCE_GENERATE: &[&str] = &[
 const STRING_DICT_ITEM: &str = "StringDictionaryItem";
 
 /// OPT-envelope sections carried as the verbatim XML subtree
-/// (`crate::xml::XmlAny`) rather than a generated struct.
+/// (`crate::xml::runtime::XmlAny`) rather than a generated struct.
 ///
 /// `T_VIEW` (the `<view>` presentation block) holds an **anonymous inline
 /// complexType** (`T_VIEW.constraints` → nested `items` with an `id` attribute
@@ -201,7 +205,7 @@ enum Resolved {
     /// A Rust primitive (`String`/`bool`/`i32`/`i64`/`f64`).
     Primitive(&'static str),
     /// `xs:anyType`/`xs:anySimpleType`/anonymous-inline → the verbatim XML
-    /// subtree carrier `crate::xml::XmlAny` (attributes, text and children in
+    /// subtree carrier `crate::xml::runtime::XmlAny` (attributes, text and children in
     /// document order, re-emitted as read).
     ///
     /// NOTE: `AM aom14 §EXPR_LEAF Class` types `item: Any`, so the payload
@@ -374,7 +378,7 @@ impl<'a> OptModel<'a> {
     fn base_decl(res: &Resolved, raw_spec: &str) -> (String, String) {
         match res {
             Resolved::Primitive(p) => ((*p).to_string(), String::new()),
-            Resolved::Any => ("crate::xml::XmlAny".to_string(), String::new()),
+            Resolved::Any => ("crate::xml::runtime::XmlAny".to_string(), String::new()),
             Resolved::Hash => (
                 "indexmap::IndexMap<String, String>".to_string(),
                 String::new(),
@@ -781,27 +785,30 @@ pub(crate) fn emit_module(spec: &ModuleSpec) -> String {
             let _ = writeln!(b, "//! {line}");
         }
     }
-    let _ = writeln!(b, "\nmod impls;\nmod types;\npub use types::*;");
+    // `pub mod types`, never a star re-export: the zero-re-exports rule means an
+    // import names its defining module, and a glob would also hide which of the
+    // three generated modules a name came from at the use site.
+    let _ = writeln!(b, "\nmod impls;\npub mod types;");
     for e in spec.entry_points {
         let _ = writeln!(
             b,
-            "\n/// Parse {} {} XML document into {} [`{}`].\n\
+            "\n/// Parse {} {} XML document into {} [`types::{}`].\n\
              ///\n\
              /// # Errors\n\
              /// Propagates canonical-XML parse errors.\n\
-             pub fn from_xml{}(xml: &str) -> Result<{}, crate::xml::runtime::XmlError> {{\n\
+             pub fn from_xml{}(xml: &str) -> Result<types::{}, crate::xml::runtime::XmlError> {{\n\
              crate::xml::runtime::from_xml(xml)\n\
              }}",
             e.article, e.what, e.article, e.root_rust, e.suffix, e.root_rust
         );
         let _ = writeln!(
             b,
-            "\n/// Serialize {} [`{}`] back to {} (root `<{}>`,\n\
+            "\n/// Serialize {} [`types::{}`] back to {} (root `<{}>`,\n\
              /// `http://schemas.openehr.org/v1`).\n\
              ///\n\
              /// # Errors\n\
              /// Propagates canonical-XML serialization errors.\n\
-             pub fn to_xml{}(value: &{}) -> Result<String, crate::xml::runtime::XmlError> {{\n\
+             pub fn to_xml{}(value: &types::{}) -> Result<String, crate::xml::runtime::XmlError> {{\n\
              crate::xml::runtime::to_xml(value, \"{}\", crate::xml::runtime::Namespace::V1)\n\
              }}",
             e.article, e.root_rust, e.wire, e.root_element, e.suffix, e.root_rust, e.root_element

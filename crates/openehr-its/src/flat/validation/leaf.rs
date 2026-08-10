@@ -21,7 +21,7 @@ use openehr_base::v1_3::base_types::definitions::definitions_impl::LOCAL_TERMINO
 use serde_json::Value;
 
 use super::{ValidationKind, Validator};
-use crate::flat::webtemplate::{
+use crate::flat::webtemplate::model::{
     WebTemplateCodedValue, WebTemplateInput, WebTemplateInputType, WebTemplateNode,
     WebTemplateRange,
 };

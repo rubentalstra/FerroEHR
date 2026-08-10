@@ -29,7 +29,7 @@
 //! Surfacing/querying the full `AUTHORED_RESOURCE` meta-data is not required by
 //! the provisioning surface.
 
-use openehr_its::opt14::OperationalTemplate;
+use openehr_its::opt14::types::OperationalTemplate;
 
 use crate::service::error::ServiceError;
 

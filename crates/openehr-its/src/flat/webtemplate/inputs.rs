@@ -31,7 +31,7 @@
               (#1694)"
 )]
 
-use crate::opt14::{CAttribute, CObject, CPrimitive, Intervalofinteger, Intervalofreal};
+use crate::opt14::types::{CAttribute, CObject, CPrimitive, Intervalofinteger, Intervalofreal};
 use indexmap::IndexMap;
 
 use super::model::{
@@ -694,9 +694,9 @@ macro_rules! iv_bounds {
     };
 }
 
-iv_bounds!(iv_bounds_date, crate::opt14::Intervalofdate);
-iv_bounds!(iv_bounds_datetime, crate::opt14::Intervalofdatetime);
-iv_bounds!(iv_bounds_time, crate::opt14::Intervaloftime);
+iv_bounds!(iv_bounds_date, crate::opt14::types::Intervalofdate);
+iv_bounds!(iv_bounds_datetime, crate::opt14::types::Intervalofdatetime);
+iv_bounds!(iv_bounds_time, crate::opt14::types::Intervaloftime);
 
 #[cfg(test)]
 mod tests {

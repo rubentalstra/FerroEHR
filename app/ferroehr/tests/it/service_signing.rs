@@ -554,7 +554,7 @@ async fn canonical_xml_carries_the_signature() {
         &ov,
         "version",
         "VERSION",
-        openehr_its::xml::Namespace::V1,
+        openehr_its::xml::runtime::Namespace::V1,
     )
     .expect("to_canonical_xml_declared");
     assert!(

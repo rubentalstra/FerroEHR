@@ -1,5 +1,5 @@
 //! The `v2_4` (ADL2 / OPT2) → Web Template front end
-//! ([`openehr_its::flat::webtemplate::build_web_template_v2_4`]).
+//! ([`openehr_its::flat::webtemplate::builder_v2_4::build_web_template_v2_4`]).
 //!
 //! Every case compiles a **real** ADL2 corpus source to its operational
 //! template (`openehr_adl::opt::create_opt`) and drives it through the same
@@ -34,9 +34,8 @@ use openehr_am::v2_4::aom2::constraint_model::c_complex_object::CComplexObject;
 use openehr_am::v2_4::aom2::constraint_model::c_object::CObject;
 use openehr_its::flat::example::{DetailLevel, ExampleType, example_composition};
 use openehr_its::flat::validation::validate_archetype_conformance;
-use openehr_its::flat::webtemplate::{
-    WebTemplate, WebTemplateCardinality, WebTemplateNode, build_web_template_v2_4,
-};
+use openehr_its::flat::webtemplate::builder_v2_4::build_web_template_v2_4;
+use openehr_its::flat::webtemplate::model::{WebTemplate, WebTemplateCardinality, WebTemplateNode};
 use openehr_its::rm_instance::{ValidationKind, validate_rm_and_terminology};
 
 const OBS_UPGRADE: &str =

@@ -21,11 +21,11 @@
 use std::collections::HashSet;
 
 use openehr_base::prelude::ArchetypeId;
-use openehr_its::opt14::{
+use openehr_its::opt14::types::{
     ArchetypeInternalRef, ArchetypeSlot, Assertion, CObject, ConstraintRef, ExprItem,
     Intervalofinteger,
 };
-use openehr_its::xml::XmlAny;
+use openehr_its::xml::runtime::XmlAny;
 
 use super::interval::{iv_lower, iv_upper};
 use super::{Ctx, NodeView, RuleViolation};

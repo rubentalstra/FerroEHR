@@ -2,7 +2,7 @@
 //!
 //! This module owns the platform crate's template surface: OPT 1.4 XML
 //! ingestion, the `template_store` repository access, and the cached derived
-//! [`WebTemplate`](openehr_its::flat::webtemplate::WebTemplate) runtime form. It is decomposed
+//! [`WebTemplate`](openehr_its::flat::webtemplate::model::WebTemplate) runtime form. It is decomposed
 //! the way the spec itself layers the material — **resource identity →
 //! operational form → derived runtime artefact**:
 //!
