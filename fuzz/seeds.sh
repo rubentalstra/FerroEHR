@@ -140,9 +140,32 @@ seed_opt14_template() {
   link_from opt14_template "$corpus/templates" 64k 250 '*.opt'
 }
 
+# Identifiers have no vendored corpus to link: they are short strings, not
+# documents. So this target's seeds are WRITTEN — a handful of literal forms
+# from the BASE grammar, which is a different thing from downloading a corpus
+# and does not touch the provenance rules for vendored material.
+#
+# The point of a seed here is to hand libFuzzer the SHAPE (two separator kinds,
+# a dotted third part) so its mutations land inside the grammar instead of
+# spending the budget discovering that `::` matters.
+seed_identifiers() {
+  local dir="$seeds_root/identifiers"
+  mkdir -p "$dir"
+  # A plain trunk version, a branch, a non-UUID object id, an archetype id, a
+  # bare version tree id, and the two degenerate separator cases.
+  printf '%s' '8849182c-82ad-4088-a07f-48ead4180515::ferroehr.example.org::1' > "$dir/trunk"
+  printf '%s' '8849182c-82ad-4088-a07f-48ead4180515::ferroehr.example.org::1.2.3' > "$dir/branch"
+  printf '%s' '1.2.840.113554.1.2.2::ferroehr.example.org::1' > "$dir/oid-object-id"
+  printf '%s' 'openEHR-EHR-COMPOSITION.encounter.v1' > "$dir/archetype-id"
+  printf '%s' '1.1.1' > "$dir/version-tree-id"
+  printf '%s' '::::' > "$dir/only-separators"
+  printf '%s' 'a::b::' > "$dir/empty-third-part"
+  echo "  identifiers: 7 written"
+}
+
 targets=("$@")
 if [[ ${#targets[@]} -eq 0 ]]; then
-  targets=(canonical_json canonical_xml aql_query simplified_formats adl2_source opt14_template)
+  targets=(canonical_json canonical_xml aql_query simplified_formats adl2_source opt14_template identifiers)
 fi
 
 for target in "${targets[@]}"; do
