@@ -51,6 +51,8 @@ PROBE_OUT="${PROBE_OUT:-docs/conformance/deployment/compose.json}"
 . scripts/deploy-probes/oidc.sh
 # shellcheck source=scripts/deploy-probes/signing.sh
 . scripts/deploy-probes/signing.sh
+# shellcheck source=scripts/deploy-probes/observability.sh
+. scripts/deploy-probes/observability.sh
 
 cleanup() {
   if [ "$KEEP_UP" -eq 0 ]; then
@@ -90,14 +92,13 @@ probes_multimedia_off
 probes_multimedia_broken
 probes_health_broken
 probes_oidc
+probes_observability
 
 # ── The honest half ───────────────────────────────────────────────────────────
 # Everything #2178 asks for that this run does NOT do. Each entry is a probe
 # somebody still has to write; none of them is silently absent.
 uncovered "kubernetes platform" \
   "this harness drives compose only; the chart is exercised by the k8s-test skill by hand"
-uncovered "observability: traces reaching a collector, metrics on a scrape (#2173, #2175)" \
-  "needs the observability overlay and a collector to observe at the far end"
 uncovered "signing in PGP mode (#2163)" \
   "digest mode and tamper detection are probed; the PGP path needs key material mounted as the docs instruct"
 uncovered "admin console journeys (#2164)" \
