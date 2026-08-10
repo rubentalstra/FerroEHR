@@ -108,11 +108,17 @@ jobs:
             out="$(cargo publish -p "$crate" --locked 2>&1)" || true
             printf '%s\n' "$out"
             echo "::endgroup::"
-            case "$out" in
+            # Match against ANSI-STRIPPED text. This job sets
+            # CARGO_TERM_COLOR: always, and cargo colours the status word
+            # alone — the bytes are `Uploaded<RESET> openehr-adl`, so a
+            # literal "Uploaded openehr-adl" never matches and a perfectly
+            # successful publish is reported as a failure.
+            plain="$(printf '%s' "$out" | sed -E 's/\x1b\[[0-9;]*m//g')"
+            case "$plain" in
               *"already exists on crates.io index"*|*"already uploaded"*)
                 echo "$crate: already published at this version — nothing to do" ;;
               *)
-                if ! printf '%s' "$out" | grep -q "Uploaded $crate"; then
+                if ! printf '%s' "$plain" | grep -q "Uploaded $crate"; then
                   failed="$failed $crate"
                 fi ;;
             esac
@@ -125,7 +131,13 @@ jobs:
       # requirements unresolvable for every consumer. Read the registry rather
       # than trusting the exit code above.
       - name: Verify all eight crates resolve at the same version
-        if: inputs.publish
+        # `always()`, because this step is the GROUND TRUTH and a failed publish
+        # step is exactly when it is most needed. Without it GitHub skips the
+        # verification on failure, so a run that actually published everything
+        # but misread its own output ends red with nothing to contradict it —
+        # and a run that genuinely stranded a crate ends red with no record of
+        # WHICH one.
+        if: always() && inputs.publish
         run: |
           set -euo pipefail
           want="$(grep -m1 '^version = ' crates/openehr-base/Cargo.toml | cut -d'"' -f2)"
