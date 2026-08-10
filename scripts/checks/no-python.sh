@@ -8,20 +8,18 @@
 # whole script. That happened while writing scripts/render/zenodo-json.sh, and
 # it is the concrete reason this rule is machine-enforced rather than advisory.
 #
-# Two exemptions remain, both recorded and both tracked by #2220: the Helm
-# selector-immutability and restricted-profile gates parse multi-document YAML,
-# which bash has no native answer for. They are security gates, mutation-proven,
-# and a conversion that silently checks less would be worse than the violation —
-# so they are being converted deliberately rather than quickly. Every OTHER
-# occurrence fails this check.
+# There are no exemptions. The last two — the Helm selector-immutability and
+# restricted-profile gates — parsed multi-document YAML and were converted to
+# yq + jq under #2220, every assertion re-proven against the same mutations it
+# caught before.
 #
 # Usage: scripts/checks/no-python.sh
 set -euo pipefail
 cd "$(dirname "$0")/../.." || exit 1
 
-# The exempt files, by path. Adding to this list requires the owner; removing
-# from it is the goal.
-EXEMPT='^deploy/helm/validate\.sh$'
+# No file is exempt. If one ever has to be, it goes here WITH its tracking
+# issue — never as a quiet omission from ROOTS below.
+EXEMPT='^$'
 
 # Where shell and CI live. Deliberately not the whole tree: a Python file
 # inside a vendored corpus is upstream material, not ours to rewrite.

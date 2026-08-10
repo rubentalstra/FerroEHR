@@ -249,12 +249,10 @@ Enforcement (tier 4): `scripts/checks/no-python.sh`, per-PR via the
 and `docker/`; prose *about* not using Python is allowed, since several
 scripts carry exactly that comment. Mutation-proven in both directions.
 
-**Two exemptions remain**, both in `deploy/helm/validate.sh` and both tracked
-by issue #2220: the selector-immutability and restricted-profile gates parse
-multi-document YAML, which bash has no native answer for. They are security
-gates and they are mutation-proven, so they are being converted deliberately —
-a replacement that silently checks fewer containers would be worse than the
-violation it fixes.
+**There are no exemptions.** The last two were the Helm selector-immutability
+and restricted-profile gates, which parsed multi-document YAML; they are now
+`yq -o=json | jq` gate programs under `deploy/helm/gates/`, with every
+assertion re-proven against the same mutations the Python caught.
 
 ## What not to do
 
