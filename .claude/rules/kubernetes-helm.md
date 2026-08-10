@@ -188,8 +188,8 @@ evidence if it ran in an enforcing namespace — say which.
 
 | Property | Check |
 |---|---|
-| Restricted profile, per container | `validate.sh` `assert_security` (YAML-parsing, mutation-proven) |
-| Selector immutability | `validate.sh` `assert_selector_stable` |
+| Restricted profile, per container | `validate.sh` `assert_security` → `deploy/helm/gates/restricted.jq` (structural, mutation-proven) |
+| Selector immutability + selector disjointness | `validate.sh` `assert_selector_stable` → `deploy/helm/gates/selector.jq` |
 | Secrets never env-borne as values | `validate.sh` `secret_leak_gate` |
 | `values.schema.json` accepts/rejects | `validate.sh` `schema_gate`, `fixture_gate` |
 | Golden render drift | CI compare against `deploy/helm/golden/` |
