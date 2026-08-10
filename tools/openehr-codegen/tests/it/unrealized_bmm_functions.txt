@@ -62,10 +62,6 @@ rm/v1_1/DV_DURATION.magnitude
 rm/v1_1/DV_DURATION.multiply
 rm/v1_1/DV_DURATION.negative
 rm/v1_1/DV_DURATION.subtract
-rm/v1_1/DV_MULTIMEDIA.has_integrity_check
-rm/v1_1/DV_MULTIMEDIA.is_compressed
-rm/v1_1/DV_MULTIMEDIA.is_external
-rm/v1_1/DV_MULTIMEDIA.is_inline
 rm/v1_1/DV_ORDINAL.is_strictly_comparable_to
 rm/v1_1/DV_ORDINAL.less_than
 rm/v1_1/DV_PERIODIC_TIME_SPECIFICATION.calendar_alignment
@@ -155,10 +151,6 @@ rm/v1_2/DV_DURATION.magnitude
 rm/v1_2/DV_DURATION.multiply
 rm/v1_2/DV_DURATION.negative
 rm/v1_2/DV_DURATION.subtract
-rm/v1_2/DV_MULTIMEDIA.has_integrity_check
-rm/v1_2/DV_MULTIMEDIA.is_compressed
-rm/v1_2/DV_MULTIMEDIA.is_external
-rm/v1_2/DV_MULTIMEDIA.is_inline
 rm/v1_2/DV_ORDINAL.is_strictly_comparable_to
 rm/v1_2/DV_ORDINAL.less_than
 rm/v1_2/DV_PERIODIC_TIME_SPECIFICATION.calendar_alignment
