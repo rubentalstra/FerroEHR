@@ -8,6 +8,7 @@
 //! status codes, realized by [`ApiError`]). The tables here keep the three in
 //! lock-step; consistency is test-enforced below.
 
+use crate::versioning::signature::signer::SignError;
 use std::sync::Arc;
 
 use openehr_base::validate::InvariantViolation;
@@ -268,6 +269,12 @@ pub enum ServiceError {
     /// below trace it and answer with `INTERNAL_MESSAGE`.
     #[error("signing: {0}")]
     Signing(String),
+    /// The same failure, with its cause intact (RFC 0201: `Error::source` is
+    /// part of the contract). A signing failure is a config problem or a key
+    /// problem, and a caller that cannot tell them apart has to substring-match
+    /// prose — which `reliability.md` bans outright.
+    #[error("signing: {0}")]
+    SigningFailed(String, #[source] SignError),
     /// A server-side fault with no more specific variant (the `500`-class SM
     /// statuses — `exception`, `file_not_writable`, `auth_failure`,
     /// `not_implemented`, `service_overloaded`).
@@ -635,6 +642,7 @@ impl From<ServiceError> for SmError {
             ServiceError::JsonRead(e) => SmError::new(S::PreconditionViolation, e.to_string()),
             ServiceError::JsonWrite(e) => internal_fault("serialize a JSON payload", &e),
             ServiceError::Signing(m) => internal_fault("sign or verify a version", &m),
+            ServiceError::SigningFailed(m, _) => internal_fault("sign or verify a version", &m),
             // The curated row: the detail and the whole cause chain go to the
             // trace record, the client gets `exception` + `INTERNAL_MESSAGE`.
             ServiceError::Internal(sm) => internal_fault_caused("complete the request", &sm),
@@ -687,7 +695,7 @@ impl From<ServiceError> for ApiError {
             // Signing/integrity failures and generic faults are server-side
             // (`500`): the carried text is the log detail, the body is the
             // curated message.
-            ServiceError::Signing(m) => {
+            ServiceError::SigningFailed(m, _) | ServiceError::Signing(m) => {
                 ApiError::Internal(internal_fault("sign or verify a version", &m).message)
             }
             ServiceError::Internal(sm) => {
@@ -720,7 +728,7 @@ mod tests {
     use openehr_base::validate::InvariantViolation;
 
     use super::{ServiceError, Violation};
-    use crate::service::status::CallStatusType as S;
+use crate::service::status::CallStatusType as S;
 
     /// A [`Violation`] renders `[<path> ]<detail>[: <cause>; …][ (<invariant>)]`
     /// — the ONE place the facts become prose. Each fact is independently
@@ -1287,6 +1295,48 @@ mod tests {
             ApiError::from(caused).to_string(),
             ApiError::from(ServiceError::sm(S::InvalidQuery, "not valid AQL")).to_string(),
             "a carried cause must not change the 422 body"
+        );
+    }
+
+    /// A signing failure reaches its concrete cause, and still renders as a
+    /// server fault.
+    ///
+    /// Downcasting rather than asserting `source().is_some()` is deliberate:
+    /// `Display` forwards either way, so a chain that is broken at the seam
+    /// reads correctly in a log while `downcast_ref` returns `None` — the exact
+    /// silent loss `reliability.md` records, and the only thing that catches it.
+    #[test]
+    fn a_signing_failure_reaches_its_concrete_cause() {
+        use std::error::Error;
+
+        let pgp = crate::versioning::signature::key::PgpSignError::from(
+            pgp::errors::Error::Message {
+                message: "no secret key".to_owned(),
+                backtrace: None,
+            },
+        );
+        let signing = ServiceError::SigningFailed(
+            pgp.to_string(),
+            crate::versioning::signature::signer::SignError::Pgp(pgp),
+        );
+
+        // Walked to the ROOT cause, not to a wrapper. `SignError::Pgp` is
+        // `#[error(transparent)]`, and transparent forwards `source()` as well
+        // as `Display` — so the wrapper is not a hop in the chain at all, and a
+        // test looking for it would fail while the chain was perfectly intact.
+        let mut found = false;
+        let mut next = Error::source(&signing);
+        while let Some(step) = next {
+            if step.downcast_ref::<pgp::errors::Error>().is_some() {
+                found = true;
+            }
+            next = step.source();
+        }
+        assert!(
+            found,
+            "a signing failure must keep the underlying OpenPGP error reachable, or a \
+             caller cannot tell a key problem from a configuration problem without \
+             parsing prose"
         );
     }
 }

@@ -106,6 +106,13 @@ chapters, the Clippy book, and the Cargo/rustdoc books.)
   lint for this: the only thing that catches it is a test that DOWNCASTS to the
   concrete error type rather than asserting `source().is_some()`, so a new
   source-carrying error type gets one.
+- **`#[error(transparent)]` removes its own type from the cause chain** —
+  verified first-hand on the pinned toolchain while landing #2034. Transparent
+  forwards `Display` AND `source()`, so the wrapper is not a hop: walking from
+  a `ServiceError` through a transparent `SignError` lands on the underlying
+  `pgp::errors::Error` directly, and a test looking for the wrapper fails while
+  the chain is perfectly intact. Assert the ROOT cause, not an intermediate
+  type, or the test measures thiserror's forwarding rather than our chaining.
 - **`Result → Option` inside a chain is a DECISION, and it carries NO
   automated guard** (review-enforced; the honest no-guard record, issue
   #1733). `.filter_map(|x| f(x).ok())`, `.and_then(|x| f(x).ok())` and

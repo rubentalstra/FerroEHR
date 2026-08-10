@@ -313,6 +313,23 @@ jobs:
       - name: No Python invocations or sources
         run: bash scripts/checks/no-python.sh
 
+  # RFC 0201: an error carries its cause. No clippy lint covers this, so the
+  # gate is a per-tree ratchet — the flattened-site counts may only fall while
+  # the #2034 sweep runs.
+  error-source-chain:
+    name: error-source-chain
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Error cause chains have not regressed
+        run: bash scripts/checks/error-source-chain.sh
+
   # Default-value style (.claude/rules/rust-style.md §Default values): a field's
   # default lives inline in its struct's `Default` impl — the RFC 3681 shape,
   # hand-written because that syntax is nightly-only.

@@ -145,7 +145,7 @@ fn sign_canonical(ctx: &SigningCtx<'_>, value: &Value) -> Result<Option<String>,
     let signature = ctx
         .signer
         .sign(&canonical)
-        .map_err(|e| ServiceError::Signing(e.to_string()))?;
+        .map_err(|e| ServiceError::SigningFailed(e.to_string(), e))?;
     Ok(Some(signature))
 }
 
