@@ -21,6 +21,15 @@ rendered perfectly and were wrong on a cluster. **Rendering is never
 acceptance.** Acceptance is `helm upgrade --install` on a live cluster, the
 behaviour observed, and the observation quoted in the PR.
 
+That acceptance is now an INSTRUMENT rather than a habit:
+**`scripts/deploy-probe-k8s.sh`** installs the chart on a real cluster and
+reads each answer from the layer that actually decides it — the container
+runtime's own spec for the security posture, the API server for admission, the
+EndpointSlice for readiness. Run it for any chart change with behavioural
+reach and quote the record (`docs/conformance/deployment/kubernetes.json`).
+The `/k8s-test` skill stays the manual procedure for what the harness does not
+cover, and the harness declares those gaps in its own output.
+
 ## 1. Version-gate every field against the declared `kubeVersion` floor
 
 An API server **silently prunes** a field its schema does not know, and a
@@ -186,4 +195,5 @@ evidence if it ran in an enforcing namespace — say which.
 | Golden render drift | CI compare against `deploy/helm/golden/` |
 | Chart/app version bumps | `chart-version-guard`, `chart-appversion-guard` |
 | Field-vs-`kubeVersion` availability | **review-enforced** — no tool knows which fields a manifest uses; §1 is the procedure |
-| Live behaviour | **review-enforced** — the `/k8s-test` skill is the procedure; the PR quotes observations |
+| Applied posture, admission, readiness gating, secret reads | `scripts/deploy-probe-k8s.sh` — observed on a live cluster, machine-readable record |
+| Live behaviour beyond those probes | **review-enforced** — the `/k8s-test` skill is the procedure; the PR quotes observations |
