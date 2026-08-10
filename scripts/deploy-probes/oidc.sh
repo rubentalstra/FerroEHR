@@ -61,7 +61,15 @@ probes_oidc() {
     probe_fail "an access token from the password grant" "the token endpoint returned none" \
       "the realm's client must have the password grant enabled"
   else
-    assert_contains "$(jwt_claims "$token")" '"aud":"ferroehr"' \
+    # `aud` is a string when there is one audience and an ARRAY when there are
+    # several — RFC 7519 §4.1.3 permits both, and Keycloak emits either
+    # depending on which mappers fire. `[.aud] | flatten` normalizes the two
+    # into one list, which is why this reads the claim with jq rather than a
+    # regex: the first attempt matched only the string spelling, and its BRE
+    # alternation silently produced nothing on BSD sed anyway.
+    local aud
+    aud="$(jwt_claims "$token" | jq -r '[.aud] | flatten | join(",")' 2>/dev/null)"
+    assert_contains "$aud" 'ferroehr' \
       "without an audience mapper the realm cannot mint a token this server accepts"
   fi
   probe_done
