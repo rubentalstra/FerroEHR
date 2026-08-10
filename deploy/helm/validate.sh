@@ -467,6 +467,33 @@ for case in "${CASES[@]}"; do
   rm -f "$rendered"
 done
 
+# ── The Artifact Hub metadata set is DECIDED, so a change must be deliberate ──
+# Every supported annotation was adjudicated (#2206): six are set here, three are
+# injected per release by the publish lane, and the rest are declined in a
+# comment block above `annotations:` with the reason. That record is only worth
+# keeping if it cannot drift, so the set is pinned: adding an annotation without
+# recording the decision, or losing one silently, fails here.
+bold "Artifact Hub metadata is the decided set"
+expected_annotations="artifacthub.io/category
+artifacthub.io/images
+artifacthub.io/license
+artifacthub.io/links
+artifacthub.io/maintainers
+artifacthub.io/screenshots"
+actual_annotations="$(yq -r '.annotations | keys | .[]' "$CHART_DIR/Chart.yaml" | sort)"
+if [ "$actual_annotations" != "$expected_annotations" ]; then
+  red "  Artifact Hub annotation set changed — decide it on the record (#2206), then update this list"
+  diff <(printf '%s\n' "$expected_annotations") <(printf '%s\n' "$actual_annotations") || true
+  exit 1
+fi
+# The listing logo is a Chart.yaml field, not an annotation, and its absence is
+# invisible except on the published page.
+[ -n "$(yq -r '.icon // ""' "$CHART_DIR/Chart.yaml")" ] || {
+  red "  Chart.yaml has no icon — Artifact Hub renders a placeholder without one"
+  exit 1
+}
+echo "  annotations are the decided set, and the listing icon is present"
+
 # ── the chart README is GENERATED, so it is drift-checked, not reviewed ───────
 # helm-docs renders README.md from README.md.gotmpl + the `# --` comments in
 # values.yaml. A hand-edited README, or a new value documented nowhere, is drift:

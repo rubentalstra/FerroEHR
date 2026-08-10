@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="FerroEHR icon">
+  <!-- FerroEHR icon, iron-tile variant: for contexts where the rust tile is too loud.
+     Text is outlined Inter SemiBold (SIL OFL 1.1). -->
+  <rect x="2" y="2" width="60" height="60" rx="12" fill="#21262B"/>
+  <path transform="translate(14.80 44.00)" d="M2.20 0.00V-21.83H16.17V-18.53H6.11V-11.98H15.19V-8.73H6.11V0.00Z M25.93 0.34Q23.45 0.34 21.67 -0.70Q19.89 -1.74 18.93 -3.63Q17.97 -5.52 17.97 -8.09Q17.97 -10.61 18.92 -12.52Q19.86 -14.43 21.60 -15.51Q23.33 -16.58 25.68 -16.58Q27.67 -16.58 29.38 -15.71Q31.08 -14.84 32.12 -13.02Q33.16 -11.19 33.16 -8.32V-7.12H21.77Q21.84 -4.94 22.99 -3.79Q24.14 -2.65 25.97 -2.65Q27.23 -2.65 28.13 -3.19Q29.03 -3.74 29.41 -4.78L32.92 -4.06Q32.33 -2.08 30.49 -0.87Q28.65 0.34 25.93 0.34ZM21.78 -9.71H29.46Q29.28 -11.47 28.34 -12.53Q27.39 -13.59 25.69 -13.59Q23.95 -13.59 22.93 -12.47Q21.91 -11.35 21.78 -9.71Z" fill="#F2F1EF"/>
+  <polyline points="12,15 17,15 20,9 23,19 26,13 29,15 36,15" fill="none" stroke="#D97742" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
