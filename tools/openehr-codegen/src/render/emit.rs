@@ -482,6 +482,15 @@ fn emit_lib(top: &BTreeSet<String>, comp: &CrateComposition) -> GenFile {
          prose in doc comments, and spec-owned class/variant/field names (a field \
          name IS the normative BMM attribute name)\"\n\
          )]\n\
+         // The generation preludes ARE this crate's public surface: the crate \
+         prelude re-exports the current generation, and each generation module \
+         re-exports its own types. That is the design (codegen.md), and it is \
+         the one place `clippy::pub_use` is satisfied by an exception rather \
+         than by removal. `expect` rather than `allow`: if a crate ever stops \
+         re-exporting, the exception self-reports instead of outliving its \
+         reason.\n\
+         #![expect(clippy::pub_use, reason = \"the generation preludes are this \
+         crate's public surface\")]\n\
          // A vendored BMM model is a deep, mutually-recursive type graph (the LANG \
          // BMM-3 expression/statement families reach several hundred levels), so \
          // auto-trait inference — `Send`/`Sync`/`RefUnwindSafe`, which rustdoc \
