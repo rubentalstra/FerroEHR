@@ -122,12 +122,36 @@ terminology_import() {
 # edit rather than something that happens to a run.
 terminology_release() {
   local zip="${FERROEHR_SNOMED_RF2:-}"
+  # Nothing configured? Look in the repository root. `SnomedCT_*.zip` is
+  # gitignored precisely so an archive can live there, so dropping the download
+  # beside the checkout is the whole setup. The NEWEST match wins, and the one
+  # actually used is echoed by the caller — with two editions present, silently
+  # picking one would make a run unattributable.
+  if [ -z "$zip" ]; then
+    zip="$(find . -maxdepth 1 -name 'SnomedCT_*.zip' -print 2>/dev/null \
+           | grep -v ManagedService | sort | tail -1)"
+    # Prefer a national edition over the International one when both are there:
+    # the national package is the deployment reality being probed.
+    local national
+    national="$(find . -maxdepth 1 -name 'SnomedCT_ManagedService*.zip' -print 2>/dev/null | sort | tail -1)"
+    [ -n "$national" ] && zip="$national"
+  fi
   if [ -n "$zip" ] && [ -f "$zip" ]; then
     terminology_verify "$zip" || return 1
     printf '%s' "$zip"
     return 0
   fi
   return 1
+}
+
+# The International Edition, when one is present, so a national extension can
+# resolve against it. Discovered the same way and never the national package.
+terminology_international() {
+  local intl="${FERROEHR_SNOMED_RF2_INTL:-}"
+  if [ -z "$intl" ]; then
+    intl="$(find . -maxdepth 1 -name 'SnomedCT_InternationalRF2_*.zip' -print 2>/dev/null | sort | tail -1)"
+  fi
+  [ -n "$intl" ] && [ -f "$intl" ] && printf '%s' "$intl"
 }
 
 terminology_verify() {
@@ -149,7 +173,7 @@ probes_terminology() {
   local zip
   if ! zip="$(terminology_release)"; then
     uncovered "terminology against a real server (#2178)" \
-      "set FERROEHR_SNOMED_RF2 to a local SNOMED CT RF2 archive (the Netherlands edition is the expected one). It is licensed content this repository may not ship and CI may not fetch, and a seeded code system would only test our own fixture"
+      "drop a SnomedCT_*.zip in the repository root (it is gitignored) or set FERROEHR_SNOMED_RF2. It is licensed content this repository may not ship and CI may not fetch, and a seeded code system would only test our own fixture"
     return 0
   fi
 
@@ -174,8 +198,9 @@ probes_terminology() {
   # extension that depends on it cannot resolve otherwise. Whether the Managed
   # Service edition needs this is not documented, so it is optional rather than
   # assumed, and the run reports what was actually served either way.
-  local intl="${FERROEHR_SNOMED_RF2_INTL:-}"
-  if [ -n "$intl" ] && [ -f "$intl" ]; then
+  local intl
+  intl="$(terminology_international)"
+  if [ -n "$intl" ]; then
     probe "P-TERM-IMPORT-INTL" "working" "compose" "#2178" \
       "the International Edition imports to MAIN, so a national extension can resolve against it"
     terminology_import "$intl" || probe_fail "a COMPLETED International import" \

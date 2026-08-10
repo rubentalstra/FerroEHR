@@ -64,13 +64,24 @@ no CI lane — a workflow that downloaded it onto a shared runner would be movin
 licensed content somewhere this project does not control. Without a package the
 family declares itself not exercised rather than substituting a fixture.
 
-The Netherlands edition is the expected package:
+**The setup is: drop the archive in the repository root.** `SnomedCT_*.zip` is
+gitignored precisely so it can live there, and the probe finds it — no
+configuration:
 
 ```bash
-FERROEHR_SNOMED_RF2=~/SnomedCT_ManagedServiceNL_PRODUCTION_NL1000146_20260630T120000Z.zip \
+PROBE_ONLY=terminology bash scripts/deploy-probe.sh
+```
+
+With both editions present the NATIONAL one is used, because that is the
+deployment reality being probed, and the International is loaded first so the
+extension can resolve against it. `FERROEHR_SNOMED_RF2` still overrides if the
+archive lives elsewhere.
+
+Setting the published checksum is worth the extra line:
+
+```bash
 FERROEHR_SNOMED_RF2_MD5=876355868299a8c4d1534e53de6e75a5 \
-PROBE_ONLY=terminology \
-  bash scripts/deploy-probe.sh
+PROBE_ONLY=terminology bash scripts/deploy-probe.sh
 ```
 
 The MD5 is the one SNOMED International publishes beside the release, and it is
@@ -79,14 +90,8 @@ archive would report conformance about content nobody chose. It is pinned per
 release, so moving edition is a deliberate edit.
 
 **Whether the national package needs the International Edition alongside it is
-not something Snowstorm documents**, so the family does not assume. Supply both
-and the International is imported to MAIN first:
-
-```bash
-FERROEHR_SNOMED_RF2_INTL=~/SnomedCT_InternationalRF2_PRODUCTION_20260801T120000Z.zip \
-FERROEHR_SNOMED_RF2=~/SnomedCT_ManagedServiceNL_PRODUCTION_NL1000146_20260630T120000Z.zip \
-PROBE_ONLY=terminology bash scripts/deploy-probe.sh
-```
+not something Snowstorm documents**, so the family does not assume — put both
+zips in the root and the International is imported to `MAIN` first.
 
 With only the national package, it is loaded on its own and the run reports what
 was actually served — the subsumption probe checks that the concepts it names
