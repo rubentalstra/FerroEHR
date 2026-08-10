@@ -57,44 +57,49 @@ because a code system we seeded ourselves would only prove our client can talk
 to our own fixture — `$subsumes` in particular means nothing without a
 published hierarchy behind it.
 
-**The RF2 package is licensed content and is never in this repository.** It
-cannot be committed, fetched by a vendoring script, or baked into an image; the
-operator supplies it, and without it the family declares itself not exercised
-rather than substituting a fixture.
+**Local only, and the package is never in this repository.** The RF2 archive is
+licensed content under a SNOMED International Affiliate agreement: it is not
+committed, not fetched by CI, and not baked into an image. There is deliberately
+no CI lane — a workflow that downloaded it onto a shared runner would be moving
+licensed content somewhere this project does not control. Without a package the
+family declares itself not exercised rather than substituting a fixture.
 
-Locally, against a copy already downloaded from MLDS:
+The Netherlands edition is the expected package:
 
 ```bash
-FERROEHR_SNOMED_RF2=~/Downloads/SnomedCT_InternationalRF2_PRODUCTION_20260801T120000Z.zip \
-FERROEHR_SNOMED_RF2_MD5=878e480163d35bdf6ff3c1f5f9391d47 \
+FERROEHR_SNOMED_RF2=~/SnomedCT_ManagedServiceNL_PRODUCTION_NL1000146_20260630T120000Z.zip \
+FERROEHR_SNOMED_RF2_MD5=876355868299a8c4d1534e53de6e75a5 \
 PROBE_ONLY=terminology \
   bash scripts/deploy-probe.sh
 ```
 
-The MD5 is the one SNOMED International publishes beside the release. It is
-optional and it is worth setting: a probe that silently ran against a truncated
-or substituted archive would report conformance about content nobody chose. It
-is pinned per release, so moving to a new edition is a deliberate edit.
+The MD5 is the one SNOMED International publishes beside the release, and it is
+worth setting: a probe that silently ran against a truncated or substituted
+archive would report conformance about content nobody chose. It is pinned per
+release, so moving edition is a deliberate edit.
 
-In CI, the `Terminology probe (SNOMED)` workflow (manual dispatch) fetches the
-release from wherever the affiliate keeps it:
+**Whether the national package needs the International Edition alongside it is
+not something Snowstorm documents**, so the family does not assume. Supply both
+and the International is imported to MAIN first:
 
-| Secret / variable | Purpose |
-|---|---|
-| `SNOMED_RF2_URL` (secret) | where the archive is fetched from |
-| `SNOMED_RF2_USER` / `SNOMED_RF2_PASSWORD` (secrets) | basic auth, if that source needs it |
-| `SNOMED_RF2_MD5` (variable) | the published checksum for the pinned release |
+```bash
+FERROEHR_SNOMED_RF2_INTL=~/SnomedCT_InternationalRF2_PRODUCTION_20260801T120000Z.zip \
+FERROEHR_SNOMED_RF2=~/SnomedCT_ManagedServiceNL_PRODUCTION_NL1000146_20260630T120000Z.zip \
+PROBE_ONLY=terminology bash scripts/deploy-probe.sh
+```
 
-The archive lives on the runner's disk for the life of the job and nothing
-republishes it — no cache, no artifact upload. Only the probe RECORD is
-uploaded.
+With only the national package, it is loaded on its own and the run reports what
+was actually served — the subsumption probe checks that the concepts it names
+are present before asserting anything about them, and declares a gap rather than
+a defect if they are not.
 
 **Two resource facts, stated because discovering them mid-import wastes an
-hour.** Elasticsearch and Snowstorm want ~8 GB of memory between them, and a
-full International Edition import needs well more disk than a standard
-GitHub-hosted runner's 14 GB — which is why the workflow takes a runner label
-as an input and defaults to a larger one. Elasticsearch also refuses to start
-unless the HOST sets `vm.max_map_count=262144`, a sysctl no container can apply
-to itself; the workflow sets it, and locally you may need
-`sudo sysctl -w vm.max_map_count=262144` (on Docker Desktop,
-`wsl -d docker-desktop sysctl -w vm.max_map_count=262144`).
+hour.** Elasticsearch and Snowstorm want ~8 GB of memory between them. And
+Elasticsearch refuses to start unless the HOST sets `vm.max_map_count=262144`, a
+sysctl no container can apply to itself:
+
+```bash
+sudo sysctl -w vm.max_map_count=262144
+# Docker Desktop:
+wsl -d docker-desktop sysctl -w vm.max_map_count=262144
+```

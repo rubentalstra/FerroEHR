@@ -11,14 +11,23 @@
 # So this family drives Snowstorm (SNOMED International's own server, which
 # implements the FHIR Terminology Module) loaded with a real SNOMED CT release.
 #
-# THE RELEASE IS NOT OURS TO SHIP. The RF2 package is licensed content under an
-# SNOMED International Affiliate agreement: it cannot be committed here, fetched
-# by a script, or baked into a published image. The operator supplies it:
+# THE RELEASE IS NOT OURS TO SHIP, AND THIS FAMILY RUNS LOCALLY ONLY. The RF2
+# package is licensed content under a SNOMED International Affiliate agreement:
+# it cannot be committed here, fetched by CI, or baked into a published image.
+# The operator supplies a local path:
 #
-#   FERROEHR_SNOMED_RF2=/path/to/SnomedCT_InternationalRF2_PRODUCTION_*.zip
+#   FERROEHR_SNOMED_RF2=~/SnomedCT_ManagedServiceNL_PRODUCTION_NL1000146_*.zip
 #
 # Without it the family declares itself NOT EXERCISED rather than substituting a
 # fixture — an honest gap beats a green row that measured our own data.
+#
+# The NETHERLANDS edition is the expected package. Whether a Managed Service
+# edition package is complete on its own or is an extension that depends on the
+# International Edition is not something Snowstorm documents, so this family
+# does not assume: supply FERROEHR_SNOMED_RF2_INTL as well and it is imported to
+# MAIN first, with the national package then loaded onto its own branch. With
+# only one package, that package goes to MAIN and the run reports what it
+# actually served.
 #
 # It is also heavy: Elasticsearch plus Snowstorm want ~8 GB and the import takes
 # far longer than every other probe combined, so this family is opt-in.
@@ -102,12 +111,9 @@ terminology_import() {
 # The RF2 release, from a local path or fetched from wherever the affiliate
 # keeps it. Echoes the archive path; non-zero means none was supplied.
 #
-# Two ways in, because the two places this runs differ:
-#   FERROEHR_SNOMED_RF2      a path — how a developer runs it, against the copy
-#                            already downloaded from MLDS
-#   FERROEHR_SNOMED_RF2_URL  a URL, with optional basic-auth credentials — how
-#                            CI runs it, from a secret, since the package cannot
-#                            live in this repository
+# A local path only. There is deliberately no fetch-from-CI route: the package
+# is licensed, and a lane that downloaded it onto a shared runner would be
+# moving licensed content somewhere this project does not control.
 #
 # FERROEHR_SNOMED_RF2_MD5, when set, is CHECKED. SNOMED International publishes
 # an MD5 beside each release, and a terminology probe that silently ran against
@@ -121,16 +127,7 @@ terminology_release() {
     printf '%s' "$zip"
     return 0
   fi
-  local url="${FERROEHR_SNOMED_RF2_URL:-}"
-  [ -n "$url" ] || return 1
-  zip="$PROBE_TMP/snomed-rf2.zip"
-  local -a auth=()
-  [ -n "${FERROEHR_SNOMED_RF2_USER:-}" ] && \
-    auth=(-u "${FERROEHR_SNOMED_RF2_USER}:${FERROEHR_SNOMED_RF2_PASSWORD:-}")
-  # --fail so an HTML login page is never mistaken for a release archive.
-  curl -fsSL "${auth[@]}" -o "$zip" "$url" || return 1
-  terminology_verify "$zip" || return 1
-  printf '%s' "$zip"
+  return 1
 }
 
 terminology_verify() {
@@ -152,7 +149,7 @@ probes_terminology() {
   local zip
   if ! zip="$(terminology_release)"; then
     uncovered "terminology against a real server (#2178)" \
-      "supply a SNOMED CT RF2 release — FERROEHR_SNOMED_RF2 (a local path) or FERROEHR_SNOMED_RF2_URL (+ optional _USER/_PASSWORD). It is licensed content this repository may not ship, and a seeded code system would only test our own fixture"
+      "set FERROEHR_SNOMED_RF2 to a local SNOMED CT RF2 archive (the Netherlands edition is the expected one). It is licensed content this repository may not ship and CI may not fetch, and a seeded code system would only test our own fixture"
     return 0
   fi
 
@@ -173,6 +170,19 @@ probes_terminology() {
   fi
   probe_done
 
+  # An International package, when supplied, goes to MAIN first — a national
+  # extension that depends on it cannot resolve otherwise. Whether the Managed
+  # Service edition needs this is not documented, so it is optional rather than
+  # assumed, and the run reports what was actually served either way.
+  local intl="${FERROEHR_SNOMED_RF2_INTL:-}"
+  if [ -n "$intl" ] && [ -f "$intl" ]; then
+    probe "P-TERM-IMPORT-INTL" "working" "compose" "#2178" \
+      "the International Edition imports to MAIN, so a national extension can resolve against it"
+    terminology_import "$intl" || probe_fail "a COMPLETED International import" \
+      "the import did not complete" "a national extension cannot resolve without it"
+    probe_done
+  fi
+
   probe "P-TERM-IMPORT" "working" "compose" "#2178" \
     "the operator's SNOMED CT release imports and is served as a CodeSystem"
   if ! terminology_import "$zip"; then
@@ -190,6 +200,18 @@ probes_terminology() {
   # mellitus) in the International Edition.
   probe "P-TERM-SUBSUMES" "working" "server" "#2178" \
     "a real SNOMED hierarchy answers \$subsumes — the check a fixture cannot honestly make"
+  # The concepts below are International. A package that turned out to carry
+  # only national content would not contain them, and reporting that as a
+  # subsumption defect would be a lie about the server — so their presence is
+  # established first, and their absence is a declared gap.
+  if ! curl -s "$TERM_URL/fhir/CodeSystem/\$lookup?system=http://snomed.info/sct&code=73211009" \
+       | grep -q '"resourceType"'; then
+    dim "    SKIP  73211009 is not in the loaded content — declared as not exercised"
+    uncovered "SNOMED subsumption over a published hierarchy" \
+      "the loaded package does not contain the International concepts this probe names; supply FERROEHR_SNOMED_RF2_INTL to load the International Edition alongside it"
+    probe_done
+    return 0
+  fi
   local sub
   sub="$(curl -s --get \
     --data-urlencode 'system=http://snomed.info/sct' \
