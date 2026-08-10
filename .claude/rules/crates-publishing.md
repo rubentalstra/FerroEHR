@@ -54,6 +54,27 @@ by the `crate-version-guard` CI job.
   (`.claude/rules/reliability.md`) — the version chosen then is still ours,
   never a spec number.
 
+## The publish lane is per crate, resumable, and verified
+
+`publish-crates.yml` publishes the eight members **one at a time in
+dependency order**, treats "already exists on crates.io index" as done, and
+reads the registry back before reporting success.
+
+It is deliberately not `cargo publish --workspace` for the real upload.
+That command is all-or-nothing at the START — it refuses the whole run if any
+member version already exists — while being non-atomic at the END, so a
+partial publish cannot be finished by re-running it. Issue #2211 is the live
+proof: six crates reached `0.0.15`, `openehr-its` and `openehr-adl` stayed at
+`0.0.10`, and the retry was refused. Under lockstep `0.0.x`, where cargo
+treats every `0.0.x` as its own compatibility set, that is a broken
+dependency graph for every consumer rather than a cosmetic lag — which is why
+the lane now fails when the published set is incomplete instead of exiting on
+cargo's status.
+
+`cargo publish --workspace --dry-run` remains the right whole-workspace
+check: nothing is uploaded, so the all-or-nothing behaviour costs nothing and
+every member is verified together.
+
 ## Packaging hygiene
 
 - A new runtime-embedded asset (`include_str!`/`include_bytes!`) MUST be
