@@ -168,6 +168,45 @@ probes_multimedia() {
   probe_done
 }
 
+probes_multimedia_off() {
+  bold "multimedia — OFF (the default state)"
+
+  # The default posture, and the state #2171 hid in: with externalization off a
+  # large DV_MULTIMEDIA must be stored INLINE, byte-identical, with no
+  # dependency on the object store at all. "Off" is the state most deployments
+  # actually run, and it was never driven.
+  #
+  # Re-ups the CDR with the switch off; everything else is unchanged, so a
+  # difference here is the switch and nothing else.
+  probe "P-MM-OFF" "off" "server" "-" \
+    "with externalization off, a large DV_MULTIMEDIA is stored inline"
+  FERROEHR__MULTIMEDIA__ENABLED=false compose_up ferroehr
+  if ! wait_http "$CDR/health/readiness" 90; then
+    probe_fail "a serving CDR with multimedia off" "readiness never returned" \
+      "turning an integration off must not stop the server starting"
+    probe_done
+    return 0
+  fi
+
+  local off_env; off_env="$(curl -s -u "$BASIC" "$CDR/management/env")"
+  assert_contains "$off_env" '"enabled":false' "the switch must actually be off for this probe to mean anything"
+
+  local ehr; ehr="$(probe_commit_media_status)"
+  if [ -z "$ehr" ]; then
+    probe_fail "a committed EHR" "the commit returned no id" \
+      "an inline commit needs no object store and must succeed"
+  else
+    local stored; stored="$(curl -s -u "$BASIC" "$API/ehr/$ehr/ehr_status")"
+    assert_contains "$stored" '"data"' "with the integration off the bytes stay in the record"
+    assert_not_contains "$stored" 's3://' "nothing may be externalized while the switch is off"
+  fi
+  probe_done
+
+  # Put the stack back the way the rest of the run expects it.
+  compose_up ferroehr
+  wait_http "$CDR/health/readiness" 90 || true
+}
+
 probes_multimedia_broken() {
   bold "multimedia — dependency broken"
 

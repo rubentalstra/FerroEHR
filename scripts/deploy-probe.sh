@@ -80,6 +80,7 @@ compose_up ferroehr seaweedfs seaweedfs-init
 probes_shipped_config_boots
 probes_multimedia
 probes_management
+probes_multimedia_off
 probes_multimedia_broken
 probes_health_broken
 
@@ -98,7 +99,5 @@ uncovered "admin console journeys (#2164)" \
   "scripts/ui-e2e.sh already drives these with a real browser; folding it in is the next step"
 uncovered "FHIR, events, tenancy, terminology" \
   "no probes yet — each needs its dependency composed"
-uncovered "multimedia OFF state" \
-  "the off state is asserted by the code suite (inline storage) but not yet driven here"
 
 probe_report "$PROBE_OUT" "compose"
