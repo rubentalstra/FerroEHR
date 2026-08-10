@@ -495,6 +495,7 @@ mod tests {
     use assert_fs::prelude::*;
 
     use super::*;
+    use crate::config::authz::AbacParam;
 
     /// Build an injected env map from `(key, value)` pairs.
     fn env(pairs: &[(&str, &str)]) -> HashMap<String, String> {
@@ -606,6 +607,101 @@ mod tests {
         assert_eq!(
             c.subject_proxy.systems.get("pas").expect("pas").base_url,
             "https://pas/r4"
+        );
+    }
+
+    /// EVERY `Vec`-typed key an operator can set through the environment parses
+    /// as a list.
+    ///
+    /// A list-typed key missing from `alias::LIST_KEYS` is not mis-split — it is
+    /// REFUSED, `invalid type: string …, expected a sequence`, so its documented
+    /// env spelling is dead on arrival. Two shipped keys were in exactly that
+    /// state (`signing.retired_key_paths`, `smart.endpoints.capabilities`) and
+    /// neither was noticed until a live deployment probe hit the boot refusal:
+    /// the value that carries a whole feature is only reachable from a TOML
+    /// file, which no test asserted and no reader could tell.
+    ///
+    /// Single-element values matter as much as multi-element ones: the refusal
+    /// fires on the TYPE, so even one path fails.
+    #[test]
+    fn every_list_typed_key_parses_from_a_single_env_value() {
+        let c = assemble_ok(
+            None,
+            &env(&[
+                // The key #2122's rotation keyring depends on.
+                (
+                    "FERROEHR__SIGNING__RETIRED_KEY_PATHS",
+                    "/etc/ferroehr/retired-2025.pub.asc",
+                ),
+                ("FERROEHR__SMART__ENDPOINTS__CAPABILITIES", "launch-ehr"),
+            ]),
+            &[],
+        );
+        assert_eq!(
+            c.signing.retired_key_paths,
+            vec![PathBuf::from("/etc/ferroehr/retired-2025.pub.asc")],
+            "a single retired key path must parse as a one-element list"
+        );
+        assert_eq!(
+            c.smart.endpoints.capabilities,
+            vec!["launch-ehr".to_owned()]
+        );
+    }
+
+    /// A list nested under a MAP key is addressable from the environment too,
+    /// so it needs registration like any other — `authz.abac.policy.<kind>` is
+    /// a map, not an array of tables, and `subject_proxy.systems.<name>` above
+    /// already proves the env grammar reaches into one.
+    #[test]
+    fn a_list_under_a_map_key_parses_from_env() {
+        let c = assemble_ok(
+            None,
+            &env(&[
+                ("FERROEHR__AUTHZ__ABAC__POLICY__EHR__NAME", "ehr-policy"),
+                (
+                    "FERROEHR__AUTHZ__ABAC__POLICY__EHR__PARAMETERS",
+                    "patient,template",
+                ),
+            ]),
+            &[],
+        );
+        let rule = c.authz.abac.policy.get("ehr").expect("the ehr policy rule");
+        assert_eq!(rule.name, "ehr-policy");
+        assert_eq!(
+            rule.parameters,
+            vec![AbacParam::Patient, AbacParam::Template],
+            "a policy's parameter list must be reachable from the environment"
+        );
+    }
+
+    /// The same keys with SEVERAL values, since comma-splitting is the other
+    /// half of what registration buys.
+    #[test]
+    fn every_list_typed_key_splits_several_env_values() {
+        let c = assemble_ok(
+            None,
+            &env(&[
+                (
+                    "FERROEHR__SIGNING__RETIRED_KEY_PATHS",
+                    "/keys/a.pub.asc,/keys/b.pub.asc",
+                ),
+                (
+                    "FERROEHR__SMART__ENDPOINTS__CAPABILITIES",
+                    "launch-ehr,sso-openid-connect",
+                ),
+            ]),
+            &[],
+        );
+        assert_eq!(
+            c.signing.retired_key_paths,
+            vec![
+                PathBuf::from("/keys/a.pub.asc"),
+                PathBuf::from("/keys/b.pub.asc")
+            ]
+        );
+        assert_eq!(
+            c.smart.endpoints.capabilities,
+            vec!["launch-ehr".to_owned(), "sso-openid-connect".to_owned()]
         );
     }
 

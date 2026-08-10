@@ -90,6 +90,7 @@ probes_multimedia
 probes_management
 probes_signing
 probes_signing_pgp
+probes_signing_rotation
 probes_multimedia_restart
 probes_multimedia_off
 probes_multimedia_broken
