@@ -174,6 +174,9 @@ pub fn render(record: &AuditRecord) -> Result<serde_json::Value, AuditRenderErro
     }
     let resource = builder
         .build()
+        // NOTE: RFC 1105 — carrying `fhir_model`'s builder error would leak a
+        // dependency type into ours, making its patch bumps breaking; the
+        // message already names the missing element.
         .map_err(|e| AuditRenderError::Build(e.to_string()))?;
     Ok(serde_json::to_value(resource)?)
 }

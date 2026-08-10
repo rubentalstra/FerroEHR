@@ -179,6 +179,11 @@ pub enum FhirMapError {
     /// COMPOSITION should always flatten).
     #[error("could not flatten COMPOSITION for reverse mapping: {0}")]
     Reverse(String),
+    /// The same failure with its cause intact (RFC 0201): the flattener's own
+    /// error says WHICH node defeated the walk, which a string cannot be
+    /// matched on.
+    #[error("could not flatten COMPOSITION for reverse mapping: {0}")]
+    ReverseFailed(String, #[source] openehr_its::flat::error::FlatError),
 }
 
 /// Resolve a **`FHIRPath`-lite** dot-path against a JSON value.

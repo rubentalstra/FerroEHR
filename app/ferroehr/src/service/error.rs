@@ -275,6 +275,14 @@ pub enum ServiceError {
     /// prose — which `reliability.md` bans outright.
     #[error("signing: {0}")]
     SigningFailed(String, #[source] SignError),
+    /// Canonicalisation failed on the signing path — a different cause from a
+    /// signer failure, and the distinction is the point: one is a malformed
+    /// document, the other a key or configuration problem.
+    #[error("signing: {0}")]
+    SigningCanonical(
+        String,
+        #[source] openehr_rm::v1_2::common::change_control::version_impl::CanonicalFormError,
+    ),
     /// A server-side fault with no more specific variant (the `500`-class SM
     /// statuses — `exception`, `file_not_writable`, `auth_failure`,
     /// `not_implemented`, `service_overloaded`).
@@ -642,7 +650,9 @@ impl From<ServiceError> for SmError {
             ServiceError::JsonRead(e) => SmError::new(S::PreconditionViolation, e.to_string()),
             ServiceError::JsonWrite(e) => internal_fault("serialize a JSON payload", &e),
             ServiceError::Signing(m) => internal_fault("sign or verify a version", &m),
-            ServiceError::SigningFailed(m, _) => internal_fault("sign or verify a version", &m),
+            ServiceError::SigningFailed(m, _) | ServiceError::SigningCanonical(m, _) => {
+                internal_fault("sign or verify a version", &m)
+            }
             // The curated row: the detail and the whole cause chain go to the
             // trace record, the client gets `exception` + `INTERNAL_MESSAGE`.
             ServiceError::Internal(sm) => internal_fault_caused("complete the request", &sm),
@@ -695,7 +705,9 @@ impl From<ServiceError> for ApiError {
             // Signing/integrity failures and generic faults are server-side
             // (`500`): the carried text is the log detail, the body is the
             // curated message.
-            ServiceError::SigningFailed(m, _) | ServiceError::Signing(m) => {
+            ServiceError::SigningFailed(m, _)
+            | ServiceError::SigningCanonical(m, _)
+            | ServiceError::Signing(m) => {
                 ApiError::Internal(internal_fault("sign or verify a version", &m).message)
             }
             ServiceError::Internal(sm) => {
@@ -728,7 +740,7 @@ mod tests {
     use openehr_base::validate::InvariantViolation;
 
     use super::{ServiceError, Violation};
-use crate::service::status::CallStatusType as S;
+    use crate::service::status::CallStatusType as S;
 
     /// A [`Violation`] renders `[<path> ]<detail>[: <cause>; …][ (<invariant>)]`
     /// — the ONE place the facts become prose. Each fact is independently
@@ -1309,12 +1321,11 @@ use crate::service::status::CallStatusType as S;
     fn a_signing_failure_reaches_its_concrete_cause() {
         use std::error::Error;
 
-        let pgp = crate::versioning::signature::key::PgpSignError::from(
-            pgp::errors::Error::Message {
+        let pgp =
+            crate::versioning::signature::key::PgpSignError::from(pgp::errors::Error::Message {
                 message: "no secret key".to_owned(),
                 backtrace: None,
-            },
-        );
+            });
         let signing = ServiceError::SigningFailed(
             pgp.to_string(),
             crate::versioning::signature::signer::SignError::Pgp(pgp),
