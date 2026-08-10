@@ -99,13 +99,60 @@ terminology_import() {
   return 1
 }
 
+# The RF2 release, from a local path or fetched from wherever the affiliate
+# keeps it. Echoes the archive path; non-zero means none was supplied.
+#
+# Two ways in, because the two places this runs differ:
+#   FERROEHR_SNOMED_RF2      a path — how a developer runs it, against the copy
+#                            already downloaded from MLDS
+#   FERROEHR_SNOMED_RF2_URL  a URL, with optional basic-auth credentials — how
+#                            CI runs it, from a secret, since the package cannot
+#                            live in this repository
+#
+# FERROEHR_SNOMED_RF2_MD5, when set, is CHECKED. SNOMED International publishes
+# an MD5 beside each release, and a terminology probe that silently ran against
+# a truncated or substituted package would report conformance about content
+# nobody chose. It is pinned per release, so a release upgrade is a deliberate
+# edit rather than something that happens to a run.
+terminology_release() {
+  local zip="${FERROEHR_SNOMED_RF2:-}"
+  if [ -n "$zip" ] && [ -f "$zip" ]; then
+    terminology_verify "$zip" || return 1
+    printf '%s' "$zip"
+    return 0
+  fi
+  local url="${FERROEHR_SNOMED_RF2_URL:-}"
+  [ -n "$url" ] || return 1
+  zip="$PROBE_TMP/snomed-rf2.zip"
+  local -a auth=()
+  [ -n "${FERROEHR_SNOMED_RF2_USER:-}" ] && \
+    auth=(-u "${FERROEHR_SNOMED_RF2_USER}:${FERROEHR_SNOMED_RF2_PASSWORD:-}")
+  # --fail so an HTML login page is never mistaken for a release archive.
+  curl -fsSL "${auth[@]}" -o "$zip" "$url" || return 1
+  terminology_verify "$zip" || return 1
+  printf '%s' "$zip"
+}
+
+terminology_verify() {
+  local want="${FERROEHR_SNOMED_RF2_MD5:-}"
+  [ -n "$want" ] || return 0
+  local got
+  got="$(md5sum "$1" 2>/dev/null | awk '{print $1}')"
+  [ -n "$got" ] || got="$(md5 -q "$1" 2>/dev/null)"
+  if [ "$got" != "$want" ]; then
+    red "  SNOMED RF2 checksum mismatch: expected $want, got ${got:-none}"
+    return 1
+  fi
+  return 0
+}
+
 probes_terminology() {
   bold "terminology — a real FHIR terminology server with real content"
 
-  local zip="${FERROEHR_SNOMED_RF2:-}"
-  if [ -z "$zip" ] || [ ! -f "$zip" ]; then
+  local zip
+  if ! zip="$(terminology_release)"; then
     uncovered "terminology against a real server (#2178)" \
-      "set FERROEHR_SNOMED_RF2 to a SNOMED CT RF2 release archive — it is licensed content this repository may not ship, and a seeded code system would only test our own fixture"
+      "supply a SNOMED CT RF2 release — FERROEHR_SNOMED_RF2 (a local path) or FERROEHR_SNOMED_RF2_URL (+ optional _USER/_PASSWORD). It is licensed content this repository may not ship, and a seeded code system would only test our own fixture"
     return 0
   fi
 
