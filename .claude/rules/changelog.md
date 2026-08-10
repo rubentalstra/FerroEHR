@@ -76,15 +76,25 @@ optional:
   (dry-run by default; a real publish needs the `publish` input set to
   `true`) that authenticates via **crates.io Trusted Publishing** (OIDC,
   `rust-lang/crates-io-auth-action`, `id-token: write`, the `crates-io`
-  environment) and runs `cargo publish --workspace` over the eight
-  `crates/*` members in dependency order — no long-lived crates.io token
-  exists anywhere. Version bumps happen in the CONTENT PR, not at publish
+  environment) and publishes the eight `crates/*` members **one at a time in
+  dependency order**, treating "already exists on crates.io index" as done —
+  no long-lived crates.io token exists anywhere. It is deliberately NOT
+  `cargo publish --workspace`: that command is all-or-nothing at the START
+  (it refuses the entire run if any member version already exists) while
+  being non-atomic at the END, so a partial publish cannot be finished by
+  re-running it. That combination stranded `openehr-its` and `openehr-adl` at
+  `0.0.10` while six siblings reached `0.0.15` (issue #2211), and a split set
+  is a broken graph for every consumer, not a cosmetic lag. The lane also
+  reads the registry back before reporting success, so a publish that
+  finished half the set fails instead of going green. Version bumps happen in the CONTENT PR, not at publish
   time: any PR changing packaged crate content bumps every crate's `version`
   and the internal `version =` requirements together (lockstep `0.0.x` —
   the `crate-version-guard` CI job and the local push hook enforce it; full
   rule in `.claude/rules/crates-publishing.md`), so a publish just ships the
   version already in the tree — verify locally with
-  `cargo publish --workspace --dry-run`. The very first release
+  `cargo publish --workspace --dry-run` (the whole-workspace form is still
+  the right DRY RUN: nothing is uploaded, so its all-or-nothing behaviour
+  costs nothing and it checks every member together). The very first release
   of a crate cannot use OIDC (crates.io requires an existing crate to
   configure a Trusted Publisher) — it is pushed manually with a scoped API
   token, after which each crate's Trusted Publisher is configured on

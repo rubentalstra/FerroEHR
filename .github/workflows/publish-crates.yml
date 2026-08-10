@@ -133,12 +133,21 @@ jobs:
           bad=""
           for crate in openehr-base openehr-lang openehr-term openehr-rm \
                        openehr-am openehr-query openehr-its openehr-adl; do
-            # The index is eventually consistent right after an upload.
+            # The index is eventually consistent right after an upload, so a
+            # miss is retried rather than believed. A FAILED REQUEST is not a
+            # miss either: without --fail, curl hands an error BODY to jq, jq
+            # dies on the absent .versions, and `pipefail` ends the whole step —
+            # so one transient 429 would report a split set that does not exist.
+            # Guarding the pipeline in an `if` keeps a bad response as "not seen
+            # yet" and lets the remaining polls run.
             got=""
             for _ in 1 2 3 4 5 6; do
-              got="$(curl -sL -H 'User-Agent: ferroehr-publish-verify' \
-                     "https://crates.io/api/v1/crates/$crate/versions" \
-                     | jq -r --arg v "$want" '.versions[] | select(.num == $v) | .num' | head -1)"
+              if body="$(curl -sSL --fail -H 'User-Agent: ferroehr-publish-verify' \
+                         "https://crates.io/api/v1/crates/$crate/versions" 2>/dev/null)"; then
+                got="$(printf '%s' "$body" \
+                       | jq -r --arg v "$want" '.versions[]? | select(.num == $v) | .num' \
+                       | head -1)" || got=""
+              fi
               [ -n "$got" ] && break
               sleep 10
             done
