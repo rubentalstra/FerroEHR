@@ -434,7 +434,9 @@ sysinfo = "0.39.5"                   # CPU/RSS sampling for the benchmark harnes
 #   cargo-nextest, cargo-audit, cargo-deny, cargo-machete, cargo-hakari,
 #   cargo-llvm-cov, sccache ; linker: mold (Linux).
 #
-# Toolchain: Rust stable 1.96 (1.96.1 current), edition 2024.
+# Toolchain: Rust stable 1.97.1, edition 2024. The MSRV stays 1.96 — nothing
+# here uses a 1.97 feature, and the eight published crates are the only
+# artifacts whose consumers would feel a bump (docs/VERSIONS.md §MSRV policy).
 # Database: PostgreSQL 18 (target 18.4+; 18.x is the current stable line; PG 19 in beta — do not target).
 
 # ── Build-speed profiles ─────────────────────────────────────────────────────

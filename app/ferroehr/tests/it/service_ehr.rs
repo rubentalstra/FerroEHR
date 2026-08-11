@@ -1070,7 +1070,7 @@ async fn revision_history_lists_every_version() {
     let items = history["items"].as_array().expect("items");
     assert_eq!(items.len(), 2, "two versions after one update");
     assert_eq!(items[0]["_type"], "REVISION_HISTORY_ITEM");
-    assert!(items[0]["audits"][0]["_type"] == "AUDIT_DETAILS");
+    assert_eq!(items[0]["audits"][0]["_type"], "AUDIT_DETAILS");
 }
 
 #[tokio::test]

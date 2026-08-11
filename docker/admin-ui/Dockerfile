@@ -23,17 +23,17 @@
 # (that compiles a vendored OpenSSL C tree — ~10 min per cold build); the same
 # prebuilt path the CI workflows use.
 
-ARG RUST_VERSION=1.96.1
+ARG RUST_VERSION=1.97.1
 ARG CARGO_CHEF_VERSION=0.1.77
 ARG CARGO_LEPTOS_VERSION=0.3.7
 ARG WASM_BINDGEN_VERSION=0.2.126
 ARG TAILWIND_VERSION=v4.3.3
 
 # ── chef: builder toolchain + cargo-chef (cached base for planner/builder) ─────
-# Digest-pinned rust:1.96.1-slim-trixie (Debian 13, glibc 2.41), resolved
+# Digest-pinned rust:1.97.1-slim-trixie (Debian 13, glibc 2.41), resolved
 # 2026-07-24 — same base + rationale as docker/Dockerfile
 # (docs.docker.com/build/building/best-practices — pin by digest).
-FROM rust:${RUST_VERSION}-slim-trixie@sha256:31ee7fc65186be7e0e0ccb3f2ca305f14e4739e7642a1ae65753aa5d7b874523 AS chef
+FROM rust:${RUST_VERSION}-slim-trixie@sha256:3b2879047d42784ca9403ad20c51ed3df361a50f1df96f5777d39b4e33aa65cd AS chef
 ARG CARGO_CHEF_VERSION
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
     cargo install cargo-chef --version ${CARGO_CHEF_VERSION} --locked

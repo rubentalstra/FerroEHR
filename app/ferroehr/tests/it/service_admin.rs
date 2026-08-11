@@ -780,12 +780,12 @@ async fn physical_party_delete_cascades_relationships_and_spares_partner() {
         vo_version_rows(pool, &r3).await > 0,
         "unrelated r3 survives"
     );
-    assert!(
+    assert_eq!(
         svc.party_get(PartyKind::Person, p2.clone(), None)
             .await
             .expect("p2 still readable")
-            .body["_type"]
-            == "PERSON"
+            .body["_type"],
+        "PERSON"
     );
 
     // No orphaned audit rows were left behind (audits swept in the cascade).
