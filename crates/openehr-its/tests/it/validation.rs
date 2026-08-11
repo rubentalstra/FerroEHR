@@ -151,12 +151,19 @@ fn kinds(msgs: &[ValidationMessage]) -> Vec<ValidationKind> {
 ///   defect on its `/content[0]` OBSERVATION (an
 ///   `openEHR-EHR-COMPOSITION.*` `archetype_id` claimed by a non-COMPOSITION
 ///   node), violating the same identity rule.
+/// - `ehrb_adbm_op_consult_record.json` — carries the `TERMINOLOGY_ID` value
+///   `"SNOMED CT"`, whose interior space is outside the `terminology_id`
+///   production (BASE `base_types/master05-identification_package.adoc`
+///   §Syntaxes: `terminology_id = name-str, [ '(', name-str, ')' ]`,
+///   `name-str = letter, { letter | digit | '_' | '-' | '/' | '+' }`). The same
+///   chapter's §Terminology Identifiers spells the terminology `"SNOMED-CT"`,
+///   which the production admits. The refusal is pinned by
+///   [`snomed_ct_with_a_space_is_refused`].
 const CLEAN_COMPOSITIONS: &[&str] = &[
     "choice_validation_test.json",
     "compo_corona.json",
     "demo_vitals_352.json",
     "dvquantity_choice.json",
-    "ehrb_adbm_op_consult_record.json",
     "interval_partial_date.json",
     "ips_canonical.json",
     "minimal_with_optional_attribute.json",
@@ -218,6 +225,24 @@ fn missing_mandatory_composer_is_rejected() {
         msgs.iter()
             .any(|m| m.message.to_lowercase().contains("composer") || m.path == "/"),
         "the violation should reference the missing mandatory composer: {msgs:?}"
+    );
+}
+
+/// The invalid twin of the corpus adjudication above: a vendored composition
+/// carrying `TERMINOLOGY_ID` `"SNOMED CT"` is REFUSED, at the path that holds
+/// it.
+///
+/// Keeping the refusal asserted is what stops the reader being loosened back:
+/// the interior space is outside the `terminology_id` production (BASE
+/// `base_types/master05-identification_package.adoc` §Syntaxes), and the same
+/// chapter spells the terminology `"SNOMED-CT"`.
+#[test]
+fn snomed_ct_with_a_space_is_refused() {
+    let wts = web_templates();
+    let msgs = validate("ehrb_adbm_op_consult_record.json", &wts);
+    assert!(
+        msgs.iter().any(|m| m.path.ends_with("/terminology_id")),
+        "the space in \"SNOMED CT\" must be refused at its terminology_id path, got {msgs:?}"
     );
 }
 

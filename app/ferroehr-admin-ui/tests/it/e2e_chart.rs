@@ -114,7 +114,10 @@ async fn results_chart_groups_series_and_toggles_them() {
         .send_keys(CHART_AQL)
         .await
         .expect("type the AQL");
-    h.wait_xpath("//button[normalize-space(.)='Run']")
+    // Run stays DISABLED until the editor's content reaches the signal, so the
+    // wait has to include the condition — a click on the disabled button is
+    // intercepted by the toolbar above it, not merely lost.
+    h.wait_clickable_xpath("//button[normalize-space(.)='Run']")
         .await
         .click()
         .await

@@ -586,6 +586,32 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **AQL archetype subsumption works again for ADL 2 identifiers.** A query
+  naming a parent archetype is supposed to match data created with its
+  specialisations. For an AOM2-era identifier — `openEHR-EHR-OBSERVATION
+  .lipid_panel.v1.0.0`, the form an ADL 2 archetype actually carries — it did
+  not: the predicate read the identifier through a decomposition that accepts
+  only the single-part `.v1` version, silently fell back to matching the whole
+  identifier string, and left the index built for the subsumption query unused.
+  The answer was narrower than the spec requires, with no error. Both eras'
+  forms are now read through the same decomposition the lineage index is built
+  from.
+
+- **`TERMINOLOGY_ID` now enforces its grammar.** A value was accepted if it was
+  merely non-empty and printable, so `"SNOMED CT"` and
+  `"http://snomed.info/sct"` passed. The identifier is now the production BASE
+  `base_types` master05 §Syntaxes states. The version part in parentheses
+  admits a leading digit, because every example the same chapter gives
+  (`ICD9(1999)`, `ICD10AM(3rd_ed)`) starts with one — reported upstream, since
+  the grammar as written refuses openEHR's own identifiers.
+
+- **A Web Template no longer reports a query string as a terminology.** A
+  `C_CODE_REFERENCE` whose reference-set URI carries parameters —
+  `terminology:NSI?subset=doctor_category&language=en-GB` — had the entire
+  remainder copied into the input's `terminology` field, which is a terminology
+  identifier. Only the identifying part is taken now, for both the bare form
+  the conformance templates use and the addressed form AQL documents.
+
 - **The release lane would have shipped a release with no binaries.** GitHub
   release immutability is now enabled, which freezes a release's assets the
   moment it is published — and the binaries, SBOMs and Sigstore bundles are

@@ -18,11 +18,10 @@ use std::fmt::Write as _;
 use sea_query::extension::postgres::PgFunc;
 use sea_query::{Alias, BinOper, Expr, ExprTrait as _, Func, Value};
 
-use openehr_base::prelude::ArchetypeId;
 use openehr_query::lexer::CompOp;
 
 use crate::aql::ir::{Coercion, EhrField, LeafPath, PathTarget, TypeSet, TypedLit, VersionField};
-use crate::aql::lineage::{ArchetypeKey, ArchetypeLineage};
+use crate::aql::lineage::{ArchetypeLineage, decompose_hrid};
 
 /// A typed `"alias"."column"` reference.
 pub(super) fn col(alias: &str, column: &str) -> Expr {
@@ -227,17 +226,14 @@ pub(super) fn aql_like_to_sql(pattern: &str) -> String {
 // `archetype_node_id` string equality; we implement BASE/AM subsumption instead,
 // since a parent archetype must retrieve its children (master10).
 pub(super) fn archetype_predicate(node: &str, value: &str, lineage: &ArchetypeLineage) -> Expr {
-    let Ok(id) = value.parse::<ArchetypeId>() else {
+    // Both eras' identifier forms are read here, through the SAME decomposition
+    // the lineage index is built with — a form one side accepts and the other
+    // declines would silently narrow the answer instead of erroring.
+    let Some(decomposed) = decompose_hrid(value) else {
         return archetype_equality(node, value);
     };
-    let Ok(major) = id.major_version().parse::<i32>() else {
-        return archetype_equality(node, value);
-    };
-    let queried = ArchetypeKey::new(id.qualified_rm_entity(), id.domain_concept(), major);
-    // An ADL 1.4-form id carries a major-only version; a `.vMAJOR.MINOR.PATCH`
-    // version marks the AOM2-era physical form (AM `AOM2` master07.05), whose
-    // `-` segments carry no lineage.
-    let legacy_form = !id.version_id().contains('.');
+    let queried = decomposed.key;
+    let legacy_form = decomposed.legacy_form;
 
     // The matching set, grouped by the (entity, major) interface boundary each
     // member is scoped to. `BTreeMap`/`BTreeSet` keep the emitted SQL
@@ -427,6 +423,33 @@ mod tests {
             !sql.contains("LIKE"),
             "no `-`-prefix heuristic for an AOM2-era identifier: {sql}"
         );
+    }
+
+    /// A value that is no archetype identifier at all falls back to plain
+    /// equality on the whole `archetype` column.
+    ///
+    /// Asserted so the fallback stays REACHABLE and honest: an `at`-code or a
+    /// free string names no interface, so there is nothing to subsume over —
+    /// but if the decomposition ever started accepting these, the predicate
+    /// would silently widen instead of matching what was asked for.
+    #[test]
+    fn a_non_identifier_falls_back_to_equality() {
+        for value in [
+            "at0001",
+            "id3",
+            "not an archetype",
+            "openEHR-EHR-OBSERVATION",
+        ] {
+            let sql = archetype_predicate_sql(value, &ArchetypeLineage::default());
+            assert!(
+                sql.contains(r#""n"."archetype""#),
+                "{value:?} names no interface, so it matches the whole id: {sql}"
+            );
+            assert!(
+                !sql.contains("arch_concept"),
+                "{value:?} must not reach the subsumption columns: {sql}"
+            );
+        }
     }
 
     /// A stored specialisation family widens the matching set to `= ANY(…)`
