@@ -5,9 +5,10 @@
 //! (`RM/docs/UML/classes/org.openehr.rm.common.folder.adoc`) carries
 //! Description / Inherit / Attributes rows and no Invariants section, and the
 //! vendored BMM class definition likewise has no `invariants` member. So the
-//! only invariant that applies to a `FOLDER` is the one it inherits from
-//! `LOCATABLE` — `Archetype_node_id_valid`
-//! (`…common.locatable.adoc` §Invariants) — and that is all this impl runs.
+//! `FOLDER` inherits three from `LOCATABLE` (`…common.locatable.adoc`
+//! §Invariants): `Archetype_node_id_valid`, which this impl runs; `Links_valid`,
+//! structural (`links` is `Option<NonEmptyVec<Link>>`); and `Archetyped_valid`,
+//! whose enforceable arm runs per node in the `openehr-its` instance pass.
 
 use crate::v1_2::common::directory::folder::Folder;
 use openehr_base::validate::{InvariantViolation, Validate};

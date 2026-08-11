@@ -86,3 +86,37 @@ output, never the raw files:
   `*_impl.rs` siblings or hand-written runtimes.
 - Gates: `cargo clippy -p openehr-codegen --all-targets` +
   `cargo nextest run -p openehr-codegen` + a clean drift check.
+
+## Container shapes (the emission adjudication)
+
+A container property's Rust shape follows its BMM **existence** and
+**cardinality**, decided at one point in `render/emit.rs`:
+
+| BMM | Rust | why |
+|---|---|---|
+| mandatory (`1..1`), cardinality `0..*` | `Vec<T>` | genuinely admits zero members |
+| mandatory, cardinality `1..*` | `NonEmptyVec<T>` | the bound is a structural statement about the model, so the type carries it |
+| optional (`0..1`), no non-empty rule | `Option<Vec<T>>` | "absent" and "present-but-empty" are two legitimate model states |
+| optional, with a non-empty invariant | `Option<NonEmptyVec<T>>` | no valid instance can carry present-but-empty, so it stops being representable |
+
+The RM **does** distinguish Void from empty on a `0..1 List<T>`. Where a class
+invariant of the `x /= Void implies not x.is_empty` family forbids the
+present-but-empty state (`LOCATABLE.Links_valid`,
+`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
+§Invariants), the invariant then holds by construction and the strict readers
+refuse `[]` at parse — parse-don't-validate, the same door the `1..*` mandatory
+containers take. Where no such rule exists (`FOLDER.items`/`folders`,
+`…org.openehr.rm.common.folder.adoc` §Attributes types both `0..1` with no
+non-empty rule), both states are real and the type must carry both.
+
+The `1..*` cardinality source is the BMM, minus the overrides in
+`plan/overrides.rs` `cardinality_contradicted` — a class whose own invariants
+contradict its declared lower bound.
+
+**The wire is unaffected in the write direction**: the canonical-JSON writer
+omits an empty list whether it is `None` or `Some(vec![])`, per
+`docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md` §JSON
+Format ("The RM attributes (even required ones) that are `Null` or an empty
+list (array) SHOULD be absent when serialized as JSON"). The reader is the
+direction that gains: absent → `None`, `[]` → `Some(vec![])` (or a refusal
+where the type is `NonEmptyVec`).

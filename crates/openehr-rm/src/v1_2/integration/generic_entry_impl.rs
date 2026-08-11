@@ -5,7 +5,8 @@
 //! `org.openehr.rm.integration.generic_entry.adoc` — GENERIC_ENTRY carries
 //! only the generic `data: ITEM` (1..1, enforced structurally by the typed
 //! deserialize) plus the inherited LOCATABLE duties
-//! (`Archetype_node_id_valid`).
+//! (`Archetype_node_id_valid`; the sibling `Links_valid` is structural and
+//! `Archetyped_valid` runs in the `openehr-its` instance pass).
 
 use crate::v1_2::integration::generic_entry::GenericEntry;
 use openehr_base::validate::{InvariantViolation, Validate};

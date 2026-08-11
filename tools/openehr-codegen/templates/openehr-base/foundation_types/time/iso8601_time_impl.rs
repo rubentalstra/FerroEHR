@@ -18,6 +18,27 @@
 //!   definite forms exist for a time — 'year' and 'month' cannot land on a clock
 //!   face, so `Iso8601_time` declares no `add_nominal`).
 //!
+//! Invariants — the FIVE entries the class table declares under §Invariants,
+//! plus one rule of our own naming:
+//! - `Hour_valid`, `Minute_valid`, `Second_valid` and
+//!   `Fractional_second_valid` — checked, each under its own name (shared with
+//!   `Iso8601_date_time`, which re-declares all four verbatim).
+//! - `Partial_validity` (`minute_unknown implies second_unknown`) —
+//!   structurally satisfied: no accepted form writes a second without a minute.
+//! - `Value_lexical_form_valid` — OUR OWN name, because the class table
+//!   declares none: a value that is not the `valid_iso8601_time` production at
+//!   all has no components, so every declared invariant holds vacuously.
+//!
+//! NOTE: `Hour_valid` is `valid_hour (hour, minute, second)`, whose
+//! postcondition also admits `h = Hours_in_day and m = 0 and s = 0`; this class
+//! and `master06` §Primitive Time Types both forbid `24:00:00` "anywhere", so
+//! the invariant is enforced as `hour < 24`.
+//!
+//! NOTE: the timezone's own bounds are `Iso8601_timezone`'s invariants
+//! (`org.openehr.base.foundation_types.iso8601_timezone.adoc` §Invariants), a
+//! class an `Iso8601_time` carries only as a lexeme, so an out-of-range offset
+//! is reported as a lexical-form failure rather than under one of them.
+//!
 //! NOTE: arithmetic needs every component, and the openEHR spec says nothing
 //! about computing on a PARTIAL time (`hh`, `hh:mm`) — a partial (or
 //! unparseable) operand yields `None`, the same undecidable answer this
@@ -50,9 +71,10 @@ use super::iso8601_duration::Iso8601Duration;
 use super::iso8601_parse::{
     EXACT_SECONDS_IN_DAY, EXACT_SECONDS_IN_HOUR, EXACT_SECONDS_IN_MINUTE, ExactSeconds, ParsedTime,
     as_extended_time, hms_from_seconds_of_day, parse_time, range_before, render_duration,
-    render_time_extended, time_completion_range,
+    render_time_extended, scan_time, time_completion_range,
 };
 use super::iso8601_time::Iso8601Time;
+use crate::validate::{InvariantViolation, Validate};
 
 impl Iso8601Time {
     /// Parsed components, or `None` when `value` is not a valid ISO 8601 time.
@@ -253,6 +275,55 @@ impl PartialOrd for Iso8601Time {
             return Some(Ordering::Equal); // consistent with the derived PartialEq
         }
         cmp_time(&self.parsed()?, &other.parsed()?)
+    }
+}
+
+/// The uniform violation for one named invariant, on the class reporting it —
+/// `Iso8601_time`, or `Iso8601_date_time` where it re-declares the same rule.
+fn failed(invariant: &str, type_name: &str) -> InvariantViolation {
+    InvariantViolation::here(format!("Invariant {invariant} failed on type {type_name}"))
+}
+
+/// Appends the time-component invariant violations of a scanned value.
+///
+/// The rules are `Hour_valid`, `Minute_valid`, `Second_valid` and
+/// `Fractional_second_valid`, reported on `type_name`. `Iso8601_date_time`
+/// declares the same four under the same names with the same expressions, so
+/// both classes report through this one body.
+pub(crate) fn push_time_component_violations(
+    t: &ParsedTime,
+    type_name: &str,
+    out: &mut Vec<InvariantViolation>,
+) {
+    // Hour_valid — `24:00:00` is forbidden anywhere (module NOTE).
+    if t.hour >= 24 {
+        out.push(failed("Hour_valid", type_name));
+    }
+    // Minute_valid / Second_valid: `valid_minute (m)` is `m < Minutes_in_hour`
+    // and `valid_second (s)` is `s < Seconds_in_minute`, each on a present
+    // component (the implication is vacuous on an absent one).
+    if t.minute.is_some_and(|m| m >= 60) {
+        out.push(failed("Minute_valid", type_name));
+    }
+    if t.second.is_some_and(|s| s >= 60) {
+        out.push(failed("Second_valid", type_name));
+    }
+    // Fractional_second_valid: significant only alongside a present second, and
+    // `valid_fractional_second (fs)` is `fs >= 0.0 and fs < 1.0`.
+    if let Some(f) = t.fractional_second
+        && (t.second.is_none() || !(0.0..1.0).contains(&f))
+    {
+        out.push(failed("Fractional_second_valid", type_name));
+    }
+}
+
+impl Validate for Iso8601Time {
+    fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
+        let Some(t) = scan_time(&self.value) else {
+            out.push(failed("Value_lexical_form_valid", "Iso8601_time"));
+            return;
+        };
+        push_time_component_violations(&t, "Iso8601_time", out);
     }
 }
 
@@ -562,6 +633,59 @@ mod tests {
     }
 
     // ── partial / malformed operands ─────────────────────────────────────────
+
+    // ── invariants ───────────────────────────────────────────────────────────
+
+    /// Every invalid value names the `iso8601_time.adoc` §Invariants entry it
+    /// breaks, rather than merely failing to parse.
+    #[test]
+    fn invalid_times_name_the_invariant_they_break() {
+        for (bad, invariant) in [
+            // Hour_valid — including the `24:00:00` openEHR deviation.
+            ("24:00:00", "Hour_valid"),
+            ("25:30", "Hour_valid"),
+            ("990000", "Hour_valid"),
+            // Minute_valid / Second_valid.
+            ("12:60:00", "Minute_valid"),
+            ("12:00:60", "Second_valid"),
+            // Fractional_second_valid: a fraction with no second to carry it.
+            ("12:00.5", "Fractional_second_valid"),
+            // Our own lexical rule: not the valid_iso8601_time production.
+            ("nonsense", "Value_lexical_form_valid"),
+            ("12:00:00+15:00", "Value_lexical_form_valid"),
+            ("12:0:00", "Value_lexical_form_valid"),
+            ("", "Value_lexical_form_valid"),
+        ] {
+            let v = time(bad).invariants();
+            let expected = format!("Invariant {invariant} failed on type Iso8601_time");
+            assert!(
+                v.iter().any(|m| m.message == expected),
+                "{bad:?} should report {invariant}, got {v:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn valid_times_including_every_partial_form_report_nothing() {
+        for good in [
+            "12",
+            "12:00",
+            "12:00:00",
+            "1200",
+            "120000",
+            "12:00:00.5",
+            "12:00:00,25",
+            "23:59:59",
+            "00:00:00Z",
+            "12:00:00+02:00",
+            "120000-0500",
+        ] {
+            assert!(
+                time(good).invariants().is_empty(),
+                "{good:?} is a valid Iso8601_time"
+            );
+        }
+    }
 
     #[test]
     fn partial_and_malformed_values_have_no_arithmetic() {

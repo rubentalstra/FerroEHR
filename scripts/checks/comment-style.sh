@@ -66,7 +66,11 @@ esac
 
 fail=0
 for f in "${files[@]}"; do
-  grep -q '@generated' "$f" 2>/dev/null && continue
+  # A generated file carries its banner in the HEADER. Matching the marker
+  # anywhere let a hand-written file exempt itself by merely mentioning it in
+  # prose — `templates/openehr-rm/validate.rs` did exactly that and carried an
+  # over-budget NOTE the guard never saw (#2266).
+  head -n 3 "$f" 2>/dev/null | grep -q '@generated' && continue
   out="$(awk -v NOTE_MAX="$NOTE_MAX" -v RUN_MAX="$RUN_MAX" '
     function flush_note() {
       if (note_len > NOTE_MAX)

@@ -41,6 +41,15 @@
 //!   not resolve, is COLLECTED as a
 //!   [`crate::v1_1::bmm_persistence::validate::PBmmValidityFinding::AssertionNotMaterialised`]
 //!   and omitted, never a refusal of the schema.
+//! * **A constant stating no value.** `P_BMM_CONSTANT.value` is `0..1`
+//!   (`…bmm_persistence.p_bmm_constant.adoc` §Attributes) while the v3
+//!   `BMM_CONSTANT.generator` is `1..1` over a `1..1` `value_literal`
+//!   (`…bmm3.bmm_constant.adoc`, `…bmm3.bmm_literal_value.adoc` §Attributes),
+//!   and openEHR's own published LANG schemas omit the value on
+//!   `BMM_DEFINITIONS.Bmm_internal_version`. The constant is therefore
+//!   COLLECTED as a
+//!   [`crate::v1_1::bmm_persistence::validate::PBmmValidityFinding::ConstantNotMaterialised`]
+//!   and omitted; no empty serial form is invented.
 //!
 //! NOTE (embedding depth, the same adjudication as the v2.x transform): a v3
 //! `BMM_CLASS.ancestors` entry is a type whose `base_class` is a `BMM_CLASS`, so
@@ -96,6 +105,7 @@ use crate::v1_1::bmm3::core::entity::bmm_module::BmmModule;
 use crate::v1_1::bmm3::core::entity::bmm_parameter_type::BmmParameterType;
 use crate::v1_1::bmm3::core::entity::bmm_simple_class::BmmSimpleClass;
 use crate::v1_1::bmm3::core::entity::bmm_simple_class::BmmSimpleClassData;
+use crate::v1_1::bmm3::core::entity::bmm_simple_type::BmmSimpleType;
 use crate::v1_1::bmm3::core::entity::bmm_type::BmmType;
 use crate::v1_1::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType;
 use crate::v1_1::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumeration;
@@ -115,6 +125,7 @@ use crate::v1_1::bmm3::core::feature::bmm_procedure::BmmProcedure;
 use crate::v1_1::bmm3::core::feature::bmm_property::BmmProperty;
 use crate::v1_1::bmm3::core::feature::bmm_result::BmmResult;
 use crate::v1_1::bmm3::core::feature::bmm_static::BmmStatic;
+use crate::v1_1::bmm3::core::literal_value::bmm_integer_value::BmmIntegerValue;
 use crate::v1_1::bmm3::core::literal_value::bmm_literal_value::BmmLiteralValue;
 use crate::v1_1::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValue;
 use crate::v1_1::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValueData;
@@ -152,18 +163,22 @@ const VALUE_SET_SEPARATOR: &str = "::";
 /// [`PBmmReadError::NotAGenericClass`],
 /// [`PBmmReadError::EnumerationAncestorCount`] and
 /// [`PBmmReadError::EnumerationItemListsNotOneToOne`] — the two transforms share
-/// one enumeration-validity check, so they refuse the same schemas.
+/// one enumeration-validity check, so they refuse the same schemas there — plus
+/// [`PBmmReadError::EnumerationItemValueNotAnInteger`], which only this
+/// generation can raise because only v3 types the item values.
 pub fn create_bmm3_model(schema: &PBmmSchema) -> Result<BmmModel, PBmmReadError> {
     create_bmm3_model_reporting(schema).map(|(model, _)| model)
 }
 
-/// Materialises the v3 `BMM_MODEL` and returns the assertion findings alongside
-/// it.
+/// Materialises the v3 `BMM_MODEL` and returns the materialisation findings
+/// alongside it.
 ///
 /// Same transform as [`create_bmm3_model`]; the second element is every
 /// persisted invariant / pre-condition / post-condition string that could not
 /// become a `BMM_ASSERTION`
-/// ([`crate::v1_1::bmm_persistence::validate::PBmmValidityFinding::AssertionNotMaterialised`]).
+/// ([`crate::v1_1::bmm_persistence::validate::PBmmValidityFinding::AssertionNotMaterialised`])
+/// and every constant that states no value
+/// ([`crate::v1_1::bmm_persistence::validate::PBmmValidityFinding::ConstantNotMaterialised`]).
 /// The findings are COLLECTED rather than fatal, for the same reason
 /// [`crate::v1_1::bmm_persistence::validate::validate_schema`]'s are: a validity
 /// report is only useful whole.
@@ -1733,6 +1748,12 @@ fn parameter_context(class: &str, routine: &str, parameter: &str) -> String {
 /// constants — "Static properties defined in this class"
 /// (`org.openehr.lang.bmm3.bmm_class.adoc` §Attributes), of which `BMM_CONSTANT`
 /// is the literal-valued form (`…bmm3.bmm_static.adoc`).
+///
+/// A constant stating no value carries no `value_literal`, so it is COLLECTED
+/// as a
+/// [`crate::v1_1::bmm_persistence::validate::PBmmValidityFinding::ConstantNotMaterialised`]
+/// and omitted — the same boundary the assertions take, and for the same
+/// reason: the persisted form is legal, so the schema is not refused.
 fn build_constants(
     builder: &Builder<'_>,
     persisted: &PBmmClass,
@@ -1743,9 +1764,25 @@ fn build_constants(
     };
     let mut out = BTreeMap::new();
     for (key, constant) in constants {
+        let Some(value_literal) = constant.value.clone() else {
+            builder
+                .findings
+                .borrow_mut()
+                .push(PBmmValidityFinding::ConstantNotMaterialised {
+                    class: persisted.name().to_owned(),
+                    constant: constant.name.clone(),
+                });
+            continue;
+        };
         out.insert(
             key.clone(),
-            BmmStatic::BmmConstant(build_constant(builder, persisted, constant, visiting)?),
+            BmmStatic::BmmConstant(build_constant(
+                builder,
+                persisted,
+                constant,
+                value_literal,
+                visiting,
+            )?),
         );
     }
     Ok((!out.is_empty()).then_some(out))
@@ -1761,10 +1798,14 @@ fn build_constants(
 /// native `value` is left unset, per the literal-evaluation boundary recorded in
 /// [`crate::v1_1::bmm3::core::literal_value::bmm_literal_value_impl`]. `Inv_not_nullable`
 /// makes a constant non-nullable (`…bmm3.bmm_constant.adoc` §Invariants).
+///
+/// `value_literal` is `1..1`, so the persisted value arrives as a parameter its
+/// caller has already resolved: a constant that states none never reaches here.
 fn build_constant(
     builder: &Builder<'_>,
     owner: &PBmmClass,
     constant: &PBmmConstant,
+    value_literal: String,
     visiting: &mut BTreeSet<String>,
 ) -> Result<BmmConstant, PBmmReadError> {
     let context = format!("class `{}` constant `{}`", owner.name(), constant.name);
@@ -1790,7 +1831,7 @@ fn build_constant(
         group: group_back_reference(),
         generator: BmmLiteralValue::BmmPrimitiveValue(BmmPrimitiveValue::BmmPrimitiveValue(
             BmmPrimitiveValueData {
-                value_literal: constant.value.clone().unwrap_or_default(),
+                value_literal,
                 value: None,
                 // `_syntax_` unset means the `json` default applies
                 // (`…bmm3.bmm_literal_value.adoc` §Attributes); P_BMM states no
@@ -1838,47 +1879,34 @@ fn build_enumeration(
     };
     let item_names = persisted.item_names().to_vec();
     match persisted {
-        PBmmEnumeration::PBmmEnumerationInteger(_) => Ok(BmmEnumeration::BmmEnumerationInteger(
-            BmmEnumerationInteger {
-                name: core.name,
-                documentation: core.documentation,
-                extensions: None,
-                feature_groups: present(core.feature_groups),
-                features: present(core.features),
-                ancestors: core.ancestors,
-                package: core.package,
-                properties: core.properties,
-                source_schema_id: core.source_schema_id,
-                immediate_descendants: present(Vec::new()),
-                is_override: core.is_override,
-                static_properties: core.static_properties,
-                functions: core.functions,
-                procedures: core.procedures,
-                is_primitive: core.is_primitive,
-                is_abstract: core.is_abstract,
-                invariants: present(core.invariants.clone()),
-                creators: None,
-                converters: None,
-                item_names: present(item_names),
-                item_values: present(
-                    persisted
-                        .item_values()
-                        .iter()
-                        .map(|value| {
-                            crate::v1_1::bmm3::core::literal_value::bmm_integer_value::BmmIntegerValue {
-                                value_literal: literal_form(value),
-                                value: value
-                                    .as_i64()
-                                    .and_then(|v| i32::try_from(v).ok())
-                                    .unwrap_or_default(),
-                                syntax: None,
-                                r#type: underlying.clone(),
-                            }
-                        })
-                        .collect(),
-                ),
-            },
-        )),
+        PBmmEnumeration::PBmmEnumerationInteger(_) => {
+            let item_values = integer_item_values(&core.name, persisted, &underlying)?;
+            Ok(BmmEnumeration::BmmEnumerationInteger(
+                BmmEnumerationInteger {
+                    name: core.name,
+                    documentation: core.documentation,
+                    extensions: None,
+                    feature_groups: present(core.feature_groups),
+                    features: present(core.features),
+                    ancestors: core.ancestors,
+                    package: core.package,
+                    properties: core.properties,
+                    source_schema_id: core.source_schema_id,
+                    immediate_descendants: present(Vec::new()),
+                    is_override: core.is_override,
+                    static_properties: core.static_properties,
+                    functions: core.functions,
+                    procedures: core.procedures,
+                    is_primitive: core.is_primitive,
+                    is_abstract: core.is_abstract,
+                    invariants: present(core.invariants.clone()),
+                    creators: None,
+                    converters: None,
+                    item_names: present(item_names),
+                    item_values: present(item_values),
+                },
+            ))
+        }
         PBmmEnumeration::PBmmEnumerationString(_) => {
             Ok(BmmEnumeration::BmmEnumerationString(BmmEnumerationString {
                 name: core.name,
@@ -1960,6 +1988,55 @@ fn build_enumeration(
     }
 }
 
+/// Builds the `BMM_ENUMERATION_INTEGER` item values, one `BMM_INTEGER_VALUE`
+/// per persisted scalar.
+///
+/// `BMM_ENUMERATION_INTEGER` redefines `item_values` to
+/// `List<BMM_INTEGER_VALUE>`
+/// (`org.openehr.lang.bmm3.bmm_enumeration_integer.adoc` §Attributes) whose
+/// `value` is a "Native Integer value"
+/// (`org.openehr.lang.bmm3.bmm_integer_value.adoc` §Attributes) — an `Integer`
+/// being a 32-bit integer
+/// (`BASE/docs/foundation_types/master03-primitive_types.adoc` §Overview) — so
+/// a persisted scalar of another kind, or outside that range, states no native
+/// value and is refused rather than substituted.
+///
+/// The item is named from `item_names` at the same position, which
+/// [`check_enumeration_validity`] has already proven 1:1 with the values
+/// whenever any value is stated.
+///
+/// # Errors
+/// [`PBmmReadError::EnumerationItemValueNotAnInteger`].
+fn integer_item_values(
+    class: &str,
+    persisted: &PBmmEnumeration,
+    underlying: &BmmSimpleType,
+) -> Result<Vec<BmmIntegerValue>, PBmmReadError> {
+    let names = persisted.item_names();
+    persisted
+        .item_values()
+        .iter()
+        .enumerate()
+        .map(|(index, value)| {
+            let native = value
+                .as_i64()
+                .and_then(|wide| i32::try_from(wide).ok())
+                .ok_or_else(|| PBmmReadError::EnumerationItemValueNotAnInteger {
+                    class: class.to_owned(),
+                    index,
+                    item: names.get(index).cloned(),
+                    value: literal_form(value),
+                })?;
+            Ok(BmmIntegerValue {
+                value_literal: literal_form(value),
+                value: native,
+                syntax: None,
+                r#type: underlying.clone(),
+            })
+        })
+        .collect()
+}
+
 /// The serial form of a persisted enumeration value — `BMM_LITERAL_VALUE.value_literal`,
 /// "A serial representation of the value"
 /// (`org.openehr.lang.bmm3.bmm_literal_value.adoc` §Attributes). A JSON string
@@ -2013,4 +2090,214 @@ fn build_packages(
         );
     }
     Ok(out)
+}
+
+#[cfg(test)]
+mod tests {
+    #![expect(
+        clippy::panic_in_result_fn,
+        reason = "the Book ch11 test shape: `?` propagates the read/model plumbing while a let-else over the materialised class shape IS the assertion"
+    )]
+
+    use crate::v1_1::bmm_persistence::create_bmm3_model::create_bmm3_model;
+    use crate::v1_1::bmm_persistence::create_bmm3_model::create_bmm3_model_reporting;
+    use crate::v1_1::bmm_persistence::error::PBmmReadError;
+    use crate::v1_1::bmm_persistence::reader::read_schema;
+    use crate::v1_1::bmm_persistence::validate::PBmmValidityFinding;
+    use crate::v1_1::bmm3::core::entity::bmm_class::BmmClass;
+    use crate::v1_1::bmm3::core::entity::bmm_simple_class::BmmSimpleClass;
+    use crate::v1_1::bmm3::core::entity::range_constrained::bmm_enumeration::BmmEnumeration;
+    use crate::v1_1::bmm3::core::feature::bmm_static::BmmStatic;
+    use crate::v1_1::bmm3::core::literal_value::bmm_literal_value::BmmLiteralValue;
+    use crate::v1_1::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValue;
+    use crate::v1_1::bmm3::core::model::bmm_model::BmmModel;
+
+    /// A schema whose single package lists the primitive base classes plus the
+    /// class under test, in the `master04-syntax.adoc` §Header Items shape.
+    fn schema_src(definitions: &str) -> String {
+        format!(
+            r#"
+            bmm_version = <"2.4">
+            rm_publisher = <"openehr">
+            schema_name = <"bmm3_literal_values">
+            rm_release = <"1.0.2">
+            packages = <
+                ["test"] = <
+                    name = <"test">
+                    classes = <"Integer", "String", "SUBJECT">
+                >
+            >
+            class_definitions = <
+                ["Integer"] = < name = <"Integer"> >
+                ["String"] = < name = <"String"> >
+                {definitions}
+            >
+            "#
+        )
+    }
+
+    /// The v3 model of a schema built by [`schema_src`].
+    fn model_of(definitions: &str) -> Result<BmmModel, PBmmReadError> {
+        create_bmm3_model(&read_schema(&schema_src(definitions))?)
+    }
+
+    /// The `BMM_ENUMERATION_INTEGER` item values of the class `SUBJECT` in a
+    /// model built from `definitions`.
+    fn integer_items(definitions: &str) -> Result<Vec<i32>, PBmmReadError> {
+        let model = model_of(definitions)?;
+        let classes = model
+            .class_definitions
+            .as_ref()
+            .expect("the model defines classes");
+        let subject = classes.get("SUBJECT").expect("SUBJECT materialised");
+        let BmmClass::BmmSimpleClass(BmmSimpleClass::BmmEnumeration(
+            BmmEnumeration::BmmEnumerationInteger(enumeration),
+        )) = subject
+        else {
+            panic!("SUBJECT is not an integer enumeration");
+        };
+        Ok(enumeration
+            .item_values
+            .iter()
+            .flatten()
+            .map(|item| item.value)
+            .collect())
+    }
+
+    /// `org.openehr.lang.bmm3.bmm_enumeration_integer.adoc` §Attributes: the
+    /// item values are `BMM_INTEGER_VALUE`s, so distinct persisted scalars stay
+    /// distinct native values.
+    #[test]
+    fn integer_enumeration_values_reach_the_model_unchanged() {
+        let items = integer_items(
+            r#"["SUBJECT"] = (P_BMM_ENUMERATION_INTEGER) <
+                    name = <"SUBJECT">
+                    ancestors = <"Integer">
+                    item_names = <"first", "second">
+                    item_values = <1001, 1002>
+                >"#,
+        )
+        .expect("the enumeration materialises");
+        assert_eq!(items, vec![1001, 1002]);
+    }
+
+    /// An item value outside `Integer`'s 32-bit range
+    /// (`BASE/docs/foundation_types/master03-primitive_types.adoc` §Overview)
+    /// has no `BMM_INTEGER_VALUE.value`, so it is refused with the item named
+    /// rather than collapsed onto another item's value.
+    #[test]
+    fn an_out_of_range_integer_enumeration_value_is_refused() {
+        let refusal = integer_items(
+            r#"["SUBJECT"] = (P_BMM_ENUMERATION_INTEGER) <
+                    name = <"SUBJECT">
+                    ancestors = <"Integer">
+                    item_names = <"first", "second">
+                    item_values = <3000000000, 4000000000>
+                >"#,
+        )
+        .expect_err("an out-of-range item value is refused");
+        assert_eq!(
+            refusal,
+            PBmmReadError::EnumerationItemValueNotAnInteger {
+                class: "SUBJECT".to_owned(),
+                index: 0,
+                item: Some("first".to_owned()),
+                value: "3000000000".to_owned(),
+            },
+        );
+    }
+
+    /// A persisted item value of another JSON kind names no `Integer` either.
+    #[test]
+    fn a_non_numeric_integer_enumeration_value_is_refused() {
+        let refusal = integer_items(
+            r#"["SUBJECT"] = (P_BMM_ENUMERATION_INTEGER) <
+                    name = <"SUBJECT">
+                    ancestors = <"Integer">
+                    item_names = <"first", "second">
+                    item_values = <"one", "two">
+                >"#,
+        )
+        .expect_err("a non-integer item value is refused");
+        assert_eq!(
+            refusal,
+            PBmmReadError::EnumerationItemValueNotAnInteger {
+                class: "SUBJECT".to_owned(),
+                index: 0,
+                item: Some("first".to_owned()),
+                value: "one".to_owned(),
+            },
+        );
+    }
+
+    /// `org.openehr.lang.bmm3.bmm_constant.adoc` §Attributes: `generator` is
+    /// `1..1`, and its `value_literal` carries the persisted serial form.
+    #[test]
+    fn a_persisted_constant_value_becomes_the_generator_literal() {
+        let model = model_of(
+            r#"["SUBJECT"] = <
+                    name = <"SUBJECT">
+                    constants = <
+                        ["Max_retries"] = < name = <"Max_retries"> type = <"Integer"> value = <"3"> >
+                    >
+                >"#,
+        )
+        .expect("the class materialises");
+        let classes = model
+            .class_definitions
+            .as_ref()
+            .expect("the model defines classes");
+        let subject = classes.get("SUBJECT").expect("SUBJECT materialised");
+        let statics = subject.static_properties().expect("SUBJECT has constants");
+        let BmmStatic::BmmConstant(constant) =
+            statics.get("Max_retries").expect("the constant is keyed")
+        else {
+            panic!("Max_retries is not a constant");
+        };
+        let BmmLiteralValue::BmmPrimitiveValue(BmmPrimitiveValue::BmmPrimitiveValue(literal)) =
+            &constant.generator
+        else {
+            panic!("the generator is not a primitive value");
+        };
+        assert_eq!(literal.value_literal, "3");
+    }
+
+    /// `P_BMM_CONSTANT.value` is `0..1` while `BMM_LITERAL_VALUE.value_literal`
+    /// is `1..1`, so a constant stating no value is omitted with a finding —
+    /// never materialised with an empty serial form, and never a refusal of a
+    /// persisted form the P_BMM spec admits.
+    #[test]
+    fn a_constant_without_a_persisted_value_is_omitted_with_a_finding() {
+        let (model, findings) = create_bmm3_model_reporting(
+            &read_schema(&schema_src(
+                r#"["SUBJECT"] = <
+                    name = <"SUBJECT">
+                    constants = <
+                        ["Max_retries"] = < name = <"Max_retries"> type = <"Integer"> >
+                        ["Min_retries"] = < name = <"Min_retries"> type = <"Integer"> value = <"1"> >
+                    >
+                >"#,
+            ))
+            .expect("the fixture reads"),
+        )
+        .expect("the class materialises");
+        assert_eq!(
+            findings,
+            vec![PBmmValidityFinding::ConstantNotMaterialised {
+                class: "SUBJECT".to_owned(),
+                constant: "Max_retries".to_owned(),
+            }],
+        );
+        let classes = model
+            .class_definitions
+            .as_ref()
+            .expect("the model defines classes");
+        let subject = classes.get("SUBJECT").expect("SUBJECT materialised");
+        let statics = subject.static_properties().expect("SUBJECT has constants");
+        assert!(!statics.contains_key("Max_retries"));
+        assert!(statics.contains_key("Min_retries"));
+        // The omission reaches the feature list too, which is derived from the
+        // same map (`master07-core-classes.adoc` §Overview).
+        assert!(!subject.features().iter().any(|f| f.name() == "Max_retries"));
+    }
 }

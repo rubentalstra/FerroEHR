@@ -186,8 +186,14 @@ impl CmpOp {
 }
 
 /// The right-hand literal of a general comparison conjunct: a single-quoted
-/// string (compared lexically — ISO 8601 date/time strings order temporally)
-/// or an unquoted number (compared numerically).
+/// string (compared byte-lexically) or an unquoted number (compared
+/// numerically).
+///
+/// BASE `master11-paths.adoc` §Predicate Expressions defines the predicate
+/// SYNTAX only, so the evaluation rule is our own design. A lexical compare
+/// coincides with temporal order only for identically-formatted, same-offset,
+/// fully-specified ISO-8601 values — master11's own example literal is
+/// day-first, where it does not.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CmpLiteral {
     /// A `'…'` string literal.
@@ -1083,9 +1089,11 @@ impl fmt::Display for VersionLocator {
 /// A parsed `top_level_structure_locator`: an optional `EHR` attribute name and
 /// an optional versioned-object reference.
 ///
-/// Master11 writes locators as `compositions/<uid-or-OVID>` or `directory`; the
-/// CNF `DV_EHR_URI` fixtures also use the attribute-less short form where the
-/// versioned-object id follows the `ehr_id` directly (both are accepted here).
+/// Master11 writes locators as `compositions/<uid-or-OVID>` or `directory`.
+///
+/// The attribute-less short form — the versioned-object id following the
+/// `ehr_id` directly — is ALSO accepted, and no released form defines it: no
+/// openEHR spec governs that acceptance, it is our own extension (#2270).
 #[derive(Debug, Clone, PartialEq)]
 pub struct TopLevelLocator {
     /// The `EHR` attribute name (`compositions`, `directory`, …), if present.

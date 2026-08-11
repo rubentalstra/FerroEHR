@@ -16,6 +16,33 @@
 //!   `24:00:00` disallowed; §Computational Functions: the definite/nominal
 //!   split).
 //!
+//! Invariants — the TWELVE rows the class table declares under §Invariants:
+//! - `Month_valid`, `Day_valid` (shared with `iso8601_date_impl.rs`) and
+//!   `Hour_valid`, `Minute_valid`, `Second_valid`, `Fractional_second_valid`
+//!   (shared with `iso8601_time_impl.rs`) — checked, each under its own name.
+//!   The first two are read in the GUARDED form the sibling `Iso8601_date`
+//!   class spells them (`not month_unknown implies valid_month (month)`); the
+//!   unguarded literal form would reject every partial this class's own
+//!   Description permits.
+//! - `Year_valid` — structurally satisfied (four zero-filled digits).
+//! - `Partial_validity_minute` (`minute_unknown implies second_unknown`) —
+//!   structurally satisfied: no accepted form writes a second without a minute.
+//! - `Partial_validity_year`, `Partial_validity_month`, `Partial_validity_day`,
+//!   `Partial_validity_hour` — refused, see the NOTEs below.
+//! - `Value_lexical_form_valid` — OUR OWN name, because the class table
+//!   declares no rule for a value that is not the production at all (the same
+//!   rule `iso8601_date_impl.rs` names).
+//!
+//! NOTE: `Partial_validity_day` (`not day_unknown`) and `Partial_validity_hour`
+//! (`not hour_unknown` — a function this class never declares) are NOT
+//! enforced: `master06` §Primitive Time Types states that partial variants of
+//! this type "can include missing hours, days and months".
+//!
+//! NOTE: `Partial_validity_year` carries `Partial_validity_month`'s identical
+//! expression (`not month_unknown`) rather than any year rule, and
+//! `Time_definitions.valid_iso8601_date_time` enumerates no date-only partial;
+//! both are refused on the same `master06` ground.
+//!
 //! NOTE: arithmetic needs every component, and the openEHR spec says nothing
 //! about computing on a PARTIAL date/time — a partial (or unparseable) operand
 //! yields `None`, the same undecidable answer this module's comparison gives.
@@ -45,14 +72,17 @@
 
 use std::cmp::Ordering;
 
+use super::iso8601_date_impl::push_date_component_violations;
 use super::iso8601_date_time::Iso8601DateTime;
 use super::iso8601_duration::Iso8601Duration;
 use super::iso8601_parse::{
     EXACT_SECONDS_IN_DAY, EXACT_SECONDS_IN_HOUR, EXACT_SECONDS_IN_MINUTE, ExactSeconds,
     ParsedDateTime, ParsedTime, as_extended_date_time, civil_from_days, date_time_completion_range,
     days_from_civil, hms_from_seconds_of_day, parse_date_time, range_before, render_date_extended,
-    render_duration, render_time_extended, shift_months,
+    render_duration, render_time_extended, scan_date_time, shift_months,
 };
+use super::iso8601_time_impl::push_time_component_violations;
+use crate::validate::{InvariantViolation, Validate};
 
 impl Iso8601DateTime {
     /// Parsed components, or `None` when `value` is not a valid ISO 8601
@@ -347,6 +377,21 @@ impl PartialOrd for Iso8601DateTime {
             return Some(Ordering::Equal); // consistent with the derived PartialEq
         }
         cmp_date_time(&self.parsed()?, &other.parsed()?)
+    }
+}
+
+impl Validate for Iso8601DateTime {
+    fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
+        let Some(dt) = scan_date_time(&self.value) else {
+            out.push(InvariantViolation::here(
+                "Invariant Value_lexical_form_valid failed on type Iso8601_date_time",
+            ));
+            return;
+        };
+        push_date_component_violations(&dt.date, "Iso8601_date_time", out);
+        if let Some(time) = dt.time {
+            push_time_component_violations(&time, "Iso8601_date_time", out);
+        }
     }
 }
 
@@ -732,6 +777,56 @@ mod tests {
         );
         assert!(dt("garbage").add(&dur("PT1H")).is_none());
         assert!(dt("2020-06-15T12:00:00").add(&dur("1H")).is_none());
+    }
+
+    // ── invariants ───────────────────────────────────────────────────────────
+
+    /// Every invalid value names the `iso8601_date_time.adoc` §Invariants entry
+    /// it breaks, on this class rather than on the date/time class the rule is
+    /// shared with.
+    #[test]
+    fn invalid_date_times_name_the_invariant_they_break() {
+        for (bad, invariant) in [
+            ("2020-13-01T10:00", "Month_valid"),
+            ("2021-02-29T10:00:00", "Day_valid"),
+            ("2020-06-15T24:00:00", "Hour_valid"),
+            ("2020-06-15T12:60", "Minute_valid"),
+            ("2020-06-15T12:00:60", "Second_valid"),
+            ("2020-06-15T12:00.5", "Fractional_second_valid"),
+            ("2020-06-15T", "Value_lexical_form_valid"),
+            ("garbage", "Value_lexical_form_valid"),
+            ("2020-06-15T12:00:00+15:00", "Value_lexical_form_valid"),
+        ] {
+            let v = dt(bad).invariants();
+            let expected = format!("Invariant {invariant} failed on type Iso8601_date_time");
+            assert!(
+                v.iter().any(|m| m.message == expected),
+                "{bad:?} should report {invariant}, got {v:?}"
+            );
+        }
+    }
+
+    /// The partials `master06` §Primitive Time Types permits — "missing hours,
+    /// days and months" — validate clean, which is exactly what the refused
+    /// `Partial_validity_day`/`_hour` clauses would have rejected.
+    #[test]
+    fn valid_date_times_including_every_partial_form_report_nothing() {
+        for good in [
+            "2020",
+            "2020-06",
+            "2020-06-15",
+            "2020-06-15T10",
+            "2020-06-15T10:30",
+            "2020-06-15T10:30:00",
+            "2020-06-15T10:30:00.25Z",
+            "20200615T103000+0200",
+            "2020-02-29T00:00:00",
+        ] {
+            assert!(
+                dt(good).invariants().is_empty(),
+                "{good:?} is a valid Iso8601_date_time"
+            );
+        }
     }
 
     #[test]

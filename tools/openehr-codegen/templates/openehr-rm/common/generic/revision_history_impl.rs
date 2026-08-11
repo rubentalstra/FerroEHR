@@ -16,13 +16,9 @@
 //! … there may also be further attestations"
 //! (`…org.openehr.rm.common.revision_history_item.adoc` §Attributes).
 //!
-//! NOTE: the spec types both functions `1..1`, but the BMM `List` attributes
-//! they walk emit as `Vec`, so a value with no items — or an item with no
-//! audits, which `REVISION_HISTORY_ITEM.Audit_valid` (`not audits.is_empty`)
-//! forbids — is representable in the Rust type and not in the spec model. Each
-//! function therefore returns an `Option`, `None` exactly on that
-//! spec-unrepresentable input, so a caller can never read a fabricated id or
-//! instant out of an empty history.
+//! NOTE: both functions are `1..1` and stay total — `items` and
+//! `REVISION_HISTORY_ITEM.audits` are `NonEmptyVec`, so the empty cases the
+//! spec model forbids are unrepresentable rather than merely rejected.
 
 use crate::v1_2::common::generic::audit_details::AuditDetails;
 use crate::v1_2::common::generic::revision_history::RevisionHistory;
@@ -43,12 +39,11 @@ impl RevisionHistory {
     /// date/time of the most recent item — the `time_committed` of that item's
     /// FIRST audit, which is its commit audit — as its `String` value.
     ///
-    /// Returns `None` when the history holds no items, or the most recent item
-    /// carries no audit (`REVISION_HISTORY_ITEM.Audit_valid` forbids the
-    /// latter; see the module docs).
+    /// Returns `None` only when `items` has no last element — `NonEmptyVec`
+    /// offers no total `last`, unlike the `head` the audits are read through.
     #[must_use]
     pub fn most_recent_version_time_committed(&self) -> Option<&str> {
-        self.items.last()?.audits.first().map(|a| match a {
+        Some(match self.items.last()?.audits.head() {
             AuditDetails::AuditDetails(d) => d.time_committed.value.as_str(),
             AuditDetails::Attestation(a) => a.time_committed.value.as_str(),
         })

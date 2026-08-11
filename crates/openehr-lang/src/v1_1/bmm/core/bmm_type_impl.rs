@@ -105,8 +105,8 @@ impl BmmSimpleType {
         self.base_class.type_signature()
     }
 
-    /// `BMM_CLASSIFIER.conformance_type_name` for a simple type: "a simple
-    /// class name" (`master05-core.adoc` §Basics).
+    /// `conformance_type_name` for a simple type: "a simple class name"
+    /// (`master05-core.adoc` §Semantics §Basics).
     #[must_use]
     pub fn conformance_type_name(&self) -> String {
         self.base_class.name().to_owned()
@@ -139,9 +139,9 @@ impl BmmGenericType {
         self.rendered(BmmType::type_signature)
     }
 
-    /// `BMM_CLASSIFIER.conformance_type_name` for a generic type: "the _root_
-    /// type from a generic type (e.g. `Interval` from `Interval<T>`)"
-    /// (`master05-core.adoc` §Basics).
+    /// `conformance_type_name` for a generic type: "the _root_ type from a
+    /// generic type (e.g. `Interval` from `Interval<T>`)"
+    /// (`master05-core.adoc` §Semantics §Basics).
     #[must_use]
     pub fn conformance_type_name(&self) -> String {
         self.base_class.name.clone()
@@ -195,9 +195,9 @@ impl BmmContainerType {
         self.rendered(BmmType::type_signature)
     }
 
-    /// `BMM_CLASSIFIER.conformance_type_name` for a container type: "the
-    /// _contained_ type for a container type (e.g. `ELEMENT` from the type
-    /// `List<ELEMENT>`)" (`master05-core.adoc` §Basics).
+    /// `conformance_type_name` for a container type: "the _contained_ type for
+    /// a container type (e.g. `ELEMENT` from the type `List<ELEMENT>`)"
+    /// (`master05-core.adoc` §Semantics §Basics).
     #[must_use]
     pub fn conformance_type_name(&self) -> String {
         self.base_type().conformance_type_name()
@@ -268,9 +268,9 @@ impl BmmIndexedContainerType {
         self.rendered(BmmType::type_signature)
     }
 
-    /// `BMM_CLASSIFIER.conformance_type_name` for an indexed container: "the
-    /// _contained_ type" (`master05-core.adoc` §Semantics §Basics), i.e. the
-    /// VALUE type `base_type` — not the key type.
+    /// `conformance_type_name` for an indexed container: "the _contained_
+    /// type" (`master05-core.adoc` §Semantics §Basics), i.e. the VALUE type
+    /// `base_type` — not the key type.
     #[must_use]
     pub fn conformance_type_name(&self) -> String {
         self.base_type.conformance_type_name()
@@ -335,11 +335,14 @@ impl BmmType {
         }
     }
 
-    /// `BMM_CLASSIFIER.conformance_type_name`: "a reduced form of the type …
-    /// either a simple class name, the _contained_ type for a container type
-    /// (e.g. `ELEMENT` from the type `List<ELEMENT>`), and the _root_ type from
-    /// a generic type (e.g. `Interval` from `Interval<T>`)"
-    /// (`master05-core.adoc` §Semantics §Basics).
+    /// `conformance_type_name`: "a reduced form of the type … either a simple
+    /// class name, the _contained_ type for a container type (e.g. `ELEMENT`
+    /// from the type `List<ELEMENT>`), and the _root_ type from a generic type
+    /// (e.g. `Interval` from `Interval<T>`)"
+    /// (`LANG/docs/bmm/master05-core.adoc` §Semantics §Basics — the function is
+    /// defined there in prose; of the class docs only
+    /// `org.openehr.lang.bmm.bmm_open_type.adoc` carries it in a §Functions
+    /// table).
     #[must_use]
     pub fn conformance_type_name(&self) -> String {
         match self {

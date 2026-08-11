@@ -222,27 +222,28 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
     /// An interval `primitive_object` value (`| … |`), captured VERBATIM from
     /// the source between (and including) its two `|` delimiters — see the
     /// [`BelLiteral::Interval`] adjudication.
+    #[expect(
+        clippy::expect_used,
+        reason = "`self.src` IS the string the token spans were produced from (parse_statements_with lexes `src` and hands the same `src` to Parser::new), and the range runs from the opening delimiter's span start to the closing delimiter's span end, so it is always an in-bounds, char-boundary slice"
+    )]
     fn parse_interval_literal(&mut self) -> Result<B::Expr, BelError> {
         let open = self.pos;
         let Some(open_span) = self.toks.get(open).map(|s| s.span.clone()) else {
             return self.err("expected '|' opening an interval value");
         };
         self.pos += 1; // the opening '|'
-        while let Some(token) = self.peek() {
-            if *token == Token::SymIvlDelim {
-                let close_span = self
-                    .toks
-                    .get(self.pos)
-                    .map_or_else(|| open_span.clone(), |s| s.span.clone());
-                self.pos += 1;
+        while let Some(entry) = self.toks.get(self.pos) {
+            let close_end = entry.span.end;
+            let closes = entry.token == Token::SymIvlDelim;
+            self.pos += 1;
+            if closes {
                 let text = self
                     .src
-                    .get(open_span.start..close_span.end)
-                    .unwrap_or_default()
+                    .get(open_span.start..close_end)
+                    .expect("a token span range should slice the source it was lexed from")
                     .to_owned();
                 return Ok(self.builder.literal(BelLiteral::Interval(text)));
             }
-            self.pos += 1;
         }
         self.err("expected '|' closing an interval value")
     }
@@ -552,6 +553,10 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
     /// Capture the verbatim source of a `matches` right-hand side: either a
     /// single `CONTAINED_REGEXP` token, or a `{ … }` block captured by
     /// brace-depth over the token stream. Returns `(raw_text, byte_offset)`.
+    #[expect(
+        clippy::expect_used,
+        reason = "`self.src` IS the string the token spans were produced from (parse_statements_with lexes `src` and hands the same `src` to Parser::new), and the range runs from an opening token's span start to a later token's span end, so it is always an in-bounds, char-boundary slice"
+    )]
     fn constraint_rhs(&mut self) -> Result<(String, usize), BelError> {
         if let Some(Token::ContainedRegexp(raw)) = self.peek().cloned() {
             let at = self.at();
@@ -575,7 +580,11 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
             }
             self.pos += 1;
             if depth == 0 {
-                let raw = self.src.get(start..end).unwrap_or_default().to_owned();
+                let raw = self
+                    .src
+                    .get(start..end)
+                    .expect("a token span range should slice the source it was lexed from")
+                    .to_owned();
                 return Ok((raw, start));
             }
         }
@@ -633,15 +642,16 @@ fn decode_string(raw: &str) -> String {
 /// Decode a single-quoted character literal to a `char`.
 ///
 /// The lexer (`validate_char`) admits only the six quoted forms in a character
-/// literal, so the decode cannot fail here.
+/// literal, so the decode cannot fail here, and its token regex admits exactly
+/// one body character, so the decoded literal is never empty.
 #[expect(
     clippy::expect_used,
-    reason = "`Token::Character` only exists when the lexer's validate_char admitted the body, which restricts an escape to the six quoted forms none of which can fail to decode"
+    reason = "`Token::Character` only exists when the lexer's validate_char admitted the body, which restricts an escape to the six quoted forms none of which can fail to decode; the same token regex admits one body character or one two-character escape, each decoding to exactly one char, so the literal is never empty"
 )]
 fn decode_char(raw: &str) -> char {
     crate::v1_1::escape::decode_character_literal(raw)
         .expect("a lexer-validated character literal should decode")
         .chars()
         .next()
-        .unwrap_or('\u{fffd}')
+        .expect("a lexer-validated character literal should decode to one character")
 }
