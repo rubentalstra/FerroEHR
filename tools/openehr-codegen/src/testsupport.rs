@@ -1578,6 +1578,49 @@ pub fn generation_function_divergence(key: &str) -> Result<Vec<String>, Error> {
     Ok(divergent)
 }
 
+/// Whether `body` applies items to `rust_type` — an `impl` block on it, or the
+/// type passed to a macro that writes one.
+///
+/// Substring matching is not enough in either direction: `ImportedVersion`
+/// contains `Version`, and a doc comment naming a type says nothing about what
+/// the file implements. So the occurrence must be delimited, and it must sit
+/// where an impl target sits.
+fn targets_type(body: &str, rust_type: &str) -> bool {
+    body.lines().any(|line| {
+        let line = line.trim();
+        // `ordered_limit!(\n    DvCount,` — the type as a bare macro argument.
+        if line.strip_suffix(',').is_some_and(|arg| arg == rust_type) {
+            return true;
+        }
+        // `impl DvCount {`, `impl<T> ImportedVersion<T> {`, `impl Validate for DvCount {`
+        line.starts_with("impl") && delimited_mention(line, rust_type)
+    })
+}
+
+/// Whether `haystack` contains `needle` bounded by non-identifier characters,
+/// so `Version` does not match inside `ImportedVersion`.
+fn delimited_mention(haystack: &str, needle: &str) -> bool {
+    let is_ident = |c: char| c.is_alphanumeric() || c == '_';
+    // Split on the needle rather than slicing by byte index: a `&str` index can
+    // land inside a multi-byte character, and `string_slice` is denied for
+    // exactly that reason. Each split boundary gives the neighbouring
+    // characters directly.
+    let mut rest = haystack;
+    while let Some(at) = rest.find(needle) {
+        let (before, from_match) = rest.split_at(at);
+        let Some(after) = from_match.strip_prefix(needle) else {
+            return false;
+        };
+        if before.chars().next_back().is_none_or(|c| !is_ident(c))
+            && after.chars().next().is_none_or(|c| !is_ident(c))
+        {
+            return true;
+        }
+        rest = after;
+    }
+    false
+}
+
 /// BMM-declared functions of `key`'s crate that no Rust method realizes, as
 /// `<generation>/<CLASS>.<function>` (#2029).
 ///
@@ -1623,16 +1666,19 @@ pub fn unrealized_bmm_functions(key: &str) -> Result<Vec<String>, Error> {
                     // the generation: `ordered_limit!` in `dv_ordered_impl`
                     // gives every DV_ORDERED descendant its `less_than` and
                     // `is_strictly_comparable_to`. Reading only the class's own
-                    // two files reported 36 such methods as missing — and the
-                    // burn-down then produces DUPLICATE DEFINITIONS, which is
-                    // how this was found.
+                    // two files reported those as missing, and burning them
+                    // down produces DUPLICATE DEFINITIONS.
                     //
-                    // So a file that defines the function AND names this Rust
-                    // type counts. Both halves are needed: the function name
-                    // alone would let any file vouch for every class.
+                    // The witness must name the type as an impl TARGET, not
+                    // merely mention it. Accepting a mention credited
+                    // `VERSION.data` to `imported_version_impl.rs`, whose
+                    // `pub fn data(` belongs to `ImportedVersion<T>` and whose
+                    // only "Version" is inside that longer name — a false
+                    // NEGATIVE, which silently drops a real gap and is worse
+                    // than the false positives this replaced.
                     if bodies
                         .values()
-                        .any(|body| body.contains(&item) && body.contains(&rust_type))
+                        .any(|body| body.contains(&item) && targets_type(body, &rust_type))
                     {
                         continue;
                     }
