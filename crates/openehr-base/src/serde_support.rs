@@ -352,7 +352,7 @@ pub enum OpenSubtypeError {
 /// Some classes the specs deliberately leave open for downstream schemes —
 /// `ACCESS_CONTROL_SETTINGS` is "Intended to support multiple access control
 /// schemes. Currently implementation dependent."
-/// (`RM/docs/UML/classes/org.openehr.rm.security.access_control_settings.adoc`)
+/// (`RM/docs/UML/classes/org.openehr.rm.ehr.access_control_settings.adoc`)
 /// — so a valid instance may carry a `_type` the published model cannot name.
 /// This carrier keeps such an instance verbatim: the declared subtype tag and
 /// every member in document order, re-serialized exactly as read.

@@ -68,7 +68,7 @@ use crate::versioning::lifecycle;
 /// A `DV_CODED_TEXT` over an openEHR-terminology code, carrying `rubric` as
 /// its `value` — "the rubric of the complete term as provided by the
 /// terminology service" (RM `data_types`
-/// `UML/classes/org.openehr.rm.data_types.text.dv_coded_text.adoc`
+/// `UML/classes/org.openehr.rm.data_types.dv_coded_text.adoc`
 /// §Attributes).
 fn openehr_coded(rubric: String, code: &str) -> DvCodedText {
     DvCodedText {
@@ -202,7 +202,7 @@ pub fn audit_base_mut(audit: &mut UpdateAudit) -> AuditBaseMut<'_> {
 ///
 /// `DV_CODED_TEXT` declares the same attribute as "the rubric of the complete
 /// term" (RM `data_types`
-/// `UML/classes/org.openehr.rm.data_types.text.dv_coded_text.adoc`).
+/// `UML/classes/org.openehr.rm.data_types.dv_coded_text.adoc`).
 #[must_use]
 pub fn text_value(text: &DvText) -> &str {
     match text {

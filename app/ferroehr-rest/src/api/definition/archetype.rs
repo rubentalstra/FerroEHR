@@ -87,7 +87,7 @@ pub(crate) fn archetype_routes() -> OpenApiRouter<AppState> {
 ///
 /// NOTE (no openEHR spec governs an ADL-source media type — our own
 /// design/extension): ADL 1.4 source is a plain-text serialization (AM ADL 1.4
-/// `master01-overview.adoc` — ADL is "a formal language for expressing
+/// `ADL2/master02-overview.adoc` — ADL is "a formal language for expressing
 /// archetypes"), and the released Definition API never puts an archetype on the
 /// wire, so no registered openEHR media type exists for it. `text/plain` is the
 /// truthful declaration for an opaque UTF-8 text artefact.

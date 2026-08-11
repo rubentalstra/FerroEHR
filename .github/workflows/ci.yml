@@ -306,6 +306,21 @@ jobs:
       - name: Comment style on changed Rust files
         run: bash scripts/checks/comment-style.sh --all
 
+  spec-citations:
+    name: spec-citations
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Every cited openEHR spec file exists
+        run: bash scripts/checks/spec-citations.sh --all
+
   # No Python anywhere (.claude/rules/rust-style.md §No Python): the tooling
   # languages are bash and Rust. Embedded Python is the worst case — a heredoc
   # inside a command substitution makes bash scan the Python for quote pairs,

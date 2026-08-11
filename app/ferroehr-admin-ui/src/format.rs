@@ -1,7 +1,7 @@
 //! Representation formats the console negotiates with the CDR.
 //!
 //! The ITS-REST canonical forms plus the Simplified Formats media types (spec:
-//! `docs/specs/openehr/ITS-REST/docs/simplified_formats/master07-its_rest.adoc`
+//! `docs/specs/openehr/ITS-REST/docs/simplified_formats/master05-rm_mapping.adoc`
 //! — negotiation is strict `Accept`/`Content-Type`, no `?format=` parameter).
 
 use serde::{Deserialize, Serialize};
@@ -53,7 +53,7 @@ mod tests {
 
     #[test]
     fn media_types_match_the_simplified_formats_spec() {
-        // docs/specs/openehr/ITS-REST/docs/simplified_formats/master07-its_rest.adoc
+        // docs/specs/openehr/ITS-REST/docs/simplified_formats/master05-rm_mapping.adoc
         assert_eq!(
             ReprFormat::Flat.media_type(),
             "application/openehr.wt.flat+json"

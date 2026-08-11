@@ -1,7 +1,7 @@
 //! `COMPOSITION.category` — the openEHR `composition_category` terminology
 //! group, as named constants.
 //!
-//! Spec: RM composition `master01-composition.adoc` §COMPOSITION and
+//! Spec: RM composition `master05-composition_package.adoc` §COMPOSITION and
 //! `RM/docs/UML/classes/org.openehr.rm.composition.composition.adoc` — `category`
 //! is a `DV_CODED_TEXT` "coded by openEHR terminology group `composition
 //! category`", and `is_persistent()` is defined as that code being the

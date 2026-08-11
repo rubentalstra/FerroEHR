@@ -1,55 +1,44 @@
 ---
 name: bmm3-unimplemented-function-surface
-description: What IS and is NOT implemented in openehr-lang's hand-written BMM impls — the naming trio + graph algorithms are real, the type lattice and signature surface are absent and unmarked
+description: openehr-lang function-surface state — the meta-type lattice and signature surface ARE implemented now; the machine ratchet is unrealized_bmm_functions.txt, and the invariant boundary is the live gap
 metadata:
   type: project
 ---
 
-Verified 2026-07-31 by reading `crates/openehr-lang/src/bmm3/core/entity/{bmm_type_impl,bmm_class_impl}.rs`,
-`.../model/bmm_model_impl.rs`, `.../feature/bmm_property_impl.rs`,
-`crates/openehr-lang/src/bmm/core/bmm_generic_parameter_impl.rs`.
+**Re-verified 2026-08-11.** The gaps this memory used to list are largely
+CLOSED; check the ratchet before claiming any function is missing.
 
-**Genuinely implemented, cited, unit-tested — do not re-flag as missing:** the
-naming trio (`type_name`/`type_signature`/`conformance_type_name`) across every
-type leaf; `flattened_type_list`; `type_substitutions`; on `BMM_CLASS`
-`all_ancestors`/`all_descendants`/`suppliers`/`suppliers_non_primitive`/
-`supplier_closure`/`package_path`/`class_path`/`flat_properties`; on `BMM_MODEL`
-`class_definition` (case-insensitive, underscores significant)/
-`enumeration_definition`/`primitive_types`/`enumeration_types`/
-`all_ancestor_classes` (with the implicit `Any` top)/`property_definition`/
-`property_definition_at_path`/`ms_conformant_property_type`/`type_conforms_to`/
-the package-container trio; on `BMM_PROPERTY` `existence`/`display_name`.
+**The authority is now machine-enforced:**
+`tools/openehr-codegen/tests/it/unrealized_bmm_functions.txt` (670 entries,
+274 of them `lang/v1_0` + `lang/v1_1`) is asserted to equal the projection
+EXACTLY by `unrealized_bmm_functions_match_the_ratchet`. So "a BMM function
+implemented nowhere and absent from that file" is a build failure, not a
+review finding — do not hand-audit completeness, read the ratchet.
 
-**Absent from the whole crate (grep-verified):** `unitary_type`,
-`effective_type`, `is_primitive`, `is_abstract` on TYPES (only on `BmmClass`),
-`type_base_name`, `is_open`, `is_closed`, `is_partially_closed`,
+**Implemented since the 2026-07-31 note** (grep-verified):
+`unitary_type`, `effective_type`, `is_primitive`/`is_abstract` on types,
+`type_base_name`, `is_open`/`is_closed`/`is_partially_closed`,
 `effective_base_class`, `name_map`, `generic_parameter_conformance_type`,
-`type()` (the class→type generators, 3 forms), `flat_features`, `signature`,
-`is_boolean`, `arity`, `has_ancestor_class`. Plus every ch.6–8 invariant
-(`Inv_generic_name`, `Inv_constructors`/`Inv_converters`, `Inv_not_nullable`,
-`Operator_validity`, `Inv_result_type`, `Inv_signature_*`) and the enumeration
-one-ancestor + `item_names`/`item_values` 1:1 rules. **None carries a `// TODO:`
-or `// NOTE:`** — indistinguishable from oversight.
+the `type()` generators, `flat_features`, `signature`, `is_boolean`,
+`arity`, `has_ancestor_class`
+(`crates/openehr-lang/src/v1_1/bmm3/core/{entity/bmm_type_impl.rs,
+entity/bmm_class_impl.rs,feature/bmm_feature_impl.rs}`).
 
-**Why the split matters:** `unitary_type()`/`effective_type()` are
-*unimplementable as typed* until the merge is fixed — `BmmUnitaryType` and
-`BmmEffectiveType` exclude `BmmSimpleType`/`BmmGenericType`, so a simple type has
-no effective type to return. Sequence the fix behind
-[[lang-bmm-v2-v3-merge-contamination]].
+**Both `type_conforms_to` divergences are FIXED**
+(`…/bmm3/core/model/bmm_model_impl.rs`): base-class comparison is
+`eq_ignore_ascii_case`, and open parameters are substituted with the
+declared constraint via `generic_parameter_conformance_type` on BOTH sides.
+What is still NOT realized is the spec's
+`bmm_def_class instanceOf (BMM_GENERIC_CLASS)` guard
+(`LANG/docs/bmm3/master06-core-types.adoc` §Type Conformance) — the Rust
+branches purely on the STRING shape.
 
-**Two confirmed behavioural divergences in `type_conforms_to`
-(`bmm_model_impl.rs`):**
-1. Base-class comparison is byte-equality (`descendant == ancestor`,
-   `.any(|name| name == ancestor)`) where BMM3 master06 §Type Conformance calls
-   `is_case_insensitive_equal` — `type_conforms_to("dv_quantity","DV_QUANTITY")`
-   returns false. The crate already uses `eq_ignore_ascii_case` three lines away.
-2. Open generic parameters are substituted with `Any` on BOTH sides
-   (`substitute_open_parameter`), not with the class's declared constraint, so
-   `Interval<String> ⊑ Interval<T>` is true even against `Interval<T:Ordered>`.
-   The in-code NOTE claims the owner class is not in scope — it is
-   (`self.class_definition(root)` + `BmmGenericParameter::flattened_conforms_to_type`).
+**The live gap is the invariants**, and its stated justification is stale:
+`…/bmm3/core/feature/bmm_feature_impl.rs` module NOTE claims "the v3
+generation has no materialisation source that could produce a violating
+instance", while `bmm_persistence/create_bmm3_model.rs` IS one (it builds
+`BmmFunction`/`BmmProcedure`/`BmmConstant`/`BmmProperty`). The conclusion
+still holds — those instances satisfy the invariants by construction — but
+the reason does not.
 
-**How to apply:** when a LANG issue claims "the v2 function surface was
-implemented (107 fns, #1389)", that covers the naming/conformance/flattening
-family — NOT the meta-type lattice or the signature/arity surface. Check the
-grep list above before accepting a completeness claim.
+Related: [[lang-bmm3-two-schema-chimera]].

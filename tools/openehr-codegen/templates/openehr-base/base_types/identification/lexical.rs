@@ -286,7 +286,7 @@ pub fn is_uid(s: &str) -> bool {
 /// least two groups) becomes [`IsoOid`]; anything else becomes [`InternetId`].
 /// Inference is forced by the wire form: a UID is carried as a bare string
 /// with no `_type`, while `UID` is abstract with three concrete descendants
-/// (`…base_types.identification.uid.adoc` §Inherit), so the lexical form is
+/// (`…org.openehr.base.base_types.uid.adoc` §Inherit), so the lexical form is
 /// the only available discriminator.
 ///
 /// NOTE: no openEHR spec states the dispatch ORDER — our own design (the

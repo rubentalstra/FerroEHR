@@ -260,7 +260,7 @@ fn partition_list_rows(list: &OdinValue) -> Result<Vec<Partition>, DomainLowerin
                 let Ok(prim_members) = openehr_base::containers::NonEmptyVec::new(prim_members)
                 else {
                     // `C_PRIMITIVE_TUPLE.members` is `1..*`
-                    // (`docs/specs/openehr/AM/docs/AOM2/master04-5-constraint_model.adoc`
+                    // (`docs/specs/openehr/AM/docs/AOM2/master04.5-constraint_model-class_definitions.adoc`
                     // §C_PRIMITIVE_TUPLE); a row that matched no member name is
                     // not a tuple row.
                     return Err(DomainLoweringError::Empty);

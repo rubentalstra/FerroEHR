@@ -516,6 +516,10 @@ rm/v1_1/DV_TIME_SPECIFICATION.event_alignment
 rm/v1_1/DV_TIME_SPECIFICATION.institution_specified
 rm/v1_1/EHR_ACCESS.scheme
 rm/v1_1/ENTRY.subject_is_self
+# EVENT.offset is `time.diff(parent.origin)`. The parent back-reference is not
+# stored (no owning back-refs), so it is realized as `Event::offset_from(origin)`,
+# which HISTORY calls with its own origin — the spec signature cannot be met
+# without a parent, and the projection matches on name.
 rm/v1_1/EVENT.offset
 rm/v1_1/ITEM_LIST.as_hierarchy
 rm/v1_1/ITEM_LIST.item_count

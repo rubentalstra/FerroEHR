@@ -96,7 +96,7 @@ fn is_us_orthography_of_rm_attribute(parent_rm: &str, attr_name: &str) -> bool {
 
 /// VCORM: "object constraint type name existence: a type name introducing an
 /// object constraint block must be defined in the underlying information model."
-/// (`AOM2/master04.5-…class_definitions.adoc` line 325.)
+/// (`AOM2/master04.5-constraint_model-class_definitions.adoc` line 325.)
 pub(super) fn check_object_type(rm_type: &str, node_id: &str) -> Result<(), RuleViolation> {
     // Strip any generic argument (`DV_INTERVAL<DV_QUANTITY>` → `DV_INTERVAL`);
     // the static model keys on the bare class name.
@@ -212,7 +212,7 @@ fn rm_conformance(
 
 /// VCACA's numeric arm: the archetype cardinality interval must be CONTAINED in
 /// the RM's declared container cardinality — "the same or narrower"
-/// (`AOM2/master04.5-…class_definitions.adoc` line 162).
+/// (`AOM2/master04.5-constraint_model-class_definitions.adoc` line 162).
 ///
 /// The RM bounds come from the BMM-generated static model
 /// ([`openehr_rm::v1_2::model::RmAttribute::cardinality`], the BMM `cardinality` of a
@@ -291,7 +291,7 @@ fn check_rm_cardinality(
 
 /// VCOC / VACMCO: "it must be possible for … one instance of every mandatory
 /// child object … to be included within the cardinality range."
-/// (`AOM2/…class_definitions.adoc` line 159, restating cADL VCOC,
+/// (`AOM2/master04.5-constraint_model-class_definitions.adoc` line 159, restating cADL VCOC,
 /// `ADL1.4/master05-cadl.adoc` line 324.) The sum of the children's occurrence
 /// *lower* bounds is the count that MUST appear; it cannot exceed a finite
 /// cardinality upper bound. (The maximum-side of the literal cADL wording is
