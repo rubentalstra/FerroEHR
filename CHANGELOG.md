@@ -18,6 +18,21 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **`Time_Definitions`'s eleven validity functions are now public** on
+  `openehr-base` — `valid_year`, `valid_month`, `valid_day`, `valid_hour`,
+  `valid_minute`, `valid_second`, `valid_fractional_second`, `days_in_month`,
+  and the four `valid_iso8601_*` string predicates. They had no realization
+  anywhere despite being declared by the spec.
+
+### Changed
+
+- **One ISO-8601 grammar, not two.** `openehr-rm` validated dates, times,
+  date-times and durations with its own hand-written reader while depending on
+  the `openehr-base` one that owns them. The two drifted twice and both drifts
+  shipped, each letting a value pass validation and then behave as invalid.
+  The RM side now calls the spec functions; 341 lines of duplicate grammar are
+  gone.
+
 - **`ITEM_TABLE`'s twelve accessors** on the published spec crates — `row_count`,
   `column_count`, `row_names`, `column_names`, `ith_row`, `named_row`,
   `has_row_with_name`, `has_column_with_name`, `has_row_with_key`,

@@ -48,7 +48,7 @@ use crate::v1_2::data_types::quantity::dv_proportion::DvProportion;
 use crate::v1_2::data_types::quantity::dv_quantity::DvQuantity;
 use crate::v1_2::data_types::quantity::dv_scale::DvScale;
 use crate::v1_2::validate::{
-    is_valid_iso_date, is_valid_iso_date_time, is_valid_iso_duration, is_valid_iso_time,
+    valid_iso8601_date, valid_iso8601_date_time, valid_iso8601_duration, valid_iso8601_time,
 };
 
 // ── BASE Time_definitions constants (nominal durations) ─────────────────────
@@ -78,7 +78,7 @@ fn parse_u32(s: &str) -> Option<u32> {
 /// Decompose an openEHR ISO-8601 date (extended or compact) into (y, m, d),
 /// defaulting missing parts to 1.
 fn date_parts(s: &str) -> Option<(i64, u32, u32)> {
-    if !is_valid_iso_date(s) {
+    if !valid_iso8601_date(s) {
         return None;
     }
     let (y, m, d) = if s.contains('-') {
@@ -195,7 +195,7 @@ fn time_core_seconds(s: &str) -> Option<f64> {
 /// start-of-day origin).
 #[must_use]
 pub(crate) fn iso_time_magnitude_seconds(s: &str) -> Option<f64> {
-    if !is_valid_iso_time(s) {
+    if !valid_iso8601_time(s) {
         return None;
     }
     let (core, _tz) = split_tz(s);
@@ -206,7 +206,7 @@ pub(crate) fn iso_time_magnitude_seconds(s: &str) -> Option<f64> {
 /// `DV_DATE_TIME.magnitude`); a stated timezone offset is normalised to UTC.
 #[must_use]
 pub(crate) fn iso_date_time_magnitude_seconds(s: &str) -> Option<f64> {
-    if !is_valid_iso_date_time(s) {
+    if !valid_iso8601_date_time(s) {
         return None;
     }
     #[expect(
@@ -231,7 +231,7 @@ pub(crate) fn iso_date_time_magnitude_seconds(s: &str) -> Option<f64> {
 /// `-` negates the whole value (openEHR deviation).
 #[must_use]
 pub(crate) fn iso_duration_to_seconds(s: &str) -> Option<f64> {
-    if !is_valid_iso_duration(s) {
+    if !valid_iso8601_duration(s) {
         return None;
     }
     let (sign, body) = match s.strip_prefix('-') {

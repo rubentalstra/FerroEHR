@@ -82,7 +82,7 @@ use serde_json::{Map, Value};
 use crate::v1_1::model::{Container, RmClass};
 use crate::v1_1::validate::generated;
 use crate::v1_1::validate::{
-    is_valid_iso_date, is_valid_iso_date_time, is_valid_iso_duration, is_valid_iso_time,
+    valid_iso8601_date, valid_iso8601_date_time, valid_iso8601_duration, valid_iso8601_time,
 };
 use openehr_base::validate::{InvariantViolation, Validate};
 
@@ -451,7 +451,7 @@ fn run_invariants(ty: &str, obj: &Map<String, Value>, out: &mut Vec<InvariantVio
                 let Some(value) = str_of(obj, "value") else {
                     return false;
                 };
-                generated::temporal_value_core(ty, is_valid_iso_duration(value), out);
+                generated::temporal_value_core(ty, valid_iso8601_duration(value), out);
             }
             generated::dv_amount_core(
                 ty,
@@ -466,9 +466,9 @@ fn run_invariants(ty: &str, obj: &Map<String, Value>, out: &mut Vec<InvariantVio
                 return false;
             };
             let valid = match ty {
-                "DV_DATE" => is_valid_iso_date(value),
-                "DV_TIME" => is_valid_iso_time(value),
-                _ => is_valid_iso_date_time(value),
+                "DV_DATE" => valid_iso8601_date(value),
+                "DV_TIME" => valid_iso8601_time(value),
+                _ => valid_iso8601_date_time(value),
             };
             generated::temporal_value_core(ty, valid, out);
             generated::magnitude_status_core(ty, str_of(obj, "magnitude_status"), out);

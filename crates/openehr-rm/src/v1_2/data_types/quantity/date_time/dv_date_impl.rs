@@ -18,7 +18,7 @@ use crate::v1_2::data_types::quantity::dv_absolute_quantity_impl::{
 use crate::v1_2::data_types::quantity::dv_amount_impl::CombinedAccuracy;
 use crate::v1_2::data_types::quantity::dv_ordered::DvOrdered;
 use crate::v1_2::data_types::quantity::dv_ordered_impl::push_normal_range_consistency;
-use crate::v1_2::validate::is_valid_iso_date;
+use crate::v1_2::validate::valid_iso8601_date;
 use openehr_base::v1_3::foundation_types::time::iso8601_date::Iso8601Date;
 use openehr_base::v1_3::foundation_types::time::iso8601_duration::Iso8601Duration;
 use openehr_base::validate::{InvariantViolation, Validate};
@@ -124,7 +124,7 @@ impl Validate for DvDate {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
         crate::v1_2::validate::generated::temporal_value_core(
             "DV_DATE",
-            is_valid_iso_date(&self.value),
+            valid_iso8601_date(&self.value),
             out,
         );
         crate::v1_2::validate::generated::magnitude_status_core(

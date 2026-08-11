@@ -534,270 +534,14 @@ pub(crate) fn valid_proportion_kind(k: i32) -> bool {
 
 // The DV_DATE / DV_TIME / DV_DATE_TIME / DV_DURATION `Value_valid` invariants
 // are `valid_iso8601_date` / `_time` / `_date_time` / `_duration` (each class
-// page's §Invariants); their accepted complete, compact and partial forms are
-// enumerated in BASE `…foundation_types.time_definitions.adoc` §Functions,
-// including that page's stated exception allowing a `W` designator alongside
-// the others in a duration. `value` is a `String` here, so those grammars are
-// checked at runtime rather than guaranteed by a parsed temporal type.
+// page's §Invariants), and those are BASE `Time_Definitions` functions — so
+// this crate calls them rather than re-deriving the grammar. It used to carry
+// its own reader; the two drifted twice and both drifts shipped (#2273), each
+// time letting a value pass validation, commit, and then behave as invalid.
 
-fn all_digits(s: &str) -> bool {
-    !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit())
-}
-
-/// The byte sub-range of `s`, or `""` when the range is out of bounds or lands
-/// off a UTF-8 boundary.
-///
-/// The compact ISO 8601 forms below extract fixed byte windows only after an
-/// exact-length + all-ASCII-digits test, so the empty fallback is unreachable
-/// there; it exists so the extraction can never panic (a `""` window fails
-/// every `in_range`/`valid_day` predicate, i.e. it rejects rather than aborts).
-fn part(s: &str, range: std::ops::Range<usize>) -> &str {
-    s.get(range).unwrap_or_default()
-}
-
-fn digits_n(s: &str, n: usize) -> bool {
-    s.len() == n && all_digits(s)
-}
-
-fn in_range(s: &str, lo: u32, hi: u32) -> bool {
-    s.len() == 2 && all_digits(s) && s.parse::<u32>().is_ok_and(|v| (lo..=hi).contains(&v))
-}
-
-/// `true` for a Gregorian leap year: divisible by 4, except centuries not
-/// divisible by 400 (BASE `Time_definitions`; the calendar `days_in_month`
-/// depends on it).
-fn is_leap_year(year: u32) -> bool {
-    (year.is_multiple_of(4) && !year.is_multiple_of(100)) || year.is_multiple_of(400)
-}
-
-/// Calendar days in a given month of a given year — the `days_in_month (m, y)`
-/// the BASE `Time_definitions.valid_day` postcondition dispatches through
-/// (`docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.time_definitions.adoc`
-/// lines 95–103). Returns `0` for a month outside `1..=12` (caller has already
-/// range-checked the month, so that branch is defensive).
-fn days_in_month(year: u32, month: u32) -> u32 {
-    match month {
-        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
-        4 | 6 | 9 | 11 => 30,
-        2 if is_leap_year(year) => 29,
-        2 => 28,
-        _ => 0,
-    }
-}
-
-/// A calendar-valid two-digit day for the 4-digit `y` / 2-digit `m` strings:
-/// `d` is `01`..`days_in_month(m, y)` — the BASE `Iso8601_date` invariant
-/// `Day_valid: not day_unknown implies valid_day (year, month, day)` with
-/// `valid_day (y, m, d) = (d >= 1 and d <= days_in_month (m, y))`
-/// (`org.openehr.base.foundation_types.iso8601_date.adoc` line 107;
-/// `time_definitions.adoc` line 102). This is calendar-exact — it rejects
-/// `2021-02-31`, `2021-04-31`, and `2021-02-29` (non-leap) while accepting
-/// `2020-02-29` (leap).
-fn valid_day(y: &str, m: &str, d: &str) -> bool {
-    if d.len() != 2 || !all_digits(d) {
-        return false;
-    }
-    let (Ok(year), Ok(month), Ok(day)) = (y.parse::<u32>(), m.parse::<u32>(), d.parse::<u32>())
-    else {
-        return false;
-    };
-    (1..=days_in_month(year, month)).contains(&day)
-}
-
-/// A valid openEHR ISO-8601 date: `YYYY`, `YYYY-MM`, `YYYY-MM-DD`, or the
-/// compact `YYYYMM` / `YYYYMMDD` forms. Day validity is **calendar-exact**
-/// (month lengths + leap years) per BASE `Iso8601_date.Day_valid`, not a bare
-/// `1..=31` range.
-#[must_use]
-pub(crate) fn is_valid_iso_date(s: &str) -> bool {
-    if s.contains('-') {
-        match s.split('-').collect::<Vec<_>>().as_slice() {
-            [y] => digits_n(y, 4),
-            [y, m] => digits_n(y, 4) && in_range(m, 1, 12),
-            [y, m, d] => digits_n(y, 4) && in_range(m, 1, 12) && valid_day(y, m, d),
-            _ => false,
-        }
-    } else {
-        match s.len() {
-            4 => all_digits(s),
-            6 => all_digits(s) && in_range(part(s, 4..6), 1, 12),
-            8 => {
-                all_digits(s)
-                    && in_range(part(s, 4..6), 1, 12)
-                    && valid_day(part(s, 0..4), part(s, 4..6), part(s, 6..8))
-            }
-            _ => false,
-        }
-    }
-}
-
-fn is_valid_tz(tz: &str) -> bool {
-    if tz.is_empty() || tz == "Z" {
-        return true;
-    }
-    let Some(rest) = tz.strip_prefix(['+', '-']) else {
-        return false;
-    };
-    // BASE `Iso8601_timezone` bounds are ASYMMETRIC (`iso8601_timezone.adoc`
-    // Max_hour_valid / Min_hour_valid; `time_definitions.adoc`
-    // Max_timezone_hour = 14, Min_timezone_hour = 12): `+` offsets go to
-    // +14:00, `-` offsets only to -12:00 (reject `-13:00`).
-    //
-    // NOTE: hour 0 is accepted with either sign — `iso8601_timezone.adoc`
-    // §Description gives `hh` as "`00` - `23`" and §Functions defines `is_gmt`
-    // as "timezone `+0000`", which the `hour > 0` invariants would forbid.
-    let max_hour = if tz.starts_with('+') { 14 } else { 12 };
-    if rest.contains(':') {
-        matches!(rest.split(':').collect::<Vec<_>>().as_slice(),
-            [h, m] if in_range(h, 0, max_hour) && in_range(m, 0, 59))
-    } else {
-        match rest.len() {
-            2 => in_range(rest, 0, max_hour),
-            4 => in_range(part(rest, 0..2), 0, max_hour) && in_range(part(rest, 2..4), 0, 59),
-            _ => false,
-        }
-    }
-}
-
-fn is_valid_time_core(s: &str) -> bool {
-    // NOTE: a decimal fraction is legal only on seconds — BASE
-    // `master06-time_types.adoc`: "only fractional seconds are supported".
-    //
-    // NOTE: seconds are `0..=59` per `time_definitions.adoc` §Functions
-    // `valid_second` (`Post: … s < Seconds_in_minute`) — the machine-checkable
-    // clause, which BASE's own reader also took over the `00`-`60` prose.
-    let (base, frac) = match s.split_once(['.', ',']) {
-        Some((b, f)) => (b, Some(f)),
-        None => (s, None),
-    };
-    if let Some(f) = frac
-        && !all_digits(f)
-    {
-        return false;
-    }
-    let has_frac = frac.is_some();
-    if base.contains(':') {
-        match base.split(':').collect::<Vec<_>>().as_slice() {
-            [h] => !has_frac && in_range(h, 0, 23),
-            [h, m] => !has_frac && in_range(h, 0, 23) && in_range(m, 0, 59),
-            [h, m, sec] => in_range(h, 0, 23) && in_range(m, 0, 59) && in_range(sec, 0, 59),
-            _ => false,
-        }
-    } else {
-        match base.len() {
-            2 => !has_frac && in_range(base, 0, 23),
-            4 => {
-                !has_frac && in_range(part(base, 0..2), 0, 23) && in_range(part(base, 2..4), 0, 59)
-            }
-            6 => {
-                in_range(part(base, 0..2), 0, 23)
-                    && in_range(part(base, 2..4), 0, 59)
-                    && in_range(part(base, 4..6), 0, 59)
-            }
-            _ => false,
-        }
-    }
-}
-
-/// A valid openEHR ISO-8601 time: `HH`, `HH:MM`, `HH:MM:SS[.fff]` (and the
-/// compact `HHMM` / `HHMMSS` forms), with an optional `Z` / `±HH[:MM]` timezone.
-#[must_use]
-pub(crate) fn is_valid_iso_time(s: &str) -> bool {
-    // Split off a trailing timezone (`Z`, or a `+`/`-` offset that is not the
-    // fractional separator). Scan from the end for `Z`/`+`/`-`.
-    if let Some(stripped) = s.strip_suffix('Z') {
-        return is_valid_time_core(stripped);
-    }
-    if let Some((core, tz)) = s.rfind(['+', '-']).and_then(|pos| s.split_at_checked(pos)) {
-        return is_valid_time_core(core) && is_valid_tz(tz);
-    }
-    is_valid_time_core(s)
-}
-
-/// A valid openEHR ISO-8601 date-time: a date, then (if a time component is
-/// present) `T` and a time. A `T`-less value is accepted as a date-only partial.
-#[must_use]
-pub(crate) fn is_valid_iso_date_time(s: &str) -> bool {
-    match s.split_once('T') {
-        Some((date, time)) => is_valid_iso_date(date) && is_valid_iso_time(time),
-        None => is_valid_iso_date(s),
-    }
-}
-
-fn parse_duration_components(s: &str, allowed: &[u8], any: &mut bool) -> bool {
-    let bytes = s.as_bytes();
-    let mut i = 0;
-    // `allowed` is the production's own order (`YMWD`, then `HMS`), so a
-    // designator's index in it IS its slot: requiring the slot to advance
-    // strictly enforces both "in order" and "at most once" in one test.
-    // Without it `P1Y1Y` validated here while BASE's reader refused the same
-    // string and `iso_duration_to_seconds` summed BOTH years — one value, three
-    // in-tree answers, none of them the spec's.
-    let mut last_slot: isize = -1;
-    while i < bytes.len() {
-        let start = i;
-        while bytes.get(i).is_some_and(u8::is_ascii_digit) {
-            i += 1;
-        }
-        let mut has_fraction = false;
-        if matches!(bytes.get(i), Some(b'.' | b',')) {
-            has_fraction = true;
-            i += 1;
-            while bytes.get(i).is_some_and(u8::is_ascii_digit) {
-                i += 1;
-            }
-        }
-        // No number, or a number with no designator after it.
-        let Some(&designator) = bytes.get(i) else {
-            return false;
-        };
-        if i == start {
-            return false;
-        }
-        let Some(slot) = allowed.iter().position(|d| *d == designator) else {
-            return false;
-        };
-        let slot = slot.cast_signed();
-        if slot <= last_slot {
-            return false;
-        }
-        last_slot = slot;
-        // BASE `master06-time_types.adoc` §Primitive Time Types: "in openEHR,
-        // only fractional seconds are supported" — a decimal fraction is only
-        // permitted on the seconds ('S') component, never on Y/M/W/D/H/M.
-        if has_fraction && designator != b'S' {
-            return false;
-        }
-        i += 1;
-        *any = true;
-    }
-    true
-}
-
-/// A valid openEHR ISO-8601 duration: optional leading sign, `P`, then one or
-/// more `nY nM nW nD` components and an optional `T nH nM nS` part (openEHR
-/// permits the sign and a `W` designator mixed with the others).
-#[must_use]
-pub(crate) fn is_valid_iso_duration(s: &str) -> bool {
-    let s = s.strip_prefix(['+', '-']).unwrap_or(s);
-    let Some(rest) = s.strip_prefix('P') else {
-        return false;
-    };
-    let (date_part, time_part) = match rest.split_once('T') {
-        Some((d, t)) => (d, Some(t)),
-        None => (rest, None),
-    };
-    let mut any = false;
-    if !parse_duration_components(date_part, b"YMWD", &mut any) {
-        return false;
-    }
-    if let Some(t) = time_part
-        && (t.is_empty() || !parse_duration_components(t, b"HMS", &mut any))
-    {
-        return false;
-    }
-    any
-}
+pub(crate) use openehr_base::v1_3::foundation_types::time::time_definitions::{
+    valid_iso8601_date, valid_iso8601_date_time, valid_iso8601_duration, valid_iso8601_time,
+};
 
 #[cfg(test)]
 mod tests {
@@ -805,14 +549,14 @@ mod tests {
 
     #[test]
     fn iso_date_forms() {
-        assert!(is_valid_iso_date("2021"));
-        assert!(is_valid_iso_date("2021-05"));
-        assert!(is_valid_iso_date("2021-05-17"));
-        assert!(is_valid_iso_date("20210517"));
-        assert!(!is_valid_iso_date("2021-13"));
-        assert!(!is_valid_iso_date("2021-05-32"));
-        assert!(!is_valid_iso_date("not-a-date"));
-        assert!(!is_valid_iso_date(""));
+        assert!(valid_iso8601_date("2021"));
+        assert!(valid_iso8601_date("2021-05"));
+        assert!(valid_iso8601_date("2021-05-17"));
+        assert!(valid_iso8601_date("20210517"));
+        assert!(!valid_iso8601_date("2021-13"));
+        assert!(!valid_iso8601_date("2021-05-32"));
+        assert!(!valid_iso8601_date("not-a-date"));
+        assert!(!valid_iso8601_date(""));
     }
 
     /// BASE `Iso8601_date.Day_valid` (`valid_day = d <= days_in_month(m, y)`,
@@ -821,44 +565,44 @@ mod tests {
     #[test]
     fn iso_date_day_is_calendar_exact() {
         // 31-day months accept 31; 30-day months reject it.
-        assert!(is_valid_iso_date("2021-01-31"));
-        assert!(is_valid_iso_date("2021-12-31"));
-        assert!(!is_valid_iso_date("2021-04-31")); // April has 30 days
-        assert!(!is_valid_iso_date("2021-06-31"));
-        assert!(!is_valid_iso_date("2021-09-31"));
-        assert!(!is_valid_iso_date("2021-11-31"));
-        assert!(is_valid_iso_date("2021-04-30"));
+        assert!(valid_iso8601_date("2021-01-31"));
+        assert!(valid_iso8601_date("2021-12-31"));
+        assert!(!valid_iso8601_date("2021-04-31")); // April has 30 days
+        assert!(!valid_iso8601_date("2021-06-31"));
+        assert!(!valid_iso8601_date("2021-09-31"));
+        assert!(!valid_iso8601_date("2021-11-31"));
+        assert!(valid_iso8601_date("2021-04-30"));
 
         // February: 28 in a common year, 29 in a leap year, never 30/31.
-        assert!(!is_valid_iso_date("2021-02-31"));
-        assert!(!is_valid_iso_date("2021-02-30"));
-        assert!(!is_valid_iso_date("2021-02-29")); // 2021 is not a leap year
-        assert!(is_valid_iso_date("2021-02-28"));
-        assert!(is_valid_iso_date("2020-02-29")); // 2020 divisible by 4
-        assert!(is_valid_iso_date("2000-02-29")); // 2000 divisible by 400
-        assert!(!is_valid_iso_date("1900-02-29")); // 1900 century, not /400
+        assert!(!valid_iso8601_date("2021-02-31"));
+        assert!(!valid_iso8601_date("2021-02-30"));
+        assert!(!valid_iso8601_date("2021-02-29")); // 2021 is not a leap year
+        assert!(valid_iso8601_date("2021-02-28"));
+        assert!(valid_iso8601_date("2020-02-29")); // 2020 divisible by 4
+        assert!(valid_iso8601_date("2000-02-29")); // 2000 divisible by 400
+        assert!(!valid_iso8601_date("1900-02-29")); // 1900 century, not /400
 
         // Day 00 is never valid.
-        assert!(!is_valid_iso_date("2021-05-00"));
+        assert!(!valid_iso8601_date("2021-05-00"));
 
         // Compact form is held to the same calendar rule.
-        assert!(!is_valid_iso_date("20210431"));
-        assert!(!is_valid_iso_date("20210229"));
-        assert!(is_valid_iso_date("20200229"));
-        assert!(is_valid_iso_date("20210131"));
+        assert!(!valid_iso8601_date("20210431"));
+        assert!(!valid_iso8601_date("20210229"));
+        assert!(valid_iso8601_date("20200229"));
+        assert!(valid_iso8601_date("20210131"));
     }
 
     #[test]
     fn iso_time_forms() {
-        assert!(is_valid_iso_time("10"));
-        assert!(is_valid_iso_time("10:30"));
-        assert!(is_valid_iso_time("10:30:59"));
-        assert!(is_valid_iso_time("10:30:59.250"));
-        assert!(is_valid_iso_time("10:30:59Z"));
-        assert!(is_valid_iso_time("10:30:59+01:00"));
-        assert!(!is_valid_iso_time("25:00"));
-        assert!(!is_valid_iso_time("10:61"));
-        assert!(!is_valid_iso_time("abc"));
+        assert!(valid_iso8601_time("10"));
+        assert!(valid_iso8601_time("10:30"));
+        assert!(valid_iso8601_time("10:30:59"));
+        assert!(valid_iso8601_time("10:30:59.250"));
+        assert!(valid_iso8601_time("10:30:59Z"));
+        assert!(valid_iso8601_time("10:30:59+01:00"));
+        assert!(!valid_iso8601_time("25:00"));
+        assert!(!valid_iso8601_time("10:61"));
+        assert!(!valid_iso8601_time("abc"));
     }
 
     /// BASE `foundation_types/master06-time_types.adoc` §"ISO 8601 semantics
@@ -869,39 +613,39 @@ mod tests {
     #[test]
     fn iso_time_fraction_only_on_seconds() {
         // Fractional seconds (period or comma) is the sole permitted case.
-        assert!(is_valid_iso_time("10:30:59.250"));
-        assert!(is_valid_iso_time("10:30:59,5"));
-        assert!(is_valid_iso_time("103059.250")); // compact HHMMSS
-        assert!(is_valid_iso_time("10:30:59.5+01:00")); // fraction before timezone
+        assert!(valid_iso8601_time("10:30:59.250"));
+        assert!(valid_iso8601_time("10:30:59,5"));
+        assert!(valid_iso8601_time("103059.250")); // compact HHMMSS
+        assert!(valid_iso8601_time("10:30:59.5+01:00")); // fraction before timezone
         // A fractional hour or minute is rejected in every base form.
-        assert!(!is_valid_iso_time("10.5")); // fractional hour
-        assert!(!is_valid_iso_time("10:05.5")); // fractional minute (extended)
-        assert!(!is_valid_iso_time("1005.5")); // fractional minute (compact HHMM)
-        assert!(!is_valid_iso_time("10,5")); // fractional hour, comma
+        assert!(!valid_iso8601_time("10.5")); // fractional hour
+        assert!(!valid_iso8601_time("10:05.5")); // fractional minute (extended)
+        assert!(!valid_iso8601_time("1005.5")); // fractional minute (compact HHMM)
+        assert!(!valid_iso8601_time("10,5")); // fractional hour, comma
     }
 
     #[test]
     fn iso_date_time_forms() {
-        assert!(is_valid_iso_date_time("2021-05-17T10:30:00"));
-        assert!(is_valid_iso_date_time("2021-05-17T10:30:00+02:00"));
-        assert!(is_valid_iso_date_time("2021-05-17"));
-        assert!(!is_valid_iso_date_time("2021-05-17T99:00"));
-        assert!(!is_valid_iso_date_time("nope"));
+        assert!(valid_iso8601_date_time("2021-05-17T10:30:00"));
+        assert!(valid_iso8601_date_time("2021-05-17T10:30:00+02:00"));
+        assert!(valid_iso8601_date_time("2021-05-17"));
+        assert!(!valid_iso8601_date_time("2021-05-17T99:00"));
+        assert!(!valid_iso8601_date_time("nope"));
     }
 
     #[test]
     fn iso_duration_forms() {
-        assert!(is_valid_iso_duration("P1Y"));
-        assert!(is_valid_iso_duration("P1Y2M10D"));
-        assert!(is_valid_iso_duration("PT2H30M"));
-        assert!(is_valid_iso_duration("P1Y2M10DT2H30M"));
-        assert!(is_valid_iso_duration("P2W"));
-        assert!(is_valid_iso_duration("-P1D"));
-        assert!(is_valid_iso_duration("PT0.5S"));
-        assert!(!is_valid_iso_duration("P"));
-        assert!(!is_valid_iso_duration("1Y"));
-        assert!(!is_valid_iso_duration("P1X"));
-        assert!(!is_valid_iso_duration("PT"));
+        assert!(valid_iso8601_duration("P1Y"));
+        assert!(valid_iso8601_duration("P1Y2M10D"));
+        assert!(valid_iso8601_duration("PT2H30M"));
+        assert!(valid_iso8601_duration("P1Y2M10DT2H30M"));
+        assert!(valid_iso8601_duration("P2W"));
+        assert!(valid_iso8601_duration("-P1D"));
+        assert!(valid_iso8601_duration("PT0.5S"));
+        assert!(!valid_iso8601_duration("P"));
+        assert!(!valid_iso8601_duration("1Y"));
+        assert!(!valid_iso8601_duration("P1X"));
+        assert!(!valid_iso8601_duration("PT"));
     }
 
     /// This validator and BASE's `Iso8601Time` reader must accept the same
@@ -916,7 +660,7 @@ mod tests {
             .hour()
             .is_some();
             assert_eq!(
-                is_valid_iso_time(value),
+                valid_iso8601_time(value),
                 base,
                 "{value:?}: the RM validator and the BASE reader disagree",
             );
@@ -950,7 +694,7 @@ mod tests {
             .to_seconds()
             .is_some();
             assert_eq!(
-                is_valid_iso_duration(value),
+                valid_iso8601_duration(value),
                 base,
                 "{value:?}: the RM validator and the BASE reader disagree",
             );
@@ -964,17 +708,17 @@ mod tests {
     #[test]
     fn iso_duration_fraction_only_on_seconds() {
         // Fraction on seconds (period or comma) is the sole permitted case.
-        assert!(is_valid_iso_duration("PT2H30M0.5S"));
-        assert!(is_valid_iso_duration("PT0,5S"));
+        assert!(valid_iso8601_duration("PT2H30M0.5S"));
+        assert!(valid_iso8601_duration("PT0,5S"));
         // Fraction on any other component is rejected.
-        assert!(!is_valid_iso_duration("P1Y3M4DT2.5H"));
-        assert!(!is_valid_iso_duration("PT2H14.5M"));
-        assert!(!is_valid_iso_duration("P1.5Y"));
-        assert!(!is_valid_iso_duration("P1.5M"));
-        assert!(!is_valid_iso_duration("P1.5W"));
-        assert!(!is_valid_iso_duration("P1.5D"));
-        assert!(!is_valid_iso_duration("PT1.5H"));
-        assert!(!is_valid_iso_duration("PT2H14,5M"));
+        assert!(!valid_iso8601_duration("P1Y3M4DT2.5H"));
+        assert!(!valid_iso8601_duration("PT2H14.5M"));
+        assert!(!valid_iso8601_duration("P1.5Y"));
+        assert!(!valid_iso8601_duration("P1.5M"));
+        assert!(!valid_iso8601_duration("P1.5W"));
+        assert!(!valid_iso8601_duration("P1.5D"));
+        assert!(!valid_iso8601_duration("PT1.5H"));
+        assert!(!valid_iso8601_duration("PT2H14,5M"));
     }
 
     // NOTE: the `_type`-dispatch tests live in
@@ -985,16 +729,16 @@ mod tests {
     /// -12:00; ±00:00 is accepted (see `is_valid_tz`).
     #[test]
     fn timezone_bounds_are_asymmetric() {
-        assert!(is_valid_iso_time("10:00:00+14:00"));
-        assert!(is_valid_iso_time("10:00:00-12:00"));
-        assert!(is_valid_iso_time("10:00:00+00:00"));
-        assert!(is_valid_iso_time("10:00:00-00:00"));
+        assert!(valid_iso8601_time("10:00:00+14:00"));
+        assert!(valid_iso8601_time("10:00:00-12:00"));
+        assert!(valid_iso8601_time("10:00:00+00:00"));
+        assert!(valid_iso8601_time("10:00:00-00:00"));
         assert!(
-            !is_valid_iso_time("10:00:00+15:00"),
+            !valid_iso8601_time("10:00:00+15:00"),
             "+15 exceeds Max_timezone_hour"
         );
         assert!(
-            !is_valid_iso_time("10:00:00-13:00"),
+            !valid_iso8601_time("10:00:00-13:00"),
             "-13 exceeds Min_timezone_hour"
         );
     }
