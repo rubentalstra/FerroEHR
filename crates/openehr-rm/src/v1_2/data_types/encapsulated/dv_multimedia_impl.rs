@@ -21,9 +21,49 @@
 use crate::v1_2::data_types::encapsulated::dv_multimedia::DvMultimedia;
 use openehr_base::validate::{InvariantViolation, Validate};
 
+impl DvMultimedia {
+    /// Returns `true` when the data is stored in expanded form, within the EHR
+    /// itself.
+    ///
+    /// Spec: `dv_multimedia.adoc` §Functions — "Computed from the value of the
+    /// data attribute."
+    #[must_use]
+    pub const fn is_inline(&self) -> bool {
+        self.data.is_some()
+    }
+
+    /// Returns `true` when the data is stored externally to the record.
+    ///
+    /// Spec: `dv_multimedia.adoc` §Functions — "Computed from the value of the
+    /// `uri` attribute". Inline and external are not exclusive: the invariant
+    /// is `is_inline or is_external`, and a copy may be held both ways.
+    #[must_use]
+    pub const fn is_external(&self) -> bool {
+        self.uri.is_some()
+    }
+
+    /// Returns `true` when the data is stored in compressed form.
+    ///
+    /// Spec: `dv_multimedia.adoc` §Functions — "Computed from the value of the
+    /// `compression_algorithm` attribute."
+    #[must_use]
+    pub const fn is_compressed(&self) -> bool {
+        self.compression_algorithm.is_some()
+    }
+
+    /// Returns `true` when an integrity check has been computed.
+    ///
+    /// Spec: `dv_multimedia.adoc` §Functions — "Computed from the value of the
+    /// `integrity_check_algorithm` attribute."
+    #[must_use]
+    pub const fn has_integrity_check(&self) -> bool {
+        self.integrity_check_algorithm.is_some()
+    }
+}
+
 impl Validate for DvMultimedia {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        if self.data.is_none() && self.uri.is_none() {
+        if !self.is_inline() && !self.is_external() {
             out.push(InvariantViolation::here(
                 "Invariant Not_empty failed on type DV_MULTIMEDIA",
             ));
@@ -116,6 +156,34 @@ mod tests {
     fn zero_size_valid_per_spec() {
         let mut m = valid();
         m.size = 0;
+        assert!(m.invariants().is_empty());
+    }
+
+    /// The four §Functions predicates, each "computed from the value of" one
+    /// attribute.
+    ///
+    /// `is_inline` and `is_external` are asserted TOGETHER on one value that
+    /// carries both: the invariant is `is_inline or is_external`, an OR, so a
+    /// value held inline AND externally is valid and both must answer true.
+    /// Testing them apart would pass on an implementation that treated them as
+    /// exclusive.
+    #[test]
+    fn the_computed_predicates_follow_their_attributes() {
+        let mut m = valid();
+        assert!(m.is_inline(), "data is present");
+        assert!(!m.is_external(), "no uri is present");
+        assert!(!m.is_compressed());
+        assert!(!m.has_integrity_check());
+
+        m.uri = Some(crate::v1_2::data_types::uri::dv_uri::DvUri::DvUri(
+            crate::v1_2::data_types::uri::dv_uri::DvUriData {
+                value: "s3://bucket/key".to_owned(),
+            },
+        ));
+        assert!(
+            m.is_inline() && m.is_external(),
+            "Not_empty is an OR: a value stored both ways answers true to both"
+        );
         assert!(m.invariants().is_empty());
     }
 }
