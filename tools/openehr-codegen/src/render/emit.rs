@@ -449,23 +449,11 @@ fn emit_lib(top: &BTreeSet<String>, comp: &CrateComposition) -> GenFile {
     }
     b.push_str("//!\n//! The type files are generated; hand-written spec behaviour\n");
     b.push_str("//! lives in sibling `*_impl.rs` files.\n\n");
-    // Lint exceptions inherent to faithful spec generation:
-    //  - doc comments are verbatim openEHR spec text (bare URLs, un-backticked
-    //    terms, tabs, quote-style links, loose/overindented list continuation);
-    //  - some spec classes carry >3 boolean flags (e.g. `Interval` bounds);
-    //  - the package tree can nest a module of the same name (module_inception);
-    //  - closed-slot enums can have size-disparate variants;
-    //  - the spec owns the subtype names, so a closed set can share a prefix or
-    //    postfix (`OBJECT_ID` ⊇ `TEMPLATE_ID`, `TERMINOLOGY_ID`, …) — renaming
-    //    a variant would fork the spec model;
-    //  - the spec likewise owns the ATTRIBUTE names, so a class's fields can
-    //    share the class's own stem (`EHR.ehr_id`/`ehr_status`/`ehr_access`,
-    //    `ARCHETYPE.archetype_id`, `C_TEMPORAL.valid_*`) — the BMM attribute
-    //    name is the wire name, so `struct_field_names` cannot be satisfied
-    //    without forking the model.
-    // `reason` is mandatory (`clippy::allow_attributes_without_reason` is deny
-    // workspace-wide); `expect` is wrong here because a given crate need not
-    // trigger every listed lint.
+    // Lint exceptions inherent to faithful spec generation: the spec owns the
+    // doc text, the subtype names and the attribute names, so satisfying the
+    // doc, name-prefix and struct-field lints would fork the model.
+    // `reason` is mandatory (`allow_attributes_without_reason` is deny); `expect`
+    // is wrong because a given crate need not trigger every listed lint.
     b.push_str(
         "#![allow(\n    \
          clippy::doc_markdown,\n    \
@@ -1085,51 +1073,9 @@ pub(crate) fn field_type(
                     "Option<String>".to_string()
                 };
             }
-            // NOTE: a container property's Rust shape follows its BMM
-            // EXISTENCE, exactly like a single-valued one — `Vec<T>` when the
-            // attribute is mandatory (existence `1..1`), `Option<Vec<T>>` when
-            // it is optional (`0..1`). This is the ONE decision point of the
-            // optionality-aware container convention, so the adjudication lives
-            // here.
-            //
-            // The RM DOES distinguish Void from empty on a `0..1 List<T>`
-            // attribute — and where a class invariant of the
-            // `x /= Void implies not x.is_empty` family FORBIDS the
-            // present-but-empty state (`LOCATABLE.Links_valid`,
-            // `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`
-            // §Invariants), no valid instance can carry it, so the attribute
-            // emits `Option<NonEmptyVec<T>>` and the state stops being
-            // representable at all (#1730 — parse-don't-validate, the same
-            // door the `1..*` mandatory containers took at leg 6b-i; the
-            // invariant then holds by construction and the strict readers
-            // refuse `[]` at parse). An optional container WITHOUT such an
-            // invariant (FOLDER.items/folders — RM common
-            // `UML/classes/org.openehr.rm.common.folder.adoc` §Attributes
-            // types both 0..1 with no non-empty rule) keeps `Option<Vec<T>>`:
-            // there, "absent" and "present-but-empty" are two legitimate
-            // model states and the type must carry both.
-            //
-            // The WIRE is unaffected in the write direction — the canonical
-            // JSON writer omits an empty list either way (Resources.md §JSON
-            // Format: attributes that are Null or an empty list SHOULD be
-            // absent).
-            //
-            // The WIRE is unaffected: the canonical-JSON writer omits an empty
-            // list whether it is `None` or `Some(vec![])`, per the released
-            // sentence `docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
-            // §JSON Format ("The RM attributes (even required ones) that are
-            // `Null` or an empty list (array) SHOULD be absent when serialized
-            // as JSON"). The reader is the direction that gains: absent → `None`,
-            // `[]` → `Some(vec![])`.
-            //
-            // A MANDATORY container whose BMM cardinality has a lower bound of
-            // 1 (`CLUSTER.items: List<ITEM> {1..*}`,
-            // `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_structures.cluster.adoc`
-            // §Attributes) emits `NonEmptyVec<T>` instead of `Vec<T>`: the bound
-            // is a structural statement about the model, so the type carries it
-            // and the empty state stops being representable. A mandatory
-            // container with a `0..*` cardinality keeps the plain `Vec<T>` — it
-            // genuinely admits zero members.
+            // NOTE: a container property's Rust shape follows its BMM existence
+            // and cardinality — the emission table in this crate's `CLAUDE.md`
+            // §Container shapes carries the adjudication and its citations.
             let item_ty = model.render_type(item, generics, subst, local, external);
             let lower_bound_one = cardinality.as_ref().is_some_and(|c| c.lower >= 1)
                 && !crate::plan::overrides::cardinality_contradicted(&class.name, &p.name);

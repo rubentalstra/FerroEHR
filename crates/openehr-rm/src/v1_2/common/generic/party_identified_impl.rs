@@ -8,10 +8,9 @@
 //!   /= Void` — realized here, through the generated `party_identified_core`.
 //! - `Name_valid`: `name /= Void implies not name.is_empty` — same core.
 //! - `Identifiers_valid`: `identifiers /= Void implies not
-//!   identifiers.is_empty` — realized here, through the generated
-//!   `nonempty_list_core`: the optional-container emission shape
-//!   (`Option<Vec<T>>`) makes present-but-empty a distinct value, so the rule
-//!   has something to judge.
+//!   identifiers.is_empty` — structural: `identifiers` is
+//!   `Option<NonEmptyVec<DvIdentifier>>`, whose `Deserialize` refuses an empty
+//!   list, so a violating value cannot be built or read.
 
 use crate::v1_2::common::generic::party_identified::PartyIdentifiedData;
 use openehr_base::validate::{InvariantViolation, Validate};

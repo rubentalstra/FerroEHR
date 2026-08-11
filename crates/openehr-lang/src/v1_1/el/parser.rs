@@ -452,6 +452,10 @@ impl<'a, 'b, B: ElBuilder> Parser<'a, 'b, B> {
 
     /// Captures the verbatim `{ … }` source of a `matches` right-hand side by
     /// brace depth, or the single `CONTAINED_REGEXP` token.
+    #[expect(
+        clippy::expect_used,
+        reason = "`self.src` IS the string the token spans were produced from (parse_boolean_expression_with lexes `src` and hands the same `src` to Parser::new), and the range runs from an opening token's span start to a later token's span end, so it is always an in-bounds, char-boundary slice"
+    )]
     fn constraint_rhs(&mut self) -> Result<(String, usize), ElError> {
         if let Some(Token::ContainedRegexp(raw)) = self.peek().cloned() {
             let at = self.at();
@@ -475,7 +479,11 @@ impl<'a, 'b, B: ElBuilder> Parser<'a, 'b, B> {
             }
             self.pos += 1;
             if depth == 0 {
-                let raw = self.src.get(start..end).unwrap_or_default().to_owned();
+                let raw = self
+                    .src
+                    .get(start..end)
+                    .expect("a token span range should slice the source it was lexed from")
+                    .to_owned();
                 return Ok((raw, start));
             }
         }
@@ -520,15 +528,16 @@ fn decode_string(raw: &str) -> String {
 /// Decodes a single-quoted character literal to a `char`.
 ///
 /// The lexer admits only the six quoted forms in a character literal, so the
-/// decode cannot fail here.
+/// decode cannot fail here, and its token regex admits exactly one body
+/// character, so the decoded literal is never empty.
 #[expect(
     clippy::expect_used,
-    reason = "`Token::Character` only exists when the lexer's validate_char admitted the body, which restricts an escape to the six quoted forms none of which can fail to decode"
+    reason = "`Token::Character` only exists when the lexer's validate_char admitted the body, which restricts an escape to the six quoted forms none of which can fail to decode; the same token regex admits one body character or one two-character escape, each decoding to exactly one char, so the literal is never empty"
 )]
 fn decode_char(raw: &str) -> char {
     crate::v1_1::escape::decode_character_literal(raw)
         .expect("a lexer-validated character literal should decode")
         .chars()
         .next()
-        .unwrap_or('\u{fffd}')
+        .expect("a lexer-validated character literal should decode to one character")
 }

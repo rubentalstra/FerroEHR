@@ -16,6 +16,20 @@
 //!   Functions: the definite/nominal split and the average-length constants the
 //!   definite forms use).
 //!
+//! Invariants — the FOUR entries the class table declares under §Invariants,
+//! plus one rule of our own naming:
+//! - `Month_valid` (`not month_unknown implies valid_month (month)`) and
+//!   `Day_valid` (`not day_unknown implies valid_day (year, month, day)`) —
+//!   checked, each under its own name.
+//! - `Year_valid` (`valid_year (year)`, i.e. `year >= 0`) — structurally
+//!   satisfied: the accepted forms admit only four zero-filled digits.
+//! - `Partial_validity` (`month_unknown implies day_unknown`) — structurally
+//!   satisfied: no accepted form writes a day without a month.
+//! - `Value_lexical_form_valid` — OUR OWN name, because the class table
+//!   declares none: a value that is not the `valid_iso8601_date` production at
+//!   all has no components, so every declared invariant holds vacuously
+//!   (the same rule `version_tree_id_impl.rs` names for identifiers).
+//!
 //! NOTE: arithmetic needs every component of the value, and the openEHR spec
 //! says nothing about computing on a PARTIAL date (`2020`, `2020-06`) — the
 //! `add`/`diff` signatures simply take complete values. A partial (or
@@ -45,8 +59,10 @@ use super::iso8601_date::Iso8601Date;
 use super::iso8601_duration::Iso8601Duration;
 use super::iso8601_parse::{
     EXACT_SECONDS_IN_DAY, ExactSeconds, ParsedDate, as_extended_date, civil_from_days,
-    days_from_civil, parse_date, render_date_extended, render_duration, shift_months,
+    days_from_civil, days_in_month, parse_date, render_date_extended, render_duration, scan_date,
+    shift_months,
 };
+use crate::validate::{InvariantViolation, Validate};
 
 impl Iso8601Date {
     /// Parsed components, or `None` when `value` is not a valid ISO 8601 date.
@@ -249,6 +265,48 @@ impl PartialOrd for Iso8601Date {
             return Some(Ordering::Equal); // consistent with the derived PartialEq
         }
         cmp_date(&self.parsed()?, &other.parsed()?)
+    }
+}
+
+/// The uniform violation for one named invariant, on the class reporting it —
+/// `Iso8601_date`, or `Iso8601_date_time` where it re-declares the same rule.
+fn failed(invariant: &str, type_name: &str) -> InvariantViolation {
+    InvariantViolation::here(format!("Invariant {invariant} failed on type {type_name}"))
+}
+
+/// Appends the date-component invariant violations of a scanned value.
+///
+/// The rules are `Month_valid` and `Day_valid`, reported on `type_name` —
+/// `Iso8601_date_time` re-declares both.
+///
+/// `Day_valid` is checked only under an in-range month: its rule is
+/// `valid_day (y, m, d) = d >= 1 and d <= days_in_month (m, y)`
+/// (`time_definitions.adoc` §Functions), which is undefined where `valid_month`
+/// already fails.
+pub(crate) fn push_date_component_violations(
+    d: &ParsedDate,
+    type_name: &str,
+    out: &mut Vec<InvariantViolation>,
+) {
+    let month_valid = d.month.is_none_or(|m| (1..=12).contains(&m));
+    if !month_valid {
+        out.push(failed("Month_valid", type_name));
+    }
+    if month_valid
+        && let (Some(month), Some(day)) = (d.month, d.day)
+        && !days_in_month(d.year, month).is_some_and(|last| (1..=last).contains(&day))
+    {
+        out.push(failed("Day_valid", type_name));
+    }
+}
+
+impl Validate for Iso8601Date {
+    fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
+        let Some(d) = scan_date(&self.value) else {
+            out.push(failed("Value_lexical_form_valid", "Iso8601_date"));
+            return;
+        };
+        push_date_component_violations(&d, "Iso8601_date", out);
     }
 }
 
@@ -607,6 +665,71 @@ mod tests {
         assert!(date("not-a-date").add(&dur("P1D")).is_none());
         // A malformed duration is equally uncomputable.
         assert!(date("2020-06-15").add(&dur("1D")).is_none());
+    }
+
+    // ── invariants ───────────────────────────────────────────────────────────
+
+    /// Every invalid value names the `iso8601_date.adoc` §Invariants entry it
+    /// breaks — the point of the per-invariant realization: a report says WHICH
+    /// rule failed, not merely that the string was rejected.
+    #[test]
+    fn invalid_dates_name_the_invariant_they_break() {
+        for (bad, invariant) in [
+            // Month_valid: valid_month (m) = m >= 1 and m <= Months_in_year.
+            ("2020-13-01", "Month_valid"),
+            ("2020-00-15", "Month_valid"),
+            ("202013", "Month_valid"),
+            // Day_valid: d >= 1 and d <= days_in_month (m, y).
+            ("2021-02-29", "Day_valid"), // 2021 is not a leap year
+            ("2020-02-30", "Day_valid"),
+            ("2020-04-31", "Day_valid"),
+            ("2020-06-00", "Day_valid"),
+            ("20210229", "Day_valid"),
+            // Our own lexical rule: not the valid_iso8601_date production.
+            ("2020-W01", "Value_lexical_form_valid"),
+            ("not-a-date", "Value_lexical_form_valid"),
+            ("2020-6-15", "Value_lexical_form_valid"),
+            ("+2020-06-15", "Value_lexical_form_valid"),
+            ("", "Value_lexical_form_valid"),
+        ] {
+            let v = date(bad).invariants();
+            let expected = format!("Invariant {invariant} failed on type Iso8601_date");
+            assert!(
+                v.iter().any(|m| m.message == expected),
+                "{bad:?} should report {invariant}, got {v:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn valid_dates_including_every_partial_form_report_nothing() {
+        for good in [
+            "2020",
+            "2020-06",
+            "2020-06-15",
+            "202006",
+            "20200615",
+            "2020-02-29",
+            "0000-01-01",
+            "9999-12-31",
+        ] {
+            assert!(
+                date(good).invariants().is_empty(),
+                "{good:?} is a valid Iso8601_date"
+            );
+        }
+    }
+
+    /// `valid_day` is defined in terms of `days_in_month (m, y)`, so a month
+    /// `valid_month` already rejects leaves `Day_valid` undecided.
+    #[test]
+    fn an_out_of_range_month_reports_month_valid_alone() {
+        let v = date("2020-13-01").invariants();
+        assert_eq!(v.len(), 1);
+        assert_eq!(
+            v[0].message,
+            "Invariant Month_valid failed on type Iso8601_date"
+        );
     }
 
     #[test]

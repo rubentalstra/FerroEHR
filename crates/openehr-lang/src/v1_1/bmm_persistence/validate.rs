@@ -85,6 +85,26 @@ pub enum PBmmValidityFinding {
         reason: String,
     },
 
+    /// A persisted constant states no value, so the class carries it nowhere.
+    ///
+    /// `P_BMM_CONSTANT.value` is `0..1` — "The literal value of this constant,
+    /// in its persisted (serialised) form"
+    /// (`org.openehr.lang.bmm_persistence.p_bmm_constant.adoc` §Attributes) —
+    /// while the v3 destination is a `1..1` `BMM_CONSTANT.generator`
+    /// (`org.openehr.lang.bmm3.bmm_constant.adoc` §Attributes) over a
+    /// `BMM_LITERAL_VALUE` whose `value_literal` is a `1..1` "serial
+    /// representation of the value"
+    /// (`org.openehr.lang.bmm3.bmm_literal_value.adoc` §Attributes). Stating no
+    /// value is legal P_BMM — openEHR's own published LANG schemas do it for
+    /// `BMM_DEFINITIONS.Bmm_internal_version` — so it is reported here rather
+    /// than refusing the schema, and no empty serial form is invented.
+    ConstantNotMaterialised {
+        /// The class the constant belongs to.
+        class: String,
+        /// The constant's name, as persisted.
+        constant: String,
+    },
+
     /// A class redefines an inherited property with a type that does not
     /// conform to the overridden property's type.
     ///
@@ -162,6 +182,11 @@ impl fmt::Display for PBmmValidityFinding {
                     "{owner} {kind} `{tag}` ({expression:?}) is not materialisable                      as a BMM_ASSERTION: {reason}"
                 )
             }
+            Self::ConstantNotMaterialised { class, constant } => write!(
+                formatter,
+                "class `{class}` constant `{constant}` states no value, so it is not \
+                 materialisable as a BMM_CONSTANT"
+            ),
             Self::OverriddenPropertyNonConformance {
                 class,
                 property,

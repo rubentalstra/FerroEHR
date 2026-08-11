@@ -18,6 +18,20 @@
 //!   Types: the negative-duration and mixed-`W` deviations; §Computational
 //!   Functions).
 //!
+//! Invariants — the EIGHT entries the class table declares under §Invariants
+//! (`Years_valid` … `Seconds_valid`, each `>= 0`, and `Fractional_second_valid`
+//! `>= 0.0 and < 1.0`) are ALL structurally satisfied by the reader: a
+//! component is a digit run scanned into an unsigned count, and a fraction is
+//! scanned as `0.<digits>`, so no parsed value can break one. What a value CAN
+//! be is not a duration at all, which the class table names no rule for, so it
+//! is reported under our own `Value_lexical_form_valid` (the same rule
+//! `iso8601_date_impl.rs` names).
+//!
+//! NOTE: the openEHR negative-duration deviation (`master06` §Primitive Time
+//! Types) is a leading sign on the VALUE, not on any component, so `-P1Y` still
+//! satisfies `Years_valid` — the class declares no sign accessor to read it
+//! from.
+//!
 //! NOTE: the class doc gives an algorithm for `add`/`subtract` (reduce both
 //! operands via `to_seconds`) but none for `multiply`/`divide`. Component-wise
 //! scaling is not even expressible — `P1Y * 1.5` would need a fractional year,
@@ -39,6 +53,7 @@ use std::cmp::Ordering;
 
 use super::iso8601_duration::Iso8601Duration;
 use super::iso8601_parse::{ExactSeconds, ParsedDuration, parse_duration, render_duration};
+use crate::validate::{InvariantViolation, Validate};
 
 impl Iso8601Duration {
     /// Parsed components, or `None` when `value` is not a valid ISO 8601
@@ -240,6 +255,16 @@ impl PartialOrd for Iso8601Duration {
             // spellings ⇒ incomparable per decision 4, not equal.
             Ordering::Equal => None,
             ord => Some(ord),
+        }
+    }
+}
+
+impl Validate for Iso8601Duration {
+    fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
+        if self.parsed().is_none() {
+            out.push(InvariantViolation::here(
+                "Invariant Value_lexical_form_valid failed on type Iso8601_duration",
+            ));
         }
     }
 }
@@ -462,5 +487,44 @@ mod tests {
         assert_eq!(flipped.value, "-P1Y2M3W4DT5H6M7,50S");
         assert_eq!(flipped.negative().unwrap().value, original.value);
         assert!(dur("nonsense").negative().is_none());
+    }
+
+    // ── invariants ───────────────────────────────────────────────────────────
+
+    /// A value that is not the `P[nnY][nnM][nnW][nnD][T[nnH][nnM][nnS]]`
+    /// production is refused under the one rule this class can break.
+    #[test]
+    fn a_value_that_is_not_a_duration_reports_the_lexical_rule() {
+        for bad in [
+            "1D", "P", "PT", "", "nonsense", "P1Y1Y", "P1D1M", "P1YT", "-P", "PT1.S",
+        ] {
+            let v = dur(bad).invariants();
+            assert_eq!(v.len(), 1, "{bad:?} should be refused, got {v:?}");
+            assert_eq!(
+                v[0].message,
+                "Invariant Value_lexical_form_valid failed on type Iso8601_duration"
+            );
+        }
+    }
+
+    /// Every declared component invariant is structurally satisfied, including
+    /// on a negative duration (the sign is on the value, not on a component).
+    #[test]
+    fn valid_durations_report_nothing() {
+        for good in [
+            "P1Y",
+            "-P3M",
+            "P1W",
+            "P30D",
+            "PT1M",
+            "PT0S",
+            "PT0,5S",
+            "P1Y2M3W4DT5H6M7.5S",
+        ] {
+            assert!(
+                dur(good).invariants().is_empty(),
+                "{good:?} is a valid Iso8601_duration"
+            );
+        }
     }
 }

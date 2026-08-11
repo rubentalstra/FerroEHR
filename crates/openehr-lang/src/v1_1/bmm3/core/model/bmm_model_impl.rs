@@ -226,6 +226,12 @@ impl BmmModel {
     ///   "Conforms - case where anc type is not provided in generic form, but
     ///   desc is, e.g. `Interval<Integer>` conforms to `Interval`".
     ///
+    /// Each generic branch is gated on BOTH halves the section states —
+    /// "`valid_generic_type_name (a_type)` and `bmm_def_class instanceOf
+    /// (BMM_GENERIC_CLASS)`" — so a generic-SHAPED name whose root class the
+    /// model does not define as a `BMM_GENERIC_CLASS` takes the non-generic
+    /// path.
+    ///
     /// A non-generic descendant against a GENERIC ancestor is therefore not
     /// conformant: the section's final `else` returns "not
     /// valid_generic_type_name (anc_type)".
@@ -243,10 +249,16 @@ impl BmmModel {
         if !self.base_class_conforms_to(descendant_root, ancestor_root) {
             return false;
         }
-        if ancestor_parameters.is_empty() {
+        if !self.is_generic_type(descendant_root, &descendant_parameters) {
+            return ancestor_parameters.is_empty();
+        }
+        if !self.is_generic_type(ancestor_root, &ancestor_parameters) {
             return true;
         }
         if descendant_parameters.len() != ancestor_parameters.len() {
+            // NOTE: no openEHR spec governs this — our own design/extension;
+            // §Type Conformance's pseudocode returns nothing when two generic
+            // types differ in parameter count, and a count mismatch is refused.
             return false;
         }
         descendant_parameters
@@ -265,6 +277,23 @@ impl BmmModel {
                 };
                 self.type_conforms_to(&source, &target)
             })
+    }
+
+    /// The generic-branch guard of §Type Conformance:
+    /// "`valid_generic_type_name (a_type)` and `bmm_def_class instanceOf
+    /// (BMM_GENERIC_CLASS)`".
+    ///
+    /// The name must both CARRY generic parameters and root in a class this
+    /// model defines as a `BMM_GENERIC_CLASS`
+    /// (`org.openehr.lang.bmm3.bmm_generic_class.adoc` §Description); a class
+    /// the model does not define satisfies no `instanceOf` test, so it takes
+    /// the non-generic path.
+    fn is_generic_type(&self, root: &str, parameters: &[&str]) -> bool {
+        !parameters.is_empty()
+            && matches!(
+                self.class_definition(root),
+                Some(BmmClass::BmmGenericClass(_))
+            )
     }
 
     /// The base-class half of §Type Conformance: "`base_class`
@@ -292,5 +321,83 @@ impl BmmModel {
                 .unwrap_or_else(|| ANY_TYPE_NAME.to_owned()),
             _ => ANY_TYPE_NAME.to_owned(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::v1_1::bmm_persistence::create_bmm3_model::create_bmm3_model;
+    use crate::v1_1::bmm_persistence::reader::read_schema;
+    use crate::v1_1::bmm3::core::model::bmm_model::BmmModel;
+
+    /// A schema listing `ORDERED`, `INTEGER` and an `INTERVAL` whose definition
+    /// the caller supplies, in the `master04-syntax.adoc` §Header Items shape.
+    fn model(interval: &str) -> BmmModel {
+        let src = format!(
+            r#"
+            bmm_version = <"2.4">
+            rm_publisher = <"openehr">
+            schema_name = <"bmm3_conformance">
+            rm_release = <"1.0.2">
+            packages = <
+                ["test"] = <
+                    name = <"test">
+                    classes = <"ORDERED", "INTEGER", "INTERVAL">
+                >
+            >
+            class_definitions = <
+                ["ORDERED"] = < name = <"ORDERED"> >
+                ["INTEGER"] = < name = <"INTEGER"> ancestors = <"ORDERED"> >
+                {interval}
+            >
+            "#
+        );
+        create_bmm3_model(&read_schema(&src).expect("the fixture reads"))
+            .expect("the fixture materialises")
+    }
+
+    /// A generic class taking one parameter constrained to `ORDERED`.
+    const GENERIC_INTERVAL: &str = r#"["INTERVAL"] = <
+            name = <"INTERVAL">
+            generic_parameter_defs = <
+                ["T"] = < name = <"T"> conforms_to_type = <"ORDERED"> >
+            >
+        >"#;
+
+    /// The same name declared WITHOUT generic parameters.
+    const PLAIN_INTERVAL: &str = r#"["INTERVAL"] = < name = <"INTERVAL"> >"#;
+
+    /// `master06-core-types.adoc` §Type Conformance gates the generic branch on
+    /// "`valid_generic_type_name (a_type)` and `bmm_def_class instanceOf
+    /// (BMM_GENERIC_CLASS)`", so a generic-SHAPED name over a class the model
+    /// defines as non-generic takes the section's final `else` — "return not
+    /// valid_generic_type_name (anc_type)".
+    #[test]
+    fn a_generic_shaped_name_over_a_non_generic_class_is_not_generic() {
+        let model = model(PLAIN_INTERVAL);
+        assert!(!model.type_conforms_to("INTERVAL<INTEGER>", "INTERVAL<ORDERED>"));
+        // The same `else` admits a non-generic ancestor name.
+        assert!(model.type_conforms_to("INTERVAL<INTEGER>", "INTERVAL"));
+    }
+
+    /// The generic branches themselves, over a root the model DOES define as a
+    /// `BMM_GENERIC_CLASS`: parameters recurse pairwise, and an ancestor stated
+    /// without its generic form conforms ("e.g. `Interval<Integer>` conforms to
+    /// `Interval`").
+    #[test]
+    fn a_generic_class_compares_its_parameters() {
+        let model = model(GENERIC_INTERVAL);
+        assert!(model.type_conforms_to("INTERVAL<INTEGER>", "INTERVAL<ORDERED>"));
+        assert!(!model.type_conforms_to("INTERVAL<ORDERED>", "INTERVAL<INTEGER>"));
+        assert!(model.type_conforms_to("INTERVAL<INTEGER>", "INTERVAL"));
+        assert!(!model.type_conforms_to("INTERVAL", "INTERVAL<ORDERED>"));
+    }
+
+    /// Two generic types differing in parameter count: the section's pseudocode
+    /// returns nothing, and this implementation refuses.
+    #[test]
+    fn generic_types_of_differing_parameter_counts_do_not_conform() {
+        let model = model(GENERIC_INTERVAL);
+        assert!(!model.type_conforms_to("INTERVAL<INTEGER,INTEGER>", "INTERVAL<ORDERED>"));
     }
 }

@@ -224,6 +224,20 @@ pub(crate) fn days_from_civil(year: u32, month: u32, day: u32) -> i64 {
 /// Types); component combinations must be calendar-valid
 /// (`Time_definitions.valid_iso8601_date`).
 pub(crate) fn parse_date(s: &str) -> Option<ParsedDate> {
+    let d = scan_date(s)?;
+    validate_date(d.year, d.month, d.day)?;
+    Some(d)
+}
+
+/// Decompose a date LEXICALLY, without the calendar-validity checks: the same
+/// accepted spellings as [`parse_date`], but `2021-02-29` still yields its
+/// three components.
+///
+/// The invariant reporting in `iso8601_date_impl.rs` needs the components of an
+/// INVALID value to name the rule that value breaks (`Month_valid` versus
+/// `Day_valid`); a form that is not the production at all (a week date, an
+/// expanded year) has no components to report and is refused here.
+pub(crate) fn scan_date(s: &str) -> Option<ParsedDate> {
     if s.is_empty() || s.bytes().any(|b| b == b'W' || b == b'w') {
         return None;
     }
@@ -258,7 +272,6 @@ pub(crate) fn parse_date(s: &str) -> Option<ParsedDate> {
             _ => return None,
         }
     };
-    validate_date(year, month, day)?;
     // `Iso8601_date.is_extended`: "True if this date uses '-' separators".
     // NOTE: the spec does not say what a form with NO separator position
     // (`YYYY`) reports; we report it extended, keeping `as_string() == value`
@@ -299,17 +312,32 @@ fn validate_date(year: u32, month: Option<u32>, day: Option<u32>) -> Option<()> 
 /// (`master06`; `Time_definitions.valid_second` Post `s < Seconds_in_minute`),
 /// see the leap-second NOTE in `iso8601_time_impl.rs`.
 pub(crate) fn parse_time(s: &str) -> Option<ParsedTime> {
+    let t = scan_time(s)?;
+    validate_time(t.hour, t.minute, t.second, t.fractional_second)?;
+    Some(t)
+}
+
+/// Decompose a time LEXICALLY, without the component-validity checks: the same
+/// accepted spellings as [`parse_time`], but `24:00:00` and `12:00:60` still
+/// yield their components, and a fractional part is kept even where no second
+/// carries it (`12:00.5`).
+///
+/// The invariant reporting in `iso8601_time_impl.rs` needs those components to
+/// name the rule the value breaks. The timezone lexeme is still range-checked
+/// by [`parse_timezone`]: its bounds are `Iso8601_timezone`'s own invariants,
+/// which this class does not declare.
+pub(crate) fn scan_time(s: &str) -> Option<ParsedTime> {
     let (main, tz) = split_timezone_lexeme(s)?;
     let timezone = if tz.is_empty() {
         None
     } else {
         Some(parse_timezone(tz)?)
     };
-    let (hour, minute, second, fractional_second) = parse_time_main(main)?;
+    let (hour, minute, second, fractional_second) = scan_time_main(main)?;
     // `Iso8601_time.is_extended`: "True if this time uses '-', ':' separators".
     // A value counts as extended when every separator position it actually has
     // is written with a separator (so `hh`, `Z` and `±hh`, which have none, do
-    // not disqualify it) — see the `parse_date` is_extended NOTE.
+    // not disqualify it) — see the `scan_date` is_extended NOTE.
     let extended = body_is_extended(split_fraction_lexeme(main).0) && timezone_is_extended(tz);
     Some(ParsedTime {
         hour,
@@ -346,8 +374,9 @@ fn timezone_is_extended(tz: &str) -> bool {
     tz.contains(':') || tz.len() <= 3
 }
 
-/// Parse the time-of-day part (no timezone) in extended or compact form.
-fn parse_time_main(main: &str) -> Option<TimeParts> {
+/// Decompose the time-of-day part (no timezone) in extended or compact form,
+/// lexically only — see [`scan_time`].
+fn scan_time_main(main: &str) -> Option<TimeParts> {
     // Separate an optional fractional-seconds tail introduced by '.' or ','.
     let (body, frac) = split_fraction(main);
     let (hour, minute, second) = if body.contains(':') {
@@ -381,13 +410,7 @@ fn parse_time_main(main: &str) -> Option<TimeParts> {
             _ => return None,
         }
     };
-    // A fractional part is only meaningful on a present second.
-    let fractional_second = match frac {
-        Some(f) if second.is_some() => Some(f),
-        Some(_) => return None,
-        None => None,
-    };
-    validate_time(hour, minute, second, fractional_second)
+    Some((hour, minute, second, frac))
 }
 
 /// Split a trailing `(.|,)digits` fractional part off the time body, returning
@@ -450,8 +473,10 @@ fn validate_time(
     {
         return None; // leap second `:60` rejected per valid_second
     }
+    // `Fractional_second_valid`: a fraction is significant only on a present
+    // second, and lies in `[0.0, 1.0)` (`valid_fractional_second`).
     if let Some(f) = fractional_second
-        && !(f.is_finite() && (0.0..1.0).contains(&f))
+        && (second.is_none() || !(f.is_finite() && (0.0..1.0).contains(&f)))
     {
         return None; // includes the NaN split_fraction uses to flag malformed input
     }
@@ -522,6 +547,23 @@ pub(crate) fn parse_date_time(s: &str) -> Option<ParsedDateTime> {
     } else {
         Some(ParsedDateTime {
             date: parse_date(s)?,
+            time: None,
+        })
+    }
+}
+
+/// Decompose a date/time LEXICALLY, without the component-validity checks — see
+/// [`scan_date`] and [`scan_time`], which it composes on the same `T` split as
+/// [`parse_date_time`].
+pub(crate) fn scan_date_time(s: &str) -> Option<ParsedDateTime> {
+    if let Some((d, t)) = s.split_once('T') {
+        Some(ParsedDateTime {
+            date: scan_date(d)?,
+            time: Some(scan_time(t)?),
+        })
+    } else {
+        Some(ParsedDateTime {
+            date: scan_date(s)?,
             time: None,
         })
     }
@@ -1336,6 +1378,41 @@ mod tests {
         assert!((month - 2_628_288.0).abs() < 1e-6);
         assert_eq!(EXACT_SECONDS_IN_AVERAGE_YEAR, 31_556_736);
         assert_eq!(EXACT_SECONDS_IN_AVERAGE_MONTH, 2_628_288);
+    }
+
+    /// The lenient scanners accept EXACTLY what the strict parsers accept, plus
+    /// the values whose only defect is a class invariant — which is what lets
+    /// the `*_impl.rs` validators name the rule a bad value breaks.
+    #[test]
+    fn the_scanners_extend_the_parsers_only_where_an_invariant_decides() {
+        for good in ["2020", "2020-06", "2020-06-15", "20200615", "202006"] {
+            assert_eq!(scan_date(good), parse_date(good), "{good:?}");
+        }
+        for good in [
+            "12",
+            "12:00",
+            "12:00:00",
+            "120000",
+            "12:00:00.5",
+            "120000,25Z",
+        ] {
+            assert_eq!(scan_time(good), parse_time(good), "{good:?}");
+        }
+        for bad in ["2020-W01", "not-a-date", "2020-6-15", ""] {
+            assert!(scan_date(bad).is_none(), "{bad:?} is not the production");
+        }
+        // Calendar- and component-invalid values still decompose.
+        assert!(parse_date("2021-02-29").is_none() && scan_date("2021-02-29").is_some());
+        assert!(parse_date("2020-13-01").is_none() && scan_date("2020-13-01").is_some());
+        assert!(parse_time("24:00:00").is_none() && scan_time("24:00:00").is_some());
+        assert!(parse_time("12:00:60").is_none() && scan_time("12:00:60").is_some());
+        // A fraction with no second to carry it: refused by the parser (the
+        // `Fractional_second_valid` clause), kept by the scanner.
+        assert!(parse_time("12:00.5").is_none());
+        assert_eq!(
+            scan_time("12:00.5").and_then(|t| t.fractional_second),
+            Some(0.5)
+        );
     }
 
     #[test]

@@ -4,7 +4,7 @@
 //!
 //! Spec: RM
 //! `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.versioned_object.adoc`
-//! §Functions declares fourteen operations on a version container:
+//! §Functions declares sixteen operations on a version container:
 //! `version_count`, `all_version_ids`, `all_versions`, `has_version_at_time`,
 //! `has_version_id`, `version_with_id`, `is_original_version`,
 //! `version_at_time`, `revision_history`, `latest_version`,

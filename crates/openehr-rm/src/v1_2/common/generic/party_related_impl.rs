@@ -6,9 +6,8 @@
 //! `…org.openehr.rm.common.party_identified.adoc` §Invariants:
 //!
 //! - inherited `Basic_validity` and `Name_valid` — realized here, through the
-//!   generated `party_identified_core` (the inherited `Identifiers_valid` is
-//!   unrealizable on the typed node for the reason given in
-//!   `party_identified_impl`).
+//!   generated `party_identified_core`; the inherited `Identifiers_valid` is
+//!   structural, for the reason given in `party_identified_impl`.
 //! - `Relationship_valid`: `terminology (Terminology_id_openehr)
 //!   .has_code_for_group_id (Group_id_subject_relationship,
 //!   relationship.defining_code)` — terminology-bound, so it needs a bundle

@@ -14,6 +14,10 @@
 //! `Original_language_valid` stays with the terminology binding table;
 //! `Translations_valid`/`Description_valid` are cross-member map rules over
 //! `translations`, realized where a whole authored resource is ingested.
+//! `Languages_available_valid` (`languages_available.has (original_language)`)
+//! constrains the derived `languages_available()` function, which builds its
+//! result from `original_language` — so it holds by that function's own
+//! definition, the same venue as `Current_revision_valid`.
 
 use crate::v1_1::common::resource::authored_resource::AuthoredResource;
 use openehr_base::validate::{InvariantViolation, Validate};

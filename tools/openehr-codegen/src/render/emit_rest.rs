@@ -490,22 +490,13 @@ impl Ctx<'_> {
             return self.rust_type(self.oas.resolve(schema));
         }
         // `allOf` COMPOSITION. A schema whose only structural content is a
-        // single-`$ref` `allOf` — no `properties` of its own — is a pure alias
-        // for its referent: OAS 3.0 defines `allOf` as "inline or referenced
-        // schema MUST be of a Schema Object and not a standard JSON Schema …
-        // allOf takes an array of object definitions that are validated
-        // *independently* but together compose a single object"
+        // single-`$ref` `allOf` is a pure alias for its referent — OAS 3.0
+        // composes independently-validated definitions
         // (<https://spec.openapis.org/oas/v3.0.3#composition-and-inheritance-polymorphism>),
-        // so an empty own-contribution leaves exactly the referent's shape.
-        // The released ITS-REST OAS uses precisely this form to give one
-        // `ITEM_TAG` schema a per-resource NAME (`ItemTagOfComposition`,
-        // `ItemTagOfEhrStatus`, `ItemTagOfPerson`, …). Dropping the
-        // composition degraded all seven to an untyped map.
-        //
-        // A schema that ALSO declares its own `properties` is a genuine
-        // extension of its referent and keeps its own struct (the RM/BASE
-        // subtype chain); it never reaches here, because the caller emits it
-        // through the object branch.
+        // so an empty own-contribution leaves exactly the referent's shape. The
+        // released OAS uses it to give one `ITEM_TAG` schema a per-resource name.
+        // A schema that ALSO declares `properties` is a genuine extension and
+        // reaches the object branch instead.
         if schema.get("properties").is_none()
             && let Some(members) = schema.get("allOf").and_then(Value::as_array)
         {
@@ -663,18 +654,11 @@ fn emit_dto(b: &mut String, name: &str, schema: &Value, ctx: &Ctx) {
         .and_then(|d| d.get("mapping"))
         .and_then(Value::as_object)
     {
-        // A base that carries `x-discriminator-value` is INSTANTIABLE IN ITS
-        // OWN RIGHT — the OAS extension names the `_type` an instance of the
-        // base itself sends (`UpdateAudit` → `UPDATE_AUDIT`, whose own
-        // `example` block is a bare `UPDATE_AUDIT` object), exactly as
-        // `x-discriminator-value` marks every concrete RM class in the same
-        // bundles. Its own members therefore have to survive: the base emits
-        // as a `…Data` struct and joins the enum as one more variant (the
-        // shape the BMM emitter already uses for a concrete class with
-        // concrete descendants, e.g. `PartyIdentified::PartyIdentified(
-        // PartyIdentifiedData)`). A base with NO `x-discriminator-value` is
-        // abstract (`DataValue`, `Versionable`, `AbstractEntry`) and stays a
-        // pure union over its mapping.
+        // A base carrying `x-discriminator-value` is INSTANTIABLE in its own
+        // right — the extension names the `_type` an instance of the base itself
+        // sends — so its members survive: it emits as a `…Data` struct and joins
+        // the enum as one more variant. A base WITHOUT it is abstract and stays
+        // a pure union over its mapping.
         let base_tag = schema
             .get("x-discriminator-value")
             .and_then(Value::as_str)
@@ -758,15 +742,11 @@ fn emit_struct(
         .map(String::as_str)
         .filter(|f| crate::plan::overrides::rest_optional_override(ty_name, f).is_none())
         .collect();
-    // A schema that declares `additionalProperties: false` is CLOSED by the
-    // released OAS, and a closed object must refuse an undeclared member —
-    // otherwise the generated DTO silently accepts payloads the
-    // specification's own computable artifact rejects. serde's
-    // `deny_unknown_fields` is the exact realization
-    // (<https://serde.rs/container-attrs.html#deny_unknown_fields>), and it
-    // is mutually exclusive with the `#[serde(flatten)]` extension map by
-    // construction: that map is emitted only when `additionalProperties` is
-    // present and NOT `false`.
+    // A schema declaring `additionalProperties: false` is CLOSED by the released
+    // OAS, so the DTO must refuse an undeclared member rather than accept what
+    // the specification's own computable artifact rejects. serde's
+    // `deny_unknown_fields` is the exact realization, and it is mutually
+    // exclusive with the flatten extension map by construction.
     let closed = schema.get("additionalProperties") == Some(&Value::Bool(false));
     let (deny_doc, deny_attr) = if closed {
         (
