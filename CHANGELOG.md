@@ -18,6 +18,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **`DV_COUNT` arithmetic and `DV_MULTIMEDIA`/`COMPOSITION` predicates** on the
+  published spec crates: `add`, `subtract`, `multiply`, `is_inline`,
+  `is_external`, `is_compressed`, `has_integrity_check`, `is_persistent`.
+  Overflow and non-whole products are refused rather than wrapped or rounded —
+  openEHR defines neither, and a wrapped count is a silently wrong clinical
+  value.
+
 - **Releases are archived on Zenodo with a citable DOI.** `.zenodo.json` is
   generated from `CITATION.cff` so the two cannot disagree — necessary because
   Zenodo ignores `CITATION.cff` entirely whenever a `.zenodo.json` is present,

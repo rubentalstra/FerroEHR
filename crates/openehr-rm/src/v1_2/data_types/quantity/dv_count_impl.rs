@@ -9,6 +9,8 @@
 use crate::v1_2::data_types::quantity::dv_count::DvCount;
 use crate::v1_2::data_types::quantity::dv_ordered_impl::push_normal_range_consistency;
 use openehr_base::validate::{InvariantViolation, Validate};
+use rust_decimal::Decimal;
+use rust_decimal::prelude::ToPrimitive;
 
 impl DvCount {
     // NOTE: `less_than` and `is_strictly_comparable_to` are realized for every
@@ -52,48 +54,27 @@ impl DvCount {
     /// representable whole number.
     ///
     /// Spec: `dv_count.adoc` §Functions `multiply` — the factor is a `Real`
-    /// while `magnitude` is an `Integer64`, and the spec says nothing about
-    /// how a fractional product becomes a count. Rather than pick a rounding
-    /// rule and present it as normative, this refuses a product that is not
-    /// already whole: `count * 2.5` is an answer the spec does not define, and
+    /// while `magnitude` is an `Integer64`, and the spec says nothing about how
+    /// a fractional product becomes a count. Rather than pick a rounding rule
+    /// and present it as normative, a product that is not already whole is
+    /// refused: `count * 2.5` is an answer openEHR does not define, and
     /// inventing one would be a silent wrong value in a clinical record.
+    ///
+    /// The arithmetic runs in [`Decimal`], not in binary floating point. The
+    /// question "is this product exactly a whole count" is a decimal question,
+    /// and asking it of an `f64` means casting and then guessing from a
+    /// round-trip whether the answer survived. `Decimal` answers it directly:
+    /// `is_integer` and `to_i64` are exact, and each step that can fail says so.
     #[must_use]
     pub fn multiply(&self, factor: f64) -> Option<Self> {
-        #[expect(
-            clippy::as_conversions,
-            clippy::cast_precision_loss,
-            reason = "the product is checked for whole-ness AND round-tripped back \
-                      through i64 below, so a magnitude beyond 2^53 that lost \
-                      precision here is refused rather than returned"
-        )]
-        let product = self.magnitude as f64 * factor;
-        if !product.is_finite() || product.fract() != 0.0 {
-            return None;
-        }
-        // `as` on an out-of-range float saturates rather than wrapping, so the
-        // round-trip is what proves the value survived.
-        #[expect(
-            clippy::as_conversions,
-            clippy::cast_possible_truncation,
-            reason = "an out-of-range float saturates rather than wrapping, and the \
-                      round-trip comparison below refuses any value this did not \
-                      represent exactly"
-        )]
-        let magnitude = product as i64;
-        #[expect(
-            clippy::as_conversions,
-            clippy::cast_precision_loss,
-            clippy::float_cmp,
-            reason = "an EXACT comparison is the point: this detects a lossy \
-                      round-trip, and a tolerance would accept precisely the \
-                      values it exists to refuse"
-        )]
-        let exact = magnitude as f64 == product;
-        if exact {
-            Some(Self::of_magnitude(magnitude))
-        } else {
-            None
-        }
+        // `from_f64_retain` keeps the float's exact value rather than rounding
+        // to a display form, so nothing is lost before the check below; it
+        // returns `None` for NaN and the infinities.
+        let product =
+            Decimal::from(self.magnitude).checked_mul(Decimal::from_f64_retain(factor)?)?;
+        product
+            .is_integer()
+            .then(|| product.to_i64().map(Self::of_magnitude))?
     }
 
     /// A count of `magnitude` with every measurement-specific field cleared.
