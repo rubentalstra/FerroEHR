@@ -586,6 +586,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **An operational template whose archetype id carries an ADL 2 version is
+  accepted again.** Uploading an OPT whose root id is
+  `openEHR-EHR-COMPOSITION.minimal.v1.0.0` was refused as a malformed archetype
+  identifier (`VARID`), even though deployed OPT 1.4 exports carry exactly that
+  form and the validator documented the tolerance. The check had been routed
+  through a grammar whose version production is single-part by definition, so
+  the tolerance it described could never fire.
+
 - **AQL archetype subsumption works again for ADL 2 identifiers.** A query
   naming a parent archetype is supposed to match data created with its
   specialisations. For an AOM2-era identifier — `openEHR-EHR-OBSERVATION
