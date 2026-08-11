@@ -18,6 +18,28 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Every `DV_*` arithmetic and accessor function the openEHR RM defines** is
+  now implemented on the published spec crates — the whole quantity and
+  date/time family, not a subset: `DV_QUANTITY`, `DV_COUNT`, `DV_PROPORTION`
+  and `DV_DURATION` arithmetic; `DV_DATE`, `DV_TIME` and `DV_DATE_TIME`
+  displacement and difference; the `DV_AMOUNT` and `DV_ABSOLUTE_QUANTITY`
+  dispatchers over their subtypes; and `DV_PERIODIC_TIME_SPECIFICATION`'s
+  `period`, `calendar_alignment`, `event_alignment` and
+  `institution_specified`, parsed from the HL7 PIVL/EIVL syntax the spec
+  publishes.
+- **Accuracy now propagates through arithmetic as the RM specifies it.**
+  `DV_AMOUNT` defines the rule — accuracies sum for both addition and
+  subtraction, an unrecorded accuracy on either side makes the result's
+  unknown, and a mixed percent/absolute pair is expressed in the form of the
+  larger operand — and every descendant follows it. `DV_ABSOLUTE_QUANTITY`'s
+  duration-valued variant is applied to the date/time types. A combination no
+  valid value can carry (a percentage past 100) refuses the operation rather
+  than returning a value that fails its own class invariant.
+
+- **A decimal factor now means the decimal its author wrote.** `DV_COUNT` and
+  `DV_PROPORTION` arithmetic reads a `Real` factor as the number it denotes
+  rather than as the binary approximation carrying it, so `count * 0.1` is a
+  whole count and `1/3` equals `0.1/0.3`. The previous reading refused both.
 - **`DV_COUNT` arithmetic and `DV_MULTIMEDIA`/`COMPOSITION` predicates** on the
   published spec crates: `add`, `subtract`, `multiply`, `is_inline`,
   `is_external`, `is_compressed`, `has_integrity_check`, `is_persistent`.
