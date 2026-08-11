@@ -1613,11 +1613,30 @@ pub fn unrealized_bmm_functions(key: &str) -> Result<Vec<String>, Error> {
                     continue;
                 };
                 let own = bodies.get(&stem).map(String::as_str).unwrap_or_default();
+                let rust_type = naming::type_name(name);
                 for function in &class.functions {
                     let item = format!("fn {function}(");
-                    if !sibling.contains(&item) && !own.contains(&item) {
-                        missing.push(format!("{}/{name}.{function}", generation.spec.module));
+                    if sibling.contains(&item) || own.contains(&item) {
+                        continue;
                     }
+                    // A method can be realized by a MACRO applied elsewhere in
+                    // the generation: `ordered_limit!` in `dv_ordered_impl`
+                    // gives every DV_ORDERED descendant its `less_than` and
+                    // `is_strictly_comparable_to`. Reading only the class's own
+                    // two files reported 36 such methods as missing — and the
+                    // burn-down then produces DUPLICATE DEFINITIONS, which is
+                    // how this was found.
+                    //
+                    // So a file that defines the function AND names this Rust
+                    // type counts. Both halves are needed: the function name
+                    // alone would let any file vouch for every class.
+                    if bodies
+                        .values()
+                        .any(|body| body.contains(&item) && body.contains(&rust_type))
+                    {
+                        continue;
+                    }
+                    missing.push(format!("{}/{name}.{function}", generation.spec.module));
                 }
             }
         }

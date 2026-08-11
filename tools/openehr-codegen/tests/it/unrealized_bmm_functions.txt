@@ -5,7 +5,6 @@
 # asserts the projection equals it EXACTLY, so a new gap fails the build AND a gap
 # that gets implemented must be deleted from here in the same change. It only
 # shrinks. Burn-down is tracked on the issue named in that test.
-base/v1_2/Iso8601_date.timezone
 lang/v1_1/BMM_CLASS.features
 lang/v1_1/BMM_CLASS.flat_features
 lang/v1_1/BMM_CLASS.is_primitive
@@ -22,47 +21,28 @@ lang/v1_1/BMM_MODEL.model_id
 lang/v1_1/BMM_MODEL.subtypes
 lang/v1_1/BMM_MODEL.type_definition
 lang/v1_1/BMM_TYPE.effective_type
-lang/v1_1/BMM_TYPE.is_abstract
 lang/v1_1/BMM_TYPE.is_primitive
 lang/v1_1/BMM_TYPE.unitary_type
 lang/v1_1/P_BMM_CLASS.create_bmm_class
 lang/v1_1/P_BMM_CLASS.populate_bmm_class
 lang/v1_1/P_BMM_SCHEMA.canonical_packages
-lang/v1_1/P_BMM_SCHEMA.create_bmm_model
 lang/v1_1/P_BMM_SCHEMA.load_finalise
 lang/v1_1/P_BMM_SCHEMA.merge
-lang/v1_1/P_BMM_SCHEMA.validate
 lang/v1_1/P_BMM_SCHEMA.validate_created
 lang/v1_1/P_BMM_TYPE.create_bmm_type
 rm/v1_1/AUTHORED_RESOURCE.current_revision
 rm/v1_1/AUTHORED_RESOURCE.languages_available
-rm/v1_1/DV_COUNT.add
-rm/v1_1/DV_COUNT.is_strictly_comparable_to
-rm/v1_1/DV_COUNT.less_than
-rm/v1_1/DV_COUNT.multiply
-rm/v1_1/DV_COUNT.subtract
 rm/v1_1/DV_DATE.add
 rm/v1_1/DV_DATE.diff
 rm/v1_1/DV_DATE.is_equal
-rm/v1_1/DV_DATE.is_strictly_comparable_to
-rm/v1_1/DV_DATE.less_than
-rm/v1_1/DV_DATE.magnitude
 rm/v1_1/DV_DATE.subtract
 rm/v1_1/DV_DATE_TIME.add
 rm/v1_1/DV_DATE_TIME.diff
-rm/v1_1/DV_DATE_TIME.is_strictly_comparable_to
-rm/v1_1/DV_DATE_TIME.less_than
-rm/v1_1/DV_DATE_TIME.magnitude
 rm/v1_1/DV_DATE_TIME.subtract
 rm/v1_1/DV_DURATION.add
-rm/v1_1/DV_DURATION.is_strictly_comparable_to
-rm/v1_1/DV_DURATION.less_than
-rm/v1_1/DV_DURATION.magnitude
 rm/v1_1/DV_DURATION.multiply
 rm/v1_1/DV_DURATION.negative
 rm/v1_1/DV_DURATION.subtract
-rm/v1_1/DV_ORDINAL.is_strictly_comparable_to
-rm/v1_1/DV_ORDINAL.less_than
 # ADJUDICATED deliberately absent (#2030 outcome 2). All four are specified as
 # "extracted from value" and nothing more — and `value` is HL7v3 GTS syntax, for
 # which the openEHR spec supplies NO grammar
@@ -76,25 +56,13 @@ rm/v1_1/DV_PERIODIC_TIME_SPECIFICATION.institution_specified
 rm/v1_1/DV_PERIODIC_TIME_SPECIFICATION.period
 rm/v1_1/DV_PROPORTION.add
 rm/v1_1/DV_PROPORTION.is_equal
-rm/v1_1/DV_PROPORTION.is_integral
-rm/v1_1/DV_PROPORTION.is_strictly_comparable_to
-rm/v1_1/DV_PROPORTION.less_than
-rm/v1_1/DV_PROPORTION.magnitude
 rm/v1_1/DV_PROPORTION.multiply
 rm/v1_1/DV_PROPORTION.subtract
 rm/v1_1/DV_QUANTITY.add
-rm/v1_1/DV_QUANTITY.is_integral
-rm/v1_1/DV_QUANTITY.is_strictly_comparable_to
-rm/v1_1/DV_QUANTITY.less_than
 rm/v1_1/DV_QUANTITY.multiply
 rm/v1_1/DV_QUANTITY.subtract
-rm/v1_1/DV_SCALE.is_strictly_comparable_to
-rm/v1_1/DV_SCALE.less_than
 rm/v1_1/DV_TIME.add
 rm/v1_1/DV_TIME.diff
-rm/v1_1/DV_TIME.is_strictly_comparable_to
-rm/v1_1/DV_TIME.less_than
-rm/v1_1/DV_TIME.magnitude
 rm/v1_1/DV_TIME.subtract
 rm/v1_1/EVENT.offset
 rm/v1_1/ITEM_TABLE.as_hierarchy
@@ -110,9 +78,6 @@ rm/v1_1/ITEM_TABLE.row_count
 rm/v1_1/ITEM_TABLE.row_names
 rm/v1_1/ITEM_TABLE.row_with_key
 rm/v1_1/VERSION.canonical_form
-rm/v1_1/VERSION.data
-rm/v1_1/VERSION.lifecycle_state
-rm/v1_1/VERSION.preceding_version_uid
 rm/v1_1/VERSIONED_OBJECT.all_version_ids
 rm/v1_1/VERSIONED_OBJECT.all_versions
 rm/v1_1/VERSIONED_OBJECT.commit_attestation
@@ -131,33 +96,17 @@ rm/v1_1/VERSIONED_OBJECT.version_count
 rm/v1_1/VERSIONED_OBJECT.version_with_id
 rm/v1_2/AUTHORED_RESOURCE.current_revision
 rm/v1_2/AUTHORED_RESOURCE.languages_available
-rm/v1_2/DV_COUNT.add
-rm/v1_2/DV_COUNT.is_strictly_comparable_to
-rm/v1_2/DV_COUNT.less_than
-rm/v1_2/DV_COUNT.multiply
-rm/v1_2/DV_COUNT.subtract
 rm/v1_2/DV_DATE.add
 rm/v1_2/DV_DATE.diff
 rm/v1_2/DV_DATE.is_equal
-rm/v1_2/DV_DATE.is_strictly_comparable_to
-rm/v1_2/DV_DATE.less_than
-rm/v1_2/DV_DATE.magnitude
 rm/v1_2/DV_DATE.subtract
 rm/v1_2/DV_DATE_TIME.add
 rm/v1_2/DV_DATE_TIME.diff
-rm/v1_2/DV_DATE_TIME.is_strictly_comparable_to
-rm/v1_2/DV_DATE_TIME.less_than
-rm/v1_2/DV_DATE_TIME.magnitude
 rm/v1_2/DV_DATE_TIME.subtract
 rm/v1_2/DV_DURATION.add
-rm/v1_2/DV_DURATION.is_strictly_comparable_to
-rm/v1_2/DV_DURATION.less_than
-rm/v1_2/DV_DURATION.magnitude
 rm/v1_2/DV_DURATION.multiply
 rm/v1_2/DV_DURATION.negative
 rm/v1_2/DV_DURATION.subtract
-rm/v1_2/DV_ORDINAL.is_strictly_comparable_to
-rm/v1_2/DV_ORDINAL.less_than
 # ADJUDICATED deliberately absent (#2030 outcome 2). All four are specified as
 # "extracted from value" and nothing more — and `value` is HL7v3 GTS syntax, for
 # which the openEHR spec supplies NO grammar
@@ -171,25 +120,13 @@ rm/v1_2/DV_PERIODIC_TIME_SPECIFICATION.institution_specified
 rm/v1_2/DV_PERIODIC_TIME_SPECIFICATION.period
 rm/v1_2/DV_PROPORTION.add
 rm/v1_2/DV_PROPORTION.is_equal
-rm/v1_2/DV_PROPORTION.is_integral
-rm/v1_2/DV_PROPORTION.is_strictly_comparable_to
-rm/v1_2/DV_PROPORTION.less_than
-rm/v1_2/DV_PROPORTION.magnitude
 rm/v1_2/DV_PROPORTION.multiply
 rm/v1_2/DV_PROPORTION.subtract
 rm/v1_2/DV_QUANTITY.add
-rm/v1_2/DV_QUANTITY.is_integral
-rm/v1_2/DV_QUANTITY.is_strictly_comparable_to
-rm/v1_2/DV_QUANTITY.less_than
 rm/v1_2/DV_QUANTITY.multiply
 rm/v1_2/DV_QUANTITY.subtract
-rm/v1_2/DV_SCALE.is_strictly_comparable_to
-rm/v1_2/DV_SCALE.less_than
 rm/v1_2/DV_TIME.add
 rm/v1_2/DV_TIME.diff
-rm/v1_2/DV_TIME.is_strictly_comparable_to
-rm/v1_2/DV_TIME.less_than
-rm/v1_2/DV_TIME.magnitude
 rm/v1_2/DV_TIME.subtract
 rm/v1_2/EVENT.offset
 rm/v1_2/ITEM_TABLE.as_hierarchy
@@ -205,9 +142,6 @@ rm/v1_2/ITEM_TABLE.row_count
 rm/v1_2/ITEM_TABLE.row_names
 rm/v1_2/ITEM_TABLE.row_with_key
 rm/v1_2/VERSION.canonical_form
-rm/v1_2/VERSION.data
-rm/v1_2/VERSION.lifecycle_state
-rm/v1_2/VERSION.preceding_version_uid
 rm/v1_2/VERSIONED_OBJECT.all_version_ids
 rm/v1_2/VERSIONED_OBJECT.all_versions
 rm/v1_2/VERSIONED_OBJECT.commit_attestation
