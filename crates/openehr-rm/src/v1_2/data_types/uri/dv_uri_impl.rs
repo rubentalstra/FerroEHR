@@ -25,25 +25,18 @@ fn has_scheme(value: &str) -> bool {
     matches!(value.split_once(':'), Some((s, _)) if is_scheme(s))
 }
 
-/// The DV_URI `Value_valid` (RM invariant) + scheme-presence (CNF conformance)
-/// core over the projected value — one source for the typed impl and the
-/// value-level fast path (`validate::fast`), mirroring the DV_EHR_URI sibling
-/// (`dv_ehr_uri_impl::push_dv_ehr_uri_invariants`).
+/// The DV_URI `Value_valid` core over the projected value — one source for the
+/// typed impl and the value-level fast path (`validate::fast`), mirroring the
+/// DV_EHR_URI sibling (`dv_ehr_uri_impl::push_dv_ehr_uri_invariants`).
 pub(crate) fn push_dv_uri_invariants(value: &str, out: &mut Vec<InvariantViolation>) {
     // RM invariant `Value_valid: not value.is_empty` (the only DV_URI invariant).
     crate::v1_2::validate::generated::dv_uri_core(value, out);
-    // We therefore require an absolute reference (a scheme followed by `:`);
-    // per the RM prose we do NOT enforce RFC-3986 encoding of the remainder
-    // (plain-text URIs stay valid). The CNF content schedule is the conformance
-    // oracle and is stricter than both the RM invariant set and RFC 3986:
-    // `master17.7-content_tc_data_types-uri.adoc` (CONT-DV_URI-validate_open)
-    // tabulates `xyz | rejected` vs `ftp://ftp.is.co.za/… | accepted`.
-    // NOTE: scheme presence is NOT an RM class invariant — the only DV_URI
-    // invariant is `Value_valid: not value.is_empty` (`…dv_uri.adoc`
-    // §Invariants), and the class prose allows plain-text URIs.
+    // NOTE: `dv_uri.adoc` §Description binds `value` to "the Universal Resource
+    // Identifier (URI) RFC-3986 standard", whose §3 `URI` production requires a
+    // scheme; the encoding of the remainder stays unenforced (plain-text URIs).
     if !has_scheme(value) {
         out.push(InvariantViolation::here(
-            "Invariant Scheme_valid failed on type DV_URI",
+            "Invariant Value_valid failed on type DV_URI",
         ));
     }
 }
@@ -124,22 +117,19 @@ mod tests {
     #[test]
     fn value_valid() {
         assert!(uri("http://example.org/x").invariants().is_empty());
-        // An empty value fails both `Value_valid` (non-empty) and `Scheme_valid`
-        // (no scheme), mirroring the DV_EHR_URI sibling `empty_fails_both`.
-        let msgs = messages("");
-        assert!(msgs.contains(&"Invariant Value_valid failed on type DV_URI".to_owned()));
-        assert!(msgs.contains(&"Invariant Scheme_valid failed on type DV_URI".to_owned()));
+        // An empty value is both empty and scheme-less; both are `Value_valid`,
+        // which is the only invariant `dv_uri.adoc` §Invariants declares.
+        assert!(messages("").contains(&"Invariant Value_valid failed on type DV_URI".to_owned()));
     }
 
-    /// CNF `master17.7-content_tc_data_types-uri.adoc` (Test Case
-    /// CONT-DV_URI-validate_open): "only invalid URIs should be rejected. Any
-    /// RFC3986-compliant URI should be accepted"; the row `xyz | rejected`
-    /// requires a bare relative reference (no scheme) to be rejected, while
-    /// `ftp://ftp.is.co.za/rfc/rfc1808.txt | accepted`. A DV_URI value must
-    /// therefore be an absolute reference (scheme present).
+    /// `dv_uri.adoc` §Description binds `value` to "the Universal Resource
+    /// Identifier (URI) RFC-3986 standard", whose §3 `URI` production requires a
+    /// scheme — a scheme-less string is a `relative-ref`, which it does not
+    /// admit. The refusal is reported under `Value_valid`, the class's only
+    /// declared invariant.
     #[test]
     fn scheme_required_for_absolute_reference() {
-        let scheme_valid = "Invariant Scheme_valid failed on type DV_URI".to_owned();
+        let value_valid = "Invariant Value_valid failed on type DV_URI".to_owned();
         // Absolute references (scheme present) are accepted.
         assert!(
             uri("ftp://ftp.is.co.za/rfc/rfc1808.txt")
@@ -155,10 +145,10 @@ mod tests {
         // RM prose allows "plain-text URIs" with RFC-3986-forbidden characters
         // (e.g. a space) — still accepted so long as a scheme is present.
         assert!(uri("http://example.org/a b").invariants().is_empty());
-        // Bare relative references (no scheme) are rejected (CNF `xyz` row).
-        assert!(messages("xyz").contains(&scheme_valid));
-        assert!(messages("www.iana.org").contains(&scheme_valid));
-        assert!(messages("content/items").contains(&scheme_valid));
+        // Bare relative references (no scheme) are rejected.
+        assert!(messages("xyz").contains(&value_valid));
+        assert!(messages("www.iana.org").contains(&value_valid));
+        assert!(messages("content/items").contains(&value_valid));
     }
 
     #[test]

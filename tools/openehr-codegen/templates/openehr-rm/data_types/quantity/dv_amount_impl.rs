@@ -133,6 +133,22 @@ fn hundred() -> Decimal {
     Decimal::from(100_u8)
 }
 
+/// Whether two magnitudes are the same value.
+///
+/// Exact, in `Decimal`: these are `Real`s in the model, and the question "are
+/// these the same quantity" is about the decimals they denote, not about the
+/// binary approximations carrying them. An unavailable magnitude — a malformed
+/// value — is not equal to anything, including another malformed one.
+fn equal_magnitudes(left: Option<f64>, right: Option<f64>) -> bool {
+    let (Some(left), Some(right)) = (left, right) else {
+        return false;
+    };
+    let (Some(left), Some(right)) = (Decimal::from_f64(left), Decimal::from_f64(right)) else {
+        return false;
+    };
+    left == right
+}
+
 /// The accuracy of the sum or difference of `left` and `right`.
 ///
 /// Spec: `master06-quantity_package.adoc` §Accuracy and Uncertainty — "if
@@ -306,14 +322,33 @@ impl DvAmount {
     /// Returns `true` when this amount is considered equal to `other`.
     ///
     /// Spec: `dv_amount.adoc` §Functions `is_equal`, which the class declares
-    /// ABSTRACT. Only `DV_PROPORTION` effects it (as ratio equality); the other
-    /// descendants declare no effecting definition, so for them equality is of
-    /// the recorded value — every field, as the class models it.
+    /// ABSTRACT — but abstract is not undefined. It is inherited from BASE
+    /// `any.adoc` §Functions `is_equal`: "return True if `this` and `other` are
+    /// attached to objects considered to be equal in VALUE."
+    ///
+    /// So equality is of the quantity, not of the record that carries it.
+    /// Comparing every field instead made `PT60M` and `PT1H` unequal while
+    /// neither was less than the other — an order in which two values are
+    /// simultaneously not-less, not-greater and not-equal, which `Ordered`
+    /// cannot mean.
+    ///
+    /// Two amounts of different concrete types are never equal: `DV_ORDERED`
+    /// compares only like with like.
     #[must_use]
     pub fn is_equal(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::DvProportion(left), Self::DvProportion(right)) => left.is_equal(right),
-            (left, right) => left == right,
+            (Self::DvCount(left), Self::DvCount(right)) => left.magnitude == right.magnitude,
+            (Self::DvDuration(left), Self::DvDuration(right)) => {
+                equal_magnitudes(left.magnitude(), right.magnitude())
+            }
+            // `DV_QUANTITY` orders only within one unit, so equality takes the
+            // same gate: 1000 g is not 1 kg to a class that cannot compare them.
+            (Self::DvQuantity(left), Self::DvQuantity(right)) => {
+                left.is_strictly_comparable_to(right)
+                    && equal_magnitudes(Some(left.magnitude), Some(right.magnitude))
+            }
+            _ => false,
         }
     }
 
@@ -498,5 +533,53 @@ mod tests {
         assert!((value - 1.5).abs() < 1e-9, "the magnitude of the factor");
 
         assert_eq!(scale(unrecorded(50.0), 3.0), CombinedAccuracy::Unknown);
+    }
+
+    /// `is_equal` is inherited from BASE `Any` as equality of VALUE, so two
+    /// spellings of one duration are equal. Comparing every field instead made
+    /// `PT60M` and `PT1H` unequal while neither was less than the other — an
+    /// order in which two values are at once not-less, not-greater and
+    /// not-equal, which `Ordered` cannot mean.
+    #[test]
+    fn equality_is_of_the_value_not_the_record() {
+        use crate::v1_2::data_types::quantity::date_time::dv_duration::DvDuration;
+
+        let duration = |value: &str| {
+            DvAmount::DvDuration(DvDuration {
+                normal_status: None,
+                normal_range: None,
+                other_reference_ranges: openehr_base::containers::present_nonempty(Vec::new()),
+                magnitude_status: None,
+                accuracy: None,
+                accuracy_is_percent: None,
+                value: value.to_owned(),
+            })
+        };
+
+        let hour = duration("PT1H");
+        let sixty_minutes = duration("PT60M");
+        assert!(
+            hour.is_equal(&sixty_minutes),
+            "PT1H and PT60M are the same duration"
+        );
+        assert_eq!(hour.less_than(&sixty_minutes), Some(false));
+        assert_eq!(sixty_minutes.less_than(&hour), Some(false));
+
+        assert!(!hour.is_equal(&duration("PT2H")));
+        // A malformed value equals nothing, including another malformed one.
+        assert!(!duration("nope").is_equal(&duration("nope")));
+
+        // Different concrete types are never equal — `DV_ORDERED` compares only
+        // like with like.
+        let count = DvAmount::DvCount(crate::v1_2::data_types::quantity::dv_count::DvCount {
+            normal_status: None,
+            normal_range: None,
+            other_reference_ranges: openehr_base::containers::present_nonempty(Vec::new()),
+            magnitude_status: None,
+            accuracy: None,
+            accuracy_is_percent: None,
+            magnitude: 3600,
+        });
+        assert!(!hour.is_equal(&count));
     }
 }
