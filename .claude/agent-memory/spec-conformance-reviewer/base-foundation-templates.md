@@ -45,3 +45,9 @@ NOTE_MAX=3 / RUN_MAX=8 budgets only to plain `//` lines (`if (is_line)`), so
 `//!`/`///` NOTE essays are unchecked; the ISO-8601 module headers carry
 20–25-line adjudication essays there. `comments.md` names this as
 review-enforced.
+
+**CORRECTION (verified 2026-08-11, #2255):** the two `parse_*` claims above are
+STALE. `iso8601_parse.rs::parse_timezone` now bounds `-` at `MIN_TIMEZONE_HOUR`
+(12) and `+` at 14, and `parse_duration` now enforces designator order +
+at-most-once via a `last_slot` ratchet (and rejects second `60`). The lenient
+side today is `openehr-rm`'s own `validate.rs` copies of those grammars.

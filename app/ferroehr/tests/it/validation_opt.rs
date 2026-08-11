@@ -262,7 +262,7 @@ fn cluster_items_cardinality(lower: i32, upper: Option<i32>) -> OperationalTempl
 
 /// VCACA: "the cardinality of an attribute must conform, i.e. be the same or
 /// narrower, to the cardinality of the corresponding attribute in the
-/// underlying information model" (`AOM2/master04.5-…class_definitions.adoc`
+/// underlying information model" (`AOM2/master04.5-constraint_model-class_definitions.adoc`
 /// line 162; `master08-validation.adoc` line 74). A STATED `{0..3}` on
 /// `CLUSTER.items` admits an empty CLUSTER the RM's `[1..*]` forbids.
 #[test]

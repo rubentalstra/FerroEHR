@@ -30,7 +30,7 @@
 //! ([`crate::flat::validation::validate_archetype_conformance`]) reads — from the
 //! AOM2 constraint model (`C_ATTRIBUTE.existence`/`.cardinality`, node-identified
 //! `C_OBJECT` alternatives, `ARCHETYPE_SLOT`; AOM2
-//! `AM/docs/AOM2/master02-archetype_definition.adoc` §C_ATTRIBUTE, §ARCHETYPE_SLOT).
+//! `AM/docs/AOM2/master03-archetype_package.adoc` §C_ATTRIBUTE, §ARCHETYPE_SLOT).
 //! So the archetype-conformance walk runs against an ADL2 template exactly as it
 //! does against an OPT 1.4 template (the shared dialect-neutral seam is the Web
 //! Template layer). No openEHR spec governs the Web Template model itself — our
@@ -914,7 +914,7 @@ fn requires_cardinality(card: &Cardinality, children_count: usize) -> bool {
 // OPT-1.4 one does, so the archetype-conformance walk runs identically for both
 // dialects. AOM2 expresses them as `C_ATTRIBUTE.existence`/`.cardinality`,
 // node-identified `C_OBJECT` alternatives, and `ARCHETYPE_SLOT` (AOM2
-// `AM/docs/AOM2/master02-archetype_definition.adoc` §C_ATTRIBUTE,
+// `AM/docs/AOM2/master03-archetype_package.adoc` §C_ATTRIBUTE,
 // §ARCHETYPE_SLOT), captured before compaction hoists wrappers.
 
 /// Capture EVERY constraining `C_ATTRIBUTE.cardinality` (AOM2 §C_ATTRIBUTE:

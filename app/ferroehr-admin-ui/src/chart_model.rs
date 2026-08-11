@@ -8,7 +8,7 @@
 //! spec governs an admin UI chart — our own design / product extension; the
 //! cell texts it reads ARE spec-bound, because a projected `DV_DATE_TIME` /
 //! `DV_DATE` value carries an ISO 8601 string
-//! (`docs/specs/openehr/RM/docs/data_types/master04-quantity.adoc`
+//! (`docs/specs/openehr/RM/docs/data_types/master06-quantity_package.adoc`
 //! §Date/Time types), which is what [`iso_epoch_seconds`] reads to place a
 //! point on a real time axis.
 //!
