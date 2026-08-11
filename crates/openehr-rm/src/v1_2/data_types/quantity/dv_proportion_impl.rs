@@ -13,6 +13,7 @@ use crate::v1_2::data_types::quantity::dv_amount_impl::{
 };
 use crate::v1_2::data_types::quantity::dv_ordered_impl::push_normal_range_consistency;
 use crate::v1_2::data_types::quantity::dv_proportion::DvProportion;
+use core::cmp::Ordering;
 use openehr_base::validate::{InvariantViolation, Validate};
 use rust_decimal::Decimal;
 use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
@@ -82,22 +83,34 @@ impl DvProportion {
     /// with the proportions.
     #[must_use]
     pub fn is_equal(&self, other: &Self) -> bool {
-        if self.r#type != other.r#type {
-            return false;
-        }
-        let (Some((left_numerator, left_denominator)), Some((right_numerator, right_denominator))) =
-            (self.ratio(), other.ratio())
-        else {
-            return false;
-        };
-        // Both products must EXIST: two overflows are not an equality.
-        let (Some(left), Some(right)) = (
-            left_numerator.checked_mul(right_denominator),
-            right_numerator.checked_mul(left_denominator),
-        ) else {
-            return false;
-        };
-        left == right
+        self.r#type == other.r#type && self.compare_to(other) == Some(Ordering::Equal)
+    }
+
+    /// This proportion's ratio against `other`'s, or `None` when either has no
+    /// exact decimal form or the comparison overflows.
+    ///
+    /// The ONE ordering primitive of this class: [`Self::is_equal`] and the
+    /// `DV_ORDERED` ordering both run through it, so `<`, `=` and `>` partition
+    /// the same pairs by construction. They did not always — the ordering used
+    /// to divide in binary floating point while equality cross-multiplied
+    /// exactly, and `1/3` versus `0.1/0.3` came out equal AND less-than.
+    ///
+    /// Cross-multiplication rather than division: `a/b < c/d` iff `a·d < c·b`
+    /// when `b·d` is positive, and the sign flips when it is not — exact, where
+    /// dividing first would round both sides before comparing them.
+    #[must_use]
+    pub fn compare_to(&self, other: &Self) -> Option<Ordering> {
+        let ((left_numerator, left_denominator), (right_numerator, right_denominator)) =
+            (self.ratio()?, other.ratio()?);
+        let left = left_numerator.checked_mul(right_denominator)?;
+        let right = right_numerator.checked_mul(left_denominator)?;
+        let ordering = left.cmp(&right);
+        let denominators = left_denominator.checked_mul(right_denominator)?;
+        Some(if denominators.is_sign_negative() {
+            ordering.reverse()
+        } else {
+            ordering
+        })
     }
 
     /// Returns `true` when this proportion's accuracy was not recorded.
@@ -120,7 +133,7 @@ impl DvProportion {
     }
 
     /// This proportion's numerator and denominator as exact decimals.
-    fn ratio(&self) -> Option<(Decimal, Decimal)> {
+    pub(crate) fn ratio(&self) -> Option<(Decimal, Decimal)> {
         Some((
             Decimal::from_f64(self.numerator)?,
             Decimal::from_f64(self.denominator)?,
@@ -420,6 +433,42 @@ mod tests {
         let scaled = unitary.multiply(2.5).expect("no integrality rule");
         assert!((scaled.numerator - 7.5).abs() < f64::EPSILON);
         assert!((scaled.denominator - 1.0).abs() < f64::EPSILON);
+    }
+
+    /// `<`, `=` and `>` must partition the same pairs. They did not: equality
+    /// cross-multiplied in `Decimal` while the ordering divided in `f64`, so
+    /// `1/3` and `0.1/0.3` were simultaneously equal AND less-than. The
+    /// ordering now runs through the same primitive, so this holds by
+    /// construction — and it is asserted, because that key also backs
+    /// `DvInterval::has` and a boundary misjudgement there raises a spurious
+    /// `Normal_range_and_status_consistency` violation on a valid commit.
+    #[test]
+    fn equality_and_ordering_cannot_disagree() {
+        let pairs = [
+            ((1.0, 3.0), (0.1, 0.3)),
+            ((1.0, 2.0), (2.0, 4.0)),
+            ((1.0, 2.0), (1.0, 3.0)),
+            ((2.0, 3.0), (1.0, 3.0)),
+            // A negative denominator flips the comparison: -1/-2 is +0.5.
+            ((-1.0, -2.0), (1.0, 2.0)),
+            ((1.0, -2.0), (1.0, 2.0)),
+        ];
+        for ((ln, ld), (rn, rd)) in pairs {
+            let left = proportion(ln, ld, 0, None);
+            let right = proportion(rn, rd, 0, None);
+            let equal = left.is_equal(&right);
+            let less = left.less_than(&right);
+            let greater = right.less_than(&left);
+            assert_eq!(
+                [equal, less == Some(true), greater == Some(true)]
+                    .iter()
+                    .filter(|held| **held)
+                    .count(),
+                1,
+                "{ln}/{ld} vs {rn}/{rd}: exactly one of <, =, > must hold \
+                 (equal={equal}, less={less:?}, greater={greater:?})"
+            );
+        }
     }
 
     /// `is_equal` compares the RATIO: 1/2 and 2/4 are the same proportion, and

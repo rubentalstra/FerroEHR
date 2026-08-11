@@ -67,21 +67,18 @@ mod tests {
 /// `terminology_id = name-str [ '(' name-str ')' ]` with
 /// `name-str = letter { letter | digit | '_' | '-' | '/' | '+' }`.
 ///
-/// NOTE (CNF corpus adjudication): the CNF's own valid data sets carry
-/// `"SNOMED CT"` — a space inside the name, which the strict `name-str`
-/// production forbids. The CNF data outranks the prose reading, so interior
-/// spaces (and `.`, common in versioned names like `ISO_639-1`) are accepted;
-/// the identifier must still start with a letter and stay basic-latin.
+/// This check is LOOSER than that production, which is a known divergence
+/// tracked on its own issue rather than a reading of the spec: master05
+/// §"Terminology Identifiers" only gives EXAMPLES ("Examples of terminology
+/// identifiers include: `SNOMED-CT`, `ICD9(1999)`") and names UMLS as "the best
+/// authoritative source for the name part", while real integrations identify
+/// terminologies by URI (`http://snomed.info/sct`), which `name-str` forbids.
 #[must_use]
 pub(crate) fn is_valid_terminology_id(value: &str) -> bool {
-    // BASE base_types master05 gives the `name ['(' version ')']` syntax, but
-    // its §"Terminology Identifiers" section explicitly OPENS the value space:
-    // valid identifiers "include, but are not limited to" the openEHR/UMLS
-    // names — and real integrations (FHIR terminology systems) identify
-    // terminologies by URI (`http://snomed.info/sct`). The enforceable core is
-    // therefore well-formedness, not a closed grammar: non-empty, printable
-    // (no control characters), and not ending in whitespace; the optional
-    // `(version)` suffix, when present in name-form ids, must be non-empty.
+    // TODO(#2258): enforce the master05 §Syntaxes `name-str` production, or
+    // register the URI form as an adjudicated acceptance — the current check is
+    // well-formedness only: non-empty, printable, not ending in whitespace,
+    // with a non-empty `(version)` suffix when one is present.
     fn name_ok(s: &str) -> bool {
         !s.is_empty() && !s.ends_with(' ') && s.chars().all(|c| !c.is_control())
     }

@@ -17,8 +17,17 @@ use crate::v1_2::data_types::quantity::dv_ordered::DvOrdered;
 use crate::v1_2::data_types::quantity::reference_range::ReferenceRange;
 use openehr_base::validate::{InvariantViolation, Validate};
 
+/// One side of `Range_is_simple`, whose clause is
+/// `range.lower_unbounded **or else** range.lower.is_simple`.
+///
+/// An absent bound makes the right operand unevaluable, so the clause is
+/// undecidable rather than false — and undecidable raises nothing, the same
+/// reading `DV_INTERVAL` applies to the interval this constrains. BASE
+/// `interval.adoc` §Attributes declares `lower`/`upper` `0..1` and requires no
+/// value when the flag is false, so demanding one here refused a range
+/// `DV_INTERVAL` itself accepts.
 fn limit_ok(unbounded: bool, limit: Option<&DvOrdered>) -> bool {
-    unbounded || limit.is_some_and(DvOrdered::is_simple)
+    unbounded || limit.is_none_or(DvOrdered::is_simple)
 }
 
 impl ReferenceRange {

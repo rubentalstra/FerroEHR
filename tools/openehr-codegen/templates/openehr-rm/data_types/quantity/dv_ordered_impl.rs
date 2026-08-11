@@ -317,6 +317,36 @@ impl OrderedLimit for serde_json::Value {}
 /// concrete `DV_ORDERED` subtype from its comparability rule and its ordering
 /// key.
 macro_rules! ordered_limit {
+    // The ordering arm, for a type whose order is NOT a per-value key: the
+    // expression yields `Option<Ordering>` for the pair directly. `DV_PROPORTION`
+    // needs it — comparing two ratios exactly is a cross-multiplication, and a
+    // key would have to divide, which is where an order and an equality drift
+    // apart.
+    ($ty:ty, $rm:literal, comparable($a:ident, $b:ident) = $cmp:expr, order($x:ident, $y:ident) = $ord:expr) => {
+        impl OrderedLimit for $ty {
+            fn strictly_comparable(&self, other: &Self) -> Option<bool> {
+                let ($a, $b) = (self, other);
+                Some($cmp)
+            }
+            fn less_than(&self, other: &Self) -> Option<bool> {
+                if self.strictly_comparable(other) != Some(true) {
+                    return None;
+                }
+                let ($x, $y) = (self, other);
+                Some($ord? == core::cmp::Ordering::Less)
+            }
+            fn less_or_equal(&self, other: &Self) -> Option<bool> {
+                if self.strictly_comparable(other) != Some(true) {
+                    return None;
+                }
+                let ($x, $y) = (self, other);
+                Some($ord? != core::cmp::Ordering::Greater)
+            }
+        }
+
+        ordered_limit!(@surface $ty);
+    };
+
     ($ty:ty, $rm:literal, comparable($a:ident, $b:ident) = $cmp:expr, key($v:ident) = $key:expr) => {
         impl OrderedLimit for $ty {
             fn strictly_comparable(&self, other: &Self) -> Option<bool> {
@@ -353,6 +383,11 @@ macro_rules! ordered_limit {
             }
         }
 
+        ordered_limit!(@surface $ty);
+    };
+
+    // The RM-facing inherent methods, identical for every arm.
+    (@surface $ty:ty) => {
         impl $ty {
             /// RM `is_strictly_comparable_to` for two values of this concrete
             /// type (see the module doc for the per-type rule).
@@ -385,29 +420,25 @@ ordered_limit!(
     key(v) = Some(v.magnitude)
 );
 
-// DV_COUNT: any two counts are comparable; ordered by `magnitude`.
-#[expect(
-    clippy::as_conversions,
-    clippy::cast_precision_loss,
-    reason = "DV_COUNT magnitudes are clinical counts, far below 2^52 where f64 is exact on integers"
-)]
-mod dv_count_limit {
-    use super::{DvCount, OrderedLimit};
-    ordered_limit!(
-        DvCount,
-        "DV_COUNT",
-        comparable(_a, _b) = true,
-        key(v) = Some(v.magnitude as f64)
-    );
-}
+// DV_COUNT: any two counts are comparable; ordered by `magnitude`, which is an
+// `Integer64` and is compared as one — `less_than`'s post-condition is an exact
+// integer comparison, and routing it through `f64` made two counts at 2^53 that
+// differ by one compare as neither less nor greater.
+ordered_limit!(
+    DvCount,
+    "DV_COUNT",
+    comparable(_a, _b) = true,
+    key(v) = Some(v.magnitude)
+);
 
 // DV_PROPORTION: comparable iff same `type` (PROPORTION_KIND); ordered by the
-// effective magnitude `numerator / denominator`.
+// exact ratio comparison the class's own `is_equal` uses, so `<`, `=` and `>`
+// cannot disagree (they did when this divided in `f64`).
 ordered_limit!(
     DvProportion,
     "DV_PROPORTION",
     comparable(a, b) = a.r#type == b.r#type,
-    key(v) = (v.denominator != 0.0).then(|| v.numerator / v.denominator)
+    order(x, y) = x.compare_to(y)
 );
 
 // DV_ORDINAL: two ordinals are comparable (finer symbol-set compatibility is
@@ -489,8 +520,17 @@ impl DvProportion {
     }
 
     /// RM `DV_PROPORTION.is_integral`: `true` if the `numerator` and
-    /// `denominator` values are integers (the value-level test the
-    /// `Is_integral_validity` invariant binds this function to).
+    /// `denominator` values are integers.
+    ///
+    /// Spec: `dv_proportion.adoc` §Functions — "True if the `numerator` and
+    /// `denominator` values are integers, i.e. if `precision` is 0." That "i.e."
+    /// equates two tests that differ whenever `precision` is absent, and the
+    /// class's four invariants cannot both be non-vacuous under either reading.
+    /// The VALUE test wins: under the precision reading `Fraction_validity`
+    /// becomes "a fraction must declare `precision = 0`", which rejects a
+    /// perfectly good `1/2` that states no precision, and `Precision_validity`
+    /// collapses to `precision = 0 implies precision = 0`. Under this reading
+    /// only `Is_integral_validity` goes vacuous, and nothing valid is refused.
     #[must_use]
     #[expect(
         clippy::float_cmp,
@@ -743,7 +783,6 @@ impl OrderedLimit for DvOrdered {
         )
     }
 }
-
 
 /// DV_ORDERED `Normal_range_and_status_consistency`:
 /// `(normal_range /= Void and normal_status /= Void) implies
