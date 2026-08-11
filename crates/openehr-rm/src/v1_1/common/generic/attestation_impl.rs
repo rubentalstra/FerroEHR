@@ -14,11 +14,9 @@
 //! - `Reason_valid` (a `DV_CODED_TEXT` `reason` must code to the openEHR
 //!   `attestation reason` group) — terminology-bound likewise, and realized in
 //!   the same binding table.
-//! - `Items_valid` (`items /= Void implies not items.is_empty`) — the BMM
-//!   `List` emits as a `Vec`, so absent and present-but-empty are one value
-//!   here and the rule has nothing to distinguish; it is realized where the
-//!   raw wire body still separates them, on the application's
-//!   attestation-completion path (a `422`).
+//! - `Items_valid` (`items /= Void implies not items.is_empty`) — structural:
+//!   `items` is `Option<NonEmptyVec<DvEhrUri>>`, whose `Deserialize` refuses an
+//!   empty list at the door, so a violating value cannot be built or read.
 
 use crate::v1_1::common::generic::attestation::Attestation;
 use openehr_base::validate::{InvariantViolation, Validate};

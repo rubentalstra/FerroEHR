@@ -290,6 +290,38 @@ pub enum PBmmReadError {
         values: usize,
     },
 
+    /// An integer enumeration states an item value that is not an `Integer`.
+    ///
+    /// `BMM_ENUMERATION_INTEGER` redefines `item_values` to
+    /// `List<BMM_INTEGER_VALUE>`
+    /// (`org.openehr.lang.bmm3.bmm_enumeration_integer.adoc` §Attributes), and
+    /// `BMM_INTEGER_VALUE.value` is a "Native Integer value"
+    /// (`org.openehr.lang.bmm3.bmm_integer_value.adoc` §Attributes) — an
+    /// `Integer` being a 32-bit integer
+    /// (`BASE/docs/foundation_types/master03-primitive_types.adoc` §Overview).
+    /// `P_BMM_ENUMERATION.item_values` persists `List<Any>`
+    /// (`org.openehr.lang.bmm_persistence.p_bmm_enumeration.adoc` §Attributes),
+    /// so a persisted scalar of another kind, or outside that range, names no
+    /// `BMM_INTEGER_VALUE` that can be constructed.
+    #[error(
+        "enumeration class `{class}` item {} states value `{value}`, which is not an Integer",
+        item.as_ref().map_or_else(
+            || format!("at position {index}"),
+            |name| format!("`{name}`"),
+        )
+    )]
+    EnumerationItemValueNotAnInteger {
+        /// The enumeration class's name.
+        class: String,
+        /// The value's 0-based position in `item_values`.
+        index: usize,
+        /// The `item_names` entry at the same position, where the two lists
+        /// are 1:1.
+        item: Option<String>,
+        /// The persisted value's serial form.
+        value: String,
+    },
+
     /// A generic type's root class is not generic — `BMM_GENERIC_TYPE.base_class`
     /// is a `BMM_GENERIC_CLASS` (`org.openehr.lang.bmm.bmm_generic_type.adoc`
     /// §Attributes).

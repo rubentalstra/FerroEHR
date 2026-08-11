@@ -644,10 +644,9 @@ fn is_valid_tz(tz: &str) -> bool {
     // Max_timezone_hour = 14, Min_timezone_hour = 12): `+` offsets go to
     // +14:00, `-` offsets only to -12:00 (reject `-13:00`).
     //
-    // NOTE (corpus adjudication): the invariants literally require
-    // `hour > 0` when signed, but the canonical corpus + CNF data sets carry
-    // `+00:00`/`-00:00` UTC forms in 42 files — the corpus outranks the prose
-    // reading, so hour 0 is accepted with either sign (≡ `Z`).
+    // NOTE: hour 0 is accepted with either sign — `iso8601_timezone.adoc`
+    // §Description gives `hh` as "`00` - `23`" and §Functions defines `is_gmt`
+    // as "timezone `+0000`", which the `hour > 0` invariants would forbid.
     let max_hour = if tz.starts_with('+') { 14 } else { 12 };
     if rest.contains(':') {
         matches!(rest.split(':').collect::<Vec<_>>().as_slice(),
@@ -662,15 +661,12 @@ fn is_valid_tz(tz: &str) -> bool {
 }
 
 fn is_valid_time_core(s: &str) -> bool {
-    // A trailing decimal fraction (after '.' or ',') is legal ONLY on the
-    // seconds component: "partial date/times with fractional minutes or hours
-    // … in openEHR, only fractional seconds are supported" (BASE
-    // `foundation_types/master06-time_types.adoc` §"ISO 8601 semantics not
-    // included in these types"). A fractional hour ("10.5") or fractional
-    // minute ("10:05.5") is therefore rejected — a fraction is accepted only
-    // when the base carries full `HH:MM:SS` (seconds present). This mirrors the
-    // seconds-only fraction rule the duration path enforces
-    // (`parse_duration_components`).
+    // NOTE: a decimal fraction is legal only on seconds — BASE
+    // `master06-time_types.adoc`: "only fractional seconds are supported".
+    //
+    // NOTE: seconds are `0..=59` per `time_definitions.adoc` §Functions
+    // `valid_second` (`Post: … s < Seconds_in_minute`) — the machine-checkable
+    // clause, which BASE's own reader also took over the `00`-`60` prose.
     let (base, frac) = match s.split_once(['.', ',']) {
         Some((b, f)) => (b, Some(f)),
         None => (s, None),
@@ -685,7 +681,7 @@ fn is_valid_time_core(s: &str) -> bool {
         match base.split(':').collect::<Vec<_>>().as_slice() {
             [h] => !has_frac && in_range(h, 0, 23),
             [h, m] => !has_frac && in_range(h, 0, 23) && in_range(m, 0, 59),
-            [h, m, sec] => in_range(h, 0, 23) && in_range(m, 0, 59) && in_range(sec, 0, 60),
+            [h, m, sec] => in_range(h, 0, 23) && in_range(m, 0, 59) && in_range(sec, 0, 59),
             _ => false,
         }
     } else {
@@ -697,7 +693,7 @@ fn is_valid_time_core(s: &str) -> bool {
             6 => {
                 in_range(part(base, 0..2), 0, 23)
                     && in_range(part(base, 2..4), 0, 59)
-                    && in_range(part(base, 4..6), 0, 60)
+                    && in_range(part(base, 4..6), 0, 59)
             }
             _ => false,
         }
@@ -909,6 +905,27 @@ mod tests {
         assert!(!is_valid_iso_duration("PT"));
     }
 
+    /// This validator and BASE's `Iso8601Time` reader must accept the same
+    /// strings: `valid_second` bounds seconds below 60, and a value that passes
+    /// here but not there is stored with no magnitude and no arithmetic.
+    #[test]
+    fn time_validity_agrees_with_the_base_reader() {
+        for value in [
+            "10:30:00", "10:30:59", "23:59:59", "10:30:60", "103060", "25:00:00",
+        ] {
+            let base = openehr_base::v1_2::foundation_types::time::iso8601_time::Iso8601Time {
+                value: value.to_owned(),
+            }
+            .hour()
+            .is_some();
+            assert_eq!(
+                is_valid_iso_time(value),
+                base,
+                "{value:?}: the RM validator and the BASE reader disagree",
+            );
+        }
+    }
+
     /// This validator and BASE's `Iso8601Duration` reader must accept the same
     /// strings, or a value passes `Value_valid`, gets stored, and then has no
     /// arithmetic. `P1Y1Y` validated here while BASE refused it and
@@ -964,17 +981,12 @@ mod tests {
         assert!(!is_valid_iso_duration("PT2H14,5M"));
     }
 
-    // NOTE: the `_type`-dispatch tests (fast/typed equivalence, corpus, mutation
-    // battery) live in `openehr-its/tests/it/rm_validation.rs`, where the tiers
-    // are reachable through the COMPOSED wire entry points — the fast path
-    // (`try_fast_validate`) and the typed table
-    // (`typed_dispatch::dispatch_typed`) both live in this crate, but the
-    // generated five-crate structural fallthrough they are composed with can
-    // only exist downstream. The ISO-8601 helper tests below stay with the
-    // helpers they exercise.
+    // NOTE: the `_type`-dispatch tests live in
+    // `openehr-its/tests/it/rm_validation.rs`, where the tiers are reachable
+    // through the composed wire entry points.
 
     /// BASE `Iso8601_timezone`: `+` offsets reach +14:00, `-` offsets stop at
-    /// -12:00; ±00:00 accepted per the corpus (see `is_valid_tz`).
+    /// -12:00; ±00:00 is accepted (see `is_valid_tz`).
     #[test]
     fn timezone_bounds_are_asymmetric() {
         assert!(is_valid_iso_time("10:00:00+14:00"));

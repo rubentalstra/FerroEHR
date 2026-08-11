@@ -1676,20 +1676,12 @@ pub fn unrealized_bmm_functions(key: &str) -> Result<Vec<String>, Error> {
                     if sibling.contains(&item) || own.contains(&item) {
                         continue;
                     }
-                    // A method can be realized by a MACRO applied elsewhere in
-                    // the generation: `ordered_limit!` in `dv_ordered_impl`
-                    // gives every DV_ORDERED descendant its `less_than` and
-                    // `is_strictly_comparable_to`. Reading only the class's own
-                    // two files reported those as missing, and burning them
-                    // down produces DUPLICATE DEFINITIONS.
-                    //
-                    // The witness must name the type as an impl TARGET, not
-                    // merely mention it. Accepting a mention credited
-                    // `VERSION.data` to `imported_version_impl.rs`, whose
-                    // `pub fn data(` belongs to `ImportedVersion<T>` and whose
-                    // only "Version" is inside that longer name — a false
-                    // NEGATIVE, which silently drops a real gap and is worse
-                    // than the false positives this replaced.
+                    // A method can be realized by a MACRO applied elsewhere in the
+                    // generation, so the witness searches the whole generation —
+                    // but it must name the type as an impl TARGET, not merely
+                    // mention it: a mention credited `VERSION.data` to
+                    // `imported_version_impl.rs`, a false NEGATIVE that silently
+                    // drops a real gap (#2247).
                     if bodies
                         .values()
                         .any(|body| body.contains(&item) && targets_type(body, &rust_type))

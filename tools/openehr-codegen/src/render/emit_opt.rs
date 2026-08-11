@@ -347,14 +347,9 @@ impl<'a> OptModel<'a> {
         // A named `xs:simpleType` (restriction over string/integer): text on the
         // wire — `OPERATOR_KIND`, `Iso8601Date`, `VALIDITY_KIND`, patterns, … .
         //
-        // NOTE: the AOM integer-enum `*_KIND` restrictions
-        // (`VALIDITY_KIND` = 1001/1002/1003, `OPERATOR_KIND` = 2001..2024) are
-        // carried verbatim as their wire text (`"1001"`, `"2001"`), not decoded
-        // to a typed enum. This round-trips losslessly (text in, text out) and
-        // defers the validity/operator *semantics* to the consumer; the
-        // WebTemplate builder does not read these fields, so no fidelity is lost
-        // in practice. Emitting typed enums from the XSD `enumeration` facets is
-        // a possible future enhancement.
+        // NOTE: the AOM integer-enum `*_KIND` restrictions are carried verbatim as
+        // their wire text, round-tripping losslessly and deferring the validity
+        // and operator semantics to the consumer (#2271).
         Resolved::Primitive("String")
     }
 
@@ -557,12 +552,8 @@ impl<'a> OptModel<'a> {
             // never dropped, which would leave a dangling field type.
             //
             // NOTE: such a type is NOT added to the variant set of the enums it
-            // descends from. `XsdModel::descendants` reports concrete subtypes
-            // only, which is the XSD rule for `xsi:type` (a type declared abstract
-            // is not a legal `xsi:type` value); the closures we emit contain no
-            // slot declared as an ancestor of one of these types, so the two
-            // readings are indistinguishable on the wire today. Revisit if a
-            // future closure declares such a slot.
+            // descends from — `XsdModel::descendants` reports concrete subtypes
+            // only, which is the XSD rule for `xsi:type` (#2271).
             if ty.is_abstract && !self.enum_specs.contains(spec) {
                 let _ = writeln!(
                     b,

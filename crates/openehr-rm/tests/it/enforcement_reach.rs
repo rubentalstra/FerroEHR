@@ -96,11 +96,13 @@ fn every_terminology_slot_detects_a_violation_and_passes_its_valid_twin() {
     // The pinned table size: an arm can only leave this table together with a
     // deliberate register/test change, never silently. (Types outside the
     // static model would silently drop out of `all_slots` — the pin catches
-    // that shrinkage too; 55 = the whole binding table, verified in-audit:
-    // every match arm of `slots_for` names a static-model class.)
+    // that shrinkage too; every match arm of `slots_for` names a static-model
+    // class.) 56 since ATTESTATION gained the `change_type` slot it inherits
+    // from AUDIT_DETAILS: the table is keyed on the exact wire `_type`, so an
+    // ancestor's slot reaches a descendant only by being repeated.
     assert_eq!(
         slots.len(),
-        55,
+        56,
         "the slot table changed size — re-pin deliberately"
     );
 

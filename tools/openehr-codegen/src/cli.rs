@@ -279,20 +279,12 @@ fn cmd_emit_xml() -> Result<(), Box<dyn std::error::Error>> {
     let rm_unit = rm.current().unit()?;
     let rm_aug = augmented_schema(rm.current(), rm_unit);
 
-    // The RM-instance wire shape (element names, order, xsi:type, attributes) is
-    // identical across the two ITS-XML lineages; they differ only by the root
-    // `xmlns` string, which the `Namespace` serialize-time param selects. So a
-    // single `ToXml` impl set — generated from the v1 (parity) XSD — serves both
-    // (one impl per type; a second set would be a duplicate-impl conflict).
-    //
-    // The v1 `ALL/` bundle is not a complete RM closure: it has no `Ehr.xsd` and
-    // no demographic schema, and its `Extract.xsd` is the stale RM-1.0.2 model.
-    // So the emit-xml input is the v1 *served* core (which wins for shared types
-    // via first-wins `.or_insert`) followed by the v2 RM-1.1.0 EHR/demographic/
-    // extract schemas, which supply the LOCATABLE subtypes the v1 bundle lacks —
-    // resolving `archetype_node_id` as the required XML **attribute** for
-    // EHR_STATUS/EHR_ACCESS, the demographic PARTY hierarchy, and the extract
-    // LOCATABLE subtypes. Same wire shape bar the root `xmlns`.
+    // The two ITS-XML lineages differ only by the root `xmlns`, so ONE `ToXml`
+    // impl set serves both. The v1 `ALL/` bundle is not a complete RM closure
+    // (no `Ehr.xsd`, no demographic schema, a stale `Extract.xsd`), so the input
+    // is the v1 served core — first-wins for shared types — followed by the v2
+    // RM-1.1.0 EHR/demographic/extract schemas that supply the LOCATABLE
+    // subtypes it lacks.
     let v1 = xsd::XsdModel::parse_files(&xsd::xml_emit_files(
         Path::new(XSD_V1_DIR),
         Path::new(XSD_V2_DIR),
@@ -417,17 +409,12 @@ fn cmd_emit_json() -> Result<(), Box<dyn std::error::Error>> {
         written.push(path);
     }
 
-    // The structural dispatch is keyed by the bare canonical-JSON `_type`
-    // string, so a class name several components' BMMs declare (110 of them —
-    // `RESOURCE_DESCRIPTION`, `AUTHORED_RESOURCE`, the `BMM_*` family) resolves
-    // by SCHEMA PRIORITY, and this is the priority order: RM first, then BASE,
-    // then the archetype/meta components (each crate's generations in table
-    // order). Rationale: the dispatch's caller is the RM wire-boundary
-    // validator (`openehr_its::wire_validate`), and the same-named twins
-    // differ materially (RM's `RESOURCE_DESCRIPTION_ITEM.language` is a
-    // `CODE_PHRASE`, BASE's a `Terminology_code`), so decoding an RM wire
-    // node with another component's shape would be wrong. No openEHR spec
-    // governs a cross-component `_type` namespace — our own design.
+    // The structural dispatch is keyed by the bare `_type`, so a name several
+    // components declare resolves by SCHEMA PRIORITY: RM, then BASE, then the
+    // archetype/meta components. The caller is the RM wire-boundary validator
+    // and same-named twins differ materially, so decoding an RM node with
+    // another component's shape would be wrong. No openEHR spec governs a
+    // cross-component `_type` namespace — our own design.
     let mut structural_schemas: Vec<emit_json::JsonSchema<'_>> = Vec::new();
     for key in ["rm", "base", "lang", "am", "term"] {
         let i = keys
@@ -847,26 +834,13 @@ fn templates_root() -> PathBuf {
 }
 
 fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
-    // ONE uniform path for every crate: the declarative
-    // `plan::composition::COMPOSITIONS` table lists each crate's BMM
-    // generations (vendored file, version module, per-generation spec pin,
-    // current marker, paired dependency generations); `compose` resolves an
-    // entry and `emit_composed` renders every generation under its version
-    // module. See the table for the `includes` citations behind each entry.
-    //
-    // `cross_schema_reemit` computes the COMPLETE set of upstream classes
-    // whose Rust form widens in a generation and grafts them into its schema
-    // at the source package paths — a full, non-minimal re-emission (owner
-    // ruling 2026-07-19), applied uniformly by `augmented_schema` (#1699):
-    // AM 1.4 re-emits BASE's AUTHORED_RESOURCE + RESOURCE_DESCRIPTION
-    // (ARCHETYPE extends the former), AM 2.4 the reachable LANG beom closure,
-    // RM the BASE Interval/Iso8601 family.
-    //
-    // openehr-rm additionally carries the static RM attribute/type model and
-    // the invariant cores, emitted here too (under the CURRENT generation
-    // module) so a plain `emit` keeps the crate self-consistent — the
-    // standalone `emit-rm-model`/`emit-validate` targets regenerate the same
-    // subtrees byte-identically.
+    // ONE uniform path for every crate, driven by the declarative
+    // `plan::composition::COMPOSITIONS` table (see it for the `includes`
+    // citations). `cross_schema_reemit` grafts the COMPLETE set of upstream
+    // classes whose Rust form widens in a generation — a full, non-minimal
+    // re-emission (owner ruling 2026-07-19, #1699). `openehr-rm` additionally
+    // carries the static RM model and the invariant cores, emitted here so a
+    // plain `emit` keeps the crate self-consistent.
     for comp in composition::COMPOSITIONS {
         let c = compose(comp.key)?;
         let impls = sibling_impls(comp.crate_name);

@@ -757,15 +757,16 @@ fn decode_string(raw: &str) -> String {
 /// Decode a single-quoted `CHARACTER` literal to its `char`.
 ///
 /// The lexer (`validate_char`) admits only the six quoted forms in a character
-/// literal, so the decode cannot fail here.
+/// literal, so the decode cannot fail here, and its token regex admits exactly
+/// one body character, so the decoded literal is never empty.
 #[expect(
     clippy::expect_used,
-    reason = "`Token::Character` only exists when the lexer's validate_char admitted the body, which restricts an escape to the six quoted forms none of which can fail to decode"
+    reason = "`Token::Character` only exists when the lexer's validate_char admitted the body, which restricts an escape to the six quoted forms none of which can fail to decode; the same token regex admits one body character or one two-character escape, each decoding to exactly one char, so the literal is never empty"
 )]
 fn decode_char(raw: &str) -> char {
     crate::v1_1::escape::decode_character_literal(raw)
         .expect("a lexer-validated character literal should decode")
         .chars()
         .next()
-        .unwrap_or('\u{fffd}')
+        .expect("a lexer-validated character literal should decode to one character")
 }

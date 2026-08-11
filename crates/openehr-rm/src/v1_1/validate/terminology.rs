@@ -377,12 +377,22 @@ pub fn slots_for(rm_type: &str) -> &'static [Slot] {
             invariant: "Change_type_valid",
             binding: Binding::Group(Group::AuditChangeType),
         }],
-        // attestation.adoc: Reason_valid (attestation_reason group).
-        "ATTESTATION" => &[Slot {
-            field: "reason",
-            invariant: "Reason_valid",
-            binding: Binding::Group(Group::AttestationReason),
-        }],
+        // attestation.adoc: Reason_valid (attestation_reason group), PLUS the
+        // Change_type_valid it inherits from AUDIT_DETAILS — this table is keyed
+        // on the exact wire `_type`, so an ancestor's slot reaches a descendant
+        // only by being repeated here.
+        "ATTESTATION" => &[
+            Slot {
+                field: "reason",
+                invariant: "Reason_valid",
+                binding: Binding::Group(Group::AttestationReason),
+            },
+            Slot {
+                field: "change_type",
+                invariant: "Change_type_valid",
+                binding: Binding::Group(Group::AuditChangeType),
+            },
+        ],
         // party_related.adoc: Relationship_valid (subject_relationship group).
         "PARTY_RELATED" => &[Slot {
             field: "relationship",
@@ -485,6 +495,58 @@ pub fn validate_rm_terminology(ty: &str, value: &Value, out: &mut Vec<InvariantV
                 slot.field,
                 format!("Invariant {} failed on type {ty}", slot.invariant),
             ));
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// This table is keyed on the exact wire `_type`, so an invariant declared
+    /// on an ancestor reaches a descendant only by being repeated. `ATTESTATION`
+    /// inherits `AUDIT_DETAILS`, so an out-of-group `change_type` must be
+    /// refused on both — it was accepted on `ATTESTATION` while the identical
+    /// `AUDIT_DETAILS` node was refused.
+    #[test]
+    fn an_inherited_coded_invariant_reaches_the_descendant() {
+        let node = serde_json::json!({
+            "change_type": {
+                "value": "creation",
+                "defining_code": {
+                    "terminology_id": { "value": "openehr" },
+                    "code_string": "9999"
+                }
+            }
+        });
+        for ty in ["AUDIT_DETAILS", "ATTESTATION"] {
+            let mut out = Vec::new();
+            validate_rm_terminology(ty, &node, &mut out);
+            assert!(
+                out.iter().any(
+                    |v| v.message == format!("Invariant Change_type_valid failed on type {ty}")
+                ),
+                "{ty}: an out-of-group change_type must be refused, got {out:?}",
+            );
+        }
+
+        // The accepting twin: a code the group does carry raises nothing.
+        let valid = serde_json::json!({
+            "change_type": {
+                "value": "creation",
+                "defining_code": {
+                    "terminology_id": { "value": "openehr" },
+                    "code_string": "249"
+                }
+            }
+        });
+        for ty in ["AUDIT_DETAILS", "ATTESTATION"] {
+            let mut out = Vec::new();
+            validate_rm_terminology(ty, &valid, &mut out);
+            assert!(
+                out.is_empty(),
+                "{ty}: a valid change_type raises nothing, got {out:?}"
+            );
         }
     }
 }
