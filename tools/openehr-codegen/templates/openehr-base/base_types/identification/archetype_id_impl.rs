@@ -97,11 +97,15 @@ impl ArchetypeId {
     }
 
     /// Major version number, e.g. `1` for both `.v1` and `.v1.2.3` — the leading
-    /// numeric segment of `version_id`. BASE base_types master05 §Syntaxes:
-    /// `version_id = '0' | nz-digit [number]` is the major, optionally followed
-    /// by `'.' minor_version '.' patch_version`; only the major is significant to
-    /// interface-reference matching (AM master07 §Referencing: an `ihrid_ref`
-    /// carries the major version only, and a differing major is a hard boundary).
+    /// numeric segment of `version_id`.
+    ///
+    /// BASE base_types master05 §Syntaxes defines only the single-part form
+    /// (`version_id = '0' | non-zero-digit, [ number ]`); the three-part
+    /// `major.minor.patch` belongs to the AM archetype HRID
+    /// (`docs/specs/openehr/AM/docs/Identification/`), and only the major is
+    /// significant to interface-reference matching (AM master07 §Referencing:
+    /// an `ihrid_ref` carries the major version only, and a differing major is
+    /// a hard boundary).
     #[must_use]
     pub fn major_version(&self) -> &str {
         self.version_id().split('.').next().unwrap_or("")
@@ -111,17 +115,20 @@ impl ArchetypeId {
 impl FromStr for ArchetypeId {
     type Err = IdError;
 
-    /// Parse an `ARCHETYPE_ID`, requiring the RM qualifier, a domain concept,
-    /// and a `.vN` version segment.
+    /// Parse an `ARCHETYPE_ID` against the master05 §Syntaxes `archetype_id`
+    /// production.
+    ///
+    /// The door is the SAME check the class's `Validate` impl runs. It used to
+    /// be weaker — a `.v` anywhere, a `.` before it, three `-` segments — so
+    /// `"1-2-3.@@@.vXYZ"` constructed and then failed its own invariants, and
+    /// the "well-formed by construction" guarantee every sibling here
+    /// establishes (`HierObjectId::new` calls `is_uid`, `VersionTreeId::new`
+    /// calls `is_valid_version_tree`) did not hold for this type.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.is_empty() {
             return Err(IdError::Empty);
         }
-        let Some(p) = parse(s) else {
-            return Err(IdError::Archetype(s.to_owned()));
-        };
-        // The RM qualifier must have three '-'-delimited segments.
-        if p.qualified.split('-').count() < 3 {
+        if !is_valid_archetype_id(s) {
             return Err(IdError::Archetype(s.to_owned()));
         }
         Ok(Self {
@@ -259,6 +266,29 @@ mod validity_tests {
             "",
         ] {
             assert!(!is_valid_archetype_id(bad), "{bad} must be invalid");
+        }
+    }
+
+    /// The construction door and the class's own invariants must agree, or the
+    /// type's well-formed-by-construction guarantee is not one. They did not:
+    /// the door checked for a `.v`, a `.` before it and three `-` segments, so
+    /// these constructed and then failed `Validate`.
+    #[test]
+    fn construction_admits_exactly_what_the_invariants_accept() {
+        for value in [
+            "openEHR-EHR-COMPOSITION.encounter.v1",
+            "openEHR-EHR-OBSERVATION.blood_pressure.v2.1.0",
+            "1-2-3.@@@.vXYZ",
+            "openEHR-EHR-COMPOSITION.encounter.v1draft",
+            "openEHR-EHR.encounter.v1",
+            "openEHR-EHR-COMPOSITION.encounter",
+            "openEHR-EHR-COMPOSITION.encounter.v01",
+        ] {
+            assert_eq!(
+                ArchetypeId::from_str(value).is_ok(),
+                is_valid_archetype_id(value),
+                "{value:?}: the door and the invariants disagree",
+            );
         }
     }
 }
