@@ -75,7 +75,7 @@ crashes, the bug is in the parser until proven otherwise. Specifically:
   explicitly. Do not remove it, and do not "fix" a recurrence by disabling the
   sanitizer — the sanitizer is the instrument.
 - **`fuzz/` is its own workspace on purpose.** cargo-fuzz needs nightly; the CDR
-  workspace is pinned stable 1.96. Never add `fuzz` to the root workspace
+  workspace is pinned stable 1.97. Never add `fuzz` to the root workspace
   members, and never let a `cargo build`/`clippy`/`nextest` over `crates/*`,
   `app/*`, `tools/*` reach it.
 - **A scheduled-only lane rots silently.** This one sat broken for nights

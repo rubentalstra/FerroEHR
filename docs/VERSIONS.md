@@ -39,8 +39,8 @@ releases never ride the product version.
 
 | Item | Pin |
 |---|---|
-| Rust toolchain | stable 1.96 (1.96.1) |
-| MSRV | 1.96 |
+| Rust toolchain | stable 1.97 (1.97.1) |
+| MSRV | 1.96 |  <!-- deliberately behind the toolchain: see the MSRV bump policy below -->
 | Edition | 2024 |
 | Cargo resolver | v3 |
 
