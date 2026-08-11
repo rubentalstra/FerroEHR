@@ -8,7 +8,7 @@
 
 use crate::v1_1::data_types::quantity::date_time::dv_duration::DvDuration;
 use crate::v1_1::data_types::time_specification::dv_periodic_time_specification::DvPeriodicTimeSpecification;
-use crate::v1_1::validate::is_valid_iso_duration;
+use crate::v1_1::validate::valid_iso8601_duration;
 use openehr_base::validate::{InvariantViolation, Validate};
 
 impl DvPeriodicTimeSpecification {
@@ -121,7 +121,7 @@ const INSTITUTION_SPECIFIED: &str = "IST";
 /// nobody. A difference in neither form has no duration.
 fn iso_duration(difference: &str) -> Option<String> {
     let difference = difference.trim();
-    if is_valid_iso_duration(difference) {
+    if valid_iso8601_duration(difference) {
         return Some(difference.to_owned());
     }
     let boundary = difference.find(|c: char| !c.is_ascii_digit() && c != '-')?;
