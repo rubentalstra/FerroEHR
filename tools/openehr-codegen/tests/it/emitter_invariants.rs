@@ -1253,8 +1253,39 @@ fn generation_function_realization_agrees() {
     }
 }
 
-/// Every BMM-declared function on a class with a hand-written behaviour sibling
-/// is realized, ratcheted against the committed list of gaps.
+/// The unrealized-function projection is TOTAL over emitted classes: a class
+/// that declares functions and has no behaviour sibling still gets measured.
+///
+/// The projection used to skip those classes outright, so it was silent about
+/// exactly the ones with the most missing — 576 declared functions unreported
+/// against 75 shown (#2247). This asserts the property directly rather than
+/// trusting the count: `PATHABLE` declares six functions, has no
+/// `pathable_impl.rs`, and none of the six is realized anywhere, so all six
+/// must appear. If someone reintroduces a sibling gate, this fails.
+#[test]
+fn the_unrealized_projection_measures_classes_without_a_behaviour_sibling() {
+    let src = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../crates/openehr-rm/src");
+    for generation in ["v1_1", "v1_2"] {
+        assert!(
+            !src.join(generation)
+                .join("common/pathable_impl.rs")
+                .exists(),
+            "{generation}: PATHABLE grew a behaviour sibling — pick another sibling-less \
+             class with declared functions, or assert the property some other way",
+        );
+    }
+    let reported = testsupport::unrealized_bmm_functions("rm").expect("crate tree readable");
+    for generation in ["v1_1", "v1_2"] {
+        assert!(
+            reported.contains(&format!("{generation}/PATHABLE.item_at_path")),
+            "{generation}: PATHABLE.item_at_path is unrealized and must be reported; a class \
+             with no behaviour sibling is not out of scope (#2247)",
+        );
+    }
+}
+
+/// Every BMM-declared function on an emitted class is realized, ratcheted
+/// against the committed list of gaps.
 ///
 /// The BMM declares functions by name and result type only, so their bodies are
 /// hand-written. This asserts the unrealized set equals

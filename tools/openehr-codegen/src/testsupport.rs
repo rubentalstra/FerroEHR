@@ -1625,14 +1625,17 @@ fn delimited_mention(haystack: &str, needle: &str) -> bool {
 /// `<generation>/<CLASS>.<function>` (#2029).
 ///
 /// The BMM declares functions by name and result type only, so their bodies are
-/// hand-written in a `*_impl.rs` sibling. This projection reports, per
-/// generation, every declared function of a class that HAS such a sibling but
-/// whose name appears as no `fn` item in that class's module files — the
-/// staleness a re-vendor introduces when upstream renames or removes an
-/// accessor.
+/// hand-written — normally in a `*_impl.rs` sibling. This projection reports,
+/// per generation, EVERY declared function of EVERY class whose name appears as
+/// no `fn` item realizing it anywhere in that generation.
 ///
-/// Classes with no behaviour sibling are out of scope: a plain record realizes
-/// its functions as struct fields, and the emitter has no body to write.
+/// A class's behaviour sibling is an INPUT to that test, never a gate on
+/// reporting it. Skipping classes that had no sibling made the instrument
+/// silent about exactly the classes with the most missing: 239 declared
+/// functions across 60 classes went unreported while the ratchet showed 75
+/// (#2247). A BMM `function` is a computed operation, not a property, so "a
+/// plain record realizes its functions as struct fields" — the old
+/// justification — was never true of them.
 ///
 /// # Errors
 /// Returns an error if the composition fails to load or a crate tree cannot be
@@ -1651,10 +1654,21 @@ pub fn unrealized_bmm_functions(key: &str) -> Result<Vec<String>, Error> {
                 if class.functions.is_empty() {
                     continue;
                 }
-                let stem = name.to_lowercase();
-                let Some(sibling) = bodies.get(&format!("{stem}_impl")) else {
+                // A class the emitter never gives a Rust type has nowhere to
+                // carry an inherent method, so its BMM functions are realized
+                // by the language rather than by us: `Integer.add` is `i32`'s
+                // `+`, and `impl i32` is not a thing anyone can write. The
+                // authority is the emitter's OWN decision maps, not a name
+                // heuristic — if a class starts emitting, it starts being
+                // measured, with no second list to keep in step.
+                if overrides::primitive(name).is_some() || overrides::is_mapped_class(name) {
                     continue;
-                };
+                }
+                let stem = name.to_lowercase();
+                let sibling = bodies
+                    .get(&format!("{stem}_impl"))
+                    .map(String::as_str)
+                    .unwrap_or_default();
                 let own = bodies.get(&stem).map(String::as_str).unwrap_or_default();
                 let rust_type = naming::type_name(name);
                 for function in &class.functions {
