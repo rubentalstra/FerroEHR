@@ -31,7 +31,7 @@
 //!   reappear in the descendant with the bound type and
 //!   `is_synthesised_generic` set (`synthesise_generic_properties`).
 //!
-//! Three boundaries are load-bearing and stated here rather than left implicit:
+//! Two boundaries are load-bearing and stated here rather than left implicit:
 //!
 //! * **Class invariants and routine pre-/post-conditions.** v3 requires them as
 //!   `BMM_ASSERTION` (`LANG/docs/bmm3/master10-expressions.adoc` §Usage in BMM

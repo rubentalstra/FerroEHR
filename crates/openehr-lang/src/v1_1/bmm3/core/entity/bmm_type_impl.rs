@@ -375,7 +375,7 @@ impl BmmStatusType {
         Self::BASE_NAME.to_owned()
     }
 
-    /// `BMM_CLASSIFIER.conformance_type_name` for the status meta-type: its
+    /// `conformance_type_name` for the status meta-type: its
     /// built-in base name (`org.openehr.lang.bmm3.bmm_status_type.adoc`
     /// §Constants).
     #[expect(
@@ -412,7 +412,7 @@ impl BmmTupleType {
         Self::BASE_NAME.to_owned()
     }
 
-    /// `BMM_CLASSIFIER.conformance_type_name` for the tuple meta-type: its
+    /// `conformance_type_name` for the tuple meta-type: its
     /// built-in base name (`org.openehr.lang.bmm3.bmm_tuple_type.adoc`
     /// §Constants).
     #[expect(
@@ -462,7 +462,7 @@ impl BmmSignature {
         }
     }
 
-    /// `BMM_CLASSIFIER.conformance_type_name` for a signature meta-type: its
+    /// `conformance_type_name` for a signature meta-type: its
     /// built-in base name — a signature is not a model class, so there is no
     /// reduced form beyond the name itself (`master05-core.adoc` §Basics).
     #[must_use]
@@ -537,7 +537,7 @@ impl BmmEffectiveType {
         }
     }
 
-    /// `BMM_CLASSIFIER.conformance_type_name` for an effective type.
+    /// `conformance_type_name` for an effective type.
     #[must_use]
     pub fn conformance_type_name(&self) -> String {
         match self {
@@ -592,7 +592,7 @@ impl BmmUnitaryType {
         }
     }
 
-    /// `BMM_CLASSIFIER.conformance_type_name` for a unitary type.
+    /// `conformance_type_name` for a unitary type.
     #[must_use]
     pub fn conformance_type_name(&self) -> String {
         match self {
