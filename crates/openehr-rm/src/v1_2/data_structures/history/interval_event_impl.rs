@@ -17,43 +17,20 @@
 
 use crate::v1_2::data_structures::history::interval_event::IntervalEvent;
 use crate::v1_2::data_types::quantity::date_time::dv_date_time::DvDateTime;
-use crate::v1_2::data_types::quantity::dv_ordered_impl::{
-    SECONDS_IN_DAY, format_iso_date_time, iso_date_time_parts,
-};
 use openehr_base::validate::{InvariantViolation, Validate};
 
 impl<T> IntervalEvent<T> {
     /// RM `INTERVAL_EVENT.interval_start_time()`: the start time of the
-    /// interval, computed as `time - width` (`Interval_start_time_valid`).
-    /// The value keeps `time`'s own timezone suffix (no UTC normalisation).
-    /// `None` when `time` or `width` is malformed.
+    /// interval, `time - width` (`Interval_start_time_valid`), or `None` when
+    /// `time` or `width` is not a valid ISO-8601 value.
+    ///
+    /// `DV_DATE_TIME.subtract` is that operation, so this is that call. The
+    /// calendar belongs to the BASE ISO-8601 types; computing it here in
+    /// floating-point seconds meant carrying a day count and a sub-second
+    /// fraction in one `f64` and casting twice to get there.
     #[must_use]
     pub fn interval_start_time(&self) -> Option<DvDateTime> {
-        let (days, secs, tz) = iso_date_time_parts(&self.time.value)?;
-        let width_secs = self.width.magnitude()?;
-        #[expect(
-            clippy::as_conversions,
-            clippy::cast_precision_loss,
-            reason = "day counts over the representable calendar are far below 2^52, where f64 is exact on integers"
-        )]
-        let total = days as f64 * SECONDS_IN_DAY + secs - width_secs;
-        let start_days = (total / SECONDS_IN_DAY).floor();
-        let rem = total - start_days * SECONDS_IN_DAY;
-        #[expect(
-            clippy::as_conversions,
-            clippy::cast_possible_truncation,
-            reason = "start_days is a floored day count over the representable calendar — far inside i64"
-        )]
-        let mut value = format_iso_date_time(start_days as i64, rem);
-        value.push_str(&tz);
-        Some(DvDateTime {
-            normal_status: None,
-            normal_range: None,
-            other_reference_ranges: None,
-            magnitude_status: None,
-            accuracy: None,
-            value,
-        })
+        self.time.subtract(&self.width)
     }
 }
 
