@@ -19,15 +19,16 @@ use crate::validate::{InvariantViolation, Validate};
 /// (`docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.base_types.party_ref.adoc`,
 /// §Invariants). The class's own Description sanctions **abstract supertypes**
 /// "if the referenced object is of a type not known by the current
-/// implementation"; `ANY` is the openEHR Foundation-Types universal supertype
-/// and the value the CNF platform corpus uses on its **positive** commit
-/// fixtures (`CNF/.../create_composition-persistent.robot` "Alternative flow 1 …
-/// TDD"; every `..__full` COMPOSITION/TDD sets `external_ref.type = "ANY"`). Per
-/// By the CNF-outranks-prose rule the positive case wins over the strict enumeration, so
-/// `ANY` is admitted; an *unknown* type string (e.g. a typo) is still rejected.
-// NOTE: the normative invariant lists a closed set without `ANY`, while the CNF
-// positive corpus commits `type="ANY"`; admitting exactly `ANY` (the universal
-// supertype) reconciles the two without opening it to arbitrary strings.
+/// implementation".
+///
+/// `ANY` is admitted on the strength of the attribute it constrains:
+/// `object_ref.adoc` §Attributes `type` — "The type name `ANY` can be used to
+/// indicate that any type is accepted (e.g. if the type is unknown)" — which
+/// `PARTY_REF` inherits. An *unknown* type string (e.g. a typo) is still
+/// rejected.
+// NOTE: `party_ref.adoc` §Invariants enumerates a closed set that omits the
+// `ANY` its own inherited `type` attribute sanctions — a released-text tension,
+// resolved toward the attribute because the invariant constrains that attribute.
 const VALID_PARTY_TYPES: &[&str] = &[
     "PERSON",
     "ORGANISATION",
