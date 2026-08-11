@@ -18,6 +18,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **`ITEM_TABLE`'s twelve accessors** on the published spec crates — `row_count`,
+  `column_count`, `row_names`, `column_names`, `ith_row`, `named_row`,
+  `has_row_with_name`, `has_column_with_name`, `has_row_with_key`,
+  `row_with_key`, `element_at_cell_ij` and `as_hierarchy`, which transposes the
+  stored row-per-CLUSTER form into the column CLUSTERs the spec asks for.
+
 - **Every `DV_*` arithmetic and accessor function the openEHR RM defines** is
   now implemented on the published spec crates — the whole quantity and
   date/time family, not a subset: `DV_QUANTITY`, `DV_COUNT`, `DV_PROPORTION`

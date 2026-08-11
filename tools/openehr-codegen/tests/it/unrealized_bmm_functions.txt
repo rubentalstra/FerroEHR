@@ -44,18 +44,6 @@ rm/v1_1/AUTHORED_RESOURCE.languages_available
 # output normative, which is the opposite of spec conformance. They stay
 # unrealized until upstream defines the extraction.
 rm/v1_1/EVENT.offset
-rm/v1_1/ITEM_TABLE.as_hierarchy
-rm/v1_1/ITEM_TABLE.column_count
-rm/v1_1/ITEM_TABLE.column_names
-rm/v1_1/ITEM_TABLE.element_at_cell_ij
-rm/v1_1/ITEM_TABLE.has_column_with_name
-rm/v1_1/ITEM_TABLE.has_row_with_key
-rm/v1_1/ITEM_TABLE.has_row_with_name
-rm/v1_1/ITEM_TABLE.ith_row
-rm/v1_1/ITEM_TABLE.named_row
-rm/v1_1/ITEM_TABLE.row_count
-rm/v1_1/ITEM_TABLE.row_names
-rm/v1_1/ITEM_TABLE.row_with_key
 rm/v1_1/VERSION.canonical_form
 rm/v1_1/VERSION.data
 rm/v1_1/VERSION.lifecycle_state
@@ -86,18 +74,6 @@ rm/v1_2/AUTHORED_RESOURCE.languages_available
 # output normative, which is the opposite of spec conformance. They stay
 # unrealized until upstream defines the extraction.
 rm/v1_2/EVENT.offset
-rm/v1_2/ITEM_TABLE.as_hierarchy
-rm/v1_2/ITEM_TABLE.column_count
-rm/v1_2/ITEM_TABLE.column_names
-rm/v1_2/ITEM_TABLE.element_at_cell_ij
-rm/v1_2/ITEM_TABLE.has_column_with_name
-rm/v1_2/ITEM_TABLE.has_row_with_key
-rm/v1_2/ITEM_TABLE.has_row_with_name
-rm/v1_2/ITEM_TABLE.ith_row
-rm/v1_2/ITEM_TABLE.named_row
-rm/v1_2/ITEM_TABLE.row_count
-rm/v1_2/ITEM_TABLE.row_names
-rm/v1_2/ITEM_TABLE.row_with_key
 rm/v1_2/VERSION.canonical_form
 rm/v1_2/VERSION.data
 rm/v1_2/VERSION.lifecycle_state

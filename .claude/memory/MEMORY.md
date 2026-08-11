@@ -27,3 +27,4 @@
 - [Multi-gen refactor: no legacy carried](multi-generation-refactor-no-legacy.md) — residue found under #1936 is removed or filed as a sub-issue of #1936, never kept
 - [No worktrees — one checkout](no-worktrees-single-checkout.md) — every change in the main tree on the current branch; one worker at a time with explicit fences, never `isolation: worktree`
 - [K8s testing uses a compose postgres](k8s-testing-uses-compose-postgres.md) — database runs in docker compose on the host and the chart points at it; never deploy postgres into the test cluster
+- [This is a rewrite, not inherited code](rewrite-not-inherited-code.md) — existing code is never assumed correct; read the ancestor spec + existing code before implementing; breaking changes preferred over preserving bad code; distrust instruments too
