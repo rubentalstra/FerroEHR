@@ -561,7 +561,7 @@ fn merge_value_sets(v: &OdinValue, out: &mut BTreeMap<String, ValueSet>) {
             .and_then(|o| string_of(o.get("id")))
             .unwrap_or_else(|| id_key.clone());
         // `VALUE_SET.members` is `1..*`
-        // (`docs/specs/openehr/AM/docs/AOM2/master05-terminology.adoc`
+        // (`docs/specs/openehr/AM/docs/AOM2/master07-terminology_package.adoc`
         // §VALUE_SET): a value set stating no member is not a value set, so the
         // entry is skipped rather than materialised empty.
         let Some(members) = obj

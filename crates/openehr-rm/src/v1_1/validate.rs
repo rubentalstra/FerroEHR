@@ -732,6 +732,13 @@ pub(crate) fn is_valid_iso_date_time(s: &str) -> bool {
 fn parse_duration_components(s: &str, allowed: &[u8], any: &mut bool) -> bool {
     let bytes = s.as_bytes();
     let mut i = 0;
+    // `allowed` is the production's own order (`YMWD`, then `HMS`), so a
+    // designator's index in it IS its slot: requiring the slot to advance
+    // strictly enforces both "in order" and "at most once" in one test.
+    // Without it `P1Y1Y` validated here while BASE's reader refused the same
+    // string and `iso_duration_to_seconds` summed BOTH years — one value, three
+    // in-tree answers, none of them the spec's.
+    let mut last_slot: isize = -1;
     while i < bytes.len() {
         let start = i;
         while bytes.get(i).is_some_and(u8::is_ascii_digit) {
@@ -752,9 +759,14 @@ fn parse_duration_components(s: &str, allowed: &[u8], any: &mut bool) -> bool {
         if i == start {
             return false;
         }
-        if !allowed.contains(&designator) {
+        let Some(slot) = allowed.iter().position(|d| *d == designator) else {
+            return false;
+        };
+        let slot = slot.cast_signed();
+        if slot <= last_slot {
             return false;
         }
+        last_slot = slot;
         // BASE `master06-time_types.adoc` §Primitive Time Types: "in openEHR,
         // only fractional seconds are supported" — a decimal fraction is only
         // permitted on the seconds ('S') component, never on Y/M/W/D/H/M.
@@ -895,6 +907,41 @@ mod tests {
         assert!(!is_valid_iso_duration("1Y"));
         assert!(!is_valid_iso_duration("P1X"));
         assert!(!is_valid_iso_duration("PT"));
+    }
+
+    /// This validator and BASE's `Iso8601Duration` reader must accept the same
+    /// strings, or a value passes `Value_valid`, gets stored, and then has no
+    /// arithmetic. `P1Y1Y` validated here while BASE refused it and
+    /// `iso_duration_to_seconds` summed BOTH years — one value, three in-tree
+    /// answers, none of them the production's.
+    #[test]
+    fn duration_validity_agrees_with_the_base_reader() {
+        for value in [
+            "P1Y",
+            "P1Y2M10DT2H30M",
+            "P2W",
+            "PT0.5S",
+            "P1Y1Y",
+            "P2Y1Y",
+            "P1D1M",
+            "PT1S1H",
+            "P1YT",
+            "PT1H2H",
+            "P1X",
+            "PT",
+        ] {
+            let base =
+                openehr_base::v1_2::foundation_types::time::iso8601_duration::Iso8601Duration {
+                    value: value.to_owned(),
+                }
+                .to_seconds()
+                .is_some();
+            assert_eq!(
+                is_valid_iso_duration(value),
+                base,
+                "{value:?}: the RM validator and the BASE reader disagree",
+            );
+        }
     }
 
     /// BASE `master06-time_types.adoc` §Primitive Time Types: "in openEHR, only

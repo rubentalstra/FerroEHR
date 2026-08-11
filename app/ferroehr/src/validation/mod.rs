@@ -17,8 +17,8 @@
 //! `service::definition::{adl2,wire}`.
 //! - **Surface B — instance `valid_value` cascade (a seam, NOT here).** The
 //!   recursive top-down data-conformance function ("the key function of an
-//!   archetype-enabled kernel", `AM/docs/AOM1.4/master04-constraint_model_
-//!   package.adoc` §`Valid_value`) runs at commit time over the compacted
+//!   archetype-enabled kernel", `AM/docs/AOM1.4/master04-constraint_model_package.adoc`
+//!   §`Valid_value`) runs at commit time over the compacted
 //!   `WebTemplate`. It lives in `openehr_its::flat` (a spec-layer module) and is invoked from
 //!   the EHR commit choke point (`service::ehr::composition_validate`). Its
 //!   closed-world semantics are recorded as a spec-cited NOTE below.

@@ -41,6 +41,16 @@ if [ -x "$repo_root/scripts/checks/comment-style.sh" ]; then
   }
 fi
 
+# Spec-citation guard (.claude/rules/spec-adherence.md): every openEHR spec
+# file a comment cites must exist under docs/specs/openehr/ — a citation that
+# names no real file reads as authority while providing none.
+if [ -x "$repo_root/scripts/checks/spec-citations.sh" ]; then
+  findings="$("$repo_root/scripts/checks/spec-citations.sh" "$file_path" 2>&1)" || {
+    printf '%s\n' "$findings" >&2
+    exit 2
+  }
+fi
+
 # Default-value style guard (.claude/rules/rust-style.md §Default values): the
 # default belongs inline in the struct's own `Default` impl. Per-file mode only
 # — the single-reader `const` check needs the whole tree and runs in CI.

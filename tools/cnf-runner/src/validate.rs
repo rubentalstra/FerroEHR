@@ -2181,7 +2181,7 @@ fn citation_clauses(citation: &str) -> Vec<CitationClause<'_>> {
 ///
 /// Every token must appear in the file's component-relative path, and the LAST
 /// token must name the target: the file name equals it, starts with it
-/// (`master06` → `master06-change_control.adoc`), ends with `.`+it (the
+/// (`master06` → `master06-change_control_package.adoc`), ends with `.`+it (the
 /// `org.openehr.rm.common.locatable.adoc` UML class-export convention), or it
 /// names one of the file's parent directories — a chapter directory, whose
 /// every file is then a target.

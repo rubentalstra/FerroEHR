@@ -619,7 +619,7 @@ pub enum UnenforceableReason {
     /// computed FUNCTION written as if it were stored (`EVENT.offset`,
     /// `DV_PROPORTION.is_integral` — RM
     /// `UML/classes/org.openehr.rm.data_structures.event.adoc` §Functions and
-    /// `UML/classes/org.openehr.rm.data_types.quantity.dv_proportion.adoc`
+    /// `UML/classes/org.openehr.rm.data_types.dv_proportion.adoc`
     /// §Functions declare them as functions, not attributes), and the US
     /// spelling `null_flavor` for the RM's `null_flavour`.
     AttributeNotInRmModel,
