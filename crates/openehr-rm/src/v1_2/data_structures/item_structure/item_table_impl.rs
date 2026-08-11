@@ -20,8 +20,244 @@
 //! column) are our own labels for §Description rules.
 
 use crate::v1_2::data_structures::item_structure::item_table::ItemTable;
+use crate::v1_2::data_structures::representation::cluster::Cluster;
+use crate::v1_2::data_structures::representation::element::Element;
 use crate::v1_2::data_structures::representation::item::Item;
+use crate::v1_2::data_types::basic::data_value::DataValue;
+use crate::v1_2::data_types::text::dv_text::DvText;
 use openehr_base::validate::{InvariantViolation, Validate};
+
+impl ItemTable {
+    /// Number of rows in the table.
+    ///
+    /// Spec: `item_table.adoc` §Functions `row_count`.
+    #[must_use]
+    pub fn row_count(&self) -> usize {
+        self.rows.as_deref().unwrap_or_default().len()
+    }
+
+    /// Number of columns in the table.
+    ///
+    /// Spec: `item_table.adoc` §Functions `column_count`.
+    ///
+    /// Every row carries one `ELEMENT` per column and the `Valid_number_of_rows`
+    /// check above holds them to the same count, so the first row answers for
+    /// the table. An empty table has no columns.
+    #[must_use]
+    pub fn column_count(&self) -> usize {
+        self.rows
+            .as_deref()
+            .unwrap_or_default()
+            .first()
+            .map_or(0, |row| row.items.len())
+    }
+
+    /// The row names.
+    ///
+    /// Spec: `item_table.adoc` §Functions `row_names`, over
+    /// `master04-item_structure_package.adoc` §ITEM_TABLE — "the names of the
+    /// containing `CLUSTER` of each row is the stringified number of the row in
+    /// the overall table."
+    #[must_use]
+    pub fn row_names(&self) -> Vec<DvText> {
+        self.rows
+            .as_deref()
+            .unwrap_or_default()
+            .iter()
+            .map(|row| row.name.clone())
+            .collect()
+    }
+
+    /// The column names.
+    ///
+    /// Spec: `item_table.adoc` §Functions `column_names`, over
+    /// `master04-item_structure_package.adoc` §ITEM_TABLE — "the names of the
+    /// `ELEMENT` in a row are the column names."
+    #[must_use]
+    pub fn column_names(&self) -> Vec<DvText> {
+        self.rows
+            .as_deref()
+            .unwrap_or_default()
+            .first()
+            .into_iter()
+            .flat_map(|row| row.items.iter())
+            .map(|item| match item {
+                Item::Element(element) => element.name.clone(),
+                Item::Cluster(cluster) => cluster.name.clone(),
+            })
+            .collect()
+    }
+
+    /// The i-th row, or `None` when the table has no such row.
+    ///
+    /// Spec: `item_table.adoc` §Functions `ith_row` — "Return i-th row."
+    ///
+    /// `i` is ONE-based. No openEHR spec states the base — BASE's `List` class
+    /// declares no indexed accessor at all — but the encoding rules name each
+    /// row `CLUSTER` after "the stringified number of the row in the overall
+    /// table", so a base that disagreed with those names would make
+    /// `ith_row(i)` and `named_row(i)` return different rows. The two agree by
+    /// construction here, and a test pins it.
+    #[must_use]
+    pub fn ith_row(&self, i: usize) -> Option<&Cluster> {
+        self.rows.as_deref()?.get(i.checked_sub(1)?)
+    }
+
+    /// Returns `true` when a row has name `a_key`.
+    ///
+    /// Spec: `item_table.adoc` §Functions `has_row_with_name`. The published
+    /// description reads "Return `True` if there is a COLUMN with name =
+    /// `a_key`" — word for word what `has_column_with_name` says one row below
+    /// it in the same table. The function name, its position and its
+    /// `named_row` counterpart all say row; the description is a copy of the
+    /// neighbouring cell.
+    #[must_use]
+    pub fn has_row_with_name(&self, a_key: &str) -> bool {
+        self.named_row(a_key).is_some()
+    }
+
+    /// Returns `true` when a column has name `a_key`.
+    ///
+    /// Spec: `item_table.adoc` §Functions `has_column_with_name`.
+    #[must_use]
+    pub fn has_column_with_name(&self, a_key: &str) -> bool {
+        self.column_names()
+            .iter()
+            .any(|name| text_of(name) == a_key)
+    }
+
+    /// The row named `a_key`, or `None` when no row carries that name.
+    ///
+    /// Spec: `item_table.adoc` §Functions `named_row` — "Return row with name =
+    /// `a_key`."
+    #[must_use]
+    pub fn named_row(&self, a_key: &str) -> Option<&Cluster> {
+        self.rows
+            .as_deref()?
+            .iter()
+            .find(|row| text_of(&row.name) == a_key)
+    }
+
+    /// Returns `true` when a row has key `keys`.
+    ///
+    /// Spec: `item_table.adoc` §Functions `has_row_with_key`.
+    #[must_use]
+    pub fn has_row_with_key(&self, keys: &[String]) -> bool {
+        self.row_with_key(keys).is_some()
+    }
+
+    /// The row with key `keys`, or `None` when no row carries it.
+    ///
+    /// Spec: `item_table.adoc` §Functions `row_with_key`, over §Description —
+    /// "some columns may be designated 'key' columns, containing key data for
+    /// each row, in the manner of relational tables."
+    ///
+    /// Two things the spec does not supply, so both are our own design and
+    /// stated as such. It defines no way to DESIGNATE a column as a key column,
+    /// so the key is read from the leading columns — the only ordering the
+    /// class does define is that columns are "named and ordered with respect to
+    /// each other", and relational key columns lead. And `DATA_VALUE` declares
+    /// no function at all, so there is no spec-defined way to render a cell as
+    /// a `String`; a key therefore matches a cell only where that cell IS text,
+    /// which is what "key data" for row-naming means. A quantity-valued cell
+    /// matches no key rather than being stringified by a rule this
+    /// implementation would have had to invent.
+    #[must_use]
+    pub fn row_with_key(&self, keys: &[String]) -> Option<&Cluster> {
+        if keys.is_empty() {
+            return None;
+        }
+        self.rows.as_deref()?.iter().find(|row| {
+            keys.len() <= row.items.len()
+                && keys
+                    .iter()
+                    .zip(row.items.iter())
+                    .all(|(key, item)| cell_text(item).is_some_and(|value| value == key.as_str()))
+        })
+    }
+
+    /// The cell at row `i`, column `j`, or `None` when the table has no such
+    /// cell.
+    ///
+    /// Spec: `item_table.adoc` §Functions `element_at_cell_ij` — "Return cell at
+    /// a particular location." Both indices are one-based, per [`Self::ith_row`].
+    #[must_use]
+    pub fn element_at_cell_ij(&self, i: usize, j: usize) -> Option<&Element> {
+        match self.ith_row(i)?.items.get(j.checked_sub(1)?)? {
+            Item::Element(element) => Some(element),
+            Item::Cluster(_) => None,
+        }
+    }
+
+    /// This table as a CEN EN13606-compatible hierarchy, or `None` for a table
+    /// with no cells.
+    ///
+    /// Spec: `item_table.adoc` §Functions `as_hierarchy` — "Generate a CEN
+    /// EN13606-compatible hierarchy consisting of a single `CLUSTER` containing
+    /// the `CLUSTERs` representing the COLUMNS of this table."
+    ///
+    /// The hierarchy is therefore a TRANSPOSE of the stored form, which is
+    /// row-per-`CLUSTER`: one `CLUSTER` per column, named with the column name,
+    /// holding that column's cell from each row in row order. An empty table
+    /// has no columns to build from, and `CLUSTER.items` is `1..*`, so there is
+    /// no hierarchy to return rather than an ill-formed one.
+    #[must_use]
+    pub fn as_hierarchy(&self) -> Option<Cluster> {
+        let rows = self.rows.as_deref()?;
+        let names = self.column_names();
+        let columns: Vec<Item> = names
+            .into_iter()
+            .enumerate()
+            .filter_map(|(index, name)| {
+                let cells: Vec<Item> = rows
+                    .iter()
+                    .filter_map(|row| row.items.get(index).cloned())
+                    .collect();
+                Some(Item::Cluster(column_cluster(
+                    name,
+                    &self.archetype_node_id,
+                    cells,
+                )?))
+            })
+            .collect();
+        column_cluster(self.name.clone(), &self.archetype_node_id, columns)
+    }
+}
+
+/// A `CLUSTER` over `items`, or `None` when there are none — `CLUSTER.items` is
+/// `1..*`, so an empty one is not a `CLUSTER`.
+fn column_cluster(name: DvText, archetype_node_id: &str, items: Vec<Item>) -> Option<Cluster> {
+    Some(Cluster {
+        name,
+        archetype_node_id: archetype_node_id.to_owned(),
+        uid: None,
+        links: openehr_base::containers::present_nonempty(Vec::new()),
+        archetype_details: None,
+        feeder_audit: None,
+        // NOTE: the only failure is an empty `items`, which is this function's
+        // absent case rather than a defect — see the doc comment.
+        items: openehr_base::containers::NonEmptyVec::new(items).ok()?,
+    })
+}
+
+/// The text of a name, whichever `DV_TEXT` form carries it.
+fn text_of(name: &DvText) -> &str {
+    match name {
+        DvText::DvText(text) => &text.value,
+        DvText::DvCodedText(text) => &text.value,
+    }
+}
+
+/// A cell's value as text, when the cell is text-valued.
+fn cell_text(item: &Item) -> Option<&str> {
+    let Item::Element(element) = item else {
+        return None;
+    };
+    match element.value.as_ref()? {
+        DataValue::DvText(text) => Some(text_of(text)),
+        _ => None,
+    }
+}
 
 impl Validate for ItemTable {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
@@ -58,19 +294,18 @@ impl Validate for ItemTable {
                 DvText::DvText(t) => t.value.clone(),
                 DvText::DvCodedText(t) => t.value.clone(),
             };
-            let signature =
-                |row: &crate::v1_2::data_structures::representation::cluster::Cluster| {
-                    row.items
-                        .iter()
-                        .map(|item| match item {
-                            Item::Element(e) => (
-                                name_of(&e.name),
-                                e.value.as_ref().map(std::mem::discriminant),
-                            ),
-                            Item::Cluster(c) => (name_of(&c.name), None),
-                        })
-                        .collect::<Vec<_>>()
-                };
+            let signature = |row: &Cluster| {
+                row.items
+                    .iter()
+                    .map(|item| match item {
+                        Item::Element(e) => (
+                            name_of(&e.name),
+                            e.value.as_ref().map(std::mem::discriminant),
+                        ),
+                        Item::Cluster(c) => (name_of(&c.name), None),
+                    })
+                    .collect::<Vec<_>>()
+            };
             let first_sig = signature(first);
             if self
                 .rows
@@ -280,6 +515,178 @@ mod tests {
         assert!(
             out.iter().any(|m| m.message.contains("Row_regularity")),
             "name-irregular rows must fail, got {out:?}"
+        );
+    }
+
+    /// A table of two rows and two named columns, with the row `CLUSTER`s named
+    /// per `master04-item_structure_package.adoc` §ITEM_TABLE — "the stringified
+    /// number of the row in the overall table".
+    fn cell(column: &str, value: &str) -> Element {
+        use crate::v1_2::data_types::text::dv_text::DvTextData;
+        Element {
+            name: text(column),
+            archetype_node_id: "at0010".to_owned(),
+            uid: None,
+            links: openehr_base::containers::present_nonempty(Vec::new()),
+            archetype_details: None,
+            feeder_audit: None,
+            null_flavour: None,
+            value: Some(DataValue::DvText(DvText::DvText(DvTextData {
+                value: value.to_owned(),
+                hyperlink: None,
+                formatting: None,
+                mappings: openehr_base::containers::present_nonempty(Vec::new()),
+                language: None,
+                encoding: None,
+            }))),
+            null_reason: None,
+        }
+    }
+
+    fn numbered_row(number: &str, cells: Vec<Element>) -> Cluster {
+        Cluster {
+            name: text(number),
+            archetype_node_id: "at0002".to_owned(),
+            uid: None,
+            links: openehr_base::containers::present_nonempty(Vec::new()),
+            archetype_details: None,
+            feeder_audit: None,
+            items: openehr_base::containers::NonEmptyVec::new(
+                cells.into_iter().map(Item::Element).collect(),
+            )
+            .expect("the fixture row carries cells"),
+        }
+    }
+
+    fn acuity() -> ItemTable {
+        table(vec![
+            numbered_row("1", vec![cell("site", "left eye"), cell("result", "6/6")]),
+            numbered_row("2", vec![cell("site", "right eye"), cell("result", "6/9")]),
+        ])
+    }
+
+    /// The counts and the two name lists, over the encoding rules: the row
+    /// `CLUSTER` names are the row names, the `ELEMENT` names are the column
+    /// names.
+    #[test]
+    fn counts_and_names_come_from_the_encoding_rules() {
+        let acuity = acuity();
+        assert_eq!(acuity.row_count(), 2);
+        assert_eq!(acuity.column_count(), 2);
+        assert_eq!(
+            acuity.row_names().iter().map(text_of).collect::<Vec<_>>(),
+            ["1", "2"]
+        );
+        assert_eq!(
+            acuity
+                .column_names()
+                .iter()
+                .map(text_of)
+                .collect::<Vec<_>>(),
+            ["site", "result"]
+        );
+
+        let empty = table(vec![]);
+        assert_eq!(empty.row_count(), 0);
+        assert_eq!(empty.column_count(), 0);
+        assert!(empty.row_names().is_empty() && empty.column_names().is_empty());
+    }
+
+    /// The index base is not stated by any openEHR spec, so it is pinned to the
+    /// one thing that is: rows are NAMED after their number in the table. If
+    /// `ith_row` disagreed with `named_row`, one of them would be wrong.
+    #[test]
+    fn ith_row_agrees_with_the_row_numbering_that_names_the_rows() {
+        let acuity = acuity();
+        for number in 1..=acuity.row_count() {
+            assert_eq!(
+                acuity.ith_row(number),
+                acuity.named_row(&number.to_string()),
+                "row {number} must be the row named {number}"
+            );
+        }
+        assert!(acuity.ith_row(0).is_none(), "there is no row zero");
+        assert!(acuity.ith_row(3).is_none());
+    }
+
+    /// Lookup by name, on both axes. `has_row_with_name`'s published
+    /// description says "column"; it is the neighbouring cell's text, and this
+    /// asserts the two functions actually differ.
+    #[test]
+    fn name_lookup_distinguishes_rows_from_columns() {
+        let acuity = acuity();
+        assert!(acuity.has_row_with_name("1") && acuity.has_row_with_name("2"));
+        assert!(!acuity.has_row_with_name("site"), "that is a column");
+
+        assert!(acuity.has_column_with_name("site") && acuity.has_column_with_name("result"));
+        assert!(!acuity.has_column_with_name("1"), "that is a row");
+
+        assert!(acuity.named_row("nope").is_none());
+    }
+
+    /// Key lookup reads the leading columns and matches text-valued cells.
+    #[test]
+    fn key_lookup_matches_the_leading_columns() {
+        let acuity = acuity();
+        let key = |values: &[&str]| values.iter().map(|v| (*v).to_owned()).collect::<Vec<_>>();
+
+        assert!(acuity.has_row_with_key(&key(&["left eye"])));
+        assert_eq!(
+            acuity.row_with_key(&key(&["right eye", "6/9"])),
+            acuity.ith_row(2)
+        );
+        assert!(
+            !acuity.has_row_with_key(&key(&["6/6"])),
+            "that is the second column, not the leading key"
+        );
+        assert!(!acuity.has_row_with_key(&key(&["left eye", "6/9"])));
+        assert!(
+            !acuity.has_row_with_key(&[]),
+            "no key selects no row, rather than the first one"
+        );
+        assert!(
+            !acuity.has_row_with_key(&key(&["left eye", "6/6", "extra"])),
+            "a key longer than the row cannot match"
+        );
+    }
+
+    /// Cell access, one-based on both axes.
+    #[test]
+    fn cells_are_addressed_one_based_on_both_axes() {
+        let acuity = acuity();
+        assert_eq!(
+            acuity.element_at_cell_ij(2, 1).map(|e| text_of(&e.name)),
+            Some("site")
+        );
+        assert!(acuity.element_at_cell_ij(0, 1).is_none());
+        assert!(acuity.element_at_cell_ij(1, 0).is_none());
+        assert!(acuity.element_at_cell_ij(1, 3).is_none());
+        assert!(acuity.element_at_cell_ij(3, 1).is_none());
+    }
+
+    /// `as_hierarchy` is a TRANSPOSE: "a single CLUSTER containing the CLUSTERs
+    /// representing the COLUMNS of this table", while the stored form is one
+    /// CLUSTER per row.
+    #[test]
+    fn as_hierarchy_transposes_rows_into_columns() {
+        let hierarchy = acuity().as_hierarchy().expect("a table with cells");
+        assert_eq!(text_of(&hierarchy.name), "table");
+        assert_eq!(hierarchy.items.len(), 2, "one CLUSTER per column");
+
+        let Item::Cluster(site) = &hierarchy.items[0] else {
+            panic!("a column is a CLUSTER");
+        };
+        assert_eq!(text_of(&site.name), "site");
+        assert_eq!(site.items.len(), 2, "one cell per row");
+        assert_eq!(
+            site.items.iter().filter_map(cell_text).collect::<Vec<_>>(),
+            ["left eye", "right eye"],
+            "in row order"
+        );
+
+        assert!(
+            table(vec![]).as_hierarchy().is_none(),
+            "CLUSTER.items is 1..*, so an empty table has no hierarchy"
         );
     }
 }
