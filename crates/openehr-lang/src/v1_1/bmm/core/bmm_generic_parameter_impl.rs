@@ -105,7 +105,7 @@ impl BmmGenericParameter {
         }
     }
 
-    /// `BMM_CLASSIFIER.conformance_type_name` for a generic parameter: the
+    /// `conformance_type_name` for a generic parameter: the
     /// effective constraint, i.e. the class the parameter is guaranteed to
     /// conform to — `Any` when unconstrained
     /// (`org.openehr.lang.bmm.bmm_open_type.adoc` §Functions:

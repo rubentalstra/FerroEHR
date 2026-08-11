@@ -56,7 +56,8 @@ impl BmmClassifier {
     /// the _root_ type from a generic type (e.g. `Interval` from
     /// `Interval<T>`)" (`LANG/docs/bmm/master05-core.adoc` §Semantics §Basics —
     /// the function is defined there in prose; only
-    /// `BMM_OPEN_TYPE`/`BMM_PARAMETER_TYPE` carry it in a §Functions table).
+    /// `BMM_OPEN_TYPE` carries it in a §Functions table — the only class doc in
+    /// the vendored LANG set that names it).
     #[must_use]
     pub fn conformance_type_name(&self) -> String {
         match self {
