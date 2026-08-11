@@ -170,14 +170,21 @@ pub(crate) fn all_digits(s: &str) -> bool {
     !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit())
 }
 
-/// A positive integer with no leading zero: `[1-9][0-9]*` (used by the
-/// `VERSION_TREE_ID` trunk/branch segments — numbering starts at 1).
+/// A `number` (master05 §Syntaxes: `digit, { digit }`) whose VALUE is at least
+/// 1, as the `VERSION_TREE_ID` trunk/branch segments require.
+///
+/// The bound is on the value, not the spelling: `version_tree_id.adoc`
+/// §Invariants gives `Trunk_version_valid: … trunk_version.as_integer >= 1`,
+/// and the production admits a leading zero. Refusing `"01"` lexically was a
+/// prohibition neither states, and since `VersionTreeId::new` is the only
+/// construction door it made a foreign system's zero-padded version id
+/// impossible to accept or round-trip.
+///
+/// "At least 1" is read as "not every digit is zero" rather than by parsing,
+/// so an id longer than any integer type still answers correctly.
 #[must_use]
 pub(crate) fn is_positive_int(s: &str) -> bool {
-    match s.as_bytes() {
-        [first, rest @ ..] => (b'1'..=b'9').contains(first) && rest.iter().all(u8::is_ascii_digit),
-        [] => false,
-    }
+    !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit()) && s.bytes().any(|b| b != b'0')
 }
 
 /// `true` for the `iso_oid` production.
@@ -455,9 +462,17 @@ mod tests {
     fn positive_int_rules() {
         assert!(is_positive_int("1"));
         assert!(is_positive_int("42"));
+        // The bound is on the VALUE, not the spelling: `number` is
+        // `digit, { digit }`, so a leading zero is a legal `number` whose value
+        // is still >= 1.
+        assert!(is_positive_int("01"));
+        assert!(is_positive_int("0000000009"));
+        // Value < 1, whatever the spelling.
         assert!(!is_positive_int("0"));
-        assert!(!is_positive_int("01"));
+        assert!(!is_positive_int("000"));
+        // Not a `number` at all.
         assert!(!is_positive_int(""));
         assert!(!is_positive_int("1a"));
+        assert!(!is_positive_int("-1"));
     }
 }

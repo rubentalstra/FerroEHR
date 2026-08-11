@@ -62,6 +62,12 @@ pub(crate) const DAYS_IN_WEEK: f64 = 7.0;
 pub(crate) const AVERAGE_DAYS_IN_MONTH: f64 = 30.42;
 /// `Time_Definitions.Average_days_in_year` = 365.24.
 pub(crate) const AVERAGE_DAYS_IN_YEAR: f64 = 365.24;
+/// `Time_Definitions.Min_timezone_hour` = 12 — "minimum hour value of a
+/// timezone according to ISO 8601 (note that the -ve sign is supplied in the
+/// `ISO8601_TIMEZONE` class)".
+pub(crate) const MIN_TIMEZONE_HOUR: u32 = 12;
+/// `Time_Definitions.Max_timezone_hour` = 14.
+pub(crate) const MAX_TIMEZONE_HOUR: u32 = 14;
 
 /// Seconds in one clock hour (`Minutes_in_hour * Seconds_in_minute`).
 pub(crate) const SECONDS_IN_HOUR: f64 = MINUTES_IN_HOUR * SECONDS_IN_MINUTE;
@@ -453,8 +459,16 @@ fn validate_time(
 }
 
 /// Parse a timezone designator: `Z` → 0, `±hh[:mm]` / `±hh[mm]` → signed
-/// minutes. `hh` is `00`..=`14` (`Time_definitions.Max_timezone_hour`), `mm`
-/// `00`..=`59`.
+/// minutes.
+///
+/// The hour bound is ASYMMETRIC, per `iso8601_timezone.adoc` §Invariants:
+/// `Max_hour_valid` allows `sign = 1` up to `Max_timezone_hour` (14) while
+/// `Min_hour_valid` allows `sign = -1` only to `Min_timezone_hour` (12) — the
+/// real span of civil offsets either side of the dateline. `mm` is `00`..=`59`.
+///
+/// NOTE: both invariants also require `hour > 0`, which would refuse `+00:00`
+/// while the same class defines `is_gmt` as "timezone `+0000`" — a released-text
+/// contradiction, so that clause is not enforced (reported as #2260).
 fn parse_timezone(tz: &str) -> Option<i32> {
     if tz == "Z" {
         return Some(0);
@@ -477,7 +491,12 @@ fn parse_timezone(tz: &str) -> Option<i32> {
             _ => return None,
         }
     };
-    if hh > 14 || mm > 59 {
+    let max_hour = if sign < 0 {
+        MIN_TIMEZONE_HOUR
+    } else {
+        MAX_TIMEZONE_HOUR
+    };
+    if hh > max_hour || mm > 59 {
         return None;
     }
     #[expect(
@@ -514,6 +533,56 @@ pub(crate) fn parse_date_time(s: &str) -> Option<ParsedDateTime> {
 /// (`Time_definitions.valid_iso8601_duration`, with the openEHR deviations: a
 /// leading `-` and `W` mixable with other designators). Requires at least one
 /// component; only the seconds field may carry a fraction.
+/// Store one duration component on `d` and return its slot in the production
+/// `P[nnY][nnM][nnW][nnD][T[nnH][nnM][nnS]]`, or `None` for a designator that
+/// production does not admit in this position.
+///
+/// The slot is what makes the production ORDERED and each designator
+/// at-most-once: the caller requires it to advance strictly. Without that,
+/// `P1D1M` parsed out of order and `P2Y1Y` parsed with the second `Y`
+/// OVERWRITING the first — one duration silently becoming a different one,
+/// which every `to_seconds`/`add_nominal` downstream then computed from.
+fn apply_duration_component(
+    d: &mut ParsedDuration,
+    in_time: bool,
+    designator: char,
+    intval: u64,
+    fracval: f64,
+) -> Option<i8> {
+    match (in_time, designator) {
+        (false, 'Y') => {
+            d.years = intval;
+            Some(0)
+        }
+        (false, 'M') => {
+            d.months = intval;
+            Some(1)
+        }
+        (false, 'W') => {
+            d.weeks = intval;
+            Some(2)
+        }
+        (false, 'D') => {
+            d.days = intval;
+            Some(3)
+        }
+        (true, 'H') => {
+            d.hours = intval;
+            Some(4)
+        }
+        (true, 'M') => {
+            d.minutes = intval;
+            Some(5)
+        }
+        (true, 'S') => {
+            d.seconds = intval;
+            d.fractional_seconds = fracval;
+            Some(6)
+        }
+        _ => None,
+    }
+}
+
 pub(crate) fn parse_duration(s: &str) -> Option<ParsedDuration> {
     let mut it = s.chars().peekable();
     let negative = match it.peek() {
@@ -542,6 +611,10 @@ pub(crate) fn parse_duration(s: &str) -> Option<ParsedDuration> {
     };
     let mut in_time = false;
     let mut seen_any = false;
+    // The slot of the last designator consumed, in the order the production
+    // fixes; `-1` because `Y` is slot 0.
+    let mut last_slot: i8 = -1;
+    let mut seen_time_component = false;
     loop {
         match it.peek() {
             None => break,
@@ -585,18 +658,13 @@ pub(crate) fn parse_duration(s: &str) -> Option<ParsedDuration> {
                 } else {
                     0.0
                 };
-                match (in_time, designator) {
-                    (false, 'Y') => d.years = intval,
-                    (false, 'M') => d.months = intval,
-                    (false, 'W') => d.weeks = intval,
-                    (false, 'D') => d.days = intval,
-                    (true, 'H') => d.hours = intval,
-                    (true, 'M') => d.minutes = intval,
-                    (true, 'S') => {
-                        d.seconds = intval;
-                        d.fractional_seconds = fracval;
-                    }
-                    _ => return None,
+                let slot = apply_duration_component(&mut d, in_time, designator, intval, fracval)?;
+                if slot <= last_slot {
+                    return None;
+                }
+                last_slot = slot;
+                if in_time {
+                    seen_time_component = true;
                 }
                 if has_frac && !(in_time && designator == 'S') {
                     return None; // only the seconds field carries a fraction
@@ -608,6 +676,9 @@ pub(crate) fn parse_duration(s: &str) -> Option<ParsedDuration> {
     }
     if !seen_any {
         return None; // `P`/`PT` with no components is not a duration
+    }
+    if in_time && !seen_time_component {
+        return None; // `P1YT` — the production has no bare trailing `T`
     }
     Some(d)
 }
@@ -1309,5 +1380,38 @@ mod tests {
             render_duration(ExactSeconds::new(-1, 0.5).unwrap()).as_deref(),
             Some("-PT0.5S")
         );
+    }
+
+    /// `P[nnY][nnM][nnW][nnD][T[nnH][nnM][nnS]]` is ORDERED and each designator
+    /// appears at most once. A repeat used to parse and OVERWRITE — `P2Y1Y`
+    /// became `P1Y`, a different duration, with no error anywhere downstream.
+    #[test]
+    fn a_repeated_or_misordered_designator_is_not_a_duration() {
+        // The silent-loss case: the first count vanished.
+        assert!(parse_duration("P2Y1Y").is_none());
+        assert!(parse_duration("P1Y1Y").is_none());
+        assert!(parse_duration("PT1H2H").is_none());
+
+        // Out of order.
+        assert!(parse_duration("P1D1M").is_none());
+        assert!(parse_duration("P1D1Y").is_none());
+        assert!(parse_duration("PT1S1H").is_none());
+        assert!(parse_duration("P1D1W").is_none());
+
+        // A bare trailing `T` carries no time component.
+        assert!(parse_duration("P1YT").is_none());
+        assert!(parse_duration("PT").is_none());
+
+        // The whole production, in order, still parses — including the openEHR
+        // `W`-mixed-with-others deviation in its own slot.
+        let full = parse_duration("P1Y2M3W4DT5H6M7.5S").expect("the full production");
+        assert_eq!(
+            (full.years, full.months, full.weeks, full.days),
+            (1, 2, 3, 4)
+        );
+        assert_eq!((full.hours, full.minutes, full.seconds), (5, 6, 7));
+        assert!(parse_duration("P1M").is_some(), "months alone");
+        assert!(parse_duration("PT1M").is_some(), "minutes alone");
+        assert!(parse_duration("P1W").is_some());
     }
 }

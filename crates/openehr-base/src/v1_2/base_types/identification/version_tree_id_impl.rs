@@ -243,7 +243,7 @@ mod tests {
             // Trunk_version_valid: `trunk_version.as_integer >= 1`.
             ("a", "Trunk_version_valid"),
             ("-1", "Trunk_version_valid"),
-            ("01", "Trunk_version_valid"),
+            ("0", "Trunk_version_valid"),
             ("0.1.1", "Trunk_version_valid"),
             // Branch_number_valid: the same rule on the second part.
             ("1.0.1", "Branch_number_valid"),
@@ -273,8 +273,12 @@ mod tests {
             ),
             "a non-numeric single part breaks Trunk_version_valid"
         );
-        // The accepting twins stay silent.
-        for good in ["1", "42", "1.2.3", "10.9.8"] {
+        // The accepting twins stay silent. `01` is among them: master05
+        // §Syntaxes gives `trunk_version = number` and `number = digit,
+        // { digit }`, and `Trunk_version_valid` bounds the VALUE (`>= 1`), not
+        // the spelling — so a foreign system's zero-padded id is legal and must
+        // round-trip.
+        for good in ["1", "42", "1.2.3", "10.9.8", "01", "1.02.3", "007"] {
             assert!(vtid(good).is_empty(), "{good:?} is a legal VERSION_TREE_ID");
         }
     }
