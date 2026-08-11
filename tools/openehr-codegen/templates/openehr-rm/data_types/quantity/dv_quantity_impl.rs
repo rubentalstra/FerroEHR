@@ -11,74 +11,104 @@
 //! is deferred to the composition validator + `openehr-term` (this crate has
 //! no terminology dependency).
 
+use crate::v1_2::data_types::quantity::dv_amount_impl::{
+    AmountAccuracy, CombinedAccuracy, combine, scale,
+};
 use crate::v1_2::data_types::quantity::dv_ordered_impl::push_normal_range_consistency;
 use crate::v1_2::data_types::quantity::dv_quantity::DvQuantity;
 use openehr_base::validate::{InvariantViolation, Validate};
 
 impl DvQuantity {
     /// Sum of this quantity and `other`, or `None` when they are not strictly
-    /// comparable or the result is not a finite magnitude.
+    /// comparable or the result is one no valid quantity can carry.
     ///
     /// Spec: `dv_quantity.adoc` §Functions `add` — "Sum of this `DV_QUANTITY`
-    /// and `other`."
+    /// and `other`" — redefining `dv_amount.adoc` §Functions `add`, whose
+    /// `Pre_comparable` pre-condition is `is_strictly_comparable_to (other)`:
+    /// the same `units`, and the same `units_system` where one is stated.
     ///
-    /// The spec states no pre-condition on `add`, but `DV_ORDERED` says
-    /// instances of `DV_QUANTITY` "can only be compared if they measure the
-    /// same kind of physical quantity", and a sum of unlike quantities is no
-    /// more meaningful than a comparison of them. So this requires
-    /// [`Self::is_strictly_comparable_to`] — the same units, and the same
-    /// `units_system` where one is stated — rather than silently producing a
-    /// number whose unit is a guess.
+    /// The accuracy of the result follows the `DV_AMOUNT` rule — see
+    /// [`combine`].
     #[must_use]
     pub fn add(&self, other: &Self) -> Option<Self> {
-        self.combine(other, self.magnitude + other.magnitude)
+        self.combined(other, self.magnitude + other.magnitude)
     }
 
     /// Difference of this quantity and `other`, under the same conditions as
     /// [`Self::add`].
     ///
-    /// Spec: `dv_quantity.adoc` §Functions `subtract`.
+    /// Spec: `dv_quantity.adoc` §Functions `subtract`, redefining
+    /// `dv_amount.adoc` §Functions `subtract` — the accuracies are summed for
+    /// subtraction exactly as for addition.
     #[must_use]
     pub fn subtract(&self, other: &Self) -> Option<Self> {
-        self.combine(other, self.magnitude - other.magnitude)
+        self.combined(other, self.magnitude - other.magnitude)
     }
 
-    /// Product of this quantity and `factor`, or `None` when the result is not
-    /// a finite magnitude.
+    /// Product of this quantity and `factor`, or `None` when the result is one
+    /// no valid quantity can carry.
     ///
     /// Spec: `dv_quantity.adoc` §Functions `multiply` — "Product of this
     /// `DV_QUANTITY` and `factor`."
     ///
     /// Unlike `DV_COUNT.multiply`, a fractional result needs no adjudication:
     /// a quantity's magnitude is a `Real`, so scaling one stays in the type.
-    /// The units are unchanged — a scalar factor carries no dimension.
+    /// The units are unchanged — a scalar factor carries no dimension — and the
+    /// accuracy scales per [`scale`].
     #[must_use]
     pub fn multiply(&self, factor: f64) -> Option<Self> {
-        self.rescaled(self.magnitude * factor)
+        self.rescaled(
+            self.magnitude * factor,
+            scale(self.amount_accuracy(), factor),
+        )
+    }
+
+    /// Returns `true` when this quantity's accuracy was not recorded.
+    ///
+    /// Spec: `dv_quantified.adoc` §Functions `accuracy_unknown`, effected for
+    /// `DV_AMOUNT` by the `unknown_accuracy_value` sentinel.
+    #[must_use]
+    pub fn accuracy_unknown(&self) -> bool {
+        self.accuracy.is_none_or(|value| value < 0.0)
+    }
+
+    /// This quantity's accuracy as the `DV_AMOUNT` rule reads it.
+    fn amount_accuracy(&self) -> AmountAccuracy {
+        AmountAccuracy::measured(self.magnitude, self.accuracy, self.accuracy_is_percent)
     }
 
     /// This quantity combined with `other`, if they are strictly comparable.
-    fn combine(&self, other: &Self, magnitude: f64) -> Option<Self> {
+    fn combined(&self, other: &Self, magnitude: f64) -> Option<Self> {
         if !self.is_strictly_comparable_to(other) {
             return None;
         }
-        self.rescaled(magnitude)
+        self.rescaled(
+            magnitude,
+            combine(self.amount_accuracy(), other.amount_accuracy()),
+        )
     }
 
-    /// This quantity at a new magnitude, keeping the units and dropping every
-    /// field the spec gives no combination rule for.
+    /// This quantity at a new magnitude and accuracy, keeping the units.
     ///
-    /// `precision`, `accuracy` and the reference ranges describe how THIS value
-    /// was measured. The spec says nothing about the precision of a sum or the
-    /// accuracy of a scaled value, so carrying either would be this
-    /// implementation inventing a rule and presenting it as the model's.
-    fn rescaled(&self, magnitude: f64) -> Option<Self> {
+    /// `precision`, `magnitude_status` and the reference ranges are dropped:
+    /// they describe how THIS value was measured, and the spec gives no rule
+    /// for combining them, so carrying one would be this implementation
+    /// inventing a rule and presenting it as the model's.
+    fn rescaled(&self, magnitude: f64, accuracy: CombinedAccuracy) -> Option<Self> {
         // A non-finite magnitude is not a quantity: the class types it as a
         // `Real`, and NaN or an infinity would flow into comparisons and
         // serialization as a value no reader can act on.
         if !magnitude.is_finite() {
             return None;
         }
+        let (accuracy, accuracy_is_percent) = match accuracy {
+            CombinedAccuracy::Unrepresentable => return None,
+            CombinedAccuracy::Unknown => (None, None),
+            CombinedAccuracy::Known {
+                accuracy,
+                is_percent,
+            } => (Some(accuracy), Some(is_percent)),
+        };
         Some(Self {
             magnitude,
             units: self.units.clone(),
@@ -86,8 +116,8 @@ impl DvQuantity {
             units_display_name: self.units_display_name.clone(),
             precision: None,
             magnitude_status: None,
-            accuracy: None,
-            accuracy_is_percent: None,
+            accuracy,
+            accuracy_is_percent,
             normal_range: None,
             normal_status: None,
             other_reference_ranges: openehr_base::containers::present_nonempty(Vec::new()),
@@ -169,19 +199,84 @@ mod tests {
         assert!(plain.add(&systematised).is_none());
     }
 
-    /// The measurement-specific fields describe how THIS value was measured.
-    /// The spec defines neither the precision of a sum nor the accuracy of a
-    /// scaled value, so the result carries neither rather than this
-    /// implementation inventing a rule.
+    /// "If accuracies are present in both quantities, they are added in the
+    /// result, for both addition and subtraction operations" — the accuracy of
+    /// a sum is specified, so it is carried rather than dropped.
     #[test]
-    fn arithmetic_drops_what_the_spec_gives_no_rule_for() {
-        let mut a = quantity();
+    fn arithmetic_carries_the_accuracy_the_spec_specifies() {
+        let mut a = quantity(); // 43 kg
         a.accuracy = Some(0.5);
         a.accuracy_is_percent = Some(false);
-        let scaled = a.multiply(2.0).expect("finite");
+        let mut b = quantity();
+        b.magnitude = 7.0;
+        b.accuracy = Some(0.25);
+        b.accuracy_is_percent = Some(false);
+
+        for combined in [
+            a.add(&b).expect("same units"),
+            a.subtract(&b).expect("same units"),
+        ] {
+            assert_eq!(combined.accuracy_is_percent, Some(false));
+            let accuracy = combined.accuracy.expect("both operands recorded one");
+            assert!((accuracy - 0.75).abs() < f64::EPSILON);
+        }
+
+        // An unrecorded accuracy on either side makes the result's unknown.
+        let mut plain = quantity();
+        plain.magnitude = 7.0;
+        let sum = a.add(&plain).expect("same units");
+        assert!(sum.accuracy.is_none() && sum.accuracy_is_percent.is_none());
+    }
+
+    /// Scaling has no spec rule, so ours is asserted: a percentage of a
+    /// magnitude survives the magnitude changing, and an absolute half-range —
+    /// being in the quantity's own units — scales with it.
+    #[test]
+    fn scaling_carries_the_accuracy_forward() {
+        let mut absolute = quantity();
+        absolute.accuracy = Some(0.5);
+        absolute.accuracy_is_percent = Some(false);
+        let scaled = absolute.multiply(2.0).expect("finite");
         assert!((scaled.magnitude - 86.0).abs() < f64::EPSILON);
         assert_eq!(scaled.units, "kg");
-        assert!(scaled.precision.is_none() && scaled.accuracy.is_none());
+        assert_eq!(scaled.accuracy_is_percent, Some(false));
+        assert!((scaled.accuracy.expect("scaled") - 1.0).abs() < f64::EPSILON);
+
+        let mut percent = quantity();
+        percent.accuracy = Some(5.0);
+        percent.accuracy_is_percent = Some(true);
+        let scaled = percent.multiply(2.0).expect("finite");
+        assert_eq!(scaled.accuracy_is_percent, Some(true));
+        assert!((scaled.accuracy.expect("scaled") - 5.0).abs() < f64::EPSILON);
+
+        // `precision` and `magnitude_status` have no combination rule and are
+        // dropped rather than guessed at.
+        assert!(scaled.precision.is_none() && scaled.magnitude_status.is_none());
+    }
+
+    /// A sum whose accuracy no valid quantity can carry is refused outright
+    /// rather than returned as a value that fails its own class invariant.
+    #[test]
+    fn an_unrepresentable_accuracy_refuses_the_whole_operation() {
+        let mut a = quantity();
+        a.accuracy = Some(60.0);
+        a.accuracy_is_percent = Some(true);
+        let mut b = quantity();
+        b.accuracy = Some(60.0);
+        b.accuracy_is_percent = Some(true);
+        assert!(a.add(&b).is_none(), "120% fails Accuracy_validity");
+    }
+
+    /// `accuracy_unknown` reads both ways of not recording an accuracy: the
+    /// attribute being absent, and the `unknown_accuracy_value` sentinel.
+    #[test]
+    fn accuracy_unknown_reads_the_sentinel_and_the_absence() {
+        let mut q = quantity();
+        assert!(q.accuracy_unknown());
+        q.accuracy = Some(-1.0);
+        assert!(q.accuracy_unknown());
+        q.accuracy = Some(0.0);
+        assert!(!q.accuracy_unknown(), "0 means 100% accurate, not unknown");
     }
 
     /// A magnitude that is not finite is not a quantity: NaN or an infinity

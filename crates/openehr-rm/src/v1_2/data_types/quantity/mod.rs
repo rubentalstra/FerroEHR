@@ -17,6 +17,8 @@ pub mod proportion_kind;
 pub mod reference_range;
 
 // hand-written modules (spec behaviour), auto-declared:
+pub mod dv_absolute_quantity_impl;
+pub mod dv_amount_impl;
 pub mod dv_count_impl;
 pub mod dv_interval_impl;
 pub mod dv_ordered_impl;
