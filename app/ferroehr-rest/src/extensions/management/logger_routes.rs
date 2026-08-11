@@ -12,7 +12,7 @@ use axum::response::{IntoResponse, Response};
 use http::StatusCode;
 use serde::{Deserialize, Serialize};
 
-use ferroehr::telemetry::log_reload::LogReload;
+use ferroehr::telemetry::log_reload::{FilterReloadError, LogReload};
 
 #[derive(Debug, Serialize)]
 pub(super) struct LoggersView {
@@ -46,7 +46,7 @@ pub(super) fn set(reload: &LogReload, body: &SetFilter) -> Response {
     match reload.set(&body.filter) {
         Ok(()) => (StatusCode::OK, Json(view(reload))).into_response(),
         Err(e) => (
-            StatusCode::BAD_REQUEST,
+            refusal_status(&e),
             Json(serde_json::json!({ "error": format!("invalid filter: {e}") })),
         )
             .into_response(),
@@ -58,9 +58,18 @@ pub(super) fn reset(reload: &LogReload) -> Response {
     match reload.reset() {
         Ok(()) => (StatusCode::OK, Json(view(reload))).into_response(),
         Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
+            refusal_status(&e),
             Json(serde_json::json!({ "error": format!("reset failed: {e}") })),
         )
             .into_response(),
+    }
+}
+
+/// The two arms of a refused filter swap are two different faults: directives
+/// the caller wrote wrong are a `400`, a reload layer that is gone is a `503`.
+fn refusal_status(e: &FilterReloadError) -> StatusCode {
+    match e {
+        FilterReloadError::Directives(_) => StatusCode::BAD_REQUEST,
+        FilterReloadError::Handle(_) => StatusCode::SERVICE_UNAVAILABLE,
     }
 }

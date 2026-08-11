@@ -15,15 +15,6 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
-
-### Changed
-
-- **The Rust toolchain moves to 1.97.1.** It carries an LLVM miscompilation
-  fix whose underlying bug has been present since at least 1.87 — the pinned
-  1.96.1 sat inside that window. The MSRV stays 1.96: nothing here uses a 1.97
-  feature, and the published crates are the only artifacts whose consumers
-  would feel a bump.
-
 ### Added
 
 - **`Time_Definitions`'s eleven validity functions are now public** on
@@ -33,6 +24,37 @@ workflow refuses a tag that has no matching section here.
   anywhere despite being declared by the spec.
 
 ### Changed
+
+- **An `ehr:` URI must name the `EHR` attribute it addresses.** The server
+  accepted a short form that put the versioned-object id straight after the
+  EHR id (`ehr:/<ehr_id>/<uid>::SYSTEM::1`); no released spec defines it. BASE
+  `master11-paths` enumerates the locator's values — they "come from attribute
+  names of the class `EHR` … namely `compositions`, `directory` etc." — and
+  every example carries one. The short form is now refused; write
+  `ehr:/<ehr_id>/compositions/<uid>::SYSTEM::1` instead. This affects any
+  `DV_EHR_URI` value stored in a `LINK` or elsewhere that used the short form.
+
+- **A refused log-filter swap now answers `400` or `503`, not always `400`.**
+  `POST`/`DELETE /management/loggers` carried one flattened error string, so a
+  reload layer that had gone away was reported as if the caller had written bad
+  directives. The two faults are now distinct types: unparseable directives stay
+  `400`, a subscriber whose reload handle is gone is `503`.
+
+- **Errors carry their cause across the remaining request-path seams.** Six
+  sites in the platform library — Web Template building, FHIR terminology
+  decoding, the log-filter seam, and admin dump/load payload reading — flattened
+  their cause into a message, so nothing downstream could match on it. Each now
+  carries a typed source (RFC 0201). The sites that remain are structural and
+  say so at the site: `prometheus::Error` has no source-bearing variant, and the
+  console's error types must be serializable (server-fn boundary) or
+  `Clone + Eq` (reactive-signal storage), which no underlying error is.
+
+- **The Rust toolchain moves to 1.97.1.** It carries an LLVM miscompilation
+  fix whose underlying bug has been present since at least 1.87 — the pinned
+  1.96.1 sat inside that window. The MSRV stays 1.96: nothing here uses a 1.97
+  feature, and the published crates are the only artifacts whose consumers
+  would feel a bump.
+
 
 - **One ISO-8601 grammar, not two.** `openehr-rm` validated dates, times,
   date-times and durations with its own hand-written reader while depending on
@@ -330,7 +352,6 @@ workflow refuses a tag that has no matching section here.
 - Container scanning in CI: image vulnerability scanning, Dockerfile lint, and secret plus misconfiguration scanning over the tree. Adjudicated exceptions carry their reasoning — for an unreachable finding in an inherited upstream layer, as a published OpenVEX document under `security/vex/`.
 - Boot warnings for two deliberate weakenings that are easy to leave switched on: `cors_permissive`, and authentication enabled on a **plaintext** listener bound to a routable address.
 
-### Changed
 
 - **Every import from `openehr-its` now names the module that defines it.** The
   crate's nine convenience re-exports are gone, so consumers write
@@ -541,7 +562,6 @@ workflow refuses a tag that has no matching section here.
 - `openehr-lang` now models generations by COMPONENT VERSION like every other spec crate: one `openehr_lang::v1_1` generation holding the version's published specifications side by side — the STABLE, tool-implemented BMM v2.x model (`bmm`/`bmm_persistence`/`beom`, on the prelude) beside the PAUSED BMM3 model (`bmm3`, full-path only) — together with the hand-written ODIN/BEL/EL readers and the shared lexer for that version's notations (all previously crate-root modules). The released LANG 1.0.0 machine-readable BMM is recorded as unusable for code generation (no `includes`, unnamed `BMM_CLASS`/`BMM_PACKAGE`, an explicitly obsolete package; BMM is TRIAL in that release), so no 1.0.0 generation exists until upstream republishes usable artifacts.
 - The published `openehr-*` spec crates now expose every BMM generation under a version-named top module — `openehr_base::v1_3`, `openehr_rm::v1_2`, `openehr_lang::v2`/`v3` (replacing `bmm`/`bmm_persistence`/`beom` and `bmm3` at the crate root), `openehr_am::v1_4`/`v2_4` (replacing `am14`/`am24`), `openehr_term::v3_1` — with a new per-crate `Generation` enum (derived `Default` marking the current generation, `spec_version()`/`as_str()`, `FromStr`/`Display`) and the crate prelude re-exporting the current generation only. Import paths into these crates change accordingly; the served wire formats are unchanged.
 
-
 ### Removed
 
 - **`authz.rbac.management_access` and `management.access_default` are gone**
@@ -563,44 +583,6 @@ workflow refuses a tag that has no matching section here.
 
 
 - The generated `openehr-*` spec crates no longer carry a crate-level `SPEC_VERSION` constant: a multi-generation crate has no single implemented spec version, and a fixed crate-root pin would contradict a configured non-current generation. The ONLY pin authority is the emitted `Generation` enum (per-variant `const fn spec_version()`; the derived `Default` variant is the current generation) — the generation modules carry no version constant either; the hand-written single-spec crates (`openehr-its`, `openehr-query`, `openehr-adl`) keep their literal constant.
-
-
-### Security
-
-- The admin console's `Content-Security-Policy` no longer allows inline scripts.
-  `script-src` is now `'self' 'wasm-unsafe-eval' 'nonce-…'`, where the nonce is
-  freshly generated for every response and stamped on the only inline script the
-  console emits — Leptos's hydration bootstrap and its resource-serialization
-  chunks. An injected inline script no longer runs. `style-src` keeps
-  `'unsafe-inline'`, because the console's component library creates its
-  stylesheets in the browser through the DOM without a nonce attribute; adding a
-  nonce there would suppress the inline allowance under CSP Level 3 and leave the
-  console unstyled, so the allowance stays with its reason recorded rather than
-  being traded for a policy that looks stricter and works worse.
-
-- The error-body hygiene check now also covers Service Model faults
-  (`SmError::exception` and `exception`-coded call statuses), which are a
-  second route to a `500` response body it previously did not inspect. Three
-  boot-time terminology and subject-proxy failures were rewritten to keep the
-  underlying diagnostic out of the message and carry it as an error cause
-  instead, so it reaches the server log and never a client.
-
-- Every one of the 20 GitHub Actions referenced by the build, test, release and publish pipelines is now pinned to a full commit SHA instead of a mutable tag, so a retagged or compromised upstream release can no longer change what runs against the tokens that publish this project's releases, container images and crates. Each pin carries its human-readable version in a trailing comment and was verified to belong to the named repository.
-- 38 of the 40 repository checkouts in CI no longer leave the job's API token in `.git/config` for the rest of the job (`persist-credentials: false`), so a later step — a third-party action, a build script, an uploaded artifact — can no longer pick it up and push with it. The two exceptions are the documentation jobs that genuinely use git against the remote, and both are now annotated with the reason.
-- All nine workflows now start from `permissions: {}` and grant each job only what that job actually uses, so write access to releases, packages, issues or Pages exists in the four jobs that publish and nowhere else. Previously a single workflow-level grant applied to every job in the file — `contents: write` to all of `release.yml`, `packages: write` to all of `containers.yml` — and `codeql.yml` declared nothing at all and inherited the repository default.
-- The release tarballs and the crates.io uploads are now built with no compile cache at all, so a published artifact can only contain bytes produced from the tag being released. Both lanes were silently restoring one: the toolchain action they use enables caching by default, which the release job's own comment already assumed it did not.
-- The per-architecture release tarballs are now built from the exact commit the release notes were read from, resolved once and passed on as a SHA, instead of each job resolving the release tag separately. A tag that moved between the two jobs could previously publish assets that did not match the release they were attached to.
-- The build pipeline is now itself statically analysed on every pull request: a new `zizmor` gate audits the workflow definitions, and CodeQL analyses them as source alongside the Rust code. The properties above therefore cannot silently regress — an unpinned action, a checkout keeping its credential without a recorded reason, or a context value spliced into a shell command each fail the build.
-
-- **The PGP signing private key is no longer world-readable inside the pod.**
-  The `secrets` volume was projected at `0440`, but the sibling `config` volume
-  carried no mode and so defaulted to `0644` — and that volume holds every
-  `config.files` entry, whose documented use includes the PGP signing private
-  key (`signing.key_path`), mutual-TLS PEMs and a JWKS blob, plus `ferroehr.toml`
-  itself when the configuration holds a secret the chart cannot route out. Now
-  `0440`, matching the secrets volume. Verified on a live cluster: the applied
-  `defaultMode` is 288 (0440) and both server pods read their configuration and
-  became Ready.
 
 ### Fixed
 
@@ -885,6 +867,42 @@ workflow refuses a tag that has no matching section here.
 - Configuring both a symmetric secret (`auth.oidc.hmac_secret`/`_file`) and a static JWKS (`auth.oidc.jwks_json`/`_file`) is now a boot-time configuration error naming both keys. Previously the server silently used the symmetric secret and ignored the JWKS.
 - An unreachable or unresponsive OAuth2/OIDC issuer no longer stalls bearer-token requests or hammers the issuer with outbound connections. The client that fetches the issuer's discovery document and JWKS now carries explicit timeouts, and a failed fetch is remembered briefly, so bearer requests during an issuer outage are refused fast instead of each one opening a fresh connection and waiting for the operating system's TCP timeout. Three new `[auth.oidc]` keys tune this (they apply only when signing keys come from discovery — that is, when neither `hmac_secret` nor `jwks_json` is set): `connect_timeout_ms` (default `3000`), `request_timeout_ms` (default `5000`), and `negative_cache_ttl_seconds` (default `10`, `0` disables). Successfully fetched keys keep their existing five-minute lifetime, and recovery is automatic once the negative entry expires.
 
+### Security
+
+- The admin console's `Content-Security-Policy` no longer allows inline scripts.
+  `script-src` is now `'self' 'wasm-unsafe-eval' 'nonce-…'`, where the nonce is
+  freshly generated for every response and stamped on the only inline script the
+  console emits — Leptos's hydration bootstrap and its resource-serialization
+  chunks. An injected inline script no longer runs. `style-src` keeps
+  `'unsafe-inline'`, because the console's component library creates its
+  stylesheets in the browser through the DOM without a nonce attribute; adding a
+  nonce there would suppress the inline allowance under CSP Level 3 and leave the
+  console unstyled, so the allowance stays with its reason recorded rather than
+  being traded for a policy that looks stricter and works worse.
+
+- The error-body hygiene check now also covers Service Model faults
+  (`SmError::exception` and `exception`-coded call statuses), which are a
+  second route to a `500` response body it previously did not inspect. Three
+  boot-time terminology and subject-proxy failures were rewritten to keep the
+  underlying diagnostic out of the message and carry it as an error cause
+  instead, so it reaches the server log and never a client.
+
+- Every one of the 20 GitHub Actions referenced by the build, test, release and publish pipelines is now pinned to a full commit SHA instead of a mutable tag, so a retagged or compromised upstream release can no longer change what runs against the tokens that publish this project's releases, container images and crates. Each pin carries its human-readable version in a trailing comment and was verified to belong to the named repository.
+- 38 of the 40 repository checkouts in CI no longer leave the job's API token in `.git/config` for the rest of the job (`persist-credentials: false`), so a later step — a third-party action, a build script, an uploaded artifact — can no longer pick it up and push with it. The two exceptions are the documentation jobs that genuinely use git against the remote, and both are now annotated with the reason.
+- All nine workflows now start from `permissions: {}` and grant each job only what that job actually uses, so write access to releases, packages, issues or Pages exists in the four jobs that publish and nowhere else. Previously a single workflow-level grant applied to every job in the file — `contents: write` to all of `release.yml`, `packages: write` to all of `containers.yml` — and `codeql.yml` declared nothing at all and inherited the repository default.
+- The release tarballs and the crates.io uploads are now built with no compile cache at all, so a published artifact can only contain bytes produced from the tag being released. Both lanes were silently restoring one: the toolchain action they use enables caching by default, which the release job's own comment already assumed it did not.
+- The per-architecture release tarballs are now built from the exact commit the release notes were read from, resolved once and passed on as a SHA, instead of each job resolving the release tag separately. A tag that moved between the two jobs could previously publish assets that did not match the release they were attached to.
+- The build pipeline is now itself statically analysed on every pull request: a new `zizmor` gate audits the workflow definitions, and CodeQL analyses them as source alongside the Rust code. The properties above therefore cannot silently regress — an unpinned action, a checkout keeping its credential without a recorded reason, or a context value spliced into a shell command each fail the build.
+
+- **The PGP signing private key is no longer world-readable inside the pod.**
+  The `secrets` volume was projected at `0440`, but the sibling `config` volume
+  carried no mode and so defaulted to `0644` — and that volume holds every
+  `config.files` entry, whose documented use includes the PGP signing private
+  key (`signing.key_path`), mutual-TLS PEMs and a JWKS blob, plus `ferroehr.toml`
+  itself when the configuration holds a secret the chart cannot route out. Now
+  `0440`, matching the secrets volume. Verified on a live cluster: the applied
+  `defaultMode` is 288 (0440) and both server pods read their configuration and
+  became Ready.
 
 ## [3.17.3] - 2026-08-05
 

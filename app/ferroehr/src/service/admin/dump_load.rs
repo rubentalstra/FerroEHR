@@ -793,34 +793,43 @@ fn version_document(kind: &str, envelope: &Value) -> Result<String, ServiceError
     }
 }
 
+/// Why a `versions/*.xml` entry could not be read back into a payload.
+#[derive(Debug, thiserror::Error)]
+enum VersionPayloadError {
+    /// The entry is not a readable canonical-XML `ORIGINAL_VERSION`.
+    #[error("{0}")]
+    Xml(#[from] openehr_its::xml::runtime::XmlError),
+    /// The document parsed, but carries no `data` to restore.
+    #[error("the ORIGINAL_VERSION document carries no `data`")]
+    NoData,
+    /// The record names a versioned-object kind with no canonical-XML type.
+    #[error("no canonical-XML payload type for versioned-object kind {0}")]
+    UnknownKind(String),
+}
+
 /// Read one `versions/*.xml` entry back into the version's canonical-JSON
 /// payload — the inverse of [`version_document_of`].
 ///
 /// # Errors
-/// The parse failure as a human-readable message; the caller turns it into the
-/// record's [`DumpLoadFailReport`].
-fn version_payload_of<T: FromXml + Serialize>(xml: &str) -> Result<Value, String> {
-    let typed: OriginalVersion<T> =
-        openehr_its::xml::from_canonical_xml(xml).map_err(|e| e.to_string())?;
-    let data = typed
-        .data
-        .ok_or_else(|| "the ORIGINAL_VERSION document carries no `data`".to_owned())?;
+/// [`VersionPayloadError`]; the caller renders it into the record's
+/// [`DumpLoadFailReport`].
+fn version_payload_of<T: FromXml + Serialize>(xml: &str) -> Result<Value, VersionPayloadError> {
+    let typed: OriginalVersion<T> = openehr_its::xml::from_canonical_xml(xml)?;
+    let data = typed.data.ok_or(VersionPayloadError::NoData)?;
     Ok(openehr_its::json::to_canonical_value(&data))
 }
 
 /// [`version_payload_of`] dispatched on the record's stored kind.
 ///
 /// # Errors
-/// The parse failure as a human-readable message.
-fn version_payload(kind: &str, xml: &str) -> Result<Value, String> {
+/// [`VersionPayloadError`].
+fn version_payload(kind: &str, xml: &str) -> Result<Value, VersionPayloadError> {
     match kind {
         "COMPOSITION" => version_payload_of::<Composition>(xml),
         "EHR_STATUS" => version_payload_of::<EhrStatus>(xml),
         "EHR_ACCESS" => version_payload_of::<EhrAccess>(xml),
         "FOLDER" => version_payload_of::<Folder>(xml),
-        other => Err(format!(
-            "no canonical-XML payload type for versioned-object kind {other}"
-        )),
+        other => Err(VersionPayloadError::UnknownKind(other.to_owned())),
     }
 }
 
