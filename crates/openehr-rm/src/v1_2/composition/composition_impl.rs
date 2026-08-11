@@ -29,6 +29,26 @@
 use crate::v1_2::composition::composition::Composition;
 use openehr_base::validate::{InvariantViolation, Validate};
 
+impl Composition {
+    /// The `composition_category` code for persistent content.
+    ///
+    /// Spec: `composition.adoc` §Functions gives the code NUMERICALLY —
+    /// "True if category is `431|persistent|`" — so `431` is normative here,
+    /// not a local convention. The rubric is a rendering of it and is resolved
+    /// from the terminology bundle, never compared against.
+    const PERSISTENT_CATEGORY: &'static str = "431";
+
+    /// Returns `true` when this composition's category is `431|persistent|`.
+    ///
+    /// Spec: `composition.adoc` §Functions — "True if category is
+    /// `431|persistent|`, False otherwise. Useful for finding Compositions in
+    /// an EHR which are guaranteed to be of interest to most users."
+    #[must_use]
+    pub fn is_persistent(&self) -> bool {
+        self.category.defining_code.code_string == Self::PERSISTENT_CATEGORY
+    }
+}
+
 impl Validate for Composition {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
         crate::v1_2::validate::generated::composition_core(
@@ -104,6 +124,22 @@ mod tests {
             composer: PartyProxy::PartySelf(PartySelf { external_ref: None }),
             content: openehr_base::containers::present_nonempty(Vec::new()),
         }
+    }
+
+    /// `composition.adoc` §Functions: `is_persistent` is true for `431` and
+    /// FALSE OTHERWISE — asserted against a real other member of the same
+    /// group (`433|event|`, the fixture's own category) rather than against an
+    /// absent or nonsense code, since "not persistent" has to hold for the
+    /// categories that actually occur.
+    #[test]
+    fn is_persistent_is_the_431_category_and_nothing_else() {
+        let mut c = composition();
+        assert!(!c.is_persistent(), "433|event| is not persistent");
+        c.category = DvCodedText {
+            defining_code: code("openehr", "431"),
+            ..category()
+        };
+        assert!(c.is_persistent());
     }
 
     #[test]

@@ -36,7 +36,6 @@ lang/v1_1/P_BMM_SCHEMA.validate_created
 lang/v1_1/P_BMM_TYPE.create_bmm_type
 rm/v1_1/AUTHORED_RESOURCE.current_revision
 rm/v1_1/AUTHORED_RESOURCE.languages_available
-rm/v1_1/COMPOSITION.is_persistent
 rm/v1_1/DV_COUNT.add
 rm/v1_1/DV_COUNT.is_strictly_comparable_to
 rm/v1_1/DV_COUNT.less_than
@@ -64,6 +63,13 @@ rm/v1_1/DV_DURATION.negative
 rm/v1_1/DV_DURATION.subtract
 rm/v1_1/DV_ORDINAL.is_strictly_comparable_to
 rm/v1_1/DV_ORDINAL.less_than
+# ADJUDICATED deliberately absent (#2030 outcome 2). All four are specified as
+# "extracted from value" and nothing more — and `value` is HL7v3 GTS syntax, for
+# which the openEHR spec supplies NO grammar
+# (RM/docs/UML/classes/org.openehr.rm.data_types.dv_periodic_time_specification.adoc
+# §Functions). Implementing them would mean inventing a parser and calling its
+# output normative, which is the opposite of spec conformance. They stay
+# unrealized until upstream defines the extraction.
 rm/v1_1/DV_PERIODIC_TIME_SPECIFICATION.calendar_alignment
 rm/v1_1/DV_PERIODIC_TIME_SPECIFICATION.event_alignment
 rm/v1_1/DV_PERIODIC_TIME_SPECIFICATION.institution_specified
@@ -125,7 +131,6 @@ rm/v1_1/VERSIONED_OBJECT.version_count
 rm/v1_1/VERSIONED_OBJECT.version_with_id
 rm/v1_2/AUTHORED_RESOURCE.current_revision
 rm/v1_2/AUTHORED_RESOURCE.languages_available
-rm/v1_2/COMPOSITION.is_persistent
 rm/v1_2/DV_COUNT.add
 rm/v1_2/DV_COUNT.is_strictly_comparable_to
 rm/v1_2/DV_COUNT.less_than
@@ -153,6 +158,13 @@ rm/v1_2/DV_DURATION.negative
 rm/v1_2/DV_DURATION.subtract
 rm/v1_2/DV_ORDINAL.is_strictly_comparable_to
 rm/v1_2/DV_ORDINAL.less_than
+# ADJUDICATED deliberately absent (#2030 outcome 2). All four are specified as
+# "extracted from value" and nothing more — and `value` is HL7v3 GTS syntax, for
+# which the openEHR spec supplies NO grammar
+# (RM/docs/UML/classes/org.openehr.rm.data_types.dv_periodic_time_specification.adoc
+# §Functions). Implementing them would mean inventing a parser and calling its
+# output normative, which is the opposite of spec conformance. They stay
+# unrealized until upstream defines the extraction.
 rm/v1_2/DV_PERIODIC_TIME_SPECIFICATION.calendar_alignment
 rm/v1_2/DV_PERIODIC_TIME_SPECIFICATION.event_alignment
 rm/v1_2/DV_PERIODIC_TIME_SPECIFICATION.institution_specified
