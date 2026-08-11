@@ -94,7 +94,7 @@ impl BmmProperty<BmmType> {
         }
     }
 
-    /// `BMM_CLASSIFIER.conformance_type_name` of this property's type: the
+    /// `conformance_type_name` of this property's type: the
     /// reduced form that abstracts a container away — "the _contained_ type for
     /// a container type (e.g. `ELEMENT` from the type `List<ELEMENT>`)"
     /// (`LANG/docs/bmm/master05-core.adoc` §Semantics §Basics). This is the

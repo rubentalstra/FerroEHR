@@ -64,6 +64,22 @@ mod token;
 
 use logos::Logos;
 
+/// The source text a lexer span names.
+///
+/// Total by construction: every span reaching this function was produced by
+/// `logos` over the SAME `src`, so it always names a character boundary inside
+/// it. Returning an empty string instead would report a lexical defect with no
+/// text — a silent wrong diagnostic, which `.claude/rules/reliability.md`
+/// forbids dodging the lint with.
+#[expect(
+    clippy::expect_used,
+    reason = "the span comes from lexing this same `src`, so it always slices"
+)]
+fn span_text(src: &str, span: core::ops::Range<usize>) -> &str {
+    src.get(span)
+        .expect("a span produced by lexing this source should slice it")
+}
+
 use crate::v1_1::lexer::reclassify::{Language, reclassify};
 pub use crate::v1_1::lexer::token::Token;
 
@@ -145,7 +161,7 @@ fn retag_odin_value_words_in_key_position(src: &str, spanned: &mut [Spanned]) {
             && before_eq
             && let Some(entry) = spanned.get_mut(index)
         {
-            let slice = src.get(entry.span.clone()).unwrap_or_default();
+            let slice = span_text(src, entry.span.clone());
             entry.token = if slice.starts_with(|c: char| c.is_ascii_uppercase()) {
                 Token::AlphaUcId(slice.to_owned())
             } else {
@@ -197,11 +213,11 @@ fn lex_with(language: Language, src: &str) -> Result<Vec<Spanned>, LexError> {
     let mut lexer = Token::lexer(src);
     while let Some(result) = lexer.next() {
         let span = lexer.span();
-        let text = src.get(span.clone()).unwrap_or_default();
+        let text = span_text(src, span.clone());
         let Ok(produced) = result else {
             let end = stuck_at(language, src, span.start, span.end);
             return Err(LexError {
-                text: src.get(span.start..end).unwrap_or_default().to_owned(),
+                text: span_text(src, span.start..end).to_owned(),
                 span: span.start..end,
             });
         };
@@ -240,7 +256,7 @@ fn narrow(
     let mut end = previous_boundary(src, limit, start);
     while end > start {
         if let Some(produced) = single_token(src, start, end) {
-            let text = src.get(start..end).unwrap_or_default();
+            let text = span_text(src, start..end);
             if let Some(read) = reclassify(language, &produced, text, src, start) {
                 if !matches!(read, Token::Bom) {
                     out.push(Spanned {
@@ -256,7 +272,7 @@ fn narrow(
     let end = next_boundary(src, start);
     Err(LexError {
         span: start..end,
-        text: src.get(start..end).unwrap_or_default().to_owned(),
+        text: span_text(src, start..end).to_owned(),
     })
 }
 
