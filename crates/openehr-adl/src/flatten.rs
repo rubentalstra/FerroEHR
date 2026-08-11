@@ -606,11 +606,7 @@ fn resolve_object_mut<'a>(
         // with a copy of its target structure resolved in the snapshot.
         let children = attributes[attr_pos].children.as_mut()?;
         if let CObject::CComplexObjectProxy(proxy) = &children[child_pos] {
-            if let Some(expanded) = expand_proxy(&snapshot, proxy) {
-                children[child_pos] = expanded;
-            } else {
-                return None;
-            }
+            children[child_pos] = expand_proxy(&snapshot, proxy)?;
         }
         current = match &mut children[child_pos] {
             CObject::CComplexObject(CComplexObject::CComplexObject(d)) => d,

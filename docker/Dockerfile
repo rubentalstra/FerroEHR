@@ -19,17 +19,17 @@
 # The RUST_VERSION toolchain is single-sourced from rust-toolchain.toml; CI
 # cross-checks the ARG against its `channel` so they never drift.
 
-ARG RUST_VERSION=1.96.1
+ARG RUST_VERSION=1.97.1
 ARG CARGO_CHEF_VERSION=0.1.77
 
 # ── chef: the builder toolchain + cargo-chef, a cached base for planner/builder ─
-# Digest-pinned rust:1.96.1-slim-trixie (Debian 13, glibc 2.41), resolved
+# Digest-pinned rust:1.97.1-slim-trixie (Debian 13, glibc 2.41), resolved
 # 2026-07-24. The builder and the cc-debian13 runtime below share the Debian 13
 # generation so the binary links the exact glibc it runs against. Pinning by
 # digest (not the mutable tag) guarantees a reproducible base
 # (docs.docker.com/build/building/best-practices — "pinning to a digest
 # guarantees the same image version").
-FROM rust:${RUST_VERSION}-slim-trixie@sha256:31ee7fc65186be7e0e0ccb3f2ca305f14e4739e7642a1ae65753aa5d7b874523 AS chef
+FROM rust:${RUST_VERSION}-slim-trixie@sha256:3b2879047d42784ca9403ad20c51ed3df361a50f1df96f5777d39b4e33aa65cd AS chef
 ARG CARGO_CHEF_VERSION
 # cargo-chef pinned by version, installed behind a cargo-registry cache mount so
 # the download is not repeated on rebuilds (docs.docker.com/build/cache/optimize

@@ -16,6 +16,14 @@ workflow refuses a tag that has no matching section here.
 ## [Unreleased]
 
 
+### Changed
+
+- **The Rust toolchain moves to 1.97.1.** It carries an LLVM miscompilation
+  fix whose underlying bug has been present since at least 1.87 — the pinned
+  1.96.1 sat inside that window. The MSRV stays 1.96: nothing here uses a 1.97
+  feature, and the published crates are the only artifacts whose consumers
+  would feel a bump.
+
 ### Added
 
 - **`Time_Definitions`'s eleven validity functions are now public** on

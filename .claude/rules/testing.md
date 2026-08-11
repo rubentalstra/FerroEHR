@@ -112,7 +112,7 @@ Never park tests for crate X under crate Y's `tests/` directory.
   plumbing failures should propagate with `?`, not `.unwrap()`.
   **`clippy::panic_in_result_fn` (deny, workspace-wide) fires on this shape
   and clippy offers NO `allow-…-in-tests` knob for it** (verified
-  empirically on the pinned 1.96 toolchain: `allow-panic-in-tests = true` is
+  empirically on the pinned 1.97 toolchain (re-verified at the 1.96→1.97 bump): `allow-panic-in-tests = true` is
   already set and the lint still fires inside a `#[test] fn -> Result<…>`
   that asserts; the clippy lint-configuration page lists no option for this
   lint —
