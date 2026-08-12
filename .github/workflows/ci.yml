@@ -407,6 +407,53 @@ jobs:
       - name: No copyleft licence text in first-party source
         run: bash scripts/checks/first-party-license-text.sh
 
+  # REUSE 3.3 compliance: every file in the tree has machine-readable licensing
+  # that SURVIVES the file being copied out of it — which is the expected case
+  # for a repository whose premise is that people build on it and ship it, and
+  # which redistributes material under six distinct licences.
+  #
+  # The per-tree `PROVENANCE.md` arrangement is accurate but travels with the
+  # tree, not with the file. `REUSE.toml` closes that gap by glob, touching no
+  # vendored file — which matters, because hand-editing vendored material is
+  # forbidden here.
+  licensing:
+    name: licensing
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: reuse lint
+        # The OFFICIAL image, digest-pinned — the same construction the
+        # actionlint job uses and for the same reasons: `reuse` is distributed
+        # as a Python package, which this repository does not install, and the
+        # published container is the one distribution that needs neither a
+        # Python toolchain in CI nor an unpinned installer script.
+        run: |
+          docker run --rm \
+            -v "$PWD:/data" --workdir /data \
+            fsfe/reuse:6.2.0@sha256:85462a75c0f8efda09ddd190b92816b70e7662577c8427429e11e1b9f25a992e \
+            lint
+      # `reuse lint` proves the declarations are COMPLETE. It cannot know that
+      # this project also publishes a human-readable licensing chapter, which is
+      # what a procurement reviewer actually reads and what drifts.
+      - name: Install yq
+        env:
+          YQ_VERSION: v4.53.3
+          YQ_SHA256: fa52a4e758c63d38299163fbdd1edfb4c4963247918bf9c1c5d31d84789eded4
+        run: |
+          set -euo pipefail
+          curl -fsSL -o /tmp/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"
+          echo "${YQ_SHA256}  /tmp/yq" | sha256sum -c -
+          sudo install -m 0755 /tmp/yq /usr/local/bin/yq
+          yq --version
+      - name: The declarations, the texts and the chapter agree
+        run: bash scripts/checks/licensing-declarations.sh
+
   # The compose hardening properties (cap_drop ALL, no-new-privileges, no
   # privileged, no seccomp=unconfined, loopback-only publishing). This gate
   # existed and ran nowhere, while `docker-compose.yml` and the operations
@@ -571,6 +618,42 @@ jobs:
         with:
           tool: cargo-deny
       - run: cargo deny check
+
+  # The published VEX document must be exactly what `deny.toml` plus the prose
+  # file generate. Every advisory the gate ACCEPTS carries a machine-readable
+  # justification a downstream scanner can ingest — otherwise the argument
+  # exists only in a TOML comment nobody downstream reads, and a hospital's
+  # scanner sees unexplained findings on a clinical artifact.
+  #
+  # Ungated on `changes.code`: `deny.toml` is in the code allowlist, but the
+  # prose file and the generator are not, and a prose-only edit must still be
+  # checked.
+  vex:
+    name: vex
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # `deny.toml` and the prose file are TOML, which jq cannot read. Pinned by
+      # version and verified by checksum, like the chart lane's copy: this
+      # binary decides whether the gate passes.
+      - name: Install yq
+        env:
+          YQ_VERSION: v4.53.3
+          YQ_SHA256: fa52a4e758c63d38299163fbdd1edfb4c4963247918bf9c1c5d31d84789eded4
+        run: |
+          set -euo pipefail
+          curl -fsSL -o /tmp/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"
+          echo "${YQ_SHA256}  /tmp/yq" | sha256sum -c -
+          sudo install -m 0755 /tmp/yq /usr/local/bin/yq
+          yq --version
+      - name: Every accepted advisory has a published VEX justification
+        run: bash scripts/checks/vex-advisories.sh
 
   clippy:
     name: clippy
@@ -1749,9 +1832,11 @@ jobs:
       - error-source-chain
       - no-python
       - license-text
+      - licensing
       - spec-citations
       - compose-hardening
       - deny
+      - vex
       - clippy
       - doc
       - msrv
