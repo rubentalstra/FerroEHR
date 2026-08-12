@@ -407,6 +407,26 @@ jobs:
       - name: No copyleft licence text in first-party source
         run: bash scripts/checks/first-party-license-text.sh
 
+  # The compose hardening properties (cap_drop ALL, no-new-privileges, no
+  # privileged, no seccomp=unconfined, loopback-only publishing). This gate
+  # existed and ran nowhere, while `docker-compose.yml` and the operations
+  # chapter both told readers it "enforces that on every compose artifact" — a
+  # documented guard that does not fire is worse than none, because the docs and
+  # the reviewer both believe it did.
+  compose-hardening:
+    name: compose-hardening
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Compose artifacts stay hardened
+        run: bash scripts/checks/compose-hardening.sh
+
   # RFC 0201: an error carries its cause. No clippy lint covers this, so the
   # gate is a per-tree ratchet — the flattened-site counts may only fall while
   # the #2034 sweep runs.
@@ -1730,6 +1750,7 @@ jobs:
       - no-python
       - license-text
       - spec-citations
+      - compose-hardening
       - deny
       - clippy
       - doc

@@ -613,6 +613,25 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Five CI gates ran without gating anything.** Branch protection routes
+  through a single aggregate check, which is what lets jobs be added or renamed
+  without editing repository settings — but a job missing from that check's
+  dependency list still runs, still goes red, and still merges. The compose
+  hardening guard, the error cause-chain ratchet, the no-Python rule, the
+  spec-citation check and the chart boot check were all in that state. All are
+  wired in, and a new guard fails the build when a job is missing from the list
+  in either direction, so the next one cannot slip through silently. The compose
+  guard is the one worth calling out: `docker-compose.yml` and the operations
+  chapter both told readers it enforced on every compose artifact, and it had
+  never run.
+
+- **The forbidden-licence check now actually runs.** It was configured as a
+  FOSSA `customLicenseSearch`, which could not upload on this organization's
+  plan and did not honour the configured path exclusions — every one of its
+  findings came from vendored third-party trees rather than from this project's
+  own code. It is now a local check that shares the same exclusion list and
+  fails the build.
+
 - **An uploaded operational template no longer silently loses its slot
   constraints.** A slot assertion was rendered into ADL by writing the raw
   numeric operator code the OPT XML encodes — text the assertion parser cannot

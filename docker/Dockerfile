@@ -70,13 +70,21 @@ ENV REVISION=${REVISION}
 # The binary is pure-Rust (rustls, no OpenSSL); the slim base needs no extra
 # system libraries. Deps are already compiled by `chef cook`, so this step only
 # builds the workspace's own crates.
-# --jobs 2: the generated spec crates carry every emitted generation
-# (#1936/#1942), and two of those rustc invocations in parallel with the app
-# crates exceed a default Docker VM's memory at opt-level 3 (observed: SIGKILL
-# compiling openehr-its in a 7.7 GB VM, 2026-08-05). Capping build parallelism
-# changes no shipped byte — it only serializes compilation.
+# Build parallelism is capped, and tunable. The generated spec crates carry
+# every emitted generation (#1936/#1942), so a single rustc invocation on one of
+# them at opt-level 3 holds gigabytes; running several alongside the app crates
+# exhausts a small Docker VM and the kernel kills the compiler. That has now
+# been observed twice at two different caps — SIGKILL on openehr-its at the
+# default parallelism (7.7 GB VM, 2026-08-05), and again at `--jobs 2` once the
+# spec-function work landed — so the number is a property of the machine, not a
+# constant to keep re-tuning in this file.
+#
+# `--build-arg CARGO_BUILD_JOBS=1` builds on a memory-constrained host. It costs
+# wall-clock and changes no shipped byte: parallelism only decides how many
+# translation units compile at once.
+ARG CARGO_BUILD_JOBS=2
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
-    cargo build --release --locked --jobs 2 -p ferroehr-server \
+    cargo build --release --locked --jobs "${CARGO_BUILD_JOBS}" -p ferroehr-server \
     && cp target/release/ferroehr /usr/local/bin/ferroehr \
     && strip /usr/local/bin/ferroehr
 

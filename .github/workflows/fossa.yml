@@ -4,11 +4,14 @@
 # scans server-side with its own credentials and does NOT read `.fossa.yml`
 # (that file is the CLI's — https://docs.fossa.com/docs/cli/references/files/fossa-yml).
 # Everything the committed configuration decides — that the dependency surface
-# is the Cargo graph, that the vendored openEHR specification text and third-
-# party test corpora are not ours to license, and the customLicenseSearch rules
-# that flag GPL-family text in FIRST-PARTY source — applies only when the CLI
+# is the Cargo graph, and that the vendored openEHR specification text and
+# third-party test corpora are not ours to license — applies only when the CLI
 # runs. Without this lane the config is decoration and the dashboard reports
 # somebody else's licence as if it were ours.
+#
+# The forbidden-licence check is NOT here; it is
+# `scripts/checks/first-party-license-text.sh`, run by the `license-text` CI
+# job. `.fossa.yml` records why.
 #
 # ANALYSE-ONLY, DELIBERATELY. `run-tests` stays false: `fossa test` would fail
 # the build on a policy verdict, and this repository redistributes vendored
@@ -63,8 +66,7 @@ jobs:
       - name: Ensure the Cargo lockfile is present
         run: cargo generate-lockfile --locked || cargo generate-lockfile
 
-      - id: fossa
-        uses: fossas/fossa-action@29693cc50323968e039056be419b32989fc5880c # v2.0.0
+      - uses: fossas/fossa-action@29693cc50323968e039056be419b32989fc5880c # v2.0.0
         with:
           api-key: ${{ secrets.FOSSA_API_KEY }}
           # PINNING THE CLI IS NOT OPTIONAL HERE. The action's own README says
@@ -80,26 +82,10 @@ jobs:
           # results off the branch's history.
           branch: ${{ github.ref_name }}
           run-tests: false
-          # An SPDX attribution report of everything the dependency graph
-          # carries. This project already publishes a CycloneDX SBOM of the
-          # cargo graph per release binary; that answers "what is in the
-          # artifact", while this answers "what are we obliged to attribute" —
-          # a different question, and the one that matters for a product
-          # redistributing third-party material.
-          generate-report: spdx
-
-      # The report is a step OUTPUT, so it exists only for the length of this
-      # job unless something writes it down. Read through the environment
-      # rather than interpolated into the shell: report text is arbitrary
-      # third-party content (dependency names, licence bodies) and must never
-      # be parsed as script.
-      - name: Write the attribution report
-        env:
-          REPORT: ${{ steps.fossa.outputs.report }}
-        run: printf '%s' "$REPORT" > fossa-attribution.spdx.json
-
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: fossa-attribution-report
-          path: fossa-attribution.spdx.json
-          if-no-files-found: error
+          # NO `generate-report` HERE. It needs a READ-scoped token and fails
+          # with "Invalid API token type" on the push-only one this repository
+          # deliberately uses (measured 2026-08-12). Report generation is not
+          # worth widening a CI credential from write-only to read: a token that
+          # cannot read the organization's data is a smaller blast radius than
+          # an SPDX attribution file is a convenience. Pull the report from the
+          # dashboard when it is wanted.
