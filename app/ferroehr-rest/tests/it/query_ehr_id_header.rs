@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `openehr-ehr-id` request header as the single-EHR query scope, end to
 //! end through the assembled router over a **real** `FerroEhrService` on a real
 //! `PostgreSQL` (the `common` fixture).

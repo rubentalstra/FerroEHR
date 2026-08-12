@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Telemetry initialization.
 //!
 //! The single `tracing` instrumentation API fanned out to stdout logs +

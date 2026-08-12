@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! openEHR terminology loader + lookup API (TERM 3.1.0).
 //!
 //! Hand-written; preserved across `openehr-codegen` regeneration (it carries

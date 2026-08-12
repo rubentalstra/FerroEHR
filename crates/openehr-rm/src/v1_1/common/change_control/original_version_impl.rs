@@ -1,4 +1,7 @@
 // @generated-from-template templates/openehr-rm/common/change_control/original_version_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
 //! Hand-written spec function of `ORIGINAL_VERSION` (hand-written spec
 //! behaviour).
 //!

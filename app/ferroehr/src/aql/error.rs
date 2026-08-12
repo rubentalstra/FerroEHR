@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! AQL planner errors.
 //!
 //! Two families, both surfaced before any SQL is built:

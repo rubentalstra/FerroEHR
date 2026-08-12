@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! ADL 1.4 → ADL 2 conversion (the `adl14` 1.4→2 upgrade pipeline).
 //!
 //! NOTE: **no openEHR spec governs the 1.4 → 2 conversion ALGORITHM — the

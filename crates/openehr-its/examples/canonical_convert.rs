@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Convert a canonical-JSON RM instance to a canonical serialization — the
 //! offline generator for corpus fixtures (e.g. the CNF catalogue's request-body
 //! fixtures), so every committed fixture is produced by the same gate-proven

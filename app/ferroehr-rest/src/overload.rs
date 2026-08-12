@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Ingress overload protection: bounded in-flight concurrency + load shedding.
 //!
 //! No openEHR spec governs server overload behaviour — this is our own design

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `OpenPGP` key loading + the rPGP detached-signature primitives.
 //!
 //! Spec: RM common `master06-change_control_package.adoc` §Digital Signature —

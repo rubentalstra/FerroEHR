@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Observed-outcome classification.
 //!
 //! Interpreter law (c): transport and

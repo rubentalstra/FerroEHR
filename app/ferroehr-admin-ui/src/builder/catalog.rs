@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The path catalog the Query Builder navigates.
 //!
 //! A slim, serializable tree distilled BFF-side from the Web Template (built

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Cross-artifact validation — the schedule's machine gates.
 //!
 //! Generalized from ECC's coverage-guard discipline: id uniqueness,

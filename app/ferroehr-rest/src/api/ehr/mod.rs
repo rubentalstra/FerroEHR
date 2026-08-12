@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The ITS-REST **ehr API** (Release-1.1.0, STABLE) —
 //! `docs/specs/openehr/ITS-REST/specifications/docs/ehr/` + the
 //! `ehr-*.openapi.yaml` OAS group (generated into `openehr_its::rest`).

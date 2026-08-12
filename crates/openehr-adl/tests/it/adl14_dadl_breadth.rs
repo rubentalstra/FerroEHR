@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The ADL 1.4 dADL breadth regression corpus (`tests/corpus/adl14-dadl/`).
 //!
 //! Unlike every other tree under `tests/corpus/`, this one is **hand-written,

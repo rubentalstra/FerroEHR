@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The AOM2 validation engine: orchestration over a catalogue of topic modules.
 //!
 //! A validator walks an assembled `openehr_am::v2_4::aom2` [`Archetype`]

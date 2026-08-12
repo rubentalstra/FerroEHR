@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written spec functions of `BMM_GENERIC_PARAMETER` — the formal generic
 //! parameter of a generic class definition.
 //!

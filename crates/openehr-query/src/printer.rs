@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Canonical AQL text rendering of the [`crate::ast`].
 //!
 //! This is the inverse of the

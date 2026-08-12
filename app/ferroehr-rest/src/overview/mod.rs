@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The ITS-REST **Overview** specification — the cross-cutting protocol every
 //! openEHR REST API inherits.
 //!

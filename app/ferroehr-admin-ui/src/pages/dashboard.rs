@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `/` dashboard: headline stat tiles, per-namespace stored-query match
 //! tiles, and a commit-activity trend chart.
 //!

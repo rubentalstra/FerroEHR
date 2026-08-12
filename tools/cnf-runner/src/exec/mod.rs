@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The data-driven executor: the flow interpreter under the five step-3
 //! interpreter laws —
 //!

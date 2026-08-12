@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The dashboard stat tile: icon, tabular-nums value, muted label — the
 //! replacement for the bare number-in-a-card look.
 

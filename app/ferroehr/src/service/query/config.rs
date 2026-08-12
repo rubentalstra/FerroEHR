@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `[query]` section — AQL execution knobs.
 //!
 //! No openEHR spec governs these tuning knobs — our own operational extension. A field of the one config tree

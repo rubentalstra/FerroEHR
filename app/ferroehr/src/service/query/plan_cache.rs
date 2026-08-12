@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Bounded AQL plan cache (the parse/plan overhead item).
 //!
 //! Parsing an AQL query (`logos` + `chumsky`, `openehr_query`) and lowering it

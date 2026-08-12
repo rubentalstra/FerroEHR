@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The run orchestration: select → execute (the interpreter over the live
 //! driver) → record — producing the `results.json` outcomes the party layer
 //! emits and the verdict pipeline consumes.

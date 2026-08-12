@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Integration tests for the local IHE ATNA Audit Record Repository
 //! (`ferroehr::system_log::store`) against a real `PostgreSQL` 18
 //! (shared testkit harness): the `audit` schema migrates cleanly alongside

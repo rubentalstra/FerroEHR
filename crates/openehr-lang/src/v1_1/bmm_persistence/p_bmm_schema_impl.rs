@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written spec functions of `P_BMM_SCHEMA` — the derived schema id it
 //! inherits from `BMM_SCHEMA_CORE`, and the `create_bmm_model` transform it
 //! declares.

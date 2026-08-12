@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Pure, component-free helpers for the structured directory tree editor.
 //!
 //! Navigation and mutation of a canonical `FOLDER` tree held as

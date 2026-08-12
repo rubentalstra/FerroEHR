@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Concrete health indicators: the dependency-touching checks (DB pool,
 //! migrations, audit sender, event publisher) implementing the
 //! [`HealthIndicator`] trait from [`crate::telemetry::health`].

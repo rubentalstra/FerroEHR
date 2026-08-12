@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The archetype human-readable-identifier (HRID) grammar — the single home for
 //! reading, writing, and keying an `ARCHETYPE_HRID`.
 //!

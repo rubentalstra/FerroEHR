@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The canonical-JSON transforms: externalize large inline `DV_MULTIMEDIA.data`
 //! (commit path) and re-inline externalized blobs with integrity verification
 //! (read path). Pure functions over `serde_json::Value` — the async blob I/O is

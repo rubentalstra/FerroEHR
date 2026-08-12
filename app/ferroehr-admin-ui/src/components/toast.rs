@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Toast feedback helpers over `thaw`'s toaster: every mutation (upload, save,
 //! delete, commit, create) reports its outcome as a transient toast instead of
 //! scattered inline text.

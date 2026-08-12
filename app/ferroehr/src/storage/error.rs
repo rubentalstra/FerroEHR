@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Storage-layer error surface.
 //!
 //! No openEHR spec governs the physical storage — these are our own

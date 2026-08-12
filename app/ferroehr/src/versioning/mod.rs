@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Versioning + integrity: the openEHR change-control model realized over the
 //! greenfield PG18 storage.
 //!

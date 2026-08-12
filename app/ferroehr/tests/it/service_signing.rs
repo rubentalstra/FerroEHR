@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end tests for version signing (`VERSION.signature`, RM common
 //! §"Digital Signature")
 //! against a real `PostgreSQL` 18 (shared testkit harness).

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end HTTP tests for the stored-query DEFINITION wire (group-11 audit,
 //! `I_DEFINITION_QUERY`): the version-less `PUT /definition/query/{name}`
 //! (whose `Location` names exactly the version the store wrote — never a

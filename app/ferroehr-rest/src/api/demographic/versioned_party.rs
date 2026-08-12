@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `VERSIONED_PARTY` reads — `operations/versioned_party_get.yaml`,
 //! `versioned_party_revision_history.yaml`,
 //! `versioned_party_version_get_at_time.yaml`,

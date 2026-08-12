@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! The FLAT wire codec: `path[:i][|suffix]` key/value map ↔ [`SimNode`].
 //!
 //! Syntax per ITS-REST `simplified_formats/master04-basic_concepts.adoc`

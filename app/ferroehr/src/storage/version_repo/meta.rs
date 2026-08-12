@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Lean metadata-only reads over `vo_version`.
 //!
 //! Joined with `audit` where the commit instant is needed: the `ETag`/`If-Match`

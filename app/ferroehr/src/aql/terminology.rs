@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `TERMINOLOGY('expand', …)` `matches`-operand expansion (B4 stage (a)).
 //!
 //! master03 §TERMINOLOGY (`docs/specs/openehr/QUERY/docs/AQL/master03-syntax.adoc`

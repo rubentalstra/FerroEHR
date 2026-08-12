@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The date/time/duration constraint-pattern validators.
 //!
 //! The valid-pattern tables of `ADL2/master04.5-cadl_primitive_types.adoc`

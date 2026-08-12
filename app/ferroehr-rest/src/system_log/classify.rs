@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Operation → DICOM audit classification for the IHE ATNA system log.
 //!
 //! The IHE **ATNA** profile records, per audited access, *who* did *what* to

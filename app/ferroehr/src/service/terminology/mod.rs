@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The **Terminology** component of the platform crate.
 //!
 //! The concrete realization of the SM `I_TERMINOLOGY_SERVICE` interface on

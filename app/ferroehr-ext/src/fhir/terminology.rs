@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Typed decoding of the FHIR R4B terminology-operation responses.
 //!
 //! The platform's terminology provider owns the HTTP client, the routing, and

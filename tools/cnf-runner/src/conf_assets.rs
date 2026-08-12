@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Deterministic conformance SVG assets rendered from committed artifacts.
 //!
 //! The inputs are the committed party artifacts (`verdicts.json` +

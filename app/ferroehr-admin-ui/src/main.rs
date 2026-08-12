@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The admin-console server binary: config → CDR client → (optional) OIDC
 //! discovery → session layer → axum router (Leptos SSR + the two OIDC
 //! routes). Wiring only — logic lives in the lib.

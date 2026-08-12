@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Native `utoipa-axum` routing for the **Admin API group** — the two released
 //! ITS-REST admin operations plus three of our own extension routes.
 //!

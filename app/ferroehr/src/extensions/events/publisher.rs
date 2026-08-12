@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The background drainer + retention pruner + [`EventsHandle`].
 //!
 //! **No openEHR spec governs this — our own design/extension.** Active only

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Occurrences / cardinality reconciliation for the 1.4→2 conversion.
 //!
 //! Two rewrites, applied in this order by [`crate::adl14::convert`]: the 1.4

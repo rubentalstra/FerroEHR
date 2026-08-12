@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Builder-capture tests for the leaf content constraints the `WebTemplate`
 //! validation walk enforces at commit time, exercised end-to-end from the
 //! vendored CNF content-constraint OPTs (`tools/cnf-runner/artifacts/corpus/

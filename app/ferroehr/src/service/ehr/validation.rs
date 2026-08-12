@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The commit-validation choke point for every EHR-owned kind — the
 //! structural validators for `EHR_STATUS` / `EHR_ACCESS` / FOLDER, the
 //! COMPOSITION RM + terminology + template validation, the

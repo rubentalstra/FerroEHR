@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end HTTP tests for the DEFINITION stored-query store surface against a
 //! real `PostgreSQL` 18 (the shared `testkit` harness), driven through the
 //! assembled `ferroehr-rest` router (auth disabled) with `tower`'s `oneshot`.

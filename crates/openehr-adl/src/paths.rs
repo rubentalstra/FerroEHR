@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Archetype path utilities over the parsed AOM2 constraint model.
 //!
 //! Path resolution, enumeration, and existence checks against a

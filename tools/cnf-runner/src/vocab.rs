@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The closed vocabularies of the CNF 2.0 schedule.
 //!
 //! Every enum here is normative and extensible only by schedule release

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end HTTP tests for the two ADMIN **extension** groups — the SM
 //! activity report (`/admin/report/*`, `I_ADMIN_SERVICE` statistics) and the SM
 //! archive pair (`/admin/archive/*`, `I_ADMIN_ARCHIVE`) — driven through the

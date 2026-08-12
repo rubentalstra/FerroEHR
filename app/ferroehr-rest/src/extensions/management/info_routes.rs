@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `GET /management/info` — the axum handler over the platform
 //! [`BuildInfo`] model
 //! (the model lives in the platform, wire here).

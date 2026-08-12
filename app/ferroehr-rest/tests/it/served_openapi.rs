@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Structural completeness gate over the SERVED `OpenAPI` document — the only
 //! `OpenAPI` we publish (owner hard rule: serve only what we generate). The
 //! rules encode the ITS-REST conventions every declaration must document

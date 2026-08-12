@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Re-differentialisation of a converted specialised 1.4 child against its
 //! converted+flattened parent.
 //!

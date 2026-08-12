@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! HTTP dispatch for the `admin` API group, over the concrete
 //! `ferroehr::service::FerroEhrService` admin methods.
 //!

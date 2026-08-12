@@ -1,4 +1,7 @@
 // @generated-from-template templates/openehr-rm/composition/content/entry/evaluation_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
 //! Hand-written RM class invariants for `EVALUATION`.
 //!
 //! Inherited `Entry` + LOCATABLE invariants (`Is_archetype_root`,

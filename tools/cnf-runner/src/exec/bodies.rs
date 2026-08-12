@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Response-body selector evaluation.
 //!
 //! This is the executed half of the catalogue's

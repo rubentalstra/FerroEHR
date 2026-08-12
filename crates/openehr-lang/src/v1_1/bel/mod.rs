@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! openEHR **Basic Expression Language (BEL)** — a hand-written parser that
 //! produces the generated `beom` object model.
 //!

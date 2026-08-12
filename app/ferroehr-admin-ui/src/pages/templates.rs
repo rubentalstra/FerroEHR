@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `/templates` screen — the Template Manager list + OPT upload.
 //!
 //! A list of the CDR's ADL 1.4 operational templates with a client-side text

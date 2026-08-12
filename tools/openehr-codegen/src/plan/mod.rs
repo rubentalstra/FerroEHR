@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Stage 3 — PLAN. The emission-decision layer: for every analysed class,
 //! decide the Rust shape it emits as (struct / closed enum / polymorphic enum /
 //! enumeration literals / transparent newtype / skip) and the XML shape it

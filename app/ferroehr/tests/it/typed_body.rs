@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The shared fixture→typed-value door for the service-seam suites.
 //!
 //! The commit seams take typed `openehr-rm` values, while the suites author

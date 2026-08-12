@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `/ehrs/{ehr_id}/compositions/{uid}` screen — the composition viewer.
 //!
 //! A view of one COMPOSITION: a format toggle (canonical JSON/XML and the

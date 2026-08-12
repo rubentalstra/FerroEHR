@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `ETag` expectations use the weak form (`W/"…"`): the ITS-REST overview
 //! §"`ETag` and Last-Modified" makes the `ETag` weak-type ("should have a
 //! weakness indicator `W/` prefix"); the bare quoted form is deprecated.

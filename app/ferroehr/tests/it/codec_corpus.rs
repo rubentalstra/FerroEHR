@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! the node codec round-trips the entire canonical-JSON corpus
 //! losslessly (in memory — the DB round-trip lives in `persistence.rs`).
 

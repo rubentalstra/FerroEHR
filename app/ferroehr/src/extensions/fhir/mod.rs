@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The FHIR connector: mapping store + inbound ingest + read façade + outbound
 //! reverse-map.
 //!

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Console authentication: the login/logout/session server functions.
 //!
 //! Server functions are a public HTTP API — each one enforces auth itself

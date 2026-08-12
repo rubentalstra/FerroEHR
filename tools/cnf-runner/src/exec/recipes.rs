@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The registered recipe set.
 //!
 //! This is the ONLY hand-written generation glue in the

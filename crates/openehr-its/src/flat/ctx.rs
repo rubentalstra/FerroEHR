@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! The `ctx/` context vocabulary + defaulting.
 //!
 //! ITS-REST `simplified_formats/master06-context_information.adoc` (and the

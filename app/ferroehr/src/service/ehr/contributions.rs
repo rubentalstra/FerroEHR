@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `I_EHR_CONTRIBUTION` (`i_ehr_contribution.adoc`) — the explicit
 //! CONTRIBUTION-level surface: has/get/commit/list/count, plus the ITS-REST
 //! raw-wire commit seam (`create_ehr_contribution`).

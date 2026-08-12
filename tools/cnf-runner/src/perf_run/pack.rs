@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The journey template pack.
 //!
 //! Carries the CKM OPTs + committed example skeletons the journey stages

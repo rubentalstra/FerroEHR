@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Pins the ODIN specification's own example documents against the reader:
 //! the ch.2 overview exemplar of
 //! `docs/specs/openehr/LANG/docs/odin/master02-overview.adoc` as its valid +

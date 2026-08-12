@@ -453,6 +453,11 @@ jobs:
           yq --version
       - name: The declarations, the texts and the chapter agree
         run: bash scripts/checks/licensing-declarations.sh
+      # `reuse lint` is satisfied by the glob declaration alone, so it cannot
+      # see a first-party file losing the header that makes its licensing
+      # travel. This is the check that can.
+      - name: First-party Rust source carries its SPDX header
+        run: bash scripts/checks/spdx-headers.sh
 
   # The compose hardening properties (cap_drop ALL, no-new-privileges, no
   # privileged, no seccomp=unconfined, loopback-only publishing). This gate

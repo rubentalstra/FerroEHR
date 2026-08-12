@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The connection-level bounds, driven over a real socket.
 //!
 //! These have to be tested at the transport, not through a `Router`, because

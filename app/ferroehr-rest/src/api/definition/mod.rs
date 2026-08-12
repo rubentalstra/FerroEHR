@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The ITS-REST **definition API** (Release-1.1.0, STABLE).
 //!
 //! The surface is generated into `openehr_its::rest` from the

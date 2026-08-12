@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end exercise of the performance measurement machinery against a
 //! local stub SUT: the open-loop driver seeds the scale corpus + the
 //! standing ward through the API surface, drives the case's journey

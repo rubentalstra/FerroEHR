@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Journey expansion into the planned arrival schedule: deterministic,
 //! open-loop, coordinated-omission-free.
 //!

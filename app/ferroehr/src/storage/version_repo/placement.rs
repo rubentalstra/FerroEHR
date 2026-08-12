@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The version-tree placement reads: the next storage commit ordinal, the
 //! transaction timestamp, and the next branch number at a fork point.
 //!

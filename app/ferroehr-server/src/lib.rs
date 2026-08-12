@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `FerroEHR` server wiring — the binary's testable library half.
 //!
 //! Boots the `ferroehr-rest` ITS-REST server backed by the DB-backed

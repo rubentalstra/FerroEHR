@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end HTTP tests for the SMART App Launch surface (group-15 audit,
 //! #391): the discovery document's absolute `baseUrl`s (master04 §Services:
 //! "Absolute URL to the root of the API `*(required)*`"), the honest

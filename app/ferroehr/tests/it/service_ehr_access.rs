@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `EHR_ACCESS` scheme-settings round trip end-to-end against a real
 //! `PostgreSQL` 18 (shared testkit harness).
 //!

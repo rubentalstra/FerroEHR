@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Storage spike: measure the candidate greenfield schema on
 //! a real `PostgreSQL` 18 before committing to migrations.
 //!

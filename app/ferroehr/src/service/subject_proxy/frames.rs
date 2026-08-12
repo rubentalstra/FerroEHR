@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `I_DATA_BINDING` implementation (`i_data_binding.adoc`): execute a retrieve
 //! frame for a subject, with the primary→fallback pipeline of
 //! `data_frame.adoc` ("Alternative method to use if primary retrieve method

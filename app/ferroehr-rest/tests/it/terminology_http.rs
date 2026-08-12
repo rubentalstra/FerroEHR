@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end HTTP tests for the terminology extension API group (SM
 //! `I_TERMINOLOGY_SERVICE`): the config gate
 //! (`AppConfig::terminology_api_enabled`), the `200`/`404`/`400` wire outcomes

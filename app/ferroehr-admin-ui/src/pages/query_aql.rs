@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `/queries/aql` screen: the raw AQL editor.
 //!
 //! A plain-text AQL editor with BFF-local validation, an optional JSON

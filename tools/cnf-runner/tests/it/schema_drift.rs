@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The committed schema set (`schemas/*.schema.json`) is the published norm;
 //! it must stay byte-identical to what the code emits (regenerate with
 //! `cargo run -p cnf-runner -- emit-schemas --out tools/cnf-runner/schemas`).

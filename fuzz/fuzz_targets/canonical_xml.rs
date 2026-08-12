@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The canonical-XML reader: the same REST writes as JSON, reached by content
 //! negotiation, plus the AOM2 archetype-XML doors the definition surface reads.
 //!

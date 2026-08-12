@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `rules` section (`ADL2/master07.11`) and the BEL expression printers
 //! that also serve slot include/exclude assertions (`master04.6`). Expressions
 //! are rendered with full parenthesization so they re-parse to the identical

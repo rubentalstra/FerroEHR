@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! REST-adapter configuration types.
 //!
 //! No openEHR spec governs configuration mechanics — our own design. There is **no loader here**: the whole

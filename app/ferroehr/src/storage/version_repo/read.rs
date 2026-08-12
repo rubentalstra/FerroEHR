@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The full version reads.
 //!
 //! One `vo_version`⋈`audit` statement (attestations folded in as a LATERAL

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! The `P_BMM_SCHEMA` → **v3** (`org.openehr.lang.bmm3`) `BMM_MODEL` transform.
 //!
 //! The sibling of [`crate::v1_1::bmm_persistence::create_model`] against the other BMM

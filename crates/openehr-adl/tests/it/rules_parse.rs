@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Structure tests for the AOM rules / slot-assertion composition
 //! (`openehr_adl::rules`). Deep-structure assertions hand-derived from the
 //! `AOM2` master05 / `master04.3` shapes.

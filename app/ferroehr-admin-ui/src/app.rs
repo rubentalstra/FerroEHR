@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The root Leptos application: the HTML document shell, the theme provider,
 //! and the route tree.
 //!

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The service-side realization of the versioning commit environment.
 //!
 //! The CONTRIBUTION commit orchestration

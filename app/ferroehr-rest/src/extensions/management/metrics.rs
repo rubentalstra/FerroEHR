@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `GET /management/prometheus` and `GET /management/metrics[/{name}]`.
 //!
 //! `prometheus` renders the exposition text scraped by Prometheus.

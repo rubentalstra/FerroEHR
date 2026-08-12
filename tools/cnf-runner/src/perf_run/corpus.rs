@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The seeded corpus for measured runs.
 //!
 //! It is the `scale_ladder` volume (N EHRs × ~100 committed

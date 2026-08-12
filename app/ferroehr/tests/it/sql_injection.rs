@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Injection evidence for the AQL→SQL engine: identifiers, jsonpath, `ORDER BY`.
 //!
 //! The engine builds SQL dynamically from attacker-supplied query text, so the

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Ad-hoc AQL execution — `GET`/`POST /query/aql` (`query_execute_adhoc_query`
 //! + `_body`).
 //!

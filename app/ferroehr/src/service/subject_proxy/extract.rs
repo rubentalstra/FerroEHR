@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `frame_path` extraction: turn a `DATA_FRAME_SAMPLE` into a typed
 //! `VARIABLE_VALUE` (`subject_variable.adoc` `value()`: "Extract the value
 //! from the source retrieve frame, reprocessing if necessary to obtain

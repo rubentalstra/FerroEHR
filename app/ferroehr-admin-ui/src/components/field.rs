@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The shared form-control classes: ONE styled definition for text inputs,
 //! selects, and textareas (previously hand-duplicated per screen).
 //!

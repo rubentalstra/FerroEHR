@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The ODIN bridge — one home for reading an `openehr_lang::v1_1::odin` value tree
 //! into AOM/BASE types, plus the `master03` lexical decoding both ODIN and cADL
 //! share.

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `openehr-version` / `openehr-audit-details` committal request headers.
 //!
 //! ITS-REST overview §"openehr-version and openehr-audit-details"

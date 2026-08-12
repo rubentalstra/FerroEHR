@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The loaded artifact set — one root directory laid out per the artifact
 //! families:
 //!

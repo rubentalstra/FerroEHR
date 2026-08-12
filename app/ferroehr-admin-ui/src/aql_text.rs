@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Pure readings of AQL **text** the query screens need before they can run a
 //! query.
 //!

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The console's OIDC authorization-code login (with PKCE): two plain axum
 //! routes (`/auth/oidc/login`, `/auth/oidc/callback`) on the BFF.
 //!

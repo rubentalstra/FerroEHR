@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Regression: generated examples must be RM-valid — an `ELEMENT.value`
 //! carries a `DATA_VALUE`, never a structure (RM `data_structures`
 //! `ELEMENT.value: DATA_VALUE [0..1]`). The CKM `CCTA report` OPT (vendored

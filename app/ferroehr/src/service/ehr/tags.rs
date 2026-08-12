@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `ITEM_TAG` CRUD on the `item_tag` table — a RELEASED ITS-REST 1.1.0 surface
 //! (23 dedicated operations plus the two wrapper headers, added by SPECITS-77;
 //! ITS-REST overview `Amendment_record.md` §Release-1.1.0). Server support for

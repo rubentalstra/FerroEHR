@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The SM **System Log** component at the wire — the IHE ATNA audit
 //! middleware and the operation → audit-event classification.
 //!

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The card surface classes: the design-system replacement for widget-kit
 //! cards in static chrome.
 //!

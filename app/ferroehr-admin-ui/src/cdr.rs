@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The BFF's CDR client.
 //!
 //! One `reqwest` client, the ITS-REST base path, credential injection, strict

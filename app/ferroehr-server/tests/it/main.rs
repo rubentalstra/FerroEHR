@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Integration tests for `ferroehr-server` — the wiring binary's testable
 //! library half (`src/lib.rs` behind a thin `main.rs`, the Rust Book ch12.3
 //! shape, because a bin-only crate cannot be imported from `tests/`).

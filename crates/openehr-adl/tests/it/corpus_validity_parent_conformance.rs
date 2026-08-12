@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Phase-2 specialisation validation corpus harness.
 //!
 //! Walks the `validity/specialisation/**` corpus (plus the four slot-

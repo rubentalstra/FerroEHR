@@ -93,16 +93,26 @@ So licensing is **also** published in the machine-readable form the
   declares, by glob, which files are offered under which — including the two
   positions above, represented rather than flattened.
 
-It is expressed by glob rather than by per-file headers for the vendored trees
-for a reason that is not convenience: **no vendored file may be edited**, so a
-header sweep over third-party material was never available. `REUSE.toml` is the
-mechanism that makes the declaration complete without touching one.
+- **Every first-party Rust source file carries the header inside itself** — an
+  `SPDX-FileCopyrightText` line and an `SPDX-License-Identifier` line stating
+  the same position `REUSE.toml` declares for it, so a file copied out of this
+  repository takes its licensing along. The files of the six published spec
+  crates state `MIT AND Apache-2.0`, the rest state `MIT`.
 
-Both halves are gated in CI: `reuse lint` must report the project compliant,
-and a second check fails the build if the set of licenses declared in
-`REUSE.toml`, the texts present in `LICENSES/`, and the licenses named on this
-page ever stop agreeing. This page cannot drift away from the declarations
-silently.
+The vendored trees are glob-declared rather than headered for a reason that is
+not convenience: **no vendored file may be edited**, so a header sweep over
+third-party material was never available. `REUSE.toml` is the mechanism that
+makes the declaration complete without touching one. The generated spec-crate
+sources are the mirror case — a hand-written header there would be erased by
+the next code-generation run, so they receive theirs from the code generator,
+which stamps every file it writes.
+
+All of it is gated in CI: `reuse lint` must report the project compliant, a
+second check fails the build if the set of licenses declared in `REUSE.toml`,
+the texts present in `LICENSES/`, and the licenses named on this page ever stop
+agreeing, and a third fails if any first-party Rust file loses its header or
+states a license other than the one declared for its path. This page cannot
+drift away from the declarations silently.
 
 The CC-BY-SA specification text and clinical models are redistributed
 **verbatim, with attribution** — they are reference and test material, not

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The cold archival storage tier: the physical move, its reverse, and the
 //! marker-gated read fallback.
 //!

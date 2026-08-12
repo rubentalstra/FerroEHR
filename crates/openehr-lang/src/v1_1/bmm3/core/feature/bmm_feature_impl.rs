@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written spec functions of the BMM **v3** class-feature family
 //! (`BMM_FORMAL_ELEMENT` / `BMM_FEATURE` / `BMM_ROUTINE` and their leaves) — and
 //! the home of that family's invariant boundary.

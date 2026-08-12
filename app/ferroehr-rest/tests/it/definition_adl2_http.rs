@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end HTTP tests for the ADL2 template wire (SM-2, `I_DEFINITION_ADL2`):
 //! `POST /definition/template/adl2` (text/plain source upload, `Location` +
 //! `Prefer` body, `422`-with-rule-codes on an invalid source),

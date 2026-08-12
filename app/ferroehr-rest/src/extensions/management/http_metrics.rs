@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The per-request HTTP observability middleware.
 //!
 //! Two `axum` middlewares, applied to the API router beside the ATNA audit

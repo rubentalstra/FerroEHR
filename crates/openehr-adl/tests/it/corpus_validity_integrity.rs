@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Phase-1 validation corpus harness.
 //!
 //! Walks the vendored ADL2 conformance corpus (`tests/corpus/adl2-reference/`)

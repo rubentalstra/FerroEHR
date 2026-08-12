@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Native `utoipa-axum` routing for the Query API group (ad-hoc + stored AQL).
 //!
 //! Operation semantics are the ITS-REST Query API (`docs/specs/openehr/ITS-REST`;

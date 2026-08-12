@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Emitter invariants, tested as properties over the **real** pipeline on the
 //! **real** vendored BMM inputs (design doc §1). Each test drives
 //! `openehr_codegen::testsupport`, which runs the same LOAD → ANALYZE → PLAN →

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! CONTRIBUTION reads: a contribution's own audit, the versions it affected,
 //! and per-EHR listing/counting.
 //!

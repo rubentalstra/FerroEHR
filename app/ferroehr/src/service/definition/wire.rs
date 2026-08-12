@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The ITS-REST wire-shaped DEFINITION extension methods: the rich shapes the
 //! `DEFINITION` API group returns (template summaries, the example
 //! COMPOSITION, `StoredQuery` descriptors, glob filters) that the SM

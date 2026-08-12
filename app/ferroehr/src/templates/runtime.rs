@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Derived-runtime resolution: the cached [`WebTemplate`] and example
 //! COMPOSITION surfaces, thin over `openehr_its::flat`.
 //!

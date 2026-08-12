@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Archetype / template artefact validation (the ingestion surface).
 //!
 //! The platform crate carries **three distinct validation surfaces**; this

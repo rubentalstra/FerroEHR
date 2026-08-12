@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Lowering [`crate::builder::model::BuilderQuery`] into the `openehr_query`
 //! AST.
 //!

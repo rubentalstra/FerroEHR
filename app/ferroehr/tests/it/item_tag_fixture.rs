@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `UPDATE_ITEM_TAG` builders shared by the tag-facing suites.
 //!
 //! The tag write seams take the GENERATED ITS-REST DTO

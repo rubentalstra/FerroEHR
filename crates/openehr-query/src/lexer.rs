@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! AQL lexer — a `logos` tokenizer transcribed from the authoritative
 //! `AqlLexer.g4` (vendored at `vendor/grammar/`).
 //!

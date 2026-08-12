@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Shared E2E journey harness: env-gated `WebDriver` setup (skip-with-reason
 //! when the stack isn't up), step screenshots, explicit waits, and the
 //! standing browser-console gate — every journey fails on any console

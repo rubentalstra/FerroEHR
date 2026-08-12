@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The FHIR-connector **reverse** transform: canonical COMPOSITION → FHIR
 //! resource (the read façade + the outbound emitter share it).
 //!

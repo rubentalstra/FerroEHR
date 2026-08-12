@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Access control for the ITS-REST surface.
 //!
 //! **Authentication** (who the caller is) and **authorization** (what they

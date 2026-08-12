@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The empty-directory create flow.
 //!
 //! For an EHR the CDR has no directory for (a `404`), commit an empty root

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `I_PARTY` CRUD (`i_party.adoc`) + the `I_DEMOGRAPHIC_SERVICE.create_party`
 //! factory (`i_demographic_service.adoc`) — the party create / read / update /
 //! delete domain logic, built on the shared [`crate::versioning`]

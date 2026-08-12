@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Row I/O for `item_tag` — the `ITEM_TAG` store shared by the EHR-scoped tag
 //! surface (`ehr_id = <uuid>`) and the demographic (ehr-less,
 //! `ehr_id IS NULL`) one.

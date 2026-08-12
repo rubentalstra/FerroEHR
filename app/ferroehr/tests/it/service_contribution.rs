@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end tests for ATTESTATION support in the CONTRIBUTION path
 //! (RM common `master06-change_control_package.adoc` §Change Control /
 //! §Attestation; ITS-REST `UpdateVersion.yaml` + `UpdateAttestation.yaml`)

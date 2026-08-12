@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Query execution requests and outcomes.
 //!
 //! The realization of `ADHOC_QUERY_EXECUTE_SPEC` /

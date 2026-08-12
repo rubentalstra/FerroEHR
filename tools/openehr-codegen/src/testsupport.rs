@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! A curated public surface over the pipeline for the emitter-invariant tests
 //! (`tests/emitter_invariants.rs`).
 //!

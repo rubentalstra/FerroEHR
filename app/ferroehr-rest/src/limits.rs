@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Per-route-family request-body limits.
 //!
 //! The `tower-http` `RequestBodyLimitLayer` on the outer stack is a single

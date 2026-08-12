@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end HTTP tests for the template-example endpoint
 //! (`GET /definition/template/adl1.4/{template_id}/example`, a Release-1.1.0
 //! operation — ITS-REST overview `Amendment_record` §Release-1.1.0, SPECITS-58).

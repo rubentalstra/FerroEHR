@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Public-API battery for the `openehr_lang::v1_1::odin` reader over the 38 vendored
 //! BMM schema fixtures under `tests/vendor/bmm/`.
 //!

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `EHR` resource + EHR-level item tags.
 //!
 //! Spec: `docs/specs/openehr/ITS-REST/specifications/docs/ehr/` (EHR API) +

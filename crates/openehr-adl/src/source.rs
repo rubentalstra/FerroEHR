@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The outer ADL artefact parser: sections, kind, meta, spans.
 //!
 //! Transcribed from the vendored `adl2.g4` (at

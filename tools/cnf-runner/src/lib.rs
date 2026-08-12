@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 #![recursion_limit = "256"]
 //! CNF 2.0 reference runner — the typed schedule-artifact model, validator,
 //! and JSON-Schema emission for the openEHR conformance framework.

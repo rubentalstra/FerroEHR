@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The metrics system: ONE `OpenTelemetry` `MeterProvider` feeding both
 //! surfaces.
 //!

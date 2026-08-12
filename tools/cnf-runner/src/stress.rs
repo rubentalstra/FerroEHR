@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The step-load STRESS instrument.
 //!
 //! Short, intense load steps at

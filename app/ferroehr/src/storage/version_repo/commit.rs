@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The local commit write path.
 //!
 //! Covers the `audit` + `contribution` inserts, the folded one-statement

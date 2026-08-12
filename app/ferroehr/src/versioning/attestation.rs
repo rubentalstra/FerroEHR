@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Attestation: attaching an `ATTESTATION` to an `ORIGINAL_VERSION` at or after
 //! committal.
 //!

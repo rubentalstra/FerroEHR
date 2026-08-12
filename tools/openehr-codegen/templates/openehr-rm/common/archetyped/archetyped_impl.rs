@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written RM class invariant for `ARCHETYPED`.
 //!
 //! `Rm_version_valid` (`not rm_version.is_empty`) —

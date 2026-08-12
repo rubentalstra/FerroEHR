@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The archetype **specialisation-lineage** index the AQL planner folds into an
 //! `archetype_node_id` predicate.
 //!

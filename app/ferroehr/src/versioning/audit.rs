@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `AUDIT_DETAILS` — the commit provenance every version and contribution
 //! carries, and the `audit_change_type` terminology codes it is
 //! coded from.

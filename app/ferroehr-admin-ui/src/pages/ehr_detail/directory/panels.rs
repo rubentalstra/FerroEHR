@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The directory tab's supporting panels.
 //!
 //! The toolbar (history / time / path toggles + delete), the version-history

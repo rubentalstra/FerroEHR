@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The one admin-console e2e integration binary (`testing.md` §Where tests
 //! live): every journey battery is a module here; the shared
 //! browser/router/DB fixture lives in `common`.

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The published vocabulary artifacts (`vocab/outcomes.yaml`,
 //! `vocab/selectors.yaml`).
 //!

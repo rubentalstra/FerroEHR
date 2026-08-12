@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Read-time verification. We do not persist a signature's provenance (the
 //! schema stores only `signature text`), so `verify` classifies by
 //! **format**:

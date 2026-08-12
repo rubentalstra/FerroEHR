@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Shared application state.
 //!
 //! [`AppState`] is the router state every group dispatcher in [`crate::api`]

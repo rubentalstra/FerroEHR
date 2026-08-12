@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! The **typed dispatch tier** of the RM class-invariant check (hand-written).
 //!
 //! This is the `_type` → concrete-RM-type table that deserializes a

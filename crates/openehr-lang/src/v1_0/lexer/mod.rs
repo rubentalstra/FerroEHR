@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! The LANG 1.0.0 lexical layer: the shared `logos` token superset read under
 //! this generation's ONE language, ODIN.
 //!

@@ -1,4 +1,7 @@
 // @generated-from-template templates/openehr-rm/data_types/quantity/dv_amount_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
 //! Hand-written `DV_AMOUNT` spec behaviour, shared by its descendants.
 //!
 //! `DV_AMOUNT` is abstract, so the generated `DvAmount` is a subtype enum and

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The ADL 1.4 phase-1 validation subset
 //! ([`openehr_adl::validate::validate_source_integrity`] in
 //! [`openehr_adl::parse::Dialect::Adl14`]).

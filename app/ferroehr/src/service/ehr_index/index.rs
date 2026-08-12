@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `I_EHR_INDEX` operations (I1–I5, `i_ehr_index.adoc`) + the two
 //! design-filled reads. All direct SQL over the `ehr_index` table (no openEHR
 //! spec governs the storage — our own design; master07 governs the operation

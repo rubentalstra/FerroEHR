@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The transcript player — the runner-verification pack's part 1: replay a
 //! fixed transcript and reproduce the adjudicated verdicts.
 //!

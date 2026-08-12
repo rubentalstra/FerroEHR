@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The REST adapter's runtime configuration view.
 //!
 //! The configuration *data* lives in the platform tree

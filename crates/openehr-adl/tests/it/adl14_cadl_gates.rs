@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The ADL 1.4 cADL regression corpus (`tests/corpus/adl14-cadl/`).
 //!
 //! Sibling of `adl14-dadl/` (the dADL leaf/structure breadth tree): this one

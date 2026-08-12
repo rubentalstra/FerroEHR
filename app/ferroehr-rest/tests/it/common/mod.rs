@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Shared test fixture: the REST router over a **real** `FerroEhrService` on a
 //! **real `PostgreSQL` 18** from the shared `testkit` harness (one server,
 //! one migrated template database, one `CREATE DATABASE … TEMPLATE` clone

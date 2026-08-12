@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The AQL `TERMINOLOGY()` seam: [`FerroEhrService`] implements the
 //! [`TerminologyExpander`] trait (`crate::aql::terminology`) so the AQL
 //! semantic-analysis pass (`aql/terminology.rs::expand_matches`) can resolve

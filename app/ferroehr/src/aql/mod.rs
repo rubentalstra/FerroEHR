@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The AQL execution engine — our own typed IR over the
 //! greenfield node store.
 //!

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written AOM2 `ARCHETYPE_CONSTRAINT` spec functions.
 //!
 //! Spec source (vendored):

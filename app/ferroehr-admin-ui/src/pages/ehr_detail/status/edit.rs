@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `EHR_STATUS` edit form: the two capability toggles, the `other_details`
 //! JSON editor, and the pure merge that turns them into the body
 //! `PUT /ehr/{ehr_id}/ehr_status` sends.

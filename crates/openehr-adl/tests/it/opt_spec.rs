@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! OPT2 acceptance harness — the master10 worked example, transcribed inline.
 //!
 //! Oracle: `docs/specs/openehr/AM/docs/ADL2/master10-templates.adoc` (the

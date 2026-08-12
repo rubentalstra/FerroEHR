@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Integration tests for `cnf-runner`, the CNF 2.0 conformance runner: the
 //! committed catalogue's artifact gates and schema-drift guards, the
 //! claim/coverage completeness gates, defect-fixture rejection, the

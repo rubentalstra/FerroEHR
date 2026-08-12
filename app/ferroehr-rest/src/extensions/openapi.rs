@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `OpenAPI` document + Swagger UI (discoverability).
 //!
 //! No openEHR spec governs an OAS-serving endpoint; this is our own surface. The

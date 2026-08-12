@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The shared empty state: icon + explanation + the action that fills the
 //! void — data regions must never render as bare muted text.
 

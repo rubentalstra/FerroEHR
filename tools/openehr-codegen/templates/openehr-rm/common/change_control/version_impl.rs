@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written RM spec functions of `VERSION`.
 //!
 //! The surface is `canonical_form()` over an already-serialised Version value,

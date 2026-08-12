@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Protocol-adapter response envelope — the typed resource metadata from
 //! which the ITS-REST adapter derives `ETag`/`Location`/`Last-Modified`.
 //!

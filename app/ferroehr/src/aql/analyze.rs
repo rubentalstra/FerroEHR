@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Path analysis + typing against the generated RM model
 //! (`openehr_rm::v1_2::model`) — the AQL planner's oracle.
 //!

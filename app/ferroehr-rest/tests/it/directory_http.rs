@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end HTTP tests for the DIRECTORY (FOLDER) API group, driven through
 //! the assembled router over a **real** `FerroEhrService` on a real
 //! `PostgreSQL` 18 (auth disabled), via `tower::ServiceExt::oneshot` in-process

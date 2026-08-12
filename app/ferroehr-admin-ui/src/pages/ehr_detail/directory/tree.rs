@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The structured directory tree editor.
 //!
 //! A recursive, editable view of the root `FOLDER` (add / rename / delete

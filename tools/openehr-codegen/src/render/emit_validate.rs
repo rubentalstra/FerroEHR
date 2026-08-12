@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `emit-validate`: emit the **RM class-invariant cores** into `openehr-rm`
 //! (`src/validate/generated.rs`), the single source both the typed `Validate`
 //! impls (`*_impl.rs`) and the allocation-free fast path (`validate::fast`)

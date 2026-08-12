@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written RM class invariants for `FOLDER`.
 //!
 //! `FOLDER` declares NO invariants of its own in RM 1.2.0: its class table

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end ATNA audit over the real axum app.
 //!
 //! Drives the assembled router (auth + audit + dispatch) with `tower`'s

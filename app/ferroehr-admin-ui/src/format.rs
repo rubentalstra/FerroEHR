@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Representation formats the console negotiates with the CDR.
 //!
 //! The ITS-REST canonical forms plus the Simplified Formats media types (spec:

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! ADL 1.4 inline dADL domain lowering (converter front end).
 //!
 //! NOTE: no openEHR spec governs the 1.4→2 conversion algorithm — the whole

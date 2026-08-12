@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The policy-decision-point (PDP) seam: one async trait behind which the embedded [`CedarEngine`] and the
 //! [`RemotePdp`] are interchangeable.
 //!

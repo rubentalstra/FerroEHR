@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! **ITS-REST** — the openEHR REST API contract (ITS-REST 1.1.0).
 //!
 //! The transport DTOs, a server trait per API group, and a route table are

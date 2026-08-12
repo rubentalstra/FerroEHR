@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Deterministic SVG assets rendered FROM committed measurement records.
 //!
 //! The published performance visuals derive from `results.json` exactly like

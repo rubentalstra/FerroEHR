@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `validity/templates` corpus harness — VTPL + VARXR filler validation.
 //!
 //! Oracle: `docs/specs/openehr/AM/docs/AOM2/master03-archetype_package.adoc`

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Per-row OPT 1.4 XML synthesis for the *value* and *interval* content
 //! families (issue #228).
 //!

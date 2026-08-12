@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `CedarEngine` tests: the shipped
 //! example policies produce the expected golden decisions, and the Cedar engine
 //! is **behaviourally identical** to the remote PDP over a corpus of requests

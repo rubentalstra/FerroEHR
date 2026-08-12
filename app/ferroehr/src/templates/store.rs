@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `template_store` access: the operational-template repository keyed by
 //! its `template_id` on the ITS-REST `adl1.4` surface.
 //!

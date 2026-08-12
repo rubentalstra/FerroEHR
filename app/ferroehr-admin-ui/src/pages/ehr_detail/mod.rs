@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `/ehrs/{ehr_id}` screen — EHR detail: status / status history /
 //! directory / compositions / contributions tabs.
 //!

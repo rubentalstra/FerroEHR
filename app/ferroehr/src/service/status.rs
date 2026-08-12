@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The SM call-status model (`master03-common_package.adoc` §Representing
 //! Call Status; `i_status.adoc`, `call_status.adoc`, `call_status_type.adoc`
 //! + the service-specific descendants `ehr_call_status_type.adoc`,

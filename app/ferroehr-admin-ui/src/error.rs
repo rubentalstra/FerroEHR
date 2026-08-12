@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The console-wide error type, shared by both compilation targets so the UI
 //! can render domain errors (CDR status + diagnostic) instead of opaque
 //! strings.

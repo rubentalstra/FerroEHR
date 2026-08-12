@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The decision-table literal grammar and violation categories.
 //!
 //! The content chapters carry structured constraint literals in their

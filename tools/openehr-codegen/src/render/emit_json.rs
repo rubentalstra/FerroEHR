@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! JSON emitter: emits `impl serde::Serialize` + `impl serde::Deserialize` for
 //! the generated spec types (BASE / RM / AM / TERM / LANG), into each spec
 //! crate's own `src/json_serde.rs`, plus the `_type`-keyed structural dispatch

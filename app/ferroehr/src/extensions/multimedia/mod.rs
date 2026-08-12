@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `[multimedia]` config section + the feature-gated glue onto the
 //! extension crate's externalization engine.
 //!

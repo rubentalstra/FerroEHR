@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! IR → SQL lowering.
 //!
 //! Turns a typed [`QueryIr`] into one `SELECT` over the greenfield

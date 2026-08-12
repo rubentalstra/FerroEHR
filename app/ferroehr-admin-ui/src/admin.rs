@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The CDR **Admin API** surface the console consumes.
 //!
 //! The availability probe every admin affordance is gated on, plus the three

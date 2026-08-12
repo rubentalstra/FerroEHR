@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written RM spec functions for `DV_QUANTIFIED`.
 //!
 //! `DV_QUANTIFIED` is abstract, so the generated `DvQuantified` is the closed

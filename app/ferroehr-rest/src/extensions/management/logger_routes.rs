@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Axum handlers for the logger-reload surface (model:
 //! [`ferroehr::telemetry::log_reload::LogReload`]).
 

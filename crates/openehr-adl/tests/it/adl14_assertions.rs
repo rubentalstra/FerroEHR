@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The ADL 1.4 assertion sub-language operator/symbol matrix
 //! (`ADL1.4/master06-assertions.adoc`): every operator the chapter defines —
 //! textual and symbolic renderings alike — parses in a 1.4 `invariant`

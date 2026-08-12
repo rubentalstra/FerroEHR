@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! End-to-end service tests for the ADMIN dump/load API against a real
 //! `PostgreSQL` 18 (shared testkit harness).
 //!

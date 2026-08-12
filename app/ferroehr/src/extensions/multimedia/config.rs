@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `[multimedia]` section — `DV_MULTIMEDIA` externalization.
 //!
 //! **No openEHR spec governs this — our own design/extension.** A field of the

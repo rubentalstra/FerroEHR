@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Wire-string decoding for the EHR-core routes: path/header identifiers into
 //! the SM catalog's native argument types (`uuid::Uuid`,
 //! [`openehr_base::prelude::ObjectVersionId`]).

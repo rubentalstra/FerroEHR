@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The performance measurement machinery.
 //!
 //! This is the OPEN-LOOP driver that

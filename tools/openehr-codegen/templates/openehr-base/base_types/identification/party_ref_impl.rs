@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written BASE class checks for `PARTY_REF`.
 //!
 //! - `Type_validity` — a RELEASED invariant, declared by BASE base_types

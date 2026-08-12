@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The resource-telemetry sampler for measured runs.
 //!
 //! It records per-container

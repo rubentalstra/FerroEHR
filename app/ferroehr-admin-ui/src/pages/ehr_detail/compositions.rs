@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The EHR-detail Compositions tab: the AQL-driven composition list plus the
 //! "Commit composition" form.
 

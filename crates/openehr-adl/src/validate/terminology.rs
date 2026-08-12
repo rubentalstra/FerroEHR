@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Phase-1 terminology topic: the archetype's own `term_definitions`,
 //! `constraint_definitions` and `value_sets`, and the codes the definition
 //! references against them — definedness, specialisation level, code form,

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The OPT 1.4 reader: an operational template is uploaded as XML on the
 //! definition surface, and the server immediately walks the parsed template to
 //! build its Web Template.

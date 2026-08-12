@@ -1,4 +1,7 @@
 // @generated-from-template templates/openehr-rm/data_types/text/dv_text_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
 //! Hand-written RM class invariants for `DV_TEXT` / `DV_CODED_TEXT`.
 //!
 //! Spec: RM 1.2.0

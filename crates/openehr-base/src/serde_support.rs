@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! The small shared runtime the emitted canonical-JSON `serde` impls call into.
 //!
 //! Hand-written; preserved across `openehr-codegen` regeneration (it carries no

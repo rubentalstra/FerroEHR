@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `EHR_ACCESS` — the EHR-wide access-control top-level structure
 //! (arch-overview `master06-design_of_the_ehr.adoc` §`EHR_ACCESS`; RM ehr
 //! `org.openehr.rm.ehr.ehr_access.adoc`). This file owns the object's default

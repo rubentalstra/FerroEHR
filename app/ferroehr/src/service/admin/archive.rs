@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Archival storage movement (SM `I_ADMIN_ARCHIVE.archive_ehrs` /
 //! `archive_parties`).
 //!

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Syslog assembly (RFC 5424) + transports (RFC 5426 UDP / RFC 5425 TLS).
 //!
 //! The DICOM Audit Message XML is carried as the RFC 5424 `MSG` field. IHE ATNA

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Subject-proxy FHIR-frame executor configuration + client.
 //!
 //! The Subject Proxy Service exists so a caller "need not know about the

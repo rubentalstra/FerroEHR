@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Interval / multiplicity primitives for the OPT 1.4 artefact pass.
 //!
 //! The AOM occurrence / existence / cardinality invariants and the primitive

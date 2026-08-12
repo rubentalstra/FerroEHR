@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Specialisation-flattener conformance harness.
 //!
 //! Flattens each `tests/corpus/flattener/{specexamples,siblingorder}` child

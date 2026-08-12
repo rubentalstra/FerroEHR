@@ -1,4 +1,7 @@
 // @generated-from-template templates/openehr-rm/integration/generic_entry_impl.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
 //! Hand-written RM class invariants for `GENERIC_ENTRY`.
 //!
 //! Spec: RM 1.2.0 integration `master02-integration_package.adoc` +

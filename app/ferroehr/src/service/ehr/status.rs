@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `I_EHR_STATUS` (`i_ehr_status.adoc`) — the `EHR_STATUS` reads, the five
 //! discrete mutators, the versioned-object views, plus two EHR-owned commit
 //! hooks: the `is_modifiable` content-write guard and the promoted-subject

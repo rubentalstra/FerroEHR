@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The ambiguity register (`registers/ambiguities.yaml`) — every entry a
 //! real, verified spec divergence or silence with the normative handling a
 //! runner must apply.

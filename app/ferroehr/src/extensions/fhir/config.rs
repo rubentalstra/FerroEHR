@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The `[fhir]` section — the FHIR connector (inbound façade + outbound
 //! emitter).
 //!

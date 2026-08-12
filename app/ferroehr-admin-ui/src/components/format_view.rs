@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The shared read-only document viewer.
 //!
 //! A format selector row plus the document pane every screen shows a wire

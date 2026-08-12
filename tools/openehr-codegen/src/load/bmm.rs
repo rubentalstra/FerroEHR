@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! BMM object model + loader (openEHR **LANG 1.0.0**, `P_BMM` persisted form).
 //!
 //! This is `openehr-codegen`'s **internal** BMM reader — the generator's own

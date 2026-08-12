@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Shared configuration value types for the whole server configuration tree.
 //!
 //! No openEHR spec governs configuration — our own design. These two newtypes

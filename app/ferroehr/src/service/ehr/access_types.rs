@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The parsed `ferroehr.access_control.v1` scheme settings the protocol
 //! adapter's out-of-band access gate consumes.
 //!

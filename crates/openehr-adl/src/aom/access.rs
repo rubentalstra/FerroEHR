@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Field accessors over the closed AOM2 `C_OBJECT` / `C_COMPLEX_OBJECT`
 //! subtype sets.
 //!

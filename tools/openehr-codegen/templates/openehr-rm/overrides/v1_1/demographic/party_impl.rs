@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-FileCopyrightText: openEHR Foundation
+// SPDX-License-Identifier: MIT AND Apache-2.0
+
 //! Hand-written RM spec functions for `PARTY`.
 //!
 //! NOTE: this is the `v1_1` OVERRIDE — RM 1.1.0 declares `PARTY.reverse_relationships`

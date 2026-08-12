@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The emitter's **declarative decision data**: every override / mapping the
 //! generator applies, as checked-in const tables rather than logic buried in
 //! `match` arms. Each entry carries (a) its key, (b) the decision, (c) a spec

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The demographic CONTRIBUTION operations —
 //! `operations/demographic_contribution_create.yaml`,
 //! `demographic_contribution_get.yaml`. Canonical content negotiation; the

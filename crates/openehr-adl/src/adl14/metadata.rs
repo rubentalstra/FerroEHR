@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! The description / meta-data / version half of the 1.4→2 conversion.
 //!
 //! [`crate::adl14::convert`] owns the code spaces and the definition rewrite;

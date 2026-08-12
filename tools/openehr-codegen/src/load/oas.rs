@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! `OpenAPI` (OAS) reader for the REST codegen.
 //!
 //! Loads a vendored `*-codegen.openapi.yaml` bundle into a `serde_json::Value`

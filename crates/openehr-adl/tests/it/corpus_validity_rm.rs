@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! Reference-model (phase-2 RM) validation corpus harness.
 //!
 //! Exercises the reference-model checks (VCORM/VCARM/VCORMT/VCAEX/VCACA/VCAM,

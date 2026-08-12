@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: FerroEHR contributors
+// SPDX-License-Identifier: MIT
+
 //! AQL parser — a `chumsky` parser transcribed from `AqlParser.g4`, turning the
 //! [`crate::lexer`] token stream into an [`crate::ast::SelectQuery`]. No ANTLR
 //! runtime (see `.claude/rules/aql-engine.md`).
