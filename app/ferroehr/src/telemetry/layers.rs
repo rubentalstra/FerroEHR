@@ -16,7 +16,7 @@ use std::io::IsTerminal;
 use std::path::Path;
 use std::sync::Arc;
 
-use crate::telemetry::log_reload::{ApplyFilter, LogReload, ReadFilter};
+use crate::telemetry::log_reload::{ApplyFilter, FilterReloadError, LogReload, ReadFilter};
 use opentelemetry_sdk::trace::SdkTracer;
 use tracing_subscriber::layer::{Layered, SubscriberExt};
 use tracing_subscriber::util::SubscriberInitExt;
@@ -82,9 +82,10 @@ pub(super) fn init_subscriber(
             .unwrap_or_default()
     });
 
-    let apply: ApplyFilter = Arc::new(move |directives: &str| -> Result<(), String> {
-        let new_filter = EnvFilter::try_new(directives).map_err(|e| e.to_string())?;
-        reload_handle.reload(new_filter).map_err(|e| e.to_string())
+    let apply: ApplyFilter = Arc::new(move |directives: &str| -> Result<(), FilterReloadError> {
+        let new_filter = EnvFilter::try_new(directives)?;
+        reload_handle.reload(new_filter)?;
+        Ok(())
     });
 
     Ok((LogReload::new(boot_filter, read, apply), flame_flush))

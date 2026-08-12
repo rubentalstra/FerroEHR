@@ -1333,3 +1333,27 @@ fn hand_written_twins_are_templates() {
         );
     }
 }
+
+/// Reading `xsi:type` variants as CONCRETE descendants only discards no
+/// document shape.
+///
+/// A type declared `abstract` is not a legal `xsi:type` value, so it is
+/// correctly absent from a slot's dispatch enum. What has to hold alongside
+/// that is the other half: every CONCRETE type below such an abstract type is
+/// legal at the slot and must be a variant.
+///
+/// The closures are full of slots typed above an abstract type — `EXPR_ITEM`
+/// over `EXPR_OPERATOR`, `C_OBJECT` over `C_DOMAIN_TYPE`, `OBJECT_ID` over
+/// `UID_BASED_ID` — so this is a live property, not a vacuous one, and a
+/// re-vendoring that broke either half would otherwise surface as a document
+/// that silently fails to parse (#2271).
+#[test]
+fn the_concrete_only_variant_reading_loses_no_document_shape() {
+    let lost = testsupport::lost_dispatch_variants().expect("closures readable");
+    assert_eq!(
+        lost,
+        Vec::new(),
+        "the emitted xsi:type variant sets no longer cover every concrete shape a \
+         document can present (or admit an abstract type as a variant)"
+    );
+}

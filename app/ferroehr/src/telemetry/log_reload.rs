@@ -16,7 +16,22 @@ use std::sync::Arc;
 /// Reads the effective filter directives from the subscriber's reload handle.
 pub type ReadFilter = Arc<dyn Fn() -> String + Send + Sync>;
 /// Applies a new filter directive set to the subscriber's reload handle.
-pub type ApplyFilter = Arc<dyn Fn(&str) -> Result<(), String> + Send + Sync>;
+pub type ApplyFilter = Arc<dyn Fn(&str) -> Result<(), FilterReloadError> + Send + Sync>;
+
+/// Why a runtime log-filter swap did not take effect.
+///
+/// The two arms are the two distinguishable outcomes the `POST` handler must
+/// tell apart: bad directives are the caller's fault (`400`), a refused reload
+/// is the subscriber's (`503`).
+#[derive(Debug, thiserror::Error)]
+pub enum FilterReloadError {
+    /// The submitted directives are not a valid `env-filter` expression.
+    #[error("the filter directives are not valid: {0}")]
+    Directives(#[from] tracing_subscriber::filter::ParseError),
+    /// The subscriber's reload layer refused the new filter — it is gone.
+    #[error("the subscriber's reload handle refused the new filter: {0}")]
+    Handle(#[from] tracing_subscriber::reload::Error),
+}
 
 /// A type-erased handle onto the subscriber's reloadable `EnvFilter`.
 #[derive(Clone)]
@@ -58,20 +73,21 @@ impl LogReload {
         (self.read)()
     }
 
-    /// Swap the live filter. Returns an error message if `filter` does not
-    /// parse as an `EnvFilter` directive set.
+    /// Swap the live filter.
     ///
     /// # Errors
-    /// Returns the parse/apply error message.
-    pub fn set(&self, filter: &str) -> Result<(), String> {
+    /// [`FilterReloadError::Directives`] if `filter` is not a valid
+    /// `EnvFilter` directive set, [`FilterReloadError::Handle`] if the
+    /// subscriber's reload layer is gone.
+    pub fn set(&self, filter: &str) -> Result<(), FilterReloadError> {
         (self.apply)(filter)
     }
 
     /// Reset the live filter to the boot filter.
     ///
     /// # Errors
-    /// Returns the apply error message.
-    pub fn reset(&self) -> Result<(), String> {
+    /// [`FilterReloadError::Handle`] if the subscriber's reload layer is gone.
+    pub fn reset(&self) -> Result<(), FilterReloadError> {
         let boot = Arc::clone(&self.boot_filter);
         (self.apply)(&boot)
     }
@@ -92,9 +108,7 @@ mod tests {
             boot,
             Arc::new(move || read_state.lock().expect("lock").clone()),
             Arc::new(move |f: &str| {
-                if f.contains("!!bad") {
-                    return Err("parse error".to_owned());
-                }
+                tracing_subscriber::EnvFilter::try_new(f)?;
                 *apply_state.lock().expect("lock") = f.to_owned();
                 Ok(())
             }),

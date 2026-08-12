@@ -1,4 +1,3 @@
-// @generated-from-template templates/openehr-lang/position.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
 //! Source-text position arithmetic — one home for this generation's parsers.
 //!
 //! Every reader in the LANG family reports defects at a byte offset in the

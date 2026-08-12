@@ -128,7 +128,8 @@ impl FerroEhrService {
             // version, an exact OBJECT_VERSION_ID selects that version
             // (master11 §"Top-level Structure Locator").
             resolve_object_ref(object)?
-        } else if let Some(attribute) = &locator.attribute {
+        } else {
+            let attribute = &locator.attribute;
             // An attribute with no id addresses the EHR's single current object
             // of that kind (e.g. `directory`, `ehr_status`). `directory` (and a
             // bare `folders`, whose only spec-pinned member is `folders.item(1)`
@@ -168,10 +169,6 @@ impl FerroEhrService {
                 }
             };
             (vo_id, None)
-        } else {
-            return Err(ServiceError::precondition(
-                "ehr: URI locator identifies no top-level structure".to_owned(),
-            ));
         };
 
         let read = match version {

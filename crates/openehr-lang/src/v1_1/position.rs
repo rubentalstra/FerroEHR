@@ -1,9 +1,13 @@
-//! Source-text position arithmetic — one home for every LANG-family parser.
+// @generated-from-template templates/openehr-lang/position.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
+//! Source-text position arithmetic — one home for this generation's parsers.
 //!
-//! ODIN, BEL and the ADL/cADL front end all report defects at a byte offset in
-//! the source they were handed and all need to present that offset to a human
-//! as a line and column. The mapping is a property of the text, not of any one
-//! grammar, so it lives here once rather than being re-derived per parser.
+//! Every reader in the LANG family reports defects at a byte offset in the
+//! source it was handed, and needs to present that offset to a human as a line
+//! and column. Which readers a generation carries differs — Release-1.0.0
+//! defines an ODIN-only grammar set, the 1.1.0 line adds BEL and the ADL/cADL
+//! front end — but the mapping is a property of the TEXT, not of any one
+//! grammar, so it lives here once rather than being re-derived per parser or
+//! per generation.
 
 /// The 1-based line and column of a byte `offset` in `src`, counting COLUMNS
 /// IN CHARACTERS.

@@ -1,0 +1,391 @@
+# Scheduled Rust toolchain watcher (tracker issue #2278).
+#
+# The Cargo book's CI guidance asks for exactly this
+# (https://doc.rust-lang.org/cargo/guide/continuous-integration.html):
+# "CI can fail due to new toolchain versions because there are limited
+# compatibility guarantees around warnings. Consider pinning the toolchain
+# version with an automated job that creates a PR to upgrade the toolchain on
+# new releases." We already pin; this lane is the second half.
+#
+# It is a PR, never a push. The point is that a human sees the new lints — the
+# 1.96 -> 1.97.1 move introduced two pedantic lints that fail instantly under
+# -D warnings, which is fine on a dedicated PR and not fine as a surprise on
+# somebody else's.
+#
+# THE DIGEST IS RE-RESOLVED, NEVER COPIED. Bumping the `rust:X-<variant>` tag
+# while keeping the previous @sha256 pin silently keeps the OLD toolchain in
+# every container-based job — a failure that looks like success. The index
+# digest is read back from the registry for the new tag and every pin site
+# moves together, and a residual-pin check refuses to open a PR that missed one.
+#
+# THE MSRV IS A SEPARATE DATUM AND DOES NOT MOVE (docs/VERSIONS.md §MSRV bump
+# policy). This lane never writes `rust-version`; it asserts the line is
+# byte-identical after its edits. If the new toolchain makes the declared MSRV
+# unbuildable, ci.yml's `msrv` job (`cargo hack check --rust-version`) fails on
+# this PR — loudly, and without the MSRV having been moved to hide it.
+#
+# PREREQUISITE — the TOOLCHAIN_BUMP_TOKEN secret. Two properties of
+# GITHUB_TOKEN make it insufficient here, both documented and neither
+# work-aroundable: it has no `workflows` permission, so a ref update carrying
+# .github/workflows/** is refused outright; and events it raises start no
+# workflow run, so a PR opened with it arrives with no checks — which is
+# precisely the "a human sees the new lints" property this lane exists for
+# (docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication).
+# A fine-grained PAT or GitHub App installation token with contents:write,
+# pull-requests:write and workflows:write satisfies both. Without it the lane
+# still opens a PR for every pin it CAN move, says so in the PR body, and then
+# fails the job — degraded and loud, never silently partial.
+#
+# NOTE: GitHub disables scheduled workflows after 60 days without repository
+# activity — re-enable from the Actions tab if that ever happens.
+name: Toolchain watcher
+
+on:
+  schedule:
+    # Mondays 07:43 UTC — off the hour, and clear of every other scheduled
+    # lane (fuzz 02:41, latest-deps 05:17, codeql 05:23, scorecard 05:37,
+    # spec watchers 06:17/06:47, image-scan 07:13).
+    - cron: "43 7 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Resolve the bump and print the diff without creating a branch or PR"
+        type: boolean
+        default: false
+      force_version:
+        description: "Rehearsal: bump to this exact version instead of the one discovered upstream (e.g. 1.97.0). Empty = use upstream."
+        type: string
+        default: ""
+
+permissions: {}
+
+concurrency:
+  group: toolchain-watcher
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    name: watch
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write # create the blob/tree/commit and the branch ref
+      pull-requests: write # open the bump PR
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # ── Discover ────────────────────────────────────────────────────────
+      # The release channel manifest is the official, machine-readable source
+      # of what "stable" currently is; it is what rustup itself resolves
+      # against. It is TOML, so it is read with awk + sed rather than jq.
+      - name: Discover the newest stable Rust release
+        id: discover
+        env:
+          FORCE_VERSION: ${{ inputs.force_version }}
+        run: |
+          set -euo pipefail
+
+          current=$(awk -F'"' '/^[[:space:]]*channel[[:space:]]*=/ { print $2; exit }' rust-toolchain.toml)
+          if ! printf '%s' "$current" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::rust-toolchain.toml channel is '$current', not an exact x.y.z pin. This lane only moves exact pins."
+            exit 1
+          fi
+
+          if [ -n "${FORCE_VERSION:-}" ]; then
+            latest="$FORCE_VERSION"
+            echo "rehearsal: forced target version $latest"
+          else
+            manifest=$(mktemp)
+            curl -fsSL --retry 3 --retry-delay 5 --max-time 120 \
+              https://static.rust-lang.org/dist/channel-rust-stable.toml -o "$manifest"
+            # [pkg.rust] version = "1.97.1 (<commit> <date>)" — take the first
+            # `version` inside that table and stop at the next table header, so
+            # a sibling package's version can never be picked up by mistake.
+            latest=$(awk '
+              /^\[pkg\.rust\]$/          { inside = 1; next }
+              inside && /^\[/            { exit }
+              inside && /^version[ ]*=/  { print; exit }
+            ' "$manifest" | sed -E 's/^version[ ]*=[ ]*"([0-9]+\.[0-9]+\.[0-9]+).*/\1/')
+          fi
+
+          if ! printf '%s' "$latest" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Could not read a x.y.z stable version from the release channel manifest (got '$latest'). The manifest shape may have changed."
+            exit 1
+          fi
+
+          echo "pinned=$current  upstream-stable=$latest"
+          echo "old_version=$current" >> "$GITHUB_OUTPUT"
+          echo "new_version=$latest" >> "$GITHUB_OUTPUT"
+
+          if [ "$current" = "$latest" ]; then
+            echo "bump=0" >> "$GITHUB_OUTPUT"
+            echo "::notice::Toolchain pin $current is the newest stable release. Nothing to do."
+          else
+            echo "bump=1" >> "$GITHUB_OUTPUT"
+            echo "::notice::New stable Rust $latest (pinned: $current)."
+          fi
+
+      # ── Re-resolve the base-image digest ────────────────────────────────
+      # The image VARIANT is read out of docker/Dockerfile rather than spelled
+      # here, so a future base change (trixie -> whatever) is followed
+      # automatically instead of silently pinning the wrong flavour.
+      - name: Re-resolve the base-image digest for the new tag
+        id: image
+        if: steps.discover.outputs.bump == '1'
+        env:
+          NEW_VERSION: ${{ steps.discover.outputs.new_version }}
+        run: |
+          set -euo pipefail
+
+          variant=$(sed -nE 's/^FROM rust:[^-]*-([A-Za-z0-9._-]+)@sha256:[0-9a-f]{64}.*/\1/p' docker/Dockerfile | head -1)
+          if [ -z "$variant" ]; then
+            echo "::error::No digest-pinned 'FROM rust:...-<variant>@sha256:...' line in docker/Dockerfile. The base-image shape changed; this lane needs updating."
+            exit 1
+          fi
+
+          image="rust:${NEW_VERSION}-${variant}"
+          echo "resolving $image"
+          if ! inspect=$(docker buildx imagetools inspect "$image" 2>&1); then
+            echo "$inspect"
+            echo "::error::$image is not published yet. The toolchain released but the official image has not landed; this lane will pick it up on the next run rather than pin a stale digest."
+            exit 1
+          fi
+          digest=$(printf '%s\n' "$inspect" | awk '$1 == "Digest:" { print $2; exit }')
+          if ! printf '%s' "$digest" | grep -qE '^sha256:[0-9a-f]{64}$'; then
+            echo "::error::Could not read an index digest for $image (got '$digest')."
+            exit 1
+          fi
+
+          echo "variant=$variant" >> "$GITHUB_OUTPUT"
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          echo "$image -> $digest"
+
+      # ── Move every pin ──────────────────────────────────────────────────
+      - name: Move every toolchain pin
+        id: edit
+        if: steps.discover.outputs.bump == '1'
+        env:
+          OLD_VERSION: ${{ steps.discover.outputs.old_version }}
+          NEW_VERSION: ${{ steps.discover.outputs.new_version }}
+          VARIANT: ${{ steps.image.outputs.variant }}
+          NEW_DIGEST: ${{ steps.image.outputs.digest }}
+        run: |
+          set -euo pipefail
+
+          # The MSRV line, captured before anything is written, so the
+          # "does not move the MSRV" property is asserted rather than assumed.
+          msrv_before=$(grep -E '^rust-version[[:space:]]*=' Cargo.toml)
+
+          old_re=$(printf '%s' "$OLD_VERSION" | sed 's/\./\\./g')
+          new_minor=${NEW_VERSION%.*}
+
+          # 1. The channel pin itself.
+          sed -i -E "s|^([[:space:]]*channel[[:space:]]*=[[:space:]]*\").*(\")|\1${NEW_VERSION}\2|" rust-toolchain.toml
+
+          # 2. The two Dockerfiles: the build arg, the digest-pinned FROM, and
+          #    the prose that names the same tag.
+          for f in docker/Dockerfile docker/admin-ui/Dockerfile; do
+            sed -i -E "s|^ARG RUST_VERSION=.*|ARG RUST_VERSION=${NEW_VERSION}|" "$f"
+            sed -i -E "s|^(FROM rust:[^@]*@)sha256:[0-9a-f]{64}|\1${NEW_DIGEST}|" "$f"
+            sed -i -E "s|rust:${old_re}-|rust:${NEW_VERSION}-|g" "$f"
+          done
+
+          # 3. The workflow `container:` images and the cache keys that carry
+          #    the toolchain version. A blanket replace of the exact old
+          #    version inside these two files is deliberate: it also catches
+          #    cache keys added since this lane was written, which a list of
+          #    known line numbers would silently miss.
+          for f in .github/workflows/ci.yml .github/workflows/containers.yml; do
+            sed -i -E "s|(rust:[^@[:space:]]*@)sha256:[0-9a-f]{64}|\1${NEW_DIGEST}|g" "$f"
+            sed -i -E "s|${old_re}|${NEW_VERSION}|g" "$f"
+          done
+
+          # 4. The prose pins. Anchored substitutions only — a loose replace in
+          #    Cargo.toml could reach a dependency version.
+          sed -i -E "s#^\| Rust toolchain \|.*\|#| Rust toolchain | stable ${new_minor} (${NEW_VERSION}) |#" docs/VERSIONS.md
+          sed -i -E "s|^# Toolchain: Rust stable [0-9]+\.[0-9]+\.[0-9]+,|# Toolchain: Rust stable ${NEW_VERSION},|" Cargo.toml
+          sed -i -E "s|uses a [0-9]+\.[0-9]+ feature|uses a ${new_minor} feature|" Cargo.toml
+
+          # 5. The changelog entry, inserted into the existing [Unreleased]
+          #    '### Changed' subsection when there is one — a second '### Changed'
+          #    in the same release section is refused by
+          #    scripts/checks/changelog-structure.sh.
+          entry="- **The Rust toolchain moves to ${NEW_VERSION}.** The pinned channel, both container base images (digest re-resolved) and the CI job containers move together; the MSRV is unchanged."
+          awk -v entry="$entry" '
+            state == 0 && /^## \[Unreleased\]/            { print; state = 1; next }
+            state == 1 && /^### Changed[[:space:]]*$/     { print; print ""; print entry; state = 2; next }
+            state == 1 && /^## \[/                        { print "### Changed"; print ""; print entry; print ""; print; state = 2; next }
+                                                          { print }
+            END { if (state == 1) { print "### Changed"; print ""; print entry } }
+          ' CHANGELOG.md > CHANGELOG.md.new
+          mv CHANGELOG.md.new CHANGELOG.md
+
+          # ── The properties that make this safe to merge ────────────────────
+
+          msrv_after=$(grep -E '^rust-version[[:space:]]*=' Cargo.toml)
+          if [ "$msrv_before" != "$msrv_after" ]; then
+            echo "::error::The MSRV line changed ('$msrv_before' -> '$msrv_after'). It is a separate datum with its own policy and this lane must never move it."
+            exit 1
+          fi
+
+          # No pin left behind. A residual old version in any of these files is
+          # exactly the half-bump this lane exists to prevent, so it fails here
+          # rather than opening a PR that looks complete.
+          residual=$(grep -Fn "$OLD_VERSION" \
+            rust-toolchain.toml docker/Dockerfile docker/admin-ui/Dockerfile \
+            .github/workflows/ci.yml .github/workflows/containers.yml || true)
+          if [ -n "$residual" ]; then
+            echo "$residual"
+            echo "::error::A pin still names $OLD_VERSION after the rewrite. A new pin site appeared that this lane does not know about — add it above."
+            exit 1
+          fi
+
+          # And every digest-pinned rust image now carries the RE-RESOLVED
+          # digest. Stated as "none may differ" rather than "N must match", so
+          # a pin site added later is covered without editing this check.
+          pinned=$(grep -nE 'rust:[^@[:space:]]*@sha256:[0-9a-f]{64}' \
+            docker/Dockerfile docker/admin-ui/Dockerfile \
+            .github/workflows/ci.yml .github/workflows/containers.yml || true)
+          stale=$(printf '%s\n' "$pinned" | grep -v '^$' | grep -Fv "$NEW_DIGEST" || true)
+          if [ -n "$stale" ]; then
+            echo "$stale"
+            echo "::error::A digest-pinned rust image still carries the previous digest. Bumping the tag while keeping the old digest silently keeps the old toolchain — refusing to open a partial bump."
+            exit 1
+          fi
+          n_pinned=$(printf '%s\n' "$pinned" | awk 'NF { n++ } END { print n + 0 }')
+          echo "digest-pinned rust references, all re-resolved: $n_pinned"
+          if [ "$n_pinned" -lt 1 ]; then
+            echo "::error::No digest-pinned rust image was found at all. The base-image shape changed; this lane needs updating."
+            exit 1
+          fi
+
+          if ! git diff --quiet; then
+            git diff --name-only | tee changed-files.txt
+            echo "changed=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::The version differs but no file changed. The pin sites moved; this lane needs updating."
+            exit 1
+          fi
+
+          {
+            echo "### Rust ${OLD_VERSION} -> ${NEW_VERSION}"
+            echo
+            echo "Base image: \`rust:${NEW_VERSION}-${VARIANT}\` at \`${NEW_DIGEST}\`"
+            echo
+            echo '```diff'
+            git diff
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # ── Open the PR ─────────────────────────────────────────────────────
+      # The commit is created through the Git Data REST API, never local git
+      # plumbing: API commits made with a repository token are signed by GitHub
+      # and show Verified (owner hard rule 2026-08-01 — CI pushes only verified
+      # commits; docs.github.com/en/rest/git/commits, "Signature verification").
+      # The mechanism is the same one ci.yml uses for the coverage badge; the
+      # difference is that this one carries a parent and a base tree, because it
+      # lands on a real branch rather than an orphan ref.
+      - name: Open the toolchain bump PR
+        if: steps.edit.outputs.changed == '1' && inputs.dry_run != true
+        env:
+          # A fine-grained PAT or App token when one is configured, the
+          # workflow token otherwise. Two things need the former: GITHUB_TOKEN
+          # cannot write .github/workflows/** (it has no `workflows`
+          # permission), and events it raises do not start workflow runs — so a
+          # PR opened with it arrives with no checks, which defeats the purpose
+          # of seeing the new lints before they land.
+          GH_TOKEN: ${{ secrets.TOOLCHAIN_BUMP_TOKEN || github.token }}
+          HAVE_TOKEN: ${{ secrets.TOOLCHAIN_BUMP_TOKEN != '' && '1' || '0' }}
+          REPO: ${{ github.repository }}
+          BASE_BRANCH: ${{ github.event.repository.default_branch || 'develop' }}
+          OLD_VERSION: ${{ steps.discover.outputs.old_version }}
+          NEW_VERSION: ${{ steps.discover.outputs.new_version }}
+          VARIANT: ${{ steps.image.outputs.variant }}
+          NEW_DIGEST: ${{ steps.image.outputs.digest }}
+        run: |
+          set -euo pipefail
+
+          branch="chore/rust-toolchain-${NEW_VERSION}"
+
+          # Dedup across states, the spec-watcher pattern: an open PR means the
+          # bump is already filed, and a closed one means a human said no. Both
+          # are answers, and re-opening either weekly would be noise.
+          existing=$(gh pr list --repo "$REPO" --head "$branch" --state all \
+                       --json number,state --jq '.[0] | select(. != null) | "#\(.number) (\(.state))"')
+          if [ -n "$existing" ]; then
+            echo "::notice::A PR for $branch already exists: $existing. Nothing to do."
+            exit 0
+          fi
+
+          files=$(grep -v '^$' changed-files.txt || true)
+          if [ -z "$files" ]; then
+            echo "::error::No changed files were recorded. The rewrite step did not hand anything to commit."
+            exit 1
+          fi
+          if [ "$HAVE_TOKEN" != "1" ]; then
+            # The workflow token cannot write workflow files: the ref update is
+            # refused outright, which would lose the whole PR. Drop them from
+            # the commit so the rest still lands, and let the reader know.
+            files=$(printf '%s\n' "$files" | grep -v '^\.github/workflows/' || true)
+          fi
+
+          base_sha=$(gh api "repos/${REPO}/git/ref/heads/${BASE_BRANCH}" --jq .object.sha)
+          base_tree=$(gh api "repos/${REPO}/git/commits/${base_sha}" --jq .tree.sha)
+
+          tree_args=()
+          while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            blob=$(gh api "repos/${REPO}/git/blobs" \
+                     -f encoding=base64 -f content="$(base64 -w0 "$f")" --jq .sha)
+            tree_args+=( -f "tree[][path]=$f" -f "tree[][mode]=100644" \
+                         -f "tree[][type]=blob" -f "tree[][sha]=$blob" )
+            echo "staged $f ($blob)"
+          done <<< "$files"
+
+          tree=$(gh api "repos/${REPO}/git/trees" \
+                   -f "base_tree=${base_tree}" "${tree_args[@]}" --jq .sha)
+          commit=$(gh api "repos/${REPO}/git/commits" \
+                     -f "message=build(toolchain): move to Rust ${NEW_VERSION}" \
+                     -f "tree=${tree}" -f "parents[]=${base_sha}" --jq .sha)
+          gh api "repos/${REPO}/git/refs" \
+            -f "ref=refs/heads/${branch}" -f "sha=${commit}" --jq .ref
+
+          {
+            echo "The Cargo book asks for this job by name (Continuous Integration, \"Checking for warnings\"): the toolchain is pinned, and an automated job opens the upgrade PR so new-toolchain lint churn arrives on its own branch instead of on somebody else's."
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Previous pin | \`${OLD_VERSION}\` |"
+            echo "| New stable | \`${NEW_VERSION}\` |"
+            echo "| Base image | \`rust:${NEW_VERSION}-${VARIANT}\` |"
+            echo "| Index digest | \`${NEW_DIGEST}\` |"
+            echo
+            echo "The digest was **re-resolved from the registry** for the new tag, not carried over. Copying it forward would keep the old toolchain in every container-based job while every version string claimed otherwise."
+            echo
+            echo "## What to check before merging"
+            echo
+            echo "- **New lints.** A minor release routinely adds lints that fail instantly under \`-D warnings\` with the pedantic table. That churn belongs on this PR."
+            echo "- **The MSRV did not move**, and must not: it is a separate datum with its own policy (\`docs/VERSIONS.md\` §MSRV bump policy). If \`cargo hack check --rust-version\` is red here, the fix is a deliberate MSRV decision in its own PR, never a quiet bump inside this one."
+            echo "- **The digest is the index digest** of \`rust:${NEW_VERSION}-${VARIANT}\`, verifiable with \`docker buildx imagetools inspect rust:${NEW_VERSION}-${VARIANT}\`."
+            if [ "$HAVE_TOKEN" != "1" ]; then
+              echo
+              echo "## This bump is INCOMPLETE"
+              echo
+              echo "No \`TOOLCHAIN_BUMP_TOKEN\` secret is configured, so this commit could not include \`.github/workflows/ci.yml\` or \`.github/workflows/containers.yml\`: the workflow token has no \`workflows\` permission and the ref update is refused. Their \`container:\` pins and cache keys still name \`${OLD_VERSION}\` and must be moved by hand to \`rust:${NEW_VERSION}-${VARIANT}@${NEW_DIGEST}\` before this merges — the toolchain-pin check in both files fails until they are."
+              echo
+              echo "Checks also do not start by themselves on a PR opened with the workflow token. Close and reopen this PR to raise them."
+            fi
+          } > pr-body.md
+
+          url=$(gh pr create --repo "$REPO" --base "$BASE_BRANCH" --head "$branch" \
+                  --title "build(toolchain): move to Rust ${NEW_VERSION}" \
+                  --body-file pr-body.md)
+          echo "::notice::Opened $url"
+          echo "$url" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$HAVE_TOKEN" != "1" ]; then
+            echo "::error::Opened an INCOMPLETE bump PR. Configure a TOOLCHAIN_BUMP_TOKEN secret (a fine-grained PAT or GitHub App installation token with contents:write, pull-requests:write and workflows:write) so this lane can move the workflow pins and so its PRs start their own checks."
+            exit 1
+          fi

@@ -20,7 +20,6 @@
 
 use std::collections::HashSet;
 
-use openehr_base::prelude::ArchetypeId;
 use openehr_its::opt14::types::{
     ArchetypeInternalRef, ArchetypeSlot, Assertion, CObject, ConstraintRef, ExprItem,
     Intervalofinteger,
@@ -129,11 +128,10 @@ pub(super) fn check_archetype_id(id: &str, rm_type_name: &str) -> Result<(), Rul
 
 /// Archetype-identifier shape for uploaded artefacts:
 /// `rm_originator-rm_name-rm_entity.domain_concept.v<version>` (BASE `base_types`
-/// master05 §Syntaxes), decided by the BASE parser
-/// ([`ArchetypeId`]) plus the OPT-ingest narrowing below. Tolerances beyond the
-/// strict BASE `name-str` grammar,
-/// both adjudicated against real published templates (never against CNF valid
-/// fixtures, which all conform strictly):
+/// master05 §Syntaxes), read here rather than through the BASE parser, whose
+/// grammar is narrower than an uploaded OPT's identifiers on both axes below.
+/// Tolerances beyond that grammar, each adjudicated against real published
+/// templates (never against CNF valid fixtures, which all conform strictly):
 ///
 /// - the version may be multi-part numeric (`v1.0.0`) — the ADL2-era archetype
 ///   HRID form appears in deployed OPT 1.4 exports (the vendored
@@ -148,26 +146,27 @@ fn is_archetype_id_shaped(id: &str) -> bool {
         chars.next().is_some_and(|c| c.is_ascii_alphabetic())
             && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
     }
-    // The lexical form itself is BASE's — `ARCHETYPE_ID::from_str` splits on
-    // the trailing `.v` and the RM qualifier and enforces the three-part
-    // qualifier; the axes are then read back through its typed accessors, so
-    // this function never re-implements the grammar. What it adds on top is the
-    // OPT-ingest NARROWING documented above (numeric multi-part version, ASCII
-    // concept charset), which BASE deliberately leaves open.
-    let Ok(parsed) = id.parse::<ArchetypeId>() else {
+    // The split is done here rather than through `ARCHETYPE_ID::from_str`,
+    // because BASE's `version_id` production is single-part by definition
+    // (`'0' | non-zero-digit, [ number ]`, master05 §Syntaxes) — it REFUSES the
+    // `v1.0.0` this function's own tolerances exist to accept, so routing
+    // through it would make both documented tolerances unreachable.
+    let Some((qualified_and_concept, version)) = id.rsplit_once(".v") else {
         return false;
     };
-    let version = parsed.version_id();
-    let version_ok = version
-        .split('.')
-        .all(|p| !p.is_empty() && p.bytes().all(|b| b.is_ascii_digit()))
-        && version.split('.').count() <= 3;
-    let entity_parts: Vec<&str> = parsed.qualified_rm_entity().split('-').collect();
+    let Some((qualified, concept)) = qualified_and_concept.split_once('.') else {
+        return false;
+    };
+    let version_ok = version.split('.').count() <= 3
+        && version
+            .split('.')
+            .all(|p| !p.is_empty() && p.bytes().all(|b| b.is_ascii_digit()));
+    let entity_parts: Vec<&str> = qualified.split('-').collect();
     let entity_ok = entity_parts.len() == 3 && entity_parts.iter().all(|p| alphanum_str(p));
-    let concept_ok = parsed
-        .domain_concept()
-        .chars()
-        .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '(' | ')' | '.'));
+    let concept_ok = !concept.is_empty()
+        && concept
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '(' | ')' | '.'));
     version_ok && entity_ok && concept_ok
 }
 

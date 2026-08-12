@@ -15,7 +15,7 @@ pub enum FlatError {
 
     /// An OPT 1.4 XML document failed to parse.
     #[error("failed to parse OPT 1.4 XML: {0}")]
-    OptParse(String),
+    OptParse(#[from] crate::xml::runtime::XmlError),
 
     /// A value could not be serialized to JSON.
     #[error("failed to serialize to JSON: {0}")]

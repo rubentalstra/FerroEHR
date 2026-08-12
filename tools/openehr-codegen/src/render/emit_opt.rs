@@ -551,9 +551,9 @@ impl<'a> OptModel<'a> {
             // it). It is emitted as the plain shape a document has to present —
             // never dropped, which would leave a dangling field type.
             //
-            // NOTE: such a type is NOT added to the variant set of the enums it
-            // descends from — `XsdModel::descendants` reports concrete subtypes
-            // only, which is the XSD rule for `xsi:type` (#2271).
+            // NOTE: such a type is NOT a variant of the enums it descends from —
+            // the XSD `xsi:type` rule — while its concrete descendants all are,
+            // which `the_concrete_only_variant_reading_loses_no_document_shape` pins.
             if ty.is_abstract && !self.enum_specs.contains(spec) {
                 let _ = writeln!(
                     b,

@@ -409,7 +409,9 @@ async fn capture_documentation_screenshots() {
         )
         .await
         .expect("type the AQL");
-    h.wait_xpath("//button[normalize-space(.)='Run']")
+    // Run is disabled until the typed AQL reaches the signal; a click before
+    // then is intercepted by the toolbar, so the wait carries the condition.
+    h.wait_clickable_xpath("//button[normalize-space(.)='Run']")
         .await
         .click()
         .await

@@ -27,9 +27,23 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.." || exit 1
 
-# Trees still being swept. Each is a COUNT, and a count may only go DOWN:
-# the sweep is judgement-per-site (#2034), so this pins progress rather than
-# demanding a big-bang change.
+# The sweep (#2034) is CLOSED: every remaining site below was judged and carries
+# its `// NOTE:` reason at the site or on its error type. Each budget is a COUNT
+# that may only go DOWN — a new flattened site fails the gate, and lowering a
+# budget needs the same judgement the sweep applied.
+#
+# What survives, and why each one is structural rather than unfinished:
+#
+#   app/ferroehr           `prometheus::Error` has no source-bearing variant.
+#   app/ferroehr-ext       `fhir_model`'s builder error is a dependency type
+#                          (RFC 1105 — see the site's NOTE).
+#   app/ferroehr-admin-ui  `AdminUiError` crosses the server-fn boundary, so
+#                          `FromServerFnError` requires Serialize/Deserialize;
+#                          `LiftError` is held in an `RwSignal`, so it must be
+#                          Clone + Eq. No underlying error is any of those.
+#
+# A line that ALSO calls `.with_source(e)` is not flattened — it carries the
+# cause and stringifies only for the message — so the count excludes it.
 #
 # `tools/*` is NOT swept, and that is an adjudication rather than an omission —
 # both trees fall under the shapes #2034 itself names as legitimate:
@@ -46,7 +60,7 @@ cd "$(dirname "$0")/../.." || exit 1
 # Both stay out of the budget list so the gate measures the request path, where
 # a status code is chosen BY TYPE and a flattened cause actually costs something.
 declare -a BUDGETS=(
-  "app/ferroehr:9"
+  "app/ferroehr:1"
   "app/ferroehr-ext:1"
   "app/ferroehr-admin-ui:6"
 )
@@ -56,7 +70,7 @@ for entry in "${BUDGETS[@]}"; do
   tree="${entry%%:*}"
   budget="${entry##*:}"
   count="$(grep -rn 'map_err(|e| .*to_string())' "$tree" 2>/dev/null \
-           | grep -vc '/tests/' || true)"
+           | grep -v '/tests/' | grep -vc 'with_source' || true)"
   count="${count:-0}"
   printf '%-26s %3s flattened (budget %s)\n' "$tree" "$count" "$budget"
   if [ "$count" -gt "$budget" ]; then

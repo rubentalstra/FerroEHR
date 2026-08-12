@@ -413,6 +413,8 @@ pub fn render(registry: &prometheus::Registry) -> Result<String, prometheus::Err
     let encoder = prometheus::TextEncoder::new();
     let mut buf = Vec::new();
     encoder.encode(&registry.gather(), &mut buf)?;
+    // NOTE: `prometheus::Error` is the registry's own error space and carries
+    // no source-bearing variant, so the cause can only travel as its message.
     String::from_utf8(buf).map_err(|e| prometheus::Error::Msg(e.to_string()))
 }
 

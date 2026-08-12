@@ -171,7 +171,7 @@ impl FerroEhrService {
         self.web_templates
             .get_or_build(key, || {
                 let opt = openehr_its::opt14::from_xml(xml)
-                    .map_err(|e| openehr_its::flat::error::FlatError::OptParse(e.to_string()))?;
+                    .map_err(openehr_its::flat::error::FlatError::OptParse)?;
                 openehr_its::flat::webtemplate::builder::build_web_template(&opt)
             })
             .await
