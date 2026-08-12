@@ -8,3 +8,7 @@ pub mod ehr_status;
 pub mod versioned_composition;
 pub mod versioned_ehr_access;
 pub mod versioned_ehr_status;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod ehr_access_impl;
+pub mod versioned_composition_impl;

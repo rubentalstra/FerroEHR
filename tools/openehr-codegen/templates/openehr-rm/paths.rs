@@ -957,6 +957,41 @@ fn predicate_for(v: &Value) -> Predicate {
     }
 }
 
+// ── typed entry points ───────────────────────────────────────────────────────
+//
+// The navigation above is over the canonical-JSON value tree, which is what
+// every consumer already holds. A TYPED RM value reaches it by encoding
+// itself with the crate's own canonical-JSON impls first — one door, so a
+// typed path answer and a wire path answer cannot differ.
+
+/// Failure to answer a path question asked of a TYPED RM value.
+#[derive(Debug, thiserror::Error)]
+pub enum TypedPathError {
+    /// The path expression is not a well-formed openEHR path.
+    #[error("path expression")]
+    Path(#[source] PathError),
+    /// The value could not be encoded as the canonical JSON the navigation
+    /// runs over.
+    #[error("encoding the value as canonical JSON")]
+    Encode(#[source] serde_json::Error),
+}
+
+impl From<PathError> for TypedPathError {
+    fn from(error: PathError) -> Self {
+        Self::Path(error)
+    }
+}
+
+/// The canonical-JSON form of a typed RM value, as the navigation primitives
+/// above consume it.
+///
+/// # Errors
+/// Returns [`TypedPathError::Encode`] when the value cannot be encoded — a
+/// non-finite `Real` is the only shape the RM types admit that JSON does not.
+pub fn canonical_value<T: serde::Serialize>(value: &T) -> Result<Value, TypedPathError> {
+    serde_json::to_value(value).map_err(TypedPathError::Encode)
+}
+
 // ── LOCATABLE node-id forms ──────────────────────────────────────────────────
 
 /// Whether `node_id` is an ADL **term code** — an at-code or id-code such as

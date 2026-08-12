@@ -12,6 +12,7 @@
 
 use openehr_base::v1_3::prelude::MultiplicityInterval;
 
+use crate::v1_1::bmm::core::bmm_container_property::BmmContainerProperty;
 use crate::v1_1::bmm::core::bmm_property::BmmProperty;
 use crate::v1_1::bmm::core::bmm_type::BmmType;
 
@@ -80,6 +81,21 @@ impl<T> BmmProperty<T> {
     #[must_use]
     pub fn display_name(&self) -> &str {
         self.name()
+    }
+}
+
+impl BmmContainerProperty {
+    /// `BMM_CONTAINER_PROPERTY.display_name` (redefined): "Name of this
+    /// attribute to display in UI"
+    /// (`org.openehr.lang.bmm.bmm_container_property.adoc` §Functions).
+    ///
+    /// NOTE: the redefinition restates its parent's meaning verbatim
+    /// (`…bmm.bmm_property.adoc` §Functions) and neither class definition
+    /// prescribes a transformation, so the container form is the property name
+    /// too — not the container type's rendering.
+    #[must_use]
+    pub fn display_name(&self) -> &str {
+        self.name.as_str()
     }
 }
 
@@ -222,6 +238,19 @@ mod tests {
                 upper_included: true,
             }
         );
+    }
+
+    /// The redefined `display_name` on the container class itself answers the
+    /// property NAME, not the container type's rendering — the boundary the
+    /// redefinition could plausibly have moved.
+    #[test]
+    fn the_container_redefinition_still_displays_the_property_name() {
+        let BmmProperty::BmmContainerProperty(items) = container_property("items", "ELEMENT")
+        else {
+            panic!("container_property builds the container variant");
+        };
+        assert_eq!(items.display_name(), "items");
+        assert_ne!(items.display_name(), items.r#type.type_name());
     }
 
     #[test]

@@ -49,8 +49,8 @@ use std::collections::HashMap;
 
 use crate::opt14::types::{
     ArchetypeTerm, Assertion, CArchetypeRoot, CObject, CPrimitive, Cardinality,
-    Constraintbindingset, ExprItem, Intervalofinteger, OperationalTemplate, TermBindingItem,
-    Termbindingset,
+    Constraintbindingset, ExprItem, Intervalofinteger, OperationalTemplate, OperatorKind,
+    TermBindingItem, Termbindingset, ValidityKind,
 };
 use indexmap::IndexMap;
 
@@ -662,10 +662,8 @@ fn capture_leaf_constraints(co: &CObject, node: &mut WebTemplateNode) {
     // C_TIME/C_DATE_TIME timezone_validity (VALIDITY_KIND: OPT 1.4 XSD 1001 =
     // mandatory, 1002 = optional, 1003 = disallowed). C_DATE has no timezone.
     node.tz_validity = match inputs::primitive_under(co, "value") {
-        Some(CPrimitive::CTime(c)) => c.timezone_validity.as_deref().and_then(|s| s.parse().ok()),
-        Some(CPrimitive::CDateTime(c)) => {
-            c.timezone_validity.as_deref().and_then(|s| s.parse().ok())
-        }
+        Some(CPrimitive::CTime(c)) => c.timezone_validity.map(validity_code),
+        Some(CPrimitive::CDateTime(c)) => c.timezone_validity.map(validity_code),
         _ => None,
     };
     // C_QUANTITY.property (openEHR `property`-group code): captured so the
@@ -1024,17 +1022,27 @@ fn slot_pattern(a: &Assertion) -> Option<String> {
     expression_pattern(a).or_else(|| string_expression_pattern(a))
 }
 
-/// The `OPERATOR_KIND` code for `op_matches` in the OPT-1.4 XML encoding
-/// (ITS-XML `ALL/Archetype.xsd` §`OPERATOR_KIND`:
-/// `<xs:enumeration value="2007" id="matches"/>`).
-const MATCHES_OPERATOR: &str = "2007";
+/// The `VALIDITY_KIND` facet value as the integer the Web Template carries.
+///
+/// The Web Template `tz_validity` field is a number on its own wire, while the
+/// OPT-1.4 XML encodes the same fact as the `xs:enumeration` facet value
+/// (ITS-XML `ALL/Archetype.xsd` §`VALIDITY_KIND`).
+fn validity_code(kind: ValidityKind) -> i32 {
+    match kind {
+        ValidityKind::Mandatory => 1001,
+        ValidityKind::Optional => 1002,
+        ValidityKind::Disallowed => 1003,
+    }
+}
 
 /// The archetype-id regex read from an assertion's expression tree.
 fn expression_pattern(a: &Assertion) -> Option<String> {
     let ExprItem::ExprBinaryOperator(op) = a.expression.as_ref() else {
         return None;
     };
-    if op.operator != MATCHES_OPERATOR {
+    // `op_matches` — ITS-XML `ALL/Archetype.xsd` §`OPERATOR_KIND`
+    // `<xs:enumeration value="2007" id="matches"/>`.
+    if op.operator != OperatorKind::Matches {
         return None;
     }
     let (ExprItem::ExprLeaf(left), ExprItem::ExprLeaf(right)) =

@@ -8,3 +8,8 @@ pub mod authored_archetype;
 pub mod operational_template;
 pub mod template;
 pub mod template_overlay;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod archetype_hrid_impl;
+pub mod archetype_impl;
+pub mod operational_template_impl;

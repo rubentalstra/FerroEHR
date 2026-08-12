@@ -6,3 +6,6 @@ pub mod archetype_term;
 pub mod archetype_terminology;
 pub mod terminology_relation;
 pub mod value_set;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod archetype_terminology_impl;

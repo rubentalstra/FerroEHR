@@ -15,4 +15,6 @@ pub mod iso8601_date_time_impl;
 pub mod iso8601_duration_impl;
 pub mod iso8601_parse;
 pub mod iso8601_time_impl;
+pub mod iso8601_timezone_impl;
+pub mod iso8601_type_impl;
 pub mod time_definitions;

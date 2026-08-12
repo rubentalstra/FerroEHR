@@ -7,3 +7,6 @@ pub mod assertion;
 pub mod constraint_model;
 pub mod ontology;
 pub mod primitive;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod archetype_impl;

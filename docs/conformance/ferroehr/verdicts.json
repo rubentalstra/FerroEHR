@@ -43,7 +43,7 @@
     ],
     [
       "ChangeSets",
-      "passed"
+      "failed"
     ],
     [
       "Versioning",
@@ -51,7 +51,7 @@
     ],
     [
       "ArchetypeValidation",
-      "passed"
+      "failed"
     ],
     [
       "PartyOperations",
@@ -67,7 +67,7 @@
     ],
     [
       "AqlBasic",
-      "passed"
+      "failed"
     ],
     [
       "AqlAdvanced",
@@ -75,7 +75,7 @@
     ],
     [
       "AqlTerminology",
-      "passed"
+      "failed"
     ],
     [
       "ActivityReport",
@@ -143,7 +143,7 @@
     ],
     [
       "Signing",
-      "passed"
+      "failed"
     ],
     [
       "SimplifiedFormats",
@@ -268,8 +268,8 @@
     [
       "ChangeSets",
       {
-        "passed": 84,
-        "failed": 0,
+        "passed": 83,
+        "failed": 1,
         "inconclusive": 0,
         "unevidenced": 5
       }
@@ -286,8 +286,8 @@
     [
       "ArchetypeValidation",
       {
-        "passed": 125,
-        "failed": 0,
+        "passed": 123,
+        "failed": 2,
         "inconclusive": 0,
         "unevidenced": 0
       }
@@ -322,8 +322,8 @@
     [
       "AqlBasic",
       {
-        "passed": 32,
-        "failed": 0,
+        "passed": 31,
+        "failed": 1,
         "inconclusive": 0,
         "unevidenced": 0
       }
@@ -340,8 +340,8 @@
     [
       "AqlTerminology",
       {
-        "passed": 6,
-        "failed": 0,
+        "passed": 5,
+        "failed": 1,
         "inconclusive": 0,
         "unevidenced": 0
       }
@@ -493,8 +493,8 @@
     [
       "Signing",
       {
-        "passed": 11,
-        "failed": 0,
+        "passed": 8,
+        "failed": 3,
         "inconclusive": 0,
         "unevidenced": 2
       }
@@ -566,11 +566,11 @@
   "profiles": [
     [
       "CORE",
-      "pass"
+      "fail"
     ],
     [
       "STANDARD",
-      "pass"
+      "fail"
     ],
     [
       "OPTIONS",
@@ -590,8 +590,8 @@
   "coverage": {
     "selected": 1052,
     "driven": 1014,
-    "passed": 1014,
-    "failed": 0,
+    "passed": 1006,
+    "failed": 8,
     "inconclusive": 0
   }
 }

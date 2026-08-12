@@ -17,3 +17,14 @@ pub mod c_primitive_tuple;
 pub mod c_second_order;
 pub mod primitive;
 pub mod sibling_order;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod archetype_constraint_impl;
+pub mod archetype_slot_impl;
+pub mod c_attribute_impl;
+pub mod c_complex_object_impl;
+pub mod c_complex_object_proxy_impl;
+pub mod c_defined_object_impl;
+pub mod c_object_impl;
+pub mod c_primitive_object_impl;
+pub mod sibling_order_impl;

@@ -4,3 +4,7 @@
 
 pub mod archetype_ontology;
 pub mod archetype_term;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod archetype_ontology_impl;
+pub mod archetype_term_impl;

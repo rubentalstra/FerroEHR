@@ -14,6 +14,52 @@
 )]
 use crate::xml::runtime::{FromXml, ToXml, XmlError, XmlEvent};
 
+impl crate::xml::runtime::ToXml for crate::aom2::types::Operatorvaluetype {
+    fn write_xml(
+        &self,
+        w: &mut crate::xml::runtime::XmlWriter,
+        tag: &str,
+        _declared: Option<&str>,
+    ) -> Result<(), crate::xml::runtime::XmlError> {
+        w.write_text_element(tag, self.as_wire())
+    }
+}
+
+impl crate::xml::runtime::FromXml for crate::aom2::types::Operatorvaluetype {
+    fn from_xml(
+        reader: &mut crate::xml::runtime::XmlReader,
+        start: &crate::xml::runtime::StartTag,
+    ) -> Result<Self, crate::xml::runtime::XmlError> {
+        let __s = <::std::string::String as crate::xml::runtime::FromXml>::from_xml(reader, start)?;
+        crate::aom2::types::Operatorvaluetype::from_wire(__s.trim()).map_err(|__e| {
+            crate::xml::runtime::XmlError::parse_source("element text of OperatorValueType", __e)
+        })
+    }
+}
+
+impl crate::xml::runtime::ToXml for crate::aom2::types::ValidityKind {
+    fn write_xml(
+        &self,
+        w: &mut crate::xml::runtime::XmlWriter,
+        tag: &str,
+        _declared: Option<&str>,
+    ) -> Result<(), crate::xml::runtime::XmlError> {
+        w.write_text_element(tag, self.as_wire())
+    }
+}
+
+impl crate::xml::runtime::FromXml for crate::aom2::types::ValidityKind {
+    fn from_xml(
+        reader: &mut crate::xml::runtime::XmlReader,
+        start: &crate::xml::runtime::StartTag,
+    ) -> Result<Self, crate::xml::runtime::XmlError> {
+        let __s = <::std::string::String as crate::xml::runtime::FromXml>::from_xml(reader, start)?;
+        crate::aom2::types::ValidityKind::from_wire(__s.trim()).map_err(|__e| {
+            crate::xml::runtime::XmlError::parse_source("element text of VALIDITY_KIND", __e)
+        })
+    }
+}
+
 impl crate::xml::runtime::ToXml for crate::aom2::types::ArchetypeTerm {
     fn xml_type_name(&self) -> &'static str {
         "ARCHETYPE_TERM"

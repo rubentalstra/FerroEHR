@@ -24,6 +24,8 @@ pub mod dv_interval_impl;
 pub mod dv_ordered_impl;
 pub mod dv_ordinal_impl;
 pub mod dv_proportion_impl;
+pub mod dv_quantified_impl;
 pub mod dv_quantity_impl;
 pub mod dv_scale_impl;
+pub mod proportion_kind_impl;
 pub mod reference_range_impl;

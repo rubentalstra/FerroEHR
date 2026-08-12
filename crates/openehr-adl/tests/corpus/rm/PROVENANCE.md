@@ -48,3 +48,27 @@ The archie BMM-reader test schemas (`bmm/src/test/resources/`) and ODIN-reader
 test fixtures (`odin/src/test/resources/`) test the `openehr_lang` BMM/ODIN
 readers, not the ADL2 RM checks, so they are vendored with that crate at
 `crates/openehr-lang/tests/vendor/{bmm,odin}/` (see the PROVENANCE.md there).
+
+## Licence election: the ISO 13606 BMM models are taken under MPL 1.1
+
+Three files here carry the Mozilla tri-licence block —
+`cen_EN13606_0.95.bmm`, `cen_ts14796_0.90.bmm`, and
+`openehr_ehr_extract_999.bmm`:
+
+```
+--| Version: MPL 1.1/GPL 2.0/LGPL 2.1
+--| Alternatively, the contents of this file may be used under the terms of
+--| either the GNU General Public License Version 2 or later (the 'GPL'), or
+--| the GNU Lesser General Public License Version 2.1 or later (the 'LGPL'),
+--| in which case the provisions of the GPL or the LGPL are applicable instead
+--| of those above.
+```
+
+A recipient elects ONE of the three. **This project takes them under
+MPL 1.1**, so no GPL or LGPL obligation attaches to anything here. Recorded
+because a licence scanner reads the GPL and LGPL names out of the text and
+reports them as findings; the election is the answer, and writing it down once
+stops it being re-litigated at every scan.
+
+These files are test corpus. They are not packaged by any crate — `openehr-adl`
+ships `src/**` only, and Cargo excludes `tests/` from a published package.

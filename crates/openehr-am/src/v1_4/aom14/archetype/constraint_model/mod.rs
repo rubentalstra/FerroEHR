@@ -16,3 +16,9 @@ pub mod c_reference_object;
 pub mod c_single_attribute;
 pub mod cardinality;
 pub mod constraint_ref;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod c_attribute_impl;
+pub mod c_complex_object_impl;
+pub mod c_defined_object_impl;
+pub mod cardinality_impl;

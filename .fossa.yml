@@ -1,0 +1,74 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fossas/fossa-cli/master/docs/references/files/fossa-yml.schema.json
+#
+# FOSSA CLI v3 configuration.
+# Reference: https://docs.fossa.com/docs/cli/references/files/fossa-yml
+#
+# Two things this file settles, both of which cost real time when they are left
+# to defaults on this repository:
+#
+# 1. WHAT IS A DEPENDENCY. The dependency surface here is the Cargo graph and
+#    nothing else. `targets.only: cargo` says so, which keeps FOSSA from
+#    discovering "projects" in the vendored third-party trees below — those are
+#    specification text and test corpora, not things this software links.
+#    FOSSA's Rust analyzer runs `cargo generate-lockfile` then
+#    `cargo metadata --format-version 1`
+#    (https://docs.fossa.com/docs/project-setup/supported-languages/rust), so a
+#    checkout plus a toolchain is all it needs.
+#
+# 2. WHAT IS OURS. Every path excluded below is third-party material this
+#    project redistributes byte-identically, under terms recorded in that
+#    tree's own PROVENANCE.md and summarised in `.claude/rules/reliability.md`
+#    §C-PERMISSIVE. Scanning them reports somebody else's licence as if it were
+#    ours, and a scan that is never green is a scan nobody reads. Nothing here
+#    excludes this project's own code: `app/`, `crates/*/src/`, `tools/*/src/`,
+#    `scripts/` and `deploy/` are all analysed.
+#
+# Known upstream licence-header contradictions in the excluded trees, reported
+# rather than papered over:
+#   - `crates/openehr-term/assets/schema/PropertyUnitData.xsd` carries an
+#     AGPL-3.0 header attributing it to ADL2-tools, inside a repository whose
+#     LICENSE is CC-BY-SA 3.0. It is excluded from the published crate as well
+#     (see that crate's `include`), so it reaches no consumer.
+#   - three ISO 13606 BMM models under `crates/openehr-adl/tests/corpus/` are
+#     offered MPL 1.1 / GPL 2.0 / LGPL 2.1; this project TAKES THEM UNDER
+#     MPL 1.1 (recorded in that corpus's PROVENANCE.md), so no GPL or LGPL
+#     obligation attaches.
+version: 3
+
+targets:
+  only:
+    - type: cargo
+
+paths:
+  exclude:
+    # openEHR specification text — CC-BY-SA 3.0 (LICENSE-CC-BY-SA-3.0).
+    - ./docs/specs/openehr
+    # openEHR TERM computable assets — CC-BY-SA 3.0 per the upstream LICENSE.
+    - ./crates/openehr-term/assets
+    # Vendored machine-readable openEHR artifacts — Apache-2.0.
+    - ./crates/openehr-its/schemas
+    - ./crates/openehr-adl/vendor
+    - ./crates/openehr-lang/vendor
+    - ./tools/openehr-codegen/vendor
+    # Third-party test corpora, each with its own PROVENANCE.md.
+    - ./crates/openehr-adl/tests/corpus
+    - ./crates/openehr-its/tests/vendor
+    - ./crates/openehr-its/tests/fixtures
+    - ./crates/openehr-lang/tests/vendor
+    - ./crates/openehr-term/tests
+    # CKM clinical models — CC-BY-SA 4.0 (LICENSE-CC-BY-SA-4.0), per-file
+    # `licence` metadata.
+    - ./tools/cnf-runner/artifacts/corpus
+    # Fuzzing seeds: copies of the corpora above, kept for crash reproduction.
+    - ./fuzz/seeds
+
+# A licence this project must never ship goes here rather than living only in a
+# reviewer's memory. These are the two copyleft families that would conflict
+# with the MIT licence of this project's own code; a match inside our own
+# sources is a finding worth stopping for, and the exclusions above mean a hit
+# can only come from code we wrote.
+customLicenseSearch:
+  - matchCriteria: "GNU (Affero )?General Public License"
+    name: "GPL-family licence text in first-party source"
+  - matchCriteria: "Server Side Public License"
+    name: "SSPL text in first-party source"
