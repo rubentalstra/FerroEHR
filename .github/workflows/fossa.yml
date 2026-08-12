@@ -77,6 +77,11 @@ jobs:
           # exists to stop, and pinning the action alone only looks like
           # compliance. Bump deliberately, like every other pin.
           pinned-cli-version: v3.17.16
+          # Pinned, or the CLI derives the project name from the git remote and
+          # files results under a project literally named
+          # "https://github.com/rubentalstra/FerroEHR". A stable name keeps the
+          # dashboard, the badge and this lane pointing at one place.
+          project: FerroEHR
           # `github.ref_name` is the branch on a push and the PR number on a
           # pull_request, which is what FOSSA's own example uses to keep a PR's
           # results off the branch's history.
