@@ -1,4 +1,5 @@
-//! The `master03` string-escape decoder — one home for ODIN, BEL and cADL.
+// @generated-from-template templates/openehr-lang/escape.rs — DO NOT EDIT; edit the source and re-run `openehr-codegen -- emit`.
+//! The `master03` string-escape decoder — one home for this generation.
 //!
 //! `LANG/docs/odin/master03-basics.adoc` §File Encoding (verbatim twin:
 //! `AM/docs/ADL2/master03-file_encoding.adoc` §File Encoding) defines the
@@ -47,6 +48,9 @@
 //! digits opening with anything else are read as the 4-digit form followed by
 //! literal hex text, so a plain `A` never changes meaning because hex
 //! characters happen to follow it.
+//!
+//! NOTE: `master03-basics.adoc` is byte-identical in Release-1.0.0 (verified
+//! first-hand 2026-08-05), so one decoder is correct for every generation.
 
 /// A `master03` escape-sequence defect.
 ///
@@ -206,10 +210,9 @@ pub fn validate(inner: &str) -> Result<(), EscapeError> {
 ///
 /// The delimiters are `master03`'s (`LANG/docs/odin/master03-basics` §Special
 /// Character Sequences: `\"` is the escape *because* `"` delimits), and every
-/// reader of a `master03` string literal — the ODIN parser, the BEL parser and
-/// the cADL parser — strips them the same way, so the rule lives here once. A
-/// slice that is not delimited is decoded as-is rather than losing a
-/// character.
+/// reader of a `master03` string literal strips them the same way — whichever
+/// readers this generation carries — so the rule lives here once. A slice that
+/// is not delimited is decoded as-is rather than losing a character.
 ///
 /// # Errors
 /// As [`decode`].
