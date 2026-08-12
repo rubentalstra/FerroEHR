@@ -232,21 +232,26 @@ fn missing_mandatory_composer_is_rejected() {
     );
 }
 
-/// The invalid twin of the corpus adjudication above: a vendored composition
-/// carrying `TERMINOLOGY_ID` `"SNOMED CT"` is REFUSED, at the path that holds
-/// it.
+/// A vendored composition carrying `TERMINOLOGY_ID` `"SNOMED CT"` is ACCEPTED,
+/// because the class constrains no value.
 ///
-/// Keeping the refusal asserted is what stops the reader being loosened back:
-/// the interior space is outside the `terminology_id` production (BASE
-/// `base_types/master05-identification_package.adoc` §Syntaxes), and the same
-/// chapter spells the terminology `"SNOMED-CT"`.
+/// This assertion was inverted deliberately (#2314). It previously required
+/// the interior space to be REFUSED, citing the `terminology_id` production in
+/// BASE `base_types/master05-identification_package.adoc` §Syntaxes. That
+/// production is prose in a chapter: `TERMINOLOGY_ID`'s own class table
+/// declares no `Invariants` row and the BMM no `invariants` key — unlike its
+/// sibling `VERSION_TREE_ID`, which declares seven — so enforcing it invented a
+/// prohibition the model does not contain. Released QUERY 1.1.0
+/// (`docs/specs/openehr/QUERY/docs/AQL/master03-syntax.adoc` §Node predicate)
+/// settles it from the other side by publishing
+/// `terminology_id/value='snomed_ct(3.1)'`, which that same production forbids.
 #[test]
-fn snomed_ct_with_a_space_is_refused() {
+fn a_terminology_id_with_a_space_is_accepted() {
     let wts = web_templates();
     let msgs = validate("ehrb_adbm_op_consult_record.json", &wts);
     assert!(
-        msgs.iter().any(|m| m.path.ends_with("/terminology_id")),
-        "the space in \"SNOMED CT\" must be refused at its terminology_id path, got {msgs:?}"
+        !msgs.iter().any(|m| m.path.ends_with("/terminology_id")),
+        "no violation may be raised against a terminology_id, got {msgs:?}"
     );
 }
 
