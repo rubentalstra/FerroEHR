@@ -63,11 +63,43 @@ jobs:
       - name: Ensure the Cargo lockfile is present
         run: cargo generate-lockfile --locked || cargo generate-lockfile
 
-      - uses: fossas/fossa-action@29693cc50323968e039056be419b32989fc5880c # v2.0.0
+      - id: fossa
+        uses: fossas/fossa-action@29693cc50323968e039056be419b32989fc5880c # v2.0.0
         with:
           api-key: ${{ secrets.FOSSA_API_KEY }}
+          # PINNING THE CLI IS NOT OPTIONAL HERE. The action's own README says
+          # "This Action will always use the latest version of FOSSA CLI", so a
+          # SHA-pinned action still downloads a moving tool at runtime — the
+          # analysis would change under us with no commit in this repository.
+          # That is precisely what the reliability rule's pinning requirement
+          # exists to stop, and pinning the action alone only looks like
+          # compliance. Bump deliberately, like every other pin.
+          pinned-cli-version: v3.17.16
           # `github.ref_name` is the branch on a push and the PR number on a
           # pull_request, which is what FOSSA's own example uses to keep a PR's
           # results off the branch's history.
           branch: ${{ github.ref_name }}
           run-tests: false
+          # An SPDX attribution report of everything the dependency graph
+          # carries. This project already publishes a CycloneDX SBOM of the
+          # cargo graph per release binary; that answers "what is in the
+          # artifact", while this answers "what are we obliged to attribute" —
+          # a different question, and the one that matters for a product
+          # redistributing third-party material.
+          generate-report: spdx
+
+      # The report is a step OUTPUT, so it exists only for the length of this
+      # job unless something writes it down. Read through the environment
+      # rather than interpolated into the shell: report text is arbitrary
+      # third-party content (dependency names, licence bodies) and must never
+      # be parsed as script.
+      - name: Write the attribution report
+        env:
+          REPORT: ${{ steps.fossa.outputs.report }}
+        run: printf '%s' "$REPORT" > fossa-attribution.spdx.json
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: fossa-attribution-report
+          path: fossa-attribution.spdx.json
+          if-no-files-found: error
