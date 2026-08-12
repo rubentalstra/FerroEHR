@@ -287,6 +287,39 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: zizmor --min-severity=low .github/workflows/
 
+  # actionlint (github.com/rhysd/actionlint) is the CORRECTNESS half of the pair
+  # above: zizmor audits security posture, actionlint checks that the workflow
+  # is well-formed at all — `${{ }}` expressions that cannot evaluate, `needs:`
+  # naming a job that does not exist, unknown runner labels, and shellcheck over
+  # every embedded `run:` block. A committed `.github/actionlint.yaml` (the
+  # runner-label roster) existed here long before this job did, so the tool was
+  # being run by hand and never gated.
+  #
+  # Ungated on the `changes` filter for the same reason zizmor is: that filter
+  # excludes `.github/`.
+  workflow-lint:
+    name: actionlint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: taiki-e/install-action@91ddec75689c4c78665b598d188dc821c5a43e5c # v2.85.9
+        with:
+          tool: actionlint@1.7.12
+      - name: Lint .github/workflows
+        # SC2016 ("expressions don't expand in single quotes") is excluded, and
+        # only it: every occurrence in this repo is a `printf` format string or a
+        # `jq` filter, where single quotes are the CORRECT idiom precisely
+        # because the shell must not expand `%s` or `$`. Nothing else is
+        # suppressed — the run is clean at actionlint's own default severity.
+        env:
+          SHELLCHECK_OPTS: "-e SC2016"
+        run: actionlint
+
   # Comment-style guard (.claude/rules/comments.md, RFC 505/1574): block
   # comments, TODO(#N) form, NOTE/essay line budgets — over the WHOLE tree
   # hand-written .rs files. Diff-scoped until the legacy essay sweep (#1870)
@@ -1652,6 +1685,7 @@ jobs:
       - fmt
       - no-attribution
       - workflow-audit
+      - workflow-lint
       - comment-style
       - default-style
       - docs-claims
